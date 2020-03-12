@@ -1,0 +1,7 @@
+{:main            "firesage.client"
+ :output-dir      "target/public/cljs"
+ :output-to       "target/public/cljs/app.js"
+ :source-map      "target/public/cljs/app.js.map"
+ :optimizations   :advanced
+ :pretty-print    false
+ :closure-defines {"goog.DEBUG" false}}

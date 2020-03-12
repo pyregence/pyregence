@@ -1,0 +1,7 @@
+DROP DATABASE IF EXISTS firesage;
+DROP ROLE IF EXISTS firesage;
+CREATE ROLE firesage WITH LOGIN CREATEDB PASSWORD 'firesage';
+CREATE DATABASE firesage WITH OWNER firesage;
+\c firesage
+CREATE EXTENSION pgcrypto;
+CREATE EXTENSION postgis;

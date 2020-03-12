@@ -1,0 +1,7 @@
+{:main          "firesage.client"
+ :output-dir    "target/public/cljs/out"
+ :output-to     "target/public/cljs/app.js"
+ :asset-path    "/cljs/out"
+ :source-map    true
+ :optimizations :none
+ :pretty-print  true}
