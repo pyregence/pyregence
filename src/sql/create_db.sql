@@ -5,3 +5,5 @@ CREATE DATABASE firesage WITH OWNER firesage;
 \c firesage
 CREATE EXTENSION pgcrypto;
 CREATE EXTENSION postgis;
+CREATE EXTENSION postgis_raster;
+CREATE EXTENSION postgis_topology;
