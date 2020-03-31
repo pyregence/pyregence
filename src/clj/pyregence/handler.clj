@@ -40,7 +40,7 @@
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
                        (bad-uri? uri)                  forbidden-response
-                       (= uri "/")                     (render-page "/home")
+                       ;; (= uri "/")                     (render-page "/home") ; FIXME: This static page can be removed.
                        (contains? view-routes uri)     (render-page uri)
                        (str/starts-with? uri "/clj/")  (token-resp params clj-handler)
                        (str/starts-with? uri "/sql/")  (token-resp params sql-handler)
