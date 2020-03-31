@@ -1,4 +1,4 @@
-(ns firesage.build-db
+(ns pyregence.build-db
   (:require [clojure.java.io :as io]
             [clojure.java.shell :as sh]
             [clojure.string :as str]))
@@ -91,23 +91,23 @@
 
 (defn load-tables [verbose]
   (println "Loading tables...")
-  (->> (map #(format "psql -h localhost -U firesage -d firesage -f %s" %)
+  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
             (topo-sort-files-by-namespace "./src/sql/tables"))
-       (apply sh-wrapper "./" {:PGPASSWORD "firesage"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
        (println)))
 
 (defn load-functions [verbose]
   (println "Loading functions...")
-  (->> (map #(format "psql -h localhost -U firesage -d firesage -f %s" %)
+  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
             (topo-sort-files-by-namespace "./src/sql/functions"))
-       (apply sh-wrapper "./" {:PGPASSWORD "firesage"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
        (println)))
 
 (defn load-default-data [verbose]
   (println "Loading default data...")
-  (->> (map #(format "psql -h localhost -U firesage -d firesage -f %s" %)
+  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
             (topo-sort-files-by-namespace "./src/sql/default_data"))
-       (apply sh-wrapper "./" {:PGPASSWORD "firesage"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
        (println)))
 
 (defn build-everything [verbose]

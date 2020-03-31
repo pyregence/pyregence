@@ -12,7 +12,7 @@ mode, follow these steps:
 
 3. Apply any DB changes.
 
-  $ psql -h localhost -U firesage -d firesage -f src/sql/changes/SOME_CHANGE_FILE.sql
+  $ psql -h localhost -U pyregence -d pyregence -f src/sql/changes/SOME_CHANGE_FILE.sql
   $ clojure -A:build-db only-functions
 
 4. Recompile the CLJS code.

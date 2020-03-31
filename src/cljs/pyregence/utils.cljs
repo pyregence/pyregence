@@ -1,4 +1,4 @@
-(ns firesage.utils
+(ns pyregence.utils
   (:require [cljs.reader :as edn]
             [clojure.string :as str]
             [clojure.core.async :refer [chan go >! <! close!]]))
@@ -21,7 +21,7 @@
   [event]
   (-> event .-target .-files (aget 0)))
 
-(def session-key "firesage")
+(def session-key "pyregence")
 
 (defn- save-session-storage! [data]
   (.setItem (.-sessionStorage js/window) session-key (pr-str data)))
@@ -49,7 +49,7 @@
      (.open js/window url window-name)
      (jump-to-url! url))))
 
-;; FIXME: There are no /file/* routes in firesage.handler/routing-handler. These should be managed via firesage.remote-api/clj-handler.
+;; FIXME: There are no /file/* routes in pyregence.handler/routing-handler. These should be managed via pyregence.remote-api/clj-handler.
 ;; (defn download-file! [file-name]
 ;;   (jump-to-url! (str "/file/download?auth-token=KJlkjhasduewlkjdyask-dsf&file-name=" file-name)))
 
@@ -99,7 +99,7 @@
     result-chan))
 
 (defmethod call-remote! :default [method _ _]
-  (throw (str "No such method (" method ") defined for firesage.utils/call-remote!")))
+  (throw (str "No such method (" method ") defined for pyregence.utils/call-remote!")))
 
 (defn call-clj-async! [clj-fn-name & args]
   (call-remote! :post
@@ -135,7 +135,7 @@
                                                       {:sql-args args}))]
       (if success message (do (show-sql-error! message) [{}])))))
 
-;; FIXME: There are no /file/* routes in firesage.handler/routing-handler. These should be managed via firesage.remote-api/clj-handler.
+;; FIXME: There are no /file/* routes in pyregence.handler/routing-handler. These should be managed via pyregence.remote-api/clj-handler.
 ;; (defn call-file-async! [file-fn-name & args]
 ;;   (call-remote! :post
 ;;                 (str "/file/" file-fn-name)

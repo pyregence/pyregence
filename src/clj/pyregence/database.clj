@@ -1,8 +1,8 @@
-(ns firesage.database
+(ns pyregence.database
   (:require [clojure.data.json :as json]
             [clojure.string :as str]
-            [firesage.logging :refer [log-str]]
-            [firesage.views :refer [data-response]]
+            [pyregence.logging :refer [log-str]]
+            [pyregence.views :refer [data-response]]
             [next.jdbc :as jdbc]
             [next.jdbc.result-set :as rs]))
 
@@ -32,9 +32,9 @@
 ;;; Static Data
 
 (def pg-db {:dbtype                "postgresql"
-            :dbname                "firesage"
-            :user                  "firesage"
-            :password              "firesage"
+            :dbname                "pyregence"
+            :user                  "pyregence"
+            :password              "pyregence"
             :reWriteBatchedInserts true})
 
 ;;; Select Queries

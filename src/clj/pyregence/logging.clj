@@ -1,4 +1,4 @@
-(ns firesage.logging
+(ns pyregence.logging
   (:import java.text.SimpleDateFormat
            java.util.Date)
   (:require [clojure.pprint :as pp]))

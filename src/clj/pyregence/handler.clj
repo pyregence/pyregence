@@ -1,11 +1,11 @@
-(ns firesage.handler
+(ns pyregence.handler
   (:require [clojure.data.json :as json]
             [clojure.edn :as edn]
             [clojure.string :as str]
-            [firesage.database :refer [sql-handler]]
-            [firesage.logging :refer [log-str]]
-            [firesage.remote-api :refer [clj-handler]]
-            [firesage.views :refer [render-page not-found-page data-response]]
+            [pyregence.database :refer [sql-handler]]
+            [pyregence.logging :refer [log-str]]
+            [pyregence.remote-api :refer [clj-handler]]
+            [pyregence.views :refer [render-page not-found-page data-response]]
             [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.default-charset :refer [wrap-default-charset]]

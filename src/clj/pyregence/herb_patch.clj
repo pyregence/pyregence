@@ -1,4 +1,4 @@
-(ns firesage.herb-patch
+(ns pyregence.herb-patch
   (:require [clojure.spec.alpha :as s]
             [herb.core :as herb]))
 

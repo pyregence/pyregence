@@ -1,10 +1,10 @@
-(ns firesage.remote-api
+(ns pyregence.remote-api
   (:require [clojure.data.json :as json]
             [clojure.repl :refer [demunge]]
             [clojure.string :as str]
-            [firesage.email :refer [send-email]]
-            [firesage.logging :refer [log-str]]
-            [firesage.views :refer [data-response]]))
+            [pyregence.email :refer [send-email]]
+            [pyregence.logging :refer [log-str]]
+            [pyregence.views :refer [data-response]]))
 
 ;; FIXME: Add more functions as necessary.
 (def name->fn {"send-email" send-email})

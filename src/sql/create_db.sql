@@ -1,8 +1,8 @@
-DROP DATABASE IF EXISTS firesage;
-DROP ROLE IF EXISTS firesage;
-CREATE ROLE firesage WITH LOGIN CREATEDB PASSWORD 'firesage';
-CREATE DATABASE firesage WITH OWNER firesage;
-\c firesage
+DROP DATABASE IF EXISTS pyregence;
+DROP ROLE IF EXISTS pyregence;
+CREATE ROLE pyregence WITH LOGIN CREATEDB PASSWORD 'pyregence';
+CREATE DATABASE pyregence WITH OWNER pyregence;
+\c pyregence
 CREATE EXTENSION pgcrypto;
 CREATE EXTENSION postgis;
 CREATE EXTENSION postgis_raster;

@@ -1,8 +1,8 @@
-(ns firesage.server
+(ns pyregence.server
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
-            [firesage.handler :refer [development-app production-app]]
-            [firesage.logging :refer [log-str]]
+            [pyregence.handler :refer [development-app production-app]]
+            [pyregence.logging :refer [log-str]]
             [ring.adapter.jetty :refer [run-jetty]]))
 
 (defonce server           (atom nil))
@@ -18,7 +18,7 @@
   (log-str "Removing temp files.")
   (let [tmp-dir (System/getProperty "java.io.tmpdir")
         dirs    (filter #(and (.isDirectory %)
-                              (str/includes? (.getPath %) "firesage-tmp")
+                              (str/includes? (.getPath %) "pyregence-tmp")
                               (expired? (.lastModified %)))
                         (.listFiles (io/file tmp-dir)))]
     (doseq [dir  dirs

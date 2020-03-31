@@ -1,6 +1,6 @@
-(ns ^:figwheel-hooks firesage.client
-  (:require [firesage.pages.home :as home]
-            [firesage.pages.not-found :as not-found]))
+(ns ^:figwheel-hooks pyregence.client
+  (:require [pyregence.pages.home :as home]
+            [pyregence.pages.not-found :as not-found]))
 
 ;; FIXME: Add more pages to this as they are created.
 (def path->init

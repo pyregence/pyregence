@@ -1,8 +1,8 @@
-(ns firesage.email
+(ns pyregence.email
   (:import java.util.UUID)
   (:require [clojure.edn :as edn]
-            [firesage.database :refer [call-sql sql-primitive]]
-            [firesage.views :refer [data-response]]
+            [pyregence.database :refer [call-sql sql-primitive]]
+            [pyregence.views :refer [data-response]]
             [postal.core :refer [send-message]]))
 
 (defn get-mail-config []
@@ -12,13 +12,13 @@
   (str "Hi " username ",\n\n"
        "  To reset your password, simply click the following link:\n\n"
        "  " url "/password/reset?username=" username "&key=" reset-key "\n\n"
-       "  - FireSage Technical Support"))
+       "  - Pyregence Technical Support"))
 
 (defn get-new-user-message [url username reset-key]
   (str "Hi " username ",\n\n"
-       "  You have been registered for FireSage. To complete the registration process and create a password, simply click the following link:\n\n"
+       "  You have been registered for Pyregence. To complete the registration process and create a password, simply click the following link:\n\n"
        "  " url "/password/reset?username=" username "&key=" reset-key "\n\n"
-       "  - FireSage Technical Support"))
+       "  - Pyregence Technical Support"))
 
 ;; FIXME: Need to define contact.get_user_email and contact.set_reset_key or equivalent SQL functions.
 (defn send-reset-key-email! [mail-config username subject message-fn]
@@ -38,10 +38,10 @@
     (condp = email-type
       :reset    (send-reset-key-email! mail-config
                                        username
-                                       "FireSage Password Reset"
+                                       "Pyregence Password Reset"
                                        get-password-reset-message)
       :new-user (send-reset-key-email! mail-config
                                        username
-                                       "FireSage New User"
+                                       "Pyregence New User"
                                        get-new-user-message)
       (data-response 400 "Invalid email type."))))

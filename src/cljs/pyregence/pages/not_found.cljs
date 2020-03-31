@@ -1,10 +1,10 @@
-(ns firesage.pages.not-found
-  (:require-macros [firesage.herb-patch :refer [style->class]])
+(ns pyregence.pages.not-found
+  (:require-macros [pyregence.herb-patch :refer [style->class]])
   (:require herb.core
             [goog.dom :as dom]
             [reagent.core :as r]
-            [firesage.styles :as $]
-            [firesage.utils :as u]))
+            [pyregence.styles :as $]
+            [pyregence.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components

@@ -1,7 +1,7 @@
-(ns firesage.pages.home
+(ns pyregence.pages.home
   (:require [goog.dom :as dom]
             [reagent.core :as r]
-            [firesage.styles :as $]))
+            [pyregence.styles :as $]))
 
 (defn root-component []
   [:div {:style ($/root)}

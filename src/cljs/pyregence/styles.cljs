@@ -1,6 +1,6 @@
-(ns firesage.styles
+(ns pyregence.styles
   (:require-macros [herb.core :refer [defglobal]]
-                   firesage.herb-patch)
+                   pyregence.herb-patch)
   (:require herb.runtime
             [clojure.string :as str]))
 
@@ -38,7 +38,7 @@
              (fn? style)     (style)
              (vector? style) (apply (first style) (rest style))))))
 
-;; FIXME: Remove :sig-* colors since FireSage is a CEC-EPIC product.
+;; FIXME: Remove :sig-* colors since Pyregence is a CEC-EPIC product.
 (defn color-picker
   ([color]
    (color-picker color 1))
