@@ -23,8 +23,13 @@
 ;; Routing Handler
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def static-routs #{"/"
+                    "/data"
+                    "/documents"
+                    "/team"})
+
 ;; FIXME: Fill these in as you make pages.
-(def valid-routes #{})
+(def app-routes #{"/tool"})
 
 (defn bad-uri? [uri] (str/includes? (str/lower-case uri) "php"))
 
@@ -40,10 +45,11 @@
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
                        (bad-uri? uri)                  forbidden-response
-                       ;; (= uri "/")                     (render-page "/home") ; FIXME: This static page can be removed.
+                      ;;  (static-routs uri)              (static-route-handler) TODO hook this in
+                       (app-routes uri)                (render-page (app-routes uri))
                        (str/starts-with? uri "/clj/")  (token-resp params clj-handler)
                        (str/starts-with? uri "/sql/")  (token-resp params sql-handler)
-                       :else                           (render-page (valid-routes uri)))]
+                       :else                           (render-page false))] ;; TODO, a static not-found page is probably more appropriate here
     (next-handler request)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
