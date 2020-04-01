@@ -1,23 +1,25 @@
 (ns pyregence.handler
-  (:require [clojure.data.json :as json]
-            [clojure.edn :as edn]
-            [clojure.string :as str]
-            [pyregence.database :refer [sql-handler]]
-            [pyregence.logging :refer [log-str]]
-            [pyregence.remote-api :refer [clj-handler]]
-            [pyregence.views :refer [data-response render-dynamic render-static]]
+  (:require [clojure.edn       :as edn]
+            [clojure.data.json :as json]
+            [clojure.string    :as str]
             [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
-            [ring.middleware.content-type :refer [wrap-content-type]]
-            [ring.middleware.default-charset :refer [wrap-default-charset]]
-            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
-            [ring.middleware.multipart-params :refer [wrap-multipart-params]]
-            [ring.middleware.nested-params :refer [wrap-nested-params]]
-            [ring.middleware.not-modified :refer [wrap-not-modified]]
-            [ring.middleware.params :refer [wrap-params]]
-            [ring.middleware.reload :refer [wrap-reload]]
-            [ring.middleware.resource :refer [wrap-resource]]
-            [ring.middleware.x-headers :refer [wrap-frame-options wrap-content-type-options wrap-xss-protection]]
-            [ring.util.codec :refer [url-decode]]))
+            [ring.middleware.content-type       :refer [wrap-content-type]]
+            [ring.middleware.default-charset    :refer [wrap-default-charset]]
+            [ring.middleware.gzip               :refer [wrap-gzip]]
+            [ring.middleware.keyword-params     :refer [wrap-keyword-params]]
+            [ring.middleware.nested-params      :refer [wrap-nested-params]]
+            [ring.middleware.not-modified       :refer [wrap-not-modified]]
+            [ring.middleware.multipart-params   :refer [wrap-multipart-params]]
+            [ring.middleware.params             :refer [wrap-params]]
+            [ring.middleware.resource           :refer [wrap-resource]]
+            [ring.middleware.reload             :refer [wrap-reload]]
+            [ring.middleware.ssl                :refer [wrap-ssl-redirect]]
+            [ring.middleware.x-headers          :refer [wrap-frame-options wrap-content-type-options wrap-xss-protection]]
+            [ring.util.codec                    :refer [url-decode]]
+            [pyregence.database   :refer [sql-handler]]
+            [pyregence.logging    :refer [log-str]]
+            [pyregence.remote-api :refer [clj-handler]]
+            [pyregence.views :refer [data-response render-dynamic render-static]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing Handler
@@ -31,18 +33,14 @@
 
 (defn bad-uri? [uri] (str/includes? (str/lower-case uri) "php"))
 
-(defn forbidden-response [_]
-  {:status 403
-   :body "Forbidden"})
-
 (defn token-resp [{:keys [auth-token]} handler]
-  (if (= auth-token "KJlkjhasduewlkjdyask-dsf")
+  (if (= auth-token "883kljlsl36dnll9s9l2ls8xksl")
     handler
-    forbidden-response))
+    (data-response 403 "Forbidden")))
 
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
-                       (bad-uri? uri)                 forbidden-response
+                       (bad-uri? uri)                 (data-response 403 "Forbidden")
                        (contains? static-routes uri)  (render-static uri)
                        (contains? dynamic-routes uri) (render-dynamic uri)
                        (str/starts-with? uri "/clj/") (token-resp params clj-handler)
@@ -112,27 +110,34 @@
           (log-str "Error: " cause)
           (data-response (or status 500) cause))))))
 
+(defn wrap-common [handler]
+  (-> handler
+      wrap-request-logging
+      wrap-keyword-params
+      wrap-edn-params
+      wrap-nested-params
+      wrap-multipart-params
+      wrap-params
+      wrap-absolute-redirects
+      (wrap-resource "public")
+      wrap-content-type
+      (wrap-default-charset "utf-8")
+      wrap-not-modified
+      (wrap-xss-protection true {:mode :block})
+      (wrap-frame-options :sameorigin)
+      (wrap-content-type-options :nosniff)
+      wrap-response-logging
+      wrap-gzip
+      wrap-exceptions))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Handler Stacks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def production-app (-> routing-handler
-                        wrap-request-logging
-                        wrap-keyword-params
-                        wrap-edn-params
-                        wrap-nested-params
-                        wrap-multipart-params
-                        wrap-params
-                        wrap-absolute-redirects
-                        (wrap-resource "public")
-                        wrap-content-type
-                        (wrap-default-charset "utf-8")
-                        wrap-not-modified
-                        (wrap-xss-protection true {:mode :block})
-                        (wrap-frame-options :sameorigin)
-                        (wrap-content-type-options :nosniff)
-                        wrap-response-logging
-                        wrap-exceptions))
+                        ;; wrap-ssl-redirect ; TODO enable once HTTPs is implimented
+                        wrap-common))
 
-(def development-app (-> production-app
+(def development-app (-> routing-handler
+                         wrap-common
                          wrap-reload))

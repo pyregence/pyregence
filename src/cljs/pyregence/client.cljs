@@ -1,16 +1,16 @@
 (ns ^:figwheel-hooks pyregence.client
   (:require [goog.dom :as dom]
-            [reagent.core :as r]
+            [reagent.dom :refer [render]]
             [clojure.string :as str]
             [pyregence.pages.tool :as tool]
             [pyregence.pages.not-found :as not-found]))
 
 (defn render-root [_]
   (let [uri (-> js/window .-location .-pathname)]
-    (r/render (if (= "/tool" uri)
-                [tool/root-component]
-                [not-found/root-component]) ; TODO a static html not found is probably more appropriate.
-              (dom/getElement "app"))))
+    (render (if (= "/tool" uri)
+              [tool/root-component]
+              [not-found/root-component]) ; TODO a static html not found is probably more appropriate.
+            (dom/getElement "app"))))
 
 (defn ^:export init [params]
   ; TODO params can probably be done the same as figwheel instead of embedding in the JS call.

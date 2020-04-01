@@ -1,18 +1,18 @@
 {:paths ["src/clj" "src/cljs" "resources" "target"]
 
- :deps {com.draines/postal        {:mvn/version "2.0.3"}
-        dk.ative/docjure          {:mvn/version "1.13.0"}
+ :deps {bk/ring-gzip              {:mvn/version "0.3.0"}
+        com.draines/postal        {:mvn/version "2.0.3"}
         herb/herb                 {:mvn/version "0.10.0"}
         hiccup/hiccup             {:mvn/version "2.0.0-alpha2"}
         org.clojure/clojure       {:mvn/version "1.10.1"}
         org.clojure/clojurescript {:mvn/version "1.10.597"}
-        org.clojure/core.async    {:mvn/version "1.0.567"}
+        org.clojure/core.async    {:mvn/version "1.1.587"}
         org.clojure/data.json     {:mvn/version "1.0.0"}
-        org.postgresql/postgresql {:mvn/version "42.2.10"}
-        reagent/reagent           {:mvn/version "0.9.1"}
+        org.postgresql/postgresql {:mvn/version "42.2.12"}
+        reagent/reagent           {:mvn/version "0.10.0"}
         ring/ring                 {:mvn/version "1.8.0"}
         ring/ring-defaults        {:mvn/version "0.3.2"}
-        seancorfield/next.jdbc    {:mvn/version "1.0.384"}}
+        seancorfield/next.jdbc    {:mvn/version "1.0.409"}}
 
  :aliases {:build-db     {:main-opts ["-m" "pyregence.build-db"]}
            :compile-cljs {:main-opts ["-m" "cljs.main" "-co" "compile-prod.cljs.edn" "-c"]}
