@@ -29,7 +29,7 @@
     [:script {:type "text/javascript"}
       ;; TODO, I dont think we need to pass params this way, unless we are having the server modify them.
       ;;       We can read them the same way they are read for figwheel on init (see client.cljs).
-     (str "window.onload = function () { carbon_tool.client.init(" js-params "); };")]))
+     (str "window.onload = function () { pyregence.client.init(" js-params "); };")]))
 
 (defn render-page [valid?]
   (fn [request]
