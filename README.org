@@ -125,6 +125,29 @@ replacing the values with your own:
  :ssl      true}
 #+end_src
 
+** Enabling https
+
+Create a certificate with certbot following the installation instructions
+for your OS and environment. Then use openssl to package the certificates
+into pkcs12 format. The server looks for keystore.pkcs12 in .key/ and
+uses the passcode "foobar".
+
+An example process for a Linux system is as follows:
+
+#+begin_src sh
+$ sudo certbot certonly --webroot -w ./resources/public -d mydomain.com
+$ sudo openssl pkcs12 -export -out ./.key/keystore.pkcs12
+       -in /etc/letsencrypt/live/mydomain.com/fullchain.pem
+       -inkey /etc/letsencrypt/live/mydomain.com/privkey.pem
+       -passout pass:foobar
+#+end_src
+
+The cert creation and renewal can be run automatically with the following command:
+
+#+begin_src sh
+$ clojure -A:ssl-key-gen mydomain.com
+#+end_src
+
 ** Usage
 
 To compile and run the web application, navigate to the toplevel
@@ -133,6 +156,13 @@ project directory and run:
 #+begin_src sh
 $ clojure -A:compile-cljs
 $ clojure -A:run-server [port] [dev|prod]
+#+end_src
+
+If you have already created an SSL certificate, you can enable HTTPS by
+running the server in "prod" mode as the root user:
+
+#+begin_src sh
+$ sudo clojure -A:run-server [port] prod
 #+end_src
 
 The website will then be available at http://localhost:8080 or on

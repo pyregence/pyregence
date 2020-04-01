@@ -34,18 +34,27 @@
            (catch Exception _)))))
 
 (defn start-server! [& [port mode]]
-  (let [handler (case mode
-                  "dev"  #'development-app
-                  "prod" #'production-app
-                  #'production-app)
-        config  {:port (cond
-                         (integer? port) port
-                         (string? port)  (Integer/parseInt port)
-                         (nil? port)     8080
-                         :else           8080)
-                 :join? false}]
-    (reset! server (run-jetty handler config))
-    (reset! clean-up-service (start-clean-up-service!))))
+  (let [mode     (or mode "prod")
+        has-key? (.exists (io/file "./.key/keystore.pkcs12"))
+        handler  (if (= mode "prod")
+                   #'production-app
+                   #'development-app)
+        config   (merge
+                  {:port  (cond
+                            (integer? port) port
+                            (string? port)  (Integer/parseInt port)
+                            (nil? port)     8080
+                            :else           8080)
+                   :join? false}
+                  (when (and has-key? (= mode "prod"))
+                    {:ssl?          true
+                     :keystore      "./.key/keystore.pkcs12"
+                     :keystore-type "pkcs12"
+                     :key-password  "foobar"}))]
+    (if (and (not has-key?) (= mode "prod"))
+      (println "ERROR: there is no SSL key for enabling HTTPS! Create a SSL key for HTTPS or run with the \"dev\" option.")
+      (do (reset! server (run-jetty handler config))
+          (reset! clean-up-service (start-clean-up-service!))))))
 
 (defn stop-server! []
   (when @clean-up-service

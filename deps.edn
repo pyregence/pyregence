@@ -15,6 +15,7 @@
         seancorfield/next.jdbc    {:mvn/version "1.0.409"}}
 
  :aliases {:build-db     {:main-opts ["-m" "pyregence.build-db"]}
+           :ssl-key-gen  {:main-opts ["-m" "pyregence.https"]}
            :compile-cljs {:main-opts ["-m" "cljs.main" "-co" "compile-prod.cljs.edn" "-c"]}
            :figwheel-lib {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.4-SNAPSHOT"}}}
            :figwheel     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.4-SNAPSHOT"}

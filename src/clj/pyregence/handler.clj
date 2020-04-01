@@ -135,7 +135,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def production-app (-> routing-handler
-                        ;; wrap-ssl-redirect ; TODO enable once HTTPs is implimented
+                        wrap-ssl-redirect
                         wrap-common))
 
 (def development-app (-> routing-handler
