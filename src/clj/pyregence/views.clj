@@ -24,26 +24,22 @@
        (str/join "-")
        (str "pyregence.pages.")))
 
-(defn cljs-init [uri params]
-  (let [js-module (-> uri uri->ns kebab->snake)
-        js-params (json/write-str params)]
+(defn cljs-init [params]
+  (let [js-params (json/write-str params)]
     [:script {:type "text/javascript"}
-     (str "window.onload = function () { " js-module ".init(" js-params "); };")]))
+      ;; TODO, I dont think we need to pass params this way, unless we are having the server modify them.
+      ;;       We can read them the same way they are read for figwheel on init (see client.cljs).
+     (str "window.onload = function () { carbon_tool.client.init(" js-params "); };")]))
 
-(defn render-page [uri]
+(defn render-page [valid?]
   (fn [request]
-    {:status  200
+    {:status  (if valid? 200 404)
      :headers {"Content-Type" "text/html"}
      :body    (html5
                (head)
                [:body
                 [:div#app]
-                (cljs-init uri (:params request))])}))
-
-(defn not-found-page [request]
-  (-> request
-      ((render-page "/not-found"))
-      (assoc :status 404)))
+                (cljs-init (:params request))])}))
 
 (defn data-response
   ([status body]

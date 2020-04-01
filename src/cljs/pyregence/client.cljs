@@ -1,13 +1,39 @@
 (ns ^:figwheel-hooks pyregence.client
-  (:require [pyregence.pages.home :as home]
+  (:require [goog.dom :as dom]
+            [reagent.core :as r]
+            [clojure.string :as str]
+            [pyregence.pages.tool :as tool]
             [pyregence.pages.not-found :as not-found]))
 
 ;; FIXME: Add more pages to this as they are created.
 (def path->init
-  {"/" home/init})
+  {"/tool" tool/root-component})
+
+(defn render-root [_]
+  (let [uri (-> js/window .-location .-pathname)]
+    (r/render (cond
+                (#{"/"} uri)
+                [tool/root-component]
+
+                :else
+                [not-found/root-component])
+              (dom/getElement "app"))))
+
+(defn ^:export init [params]
+  (render-root (js->clj params :keywordize-keys true)))
+
+(defn safe-split [str pattern]
+  (if (str/blank? str)
+    []
+    (str/split str pattern)))
 
 (defn ^:after-load mount-root! []
-  (let [url-path (-> js/window .-location .-pathname)
-        init-fn  (path->init url-path not-found/init)]
-    (.log js/console (str "Running init function for " url-path))
-    (init-fn)))
+  (.log js/console (str "Rerunning init function for figwheel."))
+  (let [params (reduce (fn [acc cur]
+                         (let [[k v] (str/split cur "=")]
+                           (assoc acc (keyword k) v)))
+                       {}
+                       (-> (-> js/window .-location .-search)
+                           (str/replace #"^\?" "")
+                           (safe-split "&")))]
+    (init params)))

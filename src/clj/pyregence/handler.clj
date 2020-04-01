@@ -24,7 +24,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; FIXME: Fill these in as you make pages.
-(def view-routes #{})
+(def valid-routes #{})
 
 (defn bad-uri? [uri] (str/includes? (str/lower-case uri) "php"))
 
@@ -41,10 +41,9 @@
   (let [next-handler (cond
                        (bad-uri? uri)                  forbidden-response
                        ;; (= uri "/")                     (render-page "/home") ; FIXME: This static page can be removed.
-                       (contains? view-routes uri)     (render-page uri)
                        (str/starts-with? uri "/clj/")  (token-resp params clj-handler)
                        (str/starts-with? uri "/sql/")  (token-resp params sql-handler)
-                       :else                           not-found-page)]
+                       :else                           (render-page (valid-routes uri)))]
     (next-handler request)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
