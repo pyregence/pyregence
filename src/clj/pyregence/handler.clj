@@ -24,9 +24,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def static-routs #{"/"
-                    "/data"
-                    "/documents"
-                    "/team"})
+                    ; "/data"  ; TODO there are links to these pages but no html file
+                    ; "/documents"
+                    ; "/team"
+                    })
 
 ;; FIXME: Fill these in as you make pages.
 (def app-routes #{"/tool"})
