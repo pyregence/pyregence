@@ -5,22 +5,15 @@
             [pyregence.pages.tool :as tool]
             [pyregence.pages.not-found :as not-found]))
 
-;; FIXME: Add more pages to this as they are created.
-(def path->init
-  {"/tool" tool/root-component})
-
 (defn render-root [_]
   (let [uri (-> js/window .-location .-pathname)]
-    (r/render (cond
-                (#{"/"} uri)
+    (r/render (if (= "/tool" uri)
                 [tool/root-component]
-
-                :else
                 [not-found/root-component])
               (dom/getElement "app"))))
 
 (defn ^:export init [params]
-  (render-root (js->clj params :keywordize-keys true)))
+  (render-root (js->clj params :keywordize-keys true))) ; TODO this can probably be done the same as figwheel.
 
 (defn safe-split [str pattern]
   (if (str/blank? str)
