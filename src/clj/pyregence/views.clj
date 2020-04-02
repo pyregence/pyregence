@@ -1,6 +1,5 @@
 (ns pyregence.views
   (:require [clojure.data.json :as json]
-            [clojure.string :as str]
             [hiccup.page :refer [html5 include-js]]))
 
 (defn head []
@@ -14,15 +13,6 @@
                                              "on a continuously updated stream of weather data.")}]
    [:meta {:name "keywords" :content "pyregence california fire forecast cec epic sig reax"}]
    (include-js "/cljs/app.js")])
-
-(defn kebab->snake [kebab-str]
-  (str/replace kebab-str "-" "_"))
-
-(defn uri->ns [uri]
-  (->> (str/split uri #"/")
-       (remove str/blank?)
-       (str/join "-")
-       (str "pyregence.pages.")))
 
 (defn cljs-init [params]
   (let [js-params (json/write-str params)]
