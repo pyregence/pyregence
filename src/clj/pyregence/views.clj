@@ -31,6 +31,17 @@
                 [:div#app]
                 (cljs-init (:params request))])}))
 
+(def uri->html
+  {"/" "home.html"})
+
+(defn render-static-page [uri]
+(println "static uri")
+  (fn [_]
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body    (html5
+               (slurp (str "resources/public/html/" (uri->html uri))))}))
+
 (defn data-response
   ([status body]
    (data-response status body true))

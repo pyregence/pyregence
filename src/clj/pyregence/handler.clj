@@ -5,7 +5,7 @@
             [pyregence.database :refer [sql-handler]]
             [pyregence.logging :refer [log-str]]
             [pyregence.remote-api :refer [clj-handler]]
-            [pyregence.views :refer [render-page data-response]]
+            [pyregence.views :refer [render-page render-static-page data-response]]
             [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.default-charset :refer [wrap-default-charset]]
@@ -45,7 +45,7 @@
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
                        (bad-uri? uri)                  forbidden-response
-                      ;;  (static-routs uri)              (static-route-handler) TODO hook this in
+                       (static-routs uri)              (render-static-page (static-routs uri))
                        (app-routes uri)                (render-page (app-routes uri))
                        (str/starts-with? uri "/clj/")  (token-resp params clj-handler)
                        (str/starts-with? uri "/sql/")  (token-resp params sql-handler)
