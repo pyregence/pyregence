@@ -47,7 +47,7 @@
                        (contains? dynamic-routes uri) (render-dynamic uri)
                        (str/starts-with? uri "/clj/") (token-resp params clj-handler)
                        (str/starts-with? uri "/sql/") (token-resp params sql-handler)
-                       :else                          not-found-page)]
+                       :else                          (render-dynamic false))] ;; TODO, a static not-found page is probably more appropriate here
     (next-handler request)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
