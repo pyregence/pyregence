@@ -5,7 +5,7 @@
             [pyregence.database :refer [sql-handler]]
             [pyregence.logging :refer [log-str]]
             [pyregence.remote-api :refer [clj-handler]]
-            [pyregence.views :refer [render-page not-found-page data-response]]
+            [pyregence.views :refer [data-response render-dynamic render-static not-found-page]]
             [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.default-charset :refer [wrap-default-charset]]
@@ -23,8 +23,11 @@
 ;; Routing Handler
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; FIXME: Fill these in as you make pages.
-(def view-routes #{})
+;; FIXME: Fill these in as you make static html pages.
+(def static-routes #{"/"})
+
+;; FIXME: Fill these in as you make app pages.
+(def dynamic-routes #{})
 
 (defn bad-uri? [uri] (str/includes? (str/lower-case uri) "php"))
 
@@ -39,12 +42,12 @@
 
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
-                       (bad-uri? uri)                  forbidden-response
-                       ;; (= uri "/")                     (render-page "/home") ; FIXME: This static page can be removed.
-                       (contains? view-routes uri)     (render-page uri)
-                       (str/starts-with? uri "/clj/")  (token-resp params clj-handler)
-                       (str/starts-with? uri "/sql/")  (token-resp params sql-handler)
-                       :else                           not-found-page)]
+                       (bad-uri? uri)                 forbidden-response
+                       (contains? static-routes uri)  (render-static uri)
+                       (contains? dynamic-routes uri) (render-dynamic uri)
+                       (str/starts-with? uri "/clj/") (token-resp params clj-handler)
+                       (str/starts-with? uri "/sql/") (token-resp params sql-handler)
+                       :else                          not-found-page)]
     (next-handler request)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

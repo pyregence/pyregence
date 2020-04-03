@@ -30,7 +30,7 @@
     [:script {:type "text/javascript"}
      (str "window.onload = function () { " js-module ".init(" js-params "); };")]))
 
-(defn render-page [uri]
+(defn render-dynamic [uri]
   (fn [request]
     {:status  200
      :headers {"Content-Type" "text/html"}
@@ -40,9 +40,18 @@
                 [:div#app]
                 (cljs-init uri (:params request))])}))
 
+(def uri->html
+  {"/" "home.html"})
+
+(defn render-static [uri]
+  (fn [_]
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body    (slurp (str "resources/html/" (uri->html uri)))}))
+
 (defn not-found-page [request]
   (-> request
-      ((render-page "/not-found"))
+      ((render-dynamic "/not-found"))
       (assoc :status 404)))
 
 (defn data-response
