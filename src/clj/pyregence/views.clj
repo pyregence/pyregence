@@ -1,6 +1,5 @@
 (ns pyregence.views
   (:require [clojure.data.json :as json]
-            [clojure.string :as str]
             [hiccup.page :refer [html5 include-js]]))
 
 (defn head []
@@ -15,22 +14,18 @@
    [:meta {:name "keywords" :content "pyregence california fire forecast cec epic sig reax"}]
    (include-js "/cljs/app.js")])
 
-;; TODO, I dont think we need to pass params this way, unless we are having the server modify them.
-;;       We can read them the same way they are read for figwheel on init (see client.cljs).
-(defn cljs-init [params]
-  (let [js-params (json/write-str params)]
-    [:script {:type "text/javascript"}
-     (str "window.onload = function () { pyregence.client.init(" js-params "); };")]))
-
-(defn render-dynamic [valid?]
+(defn render-dynamic [_]
   (fn [request]
-    {:status  (if valid? 200 404)
+    {:status  200
      :headers {"Content-Type" "text/html"}
      :body    (html5
                (head)
                [:body
                 [:div#app]
-                (cljs-init (:params request))])}))
+                [:script {:type "text/javascript"}
+                 (str "window.onload = function () { pyregence.client.init("
+                      (json/write-str (:params request))
+                      "); };")]])}))
 
 (def uri->html
   {"/" "home.html"})
