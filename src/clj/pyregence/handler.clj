@@ -5,7 +5,7 @@
             [pyregence.database :refer [sql-handler]]
             [pyregence.logging :refer [log-str]]
             [pyregence.remote-api :refer [clj-handler]]
-            [pyregence.views :refer [data-response render-page render-static-page not-found-page]]
+            [pyregence.views :refer [data-response render-dynamic render-static not-found-page]]
             [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.default-charset :refer [wrap-default-charset]]
@@ -24,10 +24,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; FIXME: Fill these in as you make static html pages.
-(def static-routs #{"/"})
+(def static-routes #{"/"})
 
 ;; FIXME: Fill these in as you make app pages.
-(def app-routes #{})
+(def dynamic-routes #{})
 
 (defn bad-uri? [uri] (str/includes? (str/lower-case uri) "php"))
 
@@ -43,8 +43,8 @@
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
                        (bad-uri? uri)                 forbidden-response
-                       (static-routs uri)             (render-static-page (static-routs uri))
-                       (contains? app-routes uri)     (render-page uri)
+                       (contains? static-routes uri)  (render-static uri)
+                       (contains? dynamic-routes uri) (render-dynamic uri)
                        (str/starts-with? uri "/clj/") (token-resp params clj-handler)
                        (str/starts-with? uri "/sql/") (token-resp params sql-handler)
                        :else                          not-found-page)]

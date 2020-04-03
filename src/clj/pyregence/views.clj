@@ -30,7 +30,7 @@
     [:script {:type "text/javascript"}
      (str "window.onload = function () { " js-module ".init(" js-params "); };")]))
 
-(defn render-page [uri]
+(defn render-dynamic [uri]
   (fn [request]
     {:status  200
      :headers {"Content-Type" "text/html"}
@@ -43,17 +43,15 @@
 (def uri->html
   {"/" "home.html"})
 
-(defn render-static-page [uri]
-(println "static uri")
+(defn render-static [uri]
   (fn [_]
     {:status  200
      :headers {"Content-Type" "text/html"}
-     :body    (html5
-               (slurp (str "resources/public/html/" (uri->html uri))))}))
+     :body    (slurp (str "resources/html/" (uri->html uri)))}))
 
 (defn not-found-page [request]
   (-> request
-      ((render-page "/not-found"))
+      ((render-dynamic "/not-found"))
       (assoc :status 404)))
 
 (defn data-response
