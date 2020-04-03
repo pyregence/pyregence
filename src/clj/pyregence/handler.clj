@@ -5,7 +5,7 @@
             [pyregence.database :refer [sql-handler]]
             [pyregence.logging :refer [log-str]]
             [pyregence.remote-api :refer [clj-handler]]
-            [pyregence.views :refer [data-response render-dynamic render-static not-found-page]]
+            [pyregence.views :refer [data-response render-dynamic render-static]]
             [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.default-charset :refer [wrap-default-charset]]
