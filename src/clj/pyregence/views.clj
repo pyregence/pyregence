@@ -14,7 +14,7 @@
    [:meta {:name "keywords" :content "pyregence california fire forecast cec epic sig reax"}]
    (include-js "/cljs/app.js")])
 
-(defn render-dynamic [_]
+(defn render-dynamic []
   (fn [request]
     {:status  200
      :headers {"Content-Type" "text/html"}
@@ -28,18 +28,14 @@
                       "); };")]])}))
 
 (def uri->html
-  {"/" "home.html"})
+  {"/"          "home.html"
+   "/not-found" "not-found.html"})
 
 (defn render-static [uri]
   (fn [_]
-    {:status  200
+    {:status  (if (= uri "/not-found") 404 200)
      :headers {"Content-Type" "text/html"}
      :body    (slurp (str "resources/html/" (uri->html uri)))}))
-
-(defn not-found-page [request]
-  (-> request
-      ((render-dynamic "/not-found"))
-      (assoc :status 404)))
 
 (defn data-response
   ([status body]
