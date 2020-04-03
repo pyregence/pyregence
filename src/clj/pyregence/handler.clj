@@ -27,7 +27,7 @@
 (def static-routes #{"/"})
 
 ;; FIXME: Fill these in as you make app pages.
-(def dynamic-routes #{})
+(def dynamic-routes #{"/tool"})
 
 (defn bad-uri? [uri] (str/includes? (str/lower-case uri) "php"))
 
