@@ -158,6 +158,15 @@ The main Javascript entry point file will be written to
 target/public/cljs/app.js. The Clojurescript compiler options are read
 from the toplevel compile-prod.cljs.edn file.
 
+*** Modifying hosts file
+
+Add the following line to your hosts file. This local url will be
+launched by Figwheel (see next section).
+
+#+begin_src sh
+127.0.0.1 local.pyregence.org
+#+end_src
+
 *** Launching Figwheel
 
 To start the Figwheel server, navigate to the toplevel project
@@ -167,12 +176,13 @@ directory and run:
 $ clojure -A:figwheel
 #+end_src
 
-This will start a webserver on http://localhost:8080, which serves up
-the website in dev mode. Any changes to CLJS files will be
-automatically pushed to the browser when the files are saved. Any
-changes to CLJ files will be pushed to the running server process. A
-CLJS browser REPL will also be launched at the terminal for you to
-interactively develop your client-side code.
+This will start a webserver on http://local.pyregence.org:8080 (also
+accessible from http://localhost:8080), which serves up the website in
+dev mode. Any changes to CLJS files will be automatically pushed to
+the browser when the files are saved. Any changes to CLJ files will be
+pushed to the running server process. A CLJS browser REPL will also be
+launched at the terminal for you to interactively develop your
+client-side code.
 
 ** License and Distribution
 
