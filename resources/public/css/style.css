@@ -39,7 +39,7 @@ p a:hover, p a:active {
     color: #fff;
     border-bottom: 1px solid #fff;
 }
-.study-build h3 {   
+.study-build h3 {
     font-size: 1.3rem;
 }
 .text-yellow {
@@ -306,7 +306,7 @@ p a:hover, p a:active {
         /* Chrome, Safari, Opera */
         transform: rotate(45deg);
     }
-    .mid-animate { 
+    .mid-animate {
         opacity: 0;
     }
     .bottom-animate {
