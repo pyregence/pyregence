@@ -49,10 +49,6 @@
      (.open js/window url window-name)
      (jump-to-url! url))))
 
-;; FIXME: There are no /file/* routes in pyregence.handler/routing-handler. These should be managed via pyregence.remote-api/clj-handler.
-;; (defn download-file! [file-name]
-;;   (jump-to-url! (str "/file/download?auth-token=KJlkjhasduewlkjdyask-dsf&file-name=" file-name)))
-
 ;;; Fetch results
 
 (defmulti call-remote! (fn [method url data] method))
@@ -68,7 +64,7 @@
         result-chan  (chan)]
     (-> (.fetch js/window
                 (str url
-                     "?auth-token=KJlkjhasduewlkjdyask-dsf"
+                     "?auth-token=883kljlsl36dnll9s9l2ls8xksl"
                      (when (= query-string "") (str "&" query-string)))
                 (clj->js fetch-params))
         (.then  (fn [response]   (if (.-ok response) (.text response) (.reject js/Promise response))))
@@ -88,7 +84,7 @@
                               :else                       nil)}
         result-chan  (chan)]
     (-> (.fetch js/window
-                (str url "?auth-token=KJlkjhasduewlkjdyask-dsf")
+                (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
                 (clj->js fetch-params))
         (.then  (fn [response] (.then (.text response)
                                       (fn [text]
@@ -104,7 +100,7 @@
 (defn call-clj-async! [clj-fn-name & args]
   (call-remote! :post
                 (str "/clj/" clj-fn-name)
-                {:clj-args args}))
+                (if (= js/FormData (type (first args))) (first args) {:clj-args args})))
 
 ;; FIXME: toast-message is not yet defined.
 (defn- show-sql-error! [error]
@@ -135,54 +131,9 @@
                                                       {:sql-args args}))]
       (if success message (do (show-sql-error! message) [{}])))))
 
-;; FIXME: There are no /file/* routes in pyregence.handler/routing-handler. These should be managed via pyregence.remote-api/clj-handler.
-;; (defn call-file-async! [file-fn-name & args]
-;;   (call-remote! :post
-;;                 (str "/file/" file-fn-name)
-;;                 (if (= js/FormData (type (first args))) (first args) {:file-args args})))
-
 ;;; Process Returned Results
 
 (def sql-primitive (comp val first first))
-
-;; FIXME: set-message-box-content! is not yet defined.
-;; (defn set-message-box-error! [last-step error]
-;;   (set-message-box-content!
-;;    {:body (concat
-;;            [(str "Failed: " last-step)
-;;             ""]
-;;            (if (coll? error) error [error]))
-;;     :button :close}))
-
-;; (defn set-message-box-warning!
-;;   ([warnings]
-;;    (set-message-box-content!
-;;     {:body (concat
-;;             [(str "Finished With Warnings:")
-;;              ""]
-;;             (if (coll? warnings) warnings [warnings]))})))
-
-;; (defn results-check
-;;   ([step response-chan]
-;;    (results-check step response-chan nil))
-;;   ([step response-chan error-fn]
-;;    (go
-;;      (set-message-box-content! {:body step})
-;;      (let [{:keys [status message]} (<! response-chan)]
-;;        (condp = status
-;;          200 message
-;;          210 (set-message-box-warning! message)
-;;          (do (set-message-box-error! step message)
-;;              (when error-fn (<! (error-fn message)))))))))
-
-;; (defn sql-check [step response-chan]
-;;   (go
-;;     (set-message-box-content! {:body step})
-;;     (let [val (sql-primitive (<! response-chan))]
-;;       (if (or (= val 0) (true? val))
-;;         true
-;;         (do (set-message-box-error! step "SQL validation failed")
-;;             false)))))
 
 ;;; Misc Functions
 

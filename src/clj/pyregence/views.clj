@@ -1,6 +1,5 @@
 (ns pyregence.views
   (:require [clojure.data.json :as json]
-            [clojure.string :as str]
             [hiccup.page :refer [html5 include-js]]))
 
 (defn head []
@@ -15,22 +14,7 @@
    [:meta {:name "keywords" :content "pyregence california fire forecast cec epic sig reax"}]
    (include-js "/cljs/app.js")])
 
-(defn kebab->snake [kebab-str]
-  (str/replace kebab-str "-" "_"))
-
-(defn uri->ns [uri]
-  (->> (str/split uri #"/")
-       (remove str/blank?)
-       (str/join "-")
-       (str "pyregence.pages.")))
-
-(defn cljs-init [uri params]
-  (let [js-module (-> uri uri->ns kebab->snake)
-        js-params (json/write-str params)]
-    [:script {:type "text/javascript"}
-     (str "window.onload = function () { " js-module ".init(" js-params "); };")]))
-
-(defn render-dynamic [uri]
+(defn render-dynamic []
   (fn [request]
     {:status  200
      :headers {"Content-Type" "text/html"}
@@ -38,21 +22,20 @@
                (head)
                [:body
                 [:div#app]
-                (cljs-init uri (:params request))])}))
+                [:script {:type "text/javascript"}
+                 (str "window.onload = function () { pyregence.client.init("
+                      (json/write-str (:params request))
+                      "); };")]])}))
 
 (def uri->html
-  {"/" "home.html"})
+  {"/"          "home.html"
+   "/not-found" "not-found.html"})
 
 (defn render-static [uri]
   (fn [_]
-    {:status  200
+    {:status  (if (= uri "/not-found") 404 200)
      :headers {"Content-Type" "text/html"}
      :body    (slurp (str "resources/html/" (uri->html uri)))}))
-
-(defn not-found-page [request]
-  (-> request
-      ((render-dynamic "/not-found"))
-      (assoc :status 404)))
 
 (defn data-response
   ([status body]
