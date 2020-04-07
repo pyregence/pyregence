@@ -19,7 +19,7 @@
             [pyregence.database   :refer [sql-handler]]
             [pyregence.logging    :refer [log-str]]
             [pyregence.remote-api :refer [clj-handler]]
-            [pyregence.views :refer [data-response render-dynamic render-static]]))
+            [pyregence.views      :refer [data-response render-dynamic render-static]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing Handler
@@ -36,11 +36,11 @@
 (defn token-resp [{:keys [auth-token]} handler]
   (if (= auth-token "883kljlsl36dnll9s9l2ls8xksl")
     handler
-    (data-response 403 "Forbidden")))
+    (constantly (data-response 403 "Forbidden"))))
 
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
-                       (bad-uri? uri)                 (data-response 403 "Forbidden")
+                       (bad-uri? uri)                 (constantly (data-response 403 "Forbidden"))
                        (contains? static-routes uri)  (render-static uri)
                        (contains? dynamic-routes uri) (render-dynamic uri)
                        (str/starts-with? uri "/clj/") (token-resp params clj-handler)
