@@ -35,7 +35,7 @@ p a:link, p a:visited {
 p a:hover, p a:active {
     text-decoration: none;
 }
-.bg-brown p a:link, bg-brown p a:visited {
+.bg-brown p a:link, .bg-brown p a:visited {
     color: #fff;
     border-bottom: 1px solid #fff;
 }
