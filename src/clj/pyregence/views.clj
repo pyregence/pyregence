@@ -1,6 +1,5 @@
 (ns pyregence.views
   (:require [clojure.data.json :as json]
-            [clojure.string :as str]
             [hiccup.page :refer [html5 include-js]]))
 
 (defn head []
@@ -15,36 +14,28 @@
    [:meta {:name "keywords" :content "pyregence california fire forecast cec epic sig reax"}]
    (include-js "/cljs/app.js")])
 
-;; TODO, I dont think we need to pass params this way, unless we are having the server modify them.
-;;       We can read them the same way they are read for figwheel on init (see client.cljs).
-(defn cljs-init [params]
-  (let [js-params (json/write-str params)]
-    [:script {:type "text/javascript"}
-     (str "window.onload = function () { pyregence.client.init(" js-params "); };")]))
-
-(defn render-dynamic [valid?]
+(defn render-dynamic []
   (fn [request]
-    {:status  (if valid? 200 404)
+    {:status  200
      :headers {"Content-Type" "text/html"}
      :body    (html5
                (head)
                [:body
                 [:div#app]
-                (cljs-init (:params request))])}))
+                [:script {:type "text/javascript"}
+                 (str "window.onload = function () { pyregence.client.init("
+                      (json/write-str (:params request))
+                      "); };")]])}))
 
 (def uri->html
-  {"/" "home.html"})
+  {"/"          "home.html"
+   "/not-found" "not-found.html"})
 
 (defn render-static [uri]
   (fn [_]
-    {:status  200
+    {:status  (if (= uri "/not-found") 404 200)
      :headers {"Content-Type" "text/html"}
      :body    (slurp (str "resources/html/" (uri->html uri)))}))
-
-(defn not-found-page [request]
-  (-> request
-      ((render-dynamic "/not-found"))
-      (assoc :status 404)))
 
 (defn data-response
   ([status body]
