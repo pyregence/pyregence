@@ -1,0 +1,5 @@
+# Declare files that will always have LF line endings on checkout.
+# Normalize existing line endings with 'git add --renormalize .'
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
