@@ -1,4 +1,4 @@
-(ns pyregence.pages.tool
+(ns pyregence.pages.near-term-forecast
   (:require [pyregence.styles :as $]))
 
 (defn root-component [_]
