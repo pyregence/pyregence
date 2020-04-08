@@ -21,7 +21,9 @@
      :body    (html5
                (head)
                [:body
-                [:div#app]
+                ;; FIXME: Adjust these styles as necessary. They are just placeholders for now.
+                [:div#map {:style {:border "1px solid red" :position "absolute" :top "0px" :left "0px" :width "100%" :height "100%"}}]
+                [:div#app {:style {:border "1px solid green" :position "absolute" :top "0px" :left "0px" :width "100%"}}]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
                       (json/write-str (:params request))
