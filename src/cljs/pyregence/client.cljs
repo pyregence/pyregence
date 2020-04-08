@@ -2,10 +2,10 @@
   (:require [goog.dom :as dom]
             [reagent.dom :refer [render]]
             [clojure.string :as str]
-            [pyregence.pages.tool :as tool]))
+            [pyregence.pages.near-term-forecast :as ntf]))
 
 (def uri->root-component
-  {"/tool" tool/root-component})
+  {"/near-term-forecast" ntf/root-component})
 
 (defn render-root [params]
   (let [root-component (-> js/window .-location .-pathname uri->root-component)]

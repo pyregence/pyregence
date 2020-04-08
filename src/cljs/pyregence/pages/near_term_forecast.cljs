@@ -1,4 +1,4 @@
-(ns pyregence.pages.tool
+(ns pyregence.pages.near-term-forecast
   (:require [pyregence.styles :as $]
             ["ol"         :refer [Map View]]
             ["ol/control" :refer [defaults]]
