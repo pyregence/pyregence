@@ -4,4 +4,7 @@
 .nrepl-port
 .rebel_readline_history
 email-server.edn
-/target
+node_modules
+package.json
+package-lock.json
+target
