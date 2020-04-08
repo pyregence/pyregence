@@ -16,6 +16,7 @@ behavior models:
 
 - [[https://jdk.java.net][Java Development Kit (version 11+)]]
 - [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
+- [[https://nodejs.org][Node.js]]
 - [[https://www.postgresql.org/download][Postgresql (version 12)]]
 - [[https://postgis.net/install][PostGIS (version 3)]]
 
@@ -156,7 +157,10 @@ $ clojure -A:compile-cljs
 
 The main Javascript entry point file will be written to
 target/public/cljs/app.js. The Clojurescript compiler options are read
-from the toplevel compile-prod.cljs.edn file.
+from the toplevel compile-prod.cljs.edn file. Any Javascript libraries
+listed under the /:npm-deps/ field in this file will be automatically
+downloaded using /npm/ and installed into a toplevel /node_modules/
+directory.
 
 *** Modifying hosts file
 
