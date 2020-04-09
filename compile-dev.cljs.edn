@@ -1,6 +1,4 @@
 {:main          "pyregence.client"
- :npm-deps      {"ol" "6.3.1"}
- :install-deps  true
  :output-dir    "target/public/cljs/out"
  :output-to     "target/public/cljs/app.js"
  :asset-path    "/cljs/out"

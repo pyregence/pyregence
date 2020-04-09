@@ -1,9 +1,8 @@
 {:main            "pyregence.client"
- :npm-deps        {"ol" "6.3.1"}
- :install-deps    true
  :output-dir      "target/public/cljs"
  :output-to       "target/public/cljs/app.js"
  :source-map      "target/public/cljs/app.js.map"
- :optimizations   :simple
+ :infer-externs   true
+ :optimizations   :advanced
  :pretty-print    false
  :closure-defines {"goog.DEBUG" false}}

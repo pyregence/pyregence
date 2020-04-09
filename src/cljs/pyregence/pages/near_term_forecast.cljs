@@ -1,10 +1,15 @@
 (ns pyregence.pages.near-term-forecast
-  (:require [pyregence.styles :as $]
-            ["ol"         :refer [Map View]]
-            ["ol/control" :refer [defaults]]
-            ["ol/proj"    :refer [fromLonLat]]
-            ["ol/layer"   :refer [Tile]]
-            ["ol/source"  :refer [OSM]]))
+  (:require [pyregence.styles :as $]))
+
+(set! *warn-on-infer* true)
+
+;; OpenLayers aliases
+(def Map        js/ol.Map)
+(def View       js/ol.View)
+(def defaults   js/ol.control.defaults)
+(def fromLonLat js/ol.proj.fromLonLat)
+(def Tile       js/ol.layer.Tile)
+(def OSM        js/ol.source.OSM)
 
 (defonce the-map (atom nil))
 
