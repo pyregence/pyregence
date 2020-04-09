@@ -2,18 +2,16 @@
   (:require [goog.dom :as dom]
             [reagent.dom :refer [render]]
             [clojure.string :as str]
-            [pyregence.pages.tool :as tool]
-            [pyregence.pages.not-found :as not-found]))
+            [pyregence.pages.near-term-forecast :as ntf]))
 
-(defn render-root [_]
-  (let [uri (-> js/window .-location .-pathname)]
-    (render (if (= "/tool" uri)
-              [tool/root-component]
-              [not-found/root-component]) ; TODO a static html not found is probably more appropriate.
-            (dom/getElement "app"))))
+(def uri->root-component
+  {"/near-term-forecast" ntf/root-component})
+
+(defn render-root [params]
+  (let [root-component (-> js/window .-location .-pathname uri->root-component)]
+    (render [root-component params] (dom/getElement "app"))))
 
 (defn ^:export init [params]
-  ; TODO params can probably be done the same as figwheel instead of embedding in the JS call.
   (render-root (js->clj params :keywordize-keys true)))
 
 (defn safe-split [str pattern]
@@ -22,7 +20,7 @@
     (str/split str pattern)))
 
 (defn ^:after-load mount-root! []
-  (.log js/console (str "Rerunning init function for figwheel."))
+  (.log js/console "Rerunning init function for figwheel.")
   (let [params (reduce (fn [acc cur]
                          (let [[k v] (str/split cur "=")]
                            (assoc acc (keyword k) v)))

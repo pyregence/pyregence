@@ -6,3 +6,7 @@
 email-server.edn
 /target
 .key
+node_modules
+package.json
+package-lock.json
+target

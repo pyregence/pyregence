@@ -19,7 +19,7 @@
             [pyregence.database   :refer [sql-handler]]
             [pyregence.logging    :refer [log-str]]
             [pyregence.remote-api :refer [clj-handler]]
-            [pyregence.views :refer [data-response render-dynamic render-static]]))
+            [pyregence.views      :refer [data-response render-dynamic render-static]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing Handler
@@ -29,23 +29,23 @@
 (def static-routes #{"/"})
 
 ;; FIXME: Fill these in as you make app pages.
-(def dynamic-routes #{"/tool"})
+(def dynamic-routes #{"/near-term-forecast"})
 
 (defn bad-uri? [uri] (str/includes? (str/lower-case uri) "php"))
 
 (defn token-resp [{:keys [auth-token]} handler]
   (if (= auth-token "883kljlsl36dnll9s9l2ls8xksl")
     handler
-    (data-response 403 "Forbidden")))
+    (constantly (data-response 403 "Forbidden"))))
 
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
-                       (bad-uri? uri)                 (data-response 403 "Forbidden")
+                       (bad-uri? uri)                 (constantly (data-response 403 "Forbidden"))
                        (contains? static-routes uri)  (render-static uri)
-                       (contains? dynamic-routes uri) (render-dynamic uri)
+                       (contains? dynamic-routes uri) (render-dynamic)
                        (str/starts-with? uri "/clj/") (token-resp params clj-handler)
                        (str/starts-with? uri "/sql/") (token-resp params sql-handler)
-                       :else                          (render-dynamic false))] ;; TODO, a static not-found page is probably more appropriate here
+                       :else                          (render-static "/not-found"))]
     (next-handler request)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

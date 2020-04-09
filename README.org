@@ -16,6 +16,7 @@ behavior models:
 
 - [[https://jdk.java.net][Java Development Kit (version 11+)]]
 - [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
+- [[https://nodejs.org][Node.js]]
 - [[https://www.postgresql.org/download][Postgresql (version 12)]]
 - [[https://postgis.net/install][PostGIS (version 3)]]
 - [[https://certbot.eff.org/][certbot]]
@@ -188,7 +189,19 @@ $ clojure -A:compile-cljs
 
 The main Javascript entry point file will be written to
 target/public/cljs/app.js. The Clojurescript compiler options are read
-from the toplevel compile-prod.cljs.edn file.
+from the toplevel compile-prod.cljs.edn file. Any Javascript libraries
+listed under the /:npm-deps/ field in this file will be automatically
+downloaded using /npm/ and installed into a toplevel /node_modules/
+directory.
+
+*** Modifying hosts file
+
+Add the following line to your hosts file. This local url will be
+launched by Figwheel (see next section).
+
+#+begin_src sh
+127.0.0.1 local.pyregence.org
+#+end_src
 
 *** Launching Figwheel
 
@@ -199,12 +212,13 @@ directory and run:
 $ clojure -A:figwheel
 #+end_src
 
-This will start a webserver on http://localhost:8080, which serves up
-the website in dev mode. Any changes to CLJS files will be
-automatically pushed to the browser when the files are saved. Any
-changes to CLJ files will be pushed to the running server process. A
-CLJS browser REPL will also be launched at the terminal for you to
-interactively develop your client-side code.
+This will start a webserver on http://local.pyregence.org:8080 (also
+accessible from http://localhost:8080), which serves up the website in
+dev mode. Any changes to CLJS files will be automatically pushed to
+the browser when the files are saved. Any changes to CLJ files will be
+pushed to the running server process. A CLJS browser REPL will also be
+launched at the terminal for you to interactively develop your
+client-side code.
 
 ** License and Distribution
 
