@@ -38,7 +38,7 @@
 (defn -main [& [domain path]]
   (if domain
     (let [certbot-path (.getPath (io/file (or path "/etc/letsencrypt/live/") domain))]
-      (io/make-parents "./key/dummy")
+      (io/make-parents "./.key/dummy")
       (sh-wrapper "./"
                   {}
                   (format-simple "sudo yes 2 | certbot certonly --webroot -w ./resources/public -d %1"

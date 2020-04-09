@@ -18,6 +18,8 @@ behavior models:
 - [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
 - [[https://www.postgresql.org/download][Postgresql (version 12)]]
 - [[https://postgis.net/install][PostGIS (version 3)]]
+- [[https://certbot.eff.org/][certbot]]
+- [[https://www.openssl.org/source/][openssl]]
 
 ** Environment Variable Setup
 
@@ -165,7 +167,7 @@ running the server in "prod" mode as the root user:
 $ sudo clojure -A:run-server [port] prod
 #+end_src
 
-The website will then be available at http://localhost:8080 or on
+The website will then be available at http(s)://localhost:8080 or on
 whichever port you specified. In dev mode, server-side exceptions will
 be displayed in the browser and Clojure source files will be reloaded
 whenever you refresh the page. These features are disabled in prod
