@@ -2,6 +2,7 @@
  :output-dir      "target/public/cljs"
  :output-to       "target/public/cljs/app.js"
  :source-map      "target/public/cljs/app.js.map"
+ :infer-externs   true
  :optimizations   :advanced
  :pretty-print    false
  :closure-defines {"goog.DEBUG" false}}

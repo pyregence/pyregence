@@ -1,6 +1,8 @@
 (ns pyregence.pages.near-term-forecast
   (:require [pyregence.styles :as $]))
 
+(set! *warn-on-infer* true)
+
 ;; OpenLayers aliases
 (def Map        js/ol.Map)
 (def View       js/ol.View)
