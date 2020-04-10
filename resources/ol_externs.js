@@ -1,0 +1,15 @@
+var ol;
+ol.Map;
+ol.Map.prototype.getLayers.getArray;
+ol.View;
+ol.control;
+ol.control.defaults;
+ol.proj;
+ol.proj.fromLonLat;
+ol.layer;
+ol.layer.prototype.getSource;
+ol.layer.Tile;
+ol.source;
+ol.source.prototype.updateParams;
+ol.source.OSM;
+ol.source.TileWMS;
