@@ -25,7 +25,7 @@
                                      :visible true
                                      :source  (TileWMS.
                                                #js {:url "http://californiafireforecast.com:8181/geoserver/demo/wms"
-                                                    :params #js {"LAYERS" (str "demo:" layer) "FORMAT" "JPEG-PNG"}
+                                                    :params #js {"LAYERS" (str "demo:" layer)}
                                                     :serverType "geoserver"})})]
                 :controls (defaults)
                 :view     (View.
