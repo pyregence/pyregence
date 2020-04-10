@@ -48,6 +48,7 @@
                    :join? false}
                   (when (and has-key? (= mode "prod"))
                     {:ssl?          true
+                     :ssl-port      8443
                      :keystore      "./.key/keystore.pkcs12"
                      :keystore-type "pkcs12"
                      :key-password  "foobar"}))]
