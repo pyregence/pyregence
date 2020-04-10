@@ -1,6 +1,6 @@
 var ol;
 ol.Map;
-ol.Map.prototype.getLayers;
+ol.Map.prototype.getLayers.getArray;
 ol.View;
 ol.control;
 ol.control.defaults;
@@ -13,5 +13,3 @@ ol.source;
 ol.source.prototype.updateParams;
 ol.source.OSM;
 ol.source.TileWMS;
-var e;
-e.getArray;
