@@ -55,9 +55,9 @@
   (r/create-class
    {:component-did-mount #(init-map!)
     :reagent-render (fn [_]
-                      [:div {:style ($/combine $/root {:height "100%"})}
+                      [:div {:style ($/combine $/root {:height "100%" :padding 0})}
                        [:div {:style {:display "flex"}}
-                        [:h1 "This is a map. Put something cool on it."]
+                        [:h1 "Click next to see the next time step fire area layer."]
                         [:button {:style {:padding ".25rem" :margin-left "1rem"}
                                   :type "button"
                                   :on-click #(next-layer! @the-map)}
