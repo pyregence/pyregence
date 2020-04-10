@@ -21,7 +21,7 @@ mode, follow these steps:
 
 5. Recompile the CLJ code and launch the server in production mode.
 
-  $ clojure -A:run-server:production
+  $ sudo clojure -A:run-server:production
 
 6. Detach from the running screen session.
 
