@@ -49,7 +49,7 @@
       .getArray
       (get 1)
       .getSource
-      (.updateParams  #js {"LAYERS" (str "demo:" (get layers-list @cur-layer)) "TILED" "true"})))
+      (.updateParams #js {"LAYERS" (str "demo:" (get layers-list @cur-layer)) "TILED" "true"})))
 
 (defn root-component [_]
   (r/create-class
