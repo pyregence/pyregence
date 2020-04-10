@@ -9,7 +9,7 @@
 (def OSM        js/ol.source.OSM)
 (def TileWMS    js/ol.source.TileWMS)
 
-(defonce the-map   (atom nil))
+(defonce the-map (atom nil))
 
 (defn init-map! [layer]
   (reset! the-map
@@ -18,14 +18,13 @@
                 :layers   #js [(TileLayer.
                                 #js {:title   "OpenStreetMap"
                                      :visible true
-                                     :opacity 0.3
                                      :source  (OSM.)})
                                (TileLayer.
                                 #js {:title  "Active WMS Layer"
                                      :visible true
                                      :source  (TileWMS.
                                                #js {:url "http://californiafireforecast.com:8181/geoserver/demo/wms"
-                                                    :params #js {"LAYERS" (str "demo:" layer)}
+                                                    :params #js {"LAYERS" (str "demo:" layer) "op" ".2"}
                                                     :serverType "geoserver"})})]
                 :controls (defaults)
                 :view     (View.
@@ -37,6 +36,6 @@
   (-> @the-map
       .getLayers
       .getArray
-      (get 1)
+      (aget 1)
       .getSource
       (.updateParams #js {"LAYERS" (str "demo:" layer) "TILED" "true"})))

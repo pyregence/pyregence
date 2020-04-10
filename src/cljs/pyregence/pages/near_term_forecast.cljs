@@ -20,7 +20,7 @@
                         [:h1 "Click next to see the next time step fire area layer."]
                         [:button {:style {:padding ".25rem" :margin-left "1rem"}
                                   :type "button"
-                                  :on-click #(do (reset! cur-layer (if (= 4 @cur-layer) 0 (inc @cur-layer)))
-                                                 (ol/swap-active-layer! (get layers-list @cur-layer)))}
+                                  :on-click (fn [] (swap! cur-layer #(mod (inc %) (count layers-list)))
+                                              (ol/swap-active-layer! (get layers-list @cur-layer)))}
                          "Next"]]
                        [:div#map {:style {:height "100%" :width "100%"}}]])}))
