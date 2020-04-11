@@ -210,7 +210,7 @@ p a:hover, p a:active {
     background-size: cover;
     background-position: center center;
 }
-.navbar-brand img{
+.navbar-brand img {
     height: 40px;
     width: auto;
 }
