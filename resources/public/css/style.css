@@ -214,12 +214,12 @@ p a:hover, p a:active {
     height: 40px;
     width: auto;
 }
-.navbar-brand .yellow-logo {
+.navbar-brand .white-logo {
     opacity: 0;
     -webkit-transition: all .35s linear;
     transition: all .35s linear;
 }
-.navbar-brand .yellow-logo.fade {
+.navbar-brand .white-logo.fade {
     opacity: 1;
     transform: opacity 500 linear;
 }
