@@ -64,12 +64,9 @@ p a:hover, p a:active {
     background-image: url("../images/forest-fire.jpg");
     background-size: cover;
 }
-.navbar a, .navbar a:visited {
+.navbar a:link, .navbar a:visited {
     color: #f9af3b;
     text-transform: uppercase;
-}
-.navbar a:hover, .navbar a:active, .navbar a:focus, .navbar a.active {
-    color: #ffffff;
 }
 .jumbotron {
     border-radius: 0px;
@@ -87,7 +84,7 @@ p a:hover, p a:active {
     border-color: #f9af3b;
     background: #f96841;
     font-weight: bold;
-	font-size: .8rem;
+    font-size: .8rem;
 }
 .grey.btn {
     border-color: #888;
@@ -193,7 +190,7 @@ p a:hover, p a:active {
 .logos .col-6 {
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
-	padding: 0;
+    padding: 0;
 }
 .logos .white.circle {
     height: 150px;
@@ -212,6 +209,10 @@ p a:hover, p a:active {
     background: url("../images/topo.jpg");
     background-size: cover;
     background-position: center center;
+}
+.navbar-brand img{
+    height: 40px;
+    width: auto;
 }
 .navbar-brand .yellow-logo {
     opacity: 0;
@@ -256,7 +257,7 @@ p a:hover, p a:active {
 @media only screen and (max-width: 850px) {
     .navbar-brand {
         position: relative;
-        height: 22px;
+        height: 40px;
         z-index: 999999;
     }
     .navbar-brand img {
@@ -300,7 +301,7 @@ p a:hover, p a:active {
         width: 100%;
     }
     .top-animate {
-        background: #f9af3b!important;
+        background: #ffffff!important;
         top: 13px!important;
         -webkit-transform: rotate(45deg);
         /* Chrome, Safari, Opera */
@@ -310,7 +311,7 @@ p a:hover, p a:active {
         opacity: 0;
     }
     .bottom-animate {
-        background: #f9af3b!important;
+        background: #ffffff!important;
         top: 13px!important;
         -webkit-transform: rotate(-225deg);
         /* Chrome, Safari, Opera */
@@ -367,6 +368,9 @@ p a:hover, p a:active {
     }
     .mobile-open {
         overflow: hidden;
+    }
+    .mobilenav .navbar a:link, .mobilenav .navbar a:visited, .mobilenav .navbar a:hover, .mobilenav .navbar a:active, .mobilenav .navbar a:focus, .mobilenav .navbar a.active {
+        color: #ffffff;
     }
 }
 @media only screen and (max-width: 768px) {
