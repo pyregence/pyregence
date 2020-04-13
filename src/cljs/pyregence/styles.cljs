@@ -13,17 +13,18 @@
        :padding    "0px"
        :margin     "0px"}]
 
-  [:h1 :h2 :h3 :h4 :h5 {:text-align "center"}]
-
-  [:label {:font-size   "1rem"
-           :font-weight "bold"}])
+  [:label {:font-size     "1rem"
+           :font-weight   "bold"
+           :margin-bottom "0"}])
 
 (defglobal body-and-content-divs
   [:body {:background-color "white"
           :position         "relative"
-          :height           "100vh"
-          :font             "12px \"Helvetica\""}]
+          :height           "100vh"}]
   [:#app {:height "100%"}]
+  [:#near-term-forecast {:display        "flex"
+                         :flex-direction "column"
+                         :height         "100%"}]
   [:#exception {:padding "10px"}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
