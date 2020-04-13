@@ -274,8 +274,8 @@ p a:hover, p a:active {
 .home .panel1 .title {
     padding-top: 10vh;
 }
-.equal-heights{
-	display:flex;
+.equal-heights {
+    display:flex;
 }
 /*——Media Queries——*/
 @media (min-width: 768px) {
