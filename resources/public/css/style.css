@@ -98,7 +98,7 @@ p a:hover, p a:active {
     background: #ccc;
     font-weight: bold;
     color: #888;
-    font-size: .8rem;
+    font-size: 1rem;
 }
 .readmore a, .readmore a:hover, .readmore a:visited, .readmore a:focus, .readmore a:active {
     font-family: "big_caslonmedium";
@@ -172,7 +172,6 @@ p a:hover, p a:active {
     padding: 0 1em 1em 1em;
     display: flex;
     flex-direction: column;
-    justify-content: stretch;
     justify-content: stretch;
     flex-grow: 1;
 }
@@ -252,6 +251,7 @@ p a:hover, p a:active {
     box-shadow: 0px 5px 7px #ccc;
     display: flex;
     flex-direction: column;
+	flex-grow:1;
 }
 .readmore, .box-content .btn {
     margin-top: auto;
@@ -268,11 +268,14 @@ p a:hover, p a:active {
     transition: 0.2s all ease-in-out;
     padding: 1rem 0 1rem 0;
 }
-.content {
+#content {
     margin-top: 2rem;
 }
 .home .panel1 .title {
     padding-top: 10vh;
+}
+.equal-heights{
+	display:flex;
 }
 /*——Media Queries——*/
 @media (min-width: 768px) {
