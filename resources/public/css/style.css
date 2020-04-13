@@ -275,7 +275,7 @@ p a:hover, p a:active {
     padding-top: 10vh;
 }
 .equal-heights {
-    display:flex;
+    display: flex;
 }
 /*——Media Queries——*/
 @media (min-width: 768px) {
