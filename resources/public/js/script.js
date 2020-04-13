@@ -14,11 +14,21 @@ $(document).ready(function () {
     $(".icon").click(function () {
         $(".mobilenav").fadeToggle(500);
         $(".real-logo").fadeToggle(500);
-        $(".yellow-logo").toggleClass("fade");
+        $(".white-logo").toggleClass("fade");
         $("body").toggleClass("mobile-open");
         $(".top-menu").toggleClass("top-animate");
         $(".mid-menu").toggleClass("mid-animate");
         $(".bottom-menu").toggleClass("bottom-animate");
     });
-        $('.box-shadow').equalHeights();
+    $('.equal-heights').matchHeight();
 });
+//Header shrink on scroll
+window.onscroll = function() {
+    if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
+        document.getElementById("nav-row").style.padding = "0";
+        document.getElementById("header").style.background = "#ffffffed";
+    } else {
+        document.getElementById("nav-row").style.padding = "1rem 0 1rem 0";
+        document.getElementById("header").style.background = "#ffffff";
+    }
+};

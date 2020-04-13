@@ -63,10 +63,17 @@ p a:hover, p a:active {
 .header-image {
     background-image: url("../images/forest-fire.jpg");
     background-size: cover;
+    border-bottom: 8px solid #F9AF3B;
+    height: calc(100vh - 120px) !important;
+    min-height: 500px;
 }
 .navbar a:link, .navbar a:visited {
     color: #f9af3b;
     text-transform: uppercase;
+    transition: all .2s ease-in-out;
+}
+.navbar a:hover, .navbar a:active {
+    color: #60411F;
 }
 .jumbotron {
     border-radius: 0px;
@@ -91,7 +98,7 @@ p a:hover, p a:active {
     background: #ccc;
     font-weight: bold;
     color: #888;
-    font-size: .8rem;
+    font-size: 1rem;
 }
 .readmore a, .readmore a:hover, .readmore a:visited, .readmore a:focus, .readmore a:active {
     font-family: "big_caslonmedium";
@@ -112,6 +119,21 @@ p a:hover, p a:active {
 }
 .border-yellow.btn {
     border-color: #f9af3b;
+}
+.btn.text-white:hover, .btn.text-white:active, .btn.text-white:focus {
+    background: #ffffff;
+    color: #919191 !important;
+}
+.btn.border-yellow.text-white {
+    transition: .1s all ease-in-out;
+}
+.btn.border-yellow.text-white:hover, .btn.border-yellow.text-white:active, .btn.border-yellow.text-white:focus {
+    background: #F9AF30;
+    color: #ffffff !important;
+}
+.btn.border-yellow:hover, .btn.border-yellow:active, .btn.border-yellow:focus {
+    background: #F96841;
+    color: #fff;
 }
 .yellow-line {
     width: 150px;
@@ -150,7 +172,6 @@ p a:hover, p a:active {
     padding: 0 1em 1em 1em;
     display: flex;
     flex-direction: column;
-    justify-content: stretch;
     justify-content: stretch;
     flex-grow: 1;
 }
@@ -230,9 +251,28 @@ p a:hover, p a:active {
     box-shadow: 0px 5px 7px #ccc;
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
 }
 .readmore, .box-content .btn {
     margin-top: auto;
+}
+#header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: #ffffff;
+    z-index: 999;
+    transition: 0.2s all ease-in-out;
+}
+#nav-row {
+    transition: 0.2s all ease-in-out;
+    padding: 1rem 0 1rem 0;
+}
+#content {
+    margin-top: 2rem;
+}
+.home .panel1 .title {
+    padding-top: 10vh;
 }
 /*——Media Queries——*/
 @media (min-width: 768px) {
@@ -301,8 +341,8 @@ p a:hover, p a:active {
         width: 100%;
     }
     .top-animate {
-        background: #ffffff!important;
-        top: 13px!important;
+        background: #ffffff !important;
+        top: 13px !important;
         -webkit-transform: rotate(45deg);
         /* Chrome, Safari, Opera */
         transform: rotate(45deg);
@@ -311,8 +351,8 @@ p a:hover, p a:active {
         opacity: 0;
     }
     .bottom-animate {
-        background: #ffffff!important;
-        top: 13px!important;
+        background: #ffffff !important;
+        top: 13px !important;
         -webkit-transform: rotate(-225deg);
         /* Chrome, Safari, Opera */
         transform: rotate(-225deg);
@@ -378,12 +418,12 @@ p a:hover, p a:active {
         text-align: center;
     }
     .feature-color-container .white.circle {
-        margin: 0 auto 20px auto!important;
+        margin: 0 auto 20px auto !important;
     }
     .white-line {
-        margin: 0 auto 20px auto!important;
+        margin: 0 auto 20px auto !important;
     }
     .yellow-line {
-        margin: 0 auto!important;
+        margin: 0 auto !important;
     }
 }
