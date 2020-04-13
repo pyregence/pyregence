@@ -12,14 +12,14 @@
                 (include-css "/css/ol.css")
                 [:div#near-term-forecast
                  (slurp "resources/html/header.html")
-                 [:div#app]
+                 [:div#app]]
                  ;; Script tags
-                 (include-js "/js/ol.js" "/cljs/app.js")
-                 (slurp "resources/html/scripts.html")
-                 [:script {:type "text/javascript"}
-                  (str "window.onload = function () { pyregence.client.init("
-                       (json/write-str (:params request))
-                       "); };")]]])}))
+                (include-js "/js/ol.js" "/cljs/app.js")
+                (slurp "resources/html/scripts.html")
+                [:script {:type "text/javascript"}
+                 (str "window.onload = function () { pyregence.client.init("
+                      (json/write-str (:params request))
+                      "); };")]])}))
 
 (def uri->html
   {"/"          "home.html"
