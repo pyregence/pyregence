@@ -8,15 +8,25 @@
         <link rel="stylesheet" href="css/style.css">
         <title>Pyregence - Wildfire Risk Models for a Safe & Resilient Grid</title>
         <meta name="description" content="The next generation of open source wildfire risk models to support decision making for a more safe and resilient electric grid.">
+        <link rel="icon" type="image/png" href="../images/favicon.png">
+        <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="js/script.js"></script>
     </head>
     <body class="home">
         <div class="site">
-            <div class="wrapper-navbar">
-                <a class="skip-link sr-only sr-only-focusable" href="#content">Skip to content</a>
+            <div class="wrapper-navbar" id="header">
+                <a class="skip-link sr-only sr-only-focusable" href="#content">
+                    Skip to content
+                </a>
                 <div class="container">
-                    <div class="row align-items-center py-2 py-md-3">
+                    <div class="row align-items-center" id="nav-row">
                         <div class="col-md-3 col-6">
-                            <a class="navbar-brand" rel="home" href="/" title="Pyregence"><img src="images/pyregence-logo.svg" alt="Pyregence logo" class="real-logo" /><img src="images/pyregence-logo-white.svg" class="white-logo" alt="Pyregence logo white" /></a>
+                            <a class="navbar-brand" rel="home" href="/" title="Pyregence">
+                                <img src="images/pyregence-logo.svg" alt="Pyregence logo" class="real-logo">
+                                <img src="images/pyregence-logo-white.svg" class="white-logo" alt="Pyregence logo white">
+                            </a>
                         </div>
                         <div class="col-md-9 col-6 mobile-flex">
                             <div class="mobile-button">
@@ -48,142 +58,150 @@
                     </div>
                 </div>
             </div>
-            <div class="jumbotron header-image mb-0 panel1">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-md-9">
-                            <h1 class="title text-white pt-3">
-                                The next generation of open source wildfire risk models to support decision making for a more safe and resilient electric grid.
-                            </h1>
+            <div id="content">
+                <div class="jumbotron header-image mb-0 panel1">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-md-9">
+                                <h1 class="title text-white">
+                                    Free and open access to the next generation of wildfire risk models for grid resiliency
+                                </h1>
+                            </div>
+                            <div class="col-md-7">
+                                <p class="subtitle text-white pt-3">
+                                    Pyregence consortium is founded on open science and technology principles, employing inclusivity and collaboration to tackle complex challenges.
+                                </p>
+                                <div>
+                                    <a href="#" class="btn border-yellow text-white">Learn More</a>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-7">
-                            <p class="subtitle text-white pt-3">
-                                Pyregence consortium is founded on open science and technology principles, employing inclusivity and collaboration to tackle complex challenges.
+                    </div>
+                    <div class="slider-button p-absolute">
+                    </div>
+                </div>
+                <div class="jumbotron bg-white pt-4 pb-0 mt-3">
+                    <div class="container">
+                        <div class="row study-build">
+                            <div class="d-flex flex-column col-md-6 mb-4">
+                                <h2 class="text-center text-yellow mb-4">Study it</h2>
+                                <div class="row flex-fill">
+                                    <div class="col-md-6 px-2 mb-4 d-flex">
+                                        <div class="box-shadow">
+                                            <div class="box extreme-weather">
+                                                <div class="white circle d-flex align-items-center justify-content-center4">
+                                                    <img src="images/extreme-weather.svg" alt="Extreme Weather icon">
+                                                </div>
+                                            </div>
+                                            <div class="box-content clearfix">
+                                                <h3 class="text-center">Extreme Weather</h3>
+                                                <div class="yellow-line small my-3"></div>
+                                                <p class="text-center">
+                                                    Determining weather conditions and other factors associated with large wildfires in the past
+                                                </p>
+                                                <div class="text-center readmore mt-auto">
+                                                    <a href="#">Read More <img src="images/arrow-right-solid.png"></a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 px-2 mb-4 d-flex">
+                                        <div class="box-shadow">
+                                            <div class="box wildfire-science">
+                                                <div class="white circle d-flex align-items-center justify-content-center">
+                                                    <img src="images/advanced-wildfire-science.svg" alt="Advanced Wildfire Science icon">
+                                                </div>
+                                            </div>
+                                            <div class="box-content clearfix">
+                                                <h3 class="text-center">Fire Behavior</h3>
+                                                <div class="yellow-line small my-3"></div>
+                                                <p class="text-center">
+                                                    Advancing research on fuel mapping and fire spread to inform next generation wildfire models
+                                                </p>
+                                                <div class="text-center readmore mt-auto">
+                                                    <a href="#">Read More <img src="images/arrow-right-solid.png"></a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column col-md-6 mb-4">
+                                <h2 class="text-center text-yellow mb-4">Build it</h2>
+                                <div class="row flex-fill">
+                                    <div class="col-md-6 px-2 mb-4 d-flex">
+                                        <div class="box-shadow">
+                                            <div class="box forecasts">
+                                                <div class="white circle d-flex align-items-center justify-content-center">
+                                                    <img src="images/wildfire-map-icon.svg" alt="Wildfire Forecasts icon">
+                                                </div>
+                                            </div>
+                                            <div class="box-content clearfix">
+                                                <h3 class="text-center">Forecast Tools</h3>
+                                                <div class="yellow-line small my-3"></div>
+                                                <p class="text-center">
+                                                    Forecasting wildfire activity in California to inform the operation of a safe and reliable electric grid
+                                                </p>
+                                                <div class="text-center mt-auto">
+                                                    <a href="#" class="btn border-yellow">Launch Tool</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 px-2 mb-4 d-flex">
+                                        <div class="box-shadow">
+                                            <div class="box scenarios">
+                                                <div class="white circle d-flex align-items-center justify-content-center">
+                                                    <img src="images/wildfire-chart-icon.svg" alt="Wildfire Scenarios icon">
+                                                </div>
+                                            </div>
+                                            <div class="box-content clearfix">
+                                                <h3 class="text-center">Scenario Analyses</h3>
+                                                <div class="yellow-line small my-3"></div>
+                                                <p class="text-center">
+                                                    Analyzing wildfire scenarios under climate change to inform planning for a resilient electric grid
+                                                </p>
+                                                <div class="text-center mt-auto">
+                                                    <a href="#" class="btn grey" onclick="return false;">Coming Soon</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container pb-5">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <h2 class="text-center text-yellow mb-3">Project Biography</h2>
+                        </div>
+                    </div>
+                    <div class="row justify-content-center mb-5 mt-3">
+                        <div class="col-md-2">
+                            <div class="yellow-line"></div>
+                        </div>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col-md-6 px-4">
+                            <p class="text-justify">
+                                Wildfire threats in California are ever increasing with substantial changes in fire behaviour driven by higher fuel loads, more frequent extreme weather events and continued human development in the wildland urban interface. Organizations across the State need better operational and strategic information to understand changing wildfire risks and implement effective protection and adaptation measures. Access to this critical information is blocked by multiple barriers including fragmented silos of science and technology and black box software often behind paywalls.
                             </p>
-                            <div>
-                                <a href="#" class="btn border-yellow text-white">Learn More</a>
-                            </div>
+                        </div>
+                        <div class="col-md-6 px-4">
+                            <p class="text-justify">
+                                The Pyregence Consortium aims to provide free and open source access to operational and strategic wildfire information based on the next generation of wildfire models. At an operational level, the consortium implements best practice science and technology to forecast wildfire activity for electric utilities. At a strategic level, wildfire scenario analyses will be produced to inform future wildfire risk and California’s 5th Climate Change Assessment. The ‘open source’ collaboration brings together initiatives and leading researchers from 18 institutions representing industry, academia, and government in an effort to transform how wildfire mitigation and adaptation measures are implemented across the State.
+                            </p>
                         </div>
                     </div>
                 </div>
-                <div class="slider-button p-absolute">
-                </div>
-            </div>
-            <div class="jumbotron bg-white pt-4 pb-0 mt-3 panel2">
-                <div class="container">
-                    <div class="row study-build">
-                        <div class="col-md-6 mb-4">
-                            <h2 class="text-center text-yellow mb-4">Study it</h2>
-                            <div class="row">
-                                <div class="col-md-6 px-2 mb-4">
-                                    <div class="box-shadow">
-                                        <div class="box extreme-weather">
-                                            <div class="white circle d-flex align-items-center justify-content-center4">
-                                                <img src="images/extreme-weather.svg" alt="Extreme Weather icon" />
-                                            </div>
-                                        </div>
-                                        <div class="box-content">
-                                            <h3 class="text-center">Extreme Weather</h3>
-                                            <div class="yellow-line small my-3"></div>
-                                            <p class="text-center">Determining weather conditions and other associated factors with large wildfires in the past</p>
-                                            <div class="text-center readmore">
-                                                <a href="#">Read More <img src="images/arrow-right-solid.png"></a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 px-2 mb-4">
-                                    <div class="box-shadow">
-                                        <div class="box wildfire-science">
-                                            <div class="white circle d-flex align-items-center justify-content-center">
-                                                <img src="images/advanced-wildfire-science.svg" alt="Advanced Wildfire Science icon" />
-                                            </div>
-                                        </div>
-                                        <div class="box-content">
-                                            <h3 class="text-center">Advanced Wildfire Science</h3>
-                                            <div class="yellow-line small my-3"></div>
-                                            <p class="text-center">Fundamental scientific research on fuel mapping and fire spread dynamics to inform the next generation of wildfire models</p>
-                                            <div class="text-center readmore">
-                                                <a href="#">Read More <img src="images/arrow-right-solid.png"></a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <h2 class="text-center text-yellow mb-4">Build it</h2>
-                            <div class="row">
-                                <div class="col-md-6 px-2 mb-4">
-                                    <div class="box-shadow">
-                                        <div class="box forecasts">
-                                            <div class="white circle d-flex align-items-center justify-content-center">
-                                                <img src="images/wildfire-map-icon.svg" alt="Wildfire Forecasts icon" />
-                                            </div>
-                                        </div>
-                                        <div class="box-content">
-                                            <h3 class="text-center">Wildfire Forecasts</h3>
-                                            <div class="yellow-line small my-3"></div>
-                                            <p class="text-center">Forecast for all wildfire activity in California to inform the management of a safe and reliable grid</p>
-                                            <div class="text-center">
-                                                <a href="#" class="btn red text-white">Launch Tool</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 px-2 mb-4">
-                                    <div class="box-shadow">
-                                        <div class="box scenarios">
-                                            <div class="white circle d-flex align-items-center justify-content-center">
-                                                <img src="images/wildfire-chart-icon.svg" alt="Wildfire Scenarios icon" />
-                                            </div>
-                                        </div>
-                                        <div class="box-content">
-                                            <h3 class="text-center">Wildfire Scenarios</h3>
-                                            <div class="yellow-line small my-3"></div>
-                                            <p class="text-center">Wildfire scenarios under a changing climate to inform adaptation planning for a more resilient grid</p>
-                                            <div class="text-center">
-                                                <a href="#" class="btn grey" onclick="return false;">Coming Soon</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="container pb-5 panel 3">
-                <div class="row justify-content-center">
-                    <div class="col-md-8">
-                        <h2 class="text-center text-yellow mb-3">Project Biography</h2>
-                    </div>
-                </div>
-                <div class="row justify-content-center mb-5 mt-3">
-                    <div class="col-md-2">
-                        <div class="yellow-line"></div>
-                    </div>
-                </div>
-                <div class="row justify-content-center">
-                    <div class="col-md-6 px-4">
-                        <p class="text-justify">
-                            Current wildfire science and forecasting models lack capability to provide scientifically rigorous, timely and location specific insights for situational awareness of wildfire threats to and from the electric grid. The fire physics supporting the state-level models fail to address the substantial changes in fire behavior driven by higher fuel loads, more frequent extreme weather events and development in the wildland urban interface throughout California. Furthermore, wildfire modeling is often in a black box and/or not scientifically reviewed resulting in a lack of transparency into the basis of many critical, often life-saving decisions.
-                        </p>
-                    </div>
-                    <div class="col-md-6 px-4">
-                        <p class="text-justify">
-                            Pyregence is a consortium funded by the California Energy Commission to focus on the challenge of wildfire impacts to and from the electric grid. Pyregence aims to advance fire behavior science, enhance cutting-edge risk models and operationalize the analysis for electric utilities and adaptation planning for California’s Fifth Climate Change Assessment. The consortium will release all software code as open source. Throughout the development of new software, a diversity of specialists will compare and contrast approaches to addressing technical challenges and converge on the optimal path to the next generation of wildfire models.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="panel4">
                 <div class="jumbatron bg-brown py-5 feature-color-container">
                     <div class="container">
                         <div class="row align-items-center">
                             <div class="col-md-2">
                                 <div class="white circle large">
-                                    <img src="images/extreme-weather.svg" alt="Extreme Weather icon" />
+                                    <img src="images/extreme-weather.svg" alt="Extreme Weather icon">
                                 </div>
                             </div>
                             <div class="col-md-7">
@@ -204,14 +222,14 @@
                         <div class="row align-items-center">
                             <div class="col-md-2">
                                 <div class="white circle large">
-                                    <img src="images/advanced-wildfire-science.svg" alt="Advanced Wildfire Science icon" />
+                                    <img src="images/advanced-wildfire-science.svg" alt="Advanced Wildfire Science icon">
                                 </div>
                             </div>
                             <div class="col-md-7">
                                 <h3 class="text-white">Advance Wildfire Science</h3>
                                 <div class="white-line my-3"></div>
                                 <p class="text-white">
-                                    Current fire models fail to address the fundamental physics behind contemporary wildfire events in the State of California. This team aims to deliver fundamental scientific advances to give rise to the next generation of wildfire models, including a new fuel mapping technique and fire spread model based derived from fire physics.
+                                    Current fire models fail to address the fundamental physics behind contemporary wildfire events in the State of California. This team aims to deliver fundamental scientific advances to give rise to the next generation of wildfire models, including a new fuel mapping technique and fire spread model based on fire physics.
                                 </p>
                             </div>
                             <div class="col-md-3 text-center">
@@ -225,14 +243,15 @@
                         <div class="row align-items-center">
                             <div class="col-md-2">
                                 <div class="white circle large">
-                                    <img src="images/wildfire-map-icon.svg" alt="Wildfire Forecasts icon" />
+                                    <img src="images/wildfire-map-icon.svg" alt="Wildfire Forecasts icon">
                                 </div>
                             </div>
                             <div class="col-md-7">
                                 <h3 class="text-white">Wildfire Forecasts</h3>
                                 <div class="white-line my-3"></div>
                                 <p class="text-white">
-                                    Current wildfire forecasting software fails to take into account fundamental fire physics and often uses a singular approach in modeling the complexities of wildfires in California. Project Pyregence will integrate multiple best practice wildfire models into a single open source software interface to provide IOUs with the best possible 0-7 day fire forecasts that are vital to managing a more reliable, safe, cost effective and resilient electric grid.
+                                    Electric utilities face numerous barriers to access operational information to mitigate wildfire risk. Current wildfire science and technology is fragmented and software is either unable to function at scale or hidden in a black box behind a paywall. The Pyregence Consortium provides electric utilities with free and open source access to software tools for forecasting wildfire activity in California to inform the operation of a safe and reliable electric grid
+                                </p>
                             </div>
                             <div class="col-md-3 text-center">
                                 <a class="btn text-white" href="#">Learn More</a>
@@ -245,14 +264,15 @@
                         <div class="row align-items-center">
                             <div class="col-md-2">
                                 <div class="white circle large">
-                                    <img src="images/wildfire-chart-icon.svg" alt="Wildfire Scenarios icon" />
+                                    <img src="images/wildfire-chart-icon.svg" alt="Wildfire Scenarios icon">
                                 </div>
                             </div>
                             <div class="col-md-7">
                                 <h3 class="text-white">Wildfire Scenarios</h3>
                                 <div class="white-line my-3"></div>
                                 <p class="text-white">
-                                    California is faced with a challenging ‘new normal’: an increased risk of megafires resulting in catastrophic impacts to society over the coming century. The Pyregence consortium will develop wildfire scenarios under a changing climate to inform mitigation and adaptation planning for a more safe, cost-effective, reliable and resilient electric utility grid.
+                                    California is faced with a challenging ‘new normal’: an increased risk of megafires potentially resulting in catastrophic impacts to society over the coming century. The Pyregence consortium will develop wildfire scenarios under a changing climate to inform climate mitigation and adaptation planning for a more safe, cost-effective, reliable and resilient electric utility grid
+                                </p>
                             </div>
                             <div class="col-md-3 text-center">
                                 <a class="btn text-white" href="#">Learn More</a>
@@ -260,130 +280,163 @@
                         </div>
                     </div>
                 </div>
-            </div><!--end panel4 -->
-            <div class="container py-5 panel5">
-                <div class="row justify-content-center">
-                    <div class="col-md-8">
-                        <h2 class="text-center text-yellow mb-3">
-                            Pyregence Consortium
-                        </h2>
-                        <p class="subtitle text-center">
-                            The consortium brings together wildfire scientists and technologists, partners from leading research institutions from industry, academia, and government.
-                        </p>
-                    </div>
-                </div>
-                <div class="row justify-content-center mb-5 mt-3">
-                    <div class="col-md-2">
-                        <div class="yellow-line"></div>
-                    </div>
-                </div>
-                <div class="row justify-content-center logos">
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/berkeley.png" alt="berkeley logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/USGS-01.png" alt="USGS logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/sig-logo-stacked.png" alt="SIG logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/reax-enginering.jpg" alt="reax engineeering logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/university-of-california-merced.png" alt="university-of-california-merced logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/usfs-logo.png" alt="usfs logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/prometheus.jpg" alt="prometheus logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/UNM.png" alt="UNM logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/university-of-san-francisco.png" alt="university-of-san-francisco logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/university-of-california-santa-barbara.png" alt="universit-of-california-santa-barbara logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/scripps-logo.png" alt="scripps logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/UCAR.jpg" alt="UCAR logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/pyrologix.png" alt="pyrologix logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/eagle.jpg" alt="eagle logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/deer-creek-gis.png" alt="deer-creek-gis" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/STI-logo.jpg" alt="STI logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/Salo-logo.jpg" alt="Salo Logo" /></div>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
-                        <div class="circle white"><img src="images/lumen-logo.jpg" alt="lumen energy strategy Logo" /></div>
-                    </div>
-                </div>
-            </div>
-            <div class="jumbotron bg-brown mb-0 panel6">
-                <div class="container">
+                <div class="container py-5">
                     <div class="row justify-content-center">
                         <div class="col-md-8">
-                            <div class="d-block text-center gpl mb-4"><img src="images/gpl-logo.svg" alt="GPL Free Software" /></div>
-                            <h3 class="text-white text-center mb-0">Everything open source because it’s good</h3>
-                        </div>
-                    </div>
-                    <div class="row justify-content-center">
-                        <div class="col-md-1 py-3">
-                            <div class="yellow-line small my-3"></div>
-                        </div>
-                    </div>
-                    <div class="row justify-content-center">
-                        <div class="col-md-8">
-                            <p class="text-white text-justify">
-                                The Pyregence Consortium is committed to transparency and reproducibility throughout our systems because we recognize these as necessary ingredients for successful science-based decision making. No one trusts a black box, and that is why all of our software from our weather pipeline and high performance fire models to our dynamic web interface is being developed and released under the strongest open source license currently available: the <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" target="_blank">GPLv3</a>. This ensures that any contributions to Pyregence's tools will remain in the open source domain indefinitely and may be reused and improved upon by the next generation of modelers, programmers, and fire scientists.
+                            <h2 class="text-center text-yellow mb-3">
+                                Pyregence Consortium
+                            </h2>
+                            <p class="subtitle text-center">
+                                The ‘open source’ collaboration brings together initiatives and researchers from 18 institutions representing industry, academia, and government to support how wildfire risk mitigation and adaptation is implemented across California.
                             </p>
-                            <div class="d-flex justify-content-center py-3">
-                                <a href="https://github.com/pyregence" class="btn border-yellow text-white text-center">Github</a>
+                        </div>
+                    </div>
+                    <div class="row justify-content-center mb-5 mt-3">
+                        <div class="col-md-2">
+                            <div class="yellow-line"></div>
+                        </div>
+                    </div>
+                    <div class="row justify-content-center logos">
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/sig-logo-stacked.png" alt="SIG logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/UCAR.jpg" alt="UCAR logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/berkeley.png" alt="berkeley logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/USGS-01.png" alt="USGS logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/reax-enginering.jpg" alt="reax engineeering logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/university-of-california-merced.png" alt="university-of-california-merced logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/scripps-logo.png" alt="scripps logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/prometheus.jpg" alt="prometheus logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/UNM.png" alt="UNM logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/university-of-san-francisco.png" alt="university-of-san-francisco logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/university-of-california-santa-barbara.png" alt="universit-of-california-santa-barbara logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/usfs-logo.png" alt="usfs logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/pyrologix.png" alt="pyrologix logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/eagle.jpg" alt="eagle logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/deer-creek-gis.png" alt="deer-creek-gis">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/STI-logo.jpg" alt="STI logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/Salo-logo.jpg" alt="Salo Logo">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6 d-flex justify-content-center align-items-center">
+                            <div class="circle white">
+                                <img src="images/lumen-logo.jpg" alt="lumen energy strategy Logo">
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="jumbotron topomap py-5 mb-0 panel7">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-md-6 px-4">
-                            <h3 class="text-brown">
-                                Project funded by</h3>
-                            <div class="yellow-line small my-3"></div>
-                            <p class="text-justify">
-                                This document was prepared as a result of work sponsored by the California Energy Commission. It does not necessarily represent the views of the Energy Commission, its employees, or the State of California. Neither the Commission, the State of California, nor the Commission's employees, contractors, or subcontractors makes any warranty, express or implied, or assumes any legal liability for the information in this document; nor does any party represent that the use of this information will not infringe upon privately owned rights. This document has not been approved or disapproved by the Commission, nor has the Commission passed upon the accuracy of the information in this document.
-                            </p>
-                        </div>
-                        <div class="col-md-6 px-4">
-                            <h3 class="text-brown">Contact Us</h3>
-                            <div class="yellow-line small my-3"></div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p><span class="smaller">Project Manager</span><br>
-                                    Shane Romsos<br />
-                                    <a href="mailto:pyregence@sig-gis.com">pyregence@sig-gis.com</a></p>
+                <div class="jumbotron bg-brown mb-0">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="d-block text-center gpl mb-4">
+                                    <img src="images/gpl-logo.svg" alt="GPL Free Software">
                                 </div>
-                                <div class="col-md-6">
-                                    <p><span class="smaller">Address</span><br>
-                                        2529 Yolanda Ct.<br>
-                                        Pleasanton, CA. 94566
-                                    </p>
+                                <h3 class="text-white text-center mb-0">Everything open source because it’s good</h3>
+                            </div>
+                        </div>
+                        <div class="row justify-content-center">
+                            <div class="col-md-1 py-3">
+                                <div class="yellow-line small my-3"></div>
+                            </div>
+                        </div>
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <p class="text-white text-justify">
+                                    The Pyregence Consortium is committed to transparency and reproducibility throughout our systems because we recognize these as necessary ingredients for successful science-based decision making. No one trusts a black box, and that is why all of our software from our weather pipeline and high performance fire forecast models to our dynamic web interface is being developed and released under the strongest open source license currently available: the <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" target="_blank">GNU General Public License version 3 (GPLv3)</a>. The GPLv3 software license ensures that any contributions to Pyregence's tools will remain in the open source domain indefinitely and may be reused and improved upon by the next generation of modelers, programmers, and fire scientists.
+                                </p>
+                                <div class="d-flex justify-content-center py-3">
+                                    <a href="https://github.com/pyregence" class="btn border-yellow text-white text-center">Github</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="jumbotron topomap py-5 mb-0">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-md-6 px-4">
+                                <h3 class="text-brown">Project funded by</h3>
+                                <div class="yellow-line small my-3"></div>
+                                <h4>Disclaimer</h4>
+                                <p class="text-justify">
+                                    The Pyregence project is sponsored by the California Energy Commission. It does not necessarily represent the views of the Energy Commission, its employees, or the State of California. Neither the Commission, the State of California, nor the Commission's employees, contractors, or subcontractors makes any warranty, express or implied, or assumes any legal liability for the information in this document; nor does any party represent that the use of this information will not infringe upon privately owned rights.
+                                </p>
+                            </div>
+                            <div class="col-md-6 px-4">
+                                <h3 class="text-brown">Contact Us</h3>
+                                <div class="yellow-line small my-3"></div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <p><span class="smaller">Project Manager</span><br>
+                                            Shane Romsos<br>
+                                            <a href="mailto:pyregence@sig-gis.com">pyregence@sig-gis.com</a>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -394,9 +447,5 @@
                 <p class="text-white text-center mb-0 smaller">&copy; 2020 Pyregence - All Rights Reserved | Terms</p>
             </footer>
         </div>
-        <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-        <script src="js/script.js"></script>
     </body>
 </html>
