@@ -1,0 +1,34 @@
+* Configuring A GeoServer for Pyregence
+
+** Installation Requirements
+
+TODO FILL IN
+
+** Configuration
+
+*** Allowing Cross-Origin Resource Sharing (CORS)
+
+Open [GeoServer location]/webapps/GeoServer/WEB-INF/web.xml for editing.
+Uncomment the following 2 blocks:
+
+#+begin_src sh
+<!-- Uncomment following filter to enable CORS -->
+<filter>
+  <filter-name>cross-origin</filter-name>
+#+end_src
+
+#+begin_src sh
+<!-- Uncomment following filter to enable CORS -->
+<filter-mapping>
+   <filter-name>cross-origin</filter-name>
+#+end_src
+
+In the first block listed above, restrict the cross origin domain by
+editing the allowedOrigins param.
+
+#+begin_src sh
+<init-param>
+    <param-name>allowedOrigins</param-name>
+    <param-value>*pyregence.org*</param-value>
+</init-param>
+#+end_src
