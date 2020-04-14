@@ -74,7 +74,7 @@
    :top              ".5rem"
    :z-index          "100"})
 
-(defn $legen-color [color]
+(defn $legend-color [color]
   {:background-color color
    :height           "1rem"
    :margin-right     ".5rem"
@@ -92,7 +92,7 @@
          (map-indexed (fn [i leg]
                         ^{:key i}
                         [:div {:style ($/combine $/flex-row {:justify-content "flex-start"})}
-                         [:div {:style ($legen-color (get leg "color"))}]
+                         [:div {:style ($legend-color (get leg "color"))}]
                          [:label (get leg "label")]]))
          (doall))]])
 
