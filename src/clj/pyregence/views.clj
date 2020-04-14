@@ -1,25 +1,32 @@
 (ns pyregence.views
   (:require [clojure.data.json :as json]
-            [hiccup.page :refer [html5 include-css include-js]]))
+            [clojure.string :as str]
+            [hiccup.page :refer [html5 include-css include-js]]
+            [pyregence.logging :refer [log]]))
+
+(defn combine-head []
+  (let [split-head (drop-last (str/split-lines (slurp "resources/html/head.html")))]
+    (html5
+     (apply str (butlast split-head))
+     (include-js "/js/ol.js" "/cljs/app.js")
+     (include-css "/css/ol.css")
+     (last split-head))))
 
 (defn render-dynamic []
+  (log (combine-head))
   (fn [request]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body    (html5
-               (slurp "resources/html/head.html")
+               (combine-head)
                [:body
-                (include-css "/css/ol.css")
                 [:div#near-term-forecast
                  (slurp "resources/html/header.html")
-                 [:div#app]
-                 ;; Script tags
-                 (include-js "/js/ol.js" "/cljs/app.js")
-                 (slurp "resources/html/scripts.html")
-                 [:script {:type "text/javascript"}
-                  (str "window.onload = function () { pyregence.client.init("
-                       (json/write-str (:params request))
-                       "); };")]]])}))
+                 [:div#app]]
+                [:script {:type "text/javascript"}
+                 (str "window.onload = function () { pyregence.client.init("
+                      (json/write-str (:params request))
+                      "); };")]])}))
 
 (def uri->html
   {"/"          "home.html"
