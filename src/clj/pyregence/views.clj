@@ -1,8 +1,7 @@
 (ns pyregence.views
   (:require [clojure.data.json :as json]
             [clojure.string :as str]
-            [hiccup.page :refer [html5 include-css include-js]]
-            [pyregence.logging :refer [log]]))
+            [hiccup.page :refer [html5 include-css include-js]]))
 
 (defn combine-head []
   (let [split-head (drop-last (str/split-lines (slurp "resources/html/head.html")))]
@@ -13,7 +12,6 @@
      (last split-head))))
 
 (defn render-dynamic []
-  (log (combine-head))
   (fn [request]
     {:status  200
      :headers {"Content-Type" "text/html"}
