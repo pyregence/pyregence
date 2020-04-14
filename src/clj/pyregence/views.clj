@@ -4,12 +4,10 @@
             [hiccup.page :refer [html5 include-css include-js]]))
 
 (defn combine-head []
-  (let [split-head (drop-last (str/split-lines (slurp "resources/html/head.html")))]
-    (html5
-     (apply str (butlast split-head))
-     (include-js "/js/ol.js" "/cljs/app.js")
-     (include-css "/css/ol.css")
-     (last split-head))))
+  [:head
+   (rest (pop (str/split-lines (slurp "resources/html/head.html"))))
+   (include-css "/css/ol.css")
+   (include-js "/js/ol.js" "/cljs/app.js")])
 
 (defn render-dynamic []
   (fn [request]
