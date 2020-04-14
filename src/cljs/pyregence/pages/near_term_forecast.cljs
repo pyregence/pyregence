@@ -1,5 +1,7 @@
 (ns pyregence.pages.near-term-forecast
   (:require [reagent.core :as r]
+            [cljs.core.async :refer [go]]
+            [cljs.core.async.interop :refer-macros [<p!]]
             [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]))
 
@@ -24,15 +26,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-json! [state process-fn url]
-  (let [fetch-params {:method "get"
-                      :headers {"Accept" "application/json"
-                                "Content-Type" "application/json"}}]
-    (-> (.fetch js/window
-                url
-                (clj->js fetch-params))
-        (.then  (fn [response] (if (.-ok response) (.json response) (.reject js/Promise response))))
-        (.then  (fn [json]     (reset! state (process-fn json))))
-        (.catch (fn [response] (.log js/console response))))))
+  (go
+    (try
+      (let [fetch-params {:method "get"
+                          :headers {"Accept"       "application/json"
+                                    "Content-Type" "application/json"}}
+            response     (<p! (js/window.fetch url (clj->js fetch-params)))]
+        (when (.-ok response)
+          (reset! state (process-fn (<p! (.json response))))))
+      (catch js/Error err
+        (js/console.log (ex-cause err))))))
 
 (defn process-legend [json]
   (-> json
