@@ -1,24 +1,17 @@
 (ns pyregence.pages.near-term-forecast
   (:require [reagent.core :as r]
             [pyregence.components.openlayers :as ol]
-            [pyregence.styles :as $]))
+            [pyregence.styles :as $]
+            [pyregence.utils  :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce cur-layer   (atom 0))
-(defonce legend-list (r/atom []))
-(defonce layer-list  (r/atom []))
-
-(def point-layers-list  ["fire-area_20171006_070000"
-                         "fire-area_20171007_070000"
-                         "fire-area_20171008_070000"
-                         "fire-area_20171009_070000"
-                         "fire-area_20171010_070000"])
-
-(def interp-layers-list ["fire-area_20200414_070000"
-                         "fire-area_20200415_070000"])
+(defonce cur-layer      (r/atom 0))
+(defonce legend-list    (r/atom []))
+(defonce layer-list     (r/atom []))
+(defonce layer-interval (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -71,6 +64,10 @@
                   "&REQUEST=GetCapabilities"
                   "&NAMESPACE=demo")))
 
+(defn increment-layer []
+  (swap! cur-layer #(mod (inc %) (count @layer-list)))
+  (ol/swap-active-layer! (nth @layer-list @cur-layer)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -102,12 +99,26 @@
    :margin-right     ".5rem"
    :width            "1rem"})
 
+(defn $time-slider []
+  {:background-color "white"
+   :border           "1px solid black"
+   :border-radius    "5px"
+   :display          "flex"
+   :margin-right     "auto"
+   :margin-left      "auto"
+   :left             "0"
+   :right            "0"
+   :position         "absolute"
+   :bottom           "1rem"
+   :width            "fit-content"
+   :z-index          "100"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn legend-box []
-  [:div {:style ($legend-box)}
+  [:div {:style ($legend-box) :id "legend-box"}
    [:div {:style {:display "flex" :flex-direction "column"}}
     (->> @legend-list
          (remove (fn [leg] (= "nodata" (get leg "label"))))
@@ -118,13 +129,33 @@
                          [:label (get leg "label")]]))
          (doall))]])
 
+(defn time-slider []
+  [:div {:style ($time-slider) :id "time-slider"}
+   [:input {:style {:margin "1rem" :width "10rem"}
+            :type "range" :min "0" :max (count @layer-list) :value @cur-layer
+            :on-change #(do
+                          (reset! cur-layer (u/input-int-value %))
+                          (ol/swap-active-layer! (nth @layer-list @cur-layer)))}]
+   [:button {:style {:padding "0 .25rem" :margin ".5rem"}
+             :type "button"
+             :on-click #(when-not @layer-interval
+                          (increment-layer)
+                          (reset! layer-interval (js/setInterval increment-layer 1000)))}
+    "Play"]
+   [:button {:style {:padding "0 .25rem" :margin ".5rem"}
+             :type "button"
+             :on-click #(when @layer-interval
+                          (.clearInterval js/window @layer-interval)
+                          (reset! layer-interval nil))}
+    "Stop"]])
+
 (defn root-component [_]
   (r/create-class
    {:component-did-mount
     (fn [_]
       (get-layers!)
       (get-legend!)
-      (ol/init-map! (get interp-layers-list @cur-layer)))
+      (ol/init-map! (get @layer-list @cur-layer)))
 
     :reagent-render
     (fn [_]
@@ -138,9 +169,4 @@
         [:label {:style {:position "absolute" :right "3rem"}} "Login"]]
        [:div#map {:style {:height "100%" :position "relative" :width "100%"}}
         [legend-box]
-        [:button {:style {:padding ".25rem" :position "absolute" :top "4.5rem" :left ".25rem" :z-index "100"}
-                  :type "button"
-                  :on-click (fn []
-                              (swap! cur-layer #(mod (inc %) (count interp-layers-list)))
-                              (ol/swap-active-layer! (get interp-layers-list @cur-layer)))}
-         "Next"]]])}))
+        [time-slider]]])}))
