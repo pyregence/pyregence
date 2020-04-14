@@ -20,7 +20,6 @@ $(document).ready(function () {
         $(".mid-menu").toggleClass("mid-animate");
         $(".bottom-menu").toggleClass("bottom-animate");
     });
-    $('.equal-heights').matchHeight();
 });
 //Header shrink on scroll
 window.onscroll = function() {
