@@ -27,7 +27,7 @@
                          :height         "100%"}]
   [:#exception {:padding "10px"}])
 
-(defglobal over-write-styles.css
+(defglobal over-write-styles
   [:#header {:position "static"}]
   [:#nav-row {:padding "0"}])
 
