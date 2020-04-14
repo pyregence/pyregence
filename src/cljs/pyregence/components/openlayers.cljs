@@ -1,13 +1,14 @@
 (ns pyregence.components.openlayers)
 
 ;; OpenLayers aliases
-(def Map        js/ol.Map)
-(def View       js/ol.View)
-(def defaults   js/ol.control.defaults)
-(def fromLonLat js/ol.proj.fromLonLat)
-(def TileLayer  js/ol.layer.Tile)
-(def OSM        js/ol.source.OSM)
-(def TileWMS    js/ol.source.TileWMS)
+(def Map             js/ol.Map)
+(def View            js/ol.View)
+(def defaults        js/ol.control.defaults)
+(def fromLonLat      js/ol.proj.fromLonLat)
+(def TileLayer       js/ol.layer.Tile)
+(def OSM             js/ol.source.OSM)
+(def TileWMS         js/ol.source.TileWMS)
+(def WMSCapabilities js/ol.format.WMSCapabilities)
 
 (defonce the-map (atom nil))
 
@@ -39,3 +40,8 @@
       (aget 1)
       .getSource
       (.updateParams #js {"LAYERS" (str "demo:" layer) "TILED" "true"})))
+
+(defn wms-capabilities
+  "Converts capbilites xml to a js object"
+  [text]
+  (.read (WMSCapabilities.) text))

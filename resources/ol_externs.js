@@ -13,3 +13,4 @@ ol.source;
 ol.source.prototype.updateParams;
 ol.source.OSM;
 ol.source.TileWMS;
+ol.format.WMSCapabilities;

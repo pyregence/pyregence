@@ -9,6 +9,7 @@
 
 (defonce cur-layer   (atom 0))
 (defonce legend-list (r/atom []))
+(defonce layer-list  (r/atom []))
 
 (def point-layers-list  ["fire-area_20171006_070000"
                          "fire-area_20171007_070000"
@@ -23,31 +24,52 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-json! [state process-fn url]
+(defn get-data! [process-fn url]
   (let [fetch-params {:method "get"
-                      :headers {"Accept" "application/json"
+                      :headers {"Accept" "application/json, text/xml"
                                 "Content-Type" "application/json"}}]
     (-> (.fetch js/window
                 url
                 (clj->js fetch-params))
-        (.then  (fn [response] (if (.-ok response) (.json response) (.reject js/Promise response))))
-        (.then  (fn [json]     (reset! state (process-fn json))))
+        (.then  (fn [response] (if (.-ok response)
+                                 (process-fn response)
+                                 (.reject js/Promise response))))
         (.catch (fn [response] (.log js/console response))))))
 
-(defn process-legend [json]
-  (-> json
-      js->clj
-      (get-in ["Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries"])))
+(defn process-legend [response]
+  (-> (.json response)
+      (.then (fn [json]
+               (reset! legend-list
+                       (-> json
+                           js->clj
+                           (get-in ["Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries"])))))))
 
 (defn get-legend! []
-  (get-json! legend-list
-             process-legend
+  (get-data! process-legend
              (str "http://californiafireforecast.com:8181/geoserver/demo/wms"
-                  "?service=WMS"
+                  "?SERVICE=WMS"
                   "&VERSION=1.3.0"
                   "&REQUEST=GetLegendGraphic"
-                  "&format=application/json"
+                  "&FORMAT=application/json"
                   "&LAYER=demo%3Afire-area_20200414_070000")))
+
+(defn process-capabilities [response]
+  (-> (.text response)
+      (.then (fn [text]
+               (reset! layer-list
+                       (map (fn [layer] (get layer "Name"))
+                            (-> text
+                                ol/wms-capabilities
+                                js->clj
+                                (get-in ["Capability" "Layer" "Layer"]))))))))
+
+(defn get-layers! []
+  (get-data! process-capabilities
+             (str "http://californiafireforecast.com:8181/geoserver/demo/wms"
+                  "?SERVICE=WMS"
+                  "&VERSION=1.3.0"
+                  "&REQUEST=GetCapabilities"
+                  "&NAMESPACE=demo")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -100,6 +122,7 @@
   (r/create-class
    {:component-did-mount
     (fn [_]
+      (get-layers!)
       (get-legend!)
       (ol/init-map! (get interp-layers-list @cur-layer)))
 
