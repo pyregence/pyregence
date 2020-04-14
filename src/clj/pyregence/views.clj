@@ -7,8 +7,7 @@
   [:head
    (rest (pop (str/split-lines (slurp "resources/html/head.html"))))
    (include-css "/css/ol.css")
-   (include-js "/js/ol.js")
-   (include-js "/cljs/app.js")])
+   (include-js "/js/ol.js" "/cljs/app.js")])
 
 (defn render-dynamic []
   (fn [request]
