@@ -42,6 +42,6 @@
       (.updateParams #js {"LAYERS" (str "demo:" layer) "TILED" "true"})))
 
 (defn wms-capabilities
-  "Converts capbilites xml to a js object"
+  "Converts capabilities xml to a js object"
   [text]
   (.read (WMSCapabilities.) text))
