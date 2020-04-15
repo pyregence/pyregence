@@ -1,5 +1,6 @@
 (ns pyregence.pages.near-term-forecast
   (:require [reagent.core :as r]
+            [clojure.string :as str]
             [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]))
@@ -8,10 +9,11 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce cur-layer      (r/atom 0))
-(defonce legend-list    (r/atom []))
-(defonce layer-list     (r/atom []))
-(defonce layer-interval (r/atom nil))
+(defonce cur-layer         (r/atom 0))
+(defonce legend-list       (r/atom []))
+(defonce layer-list        (r/atom []))
+(defonce last-clicked-info (r/atom 0))
+(defonce layer-interval    (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -63,6 +65,31 @@
                   "&VERSION=1.3.0"
                   "&REQUEST=GetCapabilities"
                   "&NAMESPACE=demo")))
+
+(defn process-point-info [response]
+  (-> (.json response)
+      (.then (fn [json] (reset! last-clicked-info
+                                (-> json
+                                    js->clj
+                                    (get-in ["features" 0 "properties" "GRAY_INDEX"])))))))
+
+(defn get-point-info! [point-info]
+  (get-data! process-point-info
+             (str "http://californiafireforecast.com:8181/geoserver/demo/wms"
+                  "?SERVICE=WMS"
+                  "&VERSION=1.3.0"
+                  "&REQUEST=GetFeatureInfo"
+                  "&INFO_FORMAT=application/json"
+                  "&LAYERS=demo:" (nth @layer-list @cur-layer)
+                  "&QUERY_LAYERS=demo:" (nth @layer-list @cur-layer)
+                  "&TILED=true"
+                  "&I=0"
+                  "&J=0"
+                  "&WIDTH=1"
+                  "&HEIGHT=1"
+                  "&CRS=" (:crs point-info)
+                  "&STYLES="
+                  "&BBOX=" (str/join "," (:bbox point-info)))))
 
 (defn increment-layer []
   (swap! cur-layer #(mod (inc %) (count @layer-list)))
@@ -128,7 +155,9 @@
                         [:div {:style ($/combine $/flex-row {:justify-content "flex-start"})}
                          [:div {:style ($legend-color (get leg "color"))}]
                          [:label (get leg "label")]]))
-         (doall))]])
+         (doall))
+    [:label {:style {:padding ".5rem"}}
+     (str "Last Clicked: " (or @last-clicked-info 0))]]])
 
 (defn time-slider []
   [:div {:style ($time-slider) :id "time-slider"}
@@ -205,9 +234,7 @@
       (-> (get-layers!)
           (.then (fn []
                    (get-legend!)
-                   )))
-(ol/init-map! "")
-      (ol/add-map-single-click println))
+                   (ol/init-map! (nth @layer-list @cur-layer) get-point-info!)))))
 
     :reagent-render
     (fn [_]

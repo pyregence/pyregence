@@ -13,7 +13,18 @@
 (defonce the-map      (atom nil))
 (defonce active-layer (atom nil))
 
-(defn init-map! [layer]
+(defn add-map-single-click [call-back]
+  (let [mapView (.getView @the-map)]
+    (.on @the-map
+         "singleclick"
+         (fn [evt]
+           (let [x   (nth (.-coordinate evt) 0)
+                 y   (nth (.-coordinate evt) 1)
+                 res (.getResolution mapView)]
+             (call-back {:bbox [x (+ x res) y (+ y res)]
+                         :crs  (-> mapView .getProjection .getCode)}))))))
+
+(defn init-map! [layer click-fn]
   (reset! active-layer (TileLayer.
                         #js {:title  "active"
                              :visible true
@@ -34,7 +45,7 @@
                            #js {:projection "EPSG:3857"
                                 :center     (fromLonLat #js [-120.8958 38.8375])
                                 :zoom       10})}))
-  (println "done init"))
+  (add-map-single-click click-fn))
 
 (defn swap-active-layer! [layer]
   (-> @active-layer
@@ -49,14 +60,3 @@
   "Converts capbilites xml to a js object"
   [text]
   (.read (WMSCapabilities.) text))
-
-(defn add-map-single-click [call-back]
-  (let [mapView (.getView @the-map)]
-    (.on @the-map
-         "singleclick"
-         (fn [evt]
-           (let [x   (nth (.-coordinate evt) 0)
-                 y   (nth (.-coordinate evt) 1)
-                 res (.getResolution mapView)]
-             (call-back {:bbox [x (+ x res) y (+ y res)]
-                         :projection (-> mapView .getProjection .getCode)}))))))
