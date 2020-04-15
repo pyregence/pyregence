@@ -25,16 +25,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-data! [process-fn url]
-  (let [fetch-params {:method "get"
-                      :headers {"Accept" "application/json, text/xml"
-                                "Content-Type" "application/json"}}]
-    (-> (.fetch js/window
-                url
-                (clj->js fetch-params))
-        (.then  (fn [response] (if (.-ok response)
-                                 (process-fn response)
-                                 (.reject js/Promise response))))
-        (.catch (fn [response] (.log js/console response))))))
+  (-> (.fetch js/window
+              url
+              (clj->js {:method "get"
+                        :headers {"Accept" "application/json, text/xml"
+                                  "Content-Type" "application/json"}}))
+      (.then  (fn [response] (if (.-ok response)
+                               (process-fn response)
+                               (.reject js/Promise response))))
+      (.catch (fn [response] (.log js/console response)))))
 
 (defn process-legend [response]
   (-> (.json response)
