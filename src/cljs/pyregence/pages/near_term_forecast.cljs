@@ -114,6 +114,32 @@
    :width            "fit-content"
    :z-index          "100"})
 
+(defn $collapsable-panel [show?]
+  (merge
+   {:background-color "white"
+    :border-right     "2px solid black"
+    :height           "100%"
+    :position         "absolute"
+    :transition       "all 200ms ease-in"
+    :width            "20rem"
+    :z-index          "1000"}
+   (if show?
+     {:left "0"}
+     {:left "-20rem"})))
+
+(defn $collapse-button []
+  {:background-color "white"
+   :border-right     "2px solid black"
+   :border-top       "2px solid black"
+   :border-bottom    "2px solid black"
+   :border-left      "4px solid white"
+   :border-radius    "0 5px 5px 0"
+   :height           "2rem"
+   :position         "absolute"
+   :right            "-2rem"
+   :top              ".5rem"
+   :width            "2rem"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -149,32 +175,6 @@
                           (.clearInterval js/window @layer-interval)
                           (reset! layer-interval nil))}
     "Stop"]])
-
-(defn $collapsable-panel [show?]
-  (merge
-   {:background-color "white"
-    :border-right     "2px solid black"
-    :height           "100%"
-    :position         "absolute"
-    :transition       "all 200ms ease-in"
-    :width            "20rem"
-    :z-index          "1000"}
-   (if show?
-     {:left "0"}
-     {:left "-20rem"})))
-
-(defn $collapse-button []
-  {:background-color "white"
-   :border-right     "2px solid black"
-   :border-top       "2px solid black"
-   :border-bottom    "2px solid black"
-   :border-left      "4px solid white"
-   :border-radius    "0 5px 5px 0"
-   :height           "2rem"
-   :position         "absolute"
-   :right            "-2rem"
-   :top              ".5rem"
-   :width            "2rem"})
 
 (defn collapsable-panel []
   (r/with-let [show-panel?   (r/atom true)
