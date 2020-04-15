@@ -153,9 +153,10 @@
   (r/create-class
    {:component-did-mount
     (fn [_]
-      (get-layers!)
-      (get-legend!)
-      (ol/init-map! (get @layer-list @cur-layer)))
+      (-> (get-layers!)
+          (.then (fn []
+                   (get-legend!)
+                   (ol/init-map! (nth @layer-list @cur-layer))))))
 
     :reagent-render
     (fn [_]
