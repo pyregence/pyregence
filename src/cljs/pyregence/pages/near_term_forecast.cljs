@@ -136,7 +136,8 @@
             :type "range" :min "0" :max (- (count @layer-list) 1) :value @cur-layer
             :on-change #(do
                           (reset! cur-layer (u/input-int-value %))
-                          (ol/swap-active-layer! (nth @layer-list @cur-layer)))}]
+                          (ol/swap-active-layer! (nth @layer-list @cur-layer))
+                          )}]
    [:button {:style {:padding "0 .25rem" :margin ".5rem"}
              :type "button"
              :on-click #(when-not @layer-interval
@@ -204,7 +205,9 @@
       (-> (get-layers!)
           (.then (fn []
                    (get-legend!)
-                   (ol/init-map! (nth @layer-list @cur-layer))))))
+                   )))
+(ol/init-map! "")
+      (ol/add-map-single-click println))
 
     :reagent-render
     (fn [_]

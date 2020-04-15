@@ -10,9 +10,17 @@
 (def TileWMS         js/ol.source.TileWMS)
 (def WMSCapabilities js/ol.format.WMSCapabilities)
 
-(defonce the-map (atom nil))
+(defonce the-map      (atom nil))
+(defonce active-layer (atom nil))
 
 (defn init-map! [layer]
+  (reset! active-layer (TileLayer.
+                        #js {:title  "active"
+                             :visible true
+                             :source  (TileWMS.
+                                       #js {:url "http://californiafireforecast.com:8181/geoserver/demo/wms"
+                                            :params #js {"LAYERS" (str "demo:" layer)}
+                                            :serverType "geoserver"})}))
   (reset! the-map
           (Map.
            #js {:target   "map"
@@ -20,35 +28,35 @@
                                 #js {:title   "OpenStreetMap"
                                      :visible true
                                      :source  (OSM.)})
-                               (TileLayer.
-                                #js {:title  "Active WMS Layer"
-                                     :visible true
-                                     :source  (TileWMS.
-                                               #js {:url "http://californiafireforecast.com:8181/geoserver/demo/wms"
-                                                    :params #js {"LAYERS" (str "demo:" layer)}
-                                                    :serverType "geoserver"})})]
+                               @active-layer]
                 :controls (defaults)
                 :view     (View.
                            #js {:projection "EPSG:3857"
                                 :center     (fromLonLat #js [-120.8958 38.8375])
-                                :zoom       10})})))
+                                :zoom       10})}))
+  (println "done init"))
 
 (defn swap-active-layer! [layer]
-  (-> @the-map
-      .getLayers
-      .getArray
-      (aget 1)
+  (-> @active-layer
       .getSource
       (.updateParams #js {"LAYERS" (str "demo:" layer) "TILED" "true"})))
 
 (defn set-active-layer-opacity! [opacity]
-  (-> @the-map
-      .getLayers
-      .getArray
-      (aget 1)
+  (-> @active-layer
       (.setOpacity opacity)))
 
 (defn wms-capabilities
   "Converts capbilites xml to a js object"
   [text]
   (.read (WMSCapabilities.) text))
+
+(defn add-map-single-click [call-back]
+  (let [mapView (.getView @the-map)]
+    (.on @the-map
+         "singleclick"
+         (fn [evt]
+           (let [x   (nth (.-coordinate evt) 0)
+                 y   (nth (.-coordinate evt) 1)
+                 res (.getResolution mapView)]
+             (call-back {:bbox [x (+ x res) y (+ y res)]
+                         :projection (-> mapView .getProjection .getCode)}))))))
