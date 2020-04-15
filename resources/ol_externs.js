@@ -8,6 +8,7 @@ ol.proj;
 ol.proj.fromLonLat;
 ol.layer;
 ol.layer.prototype.getSource;
+ol.layer.prototype.setOpacity;
 ol.layer.Tile;
 ol.source;
 ol.source.prototype.updateParams;

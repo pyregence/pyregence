@@ -177,12 +177,19 @@
    :width            "2rem"})
 
 (defn collapsable-panel []
-  (r/with-let [show-panel? (r/atom true)]
+  (r/with-let [show-panel?   (r/atom true)
+               layer-opacity (r/atom 100)]
     [:div {:id "collapsable-panel" :style ($collapsable-panel @show-panel?)}
      [:div {:style ($collapse-button)
             :on-click #(swap! show-panel? not)}
       [:label {:style {:padding-top "2px"}} (if @show-panel? "<<" ">>")]]
-     [:label {:style {:padding "2rem"}} "test"]]))
+     [:div {:style ($/combine $/flex-col [$/align :flex :center] {:margin "2rem"})}
+      [:label "Active Layer Opacity"]
+      [:input {:style {:margin-top ".25rem" :width "10rem"}
+               :type "range" :min "0" :max "100" :value @layer-opacity
+               :on-change #(do
+                             (reset! layer-opacity (u/input-int-value %))
+                             (ol/set-active-layer-opacity! (/ @layer-opacity 100)))}]]]))
 
 (defn mask-layer []
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
