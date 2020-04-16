@@ -167,8 +167,8 @@ p a:hover, p a:active {
     bottom: 0;
     left: 50%;
     transform: translate(-50%, 50%);
-    height:125px;
-    width:125px;
+    height: 125px;
+    width: 125px;
 }
 .box-content {
     padding: 0 1em 1em 1em;
