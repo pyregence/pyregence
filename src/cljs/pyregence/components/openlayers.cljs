@@ -21,7 +21,7 @@
            (let [x   (nth (.-coordinate evt) 0)
                  y   (nth (.-coordinate evt) 1)
                  res (.getResolution mapView)]
-             (call-back {:bbox [x (+ x res) y (+ y res)]
+             (call-back {:bbox [x y (+ x res) (+ y res)]
                          :crs  (-> mapView .getProjection .getCode)}))))))
 
 (defn init-map! [layer click-fn]
