@@ -167,6 +167,8 @@ p a:hover, p a:active {
     bottom: 0;
     left: 50%;
     transform: translate(-50%, 50%);
+    height: 125px;
+    width: 125px;
 }
 .box-content {
     padding: 0 1em 1em 1em;
@@ -199,6 +201,17 @@ p a:hover, p a:active {
 .white.circle.large {
     max-width: 150px;
     max-height: 150px;
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.feature-color-container .circle img {
+    height: 60%;
+}
+.bg-red.py-5.feature-color-container .circle img {
+    height: auto;
 }
 .circle img {
     max-width: 100%;
