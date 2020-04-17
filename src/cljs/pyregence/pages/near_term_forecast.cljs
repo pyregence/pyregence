@@ -31,7 +31,10 @@
           @layer-list))
 
 (defn get-current-layer []
-  (nth (filtered-layers) @cur-layer))
+  (let [filtered (filtered-layers)]
+    (if (seq filtered)
+      (nth (filtered-layers) @cur-layer)
+      "")))
 
 (defn get-data! [process-fn url]
   (let [fetch-params {:method "get"
