@@ -234,7 +234,8 @@
       (-> (get-layers!)
           (.then (fn []
                    (get-legend!)
-                   (ol/init-map! (nth @layer-list @cur-layer) get-point-info!)))))
+                   (ol/init-map! (nth @layer-list @cur-layer)
+                                 #(ol/add-map-single-click get-point-info!))))))
 
     :reagent-render
     (fn [_]

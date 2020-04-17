@@ -24,7 +24,7 @@
              (call-back {:bbox [x y (+ x res) (+ y res)]
                          :crs  (-> mapView .getProjection .getCode)}))))))
 
-(defn init-map! [layer click-fn]
+(defn init-map! [layer post-fn]
   (reset! active-layer (TileLayer.
                         #js {:title  "active"
                              :visible true
@@ -45,7 +45,7 @@
                            #js {:projection "EPSG:3857"
                                 :center     (fromLonLat #js [-120.8958 38.8375])
                                 :zoom       10})}))
-  (add-map-single-click click-fn))
+  (post-fn))
 
 (defn swap-active-layer! [layer]
   (-> @active-layer
