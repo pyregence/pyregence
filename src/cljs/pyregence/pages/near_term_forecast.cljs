@@ -15,10 +15,10 @@
 (defonce last-clicked-info (r/atom 0))
 (defonce layer-interval    (r/atom nil))
 (defonce *layer-type       (r/atom 0))
-(defonce layer-types       [{:opt_id 0 :opt_label "Fire Area" :filter "fire-area"}
-                            {:opt_id 1 :opt_label "Fire Volume" :filter "fire-volume"}
+(defonce layer-types       [{:opt_id 0 :opt_label "Fire Area"           :filter "fire-area"}
+                            {:opt_id 1 :opt_label "Fire Volume"         :filter "fire-volume"}
                             {:opt_id 2 :opt_label "Impacted Structures" :filter "impacted-structures"}
-                            {:opt_id 3 :opt_label "Times Burned" :filter "times-burned"}])
+                            {:opt_id 3 :opt_label "Times Burned"        :filter "times-burned"}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
