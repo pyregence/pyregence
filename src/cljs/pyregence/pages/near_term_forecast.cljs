@@ -14,10 +14,24 @@
 (defonce layer-list        (r/atom []))
 (defonce last-clicked-info (r/atom 0))
 (defonce layer-interval    (r/atom nil))
+(defonce *layer-type       (r/atom 0))
+(defonce layer-types       [{:opt_id 0 :opt_label "fire-area"}
+                            {:opt_id 1 :opt_label "fire-volume"}
+                            {:opt_id 2 :opt_label "impacted-structures"}
+                            {:opt_id 3 :opt_label "times-burned"}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn filtered-layers []
+  (let [layer-filter (:opt_label (nth layer-types @*layer-type))]
+    (filter (fn [layer-name]
+              (str/includes? layer-name layer-filter))
+            @layer-list)))
+
+(defn get-current-layer []
+  (nth (filtered-layers) @cur-layer))
 
 (defn get-data! [process-fn url]
   (let [fetch-params {:method "get"
@@ -39,14 +53,14 @@
                            js->clj
                            (get-in ["Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries"])))))))
 
-(defn get-legend! []
+(defn get-legend! [layer]
   (get-data! process-legend
              (str "http://californiafireforecast.com:8181/geoserver/demo/wms"
                   "?SERVICE=WMS"
                   "&VERSION=1.3.0"
                   "&REQUEST=GetLegendGraphic"
                   "&FORMAT=application/json"
-                  "&LAYER=demo%3Afire-area_20200414_070000")))
+                  "&LAYER=" layer)))
 
 (defn process-capabilities [response]
   (-> (.text response)
@@ -80,8 +94,8 @@
                   "&VERSION=1.3.0"
                   "&REQUEST=GetFeatureInfo"
                   "&INFO_FORMAT=application/json"
-                  "&LAYERS=demo:" (nth @layer-list @cur-layer)
-                  "&QUERY_LAYERS=demo:" (nth @layer-list @cur-layer)
+                  "&LAYERS=demo:" (get-current-layer)
+                  "&QUERY_LAYERS=demo:" (get-current-layer)
                   "&TILED=true"
                   "&I=0"
                   "&J=0"
@@ -92,8 +106,8 @@
                   "&BBOX=" (str/join "," (:bbox point-info)))))
 
 (defn increment-layer []
-  (swap! cur-layer #(mod (inc %) (count @layer-list)))
-  (ol/swap-active-layer! (nth @layer-list @cur-layer)))
+  (swap! cur-layer #(mod (inc %) (count (filtered-layers))))
+  (ol/swap-active-layer! (get-current-layer)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -141,45 +155,6 @@
    :width            "fit-content"
    :z-index          "100"})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI Components
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn legend-box []
-  [:div {:style ($legend-box) :id "legend-box"}
-   [:div {:style {:display "flex" :flex-direction "column"}}
-    (->> @legend-list
-         (remove (fn [leg] (= "nodata" (get leg "label"))))
-         (map-indexed (fn [i leg]
-                        ^{:key i}
-                        [:div {:style ($/combine $/flex-row {:justify-content "flex-start"})}
-                         [:div {:style ($legend-color (get leg "color"))}]
-                         [:label (get leg "label")]]))
-         (doall))
-    [:label {:style {:padding ".5rem"}}
-     (str "Last Clicked: " (or @last-clicked-info 0))]]])
-
-(defn time-slider []
-  [:div {:style ($time-slider) :id "time-slider"}
-   [:input {:style {:margin "1rem" :width "10rem"}
-            :type "range" :min "0" :max (- (count @layer-list) 1) :value @cur-layer
-            :on-change #(do
-                          (reset! cur-layer (u/input-int-value %))
-                          (ol/swap-active-layer! (nth @layer-list @cur-layer))
-                          )}]
-   [:button {:style {:padding "0 .25rem" :margin ".5rem"}
-             :type "button"
-             :on-click #(when-not @layer-interval
-                          (increment-layer)
-                          (reset! layer-interval (js/setInterval increment-layer 1000)))}
-    "Play"]
-   [:button {:style {:padding "0 .25rem" :margin ".5rem"}
-             :type "button"
-             :on-click #(when @layer-interval
-                          (.clearInterval js/window @layer-interval)
-                          (reset! layer-interval nil))}
-    "Stop"]])
-
 (defn $collapsable-panel [show?]
   (merge
    {:background-color "white"
@@ -206,6 +181,65 @@
    :top              ".5rem"
    :width            "2rem"})
 
+(defn $dropdown []
+  {:background-color "white"
+   :border           "1px solid"
+   :border-color     ($/color-picker :sig-brown)
+   :border-radius    "2px"
+   :font-family      "inherit"
+   :height           "2rem"
+   :padding          ".25rem .5rem"})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UI Components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn legend-box []
+  [:div {:style ($legend-box) :id "legend-box"}
+   [:div {:style {:display "flex" :flex-direction "column"}}
+    (->> @legend-list
+         (remove (fn [leg] (= "nodata" (get leg "label"))))
+         (map-indexed (fn [i leg]
+                        ^{:key i}
+                        [:div {:style ($/combine $/flex-row {:justify-content "flex-start"})}
+                         [:div {:style ($legend-color (get leg "color"))}]
+                         [:label (get leg "label")]]))
+         (doall))
+    [:label {:style {:padding ".5rem"}}
+     (str "Last Clicked: " (or @last-clicked-info 0))]]])
+
+(defn time-slider []
+  [:div {:style ($time-slider) :id "time-slider"}
+   [:input {:style {:margin "1rem" :width "10rem"}
+            :type "range" :min "0" :max (- (count (filtered-layers)) 1) :value @cur-layer
+            :on-change #(do
+                          (reset! cur-layer (u/input-int-value %))
+                          (ol/swap-active-layer! (get-current-layer)))}]
+   [:button {:style {:padding "0 .25rem" :margin ".5rem"}
+             :type "button"
+             :on-click #(when-not @layer-interval
+                          (increment-layer)
+                          (reset! layer-interval (js/setInterval increment-layer 1000)))}
+    "Play"]
+   [:button {:style {:padding "0 .25rem" :margin ".5rem"}
+             :type "button"
+             :on-click #(when @layer-interval
+                          (.clearInterval js/window @layer-interval)
+                          (reset! layer-interval nil))}
+    "Stop"]])
+
+(defn layer-dropdown []
+  [:div {:style {:display "flex" :flex-direction "column" :padding "0 3rem"}}
+   [:label "Select Layer"]
+   [:select {:style ($dropdown)
+             :value (or @*layer-type -1)
+             :on-change #(do (reset! *layer-type (u/input-int-value %))
+                             (ol/swap-active-layer! (get-current-layer))
+                             (get-legend! (get-current-layer)))}
+    (doall (map (fn [{:keys [opt_id opt_label]}]
+                  [:option {:key opt_id :value opt_id} opt_label])
+                layer-types))]])
+
 (defn collapsable-panel []
   (r/with-let [show-panel?   (r/atom true)
                layer-opacity (r/atom 100)]
@@ -213,13 +247,14 @@
      [:div {:style ($collapse-button)
             :on-click #(swap! show-panel? not)}
       [:label {:style {:padding-top "2px"}} (if @show-panel? "<<" ">>")]]
-     [:div {:style ($/combine $/flex-col [$/align :flex :center] {:margin "2rem"})}
-      [:label "Active Layer Opacity"]
-      [:input {:style {:margin-top ".25rem" :width "10rem"}
+     [:div {:style ($/combine $/flex-col {:margin "2rem"})}
+      [:label (str "Active Layer Opacity: " @layer-opacity)]
+      [:input {:style {:margin-top ".25rem" :width "13rem"}
                :type "range" :min "0" :max "100" :value @layer-opacity
                :on-change #(do
                              (reset! layer-opacity (u/input-int-value %))
-                             (ol/set-active-layer-opacity! (/ @layer-opacity 100)))}]]]))
+                             (ol/set-active-layer-opacity! (/ @layer-opacity 100)))}]]
+     [layer-dropdown]]))
 
 (defn mask-layer []
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
@@ -233,8 +268,8 @@
     (fn [_]
       (-> (get-layers!)
           (.then (fn []
-                   (get-legend!)
-                   (ol/init-map! (nth @layer-list @cur-layer)
+                   (get-legend!  (get-current-layer))
+                   (ol/init-map! (get-current-layer)
                                  #(ol/add-map-single-click get-point-info!))))))
 
     :reagent-render
