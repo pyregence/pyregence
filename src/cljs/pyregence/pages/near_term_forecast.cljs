@@ -49,11 +49,11 @@
   (-> (.text response)
       (.then (fn [text]
                (reset! layer-list
-                       (map (fn [layer] (get layer "Name"))
-                            (-> text
-                                ol/wms-capabilities
-                                js->clj
-                                (get-in ["Capability" "Layer" "Layer"]))))))))
+                       (mapv (fn [layer] (get layer "Name"))
+                             (-> text
+                                 ol/wms-capabilities
+                                 js->clj
+                                 (get-in ["Capability" "Layer" "Layer"]))))))))
 
 (defn get-layers! []
   (get-data! process-capabilities
@@ -63,9 +63,9 @@
                   "&REQUEST=GetCapabilities"
                   "&NAMESPACE=demo")))
 
-(defn increment-layer []
+(defn increment-layer! []
   (swap! cur-layer #(mod (inc %) (count @layer-list)))
-  (ol/swap-active-layer! (nth @layer-list @cur-layer)))
+  (ol/swap-active-layer! (get @layer-list @cur-layer)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -117,7 +117,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn legend-box []
-  [:div {:style ($legend-box) :id "legend-box"}
+  [:div#legend-box {:style ($legend-box)}
    [:div {:style {:display "flex" :flex-direction "column"}}
     (->> @legend-list
          (remove (fn [leg] (= "nodata" (get leg "label"))))
@@ -129,23 +129,23 @@
          (doall))]])
 
 (defn time-slider []
-  [:div {:style ($time-slider) :id "time-slider"}
+  [:div#time-slider {:style ($time-slider)}
    [:input {:style {:margin "1rem" :width "10rem"}
             :type "range" :min "0" :max (count @layer-list) :value @cur-layer
             :on-change #(do
                           (reset! cur-layer (u/input-int-value %))
-                          (ol/swap-active-layer! (nth @layer-list @cur-layer)))}]
+                          (ol/swap-active-layer! (get @layer-list @cur-layer)))}]
    [:button {:style {:padding "0 .25rem" :margin ".5rem"}
              :type "button"
-             :on-click #(when-not @layer-interval
-                          (increment-layer)
-                          (reset! layer-interval (js/setInterval increment-layer 1000)))}
+             :disabled @layer-interval
+             :on-click #(do (increment-layer!)
+                            (reset! layer-interval (js/setInterval increment-layer! 1000)))}
     "Play"]
    [:button {:style {:padding "0 .25rem" :margin ".5rem"}
              :type "button"
-             :on-click #(when @layer-interval
-                          (.clearInterval js/window @layer-interval)
-                          (reset! layer-interval nil))}
+             :disabled (not @layer-interval)
+             :on-click #(do (.clearInterval js/window @layer-interval)
+                            (reset! layer-interval nil))}
     "Stop"]])
 
 (defn root-component [_]
@@ -155,7 +155,7 @@
       (-> (get-layers!)
           (.then (fn []
                    (get-legend!)
-                   (ol/init-map! (nth @layer-list @cur-layer))))))
+                   (ol/init-map! (get @layer-list @cur-layer))))))
 
     :reagent-render
     (fn [_]
