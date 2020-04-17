@@ -41,6 +41,13 @@
       .getSource
       (.updateParams #js {"LAYERS" (str "demo:" layer) "TILED" "true"})))
 
+(defn set-active-layer-opacity! [opacity]
+  (-> @the-map
+      .getLayers
+      .getArray
+      (aget 1)
+      (.setOpacity opacity)))
+
 (defn wms-capabilities
   "Converts capabilities xml to a js object"
   [text]

@@ -76,6 +76,7 @@
    :display         "flex"
    :height          "2.5rem"
    :justify-content "center"
+   :position        "relative"
    :width           "100%"})
 
 (defn $tool-label [selected?]
@@ -112,6 +113,29 @@
    :width            "fit-content"
    :z-index          "100"})
 
+(defn $collapsible-panel [show?]
+   {:background-color "white"
+    :border-right     "2px solid black"
+    :height           "100%"
+    :position         "absolute"
+    :transition       "all 200ms ease-in"
+    :width            "20rem"
+    :z-index          "1000"
+    :left             (if show? "0" "-20rem")})
+
+(defn $collapse-button []
+  {:background-color "white"
+   :border-right     "2px solid black"
+   :border-top       "2px solid black"
+   :border-bottom    "2px solid black"
+   :border-left      "4px solid white"
+   :border-radius    "0 5px 5px 0"
+   :height           "2rem"
+   :position         "absolute"
+   :right            "-2rem"
+   :top              ".5rem"
+   :width            "2rem"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -131,7 +155,7 @@
 (defn time-slider []
   [:div#time-slider {:style ($time-slider)}
    [:input {:style {:margin "1rem" :width "10rem"}
-            :type "range" :min "0" :max (count @layer-list) :value @cur-layer
+            :type "range" :min "0" :max (dec (count @layer-list)) :value @cur-layer
             :on-change #(do
                           (reset! cur-layer (u/input-int-value %))
                           (ol/swap-active-layer! (get @layer-list @cur-layer)))}]
@@ -147,6 +171,27 @@
              :on-click #(do (.clearInterval js/window @layer-interval)
                             (reset! layer-interval nil))}
     "Stop"]])
+
+(defn collapsible-panel []
+  (r/with-let [show-panel?   (r/atom true)
+               layer-opacity (r/atom 100.0)]
+    [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
+     [:div {:style ($collapse-button)
+            :on-click #(swap! show-panel? not)}
+      [:label {:style {:padding-top "2px"}} (if @show-panel? "<<" ">>")]]
+     [:div {:style ($/combine $/flex-col [$/align :flex :center] {:margin "2rem"})}
+      [:label "Active Layer Opacity"]
+      [:input {:style {:margin-top ".25rem" :width "10rem"}
+               :type "range" :min "0" :max "100" :value @layer-opacity
+               :on-change #(do
+                             (reset! layer-opacity (u/input-int-value %))
+                             (ol/set-active-layer-opacity! (/ @layer-opacity 100.0)))}]]]))
+
+(defn mask-layer []
+  [:div {:style {:height "100%" :position "absolute" :width "100%"}}
+   [collapsible-panel]
+   [legend-box]
+   [time-slider]])
 
 (defn root-component [_]
   (r/create-class
@@ -167,6 +212,6 @@
          [:label {:style ($/combine [$tool-label false] [$/margin "2rem" :h])} "Active Fire Forecast"]
          [:label {:style ($tool-label true)} "Risk Forecast"]]
         [:label {:style {:position "absolute" :right "3rem"}} "Login"]]
-       [:div#map {:style {:height "100%" :position "relative" :width "100%"}}
-        [legend-box]
-        [time-slider]]])}))
+       [:div {:style {:height "100%" :position "relative" :width "100%"}}
+        [mask-layer]
+        [:div#map {:style {:height "100%" :position "absolute" :width "100%"}}]]])}))
