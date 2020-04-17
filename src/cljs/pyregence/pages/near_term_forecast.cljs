@@ -15,20 +15,20 @@
 (defonce last-clicked-info (r/atom 0))
 (defonce layer-interval    (r/atom nil))
 (defonce *layer-type       (r/atom 0))
-(defonce layer-types       [{:opt_id 0 :opt_label "fire-area"}
-                            {:opt_id 1 :opt_label "fire-volume"}
-                            {:opt_id 2 :opt_label "impacted-structures"}
-                            {:opt_id 3 :opt_label "times-burned"}])
+(defonce layer-types       [{:opt_id 0 :opt_label "Fire Area" :filter "fire-area"}
+                            {:opt_id 1 :opt_label "Fire Volume" :filter "fire-volume"}
+                            {:opt_id 2 :opt_label "Impacted Structures" :filter "impacted-structures"}
+                            {:opt_id 3 :opt_label "Times Burned" :filter "times-burned"}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn filtered-layers []
-  (let [layer-filter (:opt_label (nth layer-types @*layer-type))]
-    (filter (fn [layer-name]
-              (str/includes? layer-name layer-filter))
-            @layer-list)))
+  (filter (fn [layer-name]
+            (str/includes? layer-name
+                           (u/find-key-by-id layer-types @*layer-type :filter)))
+          @layer-list))
 
 (defn get-current-layer []
   (nth (filtered-layers) @cur-layer))
