@@ -49,6 +49,6 @@
       (.setOpacity opacity)))
 
 (defn wms-capabilities
-  "Converts capbilites xml to a js object"
+  "Converts capabilities xml to a js object"
   [text]
   (.read (WMSCapabilities.) text))
