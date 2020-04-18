@@ -33,20 +33,19 @@
 (defn get-current-layer []
   (let [filtered (filtered-layers)]
     (if (seq filtered)
-      (nth (filtered-layers) @cur-layer)
+      (get (filtered-layers) @cur-layer)
       "")))
 
 (defn get-data! [process-fn url]
-  (let [fetch-params {:method "get"
-                      :headers {"Accept" "application/json, text/xml"
-                                "Content-Type" "application/json"}}]
-    (-> (.fetch js/window
-                url
-                (clj->js fetch-params))
-        (.then  (fn [response] (if (.-ok response)
-                                 (process-fn response)
-                                 (.reject js/Promise response))))
-        (.catch (fn [response] (.log js/console response))))))
+  (-> (.fetch js/window
+              url
+              (clj->js {:method "get"
+                        :headers {"Accept" "application/json, text/xml"
+                                  "Content-Type" "application/json"}}))
+      (.then  (fn [response] (if (.-ok response)
+                               (process-fn response)
+                               (.reject js/Promise response))))
+      (.catch (fn [response] (.log js/console response)))))
 
 (defn process-legend [response]
   (-> (.json response)
@@ -69,11 +68,11 @@
   (-> (.text response)
       (.then (fn [text]
                (reset! layer-list
-                       (map (fn [layer] (get layer "Name"))
-                            (-> text
-                                ol/wms-capabilities
-                                js->clj
-                                (get-in ["Capability" "Layer" "Layer"]))))))))
+                       (mapv (fn [layer] (get layer "Name"))
+                             (-> text
+                                 ol/wms-capabilities
+                                 js->clj
+                                 (get-in ["Capability" "Layer" "Layer"]))))))))
 
 (defn get-layers! []
   (get-data! process-capabilities
@@ -108,7 +107,7 @@
                   "&STYLES="
                   "&BBOX=" (str/join "," (:bbox point-info)))))
 
-(defn increment-layer []
+(defn increment-layer! []
   (swap! cur-layer #(mod (inc %) (count (filtered-layers))))
   (ol/swap-active-layer! (get-current-layer)))
 
@@ -158,18 +157,15 @@
    :width            "fit-content"
    :z-index          "100"})
 
-(defn $collapsable-panel [show?]
-  (merge
-   {:background-color "white"
-    :border-right     "2px solid black"
-    :height           "100%"
-    :position         "absolute"
-    :transition       "all 200ms ease-in"
-    :width            "20rem"
-    :z-index          "1000"}
-   (if show?
-     {:left "0"}
-     {:left "-20rem"})))
+(defn $collapsible-panel [show?]
+  {:background-color "white"
+   :border-right     "2px solid black"
+   :height           "100%"
+   :position         "absolute"
+   :transition       "all 200ms ease-in"
+   :width            "20rem"
+   :z-index          "1000"
+   :left             (if show? "0" "-20rem")})
 
 (defn $collapse-button []
   {:background-color "white"
@@ -198,7 +194,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn legend-box []
-  [:div {:style ($legend-box) :id "legend-box"}
+  [:div#legend-box {:style ($legend-box)}
    [:div {:style {:display "flex" :flex-direction "column"}}
     (->> @legend-list
          (remove (fn [leg] (= "nodata" (get leg "label"))))
@@ -212,23 +208,22 @@
      (str "Last Clicked: " (or @last-clicked-info 0))]]])
 
 (defn time-slider []
-  [:div {:style ($time-slider) :id "time-slider"}
+  [:div#time-slider {:style ($time-slider)}
    [:input {:style {:margin "1rem" :width "10rem"}
-            :type "range" :min "0" :max (- (count (filtered-layers)) 1) :value @cur-layer
-            :on-change #(do
-                          (reset! cur-layer (u/input-int-value %))
-                          (ol/swap-active-layer! (get-current-layer)))}]
+            :type "range" :min "0" :max (dec (count (filtered-layers))) :value @cur-layer
+            :on-change #(do (reset! cur-layer (u/input-int-value %))
+                            (ol/swap-active-layer! (get-current-layer)))}]
    [:button {:style {:padding "0 .25rem" :margin ".5rem"}
              :type "button"
-             :on-click #(when-not @layer-interval
-                          (increment-layer)
-                          (reset! layer-interval (js/setInterval increment-layer 1000)))}
+             :disabled @layer-interval
+             :on-click #(do (increment-layer!)
+                            (reset! layer-interval (js/setInterval increment-layer! 1000)))}
     "Play"]
    [:button {:style {:padding "0 .25rem" :margin ".5rem"}
              :type "button"
-             :on-click #(when @layer-interval
-                          (.clearInterval js/window @layer-interval)
-                          (reset! layer-interval nil))}
+             :disabled (not @layer-interval)
+             :on-click #(do (.clearInterval js/window @layer-interval)
+                            (reset! layer-interval nil))}
     "Stop"]])
 
 (defn layer-dropdown []
@@ -243,10 +238,10 @@
                   [:option {:key opt_id :value opt_id} opt_label])
                 layer-types))]])
 
-(defn collapsable-panel []
+(defn collapsible-panel []
   (r/with-let [show-panel?   (r/atom true)
-               layer-opacity (r/atom 100)]
-    [:div {:id "collapsable-panel" :style ($collapsable-panel @show-panel?)}
+               layer-opacity (r/atom 100.0)]
+    [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style ($collapse-button)
             :on-click #(swap! show-panel? not)}
       [:label {:style {:padding-top "2px"}} (if @show-panel? "<<" ">>")]]
@@ -256,12 +251,12 @@
                :type "range" :min "0" :max "100" :value @layer-opacity
                :on-change #(do
                              (reset! layer-opacity (u/input-int-value %))
-                             (ol/set-active-layer-opacity! (/ @layer-opacity 100)))}]]
+                             (ol/set-active-layer-opacity! (/ @layer-opacity 100.0)))}]]
      [layer-dropdown]]))
 
 (defn mask-layer []
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
-   [collapsable-panel]
+   [collapsible-panel]
    [legend-box]
    [time-slider]])
 
@@ -273,7 +268,7 @@
           (.then (fn []
                    (get-legend!  (get-current-layer))
                    (ol/init-map! (get-current-layer)
-                                 #(ol/add-map-single-click get-point-info!))))))
+                                 #(ol/add-map-single-click! get-point-info!))))))
 
     :reagent-render
     (fn [_]
