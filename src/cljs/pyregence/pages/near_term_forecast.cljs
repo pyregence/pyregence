@@ -79,8 +79,8 @@
                   "&VERSION=1.3.0"
                   "&REQUEST=GetFeatureInfo"
                   "&INFO_FORMAT=application/json"
-                  "&LAYERS=demo:" (nth @layer-list @cur-layer)
-                  "&QUERY_LAYERS=demo:" (nth @layer-list @cur-layer)
+                  "&LAYERS=demo:" (get @layer-list @cur-layer)
+                  "&QUERY_LAYERS=demo:" (get @layer-list @cur-layer)
                   "&TILED=true"
                   "&I=0"
                   "&J=0"
@@ -141,14 +141,14 @@
    :z-index          "100"})
 
 (defn $collapsible-panel [show?]
-   {:background-color "white"
-    :border-right     "2px solid black"
-    :height           "100%"
-    :position         "absolute"
-    :transition       "all 200ms ease-in"
-    :width            "20rem"
-    :z-index          "1000"
-    :left             (if show? "0" "-20rem")})
+  {:background-color "white"
+   :border-right     "2px solid black"
+   :height           "100%"
+   :position         "absolute"
+   :transition       "all 200ms ease-in"
+   :width            "20rem"
+   :z-index          "1000"
+   :left             (if show? "0" "-20rem")})
 
 (defn $collapse-button []
   {:background-color "white"
@@ -187,8 +187,7 @@
             :type "range" :min "0" :max (dec (count @layer-list)) :value @cur-layer
             :on-change #(do
                           (reset! cur-layer (u/input-int-value %))
-                          (ol/swap-active-layer! (get @layer-list @cur-layer))
-                          )}]
+                          (ol/swap-active-layer! (get @layer-list @cur-layer)))}]
    [:button {:style {:padding "0 .25rem" :margin ".5rem"}
              :type "button"
              :disabled @layer-interval
@@ -231,7 +230,7 @@
           (.then (fn []
                    (get-legend!)
                    (ol/init-map! (get @layer-list @cur-layer)
-                                 #(ol/add-map-single-click get-point-info!))))))
+                                 #(ol/add-map-single-click! get-point-info!))))))
 
     :reagent-render
     (fn [_]

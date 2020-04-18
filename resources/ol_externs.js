@@ -20,7 +20,6 @@ ol.source.OSM;
 ol.source.TileWMS;
 ol.format.WMSCapabilities;
 
-// Specific to implimentation using evt as symbol for returned event.
-var evt
+// Specific to implementation using evt as symbol for returned event.
+var evt;
 evt.coordinate;
-evt.dragging;

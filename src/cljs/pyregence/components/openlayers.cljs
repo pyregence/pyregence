@@ -13,20 +13,9 @@
 (defonce the-map      (atom nil))
 (defonce active-layer (atom nil))
 
-(defn add-map-single-click [call-back]
-  (let [mapView (.getView @the-map)]
-    (.on @the-map
-         "singleclick"
-         (fn [evt]
-           (let [x   (nth (.-coordinate evt) 0)
-                 y   (nth (.-coordinate evt) 1)
-                 res (.getResolution mapView)]
-             (call-back {:bbox [x y (+ x res) (+ y res)]
-                         :crs  (-> mapView .getProjection .getCode)}))))))
-
 (defn init-map! [layer post-fn]
   (reset! active-layer (TileLayer.
-                        #js {:title  "active"
+                        #js {:title   "active"
                              :visible true
                              :source  (TileWMS.
                                        #js {:url "http://californiafireforecast.com:8181/geoserver/demo/wms"
@@ -46,6 +35,16 @@
                                 :center     (fromLonLat #js [-120.8958 38.8375])
                                 :zoom       10})}))
   (post-fn))
+
+(defn add-map-single-click! [call-back]
+  (let [map-view (.getView @the-map)]
+    (.on @the-map
+         "singleclick"
+         (fn [evt]
+           (let [[x y] (.-coordinate evt)
+                 res   (.getResolution map-view)]
+             (call-back {:bbox [x y (+ x res) (+ y res)]
+                         :crs  (-> map-view .getProjection .getCode)}))))))
 
 (defn swap-active-layer! [layer]
   (-> @active-layer
