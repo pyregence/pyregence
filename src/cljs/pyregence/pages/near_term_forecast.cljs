@@ -25,10 +25,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn filtered-layers []
-  (filter (fn [layer-name]
-            (str/includes? layer-name
-                           (u/find-key-by-id layer-types @*layer-type :filter)))
-          @layer-list))
+  (filterv (fn [layer-name]
+             (str/includes? layer-name
+                            (u/find-key-by-id layer-types @*layer-type :filter)))
+           @layer-list))
 
 (defn get-current-layer []
   (let [filtered (filtered-layers)]
