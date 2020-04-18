@@ -25,16 +25,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn filtered-layers []
-  (filterv (fn [layer-name]
-             (str/includes? layer-name
-                            (u/find-key-by-id layer-types @*layer-type :filter)))
-           @layer-list))
+  (let [filter-text (u/find-key-by-id layer-types @*layer-type :filter)]
+    (filterv (fn [layer-name]
+               (str/includes? layer-name
+                              filter-text))
+             @layer-list)))
 
 (defn get-current-layer []
-  (let [filtered (filtered-layers)]
-    (if (seq filtered)
-      (get (filtered-layers) @cur-layer)
-      "")))
+  (get (filtered-layers) @cur-layer ""))
 
 (defn get-data! [process-fn url]
   (-> (.fetch js/window
