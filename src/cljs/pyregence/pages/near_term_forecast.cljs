@@ -55,7 +55,7 @@
 
 (defn get-legend! [layer]
   (get-data! process-legend
-             (str "http://californiafireforecast.com:8181/geoserver/demo/wms"
+             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
                   "?SERVICE=WMS"
                   "&VERSION=1.3.0"
                   "&REQUEST=GetLegendGraphic"
@@ -74,7 +74,7 @@
 
 (defn get-layers! []
   (get-data! process-capabilities
-             (str "http://californiafireforecast.com:8181/geoserver/demo/wms"
+             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
                   "?SERVICE=WMS"
                   "&VERSION=1.3.0"
                   "&REQUEST=GetCapabilities"
@@ -89,7 +89,7 @@
 
 (defn get-point-info! [point-info]
   (get-data! process-point-info
-             (str "http://californiafireforecast.com:8181/geoserver/demo/wms"
+             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
                   "?SERVICE=WMS"
                   "&VERSION=1.3.0"
                   "&REQUEST=GetFeatureInfo"
