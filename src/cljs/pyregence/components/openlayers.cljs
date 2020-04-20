@@ -18,7 +18,7 @@
                         #js {:title   "active"
                              :visible true
                              :source  (TileWMS.
-                                       #js {:url "http://californiafireforecast.com:8181/geoserver/demo/wms"
+                                       #js {:url "https://californiafireforecast.com:8443/geoserver/demo/wms"
                                             :params #js {"LAYERS" (str "demo:" layer)}
                                             :serverType "geoserver"})}))
   (reset! the-map
