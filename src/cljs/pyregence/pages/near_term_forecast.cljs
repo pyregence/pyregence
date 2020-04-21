@@ -12,7 +12,7 @@
 (defonce cur-layer         (r/atom 0))
 (defonce legend-list       (r/atom []))
 (defonce layer-list        (r/atom []))
-(defonce last-clicked-info (r/atom 0))
+(defonce last-clicked-info (r/atom nil))
 (defonce layer-interval    (r/atom nil))
 (defonce *layer-type       (r/atom 0))
 (defonce layer-types       [{:opt_id 0 :opt_label "Fire Area"           :filter "fire-area"}
@@ -222,9 +222,7 @@
                         [:div {:style ($/combine $/flex-row {:justify-content "flex-start"})}
                          [:div {:style ($legend-color (get leg "color"))}]
                          [:label (get leg "label")]]))
-         (doall))
-    [:label {:style {:padding ".5rem"}}
-     (str "Last Clicked: " (or @last-clicked-info 0))]]])
+         (doall))]])
 
 (defn time-slider []
   [:div#time-slider {:style ($time-slider)}

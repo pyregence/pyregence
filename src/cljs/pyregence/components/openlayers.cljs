@@ -20,8 +20,8 @@
            #js {:title   "active"
                 :visible true
                 :source  (TileWMS.
-                          #js {:url "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                               :params #js {"LAYERS" (str "demo:" layer)}
+                          #js {:url        "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                               :params     #js {"LAYERS" (str "demo:" layer)}
                                :serverType "geoserver"})}))
   (reset! the-map
           (Map.
@@ -37,12 +37,12 @@
                                 :center     (fromLonLat #js [-120.8958 38.8375])
                                 :zoom       10})
                 :overlays #js [(Overlay.
-                                #js {:id "popup"
-                                     :element (.getElementById js/document "popup")
-                                     :position nil
-                                     :positioning "bottom-center"
-                                     :offset  #js [0 -4]
-                                     :autoPan true
+                                #js {:id               "popup"
+                                     :element          (.getElementById js/document "popup")
+                                     :position         nil
+                                     :positioning      "bottom-center"
+                                     :offset           #js [0 -4]
+                                     :autoPan          true
                                      :autoPanAnimation #js {:duration 250}})]}))
   (post-fn))
 
