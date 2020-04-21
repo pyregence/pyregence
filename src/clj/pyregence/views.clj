@@ -25,8 +25,9 @@
                       "); };")]])}))
 
 (def uri->html
-  {"/"          "home.html"
-   "/not-found" "not-found.html"})
+  {"/"                   "home.html"
+   "/extreme-weather"    "extreme-weather.html"
+   "/not-found"          "not-found.html"})
 
 (defn render-static [uri]
   (fn [_]
