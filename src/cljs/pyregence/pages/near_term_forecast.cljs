@@ -88,6 +88,7 @@
                                     (get-in ["features" 0 "properties" "GRAY_INDEX"])))))))
 
 (defn get-point-info! [point-info]
+  (reset! last-clicked-info nil)
   (get-data! process-point-info
              (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
                   "?SERVICE=WMS"
@@ -187,6 +188,26 @@
    :height           "2rem"
    :padding          ".25rem .5rem"})
 
+(defn $pop-up-box []
+  {:background-color "white"
+   :border-radius    "5px"
+   :box-shadow       "0 0 2px 1px rgba(0,0,0,0.1)"
+   :margin-bottom    ".5rem"
+   :padding          ".25rem .5rem"})
+
+(defn $pop-up-arrow []
+  {:background-color "white"
+   :bottom           "0"
+   :height           "1.5rem"
+   :left             "0"
+   :margin-left      "auto"
+   :margin-right     "auto"
+   :right            "0"
+   :position         "absolute"
+   :transform        "rotate(45deg)"
+   :width            "1.5rem"
+   :z-index          "-1"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -258,6 +279,16 @@
    [legend-box]
    [time-slider]])
 
+(defn pop-up []
+  [:div#popup
+   [:div {:style ($pop-up-box)}
+    [:label (if @last-clicked-info
+              (str @last-clicked-info
+                   " acre"
+                   (when-not (= 1 @last-clicked-info) "s"))
+              "...")]]
+   [:div {:style ($pop-up-arrow)}]])
+
 (defn root-component [_]
   (r/create-class
    {:component-did-mount
@@ -280,4 +311,5 @@
         [:label {:style {:position "absolute" :right "3rem"}} "Login"]]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         [mask-layer]
-        [:div#map {:style {:height "100%" :position "absolute" :width "100%"}}]]])}))
+        [:div#map {:style {:height "100%" :position "absolute" :width "100%"}}
+         [pop-up]]]])}))
