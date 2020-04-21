@@ -14,7 +14,7 @@
 
 ;; Creating objects
 
-(defn init-map! [layer post-fn]
+(defn init-map! [layer]
   (reset! active-layer (TileLayer.
                         #js {:title   "active"
                              :visible true
@@ -34,8 +34,9 @@
                 :view     (View.
                            #js {:projection "EPSG:3857"
                                 :center     (fromLonLat #js [-120.8958 38.8375])
-                                :zoom       10})}))
-  (post-fn))
+                                :minZoom    6
+                                :maxZoom    18
+                                :zoom       10})})))
 
 ;; Modifying objects
 
@@ -59,7 +60,7 @@
       (.setOpacity opacity)))
 
 (defn set-zoom [zoom]
-  (.setZoom .getView @the-map zoom))
+  (-> @the-map .getView (.setZoom zoom)))
 
 ;; Getting object information
 

@@ -1,6 +1,7 @@
 (ns pyregence.pages.near-term-forecast
   (:require [reagent.core :as r]
             [clojure.string :as str]
+            [herb.core :refer [<class]]
             [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]))
@@ -9,6 +10,9 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce minZoom           (r/atom 0))
+(defonce maxZoom           (r/atom 28))
+(defonce *zoom             (r/atom 10))
 (defonce cur-layer         (r/atom 0))
 (defonce legend-list       (r/atom []))
 (defonce layer-list        (r/atom []))
@@ -109,6 +113,12 @@
   (swap! cur-layer #(mod (inc %) (count (filtered-layers))))
   (ol/swap-active-layer! (get-current-layer)))
 
+(defn select-zoom [zoom]
+  (reset! *zoom (max @minZoom
+                     (min @maxZoom
+                          zoom)))
+  (ol/set-zoom @*zoom))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -187,6 +197,27 @@
    :height           "2rem"
    :padding          ".25rem .5rem"})
 
+(defn $zoom-slider []
+  {:background-color "white"
+   :border           "1px solid black"
+   :border-radius    "5px"
+   :right            "-2rem"
+   :position         "absolute"
+   :bottom           "4rem"
+   :display          "flex"
+   :transform        "rotate(270deg)"
+   :width            "8rem"
+   :height           "2rem"
+   :z-index          "100"})
+
+(defn $p-zoom-button-common []
+  (with-meta
+    {:border-radius "4px"
+     :cursor        "pointer"
+     :font-weight   "bold"
+     :transform     "rotate(90deg)"}
+    {:pseudo {:hover {:background-color ($/color-picker :sig-brown 0.1)}}}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -224,6 +255,22 @@
                             (reset! layer-interval nil))}
     "Stop"]])
 
+(defn zoom-slider []
+  [:div#zoom-slider {:style ($zoom-slider)}
+   [:span {:class (<class $p-zoom-button-common)
+           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .75rem"})
+           :disabled @layer-interval
+           :on-click #(select-zoom (dec @*zoom))}
+    "-"]
+   [:input {:style {:min-width "0"}
+            :type "range" :min @minZoom :max @maxZoom :value @*zoom
+            :on-change #(select-zoom (u/input-int-value %))}]
+   [:span {:class (<class $p-zoom-button-common)
+           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
+           :disabled @layer-interval
+           :on-click #(select-zoom (inc @*zoom))}
+    "+"]])
+
 (defn layer-dropdown []
   [:div {:style {:display "flex" :flex-direction "column" :padding "0 3rem"}}
    [:label "Select Layer"]
@@ -252,11 +299,12 @@
                              (ol/set-active-layer-opacity! (/ @layer-opacity 100.0)))}]]
      [layer-dropdown]]))
 
-(defn mask-layer []
+(defn control-layer []
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
    [collapsible-panel]
    [legend-box]
-   [time-slider]])
+   [time-slider]
+   [zoom-slider]])
 
 (defn root-component [_]
   (r/create-class
@@ -265,8 +313,12 @@
       (-> (get-layers!)
           (.then (fn []
                    (get-legend!  (get-current-layer))
-                   (ol/init-map! (get-current-layer)
-                                 #(ol/add-map-single-click! get-point-info!))))))
+                   (ol/init-map! (get-current-layer))
+                   (ol/add-map-single-click! get-point-info!)
+                   (let [[cur min max] (ol/get-zoom-info)]
+                     (reset! *zoom   cur)
+                     (reset! minZoom min)
+                     (reset! maxZoom max))))))
 
     :reagent-render
     (fn [_]
@@ -279,5 +331,5 @@
          [:label {:style ($tool-label true)} "Risk Forecast"]]
         [:label {:style {:position "absolute" :right "3rem"}} "Login"]]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
-        [mask-layer]
+        [control-layer]
         [:div#map {:style {:height "100%" :position "absolute" :width "100%"}}]]])}))
