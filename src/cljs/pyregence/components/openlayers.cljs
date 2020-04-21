@@ -3,7 +3,6 @@
 ;; OpenLayers aliases
 (def Map             js/ol.Map)
 (def View            js/ol.View)
-(def defaults        js/ol.control.defaults)
 (def fromLonLat      js/ol.proj.fromLonLat)
 (def TileLayer       js/ol.layer.Tile)
 (def OSM             js/ol.source.OSM)
@@ -12,6 +11,8 @@
 
 (defonce the-map      (atom nil))
 (defonce active-layer (atom nil))
+
+;; Creating objects
 
 (defn init-map! [layer post-fn]
   (reset! active-layer (TileLayer.
@@ -29,12 +30,14 @@
                                      :visible true
                                      :source  (OSM.)})
                                @active-layer]
-                :controls (defaults)
+                :controls #js []
                 :view     (View.
                            #js {:projection "EPSG:3857"
                                 :center     (fromLonLat #js [-120.8958 38.8375])
                                 :zoom       10})}))
   (post-fn))
+
+;; Modifying objects
 
 (defn add-map-single-click! [call-back]
   (let [map-view (.getView @the-map)]
@@ -54,6 +57,17 @@
 (defn set-active-layer-opacity! [opacity]
   (-> @active-layer
       (.setOpacity opacity)))
+
+(defn set-zoom [zoom]
+  (.setZoom .getView @the-map zoom))
+
+;; Getting object information
+
+(defn get-zoom-info []
+  (let [map-view (.getView @the-map)]
+    [(.getZoom    map-view)
+     (.getMinZoom map-view)
+     (.getMaxZoom map-view)]))
 
 (defn wms-capabilities
   "Converts capabilities xml to a js object"
