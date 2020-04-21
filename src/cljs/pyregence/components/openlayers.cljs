@@ -56,13 +56,18 @@
          (fn [evt]
            (let [[x y] (.-coordinate evt)
                  res   (.getResolution map-view)]
-             (call-back {:bbox [x y (+ x res) (+ y res)]
-                         :crs  (-> map-view .getProjection .getCode)}))))))
+             (call-back [x y (+ x res) (+ y res)]))))))
 
-(defn swap-active-layer! [layer]
+(defn zoom-to-extent! [[minx miny maxx maxy]]
+  (-> @the-map
+      .getView
+      (.fit (clj->js (concat (fromLonLat #js [minx miny])
+                             (fromLonLat #js [maxx maxy]))))))
+
+(defn swap-active-layer! [geo-layer]
   (-> @active-layer
       .getSource
-      (.updateParams #js {"LAYERS" (str "demo:" layer) "TILED" "true"})))
+      (.updateParams #js {"LAYERS" (str "demo:" geo-layer)})))
 
 (defn set-active-layer-opacity! [opacity]
   (-> @active-layer

@@ -4,6 +4,7 @@ ol.Map.getView;
 ol.Map.on;
 ol.Map.getLayers.getArray;
 ol.View;
+ol.View.fit;
 ol.View.getZoom;
 ol.View.getMaxZoom;
 ol.View.getMinZoom;
