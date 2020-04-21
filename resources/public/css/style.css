@@ -417,7 +417,7 @@ p a:hover, p a:active {
     .value-prop1 .features div:not(:last-child) {
         border-right: none;
     }
-}    
+}
 @media only screen and (max-width: 850px) {
     .navbar-brand {
         position: relative;
