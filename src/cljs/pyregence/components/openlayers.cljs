@@ -73,7 +73,7 @@
   (-> @active-layer
       (.setOpacity opacity)))
 
-(defn set-zoom [zoom]
+(defn set-zoom! [zoom]
   (-> @the-map .getView (.setZoom zoom)))
 
 ;; Getting object information

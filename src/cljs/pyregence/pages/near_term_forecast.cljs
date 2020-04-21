@@ -113,7 +113,7 @@
                   "&HEIGHT=1"
                   "&CRS=EPSG:3857"
                   "&STYLES="
-                  "&BBOX=" (str/join "," (:bbox point-info)))))
+                  "&BBOX=" (str/join "," point-info))))
 
 (defn increment-layer! []
   (swap! *cur-layer #(mod (inc %) (count (filtered-layers))))
@@ -124,7 +124,7 @@
    (reset! *zoom (max @minZoom
                      (min @maxZoom
                           zoom)))
-  (ol/set-zoom @*zoom)))
+  (ol/set-zoom! @*zoom)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -332,7 +332,7 @@
                      (reset! *zoom   cur)
                      (reset! minZoom min)
                      (reset! maxZoom max))
-                   (ol/add-map-zoom-end! (fn [zoom] (select-zoom! zoom)))))))
+                   (ol/add-map-zoom-end! select-zoom!)))))
 
     :reagent-render
     (fn [_]
