@@ -113,11 +113,12 @@
   (swap! cur-layer #(mod (inc %) (count (filtered-layers))))
   (ol/swap-active-layer! (get-current-layer)))
 
-(defn select-zoom [zoom]
-  (reset! *zoom (max @minZoom
+(defn select-zoom! [zoom]
+  (when-not (= zoom @*zoom)
+   (reset! *zoom (max @minZoom
                      (min @maxZoom
                           zoom)))
-  (ol/set-zoom @*zoom))
+  (ol/set-zoom @*zoom)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -260,15 +261,15 @@
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .75rem"})
            :disabled @layer-interval
-           :on-click #(select-zoom (dec @*zoom))}
+           :on-click #(select-zoom! (dec @*zoom))}
     "-"]
    [:input {:style {:min-width "0"}
             :type "range" :min @minZoom :max @maxZoom :value @*zoom
-            :on-change #(select-zoom (u/input-int-value %))}]
+            :on-change #(select-zoom! (u/input-int-value %))}]
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
            :disabled @layer-interval
-           :on-click #(select-zoom (inc @*zoom))}
+           :on-click #(select-zoom! (inc @*zoom))}
     "+"]])
 
 (defn layer-dropdown []
@@ -318,7 +319,8 @@
                    (let [[cur min max] (ol/get-zoom-info)]
                      (reset! *zoom   cur)
                      (reset! minZoom min)
-                     (reset! maxZoom max))))))
+                     (reset! maxZoom max))
+                   (ol/add-map-zoom-end! (fn [zoom] (select-zoom! zoom)))))))
 
     :reagent-render
     (fn [_]

@@ -40,6 +40,15 @@
 
 ;; Modifying objects
 
+(defn add-map-zoom-end! [call-back]
+  (.on @the-map
+       "moveend"
+       (fn [_]
+         (-> @the-map
+             .getView
+             .getZoom
+             call-back))))
+
 (defn add-map-single-click! [call-back]
   (let [map-view (.getView @the-map)]
     (.on @the-map
