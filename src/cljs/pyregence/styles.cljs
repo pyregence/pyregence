@@ -40,7 +40,7 @@
   (herb/join (apply
               (fn [style]
                 (cond
-                  (map? style)    (herb/<class (fn a [] style))
+                  (map? style)    (herb/<class (fn [] style))
                   (fn? style)     (herb/<class style)
                   (vector? style) (herb/<class (first style) (rest style))))
               styles)))
