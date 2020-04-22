@@ -291,15 +291,9 @@
    :overflow      "hidden"
    :text-overflow "ellipsis"})
 
-;;; New UI styles
-
-(def light-border (str "1px solid " (color-picker :sig-tan)))
-
-(defn action-box []
-  {:background-color (color-picker :white)
-   :border           light-border
-   :border-radius    "2px"
-   :box-shadow       (str "0 0 3px 0px " (color-picker :sig-tan 0.6))
-   :height           "100%"
-   :padding          "0"
-   :width            "100%"})
+(defn fixed-size [size]
+  {:float      "left"
+   :height     size
+   :min-height size
+   :min-width  size
+   :width      size})

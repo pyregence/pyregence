@@ -1,6 +1,7 @@
 (ns pyregence.pages.near-term-forecast
   (:require [reagent.core :as r]
             [clojure.string :as str]
+            [herb.core :refer [<class]]
             [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]))
@@ -9,7 +10,10 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce cur-layer         (r/atom 0))
+(defonce minZoom           (r/atom 0))
+(defonce maxZoom           (r/atom 28))
+(defonce *zoom             (r/atom 10))
+(defonce *cur-layer        (r/atom 0))
 (defonce legend-list       (r/atom []))
 (defonce layer-list        (r/atom []))
 (defonce last-clicked-info (r/atom nil))
@@ -26,13 +30,18 @@
 
 (defn filtered-layers []
   (let [filter-text (u/find-key-by-id layer-types @*layer-type :filter)]
-    (filterv (fn [layer-name]
+    (filterv (fn [{:keys [layer-name]}]
                (str/includes? layer-name
                               filter-text))
              @layer-list)))
 
-(defn get-current-layer []
-  (get (filtered-layers) @cur-layer ""))
+(defn get-current-layer-name []
+  (or (:layer-name (get (filtered-layers) @*cur-layer))
+      ""))
+
+(defn get-current-layer-extent []
+  (or (:extent (get (filtered-layers) @*cur-layer))
+      [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
 
 (defn get-data! [process-fn url]
   (-> (.fetch js/window
@@ -66,7 +75,8 @@
   (-> (.text response)
       (.then (fn [text]
                (reset! layer-list
-                       (mapv (fn [layer] (get layer "Name"))
+                       (mapv (fn [layer] {:layer-name (get layer "Name")
+                                          :extent     (get layer "EX_GeographicBoundingBox")})
                              (-> text
                                  ol/wms-capabilities
                                  js->clj
@@ -95,20 +105,27 @@
                   "&VERSION=1.3.0"
                   "&REQUEST=GetFeatureInfo"
                   "&INFO_FORMAT=application/json"
-                  "&LAYERS=demo:" (get-current-layer)
-                  "&QUERY_LAYERS=demo:" (get-current-layer)
+                  "&LAYERS=demo:" (get-current-layer-name)
+                  "&QUERY_LAYERS=demo:" (get-current-layer-name)
                   "&TILED=true"
                   "&I=0"
                   "&J=0"
                   "&WIDTH=1"
                   "&HEIGHT=1"
-                  "&CRS=" (:crs point-info)
+                  "&CRS=EPSG:3857"
                   "&STYLES="
-                  "&BBOX=" (str/join "," (:bbox point-info)))))
+                  "&BBOX=" (str/join "," point-info))))
 
 (defn increment-layer! []
-  (swap! cur-layer #(mod (inc %) (count (filtered-layers))))
-  (ol/swap-active-layer! (get-current-layer)))
+  (swap! *cur-layer #(mod (inc %) (count (filtered-layers))))
+  (ol/swap-active-layer! (get-current-layer-name)))
+
+(defn select-zoom! [zoom]
+  (when-not (= zoom @*zoom)
+   (reset! *zoom (max @minZoom
+                     (min @maxZoom
+                          zoom)))
+  (ol/set-zoom! @*zoom)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -188,6 +205,27 @@
    :height           "2rem"
    :padding          ".25rem .5rem"})
 
+(defn $zoom-slider []
+  {:background-color "white"
+   :border           "1px solid black"
+   :border-radius    "5px"
+   :right            "-3rem"
+   :position         "absolute"
+   :bottom           "5rem"
+   :display          "flex"
+   :transform        "rotate(270deg)"
+   :width            "10rem"
+   :height           "2rem"
+   :z-index          "100"})
+
+(defn $p-zoom-button-common []
+  (with-meta
+    {:border-radius "4px"
+     :cursor        "pointer"
+     :font-weight   "bold"
+     :transform     "rotate(90deg)"}
+    {:pseudo {:hover {:background-color ($/color-picker :sig-brown 0.1)}}}))
+
 (defn $pop-up-box []
   {:background-color "white"
    :border-radius    "5px"
@@ -227,9 +265,9 @@
 (defn time-slider []
   [:div#time-slider {:style ($time-slider)}
    [:input {:style {:margin "1rem" :width "10rem"}
-            :type "range" :min "0" :max (dec (count (filtered-layers))) :value @cur-layer
-            :on-change #(do (reset! cur-layer (u/input-int-value %))
-                            (ol/swap-active-layer! (get-current-layer)))}]
+            :type "range" :min "0" :max (dec (count (filtered-layers))) :value @*cur-layer
+            :on-change #(do (reset! *cur-layer (u/input-int-value %))
+                            (ol/swap-active-layer! (get-current-layer-name)))}]
    [:button {:style {:padding "0 .25rem" :margin ".5rem"}
              :type "button"
              :disabled @layer-interval
@@ -243,14 +281,36 @@
                             (reset! layer-interval nil))}
     "Stop"]])
 
+(defn zoom-slider []
+  [:div#zoom-slider {:style ($zoom-slider)}
+   [:span {:class (<class $p-zoom-button-common)
+           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .75rem"})
+           :disabled @layer-interval
+           :on-click #(select-zoom! (dec @*zoom))}
+    "-"]
+   [:input {:style {:min-width "0"}
+            :type "range" :min @minZoom :max @maxZoom :value @*zoom
+            :on-change #(select-zoom! (u/input-int-value %))}]
+   [:span {:class (<class $p-zoom-button-common)
+           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
+           :disabled @layer-interval
+           :on-click #(select-zoom! (inc @*zoom))}
+    "+"]
+   [:span {:class (<class $p-zoom-button-common)
+           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".25rem 0 0 .5rem" :font-size ".9rem"})
+           :title "Zoom to Extent"
+           :disabled @layer-interval
+           :on-click #(ol/zoom-to-extent! (get-current-layer-extent))}
+    "E"]])
+
 (defn layer-dropdown []
   [:div {:style {:display "flex" :flex-direction "column" :padding "0 3rem"}}
    [:label "Select Layer"]
    [:select {:style ($dropdown)
              :value (or @*layer-type -1)
              :on-change #(do (reset! *layer-type (u/input-int-value %))
-                             (ol/swap-active-layer! (get-current-layer))
-                             (get-legend! (get-current-layer)))}
+                             (ol/swap-active-layer! (get-current-layer-name))
+                             (get-legend! (get-current-layer-name)))}
     (doall (map (fn [{:keys [opt_id opt_label]}]
                   [:option {:key opt_id :value opt_id} opt_label])
                 layer-types))]])
@@ -271,11 +331,12 @@
                              (ol/set-active-layer-opacity! (/ @layer-opacity 100.0)))}]]
      [layer-dropdown]]))
 
-(defn mask-layer []
+(defn control-layer []
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
    [collapsible-panel]
    [legend-box]
-   [time-slider]])
+   [time-slider]
+   [zoom-slider]])
 
 (defn pop-up []
   [:div#popup
@@ -293,9 +354,14 @@
     (fn [_]
       (-> (get-layers!)
           (.then (fn []
-                   (get-legend!  (get-current-layer))
-                   (ol/init-map! (get-current-layer)
-                                 #(ol/add-map-single-click! get-point-info!))))))
+                   (get-legend!  (get-current-layer-name))
+                   (ol/init-map! (get-current-layer-name))
+                   (ol/add-map-single-click! get-point-info!)
+                   (let [[cur min max] (ol/get-zoom-info)]
+                     (reset! *zoom   cur)
+                     (reset! minZoom min)
+                     (reset! maxZoom max))
+                   (ol/add-map-zoom-end! select-zoom!)))))
 
     :reagent-render
     (fn [_]
@@ -308,6 +374,6 @@
          [:label {:style ($tool-label true)} "Risk Forecast"]]
         [:label {:style {:position "absolute" :right "3rem"}} "Login"]]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
-        [mask-layer]
+        [control-layer]
         [:div#map {:style {:height "100%" :position "absolute" :width "100%"}}
          [pop-up]]]])}))
