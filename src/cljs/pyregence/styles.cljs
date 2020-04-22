@@ -1,7 +1,8 @@
 (ns pyregence.styles
   (:require-macros [herb.core :refer [defglobal]]
-                   pyregence.herb-patch)
+                   pyregence.spec)
   (:require herb.runtime
+            [herb.core :as herb]
             [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -34,6 +35,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn style->class [& styles]
+  (herb/join (apply
+              (fn [style]
+                (cond
+                  (map? style)    (herb/<class (fn a [] style))
+                  (fn? style)     (herb/<class style)
+                  (vector? style) (herb/<class (first style) (rest style))))
+              styles)))
 
 (defn combine [& styles]
   (apply merge

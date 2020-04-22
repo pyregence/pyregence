@@ -1,4 +1,4 @@
-(ns pyregence.herb-patch
+(ns pyregence.spec
   (:require [clojure.spec.alpha :as s]
             [herb.core :as herb]))
 
@@ -10,10 +10,3 @@
 (s/fdef herb/defglobal
   :args (s/cat :name symbol? :styles (s/+ ::style))
   :ret any?)
-
-(defmacro style->class [& styles]
-  (cons `herb/join
-        (for [style styles]
-          (cond
-            (symbol? style) `(herb/<class ~style)
-            (vector? style) `(herb/<class ~(first style) ~@(rest style))))))

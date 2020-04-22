@@ -1,7 +1,6 @@
 (ns pyregence.pages.near-term-forecast
   (:require [reagent.core :as r]
             [clojure.string :as str]
-            [herb.core :refer [<class]]
             [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]))
@@ -264,7 +263,7 @@
 
 (defn zoom-slider []
   [:div#zoom-slider {:style ($zoom-slider)}
-   [:span {:class (<class $p-zoom-button-common)
+   [:span {:class ($/style->class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .75rem"})
            :disabled @layer-interval
            :on-click #(select-zoom! (dec @*zoom))}
@@ -272,12 +271,12 @@
    [:input {:style {:min-width "0"}
             :type "range" :min @minZoom :max @maxZoom :value @*zoom
             :on-change #(select-zoom! (u/input-int-value %))}]
-   [:span {:class (<class $p-zoom-button-common)
+   [:span {:class ($/style->class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
            :disabled @layer-interval
            :on-click #(select-zoom! (inc @*zoom))}
     "+"]
-   [:span {:class (<class $p-zoom-button-common)
+   [:span {:class ($/style->class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".25rem 0 0 .5rem" :font-size ".9rem"})
            :title "Zoom to Extent"
            :disabled @layer-interval
