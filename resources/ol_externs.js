@@ -1,6 +1,8 @@
 var ol;
 ol.Map;
+ol.Map.addOverlay;
 ol.Map.getView;
+ol.Map.getOverlayById;
 ol.Map.on;
 ol.Map.getLayers.getArray;
 ol.View;
@@ -11,6 +13,8 @@ ol.View.getMinZoom;
 ol.View.setZoom;
 ol.View.getResolution;
 ol.View.getProjection.getCode;
+ol.Overlay;
+ol.Overlay.setPosition;
 ol.control;
 ol.control.defaults;
 ol.proj;

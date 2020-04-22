@@ -3,6 +3,7 @@
 ;; OpenLayers aliases
 (def Map             js/ol.Map)
 (def View            js/ol.View)
+(def Overlay         js/ol.Overlay)
 (def fromLonLat      js/ol.proj.fromLonLat)
 (def TileLayer       js/ol.layer.Tile)
 (def OSM             js/ol.source.OSM)
@@ -15,13 +16,14 @@
 ;; Creating objects
 
 (defn init-map! [layer]
-  (reset! active-layer (TileLayer.
-                        #js {:title   "active"
-                             :visible true
-                             :source  (TileWMS.
-                                       #js {:url "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                                            :params #js {"LAYERS" (str "demo:" layer)}
-                                            :serverType "geoserver"})}))
+  (reset! active-layer
+          (TileLayer.
+           #js {:title   "active"
+                :visible true
+                :source  (TileWMS.
+                          #js {:url        "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                               :params     #js {"LAYERS" (str "demo:" layer)}
+                               :serverType "geoserver"})}))
   (reset! the-map
           (Map.
            #js {:target   "map"
@@ -36,9 +38,29 @@
                                 :center     (fromLonLat #js [-120.8958 38.8375])
                                 :minZoom    6
                                 :maxZoom    18
-                                :zoom       10})})))
+                                :zoom       10})
+                :overlays #js [(Overlay.
+                                #js {:id               "popup"
+                                     :element          (.getElementById js/document "popup")
+                                     :position         nil
+                                     :positioning      "bottom-center"
+                                     :offset           #js [0 -4]
+                                     :autoPan          true
+                                     :autoPanAnimation #js {:duration 250}})]})))
 
 ;; Modifying objects
+
+(defn add-map-single-click! [call-back]
+  (let [map-view (.getView @the-map)]
+    (.on @the-map
+         "singleclick"
+         (fn [evt]
+           (let [map-overlay (.getOverlayById @the-map "popup")
+                 coord       (.-coordinate evt)
+                 [x y]       coord
+                 res         (.getResolution map-view)]
+             (.setPosition map-overlay coord)
+             (call-back [x y (+ x res) (+ y res)]))))))
 
 (defn add-map-zoom-end! [call-back]
   (.on @the-map
@@ -48,15 +70,6 @@
              .getView
              .getZoom
              call-back))))
-
-(defn add-map-single-click! [call-back]
-  (let [map-view (.getView @the-map)]
-    (.on @the-map
-         "singleclick"
-         (fn [evt]
-           (let [[x y] (.-coordinate evt)
-                 res   (.getResolution map-view)]
-             (call-back [x y (+ x res) (+ y res)]))))))
 
 (defn zoom-to-extent! [[minx miny maxx maxy]]
   (-> @the-map

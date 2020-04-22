@@ -35,6 +35,10 @@ p a:link, p a:visited {
 p a:hover, p a:active {
     text-decoration: none;
 }
+#content p {
+    display: inline-block;
+    width: 100%;
+}
 .bg-brown p a:link, .bg-brown p a:visited {
     color: #fff;
     border-bottom: 1px solid #fff;
@@ -152,7 +156,7 @@ p a:hover, p a:active {
     text-transform: uppercase;
 }
 .gpl img {
-    max-width: 200px;
+    width: 200px;
 }
 .white.circle {
     max-width: 125px;
@@ -284,8 +288,110 @@ p a:hover, p a:active {
 #content {
     margin-top: 2rem;
 }
+#content img {
+    max-width: 100%;
+}
 .home .panel1 .title {
     padding-top: 10vh;
+}
+#content.wg {
+    color: #5A5A5A;
+}
+.wg .background {
+    display: inline-block;
+    width: 100%;
+    height: 260px;
+    position: relative;
+}
+.background.extreme-weather {
+    background: url(..//images/seashore.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center top;
+}
+.wg header .icon {
+    margin: 0 auto;
+    position: absolute;
+    bottom: -60px;
+    left: 0;
+    right: 0;
+}
+.wg header h1 {
+    text-align: center;
+    margin-top: 80px;
+}
+.line {
+  box-sizing: border-box;
+  height: 1px;
+  width: 136px;
+  border-width: 2px;
+  border-style: solid;
+  margin: 30px 0;
+}
+.line.gray {
+    border-color: #5A5A5A;
+}
+.line.white {
+    border-color: #FFFFFF;
+}
+.line.yellow {
+    border-color: #F9AF3B;
+}
+.line-center {
+    margin: 30px auto;
+}
+.line.small {
+    width: 40px;
+    margin: 18px auto;
+}
+.line.full-width {
+    width: 100%;
+}
+.wg header .subtitle {
+    padding: 0 25%;
+}
+.wg .value-prop1 {
+    background: #DFDFDF;
+    color: #5A5A5A;
+}
+.value-prop1 .features div:not(:last-child) {
+    border-right: 2px solid #979797;
+}
+.value-prop2 {
+    background: #5A5A5A;
+    color: #FFFFFF;
+}
+.value-prop2 .prod {
+    color: #5A5A5A;
+    background: #FFFFFF;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+}
+.prod img {
+    height: 100px;
+    width: auto;
+}
+.issue {
+    color: #FFFFFF;
+}
+.wg-extreme-weather .issue {
+    background: url(../images/forest-fire-bw.jpg);
+    background-size: cover;
+    background-position: center bottom;
+}
+.team .indv img {
+    box-shadow: 0px 3px 5px #CCC;
+    border: 4px solid #FFFFFF;
+}
+.team .indv {
+    box-shadow: 0px 3px 5px #CCC;
+}
+.team-page header {
+    background: #CCCCCC;
+    border-top: 8px solid #F9AF3B;
+    margin-top: calc(48px + 2.5rem);
+    color: #FFFFFF;
 }
 /*——Media Queries——*/
 @media (min-width: 768px) {
@@ -305,6 +411,11 @@ p a:hover, p a:active {
     .navbar {
         justify-content: flex-end;
         align-items: centered;
+    }
+}
+@media only screen and (max-width: 991px) {
+    .value-prop1 .features div:not(:last-child) {
+        border-right: none;
     }
 }
 @media only screen and (max-width: 850px) {
@@ -438,5 +549,14 @@ p a:hover, p a:active {
     }
     .yellow-line {
         margin: 0 auto !important;
+    }
+}
+@media only screen and (max-width: 575px) {
+    .wg .headshot {
+        width: 220px;
+    }
+    .team .indv {
+        width: 100%;
+        text-align: center;
     }
 }
