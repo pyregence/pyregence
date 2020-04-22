@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [clojure.string :as str]
             [herb.core :refer [<class]]
+            [oz.core :refer [vega-lite]]
             [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]))
@@ -37,14 +38,16 @@
 
 (defn filtered-layers []
   (let [filter-text (u/find-key-by-id layer-types @*layer-type :filter)]
-    (filterv (fn [{:keys [layer-name]}]
-               (str/includes? layer-name
-                              filter-text))
+    (filterv (fn [{:keys [type]}] (= type filter-text))
              @layer-list)))
 
 (defn get-current-layer-name []
   (or (:layer-name (get (filtered-layers) @*cur-layer))
       ""))
+
+(defn get-current-layer-hour []
+  (or (:hour (get (filtered-layers) @*cur-layer))
+      0))
 
 (defn get-current-layer-extent []
   (or (:extent (get (filtered-layers) @*cur-layer))
@@ -78,12 +81,27 @@
                   "&FORMAT=application/json"
                   "&LAYER=" layer)))
 
+(defn date-from-string [date time]
+  (js/Date. (subs date 0 4)
+            (subs date 4 6)
+            (subs date 6 8)
+            (subs time 0 2)))
+
 (defn process-capabilities [response]
   (-> (.text response)
       (.then (fn [text]
                (reset! layer-list
-                       (mapv (fn [layer] {:layer-name (get layer "Name")
-                                          :extent     (get layer "EX_GeographicBoundingBox")})
+                       (mapv (fn [layer]
+                               (let [full-name   (get layer "Name")
+                                     [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
+                                     cur-date    (date-from-string date time)
+                                     base-date   (date-from-string "20200417" "140000")] ; TODO find first date for each group. This may come with model information
+                                 {:layer-name full-name
+                                  :type       type
+                                  :extent     (get layer "EX_GeographicBoundingBox")
+                                  :date       cur-date
+                                  :hour       (/ (- cur-date base-date) 1000 60 60)
+                                  :oz-test    (rand-int 1000)}))
                              (-> text
                                  ol/wms-capabilities
                                  js->clj
@@ -162,7 +180,7 @@
    :border-radius    "5px"
    :right            ".5rem"
    :position         "absolute"
-   :top              ".5rem"
+   :top              "16rem"
    :z-index          "100"})
 
 (defn $legend-color [color]
@@ -259,6 +277,19 @@
    :width            "1.5rem"
    :z-index          "-1"})
 
+(defn $oz-box []
+  {:background-color "white"
+   :border           "1px solid black"
+   :border-radius    "5px"
+   :height           "15rem"
+   :overflow         "hidden"
+   :padding-top      "1rem"
+   :position         "absolute"
+   :right            ".5rem"
+   :top              ".5rem"
+   :width            "18rem"
+   :z-index          "100"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -335,6 +366,40 @@
                   [:option {:key opt_id :value opt_id} opt_label])
                 layer-types))]])
 
+(defn line-plot []
+  {:autosize {:type "fit-y"}
+   :data     {:values (filtered-layers)}
+   :layer    [{:encoding {:x {:field "hour"    :type "quantitative"}
+                          :y {:field "oz-test" :type "quantitative"}
+                          :color {:field "type" :type "nominal" :legend nil}}
+               :layer [{:mark "line"}
+                       ;; Layer with all points for selection
+                       {:mark "point"
+                        :selection {:hover {:type      "single"
+                                            :nearest   true
+                                            :on        "mouseover"
+                                            :encodings ["x"]
+                                            :empty     "none"}}}
+                       {:transform [{:filter {:or [{:field "hour" :lt (get-current-layer-hour)}
+                                                   {:field "hour" :gt (get-current-layer-hour)}]}}]
+                        :mark {:type   "point"
+                               :filled false
+                               :color  "white"}
+                        :encoding {:size {:condition {:selection :hover :value 100}
+                                          :value 50}}}
+                       ;; There needs to be a range of values for nearest neighbor to work
+                       {:transform [{:filter {:and [{:field "hour" :lt (inc (get-current-layer-hour))}
+                                                    {:field "hour" :gt (dec (get-current-layer-hour))}]}}]
+                        :mark {:type   "point"
+                               :filled false
+                               :fill   "black"}
+                        :encoding {:size {:condition {:selection :hover :value 100}
+                                          :value 50}}}]}]})
+
+(defn oz-box []
+  [:div#oz-box {:style ($oz-box)}
+   [vega-lite (line-plot)]])
+
 (defn collapsible-panel []
   (r/with-let [show-panel?   (r/atom true)
                layer-opacity (r/atom 100.0)]
@@ -355,6 +420,7 @@
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
    [collapsible-panel]
    [legend-box]
+   [oz-box]
    [time-slider]
    [zoom-slider]])
 
