@@ -18,11 +18,18 @@
 (defonce layer-list        (r/atom []))
 (defonce last-clicked-info (r/atom nil))
 (defonce layer-interval    (r/atom nil))
+(defonce animate?          (r/atom false))
 (defonce *layer-type       (r/atom 0))
+(defonce *speed            (r/atom 1))
 (defonce layer-types       [{:opt_id 0 :opt_label "Fire Area"           :filter "fire-area"}
                             {:opt_id 1 :opt_label "Fire Volume"         :filter "fire-volume"}
                             {:opt_id 2 :opt_label "Impacted Structures" :filter "impacted-structures"}
                             {:opt_id 3 :opt_label "Times Burned"        :filter "times-burned"}])
+(defonce speeds            [{:opt_id 0 :opt_label ".5x" :delay 2000}
+                            {:opt_id 1 :opt_label "1x"  :delay 1000}
+                            {:opt_id 2 :opt_label "2x"  :delay 500}
+                            {:opt_id 3 :opt_label "5x"  :delay 200}])
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -116,16 +123,21 @@
                   "&STYLES="
                   "&BBOX=" (str/join "," point-info))))
 
-(defn increment-layer! []
-  (swap! *cur-layer #(mod (inc %) (count (filtered-layers))))
+(defn cycle-layer! [change]
+  (swap! *cur-layer #(mod (+ change %) (count (filtered-layers))))
   (ol/swap-active-layer! (get-current-layer-name)))
+
+(defn loop-animation []
+  (when @animate?
+    (cycle-layer! 1)
+    (js/setTimeout loop-animation (u/find-key-by-id speeds @*speed :delay))))
 
 (defn select-zoom! [zoom]
   (when-not (= zoom @*zoom)
-   (reset! *zoom (max @minZoom
-                     (min @maxZoom
-                          zoom)))
-  (ol/set-zoom! @*zoom)))
+    (reset! *zoom (max @minZoom
+                       (min @maxZoom
+                            zoom)))
+    (ol/set-zoom! @*zoom)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -168,6 +180,7 @@
    :margin-left      "auto"
    :left             "0"
    :right            "0"
+   :padding          ".75rem"
    :position         "absolute"
    :bottom           "1rem"
    :width            "fit-content"
@@ -264,22 +277,29 @@
 
 (defn time-slider []
   [:div#time-slider {:style ($time-slider)}
-   [:input {:style {:margin "1rem" :width "10rem"}
+   [:input {:style {:width "10rem"}
             :type "range" :min "0" :max (dec (count (filtered-layers))) :value @*cur-layer
             :on-change #(do (reset! *cur-layer (u/input-int-value %))
                             (ol/swap-active-layer! (get-current-layer-name)))}]
-   [:button {:style {:padding "0 .25rem" :margin ".5rem"}
+   [:button {:style {:padding "0 .25rem" :margin-left ".5rem"}
              :type "button"
-             :disabled @layer-interval
-             :on-click #(do (increment-layer!)
-                            (reset! layer-interval (js/setInterval increment-layer! 1000)))}
-    "Play"]
-   [:button {:style {:padding "0 .25rem" :margin ".5rem"}
+             :on-click #(cycle-layer! -1)}
+    "<<"]
+   [:button {:style {:padding "0 .25rem"}
              :type "button"
-             :disabled (not @layer-interval)
-             :on-click #(do (.clearInterval js/window @layer-interval)
-                            (reset! layer-interval nil))}
-    "Stop"]])
+             :on-click #(do (swap! animate? not)
+                            (loop-animation))}
+    (if @animate? "Stop" "Play")]
+   [:button {:style {:padding "0 .25rem"}
+             :type "button"
+             :on-click #(cycle-layer! 1)}
+    ">>"]
+   [:select {:style ($/combine $dropdown)
+             :value (or @*speed 1)
+             :on-change #(reset! *speed (u/input-int-value %))}
+    (doall (map (fn [{:keys [opt_id opt_label]}]
+                  [:option {:key opt_id :value opt_id} opt_label])
+                speeds))]])
 
 (defn zoom-slider []
   [:div#zoom-slider {:style ($zoom-slider)}
