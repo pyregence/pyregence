@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [clojure.string :as str]
             [herb.core :refer [<class]]
-            [oz.core :refer [vega-lite]]
+            [oz.core :as oz]
             [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]))
@@ -117,29 +117,38 @@
 
 (defn process-point-info [response]
   (-> (.json response)
-      (.then (fn [json] (reset! last-clicked-info
-                                (-> json
-                                    js->clj
-                                    (get-in ["features" 0 "properties" "GRAY_INDEX"])))))))
+      (.then (fn [json]
+               (reset! last-clicked-info
+                       (mapv (fn [pi li]
+                               (merge (select-keys li [:date :hour :type])
+                                      {:band (get-in pi ["properties" "GRAY_INDEX"])}))
+                             (-> json
+                                 js->clj
+                                 (get "features"))
+                             (filtered-layers)))))))
 
+;; TODO, get info again if user selects new layer
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
-  (get-data! process-point-info
-             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                  "?SERVICE=WMS"
-                  "&VERSION=1.3.0"
-                  "&REQUEST=GetFeatureInfo"
-                  "&INFO_FORMAT=application/json"
-                  "&LAYERS=demo:" (get-current-layer-name)
-                  "&QUERY_LAYERS=demo:" (get-current-layer-name)
-                  "&TILED=true"
-                  "&I=0"
-                  "&J=0"
-                  "&WIDTH=1"
-                  "&HEIGHT=1"
-                  "&CRS=EPSG:3857"
-                  "&STYLES="
-                  "&BBOX=" (str/join "," point-info))))
+  (let [layers-str (str/join "," (map #(str "demo:" (:layer-name %))
+                                      (filtered-layers)))]
+    (get-data! process-point-info
+               (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                    "?SERVICE=WMS"
+                    "&VERSION=1.3.0"
+                    "&REQUEST=GetFeatureInfo"
+                    "&INFO_FORMAT=application/json"
+                    "&LAYERS=" layers-str
+                    "&QUERY_LAYERS=" layers-str
+                    "&FEATURE_COUNT=1000"
+                    "&TILED=true"
+                    "&I=0"
+                    "&J=0"
+                    "&WIDTH=1"
+                    "&HEIGHT=1"
+                    "&CRS=EPSG:3857"
+                    "&STYLES="
+                    "&BBOX=" (str/join "," point-info)))))
 
 (defn cycle-layer! [change]
   (swap! *cur-layer #(mod (+ change %) (count (filtered-layers))))
@@ -366,11 +375,11 @@
                   [:option {:key opt_id :value opt_id} opt_label])
                 layer-types))]])
 
-(defn line-plot []
+(defn layer-line-plot []
   {:autosize {:type "fit-y"}
-   :data     {:values (filtered-layers)}
-   :layer    [{:encoding {:x {:field "hour"    :type "quantitative"}
-                          :y {:field "oz-test" :type "quantitative"}
+   :data     {:values (or @last-clicked-info [])}
+   :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "hour"}
+                          :y {:field "band" :type "quantitative" :title "acres"} ; TODO change with layer
                           :color {:field "type" :type "nominal" :legend nil}}
                :layer [{:mark "line"}
                        ;; Layer with all points for selection
@@ -398,7 +407,7 @@
 
 (defn oz-box []
   [:div#oz-box {:style ($oz-box)}
-   [vega-lite (line-plot)]])
+   [oz/vega-lite (layer-line-plot)]])
 
 (defn collapsible-panel []
   (r/with-let [show-panel?   (r/atom true)
@@ -428,7 +437,7 @@
   [:div#popup
    [:div {:style ($pop-up-box)}
     [:label (if @last-clicked-info
-              (str @last-clicked-info
+              (str (:band (get @last-clicked-info @*cur-layer))
                    " acre"
                    (when-not (= 1 @last-clicked-info) "s"))
               "...")]]
@@ -442,7 +451,7 @@
           (.then (fn []
                    (get-legend!  (get-current-layer-name))
                    (ol/init-map! (get-current-layer-name))
-                   (ol/add-map-single-click! get-point-info!)
+                   (ol/add-map-single-click! (fn [p] (get-point-info! p)))
                    (let [[cur min max] (ol/get-zoom-info)]
                      (reset! *zoom   cur)
                      (reset! minZoom min)
