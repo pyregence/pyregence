@@ -100,8 +100,7 @@
                                   :type       type
                                   :extent     (get layer "EX_GeographicBoundingBox")
                                   :date       cur-date
-                                  :hour       (/ (- cur-date base-date) 1000 60 60)
-                                  :oz-test    (rand-int 1000)}))
+                                  :hour       (/ (- cur-date base-date) 1000 60 60)}))
                              (-> text
                                  ol/wms-capabilities
                                  js->clj
@@ -154,10 +153,10 @@
   (swap! *cur-layer #(mod (+ change %) (count (filtered-layers))))
   (ol/swap-active-layer! (get-current-layer-name)))
 
-(defn loop-animation []
+(defn loop-animation! []
   (when @animate?
     (cycle-layer! 1)
-    (js/setTimeout loop-animation (u/find-key-by-id speeds @*speed :delay))))
+    (js/setTimeout loop-animation! (u/find-key-by-id speeds @*speed :delay))))
 
 (defn select-zoom! [zoom]
   (when-not (= zoom @*zoom)
@@ -328,7 +327,7 @@
    [:button {:style {:padding "0 .25rem"}
              :type "button"
              :on-click #(do (swap! animate? not)
-                            (loop-animation))}
+                            (loop-animation!))}
     (if @animate? "Stop" "Play")]
    [:button {:style {:padding "0 .25rem"}
              :type "button"
@@ -345,7 +344,6 @@
   [:div#zoom-slider {:style ($zoom-slider)}
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .75rem"})
-           :disabled @layer-interval
            :on-click #(select-zoom! (dec @*zoom))}
     "-"]
    [:input {:style {:min-width "0"}
@@ -353,13 +351,11 @@
             :on-change #(select-zoom! (u/input-int-value %))}]
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
-           :disabled @layer-interval
            :on-click #(select-zoom! (inc @*zoom))}
     "+"]
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".25rem 0 0 .5rem" :font-size ".9rem"})
            :title "Zoom to Extent"
-           :disabled @layer-interval
            :on-click #(ol/zoom-to-extent! (get-current-layer-extent))}
     "E"]])
 
@@ -438,7 +434,7 @@
    [:div {:style ($pop-up-box)}
     [:label (if @last-clicked-info
               (str (:band (get @last-clicked-info @*cur-layer))
-                   " acre"
+                   " acre" ; TODO change with layer
                    (when-not (= 1 @last-clicked-info) "s"))
               "...")]]
    [:div {:style ($pop-up-arrow)}]])
@@ -451,7 +447,7 @@
           (.then (fn []
                    (get-legend!  (get-current-layer-name))
                    (ol/init-map! (get-current-layer-name))
-                   (ol/add-map-single-click! (fn [p] (get-point-info! p)))
+                   (ol/add-map-single-click! get-point-info!)
                    (let [[cur min max] (ol/get-zoom-info)]
                      (reset! *zoom   cur)
                      (reset! minZoom min)
