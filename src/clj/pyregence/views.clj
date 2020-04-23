@@ -25,9 +25,12 @@
                       "); };")]])}))
 
 (def uri->html
-  {"/"                "home.html"
-   "/extreme-weather" "extreme-weather.html"
-   "/not-found"       "not-found.html"})
+  {"/"                  "home.html"
+   "/extreme-weather"   "extreme-weather.html"
+   "/not-found"         "not-found.html"
+   "/fire-behavior"     "fire-behavior.html"
+   "/forecast-tools"    "forecast-tools.html"
+   "/scenario-analyses" "scenario-analyses.html"})
 
 (defn render-static [uri]
   (fn [_]

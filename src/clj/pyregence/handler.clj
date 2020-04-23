@@ -27,7 +27,10 @@
 
 ;; FIXME: Fill these in as you make static html pages.
 (def static-routes #{"/"
-                     "/extreme-weather"})
+                     "/extreme-weather"
+                     "/fire-behavior"
+                     "/forecast-tools"
+                     "/scenario-analyses"})
 
 ;; FIXME: Fill these in as you make app pages.
 (def dynamic-routes #{"/near-term-forecast"})
