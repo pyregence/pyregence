@@ -303,8 +303,26 @@ p a:hover, p a:active {
     height: 260px;
     position: relative;
 }
-.background.extreme-weather {
+.wg-extreme-weather header .background {
     background: url(..//images/seashore.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center top;
+}
+.wg-fire-behavior header .background {
+    background: url(..//images/fire-behavior-working-group.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+.wg-forecast-tools header .background {
+    background: url(..//images/forecast-tools-header.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center top;
+}
+.wg-scenario-analyses header .background {
+    background: url(..//images/scenario-analyses-header.jpg);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center top;
@@ -392,6 +410,9 @@ p a:hover, p a:active {
     border-top: 8px solid #F9AF3B;
     margin-top: calc(48px + 2.5rem);
     color: #FFFFFF;
+}
+.wg .team .indv h3 {
+    font-size: 1.5rem;
 }
 /*——Media Queries——*/
 @media (min-width: 768px) {
