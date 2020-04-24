@@ -1,6 +1,7 @@
 {:paths ["src/clj" "src/cljs" "resources" "target"]
 
  :deps {bk/ring-gzip              {:mvn/version "0.3.0"}
+        cljsjs/vega-embed         {:mvn/version "6.0.0-0"}
         com.draines/postal        {:mvn/version "2.0.3"}
         herb/herb                 {:mvn/version "0.10.0"}
         hiccup/hiccup             {:mvn/version "2.0.0-alpha2"}
@@ -9,7 +10,6 @@
         org.clojure/core.async    {:mvn/version "1.1.587"}
         org.clojure/data.json     {:mvn/version "1.0.0"}
         org.postgresql/postgresql {:mvn/version "42.2.12"}
-        metasoarous/oz            {:mvn/version "1.5.6"}
         reagent/reagent           {:mvn/version "0.10.0"}
         ring/ring                 {:mvn/version "1.8.0"}
         ring/ring-defaults        {:mvn/version "0.3.2"}

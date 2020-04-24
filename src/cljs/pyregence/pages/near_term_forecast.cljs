@@ -1,8 +1,9 @@
 (ns pyregence.pages.near-term-forecast
-  (:require [reagent.core :as r]
+  (:require [cljsjs.vega-embed]
+            [reagent.core :as r]
+            [reagent.dom :as rd]
             [clojure.string :as str]
             [herb.core :refer [<class]]
-            [oz.core :as oz]
             [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]))
@@ -284,7 +285,7 @@
    :width            "1.5rem"
    :z-index          "-1"})
 
-(defn $oz-box []
+(defn $vega-box []
   {:background-color "white"
    :border           "1px solid black"
    :border-radius    "5px"
@@ -378,18 +379,17 @@
                           :color {:field "type" :type "nominal" :legend nil}}
                :layer [{:mark "line"}
                        ;; Layer with all points for selection
-                       {:mark "point"
-                        :selection {:hover {:type      "single"
-                                            :nearest   true
-                                            :on        "mouseover"
-                                            :encodings ["x"]
-                                            :empty     "none"}}}
+                       {:mark      "point"
+                        :selection {:point-hover {:type    "single"
+                                                  :nearest true
+                                                  :on      "mouseover"
+                                                  :empty   "none"}}}
                        {:transform [{:filter {:or [{:field "hour" :lt (get-current-layer-hour)}
                                                    {:field "hour" :gt (get-current-layer-hour)}]}}]
-                        :mark {:type   "point"
-                               :filled false
-                               :color  "white"}
-                        :encoding {:size {:condition {:selection :hover :value 100}
+                        :mark     {:type   "point"
+                                   :filled false
+                                   :fill   "white"}
+                        :encoding {:size {:condition {:selection :point-hover :value 100}
                                           :value 50}}}
                        ;; There needs to be a range of values for nearest neighbor to work
                        {:transform [{:filter {:and [{:field "hour" :lt (inc (get-current-layer-hour))}
@@ -397,12 +397,46 @@
                         :mark {:type   "point"
                                :filled false
                                :fill   "black"}
-                        :encoding {:size {:condition {:selection :hover :value 100}
+                        :encoding {:size {:condition {:selection :point-hover :value 100}
                                           :value 50}}}]}]})
 
-(defn oz-box []
-  [:div#oz-box {:style ($oz-box)}
-   [oz/vega-lite (layer-line-plot)]])
+(defn try-get-js [obj & values]
+  (try
+    (reduce
+     (fn [acc cur]
+       (if (and acc (.hasOwnProperty acc cur))
+         (aget acc cur)
+         nil))
+     obj
+     values)
+    (catch js/Error e (.log js/console e) nil)))
+
+(defn render-vega [spec elem]
+  (when spec
+    (let [spec (clj->js spec)
+          opts {:renderer "canvas"
+                :mode     "vega-lite"}]
+      (-> (js/vegaEmbed elem spec (clj->js opts))
+          (.then (fn [result]
+                   (.addEventListener (-> result .-view)
+                                      "click"
+                                      (fn [_ data]
+                                        (when-let [index (or (try-get-js data "datum" "datum" "_vgsid_")
+                                                             (try-get-js data "datum" "_vgsid_"))]
+                                          (reset! *cur-layer (dec ^js/integer index))
+                                          (ol/swap-active-layer! (get-current-layer-name)))))))
+          (.catch (fn [err] (js/console.log err)))))))
+
+(defn vega-box [props]
+  (r/create-class
+   {:component-did-mount
+    (fn [this] (render-vega (:spec props) (rd/dom-node this)))
+
+    :component-did-update
+    (fn [this _] (render-vega (:spec (r/props this)) (rd/dom-node this)))
+
+    :render
+    (fn [] [:div#vega-box {:style ($vega-box)}])}))
 
 (defn collapsible-panel []
   (r/with-let [show-panel?   (r/atom true)
@@ -424,7 +458,7 @@
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
    [collapsible-panel]
    [legend-box]
-   [oz-box]
+   [vega-box {:spec (layer-line-plot)}]
    [time-slider]
    [zoom-slider]])
 
