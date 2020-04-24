@@ -409,7 +409,7 @@
          nil))
      obj
      values)
-    (catch js/Error e nil)))
+    (catch js/Error e (.log js/console e) nil)))
 
 (defn render-vega [spec elem]
   (when spec
