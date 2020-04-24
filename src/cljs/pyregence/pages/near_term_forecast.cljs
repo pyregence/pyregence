@@ -18,7 +18,6 @@
 (defonce legend-list       (r/atom []))
 (defonce layer-list        (r/atom []))
 (defonce last-clicked-info (r/atom nil))
-(defonce layer-interval    (r/atom nil))
 (defonce animate?          (r/atom false))
 (defonce *layer-type       (r/atom 0))
 (defonce *speed            (r/atom 1))
