@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [clojure.string :as str]
             [herb.core :refer [<class]]
+            [oz.core :as oz]
             [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]))
@@ -17,12 +18,18 @@
 (defonce legend-list       (r/atom []))
 (defonce layer-list        (r/atom []))
 (defonce last-clicked-info (r/atom nil))
-(defonce layer-interval    (r/atom nil))
+(defonce animate?          (r/atom false))
 (defonce *layer-type       (r/atom 0))
+(defonce *speed            (r/atom 1))
 (defonce layer-types       [{:opt_id 0 :opt_label "Fire Area"           :filter "fire-area"}
                             {:opt_id 1 :opt_label "Fire Volume"         :filter "fire-volume"}
                             {:opt_id 2 :opt_label "Impacted Structures" :filter "impacted-structures"}
                             {:opt_id 3 :opt_label "Times Burned"        :filter "times-burned"}])
+(defonce speeds            [{:opt_id 0 :opt_label ".5x" :delay 2000}
+                            {:opt_id 1 :opt_label "1x"  :delay 1000}
+                            {:opt_id 2 :opt_label "2x"  :delay 500}
+                            {:opt_id 3 :opt_label "5x"  :delay 200}])
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -30,14 +37,16 @@
 
 (defn filtered-layers []
   (let [filter-text (u/find-key-by-id layer-types @*layer-type :filter)]
-    (filterv (fn [{:keys [layer-name]}]
-               (str/includes? layer-name
-                              filter-text))
+    (filterv (fn [{:keys [type]}] (= type filter-text))
              @layer-list)))
 
 (defn get-current-layer-name []
   (or (:layer-name (get (filtered-layers) @*cur-layer))
       ""))
+
+(defn get-current-layer-hour []
+  (or (:hour (get (filtered-layers) @*cur-layer))
+      0))
 
 (defn get-current-layer-extent []
   (or (:extent (get (filtered-layers) @*cur-layer))
@@ -71,12 +80,26 @@
                   "&FORMAT=application/json"
                   "&LAYER=" layer)))
 
+(defn date-from-string [date time]
+  (js/Date. (subs date 0 4)
+            (subs date 4 6)
+            (subs date 6 8)
+            (subs time 0 2)))
+
 (defn process-capabilities [response]
   (-> (.text response)
       (.then (fn [text]
                (reset! layer-list
-                       (mapv (fn [layer] {:layer-name (get layer "Name")
-                                          :extent     (get layer "EX_GeographicBoundingBox")})
+                       (mapv (fn [layer]
+                               (let [full-name   (get layer "Name")
+                                     [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
+                                     cur-date    (date-from-string date time)
+                                     base-date   (date-from-string "20200417" "140000")] ; TODO find first date for each group. This may come with model information
+                                 {:layer-name full-name
+                                  :type       type
+                                  :extent     (get layer "EX_GeographicBoundingBox")
+                                  :date       cur-date
+                                  :hour       (/ (- cur-date base-date) 1000 60 60)}))
                              (-> text
                                  ol/wms-capabilities
                                  js->clj
@@ -92,40 +115,54 @@
 
 (defn process-point-info [response]
   (-> (.json response)
-      (.then (fn [json] (reset! last-clicked-info
-                                (-> json
-                                    js->clj
-                                    (get-in ["features" 0 "properties" "GRAY_INDEX"])))))))
+      (.then (fn [json]
+               (reset! last-clicked-info
+                       (mapv (fn [pi li]
+                               (merge (select-keys li [:date :hour :type])
+                                      {:band (get-in pi ["properties" "GRAY_INDEX"])}))
+                             (-> json
+                                 js->clj
+                                 (get "features"))
+                             (filtered-layers)))))))
 
+;; TODO, get info again if user selects new layer
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
-  (get-data! process-point-info
-             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                  "?SERVICE=WMS"
-                  "&VERSION=1.3.0"
-                  "&REQUEST=GetFeatureInfo"
-                  "&INFO_FORMAT=application/json"
-                  "&LAYERS=demo:" (get-current-layer-name)
-                  "&QUERY_LAYERS=demo:" (get-current-layer-name)
-                  "&TILED=true"
-                  "&I=0"
-                  "&J=0"
-                  "&WIDTH=1"
-                  "&HEIGHT=1"
-                  "&CRS=EPSG:3857"
-                  "&STYLES="
-                  "&BBOX=" (str/join "," point-info))))
+  (let [layers-str (str/join "," (map #(str "demo:" (:layer-name %))
+                                      (filtered-layers)))]
+    (get-data! process-point-info
+               (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                    "?SERVICE=WMS"
+                    "&VERSION=1.3.0"
+                    "&REQUEST=GetFeatureInfo"
+                    "&INFO_FORMAT=application/json"
+                    "&LAYERS=" layers-str
+                    "&QUERY_LAYERS=" layers-str
+                    "&FEATURE_COUNT=1000"
+                    "&TILED=true"
+                    "&I=0"
+                    "&J=0"
+                    "&WIDTH=1"
+                    "&HEIGHT=1"
+                    "&CRS=EPSG:3857"
+                    "&STYLES="
+                    "&BBOX=" (str/join "," point-info)))))
 
-(defn increment-layer! []
-  (swap! *cur-layer #(mod (inc %) (count (filtered-layers))))
+(defn cycle-layer! [change]
+  (swap! *cur-layer #(mod (+ change %) (count (filtered-layers))))
   (ol/swap-active-layer! (get-current-layer-name)))
+
+(defn loop-animation! []
+  (when @animate?
+    (cycle-layer! 1)
+    (js/setTimeout loop-animation! (u/find-key-by-id speeds @*speed :delay))))
 
 (defn select-zoom! [zoom]
   (when-not (= zoom @*zoom)
-   (reset! *zoom (max @minZoom
-                     (min @maxZoom
-                          zoom)))
-  (ol/set-zoom! @*zoom)))
+    (reset! *zoom (max @minZoom
+                       (min @maxZoom
+                            zoom)))
+    (ol/set-zoom! @*zoom)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -150,7 +187,7 @@
    :border-radius    "5px"
    :right            ".5rem"
    :position         "absolute"
-   :top              ".5rem"
+   :top              "16rem"
    :z-index          "100"})
 
 (defn $legend-color [color]
@@ -168,6 +205,7 @@
    :margin-left      "auto"
    :left             "0"
    :right            "0"
+   :padding          ".75rem"
    :position         "absolute"
    :bottom           "1rem"
    :width            "fit-content"
@@ -246,6 +284,19 @@
    :width            "1.5rem"
    :z-index          "-1"})
 
+(defn $oz-box []
+  {:background-color "white"
+   :border           "1px solid black"
+   :border-radius    "5px"
+   :height           "15rem"
+   :overflow         "hidden"
+   :padding-top      "1rem"
+   :position         "absolute"
+   :right            ".5rem"
+   :top              ".5rem"
+   :width            "18rem"
+   :z-index          "100"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -264,28 +315,34 @@
 
 (defn time-slider []
   [:div#time-slider {:style ($time-slider)}
-   [:input {:style {:margin "1rem" :width "10rem"}
+   [:input {:style {:width "10rem"}
             :type "range" :min "0" :max (dec (count (filtered-layers))) :value @*cur-layer
             :on-change #(do (reset! *cur-layer (u/input-int-value %))
                             (ol/swap-active-layer! (get-current-layer-name)))}]
-   [:button {:style {:padding "0 .25rem" :margin ".5rem"}
+   [:button {:style {:padding "0 .25rem" :margin-left ".5rem"}
              :type "button"
-             :disabled @layer-interval
-             :on-click #(do (increment-layer!)
-                            (reset! layer-interval (js/setInterval increment-layer! 1000)))}
-    "Play"]
-   [:button {:style {:padding "0 .25rem" :margin ".5rem"}
+             :on-click #(cycle-layer! -1)}
+    "<<"]
+   [:button {:style {:padding "0 .25rem"}
              :type "button"
-             :disabled (not @layer-interval)
-             :on-click #(do (.clearInterval js/window @layer-interval)
-                            (reset! layer-interval nil))}
-    "Stop"]])
+             :on-click #(do (swap! animate? not)
+                            (loop-animation!))}
+    (if @animate? "Stop" "Play")]
+   [:button {:style {:padding "0 .25rem"}
+             :type "button"
+             :on-click #(cycle-layer! 1)}
+    ">>"]
+   [:select {:style ($/combine $dropdown)
+             :value (or @*speed 1)
+             :on-change #(reset! *speed (u/input-int-value %))}
+    (doall (map (fn [{:keys [opt_id opt_label]}]
+                  [:option {:key opt_id :value opt_id} opt_label])
+                speeds))]])
 
 (defn zoom-slider []
   [:div#zoom-slider {:style ($zoom-slider)}
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .75rem"})
-           :disabled @layer-interval
            :on-click #(select-zoom! (dec @*zoom))}
     "-"]
    [:input {:style {:min-width "0"}
@@ -293,13 +350,11 @@
             :on-change #(select-zoom! (u/input-int-value %))}]
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
-           :disabled @layer-interval
            :on-click #(select-zoom! (inc @*zoom))}
     "+"]
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".25rem 0 0 .5rem" :font-size ".9rem"})
            :title "Zoom to Extent"
-           :disabled @layer-interval
            :on-click #(ol/zoom-to-extent! (get-current-layer-extent))}
     "E"]])
 
@@ -314,6 +369,40 @@
     (doall (map (fn [{:keys [opt_id opt_label]}]
                   [:option {:key opt_id :value opt_id} opt_label])
                 layer-types))]])
+
+(defn layer-line-plot []
+  {:autosize {:type "fit-y"}
+   :data     {:values (or @last-clicked-info [])}
+   :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "hour"}
+                          :y {:field "band" :type "quantitative" :title "acres"} ; TODO change with layer
+                          :color {:field "type" :type "nominal" :legend nil}}
+               :layer [{:mark "line"}
+                       ;; Layer with all points for selection
+                       {:mark "point"
+                        :selection {:hover {:type      "single"
+                                            :nearest   true
+                                            :on        "mouseover"
+                                            :encodings ["x"]
+                                            :empty     "none"}}}
+                       {:transform [{:filter {:or [{:field "hour" :lt (get-current-layer-hour)}
+                                                   {:field "hour" :gt (get-current-layer-hour)}]}}]
+                        :mark {:type   "point"
+                               :filled false
+                               :color  "white"}
+                        :encoding {:size {:condition {:selection :hover :value 100}
+                                          :value 50}}}
+                       ;; There needs to be a range of values for nearest neighbor to work
+                       {:transform [{:filter {:and [{:field "hour" :lt (inc (get-current-layer-hour))}
+                                                    {:field "hour" :gt (dec (get-current-layer-hour))}]}}]
+                        :mark {:type   "point"
+                               :filled false
+                               :fill   "black"}
+                        :encoding {:size {:condition {:selection :hover :value 100}
+                                          :value 50}}}]}]})
+
+(defn oz-box []
+  [:div#oz-box {:style ($oz-box)}
+   [oz/vega-lite (layer-line-plot)]])
 
 (defn collapsible-panel []
   (r/with-let [show-panel?   (r/atom true)
@@ -335,6 +424,7 @@
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
    [collapsible-panel]
    [legend-box]
+   [oz-box]
    [time-slider]
    [zoom-slider]])
 
@@ -342,8 +432,8 @@
   [:div#popup
    [:div {:style ($pop-up-box)}
     [:label (if @last-clicked-info
-              (str @last-clicked-info
-                   " acre"
+              (str (:band (get @last-clicked-info @*cur-layer))
+                   " acre" ; TODO change with layer
                    (when-not (= 1 @last-clicked-info) "s"))
               "...")]]
    [:div {:style ($pop-up-arrow)}]])
