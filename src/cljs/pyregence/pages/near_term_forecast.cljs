@@ -56,16 +56,12 @@
   (or (:extent (get (filtered-layers) @*cur-layer))
       [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
 
-(defn get-data! [process-fn url]
-  (-> (.fetch js/window
-              url
-              (clj->js {:method "get"
+(defn get-data [process-fn url]
+  (u/fetch-and-process url
+                       {:method "get"
                         :headers {"Accept" "application/json, text/xml"
-                                  "Content-Type" "application/json"}}))
-      (.then  (fn [response] (if (.-ok response)
-                               (process-fn response)
-                               (.reject js/Promise response))))
-      (.catch (fn [response] (.log js/console response)))))
+                                  "Content-Type" "application/json"}}
+                       process-fn))
 
 (defn process-legend [response]
   (-> (.json response)
@@ -76,13 +72,13 @@
                            (get-in ["Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries"])))))))
 
 (defn get-legend! [layer]
-  (get-data! process-legend
-             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                  "?SERVICE=WMS"
-                  "&VERSION=1.3.0"
-                  "&REQUEST=GetLegendGraphic"
-                  "&FORMAT=application/json"
-                  "&LAYER=" layer)))
+  (get-data process-legend
+            (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                 "?SERVICE=WMS"
+                 "&VERSION=1.3.0"
+                 "&REQUEST=GetLegendGraphic"
+                 "&FORMAT=application/json"
+                 "&LAYER=" layer)))
 
 (defn date-from-string [date time]
   (js/Date. (str (subs date 0 4) "-"
@@ -111,12 +107,12 @@
                                  (get-in ["Capability" "Layer" "Layer"]))))))))
 
 (defn get-layers! []
-  (get-data! process-capabilities
-             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                  "?SERVICE=WMS"
-                  "&VERSION=1.3.0"
-                  "&REQUEST=GetCapabilities"
-                  "&NAMESPACE=demo")))
+  (get-data process-capabilities
+            (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                 "?SERVICE=WMS"
+                 "&VERSION=1.3.0"
+                 "&REQUEST=GetCapabilities"
+                 "&NAMESPACE=demo")))
 
 (defn process-point-info [response]
   (-> (.json response)
@@ -135,23 +131,23 @@
   (reset! last-clicked-info nil)
   (let [layers-str (str/join "," (map #(str "demo:" (:layer %))
                                       (filtered-layers)))]
-    (get-data! process-point-info
-               (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                    "?SERVICE=WMS"
-                    "&VERSION=1.3.0"
-                    "&REQUEST=GetFeatureInfo"
-                    "&INFO_FORMAT=application/json"
-                    "&LAYERS=" layers-str
-                    "&QUERY_LAYERS=" layers-str
-                    "&FEATURE_COUNT=1000"
-                    "&TILED=true"
-                    "&I=0"
-                    "&J=0"
-                    "&WIDTH=1"
-                    "&HEIGHT=1"
-                    "&CRS=EPSG:3857"
-                    "&STYLES="
-                    "&BBOX=" (str/join "," point-info)))))
+    (get-data process-point-info
+              (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                   "?SERVICE=WMS"
+                   "&VERSION=1.3.0"
+                   "&REQUEST=GetFeatureInfo"
+                   "&INFO_FORMAT=application/json"
+                   "&LAYERS=" layers-str
+                   "&QUERY_LAYERS=" layers-str
+                   "&FEATURE_COUNT=1000"
+                   "&TILED=true"
+                   "&I=0"
+                   "&J=0"
+                   "&WIDTH=1"
+                   "&HEIGHT=1"
+                   "&CRS=EPSG:3857"
+                   "&STYLES="
+                   "&BBOX=" (str/join "," point-info)))))
 
 (defn cycle-layer! [change]
   (swap! *cur-layer #(mod (+ change %) (count (filtered-layers))))
