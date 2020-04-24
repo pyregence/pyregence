@@ -379,16 +379,16 @@
                           :color {:field "type" :type "nominal" :legend nil}}
                :layer [{:mark "line"}
                        ;; Layer with all points for selection
-                       {:mark "point"
+                       {:mark      "point"
                         :selection {:point-hover {:type    "single"
                                                   :nearest true
                                                   :on      "mouseover"
                                                   :empty   "none"}}}
                        {:transform [{:filter {:or [{:field "hour" :lt (get-current-layer-hour)}
                                                    {:field "hour" :gt (get-current-layer-hour)}]}}]
-                        :mark {:type   "point"
-                               :filled false
-                               :color  "white"}
+                        :mark     {:type   "point"
+                                   :filled false
+                                   :fill   "white"}
                         :encoding {:size {:condition {:selection :point-hover :value 100}
                                           :value 50}}}
                        ;; There needs to be a range of values for nearest neighbor to work
