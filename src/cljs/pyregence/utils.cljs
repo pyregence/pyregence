@@ -1,7 +1,11 @@
 (ns pyregence.utils
   (:require [cljs.reader :as edn]
             [clojure.string :as str]
-            [clojure.core.async :refer [chan go >! <! close!]]))
+            [clojure.core.async :refer [chan go >! <! close!]]
+            [cljs.core.async.interop :refer-macros [<p!]]))
+
+;; Make (println) function as console.log()
+(enable-console-print!)
 
 (defn input-value
   "Return the value property of the target property of an event."
@@ -51,6 +55,25 @@
 
 ;;; Fetch results
 
+(defn fetch
+  "Converts options map to a JS object and runs js/window.fetch. Returns a Promise."
+  [url options]
+  (.fetch js/window url (clj->js options)))
+
+(defn fetch-and-process
+  "Launches a js/window.fetch operation and runs process-fn on the
+  successful result. HTTP Errors and Network Errors raised by the
+  fetch are printed to the console. The options map will be
+  automatically converted to a JS object for the fetch call."
+  [url options process-fn]
+  (go
+    (try
+      (let [response (<p! (fetch url options))]
+        (if (.-ok response)
+          (process-fn response)
+          (println "HTTP Error:" response)))
+      (catch ExceptionInfo e (println "Network Error:" (ex-cause e))))))
+
 (defmulti call-remote! (fn [method url data] method))
 
 (defmethod call-remote! :get [_ url data]
@@ -69,7 +92,7 @@
                 (clj->js fetch-params))
         (.then  (fn [response]   (if (.-ok response) (.text response) (.reject js/Promise response))))
         (.then  (fn [edn-string] (go (>! result-chan (or (edn/read-string edn-string) :no-data)))))
-        (.catch (fn [response]   (.log js/console response) (close! result-chan))))
+        (.catch (fn [response]   (println response) (close! result-chan))))
     result-chan))
 
 ;; Combines status and error message into return value
