@@ -427,10 +427,14 @@
                                           (ol/swap-active-layer! (get-current-layer-name)))))))
           (.catch (fn [err] (js/console.log err)))))))
 
-(defn vega-box [spec]
+(defn vega-box [props]
   (r/create-class
-   {:component-did-mount (fn [this] (render-vega spec (rd/dom-node this)))
-    :component-will-update (fn [this [_ new-spec] _] (render-vega new-spec (rd/dom-node this)))
+   {:component-did-mount
+    (fn [this] (render-vega (:spec props) (rd/dom-node this)))
+
+    :component-did-update
+    (fn [this _] (render-vega (:spec (r/props this)) (rd/dom-node this)))
+
     :render
     (fn [] [:div#vega-box {:style ($vega-box)}])}))
 
@@ -454,7 +458,7 @@
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
    [collapsible-panel]
    [legend-box]
-   [vega-box (clj->js (layer-line-plot))]
+   [vega-box {:spec (layer-line-plot)}]
    [time-slider]
    [zoom-slider]])
 
