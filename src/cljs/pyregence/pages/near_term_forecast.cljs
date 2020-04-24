@@ -106,21 +106,22 @@
   (-> (.text response)
       (.then (fn [text]
                (reset! layer-list
-                       (mapv (fn [layer]
-                               (let [full-name   (get layer "Name")
-                                     [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
-                                     cur-date    (date-from-string date time)
-                                     base-date   (date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
-                                 {:layer  full-name
-                                  :type   type
-                                  :extent (get layer "EX_GeographicBoundingBox")
-                                  :date   (subs (.toISOString cur-date) 0 10)
-                                  :time   (str (subs (.toISOString cur-date) 11 16) " UTC")
-                                  :hour   (/ (- cur-date base-date) 1000 60 60)}))
-                             (-> text
-                                 ol/wms-capabilities
-                                 js->clj
-                                 (get-in ["Capability" "Layer" "Layer"]))))))))
+                       (->> (-> text
+                                ol/wms-capabilities
+                                js->clj
+                                (get-in ["Capability" "Layer" "Layer"]))
+                            (remove #(str/starts-with? (get % "Name") "lg"))
+                            (mapv (fn [layer]
+                                    (let [full-name   (get layer "Name")
+                                          [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
+                                          cur-date    (date-from-string date time)
+                                          base-date   (date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
+                                      {:layer  full-name
+                                       :type   type
+                                       :extent (get layer "EX_GeographicBoundingBox")
+                                       :date   (subs (.toISOString cur-date) 0 10)
+                                       :time   (str (subs (.toISOString cur-date) 11 16) " UTC")
+                                       :hour   (/ (- cur-date base-date) 1000 60 60)})))))))))
 
 (defn get-layers! []
   (get-data! process-capabilities
@@ -144,16 +145,15 @@
 
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
-  (let [layers-str (str/join "," (map #(str "demo:" (:layer %))
-                                      (filtered-layers)))]
+  (let [layer-str (u/find-key-by-id layer-types @*layer-type :filter)]
     (get-data! process-point-info
                (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
                     "?SERVICE=WMS"
                     "&VERSION=1.3.0"
                     "&REQUEST=GetFeatureInfo"
                     "&INFO_FORMAT=application/json"
-                    "&LAYERS=" layers-str
-                    "&QUERY_LAYERS=" layers-str
+                    "&LAYERS=demo:lg-" layer-str
+                    "&QUERY_LAYERS=demo:lg-" layer-str
                     "&FEATURE_COUNT=1000"
                     "&TILED=true"
                     "&I=0"
