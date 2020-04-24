@@ -15,17 +15,32 @@
 (defonce minZoom           (r/atom 0))
 (defonce maxZoom           (r/atom 28))
 (defonce *zoom             (r/atom 10))
-(defonce *cur-layer        (r/atom 0))
 (defonce legend-list       (r/atom []))
 (defonce layer-list        (r/atom []))
+(defonce *layer-idx        (r/atom 0))
 (defonce last-clicked-info (r/atom nil))
 (defonce animate?          (r/atom false))
 (defonce *layer-type       (r/atom 0))
 (defonce *speed            (r/atom 1))
-(defonce layer-types       [{:opt_id 0 :opt_label "Fire Area"           :filter "fire-area"}
-                            {:opt_id 1 :opt_label "Fire Volume"         :filter "fire-volume"}
-                            {:opt_id 2 :opt_label "Impacted Structures" :filter "impacted-structures"}
-                            {:opt_id 3 :opt_label "Times Burned"        :filter "times-burned"}])
+
+;; Static Data
+
+(defonce layer-types       [{:opt_id 0
+                             :opt_label "Fire Area"
+                             :filter "fire-area"
+                             :units "Acres"}
+                            {:opt_id 1
+                             :opt_label "Fire Volume"
+                             :filter "fire-volume"
+                             :units "Acre-ft"}
+                            {:opt_id 2
+                             :opt_label "Impacted Structures"
+                             :filter "impacted-structures"
+                             :units "Structures"}
+                            {:opt_id 3
+                             :opt_label "Times Burned"
+                             :filter "times-burned"
+                             :units "Times"}])
 (defonce speeds            [{:opt_id 0 :opt_label ".5x" :delay 2000}
                             {:opt_id 1 :opt_label "1x"  :delay 1000}
                             {:opt_id 2 :opt_label "2x"  :delay 500}
@@ -42,15 +57,15 @@
              @layer-list)))
 
 (defn get-current-layer-name []
-  (or (:layer (get (filtered-layers) @*cur-layer))
+  (or (:layer (get (filtered-layers) @*layer-idx))
       ""))
 
 (defn get-current-layer-hour []
-  (or (:hour (get (filtered-layers) @*cur-layer))
+  (or (:hour (get (filtered-layers) @*layer-idx))
       0))
 
 (defn get-current-layer-extent []
-  (or (:extent (get (filtered-layers) @*cur-layer))
+  (or (:extent (get (filtered-layers) @*layer-idx))
       [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
 
 (defn get-data! [process-fn url]
@@ -127,7 +142,6 @@
                                  (get "features"))
                              (filtered-layers)))))))
 
-;; TODO, get info again if user selects new layer
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
   (let [layers-str (str/join "," (map #(str "demo:" (:layer %))
@@ -151,7 +165,7 @@
                     "&BBOX=" (str/join "," point-info)))))
 
 (defn cycle-layer! [change]
-  (swap! *cur-layer #(mod (+ change %) (count (filtered-layers))))
+  (swap! *layer-idx #(mod (+ change %) (count (filtered-layers))))
   (ol/swap-active-layer! (get-current-layer-name)))
 
 (defn loop-animation! []
@@ -165,6 +179,12 @@
                        (min @maxZoom
                             zoom)))
     (ol/set-zoom! @*zoom)))
+
+(defn select-layer-type! [id]
+  (reset! *layer-type id)
+  (ol/swap-active-layer! (get-current-layer-name))
+  (get-point-info!       (ol/get-selected-point))
+  (get-legend!           (get-current-layer-name)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -185,11 +205,11 @@
 
 (defn $legend-box []
   {:background-color "white"
+   :bottom           "1rem"
    :border           "1px solid black"
    :border-radius    "5px"
    :right            ".5rem"
    :position         "absolute"
-   :top              "16rem"
    :z-index          "100"})
 
 (defn $legend-color [color]
@@ -249,7 +269,7 @@
   {:background-color "white"
    :border           "1px solid black"
    :border-radius    "5px"
-   :right            "-3rem"
+   :right            "5rem"
    :position         "absolute"
    :bottom           "5rem"
    :display          "flex"
@@ -276,14 +296,14 @@
 (defn $pop-up-arrow []
   {:background-color "white"
    :bottom           "0"
-   :height           "1.5rem"
+   :height           "1rem"
    :left             "0"
    :margin-left      "auto"
    :margin-right     "auto"
    :right            "0"
    :position         "absolute"
    :transform        "rotate(45deg)"
-   :width            "1.5rem"
+   :width            "1rem"
    :z-index          "-1"})
 
 (defn $vega-box []
@@ -296,7 +316,7 @@
    :position         "absolute"
    :right            ".5rem"
    :top              ".5rem"
-   :width            "18rem"
+   :width            "25rem"
    :z-index          "100"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -318,8 +338,8 @@
 (defn time-slider []
   [:div#time-slider {:style ($time-slider)}
    [:input {:style {:width "10rem"}
-            :type "range" :min "0" :max (dec (count (filtered-layers))) :value @*cur-layer
-            :on-change #(do (reset! *cur-layer (u/input-int-value %))
+            :type "range" :min "0" :max (dec (count (filtered-layers))) :value @*layer-idx
+            :on-change #(do (reset! *layer-idx (u/input-int-value %))
                             (ol/swap-active-layer! (get-current-layer-name)))}]
    [:button {:style {:padding "0 .25rem" :margin-left ".5rem"}
              :type "button"
@@ -365,41 +385,42 @@
    [:label "Select Layer"]
    [:select {:style ($dropdown)
              :value (or @*layer-type -1)
-             :on-change #(do (reset! *layer-type (u/input-int-value %))
-                             (ol/swap-active-layer! (get-current-layer-name))
-                             (get-legend! (get-current-layer-name)))}
+             :on-change #(select-layer-type! (u/input-int-value %))}
     (doall (map (fn [{:keys [opt_id opt_label]}]
                   [:option {:key opt_id :value opt_id} opt_label])
                 layer-types))]])
 
 (defn layer-line-plot []
-  {:autosize {:type "fit-y"}
-   :data     {:values (or @last-clicked-info [])}
-   :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "hour"}
-                          :y {:field "band" :type "quantitative" :title "acres"} ; TODO change with layer
-                          :color   {:field "type" :type "nominal" :legend nil}
-                          :tooltip [{:field "band" :title "Acres"} ; TODO change with layer
-                                    {:field "date" :title "Date"}
-                                    {:field "time" :title "Time"}]}
-               :layer [{:mark "line"}
+  (let [units (u/find-key-by-id layer-types @*layer-type :units)]
+    {:width    "container"
+     :height   "container"
+     :padding  {:left "16" :top "0" :right "16" :bottom "32"}
+     :data     {:values (or @last-clicked-info [])}
+     :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "Hour"}
+                            :y {:field "band" :type "quantitative" :title units}
+                            :color   {:field "type" :type "nominal" :legend nil}
+                            :tooltip [{:field "band" :title units  :type "nominal"}
+                                      {:field "date" :title "Date" :type "nominal"}
+                                      {:field "time" :title "Time" :type "nominal"}]}
+                 :layer [{:mark "line"}
                        ;; Layer with all points for selection
-                       {:mark      "point"
-                        :selection {:point-hover {:type    "single"
-                                                  :on      "mouseover"
-                                                  :empty   "none"}}}
-                       {:transform [{:filter {:or [{:field "hour" :lt (get-current-layer-hour)}
-                                                   {:field "hour" :gt (get-current-layer-hour)}]}}]
-                        :mark     {:type   "point"
-                                   :filled false
-                                   :fill   "white"}
-                        :encoding {:size {:condition {:selection :point-hover :value 150}
-                                          :value 75}}}
-                       {:transform [{:filter {:field "hour" :equal (get-current-layer-hour)}}]
-                        :mark {:type   "point"
-                               :filled false
-                               :fill   "black"}
-                        :encoding {:size {:condition {:selection :point-hover :value 150}
-                                          :value 75}}}]}]})
+                         {:mark      "point"
+                          :selection {:point-hover {:type    "single"
+                                                    :on      "mouseover"
+                                                    :empty   "none"}}}
+                         {:transform [{:filter {:or [{:field "hour" :lt (get-current-layer-hour)}
+                                                     {:field "hour" :gt (get-current-layer-hour)}]}}]
+                          :mark     {:type   "point"
+                                     :filled false
+                                     :fill   "white"}
+                          :encoding {:size {:condition {:selection :point-hover :value 150}
+                                            :value 75}}}
+                         {:transform [{:filter {:field "hour" :equal (get-current-layer-hour)}}]
+                          :mark {:type   "point"
+                                 :filled false
+                                 :fill   "black"}
+                          :encoding {:size {:condition {:selection :point-hover :value 150}
+                                            :value 75}}}]}]}))
 
 (defn try-get-js [obj & values]
   (try
@@ -413,7 +434,7 @@
     (catch js/Error e (.log js/console e) nil)))
 
 (defn render-vega [spec elem]
-  (when spec
+  (when (and spec (seq (get-in spec [:data :values])))
     (let [spec (clj->js spec)
           opts {:renderer "canvas"
                 :mode     "vega-lite"}]
@@ -424,7 +445,7 @@
                                       (fn [_ data]
                                         (when-let [index (or (try-get-js data "datum" "datum" "_vgsid_")
                                                              (try-get-js data "datum" "_vgsid_"))]
-                                          (reset! *cur-layer (dec ^js/integer index))
+                                          (reset! *layer-idx (dec ^js/integer index))
                                           (ol/swap-active-layer! (get-current-layer-name)))))))
           (.catch (fn [err] (js/console.log err)))))))
 
@@ -437,7 +458,7 @@
     (fn [this _] (render-vega (:spec (r/props this)) (rd/dom-node this)))
 
     :render
-    (fn [] [:div#vega-box {:style ($vega-box)}])}))
+    (fn [] [:div#vega-box {:style ($vega-box)}])})) ; TODO render no data / loading message
 
 (defn collapsible-panel []
   (r/with-let [show-panel?   (r/atom true)
@@ -467,9 +488,9 @@
   [:div#popup
    [:div {:style ($pop-up-box)}
     [:label (if @last-clicked-info
-              (str (:band (get @last-clicked-info @*cur-layer))
-                   " acre" ; TODO change with layer
-                   (when-not (= 1 @last-clicked-info) "s"))
+              (str (:band (get @last-clicked-info @*layer-idx))
+                   " "
+                   (u/find-key-by-id layer-types @*layer-type :units))
               "...")]]
    [:div {:style ($pop-up-arrow)}]])
 
