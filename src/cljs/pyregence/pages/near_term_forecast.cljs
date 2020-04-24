@@ -8,6 +8,9 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]))
 
+;; Make (println) function as console.log()
+(enable-console-print!)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -410,7 +413,7 @@
          nil))
      obj
      values)
-    (catch js/Error e (.log js/console e) nil)))
+    (catch js/Error e (println e) nil)))
 
 (defn render-vega [spec elem]
   (when spec
@@ -426,7 +429,7 @@
                                                              (try-get-js data "datum" "_vgsid_"))]
                                           (reset! *cur-layer (dec ^js/integer index))
                                           (ol/swap-active-layer! (get-current-layer-name)))))))
-          (.catch (fn [err] (js/console.log err)))))))
+          (.catch (fn [err] (println err)))))))
 
 (defn vega-box [props]
   (r/create-class
