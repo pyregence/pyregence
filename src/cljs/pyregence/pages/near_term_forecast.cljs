@@ -42,7 +42,7 @@
              @layer-list)))
 
 (defn get-current-layer-name []
-  (or (:layer-name (get (filtered-layers) @*cur-layer))
+  (or (:layer (get (filtered-layers) @*cur-layer))
       ""))
 
 (defn get-current-layer-hour []
@@ -82,10 +82,10 @@
                   "&LAYER=" layer)))
 
 (defn date-from-string [date time]
-  (js/Date. (subs date 0 4)
-            (subs date 4 6)
-            (subs date 6 8)
-            (subs time 0 2)))
+  (js/Date. (str (subs date 0 4) "-"
+                 (subs date 4 6) "-"
+                 (subs date 6 8) "T"
+                 (subs time 0 2) ":00:00.000z")))
 
 (defn process-capabilities [response]
   (-> (.text response)
@@ -95,12 +95,13 @@
                                (let [full-name   (get layer "Name")
                                      [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
                                      cur-date    (date-from-string date time)
-                                     base-date   (date-from-string "20200417" "140000")] ; TODO find first date for each group. This may come with model information
-                                 {:layer-name full-name
-                                  :type       type
-                                  :extent     (get layer "EX_GeographicBoundingBox")
-                                  :date       cur-date
-                                  :hour       (/ (- cur-date base-date) 1000 60 60)}))
+                                     base-date   (date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
+                                 {:layer  full-name
+                                  :type   type
+                                  :extent (get layer "EX_GeographicBoundingBox")
+                                  :date   (subs (.toISOString cur-date) 0 10)
+                                  :time   (str (subs (.toISOString cur-date) 11 16) " UTC")
+                                  :hour   (/ (- cur-date base-date) 1000 60 60)}))
                              (-> text
                                  ol/wms-capabilities
                                  js->clj
@@ -119,7 +120,7 @@
       (.then (fn [json]
                (reset! last-clicked-info
                        (mapv (fn [pi li]
-                               (merge (select-keys li [:date :hour :type])
+                               (merge (select-keys li [:time :date :hour :type])
                                       {:band (get-in pi ["properties" "GRAY_INDEX"])}))
                              (-> json
                                  js->clj
@@ -129,7 +130,7 @@
 ;; TODO, get info again if user selects new layer
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
-  (let [layers-str (str/join "," (map #(str "demo:" (:layer-name %))
+  (let [layers-str (str/join "," (map #(str "demo:" (:layer %))
                                       (filtered-layers)))]
     (get-data! process-point-info
                (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
@@ -376,12 +377,14 @@
    :data     {:values (or @last-clicked-info [])}
    :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "hour"}
                           :y {:field "band" :type "quantitative" :title "acres"} ; TODO change with layer
-                          :color {:field "type" :type "nominal" :legend nil}}
+                          :color   {:field "type" :type "nominal" :legend nil}
+                          :tooltip [{:field "band" :title "Acres"} ; TODO change with layer
+                                    {:field "date" :title "Date"}
+                                    {:field "time" :title "Time"}]}
                :layer [{:mark "line"}
                        ;; Layer with all points for selection
                        {:mark      "point"
                         :selection {:point-hover {:type    "single"
-                                                  :nearest true
                                                   :on      "mouseover"
                                                   :empty   "none"}}}
                        {:transform [{:filter {:or [{:field "hour" :lt (get-current-layer-hour)}
@@ -389,16 +392,14 @@
                         :mark     {:type   "point"
                                    :filled false
                                    :fill   "white"}
-                        :encoding {:size {:condition {:selection :point-hover :value 100}
-                                          :value 50}}}
-                       ;; There needs to be a range of values for nearest neighbor to work
-                       {:transform [{:filter {:and [{:field "hour" :lt (inc (get-current-layer-hour))}
-                                                    {:field "hour" :gt (dec (get-current-layer-hour))}]}}]
+                        :encoding {:size {:condition {:selection :point-hover :value 150}
+                                          :value 75}}}
+                       {:transform [{:filter {:field "hour" :equal (get-current-layer-hour)}}]
                         :mark {:type   "point"
                                :filled false
                                :fill   "black"}
-                        :encoding {:size {:condition {:selection :point-hover :value 100}
-                                          :value 50}}}]}]})
+                        :encoding {:size {:condition {:selection :point-hover :value 150}
+                                          :value 75}}}]}]})
 
 (defn try-get-js [obj & values]
   (try
