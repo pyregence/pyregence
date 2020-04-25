@@ -109,7 +109,7 @@
                                 ol/wms-capabilities
                                 js->clj
                                 (get-in ["Capability" "Layer" "Layer"]))
-                            (remove #(str/starts-with? (get % "Name") "lg"))
+                            (remove #(str/starts-with? (get % "Name") "lg-"))
                             (mapv (fn [layer]
                                     (let [full-name   (get layer "Name")
                                           [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
