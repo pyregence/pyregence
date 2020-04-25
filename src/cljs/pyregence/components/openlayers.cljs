@@ -51,16 +51,15 @@
 ;; Modifying objects
 
 (defn add-map-single-click! [call-back]
-  (let [map-view (.getView @the-map)]
-    (.on @the-map
-         "singleclick"
-         (fn [evt]
-           (let [map-overlay (.getOverlayById @the-map "popup")
-                 coord       (.-coordinate evt)
-                 [x y]       coord
-                 res         (.getResolution map-view)]
-             (.setPosition map-overlay coord)
-             (call-back [x y (+ x res) (+ y res)]))))))
+  (.on @the-map
+       "singleclick"
+       (fn [evt]
+         (let [map-overlay (.getOverlayById @the-map "popup")
+               coord       (.-coordinate evt)
+               [x y]       coord
+               res         (-> @the-map .getView .getResolution)]
+           (.setPosition map-overlay coord)
+           (call-back [x y (+ x res) (+ y res)])))))
 
 (defn add-map-zoom-end! [call-back]
   (.on @the-map
@@ -96,6 +95,11 @@
     [(.getZoom    map-view)
      (.getMinZoom map-view)
      (.getMaxZoom map-view)]))
+
+(defn get-selected-point []
+  (let [[x y] (-> @the-map (.getOverlayById "popup") .getPosition)
+        res   (-> @the-map .getView .getResolution)]
+    [x y (+ x res) (+ y res)]))
 
 (defn wms-capabilities
   "Converts capabilities xml to a js object"
