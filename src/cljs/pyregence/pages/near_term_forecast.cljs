@@ -25,27 +25,26 @@
 
 ;; Static Data
 
-(defonce layer-types       [{:opt_id 0
-                             :opt_label "Fire Area"
-                             :filter "fire-area"
-                             :units "Acres"}
-                            {:opt_id 1
-                             :opt_label "Fire Volume"
-                             :filter "fire-volume"
-                             :units "Acre-ft"}
-                            {:opt_id 2
-                             :opt_label "Impacted Structures"
-                             :filter "impacted-structures"
-                             :units "Structures"}
-                            {:opt_id 3
-                             :opt_label "Times Burned"
-                             :filter "times-burned"
-                             :units "Times"}])
-(defonce speeds            [{:opt_id 0 :opt_label ".5x" :delay 2000}
-                            {:opt_id 1 :opt_label "1x"  :delay 1000}
-                            {:opt_id 2 :opt_label "2x"  :delay 500}
-                            {:opt_id 3 :opt_label "5x"  :delay 200}])
-
+(defonce layer-types [{:opt_id 0
+                       :opt_label "Fire Area"
+                       :filter "fire-area"
+                       :units "Acres"}
+                      {:opt_id 1
+                       :opt_label "Fire Volume"
+                       :filter "fire-volume"
+                       :units "Acre-ft"}
+                      {:opt_id 2
+                       :opt_label "Impacted Structures"
+                       :filter "impacted-structures"
+                       :units "Structures"}
+                      {:opt_id 3
+                       :opt_label "Times Burned"
+                       :filter "times-burned"
+                       :units "Times"}])
+(defonce speeds      [{:opt_id 0 :opt_label ".5x" :delay 2000}
+                      {:opt_id 1 :opt_label "1x"  :delay 1000}
+                      {:opt_id 2 :opt_label "2x"  :delay 500}
+                      {:opt_id 3 :opt_label "5x"  :delay 200}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -403,7 +402,7 @@
                                       {:field "date" :title "Date" :type "nominal"}
                                       {:field "time" :title "Time" :type "nominal"}]}
                  :layer [{:mark "line"}
-                       ;; Layer with all points for selection
+                         ;; Layer with all points for selection
                          {:mark      "point"
                           :selection {:point-hover {:type    "single"
                                                     :on      "mouseover"
