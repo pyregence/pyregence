@@ -512,6 +512,7 @@
 
     :reagent-render
     (fn [_]
+      [:input {:type "hidden" :value (count @layer-list)}] ; triggers :component-did-update
       [:div {:style ($/combine $/root {:height "100%" :padding 0})}
        [:div {:class "bg-yellow"
               :style ($app-header)}
