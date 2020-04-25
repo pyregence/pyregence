@@ -4,6 +4,7 @@
 .key
 .nrepl-port
 .rebel_readline_history
-email-server.edn
-target
 .vscode
+email-server.edn
+logs
+target
