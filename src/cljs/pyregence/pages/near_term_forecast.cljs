@@ -141,25 +141,26 @@
                   (filtered-layers)))))
 
 (defn get-point-info! [point-info]
-  (reset! last-clicked-info nil)
-  (let [layer-str (u/find-key-by-id layer-types @*layer-type :filter)]
-    (get-data process-point-info!
-              (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                   "?SERVICE=WMS"
-                   "&VERSION=1.3.0"
-                   "&REQUEST=GetFeatureInfo"
-                   "&INFO_FORMAT=application/json"
-                   "&LAYERS=demo:lg-" layer-str
-                   "&QUERY_LAYERS=demo:lg-" layer-str
-                   "&FEATURE_COUNT=1000"
-                   "&TILED=true"
-                   "&I=0"
-                   "&J=0"
-                   "&WIDTH=1"
-                   "&HEIGHT=1"
-                   "&CRS=EPSG:3857"
-                   "&STYLES="
-                   "&BBOX=" (str/join "," point-info)))))
+  (when point-info
+    (reset! last-clicked-info nil)
+    (let [layer-str (u/find-key-by-id layer-types @*layer-type :filter)]
+      (get-data process-point-info!
+                (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                     "?SERVICE=WMS"
+                     "&VERSION=1.3.0"
+                     "&REQUEST=GetFeatureInfo"
+                     "&INFO_FORMAT=application/json"
+                     "&LAYERS=demo:lg-" layer-str
+                     "&QUERY_LAYERS=demo:lg-" layer-str
+                     "&FEATURE_COUNT=1000"
+                     "&TILED=true"
+                     "&I=0"
+                     "&J=0"
+                     "&WIDTH=1"
+                     "&HEIGHT=1"
+                     "&CRS=EPSG:3857"
+                     "&STYLES="
+                     "&BBOX=" (str/join "," point-info))))))
 
 (defn cycle-layer! [change]
   (swap! *layer-idx #(mod (+ change %) (count (filtered-layers))))
