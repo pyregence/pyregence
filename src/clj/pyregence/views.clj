@@ -30,7 +30,8 @@
    "/not-found"         "not-found.html"
    "/fire-behavior"     "fire-behavior.html"
    "/forecast-tools"    "forecast-tools.html"
-   "/scenario-analyses" "scenario-analyses.html"})
+   "/scenario-analyses" "scenario-analyses.html"
+   "/team"              "team.html"})
 
 (defn render-static [uri]
   (fn [_]
