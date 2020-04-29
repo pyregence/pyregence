@@ -1,276 +1,424 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta name="robots" content="noindex, nofollow">
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-        <link rel="stylesheet" href="css/style.css">
-        <title>Pyregence - Wildfire Risk Models for a Safe & Resilient Grid</title>
-        <meta name="description" content="The next generation of open source wildfire risk models to support decision making for a more safe and resilient electric grid.">
-        <link rel="icon" type="image/png" href="../images/favicon.png">
-        <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-        <script src="js/script.js"></script>
-    </head>
-    <body>
-        <div class="site">
-            <div class="wrapper-navbar" id="header">
-                <a class="skip-link sr-only sr-only-focusable" href="#content">Skip to content</a>
-                <div class="container">
-                    <div class="row align-items-center" id="nav-row">
-                        <div class="col-md-3 col-6">
-                            <a class="navbar-brand" rel="home" href="/" title="Pyregence">
-                                <img src="images/pyregence-logo.svg" alt="Pyregence logo" class="real-logo">
-                                <img src="images/pyregence-logo-white.svg" class="white-logo" alt="Pyregence logo white">
-                            </a>
-                        </div>
-                        <div class="col-md-9 col-6 mobile-flex">
-                            <div class="mobile-button">
-                                <a href="javascript:void(0)" class="icon">
-                                    <div class="hamburger">
-                                        <div class="menui top-menu"></div>
-                                        <div class="menui mid-menu"></div>
-                                        <div class="menui bottom-menu"></div>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="mobilenav">
-                                <ul id="main-menu" class="navbar ml-auto list-unstyled mb-0">
-                                    <!--<li itemscope="itemscope" itemtype="https://www.schema.org/SiteNavigationElement" id="menu-item-home" class="nav-item">
-                                        <a href="/" class="nav-link">home</a>
-                                    </li>
-                                    <li itemscope="itemscope" itemtype="https://www.schema.org/SiteNavigationElement" id="menu-item-documents" class="nav-item">
-                                        <a href="/documents" class="nav-link">documents</a>
-                                    </li>
-                                    <li itemscope="itemscope" itemtype="https://www.schema.org/SiteNavigationElement" id="menu-item-data" class="nav-item">
-                                        <a href="/data" class="nav-link">data</a>
-                                    </li>-->
-                                    <li itemscope="itemscope" itemtype="https://www.schema.org/SiteNavigationElement" id="menu-item-team" class="nav-item">
-                                        <a href="/team" class="nav-link">team</a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
+<div id="content" class="wg wg-forecast-tools">
+    <header>
+        <div class="background">
+            <div class="white circle large icon">
+            <img src="images/icons/forecast-tools.svg" alt="Forecast tools icon">
+        </div>
+        </div>
+        <div class="container mb-5">
+            <h1 class="display-4">Forecast Tools</h1>
+            <p class="subtitle text-center">
+                Forecasting wildfire activity in California to inform the operation of a safe and reliable electric grid
+            </p>
+            <div class="line gray line-center"></div>
+            <p>
+                Situational awareness of hazardous fire conditions and the potential impacts of wildfire, both to and from the electric grid, is vital to maintain infrastructure integrity. Electric utilities rely on timely and actionable intel to mitigate fire risk, yet there are numerous barriers to accessing information: current wildfire science and technology is fragmented and limited, and software is either unable to function at scale or hidden in a black box behind a paywall.
+            </p>
+            <p>
+                The Pyregence Consortium provides free and open source access to software tools and data backed by a fire and risk forecasting system specifically developed for use by California’s electric utilities. A web-based, interactive interface displays forecasts for active fires, fire weather, and fire risk at a seven-day horizon. A user-selected output data structure allows for flexible integration with existing workflows to assist decision-making for fire and ignition risk mitigation, thus reducing losses and enhancing grid safety and reliability.
+            </p>
+        </div>
+    </header>
+    <section class="value-prop1 py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8">
+                    <h2 class="display-4">
+                        Pyregence Tools
+                    </h2>
+                    <p class="mb-5">
+                        Electric utilities currently use fire models that are based on dated wildfire science. PRC is providing free and open source access to cutting-edge wildfire science and tools that provide for timely and accurate forecasts of wildfire spread and potential impacts to the electric utility grid and communities.
+                    </p>
+                    <h3>Goals</h3>
+                    <p class="subtitle my-1">
+                        Develop the next generation of models to provide near-term risk forecasts at a 0-to-7-day temporal scale and at a fine (circa 30m) spatial scale to simulate spread of extant fire ignitions and enhance current models with best practice in wildfire risk modeling.
+                    </p>
+                    <hr>
+                    <p class="subtitle my-1">
+                        Integrate a decision-support tool into operating procedures at IOUs.
+                    </p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <img class="p-4" src="images/icons/pyregence-tools-icon-round@2x.png" alt="Pyregence tools icon">
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="value-prop2 py-5">
+        <div class="container">
+            <h2 class="display-4 text-center">High Impact Products</h2>
+            <div class="row my-5">
+                <div class="col-md-4 px-4 d-flex">
+                    <div class="prod p-4 my-3">
+                        <img class="mb-3" src="images/icons/computer-icon@2x.jpg" alt="Computer icon">
+                        <p class="text-center">
+                            Web-platform to view active fire forecasts, 0 to 7 day fire probability and de-energization metrics from multiple wildfire models
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4 px-4 d-flex">
+                    <div class="prod p-4 my-3">
+                        <img class="mb-3" src="images/icons/map-icon-2@2x.jpg" alt="Map icon">
+                        <p class="text-center">
+                            Enhancement of current wildfire models (Elmfire/GridFire) to include fire in the WUI, coupled fire-weather dynamics, spotting, amongst others
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4 px-4 d-flex">
+                    <div class="prod p-4 my-3">
+                        <img class="mb-3" src="images/icons/tools-icon@2x.jpg" alt="Tools icon">
+                        <p class="text-center">
+                            Future re-design of wildfire modelling to incorporate new developments in basic science of fire behaviour modelling
+                        </p>
                     </div>
                 </div>
             </div>
-            <div id="content" class="wg wg-forecast-tools">
-                <header>
-                    <div class="background">
-                        <div class="white circle large icon">
-                        <img src="images/icons/forecast-tools.svg" alt="Forecast tools icon">
-                    </div>
-                    </div>
-                    <div class="container mb-5">
-                        <h1 class="display-4">Forecast Tools</h1>
-                        <p class="subtitle text-center">
-                            Forecasting wildfire activity in California to inform the operation of a safe and reliable electric grid
-                        </p>
-                        <div class="line gray line-center"></div>
-                        <p>
-                            Situational awareness of hazardous fire conditions and the potential impacts of wildfire, both to and from the electric grid, is vital to maintain infrastructure integrity. Electric utilities rely on timely and actionable intel to mitigate fire risk, yet there are numerous barriers to accessing information: current wildfire science and technology is fragmented and limited, and software is either unable to function at scale or hidden in a black box behind a paywall.
-                        </p>
-                        <p>
-                            The Pyregence Consortium provides free and open source access to software tools and data backed by a fire and risk forecasting system specifically developed for use by California’s electric utilities. A web-based, interactive interface displays forecasts for active fires, fire weather, and fire risk at a seven-day horizon. A user-selected output data structure allows for flexible integration with existing workflows to assist decision-making for fire and ignition risk mitigation, thus reducing losses and enhancing grid safety and reliability.
-                        </p>
-                    </div>
-                </header>
-                <section class="value-prop1 py-5">
-                    <div class="container">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <h2 class="display-4">
-                                    Pyregence Tools
-                                </h2>
-                                <p class="mb-5">
-                                    Electric utilities currently use fire models that are based on dated wildfire science. PRC is providing free and open source access to cutting-edge wildfire science and tools that provide for timely and accurate forecasts of wildfire spread and potential impacts to the electric utility grid and communities.
-                                </p>
-                                <h3>Goals</h3>
-                                <p class="subtitle my-1">
-                                    Develop the next generation of models to provide near-term risk forecasts at a 0-to-7-day temporal scale and at a fine (circa 30m) spatial scale to simulate spread of extant fire ignitions and enhance current models with best practice in wildfire risk modeling.
-                                </p>
-                                <hr>
-                                <p class="subtitle my-1">
-                                    Integrate a decision-support tool into operating procedures at IOUs.
-                                </p>
-                            </div>
-                            <div class="col-md-4 text-center">
-                                <img class="p-4" src="images/icons/pyregence-tools-icon-round@2x.png" alt="Pyregence tools icon">
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                <section class="value-prop2 py-5">
-                    <div class="container">
-                        <h2 class="display-4 text-center">High Impact Products</h2>
-                        <div class="row my-5">
-                            <div class="col-md-4 px-4 d-flex">
-                                <div class="prod p-4 my-3">
-                                    <img class="mb-3" src="images/icons/computer-icon@2x.jpg" alt="Computer icon">
-                                    <p class="text-center">
-                                        Web-platform to view active fire forecasts, 0 to 7 day fire probability and de-energization metrics from multiple wildfire models
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-md-4 px-4 d-flex">
-                                <div class="prod p-4 my-3">
-                                    <img class="mb-3" src="images/icons/map-icon-2@2x.jpg" alt="Map icon">
-                                    <p class="text-center">
-                                        Enhancement of current wildfire models (Elmfire/GridFire) to include fire in the WUI, coupled fire-weather dynamics, spotting, amongst others
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-md-4 px-4 d-flex">
-                                <div class="prod p-4 my-3">
-                                    <img class="mb-3" src="images/icons/tools-icon@2x.jpg" alt="Tools icon">
-                                    <p class="text-center">
-                                        Future re-design of wildfire modelling to incorporate new developments in basic science of fire behaviour modelling
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                <section class="team my-5">
-                    <div class="container">
-                        <h2 class="text-center">Forecast Tools Team</h2>
-                        <div class="line yellow line-center"></div>
-                        <div class="row">
-                            <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
-                                <div class="indv p-3">
-                                    <img class="headshot mb-4" src="images/team/chris-lautenberger.jpg" alt="Chris Lautenberger">
-                                    <h3 class="text-center">Chris Lautenberger, PhD</h3>
-                                    <p class="mb-1 text-center">
-                                        Reax Engineering
-                                    </p>
-                                    <div class="line yellow small line-center"></div>
-                                    <p class="text-center">
-                                        Lead of Workgroup #3 Forecast Tools
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
-                                <div class="indv p-3">
-                                    <img class="headshot mb-4" src="images/team/maria-theodori.jpg" alt="Maria Theodori">
-                                    <h3 class="text-center">Maria Theodori</h3>
-                                    <p class="text-center">
-                                        Reax Engineering
-                                    </p>
-                                    <div class="line yellow small line-center"></div>
-                                    <p class="mb-1 text-center">
-                                        User Engagement Team, Forecast Tools Workgroup support
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
-                                <div class="indv p-3">
-                                    <img class="headshot mb-4" src="images/team/gary-johnson.jpg" alt="Gary Johnson">
-                                    <h3 class="text-center">Gary Johnson, PhD</h3>
-                                    <p class="mb-1 text-center">
-                                        Spatial Informatics Group
-                                    </p>
-                                    <div class="line yellow small line-center"></div>
-                                    <p class="mb-1 text-center">
-                                        Programmer for fire models and forecast tools
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
-                                <div class="indv p-3">
-                                    <img class="headshot mb-4" src="images/team/matt-spencer.jpg" alt="Matt Spencer">
-                                    <h3 class="text-center">Matt Spencer, P.E.</h3>
-                                    <p class="mb-1 text-center">
-                                        Spatial Informatics Group
-                                    </p>
-                                    <div class="line yellow small line-center"></div>
-                                    <p class="mb-1 text-center">
-                                        Programmer for forecast tool development
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
-                                <div class="indv p-3">
-                                    <img class="headshot mb-4" src="images/team/mariko-geronimo.jpg" alt="Mariko Geronimo">
-                                    <h3 class="text-center">Mariko Geronimo</h3>
-                                    <p class="mb-1 text-center">
-                                        Lumen Energy Strategy
-                                    </p>
-                                    <div class="line yellow small line-center"></div>
-                                    <p class="mb-1 text-center">
-                                        Lead cost/benefit analysis
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
-                                <div class="indv p-3">
-                                    <img class="headshot mb-4" src="images/team/ali-tohidi.jpg" alt="Ali Tohidi">
-                                    <h3 class="text-center">Ali Tohidi, PhD</h3>
-                                    <p class="mb-1 text-center">
-                                        Spatial Informatics Group
-                                    </p>
-                                    <div class="line yellow small line-center"></div>
-                                    <p class="mb-1 text-center">
-                                        Programmer fire model development
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
-                                <div class="indv p-3">
-                                    <img class="headshot mb-4" src="images/team/joe-scott.jpg" alt="Joe Scott">
-                                    <h3 class="text-center">Joe Scott</h3>
-                                    <p class="mb-1 text-center">
-                                        Pyrologix
-                                    </p>
-                                    <div class="line yellow small line-center"></div>
-                                    <p class="mb-1 text-center">
-                                        Advisor
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
-                                <div class="indv p-3">
-                                    <img class="headshot mb-4" src="images/team/ryan-pressler.jpg" alt="Ryan Pressler">
-                                    <h3 class="text-center">Ryan Pressler</h3>
-                                    <p class="mb-1 text-center">
-                                        User interface/experience designer
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
-                                <div class="indv p-3">
-                                    <img class="headshot mb-4" src="images/team/david-saah.jpg" alt="David Saah">
-                                    <h3 class="text-center">David Saah, PhD</h3>
-                                    <p class="mb-1 text-center">
-                                        Spatial Informatics Group and University of San Francisco
-                                    </p>
-                                    <div class="line yellow small line-center"></div>
-                                    <p class="text-center">
-                                        Principle Investigator
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
-                                <div class="indv p-3">
-                                    <img class="headshot mb-4" src="images/team/shane-romsos.jpg" alt="Shane Romsos">
-                                    <h3 class="text-center">Shane Romsos, M.Sc.</h3>
-                                    <p class="mb-1 text-center">
-                                        Spatial Informatics Group
-                                    </p>
-                                    <div class="line yellow small line-center"></div>
-                                    <p class="text-center">
-                                        Project Manager
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-            <footer class="jumbotron bg-brown mb-0 py-3">
-                <p class="text-white text-center mb-0 smaller">&copy; 2020 Pyregence - All Rights Reserved | Terms</p>
-            </footer>
         </div>
-    </body>
-</html>
+    </section>
+    <section class="team my-5">
+        <div class="container">
+            <h2 class="text-center">Forecast Tools Team</h2>
+            <div class="line yellow line-center"></div>
+            <div class="row">
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/chris-lautenberger.jpg" alt="Chris Lautenberger">
+                        <h3 class="text-center">Chris Lautenberger, PhD</h3>
+                        <p class="mb-1 text-center">
+                            Reax Engineering
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="text-center">
+                            Lead of Workgroup #3 Forecast Tools
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/maria-theodori.jpg" alt="Maria Theodori">
+                        <h3 class="text-center">Maria Theodori</h3>
+                        <p class="text-center">
+                            Reax Engineering
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            User Engagement Team, Forecast Tools Workgroup support
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/gary-johnson.jpg" alt="Gary Johnson">
+                        <h3 class="text-center">Gary Johnson, PhD</h3>
+                        <p class="mb-1 text-center">
+                            Spatial Informatics Group
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Programmer for fire models and forecast tools
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/matt-spencer.jpg" alt="Matt Spencer">
+                        <h3 class="text-center">Matt Spencer, P.E.</h3>
+                        <p class="mb-1 text-center">
+                            Spatial Informatics Group
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Programmer for forecast tool development
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/mariko-geronimo.jpg" alt="Mariko Geronimo">
+                        <h3 class="text-center">Mariko Geronimo</h3>
+                        <p class="mb-1 text-center">
+                            Lumen Energy Strategy
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Lead cost/benefit analysis
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/ali-tohidi.jpg" alt="Ali Tohidi">
+                        <h3 class="text-center">Ali Tohidi, PhD</h3>
+                        <p class="mb-1 text-center">
+                            Spatial Informatics Group
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Programmer fire model development
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/joe-scott.jpg" alt="Joe Scott">
+                        <h3 class="text-center">Joe Scott</h3>
+                        <p class="mb-1 text-center">
+                            Pyrologix
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Advisor
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/ryan-pressler.jpg" alt="Ryan Pressler">
+                        <h3 class="text-center">Ryan Pressler</h3>
+                        <p class="mb-1 text-center">
+                            User interface/experience designer
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/david-saah.jpg" alt="David Saah">
+                        <h3 class="text-center">David Saah, PhD</h3>
+                        <p class="mb-1 text-center">
+                            Spatial Informatics Group and University of San Francisco
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="text-center">
+                            Principle Investigator
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/shane-romsos.jpg" alt="Shane Romsos">
+                        <h3 class="text-center">Shane Romsos, M.Sc.</h3>
+                        <p class="mb-1 text-center">
+                            Spatial Informatics Group
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="text-center">
+                            Project Manager
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+<div id="content" class="wg wg-fire-behavior">
+    <header>
+        <div class="background">
+            <div class="white circle large icon">
+            <img src="images/icons/fire-behavior.svg" alt="Fire behavior icon">
+        </div>
+        </div>
+        <div class="container mb-5">
+            <h1 class="display-4">Fire Behavior</h1>
+            <p class="subtitle text-center">
+                Advancing research on fuel mapping and fire spread to inform next generation wildfire models
+            </p>
+            <div class="line gray line-center"></div>
+            <p>
+                Operational wildfire behavior models are empirical and cannot be adapted to predict extreme fire behaviors resulting from prolonged heat release by large woody fuels and deep duff layers typical of modern California forests. Current fire and fuel models were developed in the 1970s to predict the steady advance of a thin linear flame zone assuming heat release only from flaming combustion of continuous fine fuels for periods of 10–30 seconds. Fuel classification and mapping ignores the 10–100 times greater fuel biomass of large-diameter woody material and deep duff layers now commonplace. These fuels burn for hours, leading to large-area fires (not thin flame zones) and heat release rates that vary widely depending on fire-induced ventilation of solid-phase combustion and smoldering-to-flaming transition. Without a fundamental understanding of solid-fuel combustion under large wildfire conditions we will never approximate the actual fire potential associated with the loads and extent of woody fuels as millions of drought-killed trees fall to the ground.
+            </p>
+            <p>
+                To integrate results from experimental work with detailed and extensive fuel characterizations , WG2 will use an ensemble approach to draw from measured fuel distributions and determine the variability in fire behavior predictions for the current and projected forest fuel conditions. Nonlinear dependence of fire behavior on fuel characteristics means that fuel ensembles are essential to modeling extreme fire behaviors and their relative frequencies in mixed-conifer forests with high tree mortality. The current spatially averaged fuel descriptions and fire behavior models ignore these critical dependencies. Results from WG2 will enhance the efforts to forecast near-term risk (WG3). The two groups work in parallel. WG2 focused on addressing known limitations in the contemporary fire-spread models while WG3 pushes the envelope of our current capacity to capture fire risk to electricity assets. The strategy of linking application with basic research ensures that immediate needs are met while also addressing likely future challenges. Such an anticipatory design is essential to keep pace with rapidly changing environmental conditions.
+            </p>
+        </div>
+    </header>
+    <section class="value-prop1 py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <h2 class="text-center">Contemporary wildfire events</h2>
+                    <p class="mb-5">
+                        Current fire models fail to address the fundamental physics behind contemporary wildfire events in the State of California. This team aims to deliver fundamental scientific advances to give rise to the next generation of wildfire models, including a new fuel mapping technique and fire spread model based on fire physics.
+                    </p>
+                </div>
+            </div>
+            <div class="row features">
+                <div class="col-md-3 d-flex">
+                    <p class="subtitle text-center my-2">
+                        Devise experimental apparatus and test in a laboratory setting the predicted heat release rates across the range of fuel structures and environmental conditions found in wildland areas
+                    </p>
+                </div>
+                <div class="col-md-3 d-flex">
+                    <p class="subtitle text-center my-2">
+                        Develop and employ a new fuel measurement and mapping system to resolve the essential fuel components and spatial heterogeneity in fuels occurring at multiple scales
+                    </p>
+                </div>
+                <div class="col-md-3 d-flex">
+                    <p class="subtitle text-center my-2">
+                        Map current and projected future fuel conditions in areas of elevated tree mortality
+                    </p>
+                </div>
+                <div class="col-md-3 d-flex">
+                    <p class="subtitle text-center my-2">
+                        Evaluate how to integrate the products into near-term risk forecasts
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="value-prop2 py-5">
+        <div class="container">
+            <h2 class="text-center">High Impact Products</h2>
+            <div class="row my-5">
+                <div class="col-md-4 px-4 d-flex">
+                    <div class="prod p-4 my-3">
+                        <img class="mb-3" src="images/icons/map-icon@2x.jpg" alt="Web map icon">
+                        <p class="text-center">
+                            A new fuel measurement and mapping system
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4 px-4 d-flex">
+                    <div class="prod p-4 my-3">
+                        <img class="mb-3" src="images/icons/data-icon@2x.jpg" alt="Data icon">
+                        <p class="text-center">
+                            A new fire behavior model
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4 px-4 d-flex">
+                    <div class="prod p-4 my-3">
+                        <img class="mb-3" src="images/icons/analysis-icon@2x.jpg" alt="Analysis icon">
+                        <p class="text-center">
+                            Analysis of fuels over a 20 year life-cycle in areas of elevated tree mortality across the State
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="team my-5">
+        <div class="container">
+            <h2 class="text-center">Fire Behavior Team</h2>
+            <div class="line yellow line-center"></div>
+            <div class="row">
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/scott-stephens.jpg" alt="Scott Stephens">
+                        <h3 class="text-center">Scott Stephens, PhD</h3>
+                        <p class="mb-1 text-center">
+                            UC Berkeley
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="text-center">
+                            Lead for Workgroup #2 - Fire Behavior.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/john-battles.jpg" alt="John Battles">
+                        <h3 class="text-center">John Battles, PhD</h3>
+                        <p class="text-center">
+                            UC Berkeley
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Co-lead for Workgroup #2 - Fire Behavior. Field Campaign Lead
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/brandon-collins.jpg" alt="Brandon Collins">
+                        <h3 class="text-center">Brandon Collins, PhD</h3>
+                        <p class="mb-1 text-center">
+                            UC Berkeley
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Field data collection and analysis
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/michael-gollner.jpg" alt="Michael Gollner">
+                        <h3 class="text-center">Michael Gollner, PhD</h3>
+                        <p class="mb-1 text-center">
+                            UC Berkeley
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Laboratory test and analysis
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/david-marvin.jpg" alt="David Marvin">
+                        <h3 class="text-center">David Marvin, PhD</h3>
+                        <p class="mb-1 text-center">
+                            Salo Sciences
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Fuels mapping
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/chris-anderson.jpg" alt="Chris Anderson">
+                        <h3 class="text-center">Chris Anderson, PhD</h3>
+                        <p class="mb-1 text-center">
+                            Salo Sciences
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Fuels mapping
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/mark-finney.jpg" alt="Mark Finney">
+                        <h3 class="text-center">Mark Finney, PhD</h3>
+                        <p class="mb-1 text-center">
+                            US Forest Service - Missoula Fire Lab
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="mb-1 text-center">
+                            Lead for laboratory testing and analysis
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/david-saah.jpg" alt="David Saah">
+                        <h3 class="text-center">David Saah, PhD</h3>
+                        <p class="mb-1 text-center">
+                            Spatial Informatics Group and University of San Francisco
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="text-center">
+                            Principle Investigator
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 px-3 my-3 d-flex">
+                    <div class="indv p-3">
+                        <img class="headshot mb-4" src="images/team/shane-romsos.jpg" alt="Shane Romsos">
+                        <h3 class="text-center">Shane Romsos, M.Sc.</h3>
+                        <p class="mb-1 text-center">
+                            Spatial Informatics Group
+                        </p>
+                        <div class="line yellow small line-center"></div>
+                        <p class="text-center">
+                            Project Manager
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
