@@ -1,20 +1,16 @@
 (ns pyregence.views
   (:require [clojure.data.json :as json]
-            [clojure.string :as str]
             [hiccup.page :refer [html5 include-css include-js]]))
-
-(defn combine-head []
-  [:head
-   (slurp "resources/html/~head.html")
-   (include-css "/css/ol.css")
-   (include-js "/js/ol.js" "/cljs/app.js")])
 
 (defn render-dynamic []
   (fn [request]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body    (html5
-               (combine-head)
+               [:head
+                (slurp "resources/html/~head.html")
+                (include-css "/css/ol.css")
+                (include-js "/js/ol.js" "/cljs/app.js")]
                [:body
                 [:div#near-term-forecast
                  (slurp "resources/html/~header.html")
@@ -33,32 +29,21 @@
    "/scenario-analyses" "scenario-analyses.html"
    "/team"              "team.html"})
 
-(defn separate-scripts [uri]
-  (reduce (fn [acc cur]
-            (if (or (str/includes? cur "<link href")
-                    (str/includes? cur "<script src"))
-              (update acc 1 conj cur)
-              (update acc 0 conj cur)))
-          [[] []]
-          (str/split-lines (slurp (str "resources/html/" (uri->html uri))))))
-
 (defn render-static [uri]
   (fn [_]
-    (let [[content scripts] (separate-scripts uri)]
-      {:status  (if (= uri "/not-found") 404 200)
-       :headers {"Content-Type" "text/html"}
-       :body    (html5
-                 [:head
-                  (slurp "resources/html/~head.html")
-                  (str/join "\n" scripts)]
-                 [:body
-                  (slurp "resources/html/~header.html")
-                  (str/join "\n" content)
-                  [:footer {:class "jumbotron bg-brown mb-0 py-3"}
-                   [:p {:class "text-white text-center mb-0 smaller"}
-                    (str "\u00A9 "
-                         (+ 1900 (.getYear (java.util.Date.)))
-                         " Pyregence - All Rights Reserved | Terms")]]])})))
+    {:status  (if (= uri "/not-found") 404 200)
+     :headers {"Content-Type" "text/html"}
+     :body    (html5
+               [:head
+                (slurp "resources/html/~head.html")]
+               [:body
+                (slurp "resources/html/~header.html")
+                (slurp (str "resources/html/" (uri->html uri)))
+                [:footer {:class "jumbotron bg-brown mb-0 py-3"}
+                 [:p {:class "text-white text-center mb-0 smaller"}
+                  (str "\u00A9 "
+                       (+ 1900 (.getYear (java.util.Date.)))
+                       " Pyregence - All Rights Reserved | Terms")]]])}))
 
 (defn data-response
   ([status body]
