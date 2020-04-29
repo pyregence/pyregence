@@ -4,9 +4,6 @@
             [clojure.core.async :refer [chan go >! <! close!]]
             [cljs.core.async.interop :refer-macros [<p!]]))
 
-;; Make (println) function as console.log()
-(enable-console-print!)
-
 (defn input-value
   "Return the value property of the target property of an event."
   [event]
@@ -71,8 +68,8 @@
       (let [response (<p! (fetch url options))]
         (if (.-ok response)
           (process-fn response)
-          (println "HTTP Error:" response)))
-      (catch ExceptionInfo e (println "Network Error:" (ex-cause e))))))
+          (js/console.log "HTTP Error:" response)))
+      (catch ExceptionInfo e (js/console.log "Network Error:" (ex-cause e))))))
 
 (defmulti call-remote! (fn [method url data] method))
 
@@ -92,7 +89,7 @@
                 (clj->js fetch-params))
         (.then  (fn [response]   (if (.-ok response) (.text response) (.reject js/Promise response))))
         (.then  (fn [edn-string] (go (>! result-chan (or (edn/read-string edn-string) :no-data)))))
-        (.catch (fn [response]   (println response) (close! result-chan))))
+        (.catch (fn [response]   (js/console.log response) (close! result-chan))))
     result-chan))
 
 ;; Combines status and error message into return value
