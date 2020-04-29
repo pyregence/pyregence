@@ -425,7 +425,7 @@ p a:hover, p a:active {
     background-size: cover;
     background-position: center center;
     border-top: 8px solid #F9AF3B;
-    margin-top: calc(48px + 2.5rem);
+    margin-top: calc(24px + 2.5rem);
     color: #FFFFFF;
     min-height: 320px;
 }
@@ -493,7 +493,7 @@ p a:hover, p a:active {
     text-decoration: none;
     color: #000000;
 }
-.team-block p.role, .lightbox p.role {
+p.role {
     font-weight: bold;
 }
 /*——Media Queries——*/
