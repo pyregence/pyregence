@@ -3,7 +3,7 @@
             [reagent.core :as r]
             [reagent.dom :as rd]
             [clojure.string :as str]
-            [clojure.core.async :refer [go]]
+            [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]
             [herb.core :refer [<class]]
             [pyregence.components.openlayers :as ol]
@@ -81,19 +81,20 @@
 
 (defn process-legend! [response]
   (go
-    (reset! legend-list
-            (-> (<p! (.json response))
-                js->clj
-                (get-in ["Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries"])))))
+    (-> (<p! (.json response))
+        js->clj
+        (get-in ["Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries"]))))
 
 (defn get-legend! [layer]
-  (get-data process-legend!
-            (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                 "?SERVICE=WMS"
-                 "&VERSION=1.3.0"
-                 "&REQUEST=GetLegendGraphic"
-                 "&FORMAT=application/json"
-                 "&LAYER=" layer)))
+  (go
+    (reset! legend-list
+            (<! (get-data process-legend!
+                          (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                               "?SERVICE=WMS"
+                               "&VERSION=1.3.0"
+                               "&REQUEST=GetLegendGraphic"
+                               "&FORMAT=application/json"
+                               "&LAYER=" layer))))))
 
 (defn date-from-string [date time]
   (js/Date. (str (subs date 0 4) "-"
@@ -103,64 +104,66 @@
 
 (defn process-capabilities! [response]
   (go
-    (reset! layer-list
-            (->> (-> (<p! (.text response))
-                     ol/wms-capabilities
-                     js->clj
-                     (get-in ["Capability" "Layer" "Layer"]))
-                 (remove #(str/starts-with? (get % "Name") "lg-"))
-                 (mapv (fn [layer]
-                         (let [full-name        (get layer "Name")
-                               [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
-                               cur-date         (date-from-string date time)
-                               base-date        (date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
-                           {:layer  full-name
-                            :type   type
-                            :extent (get layer "EX_GeographicBoundingBox")
-                            :date   (subs (.toISOString cur-date) 0 10)
-                            :time   (str (subs (.toISOString cur-date) 11 16) " UTC")
-                            :hour   (/ (- cur-date base-date) 1000 60 60)})))))))
+    (->> (-> (<p! (.text response))
+             ol/wms-capabilities
+             js->clj
+             (get-in ["Capability" "Layer" "Layer"]))
+         (remove #(str/starts-with? (get % "Name") "lg-"))
+         (mapv (fn [layer]
+                 (let [full-name        (get layer "Name")
+                       [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
+                       cur-date         (date-from-string date time)
+                       base-date        (date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
+                   {:layer  full-name
+                    :type   type
+                    :extent (get layer "EX_GeographicBoundingBox")
+                    :date   (subs (.toISOString cur-date) 0 10)
+                    :time   (str (subs (.toISOString cur-date) 11 16) " UTC")
+                    :hour   (/ (- cur-date base-date) 1000 60 60)}))))))
 
 (defn get-layers! []
-  (get-data process-capabilities!
-            (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                 "?SERVICE=WMS"
-                 "&VERSION=1.3.0"
-                 "&REQUEST=GetCapabilities"
-                 "&NAMESPACE=demo")))
+  (go
+    (reset! layer-list
+            (<! (get-data process-capabilities!
+                          (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                               "?SERVICE=WMS"
+                               "&VERSION=1.3.0"
+                               "&REQUEST=GetCapabilities"
+                               "&NAMESPACE=demo"))))))
 
 (defn process-point-info! [response]
   (go
-    (reset! last-clicked-info
-            (mapv (fn [pi li]
-                    (merge (select-keys li [:time :date :hour :type])
-                           {:band (get-in pi ["properties" "GRAY_INDEX"])}))
-                  (-> (<p! (.json response))
-                      js->clj
-                      (get "features"))
-                  (filtered-layers)))))
+    (mapv (fn [pi li]
+            (merge (select-keys li [:time :date :hour :type])
+                   {:band (get-in pi ["properties" "GRAY_INDEX"])}))
+          (-> (<p! (.json response))
+              js->clj
+              (get "features"))
+          (filtered-layers))))
 
 (defn get-point-info! [point-info]
-  (when point-info
+  (go
     (reset! last-clicked-info nil)
-    (let [layer-str (u/find-key-by-id layer-types @*layer-type :filter)]
-      (get-data process-point-info!
-                (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                     "?SERVICE=WMS"
-                     "&VERSION=1.3.0"
-                     "&REQUEST=GetFeatureInfo"
-                     "&INFO_FORMAT=application/json"
-                     "&LAYERS=demo:lg-" layer-str
-                     "&QUERY_LAYERS=demo:lg-" layer-str
-                     "&FEATURE_COUNT=1000"
-                     "&TILED=true"
-                     "&I=0"
-                     "&J=0"
-                     "&WIDTH=1"
-                     "&HEIGHT=1"
-                     "&CRS=EPSG:3857"
-                     "&STYLES="
-                     "&BBOX=" (str/join "," point-info))))))
+    (when point-info
+      (let [layer-str (u/find-key-by-id layer-types @*layer-type :filter)]
+        (reset! last-clicked-info
+                (<! (get-data process-point-info!
+                              (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                                   "?SERVICE=WMS"
+                                   "&VERSION=1.3.0"
+                                   "&REQUEST=GetFeatureInfo"
+                                   "&INFO_FORMAT=application/json"
+                                   "&LAYERS=demo:lg-" layer-str
+                                   "&QUERY_LAYERS=demo:lg-" layer-str
+                                   "&FEATURE_COUNT=1000"
+                                   "&TILED=true"
+                                   "&I=0"
+                                   "&J=0"
+                                   "&WIDTH=1"
+                                   "&HEIGHT=1"
+                                   "&CRS=EPSG:3857"
+                                   "&STYLES="
+                                   "&BBOX=" (str/join "," point-info)))))))))
 
 (defn cycle-layer! [change]
   (swap! *layer-idx #(mod (+ change %) (count (filtered-layers))))
@@ -496,23 +499,21 @@
 (defn root-component [_]
   (r/create-class
    {:component-did-mount
-    (fn [_] (get-layers!))
-
-    :component-did-update
-    (fn [_ _]
-      (when (and (seq @layer-list) (empty? @legend-list))
-        (get-legend!  (get-current-layer-name))
-        (ol/init-map! (get-current-layer-name))
-        (ol/add-map-single-click! get-point-info!)
-        (let [[cur min max] (ol/get-zoom-info)]
-          (reset! *zoom   cur)
-          (reset! minZoom min)
-          (reset! maxZoom max))
-        (ol/add-map-zoom-end! select-zoom!)))
+    (fn [_]
+      (go
+        (<! (get-layers!))
+        (when (seq @layer-list)
+          (get-legend!  (get-current-layer-name))
+          (ol/init-map! (get-current-layer-name))
+          (ol/add-map-single-click! get-point-info!)
+          (let [[cur min max] (ol/get-zoom-info)]
+            (reset! *zoom   cur)
+            (reset! minZoom min)
+            (reset! maxZoom max))
+          (ol/add-map-zoom-end! select-zoom!))))
 
     :reagent-render
     (fn [_]
-      [:input {:type "hidden" :value (count @layer-list)}] ; triggers :component-did-update
       [:div {:style ($/combine $/root {:height "100%" :padding 0})}
        [:div {:class "bg-yellow"
               :style ($app-header)}

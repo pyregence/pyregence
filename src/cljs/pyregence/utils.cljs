@@ -70,7 +70,7 @@
     (try
       (let [response (<p! (fetch url options))]
         (if (.-ok response)
-          (process-fn response)
+          (<! (process-fn response))
           (println "HTTP Error:" response)))
       (catch ExceptionInfo e (println "Network Error:" (ex-cause e))))))
 
