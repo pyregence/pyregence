@@ -42,7 +42,7 @@
                [:body
                 (slurp "resources/html/~header.html")
                 (slurp (str "resources/html/" (uri->html uri)))
-                [:footer {:class "jumbotron bg-brown mb-0 py-3"} ; TODO strip any page specific tags so they can be loaded after footer (or in header)
+                [:footer {:class "jumbotron bg-brown mb-0 py-3"} ; TODO strip any page specific tags so they can be loaded after footer or in head, depending
                  [:p {:class "text-white text-center mb-0 smaller"}
                   (str "\u00A9 "
                        (+ 1900 (.getYear (java.util.Date.)))
