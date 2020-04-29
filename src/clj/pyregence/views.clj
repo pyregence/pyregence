@@ -5,7 +5,7 @@
 
 (defn combine-head []
   [:head
-   (rest (pop (str/split-lines (slurp "resources/html/head.html"))))
+   (slurp "resources/html/~head.html")
    (include-css "/css/ol.css")
    (include-js "/js/ol.js" "/cljs/app.js")])
 
@@ -17,7 +17,7 @@
                (combine-head)
                [:body
                 [:div#near-term-forecast
-                 (slurp "resources/html/header.html")
+                 (slurp "resources/html/~header.html")
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
@@ -37,7 +37,16 @@
   (fn [_]
     {:status  (if (= uri "/not-found") 404 200)
      :headers {"Content-Type" "text/html"}
-     :body    (slurp (str "resources/html/" (uri->html uri)))}))
+     :body    (html5
+               [:head (slurp "resources/html/~head.html")]
+               [:body
+                (slurp "resources/html/~header.html")
+                (slurp (str "resources/html/" (uri->html uri)))
+                [:footer {:class "jumbotron bg-brown mb-0 py-3"} ; TODO strip any page specific tags so they can be loaded after footer (or in header)
+                 [:p {:class "text-white text-center mb-0 smaller"}
+                  (str "\u00A9 "
+                       (+ 1900 (.getYear (java.util.Date.)))
+                       " Pyregence - All Rights Reserved | Terms")]]])}))
 
 (defn data-response
   ([status body]
