@@ -31,7 +31,9 @@
                      "/fire-behavior"
                      "/forecast-tools"
                      "/scenario-analyses"
-                     "/team"})
+                     "/team"
+                     "/documents"
+                     "/data"})
 
 ;; FIXME: Fill these in as you make app pages.
 (def dynamic-routes #{"/near-term-forecast"})

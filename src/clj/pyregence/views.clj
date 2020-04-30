@@ -27,7 +27,9 @@
    "/fire-behavior"     "fire-behavior.html"
    "/forecast-tools"    "forecast-tools.html"
    "/scenario-analyses" "scenario-analyses.html"
-   "/team"              "team.html"})
+   "/team"              "team.html"
+   "/documents"         "documents.html"
+   "/data"              "data.html"})
 
 (defn render-static [uri]
   (fn [_]
