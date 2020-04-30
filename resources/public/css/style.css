@@ -486,7 +486,7 @@ p a:hover, p a:active {
     padding: 6px 12px;
     margin: 0px 10px;
 }
-.lightbox { 
+.lightbox {
     display: none;
 }
 .lightbox img {
