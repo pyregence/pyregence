@@ -1,6 +1,7 @@
 (ns pyregence.views
   (:require [clojure.data.json :as json]
-            [hiccup.page :refer [html5 include-css include-js]]))
+            [hiccup.page :refer [html5 include-css include-js]]
+            [pl.danieljanus.tagsoup :refer [parse]]))
 
 (defn render-dynamic []
   (fn [request]
@@ -29,21 +30,38 @@
    "/scenario-analyses" "scenario-analyses.html"
    "/team"              "team.html"})
 
+(defn recur-separate-scripts [hiccup]
+  (if (= clojure.lang.PersistentVector (type hiccup))
+    (let [[tag meta & children] hiccup]
+      (cond
+        (or (= :script tag) (= :link tag))
+        [nil [hiccup]]
+
+        children
+        (let [x (mapv recur-separate-scripts children)]
+          [(into  [tag meta] (map first x))
+           (apply concat     (map second x))])
+
+        :else [hiccup nil]))
+    [hiccup nil]))
+
 (defn render-static [uri]
   (fn [_]
+    (let [[hiccup scripts] (recur-separate-scripts (parse (str "resources/html/" (uri->html uri))))]
     {:status  (if (= uri "/not-found") 404 200)
      :headers {"Content-Type" "text/html"}
      :body    (html5
                [:head
-                (slurp "resources/html/~head.html")]
+                (slurp "resources/html/~head.html")
+                scripts]
                [:body
                 (slurp "resources/html/~header.html")
-                (slurp (str "resources/html/" (uri->html uri)))
+                hiccup
                 [:footer {:class "jumbotron bg-brown mb-0 py-3"}
                  [:p {:class "text-white text-center mb-0 smaller"}
                   (str "\u00A9 "
                        (+ 1900 (.getYear (java.util.Date.)))
-                       " Pyregence - All Rights Reserved | Terms")]]])}))
+                       " Pyregence - All Rights Reserved | Terms")]]])})))
 
 (defn data-response
   ([status body]
