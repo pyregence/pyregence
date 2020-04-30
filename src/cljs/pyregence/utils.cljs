@@ -211,3 +211,15 @@
 
 (defn find-by-id [list id]
   (some #(when (= (:opt_id %) id) %) list))
+
+(defn try-get-js [obj & values]
+  (try
+    (reduce
+     (fn [acc cur]
+       (if (and acc (or (.hasOwnProperty acc cur)
+                        (< cur (.length acc))))
+         (aget acc cur)
+         nil))
+     obj
+     values)
+    (catch js/Error e (js/console.log e))))

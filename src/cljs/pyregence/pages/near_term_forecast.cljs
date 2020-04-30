@@ -108,17 +108,16 @@
     (reset! layer-list
             (->> (-> (<p! (.text response))
                      ol/wms-capabilities
-                     js->clj
-                     (get-in ["Capability" "Layer" "Layer"]))
-                 (remove #(str/starts-with? (get % "Name") "lg-"))
+                     (u/try-get-js "Capability" "Layer" "Layer"))
+                 (remove #(str/starts-with? (aget % "Name") "lg-"))
                  (mapv (fn [layer]
-                         (let [full-name        (get layer "Name")
+                         (let [full-name        (aget layer "Name")
                                [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
                                cur-date         (date-from-string date time)
                                base-date        (date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
                            {:layer  full-name
                             :type   type
-                            :extent (get layer "EX_GeographicBoundingBox")
+                            :extent (aget layer "EX_GeographicBoundingBox")
                             :date   (subs (.toISOString cur-date) 0 10)
                             :time   (str (subs (.toISOString cur-date) 11 16) " UTC")
                             :hour   (/ (- cur-date base-date) 1000 60 60)})))))))
@@ -436,17 +435,6 @@
                           :encoding {:size {:condition {:selection :point-hover :value 150}
                                             :value 75}}}]}]}))
 
-(defn try-get-js [obj & values]
-  (try
-    (reduce
-     (fn [acc cur]
-       (if (and acc (.hasOwnProperty acc cur))
-         (aget acc cur)
-         nil))
-     obj
-     values)
-    (catch js/Error e (js/console.log e))))
-
 (defn render-vega [spec elem]
   (when (and spec (seq (get-in spec [:data :values])))
     (go
@@ -458,8 +446,8 @@
           (-> result .-view (.addEventListener
                              "click"
                              (fn [_ data]
-                               (when-let [index (or (try-get-js data "datum" "datum" "_vgsid_")
-                                                    (try-get-js data "datum" "_vgsid_"))]
+                               (when-let [index (or (u/try-get-js data "datum" "datum" "_vgsid_")
+                                                    (u/try-get-js data "datum" "_vgsid_"))]
                                  (reset! *layer-idx (dec ^js/integer index))
                                  (ol/swap-active-layer! (get-current-layer-name)))))))
         (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
