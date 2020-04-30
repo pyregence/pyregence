@@ -136,10 +136,9 @@
     (reset! last-clicked-info
             (mapv (fn [pi li]
                     (merge (select-keys li [:time :date :hour :type])
-                           {:band (get-in pi ["properties" "GRAY_INDEX"])}))
+                           {:band (u/try-get-js pi "properties" "GRAY_INDEX")}))
                   (-> (<p! (.json response))
-                      js->clj
-                      (get "features"))
+                      (u/try-get-js "features"))
                   (filtered-layers)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
