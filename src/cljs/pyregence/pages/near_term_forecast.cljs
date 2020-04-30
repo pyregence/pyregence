@@ -84,7 +84,7 @@
   (go
     (reset! legend-list
             (-> (<p! (.json response))
-                (u/try-get-js "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
+                (u/try-js-aget "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
                 (js->clj)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
@@ -108,7 +108,7 @@
     (reset! layer-list
             (->> (-> (<p! (.text response))
                      ol/wms-capabilities
-                     (u/try-get-js "Capability" "Layer" "Layer"))
+                     (u/try-js-aget "Capability" "Layer" "Layer"))
                  (remove #(str/starts-with? (aget % "Name") "lg-"))
                  (mapv (fn [layer]
                          (let [full-name        (aget layer "Name")
@@ -136,9 +136,9 @@
     (reset! last-clicked-info
             (mapv (fn [pi li]
                     (merge (select-keys li [:time :date :hour :type])
-                           {:band (u/try-get-js pi "properties" "GRAY_INDEX")}))
+                           {:band (u/try-js-aget pi "properties" "GRAY_INDEX")}))
                   (-> (<p! (.json response))
-                      (u/try-get-js "features"))
+                      (u/try-js-aget "features"))
                   (filtered-layers)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
@@ -445,8 +445,8 @@
           (-> result .-view (.addEventListener
                              "click"
                              (fn [_ data]
-                               (when-let [index (or (u/try-get-js data "datum" "datum" "_vgsid_")
-                                                    (u/try-get-js data "datum" "_vgsid_"))]
+                               (when-let [index (or (u/try-js-aget data "datum" "datum" "_vgsid_")
+                                                    (u/try-js-aget data "datum" "_vgsid_"))]
                                  (reset! *layer-idx (dec ^js/integer index))
                                  (ol/swap-active-layer! (get-current-layer-name)))))))
         (catch ExceptionInfo e (js/console.log (ex-cause e)))))))

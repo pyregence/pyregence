@@ -212,7 +212,7 @@
 (defn find-by-id [list id]
   (some #(when (= (:opt_id %) id) %) list))
 
-(defn try-get-js [obj & values]
+(defn try-js-aget [obj & values]
   (try
     (reduce
      (fn [acc cur]
