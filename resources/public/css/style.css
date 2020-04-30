@@ -136,18 +136,18 @@ p a:hover, p a:active {
 .border-yellow.btn {
     border-color: #f9af3b;
 }
-.btn.text-white:hover, .btn.text-white:active, .btn.text-white:focus {
+.btn.text-white:hover, .btn.text-white:active {
     background: #ffffff;
     color: #919191 !important;
 }
 .btn.border-yellow.text-white {
     transition: .1s all ease-in-out;
 }
-.btn.border-yellow.text-white:hover, .btn.border-yellow.text-white:active, .btn.border-yellow.text-white:focus {
+.btn.border-yellow.text-white:hover, .btn.border-yellow.text-white:active {
     background: #F9AF30;
     color: #ffffff !important;
 }
-.btn.border-yellow:hover, .btn.border-yellow:active, .btn.border-yellow:focus {
+.btn.border-yellow:hover {
     background: #F96841;
     color: #fff;
 }
@@ -425,7 +425,25 @@ p a:hover, p a:active {
     background-size: cover;
     background-position: center center;
     border-top: 8px solid #F9AF3B;
-    margin-top: calc(24px + 2.5rem);
+    margin-top: calc(48px + 2.5rem);
+    color: #FFFFFF;
+    min-height: 320px;
+}
+.documents-page header {
+    background: url(../images/documents-background.jpg);
+    background-size: cover;
+    background-position: left center;
+    border-top: 8px solid #F9AF3B;
+    margin-top: calc(48px + 2.5rem);
+    color: #FFFFFF;
+    min-height: 320px;
+}
+.data-page header {
+    background: url(../images/data-header.jpg);
+    background-size: cover;
+    background-position: left center;
+    border-top: 8px solid #F9AF3B;
+    margin-top: calc(48px + 2.5rem);
     color: #FFFFFF;
     min-height: 320px;
 }
@@ -459,7 +477,7 @@ p a:hover, p a:active {
 .team .btn:hover {
   background-color: #ddd;
 }
-.team .btn.active {
+.team button.btn.active {
   background-color: #666;
   color: white;
 }
@@ -468,7 +486,7 @@ p a:hover, p a:active {
     padding: 6px 12px;
     margin: 0px 10px;
 }
-.lightbox { 
+.lightbox {
     display: none;
 }
 .lightbox img {
@@ -495,6 +513,36 @@ p a:hover, p a:active {
 }
 p.role {
     font-weight: bold;
+}
+section.documents-panel {
+    background: #EFEFEF;
+}
+article.documents-single, .data-single {
+    background: #FFFFFF;
+    box-shadow: 0px 0px 5px #BBBBBB;
+    padding: 2em;
+    border-radius: 8px;
+}
+article.documents-single .document-meta {
+    border-right: 4px solid #F9AF3B;
+}
+#trigger {
+    width: 42px;
+    height: 42px;
+}
+.data-single h3, .documents-single h3 {
+    font-family: "Avenir";
+    font-weight: bold;
+}
+.data-single .line.yellow {
+    width: 80px;
+}
+.data-single h3 a:link, .data-single h3 a:visited {
+    color: #60411f;
+    transition: all .2s ease-in-out;
+}
+.data-single h3 a:hover, .data-single h3 a:active {
+    text-decoration: underline;
 }
 /*——Media Queries——*/
 @media (min-width: 768px) {
@@ -652,6 +700,9 @@ p.role {
     }
     .yellow-line {
         margin: 0 auto !important;
+    }
+    article.documents-single .document-meta {
+        border: none;
     }
 }
 @media only screen and (max-width: 575px) {
