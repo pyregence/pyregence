@@ -3,7 +3,7 @@
             [reagent.core :as r]
             [reagent.dom :as rd]
             [clojure.string :as str]
-            [clojure.core.async :refer [go]]
+            [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]
             [herb.core :refer [<class]]
             [pyregence.components.openlayers :as ol]
@@ -69,7 +69,11 @@
   (or (:extent (get (filtered-layers) @*layer-idx))
       [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
 
-(defn get-data [process-fn url]
+(defn get-data
+  "Asynchronously fetches the JSON or XML resource at url. Returns a
+  channel containing the result of calling process-fn on the response
+  or nil if an error occurred."
+  [process-fn url]
   (u/fetch-and-process url
                        {:method "get"
                         :headers {"Accept" "application/json, text/xml"
@@ -83,6 +87,7 @@
                 js->clj
                 (get-in ["Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries"])))))
 
+;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
   (get-data process-legend!
             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
@@ -118,6 +123,7 @@
                             :time   (str (subs (.toISOString cur-date) 11 16) " UTC")
                             :hour   (/ (- cur-date base-date) 1000 60 60)})))))))
 
+;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
   (get-data process-capabilities!
             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
@@ -137,6 +143,7 @@
                       (get "features"))
                   (filtered-layers)))))
 
+;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
   (when point-info
@@ -180,6 +187,18 @@
   (ol/swap-active-layer! (get-current-layer-name))
   (get-point-info!       (ol/get-selected-point))
   (get-legend!           (get-current-layer-name)))
+
+(defn init-map! []
+  (go
+    (<! (get-layers!))
+    (get-legend! (get-current-layer-name))
+    (ol/init-map! (get-current-layer-name))
+    (ol/add-map-single-click! get-point-info!)
+    (let [[cur min max] (ol/get-zoom-info)]
+      (reset! *zoom cur)
+      (reset! minZoom min)
+      (reset! maxZoom max))
+    (ol/add-map-zoom-end! select-zoom!)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -493,23 +512,10 @@
 (defn root-component [_]
   (r/create-class
    {:component-did-mount
-    (fn [_] (get-layers!))
-
-    :component-did-update
-    (fn [_ _]
-      (when (and (seq @layer-list) (empty? @legend-list))
-        (get-legend!  (get-current-layer-name))
-        (ol/init-map! (get-current-layer-name))
-        (ol/add-map-single-click! get-point-info!)
-        (let [[cur min max] (ol/get-zoom-info)]
-          (reset! *zoom   cur)
-          (reset! minZoom min)
-          (reset! maxZoom max))
-        (ol/add-map-zoom-end! select-zoom!)))
+    (fn [_] (init-map!))
 
     :reagent-render
     (fn [_]
-      [:input {:type "hidden" :value (count @layer-list)}] ; triggers :component-did-update
       [:div {:style ($/combine $/root {:height "100%" :padding 0})}
        [:div {:class "bg-yellow"
               :style ($app-header)}
