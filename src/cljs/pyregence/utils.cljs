@@ -218,7 +218,7 @@
      (fn [acc cur]
        (if (and acc (.hasOwnProperty acc cur))
          (aget acc cur)
-         nil))
+         (reduced nil)))
      obj
      values)
     (catch js/Error e (js/console.log e))))
