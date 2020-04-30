@@ -97,9 +97,9 @@
      (.getMaxZoom map-view)]))
 
 (defn get-selected-point []
-  (let [[x y] (-> @the-map (.getOverlayById "popup") .getPosition)
-        res   (-> @the-map .getView .getResolution)]
-    [x y (+ x res) (+ y res)]))
+  (when-let [[x y] (-> @the-map (.getOverlayById "popup") .getPosition)]
+    (let [res (-> @the-map .getView .getResolution)]
+      [x y (+ x res) (+ y res)])))
 
 (defn wms-capabilities
   "Converts capabilities xml to a js object"

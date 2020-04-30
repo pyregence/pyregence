@@ -3,6 +3,8 @@
             [reagent.core :as r]
             [reagent.dom :as rd]
             [clojure.string :as str]
+            [clojure.core.async :refer [go <!]]
+            [cljs.core.async.interop :refer-macros [<p!]]
             [herb.core :refer [<class]]
             [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]
@@ -67,33 +69,33 @@
   (or (:extent (get (filtered-layers) @*layer-idx))
       [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
 
-(defn get-data! [process-fn url]
-  (-> (.fetch js/window
-              url
-              (clj->js {:method "get"
+(defn get-data
+  "Asynchronously fetches the JSON or XML resource at url. Returns a
+  channel containing the result of calling process-fn on the response
+  or nil if an error occurred."
+  [process-fn url]
+  (u/fetch-and-process url
+                       {:method "get"
                         :headers {"Accept" "application/json, text/xml"
-                                  "Content-Type" "application/json"}}))
-      (.then  (fn [response] (if (.-ok response)
-                               (process-fn response)
-                               (.reject js/Promise response))))
-      (.catch (fn [response] (.log js/console response)))))
+                                  "Content-Type" "application/json"}}
+                       process-fn))
 
-(defn process-legend [response]
-  (-> (.json response)
-      (.then (fn [json]
-               (reset! legend-list
-                       (-> json
-                           js->clj
-                           (get-in ["Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries"])))))))
+(defn process-legend! [response]
+  (go
+    (reset! legend-list
+            (-> (<p! (.json response))
+                js->clj
+                (get-in ["Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries"])))))
 
+;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
-  (get-data! process-legend
-             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                  "?SERVICE=WMS"
-                  "&VERSION=1.3.0"
-                  "&REQUEST=GetLegendGraphic"
-                  "&FORMAT=application/json"
-                  "&LAYER=" layer)))
+  (get-data process-legend!
+            (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                 "?SERVICE=WMS"
+                 "&VERSION=1.3.0"
+                 "&REQUEST=GetLegendGraphic"
+                 "&FORMAT=application/json"
+                 "&LAYER=" layer)))
 
 (defn date-from-string [date time]
   (js/Date. (str (subs date 0 4) "-"
@@ -101,67 +103,68 @@
                  (subs date 6 8) "T"
                  (subs time 0 2) ":00:00.000z")))
 
-(defn process-capabilities [response]
-  (-> (.text response)
-      (.then (fn [text]
-               (reset! layer-list
-                       (->> (-> text
-                                ol/wms-capabilities
-                                js->clj
-                                (get-in ["Capability" "Layer" "Layer"]))
-                            (remove #(str/starts-with? (get % "Name") "lg-"))
-                            (mapv (fn [layer]
-                                    (let [full-name   (get layer "Name")
-                                          [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
-                                          cur-date    (date-from-string date time)
-                                          base-date   (date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
-                                      {:layer  full-name
-                                       :type   type
-                                       :extent (get layer "EX_GeographicBoundingBox")
-                                       :date   (subs (.toISOString cur-date) 0 10)
-                                       :time   (str (subs (.toISOString cur-date) 11 16) " UTC")
-                                       :hour   (/ (- cur-date base-date) 1000 60 60)})))))))))
+(defn process-capabilities! [response]
+  (go
+    (reset! layer-list
+            (->> (-> (<p! (.text response))
+                     ol/wms-capabilities
+                     js->clj
+                     (get-in ["Capability" "Layer" "Layer"]))
+                 (remove #(str/starts-with? (get % "Name") "lg-"))
+                 (mapv (fn [layer]
+                         (let [full-name        (get layer "Name")
+                               [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
+                               cur-date         (date-from-string date time)
+                               base-date        (date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
+                           {:layer  full-name
+                            :type   type
+                            :extent (get layer "EX_GeographicBoundingBox")
+                            :date   (subs (.toISOString cur-date) 0 10)
+                            :time   (str (subs (.toISOString cur-date) 11 16) " UTC")
+                            :hour   (/ (- cur-date base-date) 1000 60 60)})))))))
 
+;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
-  (get-data! process-capabilities
-             (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                  "?SERVICE=WMS"
-                  "&VERSION=1.3.0"
-                  "&REQUEST=GetCapabilities"
-                  "&NAMESPACE=demo")))
+  (get-data process-capabilities!
+            (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                 "?SERVICE=WMS"
+                 "&VERSION=1.3.0"
+                 "&REQUEST=GetCapabilities"
+                 "&NAMESPACE=demo")))
 
-(defn process-point-info [response]
-  (-> (.json response)
-      (.then (fn [json]
-               (reset! last-clicked-info
-                       (mapv (fn [pi li]
-                               (merge (select-keys li [:time :date :hour :type])
-                                      {:band (get-in pi ["properties" "GRAY_INDEX"])}))
-                             (-> json
-                                 js->clj
-                                 (get "features"))
-                             (filtered-layers)))))))
+(defn process-point-info! [response]
+  (go
+    (reset! last-clicked-info
+            (mapv (fn [pi li]
+                    (merge (select-keys li [:time :date :hour :type])
+                           {:band (get-in pi ["properties" "GRAY_INDEX"])}))
+                  (-> (<p! (.json response))
+                      js->clj
+                      (get "features"))
+                  (filtered-layers)))))
 
+;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
-  (let [layer-str (u/find-key-by-id layer-types @*layer-type :filter)]
-    (get-data! process-point-info
-               (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                    "?SERVICE=WMS"
-                    "&VERSION=1.3.0"
-                    "&REQUEST=GetFeatureInfo"
-                    "&INFO_FORMAT=application/json"
-                    "&LAYERS=demo:lg-" layer-str
-                    "&QUERY_LAYERS=demo:lg-" layer-str
-                    "&FEATURE_COUNT=1000"
-                    "&TILED=true"
-                    "&I=0"
-                    "&J=0"
-                    "&WIDTH=1"
-                    "&HEIGHT=1"
-                    "&CRS=EPSG:3857"
-                    "&STYLES="
-                    "&BBOX=" (str/join "," point-info)))))
+  (when point-info
+    (let [layer-str (u/find-key-by-id layer-types @*layer-type :filter)]
+      (get-data process-point-info!
+                (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                     "?SERVICE=WMS"
+                     "&VERSION=1.3.0"
+                     "&REQUEST=GetFeatureInfo"
+                     "&INFO_FORMAT=application/json"
+                     "&LAYERS=demo:lg-" layer-str
+                     "&QUERY_LAYERS=demo:lg-" layer-str
+                     "&FEATURE_COUNT=1000"
+                     "&TILED=true"
+                     "&I=0"
+                     "&J=0"
+                     "&WIDTH=1"
+                     "&HEIGHT=1"
+                     "&CRS=EPSG:3857"
+                     "&STYLES="
+                     "&BBOX=" (str/join "," point-info))))))
 
 (defn cycle-layer! [change]
   (swap! *layer-idx #(mod (+ change %) (count (filtered-layers))))
@@ -184,6 +187,18 @@
   (ol/swap-active-layer! (get-current-layer-name))
   (get-point-info!       (ol/get-selected-point))
   (get-legend!           (get-current-layer-name)))
+
+(defn init-map! []
+  (go
+    (<! (get-layers!))
+    (get-legend! (get-current-layer-name))
+    (ol/init-map! (get-current-layer-name))
+    (ol/add-map-single-click! get-point-info!)
+    (let [[cur min max] (ol/get-zoom-info)]
+      (reset! *zoom cur)
+      (reset! minZoom min)
+      (reset! maxZoom max))
+    (ol/add-map-zoom-end! select-zoom!)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -430,23 +445,24 @@
          nil))
      obj
      values)
-    (catch js/Error e (.log js/console e) nil)))
+    (catch js/Error e (js/console.log e))))
 
 (defn render-vega [spec elem]
   (when (and spec (seq (get-in spec [:data :values])))
-    (let [spec (clj->js spec)
-          opts {:renderer "canvas"
-                :mode     "vega-lite"}]
-      (-> (js/vegaEmbed elem spec (clj->js opts))
-          (.then (fn [result]
-                   (.addEventListener (-> result .-view)
-                                      "click"
-                                      (fn [_ data]
-                                        (when-let [index (or (try-get-js data "datum" "datum" "_vgsid_")
-                                                             (try-get-js data "datum" "_vgsid_"))]
-                                          (reset! *layer-idx (dec ^js/integer index))
-                                          (ol/swap-active-layer! (get-current-layer-name)))))))
-          (.catch (fn [err] (js/console.log err)))))))
+    (go
+      (try
+        (let [result (<p! (js/vegaEmbed elem
+                                        (clj->js spec)
+                                        (clj->js {:renderer "canvas"
+                                                  :mode     "vega-lite"})))]
+          (-> result .-view (.addEventListener
+                             "click"
+                             (fn [_ data]
+                               (when-let [index (or (try-get-js data "datum" "datum" "_vgsid_")
+                                                    (try-get-js data "datum" "_vgsid_"))]
+                                 (reset! *layer-idx (dec ^js/integer index))
+                                 (ol/swap-active-layer! (get-current-layer-name)))))))
+        (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
 
 (defn vega-box [props]
   (r/create-class
@@ -496,17 +512,7 @@
 (defn root-component [_]
   (r/create-class
    {:component-did-mount
-    (fn [_]
-      (-> (get-layers!)
-          (.then (fn []
-                   (get-legend!  (get-current-layer-name))
-                   (ol/init-map! (get-current-layer-name))
-                   (ol/add-map-single-click! get-point-info!)
-                   (let [[cur min max] (ol/get-zoom-info)]
-                     (reset! *zoom   cur)
-                     (reset! minZoom min)
-                     (reset! maxZoom max))
-                   (ol/add-map-zoom-end! select-zoom!)))))
+    (fn [_] (init-map!))
 
     :reagent-render
     (fn [_]

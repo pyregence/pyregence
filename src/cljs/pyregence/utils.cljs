@@ -1,7 +1,8 @@
 (ns pyregence.utils
   (:require [cljs.reader :as edn]
             [clojure.string :as str]
-            [clojure.core.async :refer [chan go >! <! close!]]))
+            [clojure.core.async :refer [go <!]]
+            [cljs.core.async.interop :refer-macros [<p!]]))
 
 (defn input-value
   "Return the value property of the target property of an event."
@@ -51,51 +52,86 @@
 
 ;;; Fetch results
 
+(defn chan? [c]
+  (= (type c) cljs.core.async.impl.channels/ManyToManyChannel))
+
+(defn promise? [p]
+  (instance? js/Promise p))
+
+(defn fetch
+  "Launches a js/window.fetch operation. Returns a channel that will
+  receive the response or nil if a network error occurs. The options
+  map will be automatically converted to a JS object for the fetch
+  call."
+  ([url]
+   (fetch url {}))
+  ([url options]
+   (go
+     (try
+       (<p! (.fetch js/window url (clj->js options)))
+       (catch ExceptionInfo e (js/console.log "Network Error:" (ex-cause e)))))))
+
+(defn fetch-and-process
+  "Launches a js/window.fetch operation and runs process-fn on the
+  successful result. HTTP Errors and Network Errors raised by the
+  fetch are printed to the console. The options map will be
+  automatically converted to a JS object for the fetch call. Returns a
+  channel with the result of process-fn. If process-fn returns a
+  channel or promise, these will be taken from using <! or <p!
+  respectively."
+  [url options process-fn]
+  (go
+    (when-let [response (<! (fetch url options))]
+      (if (.-ok response)
+        (try
+          (let [result (process-fn response)]
+            (cond (chan? result)    (<! result)
+                  (promise? result) (<p! result)
+                  :else             result))
+          (catch ExceptionInfo e (js/console.log "Error in process-fn:" (ex-cause e))))
+        (js/console.log "HTTP Error:" response)))))
+
 (defmulti call-remote! (fn [method url data] method))
 
 (defmethod call-remote! :get [_ url data]
-  (let [query-string (->> data
-                          (map (fn [[k v]] (str (pr-str k) "=" (pr-str v))))
-                          (str/join "&")
-                          (js/encodeURIComponent))
-        fetch-params {:method "get"
-                      :headers {"Accept" "application/edn"
-                                "Content-Type" "application/edn"}}
-        result-chan  (chan)]
-    (-> (.fetch js/window
-                (str url
-                     "?auth-token=883kljlsl36dnll9s9l2ls8xksl"
-                     (when (= query-string "") (str "&" query-string)))
-                (clj->js fetch-params))
-        (.then  (fn [response]   (if (.-ok response) (.text response) (.reject js/Promise response))))
-        (.then  (fn [edn-string] (go (>! result-chan (or (edn/read-string edn-string) :no-data)))))
-        (.catch (fn [response]   (.log js/console response) (close! result-chan))))
-    result-chan))
+  (go
+    (let [query-string (->> data
+                            (map (fn [[k v]] (str (pr-str k) "=" (pr-str v))))
+                            (str/join "&")
+                            (js/encodeURIComponent))
+          fetch-params {:method "get"
+                        :headers {"Accept" "application/edn"
+                                  "Content-Type" "application/edn"}}
+          edn-string   (<! (fetch-and-process (str url
+                                                   "?auth-token=883kljlsl36dnll9s9l2ls8xksl"
+                                                   (when (not= query-string "") (str "&" query-string)))
+                                              fetch-params
+                                              (fn [response] (.text response))))]
+      (or (edn/read-string edn-string) :no-data))))
 
 ;; Combines status and error message into return value
 (defmethod call-remote! :post [_ url data]
-  (let [fetch-params {:method "post"
-                      :headers (merge {"Accept" "application/edn"}
-                                      (when-not (= (type data) js/FormData)
-                                        {"Content-Type" "application/edn"}))
-                      :body (cond
-                              (= js/FormData (type data)) data
-                              data                        (pr-str data)
-                              :else                       nil)}
-        result-chan  (chan)]
-    (-> (.fetch js/window
-                (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
-                (clj->js fetch-params))
-        (.then  (fn [response] (.then (.text response)
-                                      (fn [text]
-                                        (go (>! result-chan {:success (.-ok response)
-                                                             :status  (.-status response)
-                                                             :message (or (edn/read-string text) "")}))))))
-        (.catch (fn [edn-string] (go (>! result-chan {:success false :message (or (edn/read-string edn-string) "")})))))
-    result-chan))
+  (go
+    (let [fetch-params {:method "post"
+                        :headers (merge {"Accept" "application/edn"}
+                                        (when-not (= (type data) js/FormData)
+                                          {"Content-Type" "application/edn"}))
+                        :body (cond
+                                (= js/FormData (type data)) data
+                                data                        (pr-str data)
+                                :else                       nil)}
+          response      (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+                                   fetch-params))]
+      (if response
+        {:success (.-ok response)
+         :status  (.-status response)
+         :message (or (edn/read-string (<p! (.text response))) "")}
+        {:success false
+         :status  nil
+         :message ""}))))
 
 (defmethod call-remote! :default [method _ _]
-  (throw (str "No such method (" method ") defined for pyregence.utils/call-remote!")))
+  (throw (ex-info (str "No such method (" method ") defined for pyregence.utils/call-remote!") {})))
 
 (defn call-clj-async! [clj-fn-name & args]
   (call-remote! :post
