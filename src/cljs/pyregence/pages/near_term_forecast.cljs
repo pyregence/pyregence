@@ -138,8 +138,8 @@
                   (filtered-layers)))))
 
 (defn get-point-info! [point-info]
+  (reset! last-clicked-info nil)
   (when point-info
-    (reset! last-clicked-info nil)
     (let [layer-str (u/find-key-by-id layer-types @*layer-type :filter)]
       (get-data process-point-info!
                 (str "https://californiafireforecast.com:8443/geoserver/demo/wms"

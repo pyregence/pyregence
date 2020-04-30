@@ -52,27 +52,48 @@
 
 ;;; Fetch results
 
+(defn chan? [c]
+  (= (type c) cljs.core.async.impl.channels/ManyToManyChannel))
+
+(defn promise? [p]
+  (instance? js/Promise p))
+
 (defn fetch
-  "Converts options map to a JS object and runs js/window.fetch. Returns a Promise."
-  [url options]
-  (.fetch js/window url (clj->js options)))
+  "Launches a js/window.fetch operation. Returns a channel that will
+  receive the response or nil if a network error occurs. The options
+  map will be automatically converted to a JS object for the fetch
+  call."
+  ([url]
+   (fetch url {}))
+  ([url options]
+   (go
+     (try
+       (<p! (.fetch js/window url (clj->js options)))
+       (catch ExceptionInfo e (js/console.log "Network Error:" (ex-cause e)))))))
 
 (defn fetch-and-process
   "Launches a js/window.fetch operation and runs process-fn on the
   successful result. HTTP Errors and Network Errors raised by the
   fetch are printed to the console. The options map will be
-  automatically converted to a JS object for the fetch call."
+  automatically converted to a JS object for the fetch call. Returns a
+  channel with the result of process-fn. If process-fn returns a
+  channel or promise, these will be taken from using <! or <p!
+  respectively."
   [url options process-fn]
   (go
-    (try
-      (let [response (<p! (fetch url options))]
-        (if (.-ok response)
-          (process-fn response)
-          (js/console.log "HTTP Error:" response)))
-      (catch ExceptionInfo e (js/console.log "Network Error:" (ex-cause e))))))
+    (when-let [response (<! (fetch url options))]
+      (if (.-ok response)
+        (try
+          (let [result (process-fn response)]
+            (cond (chan? result)    (<! result)
+                  (promise? result) (<p! result)
+                  :else             result))
+          (catch ExceptionInfo e (js/console.log "Error in process-fn:" (ex-cause e))))
+        (js/console.log "HTTP Error:" response)))))
 
 (defmulti call-remote! (fn [method url data] method))
 
+;; FIXME: Replace with calls to fetch as defined above.
 (defmethod call-remote! :get [_ url data]
   (let [query-string (->> data
                           (map (fn [[k v]] (str (pr-str k) "=" (pr-str v))))
@@ -92,6 +113,7 @@
         (.catch (fn [response]   (js/console.log response) (close! result-chan))))
     result-chan))
 
+;; FIXME: Replace with calls to fetch as defined above.
 ;; Combines status and error message into return value
 (defmethod call-remote! :post [_ url data]
   (let [fetch-params {:method "post"
