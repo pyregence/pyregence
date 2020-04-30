@@ -84,8 +84,8 @@
   (go
     (reset! legend-list
             (-> (<p! (.json response))
-                js->clj
-                (get-in ["Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries"])))))
+                (u/try-get-js "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
+                (js->clj)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]

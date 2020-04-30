@@ -216,8 +216,7 @@
   (try
     (reduce
      (fn [acc cur]
-       (if (and acc (or (.hasOwnProperty acc cur)
-                        (< cur (.length acc))))
+       (if (and acc (.hasOwnProperty acc cur))
          (aget acc cur)
          nil))
      obj
