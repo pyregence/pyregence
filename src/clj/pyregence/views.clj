@@ -1,6 +1,7 @@
 (ns pyregence.views
   (:require [clojure.data.json :as json]
-            [hiccup.page :refer [html5 include-css include-js]]))
+            [hiccup.page :refer [html5 include-css include-js]]
+            [pl.danieljanus.tagsoup :refer [parse]]))
 
 (defn render-dynamic []
   (fn [request]
@@ -29,21 +30,39 @@
    "/scenario-analyses" "scenario-analyses.html"
    "/team"              "team.html"})
 
+(defn recur-separate-scripts [hiccup]
+  (if (vector? hiccup)
+    (let [[tag meta & children] hiccup]
+      (cond
+        (#{:script :link} tag) {:head-tags [hiccup]
+                                :body-tags nil}
+
+        children               (let [x (map recur-separate-scripts children)]
+                                 {:head-tags (apply concat (map :head-tags x))
+                                  :body-tags (into [tag meta] (keep :body-tags x))})
+
+        :else                  {:head-tags nil
+                                :body-tags hiccup}))
+    {:head-tags nil
+     :body-tags hiccup}))
+
 (defn render-static [uri]
   (fn [_]
+    (let [{:keys [head-tags body-tags]} (recur-separate-scripts (parse (str "resources/html/" (uri->html uri))))]
     {:status  (if (= uri "/not-found") 404 200)
      :headers {"Content-Type" "text/html"}
      :body    (html5
                [:head
-                (slurp "resources/html/~head.html")]
+                (slurp "resources/html/~head.html")
+                head-tags]
                [:body
                 (slurp "resources/html/~header.html")
-                (slurp (str "resources/html/" (uri->html uri)))
+                body-tags
                 [:footer {:class "jumbotron bg-brown mb-0 py-3"}
                  [:p {:class "text-white text-center mb-0 smaller"}
                   (str "\u00A9 "
                        (+ 1900 (.getYear (java.util.Date.)))
-                       " Pyregence - All Rights Reserved | Terms")]]])}))
+                       " Pyregence - All Rights Reserved | Terms")]]])})))
 
 (defn data-response
   ([status body]
