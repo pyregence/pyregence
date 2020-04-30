@@ -136,18 +136,18 @@ p a:hover, p a:active {
 .border-yellow.btn {
     border-color: #f9af3b;
 }
-.btn.text-white:hover, .btn.text-white:active, .btn.text-white:focus {
+.btn.text-white:hover, .btn.text-white:active {
     background: #ffffff;
     color: #919191 !important;
 }
 .btn.border-yellow.text-white {
     transition: .1s all ease-in-out;
 }
-.btn.border-yellow.text-white:hover, .btn.border-yellow.text-white:active, .btn.border-yellow.text-white:focus {
+.btn.border-yellow.text-white:hover, .btn.border-yellow.text-white:active {
     background: #F9AF30;
     color: #ffffff !important;
 }
-.btn.border-yellow:hover, .btn.border-yellow:active, .btn.border-yellow:focus {
+.btn.border-yellow:hover {
     background: #F96841;
     color: #fff;
 }

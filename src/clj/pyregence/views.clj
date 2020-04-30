@@ -22,14 +22,14 @@
 
 (def uri->html
   {"/"                  "home.html"
+   "/data"              "data.html"
+   "/documents"         "documents.html"
    "/extreme-weather"   "extreme-weather.html"
-   "/not-found"         "not-found.html"
    "/fire-behavior"     "fire-behavior.html"
    "/forecast-tools"    "forecast-tools.html"
+   "/not-found"         "not-found.html"
    "/scenario-analyses" "scenario-analyses.html"
-   "/team"              "team.html"
-   "/documents"         "documents.html"
-   "/data"              "data.html"})
+   "/team"              "team.html"})
 
 (defn render-static [uri]
   (fn [_]
