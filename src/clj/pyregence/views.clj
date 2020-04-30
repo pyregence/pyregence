@@ -31,32 +31,33 @@
    "/team"              "team.html"})
 
 (defn recur-separate-scripts [hiccup]
-  (if (= clojure.lang.PersistentVector (type hiccup))
+  (if (vector? hiccup)
     (let [[tag meta & children] hiccup]
       (cond
-        (or (= :script tag) (= :link tag))
-        [nil [hiccup]]
+        (#{:script :link} tag) {:head-tags [hiccup]
+                                :body-tags nil}
 
-        children
-        (let [x (mapv recur-separate-scripts children)]
-          [(into  [tag meta] (map first x))
-           (apply concat     (map second x))])
+        children               (let [x (map recur-separate-scripts children)]
+                                 {:head-tags (apply concat (map :head-tags x))
+                                  :body-tags (into [tag meta] (keep :body-tags x))})
 
-        :else [hiccup nil]))
-    [hiccup nil]))
+        :else                  {:head-tags nil
+                                :body-tags hiccup}))
+    {:head-tags nil
+     :body-tags hiccup}))
 
 (defn render-static [uri]
   (fn [_]
-    (let [[hiccup scripts] (recur-separate-scripts (parse (str "resources/html/" (uri->html uri))))]
+    (let [{:keys [head-tags body-tags]} (recur-separate-scripts (parse (str "resources/html/" (uri->html uri))))]
     {:status  (if (= uri "/not-found") 404 200)
      :headers {"Content-Type" "text/html"}
      :body    (html5
                [:head
                 (slurp "resources/html/~head.html")
-                scripts]
+                head-tags]
                [:body
                 (slurp "resources/html/~header.html")
-                hiccup
+                body-tags
                 [:footer {:class "jumbotron bg-brown mb-0 py-3"}
                  [:p {:class "text-white text-center mb-0 smaller"}
                   (str "\u00A9 "
