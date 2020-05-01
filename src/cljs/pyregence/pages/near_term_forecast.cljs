@@ -24,6 +24,7 @@
 (defonce animate?          (r/atom false))
 (defonce *layer-type       (r/atom 0))
 (defonce *speed            (r/atom 1))
+(defonce *base-map         (r/atom 0))
 
 ;; Static Data
 
@@ -185,6 +186,10 @@
   (ol/swap-active-layer! (get-current-layer-name))
   (get-point-info!       (ol/get-selected-point))
   (get-legend!           (get-current-layer-name)))
+
+(defn select-base-map! [id]
+  (reset! *base-map id)
+  (ol/set-base-map-source! (u/find-key-by-id ol/base-map-options @*base-map :source)))
 
 (defn init-map! []
   (go
@@ -392,16 +397,6 @@
            :on-click #(ol/zoom-to-extent! (get-current-layer-extent))}
     "E"]])
 
-(defn layer-dropdown []
-  [:div {:style {:display "flex" :flex-direction "column" :padding "0 3rem"}}
-   [:label "Select Layer"]
-   [:select {:style ($dropdown)
-             :value (or @*layer-type -1)
-             :on-change #(select-layer-type! (u/input-int-value %))}
-    (doall (map (fn [{:keys [opt_id opt_label]}]
-                  [:option {:key opt_id :value opt_id} opt_label])
-                layer-types))]])
-
 (defn layer-line-plot []
   (let [units (u/find-key-by-id layer-types @*layer-type :units)]
     {:width    "container"
@@ -462,21 +457,51 @@
     :render
     (fn [] [:div#vega-box {:style ($vega-box)}])})) ; TODO render no data / loading message
 
+(defn panel-dropdown [title state list call-back]
+  [:div {:style {:display "flex" :flex-direction "column"}}
+   [:label title]
+   [:select {:style ($dropdown)
+             :value (or @state -1)
+             :on-change #(call-back (u/input-int-value %))}
+    (doall (map (fn [{:keys [opt_id opt_label]}]
+                  [:option {:key opt_id :value opt_id} opt_label])
+                list))]])
+
 (defn collapsible-panel []
-  (r/with-let [show-panel?   (r/atom true)
-               layer-opacity (r/atom 100.0)]
+  (r/with-let [show-panel?       (r/atom true)
+               active-opacity    (r/atom 70.0)
+               hillshade-opacity (r/atom 50.0)
+               show-hillshade?   (r/atom false)]
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style ($collapse-button)
             :on-click #(swap! show-panel? not)}
       [:label {:style {:padding-top "2px"}} (if @show-panel? "<<" ">>")]]
-     [:div {:style ($/combine $/flex-col {:margin "2rem"})}
-      [:label (str "Active Layer Opacity: " @layer-opacity)]
-      [:input {:style {:margin-top ".25rem" :width "13rem"}
-               :type "range" :min "0" :max "100" :value @layer-opacity
-               :on-change #(do
-                             (reset! layer-opacity (u/input-int-value %))
-                             (ol/set-active-layer-opacity! (/ @layer-opacity 100.0)))}]]
-     [layer-dropdown]]))
+     [:div {:style {:display "flex" :flex-direction "column" :padding "3rem"}}
+      [:div#baselayer
+       [panel-dropdown "Base Layer" *base-map ol/base-map-options #(select-base-map! %)]
+       [:div {:style {:margin-top ".5rem"}}
+        [:div {:style {:display "flex"}}
+         [:input {:style {:margin ".25rem .5rem 0 0"}
+                  :type "checkbox"
+                  :on-click #(do (swap! show-hillshade? not)
+                                 (ol/set-visible-by-tile! "hillshade" @show-hillshade?))}]
+         [:label "Show hill shade"]]
+        (when @show-hillshade?
+          [:<> [:label (str "Opacity: " @hillshade-opacity)]
+           [:input {:style {:width "100%"}
+                    :type "range" :min "0" :max "100" :value @hillshade-opacity
+                    :on-change #(do
+                                  (reset! hillshade-opacity (u/input-int-value %))
+                                  (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
+      [:div#activelayer {:style {:margin-top "2rem"}}
+       [panel-dropdown "Active Layer" *layer-type layer-types #(select-layer-type! %)]
+       [:div {:style {:margin-top ".5rem"}}
+        [:label (str "Opacity: " @active-opacity)]
+        [:input {:style {:width "100%"}
+                 :type "range" :min "0" :max "100" :value @active-opacity
+                 :on-change #(do
+                               (reset! active-opacity (u/input-int-value %))
+                               (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
 
 (defn control-layer []
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
