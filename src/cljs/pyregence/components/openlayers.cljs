@@ -141,12 +141,12 @@
                   (when (= title (.get layer "title"))
                     (.setOpacity layer opacity))))))
 
-(defn set-visible-by-tile! [title show?]
+(defn set-visible-by-tile! [title visible?]
   (-> @the-map
       .getLayers
       (.forEach (fn [layer]
                   (when (= title (.get layer "title"))
-                    (.setVisible layer show?))))))
+                    (.setVisible layer visible?))))))
 
 (defn set-zoom! [zoom]
   (-> @the-map .getView (.setZoom zoom)))
