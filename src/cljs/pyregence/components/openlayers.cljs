@@ -58,9 +58,10 @@
                 :visible true
                 :opacity 0.7
                 :source  (TileWMS.
-                          #js {:url        "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                               :params     #js {"LAYERS" (str "demo:" layer)}
-                               :serverType "geoserver"})}))
+                          #js {:url         "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                               :params      #js {"LAYERS" (str "demo:" layer)}
+                               :crossOrigin "anonymous"
+                               :serverType  "geoserver"})}))
   (reset! the-map
           (Map.
            #js {:target   "map"
