@@ -83,9 +83,11 @@
 (defn process-legend! [response]
   (go
     (reset! legend-list
-            (-> (<p! (.json response))
+            (remove
+             (fn [leg] (= "nodata" (get leg "label")))
+             (-> (<p! (.json response))
                 (u/try-js-aget "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
-                (js->clj)))))
+                (js->clj))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
@@ -338,14 +340,12 @@
 (defn legend-box []
   [:div#legend-box {:style ($legend-box)}
    [:div {:style {:display "flex" :flex-direction "column"}}
-    (->> @legend-list
-         (remove (fn [leg] (= "nodata" (get leg "label"))))
-         (map-indexed (fn [i leg]
-                        ^{:key i}
-                        [:div {:style ($/combine $/flex-row {:justify-content "flex-start"})}
-                         [:div {:style ($legend-color (get leg "color"))}]
-                         [:label (get leg "label")]]))
-         (doall))]])
+    (doall (map-indexed (fn [i leg]
+                          ^{:key i}
+                          [:div {:style ($/combine $/flex-row {:justify-content "flex-start"})}
+                           [:div {:style ($legend-color (get leg "color"))}]
+                           [:label (get leg "label")]])
+                        @legend-list))]])
 
 (defn time-slider []
   [:div#time-slider {:style ($time-slider)}
@@ -402,6 +402,14 @@
                   [:option {:key opt_id :value opt_id} opt_label])
                 layer-types))]])
 
+(defn create-stops []
+  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) @last-clicked-info)]
+    (mapv (fn [leg] {:offset (u/between (/ (- (get leg "quantity") 1.0) max-band)
+                                        0.0
+                                        1.0)
+                     :color  (get leg "color")})
+          @legend-list)))
+
 (defn layer-line-plot []
   (let [units (u/find-key-by-id layer-types @*layer-type :units)]
     {:width    "container"
@@ -410,27 +418,38 @@
      :data     {:values (or @last-clicked-info [])}
      :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "Hour"}
                             :y {:field "band" :type "quantitative" :title units}
-                            :color   {:field "type" :type "nominal" :legend nil}
                             :tooltip [{:field "band" :title units  :type "nominal"}
                                       {:field "date" :title "Date" :type "nominal"}
                                       {:field "time" :title "Time" :type "nominal"}]}
-                 :layer [{:mark "line"}
+                 :layer [{:mark {:type "line"
+                                 :interpolate "monotone"
+                                 :stroke {:gradient "linear"
+                                          :x2 0
+                                          :y1 1
+                                          :stops (create-stops)}}}
                          ;; Layer with all points for selection
-                         {:mark      "point"
+                         {:mark      {:type "point"
+                                      :opacity 0}
                           :selection {:point-hover {:type    "single"
                                                     :on      "mouseover"
                                                     :empty   "none"}}}
                          {:transform [{:filter {:or [{:field "hour" :lt (get-current-layer-hour)}
                                                      {:field "hour" :gt (get-current-layer-hour)}]}}]
                           :mark     {:type   "point"
-                                     :filled false
-                                     :fill   "white"}
+                                     :filled true}
                           :encoding {:size {:condition {:selection :point-hover :value 150}
-                                            :value 75}}}
+                                            :value 75}
+                                     :color {:field "band"
+                                             :type "quantitative"
+                                             :scale {:type "linear"
+                                                     :domain [1, 15, 150, 255, 10000]
+                                                     :range ["#BDFF00" "#EAFF00" "#FFD966" "#FF7100" "#FF0000"]}
+                                             :legend false}}}
                          {:transform [{:filter {:field "hour" :equal (get-current-layer-hour)}}]
                           :mark {:type   "point"
                                  :filled false
-                                 :fill   "black"}
+                                 :fill   "black"
+                                 :stroke "black"}
                           :encoding {:size {:condition {:selection :point-hover :value 150}
                                             :value 75}}}]}]}))
 
