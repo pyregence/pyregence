@@ -16,34 +16,34 @@
 (defonce the-map (atom nil))
 
 (def base-map-options [{:opt-id    0
-                        :opt_label "OpenStreetMaps"
+                        :opt-label "OpenStreetMaps"
                         :source    (OSM.)}
                        {:opt-id    1
-                        :opt_label "MapTiler Topographique"
+                        :opt-label "MapTiler Topographique"
                         :source    (TileJSON.
                                     #js {:url "https://api.maptiler.com/maps/topographique/tiles.json?key=aTxMH7uEmrp1p92D9slS"
                                          :crossOrigin "anonymous"})}
                        {:opt-id    2
-                        :opt_label "MapTiler Satellite"
+                        :opt-label "MapTiler Satellite"
                         :source    (TileJSON.
                                     #js {:url "https://api.maptiler.com/maps/hybrid/tiles.json?key=aTxMH7uEmrp1p92D9slS"
                                          :crossOrigin "anonymous"})}
                        {:opt-id    3
-                        :opt_label "Thunderforest Landscape"
+                        :opt-label "Thunderforest Landscape"
                         :source    (XYZ.
                                     #js {:url "https://tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=9dccbe884aab4483823c7cb6ab9b5f4d"})}
                        {:opt-id    4
-                        :opt_label "BingMaps Street"
+                        :opt-label "BingMaps Street"
                         :source    (BingMaps.
                                     #js {:key "AjMtoHQV7tiC8tKyktN3OFi_qXUv_0i5TvtZFic3vkIOzR2iTFmYxVOPJKSZwjHq"
                                          :imagerySet "RoadOnDemand"})}
                        {:opt-id    5
-                        :opt_label "BingMaps Aerial"
+                        :opt-label "BingMaps Aerial"
                         :source    (BingMaps.
                                     #js {:key "AjMtoHQV7tiC8tKyktN3OFi_qXUv_0i5TvtZFic3vkIOzR2iTFmYxVOPJKSZwjHq"
                                          :imagerySet "Aerial"})}
                        {:opt-id    6
-                        :opt_label "BingMaps Aerial with Streets"
+                        :opt-label "BingMaps Aerial with Streets"
                         :source    (BingMaps.
                                     #js {:key "AjMtoHQV7tiC8tKyktN3OFi_qXUv_0i5TvtZFic3vkIOzR2iTFmYxVOPJKSZwjHq"
                                          :imagerySet "AerialWithLabelsOnDemand"})}])

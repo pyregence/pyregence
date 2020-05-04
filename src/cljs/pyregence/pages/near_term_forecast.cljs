@@ -29,25 +29,25 @@
 ;; Static Data
 
 (defonce layer-types [{:opt-id 0
-                       :opt_label "Fire Area"
+                       :opt-label "Fire Area"
                        :filter "fire-area"
                        :units "Acres"}
                       {:opt-id 1
-                       :opt_label "Fire Volume"
+                       :opt-label "Fire Volume"
                        :filter "fire-volume"
                        :units "Acre-ft"}
                       {:opt-id 2
-                       :opt_label "Impacted Structures"
+                       :opt-label "Impacted Structures"
                        :filter "impacted-structures"
                        :units "Structures"}
                       {:opt-id 3
-                       :opt_label "Times Burned"
+                       :opt-label "Times Burned"
                        :filter "times-burned"
                        :units "Times"}])
-(defonce speeds      [{:opt-id 0 :opt_label ".5x" :delay 2000}
-                      {:opt-id 1 :opt_label "1x"  :delay 1000}
-                      {:opt-id 2 :opt_label "2x"  :delay 500}
-                      {:opt-id 3 :opt_label "5x"  :delay 200}])
+(defonce speeds      [{:opt-id 0 :opt-label ".5x" :delay 2000}
+                      {:opt-id 1 :opt-label "1x"  :delay 1000}
+                      {:opt-id 2 :opt-label "2x"  :delay 500}
+                      {:opt-id 3 :opt-label "5x"  :delay 200}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -374,8 +374,8 @@
    [:select {:style ($/combine $dropdown)
              :value (or @*speed 1)
              :on-change #(reset! *speed (u/input-int-value %))}
-    (doall (map (fn [{:keys [opt-id opt_label]}]
-                  [:option {:key opt-id :value opt-id} opt_label])
+    (doall (map (fn [{:keys [opt-id opt-label]}]
+                  [:option {:key opt-id :value opt-id} opt-label])
                 speeds))]])
 
 (defn zoom-slider []
@@ -463,8 +463,8 @@
    [:select {:style ($dropdown)
              :value (or @state -1)
              :on-change #(call-back (u/input-int-value %))}
-    (doall (map (fn [{:keys [opt-id opt_label]}]
-                  [:option {:key opt-id :value opt-id} opt_label])
+    (doall (map (fn [{:keys [opt-id opt-label]}]
+                  [:option {:key opt-id :value opt-id} opt-label])
                 options))]])
 
 (defn collapsible-panel []

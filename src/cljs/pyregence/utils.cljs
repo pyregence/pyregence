@@ -205,7 +205,7 @@
 
 (defn find-key-by-id
   ([list id]
-   (find-key-by-id list id :opt_label))
+   (find-key-by-id list id :opt-label))
   ([list id key]
    (some #(when (= (:opt-id %) id) (get % key)) list)))
 
