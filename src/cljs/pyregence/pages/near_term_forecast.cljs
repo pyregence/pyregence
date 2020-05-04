@@ -83,11 +83,11 @@
 (defn process-legend! [response]
   (go
     (reset! legend-list
-            (doall (remove
-                    (fn [leg] (= "nodata" (get leg "label")))
-                    (-> (<p! (.json response))
-                        (u/try-js-aget "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
-                        (js->clj)))))))
+            (as-> (<p! (.json response)) data
+              (u/try-js-aget data "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
+              (js->clj data)
+              (remove (fn [leg] (= "nodata" (get leg "label"))) data)
+              (doall data)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
@@ -422,21 +422,21 @@
            (to-hex-str (+ fb (* ratio (- tb fb))))))))
 
 (defn create-stops []
-  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) @last-clicked-info)]
-    (->> (reductions
-          (fn [last cur] (let [last-q (get last :quantity)
-                               cur-q  (get cur  "quantity")]
-                           {:quantity cur-q
-                            :offset   (min (/ cur-q max-band) 1.0)
-                            :color    (if (< last-q max-band cur-q)
-                                        (interp-color (get last :color)
-                                                      (get cur  "color")
-                                                      (/ (- max-band last-q)
-                                                         (- cur-q last-q)))
-                                        (get cur "color"))}))
-          {:offset 0.0
-           :color  (get (first @legend-list) "color")}
-          (rest @legend-list)))))
+  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 @last-clicked-info)]
+    (reductions
+     (fn [last cur] (let [last-q (get last :quantity  0.0)
+                          cur-q  (get cur  "quantity" 0.0)]
+                      {:quantity cur-q
+                       :offset   (min (/ cur-q max-band) 1.0)
+                       :color    (if (< last-q max-band cur-q)
+                                   (interp-color (get last :color)
+                                                 (get cur  "color")
+                                                 (/ (- max-band last-q)
+                                                    (- cur-q last-q)))
+                                   (get cur "color"))}))
+     {:offset 0.0
+      :color  (get (first @legend-list) "color")}
+     (rest @legend-list))))
 
 (defn create-scale []
   {:type   "linear"
