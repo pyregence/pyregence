@@ -430,18 +430,18 @@
                             :offset   (min (/ cur-q max-band) 1.0)
                             :color    (if (< last-q max-band cur-q)
                                         (interp-color (get last :color)
-                                                      (get cur "color")
+                                                      (get cur  "color")
                                                       (/ (- max-band last-q)
                                                          (- cur-q last-q)))
                                         (get cur "color"))}))
           {:offset 0.0
-           :color (get (first @legend-list) "color")}
+           :color  (get (first @legend-list) "color")}
           (rest @legend-list)))))
 
 (defn create-scale []
   {:type   "linear"
-   :domain (mapv #(get %  "quantity") @legend-list)
-   :range  (mapv #(get %  "color") @legend-list)})
+   :domain (mapv #(get % "quantity") @legend-list)
+   :range  (mapv #(get % "color")    @legend-list)})
 
 (defn layer-line-plot []
   (let [units (u/find-key-by-id layer-types @*layer-type :units)]
@@ -454,12 +454,12 @@
                             :tooltip [{:field "band" :title units  :type "nominal"}
                                       {:field "date" :title "Date" :type "nominal"}
                                       {:field "time" :title "Time" :type "nominal"}]}
-                 :layer [{:mark {:type "line"
+                 :layer [{:mark {:type        "line"
                                  :interpolate "monotone"
-                                 :stroke {:x2 0
-                                          :y1 1
-                                          :gradient "linear"
-                                          :stops    (create-stops)}}}
+                                 :stroke      {:x2 0
+                                               :y1 1
+                                               :gradient "linear"
+                                               :stops    (create-stops)}}}
                          ;; Layer with all points for selection
                          {:mark      {:type   "point"
                                       :opacity 0}
