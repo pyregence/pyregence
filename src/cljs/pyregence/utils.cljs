@@ -205,12 +205,12 @@
 
 (defn find-key-by-id
   ([list id]
-   (find-key-by-id list id :opt_label))
+   (find-key-by-id list id :opt-label))
   ([list id key]
-   (some #(when (= (:opt_id %) id) (get % key)) list)))
+   (some #(when (= (:opt-id %) id) (get % key)) list)))
 
 (defn find-by-id [list id]
-  (some #(when (= (:opt_id %) id) %) list))
+  (some #(when (= (:opt-id %) id) %) list))
 
 (defn try-js-aget [obj & values]
   (try

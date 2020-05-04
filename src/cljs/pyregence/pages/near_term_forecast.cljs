@@ -24,29 +24,30 @@
 (defonce animate?          (r/atom false))
 (defonce *layer-type       (r/atom 0))
 (defonce *speed            (r/atom 1))
+(defonce *base-map         (r/atom 0))
 
 ;; Static Data
 
-(defonce layer-types [{:opt_id 0
-                       :opt_label "Fire Area"
+(defonce layer-types [{:opt-id 0
+                       :opt-label "Fire Area"
                        :filter "fire-area"
                        :units "Acres"}
-                      {:opt_id 1
-                       :opt_label "Fire Volume"
+                      {:opt-id 1
+                       :opt-label "Fire Volume"
                        :filter "fire-volume"
                        :units "Acre-ft"}
-                      {:opt_id 2
-                       :opt_label "Impacted Structures"
+                      {:opt-id 2
+                       :opt-label "Impacted Structures"
                        :filter "impacted-structures"
                        :units "Structures"}
-                      {:opt_id 3
-                       :opt_label "Times Burned"
+                      {:opt-id 3
+                       :opt-label "Times Burned"
                        :filter "times-burned"
                        :units "Times"}])
-(defonce speeds      [{:opt_id 0 :opt_label ".5x" :delay 2000}
-                      {:opt_id 1 :opt_label "1x"  :delay 1000}
-                      {:opt_id 2 :opt_label "2x"  :delay 500}
-                      {:opt_id 3 :opt_label "5x"  :delay 200}])
+(defonce speeds      [{:opt-id 0 :opt-label ".5x" :delay 2000}
+                      {:opt-id 1 :opt-label "1x"  :delay 1000}
+                      {:opt-id 2 :opt-label "2x"  :delay 500}
+                      {:opt-id 3 :opt-label "5x"  :delay 200}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -187,6 +188,10 @@
   (ol/swap-active-layer! (get-current-layer-name))
   (get-point-info!       (ol/get-selected-point))
   (get-legend!           (get-current-layer-name)))
+
+(defn select-base-map! [id]
+  (reset! *base-map id)
+  (ol/set-base-map-source! (u/find-key-by-id ol/base-map-options @*base-map :source)))
 
 (defn init-map! []
   (go
@@ -369,8 +374,8 @@
    [:select {:style ($/combine $dropdown)
              :value (or @*speed 1)
              :on-change #(reset! *speed (u/input-int-value %))}
-    (doall (map (fn [{:keys [opt_id opt_label]}]
-                  [:option {:key opt_id :value opt_id} opt_label])
+    (doall (map (fn [{:keys [opt-id opt-label]}]
+                  [:option {:key opt-id :value opt-id} opt-label])
                 speeds))]])
 
 (defn zoom-slider []
@@ -512,21 +517,49 @@
     :render
     (fn [] [:div#vega-box {:style ($vega-box)}])})) ; TODO render no data / loading message
 
+(defn panel-dropdown [title state options call-back]
+  [:div {:style {:display "flex" :flex-direction "column"}}
+   [:label title]
+   [:select {:style ($dropdown)
+             :value (or @state -1)
+             :on-change #(call-back (u/input-int-value %))}
+    (doall (map (fn [{:keys [opt-id opt-label]}]
+                  [:option {:key opt-id :value opt-id} opt-label])
+                options))]])
+
 (defn collapsible-panel []
-  (r/with-let [show-panel?   (r/atom true)
-               layer-opacity (r/atom 100.0)]
+  (r/with-let [show-panel?       (r/atom true)
+               active-opacity    (r/atom 70.0)
+               hillshade-opacity (r/atom 50.0)
+               show-hillshade?   (r/atom false)]
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style ($collapse-button)
             :on-click #(swap! show-panel? not)}
       [:label {:style {:padding-top "2px"}} (if @show-panel? "<<" ">>")]]
-     [:div {:style ($/combine $/flex-col {:margin "2rem"})}
-      [:label (str "Active Layer Opacity: " @layer-opacity)]
-      [:input {:style {:margin-top ".25rem" :width "13rem"}
-               :type "range" :min "0" :max "100" :value @layer-opacity
-               :on-change #(do
-                             (reset! layer-opacity (u/input-int-value %))
-                             (ol/set-active-layer-opacity! (/ @layer-opacity 100.0)))}]]
-     [layer-dropdown]]))
+     [:div {:style {:display "flex" :flex-direction "column" :padding "3rem"}}
+      [:div#baselayer
+       [panel-dropdown "Base Layer" *base-map ol/base-map-options select-base-map!]
+       [:div {:style {:margin-top ".5rem"}}
+        [:div {:style {:display "flex"}}
+         [:input {:style {:margin ".25rem .5rem 0 0"}
+                  :type "checkbox"
+                  :on-click #(do (swap! show-hillshade? not)
+                                 (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
+         [:label "Show hill shade"]]
+        (when @show-hillshade?
+          [:<> [:label (str "Opacity: " @hillshade-opacity)]
+           [:input {:style {:width "100%"}
+                    :type "range" :min "0" :max "100" :value @hillshade-opacity
+                    :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
+                                    (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
+      [:div#activelayer {:style {:margin-top "2rem"}}
+       [panel-dropdown "Active Layer" *layer-type layer-types select-layer-type!]
+       [:div {:style {:margin-top ".5rem"}}
+        [:label (str "Opacity: " @active-opacity)]
+        [:input {:style {:width "100%"}
+                 :type "range" :min "0" :max "100" :value @active-opacity
+                 :on-change #(do (reset! active-opacity (u/input-int-value %))
+                                 (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
 
 (defn control-layer []
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
