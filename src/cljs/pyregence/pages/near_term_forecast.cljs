@@ -28,26 +28,26 @@
 
 ;; Static Data
 
-(defonce layer-types [{:opt_id 0
+(defonce layer-types [{:opt-id 0
                        :opt_label "Fire Area"
                        :filter "fire-area"
                        :units "Acres"}
-                      {:opt_id 1
+                      {:opt-id 1
                        :opt_label "Fire Volume"
                        :filter "fire-volume"
                        :units "Acre-ft"}
-                      {:opt_id 2
+                      {:opt-id 2
                        :opt_label "Impacted Structures"
                        :filter "impacted-structures"
                        :units "Structures"}
-                      {:opt_id 3
+                      {:opt-id 3
                        :opt_label "Times Burned"
                        :filter "times-burned"
                        :units "Times"}])
-(defonce speeds      [{:opt_id 0 :opt_label ".5x" :delay 2000}
-                      {:opt_id 1 :opt_label "1x"  :delay 1000}
-                      {:opt_id 2 :opt_label "2x"  :delay 500}
-                      {:opt_id 3 :opt_label "5x"  :delay 200}])
+(defonce speeds      [{:opt-id 0 :opt_label ".5x" :delay 2000}
+                      {:opt-id 1 :opt_label "1x"  :delay 1000}
+                      {:opt-id 2 :opt_label "2x"  :delay 500}
+                      {:opt-id 3 :opt_label "5x"  :delay 200}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -374,8 +374,8 @@
    [:select {:style ($/combine $dropdown)
              :value (or @*speed 1)
              :on-change #(reset! *speed (u/input-int-value %))}
-    (doall (map (fn [{:keys [opt_id opt_label]}]
-                  [:option {:key opt_id :value opt_id} opt_label])
+    (doall (map (fn [{:keys [opt-id opt_label]}]
+                  [:option {:key opt-id :value opt-id} opt_label])
                 speeds))]])
 
 (defn zoom-slider []
@@ -457,15 +457,15 @@
     :render
     (fn [] [:div#vega-box {:style ($vega-box)}])})) ; TODO render no data / loading message
 
-(defn panel-dropdown [title state list call-back]
+(defn panel-dropdown [title state options call-back]
   [:div {:style {:display "flex" :flex-direction "column"}}
    [:label title]
    [:select {:style ($dropdown)
              :value (or @state -1)
              :on-change #(call-back (u/input-int-value %))}
-    (doall (map (fn [{:keys [opt_id opt_label]}]
-                  [:option {:key opt_id :value opt_id} opt_label])
-                list))]])
+    (doall (map (fn [{:keys [opt-id opt_label]}]
+                  [:option {:key opt-id :value opt-id} opt_label])
+                options))]])
 
 (defn collapsible-panel []
   (r/with-let [show-panel?       (r/atom true)
@@ -478,30 +478,28 @@
       [:label {:style {:padding-top "2px"}} (if @show-panel? "<<" ">>")]]
      [:div {:style {:display "flex" :flex-direction "column" :padding "3rem"}}
       [:div#baselayer
-       [panel-dropdown "Base Layer" *base-map ol/base-map-options #(select-base-map! %)]
+       [panel-dropdown "Base Layer" *base-map ol/base-map-options select-base-map!]
        [:div {:style {:margin-top ".5rem"}}
         [:div {:style {:display "flex"}}
          [:input {:style {:margin ".25rem .5rem 0 0"}
                   :type "checkbox"
                   :on-click #(do (swap! show-hillshade? not)
-                                 (ol/set-visible-by-tile! "hillshade" @show-hillshade?))}]
+                                 (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
          [:label "Show hill shade"]]
         (when @show-hillshade?
           [:<> [:label (str "Opacity: " @hillshade-opacity)]
            [:input {:style {:width "100%"}
                     :type "range" :min "0" :max "100" :value @hillshade-opacity
-                    :on-change #(do
-                                  (reset! hillshade-opacity (u/input-int-value %))
-                                  (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
+                    :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
+                                    (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
       [:div#activelayer {:style {:margin-top "2rem"}}
-       [panel-dropdown "Active Layer" *layer-type layer-types #(select-layer-type! %)]
+       [panel-dropdown "Active Layer" *layer-type layer-types select-layer-type!]
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]
         [:input {:style {:width "100%"}
                  :type "range" :min "0" :max "100" :value @active-opacity
-                 :on-change #(do
-                               (reset! active-opacity (u/input-int-value %))
-                               (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
+                 :on-change #(do (reset! active-opacity (u/input-int-value %))
+                                 (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
 
 (defn control-layer []
   [:div {:style {:height "100%" :position "absolute" :width "100%"}}
