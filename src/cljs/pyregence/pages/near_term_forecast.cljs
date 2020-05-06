@@ -186,7 +186,7 @@
 (defn select-layer-type! [id]
   (reset! *layer-type id)
   (ol/swap-active-layer! (get-current-layer-name))
-  (get-point-info!       (ol/get-selected-point))
+  (get-point-info!       (ol/get-overlay-bbox))
   (get-legend!           (get-current-layer-name)))
 
 (defn select-base-map! [id]
@@ -393,7 +393,12 @@
     "+"]
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".25rem 0 0 .5rem" :font-size ".9rem"})
-           :title "Zoom to Extent"
+           :title "Center on selected point"
+           :on-click #(ol/center-on-overlay!)}
+    "C"]
+   [:span {:class (<class $p-zoom-button-common)
+           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".25rem 0 0 .5rem" :font-size ".9rem"})
+           :title "Zoom to fit layer"
            :on-click #(ol/zoom-to-extent! (get-current-layer-extent))}
     "E"]])
 

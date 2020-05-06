@@ -91,6 +91,33 @@
                                      :autoPan          true
                                      :autoPanAnimation #js {:duration 250}})]})))
 
+;; Getting object information
+
+(defn get-zoom-info []
+  (let [map-view (.getView @the-map)]
+    [(.getZoom    map-view)
+     (.getMinZoom map-view)
+     (.getMaxZoom map-view)]))
+
+(defn get-overlay-center []
+  (-> @the-map (.getOverlayById "popup") .getPosition))
+
+(defn get-overlay-bbox []
+  (when-let [[x y] (get-overlay-center)]
+    (let [res (-> @the-map .getView .getResolution)]
+      [x y (+ x res) (+ y res)])))
+
+(defn wms-capabilities
+  "Converts capabilities xml to a js object"
+  [text]
+  (.read (WMSCapabilities.) text))
+
+(defn get-layer-by-title [title]
+  (-> @the-map
+      .getLayers
+      .getArray
+      (.find (fn [layer] (= title (.get layer "title"))))))
+
 ;; Modifying objects
 
 (defn add-map-single-click! [call-back]
@@ -113,21 +140,9 @@
              .getZoom
              call-back))))
 
-(defn get-layer-by-title [title]
-  (-> @the-map
-      .getLayers
-      .getArray
-      (.find (fn [layer] (= title (.get layer "title"))))))
-
 (defn set-base-map-source! [source]
   (-> (get-layer-by-title "basemap")
       (.setSource source)))
-
-(defn zoom-to-extent! [[minx miny maxx maxy]]
-  (-> @the-map
-      .getView
-      (.fit (clj->js (concat (fromLonLat #js [minx miny])
-                             (fromLonLat #js [maxx maxy]))))))
 
 (defn swap-active-layer! [geo-layer]
   (-> (get-layer-by-title "active")
@@ -145,20 +160,12 @@
 (defn set-zoom! [zoom]
   (-> @the-map .getView (.setZoom zoom)))
 
-;; Getting object information
+(defn zoom-to-extent! [[minx miny maxx maxy]]
+  (-> @the-map
+      .getView
+      (.fit (clj->js (concat (fromLonLat #js [minx miny])
+                             (fromLonLat #js [maxx maxy]))))))
 
-(defn get-zoom-info []
-  (let [map-view (.getView @the-map)]
-    [(.getZoom    map-view)
-     (.getMinZoom map-view)
-     (.getMaxZoom map-view)]))
-
-(defn get-selected-point []
-  (when-let [[x y] (-> @the-map (.getOverlayById "popup") .getPosition)]
-    (let [res (-> @the-map .getView .getResolution)]
-      [x y (+ x res) (+ y res)])))
-
-(defn wms-capabilities
-  "Converts capabilities xml to a js object"
-  [text]
-  (.read (WMSCapabilities.) text))
+(defn center-on-overlay! []
+  (when-let [center (get-overlay-center)]
+    (-> @the-map .getView (.setCenter center))))
