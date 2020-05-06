@@ -25,6 +25,7 @@
 (defonce *layer-type       (r/atom 0))
 (defonce *speed            (r/atom 1))
 (defonce *base-map         (r/atom 0))
+(defonce show-utc?         (r/atom true))
 
 ;; Static Data
 
@@ -66,6 +67,13 @@
   (or (:hour (get (filtered-layers) @*layer-idx))
       0))
 
+(defn get-current-layer-full-time []
+  (str (or (:date (get (filtered-layers) @*layer-idx))
+           "")
+       "-"
+       (or (:time (get (filtered-layers) @*layer-idx))
+           "")))
+
 (defn get-current-layer-extent []
   (or (:extent (get (filtered-layers) @*layer-idx))
       [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
@@ -100,11 +108,38 @@
                  "&FORMAT=application/json"
                  "&LAYER=" layer)))
 
-(defn date-from-string [date time]
+(defn js-date-from-string [date time]
   (js/Date. (str (subs date 0 4) "-"
                  (subs date 4 6) "-"
                  (subs date 6 8) "T"
                  (subs time 0 2) ":00:00.000z")))
+
+(defn pad-zero [num]
+  (let [num-str (str num)]
+    (if (= 2 (count num-str))
+      num-str
+      (str "0" num-str))))
+
+(defn get-date-from-js [js-date]
+  (if @show-utc?
+    (subs (.toISOString js-date) 0 10)
+    (str (.getFullYear js-date)
+         "-"
+         (pad-zero (+ 1 (.getMonth js-date)))
+         "-"
+         (pad-zero (.getDate js-date)))))
+
+(defn get-time-from-js [js-date]
+  (if @show-utc?
+    (str (subs (.toISOString js-date) 11 16) " UTC")
+    (str (pad-zero (.getHours js-date))
+         ":"
+         (pad-zero (.getMinutes js-date))
+         " "
+         (-> js-date
+             (.toLocaleTimeString "en-us" #js {:timeZoneName "short"})
+             (str/split " ")
+             (last)))))
 
 (defn process-capabilities! [response]
   (go
@@ -116,14 +151,15 @@
                  (mapv (fn [layer]
                          (let [full-name        (aget layer "Name")
                                [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
-                               cur-date         (date-from-string date time)
-                               base-date        (date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
+                               cur-date         (js-date-from-string date time)
+                               base-date        (js-date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
                            {:layer  full-name
                             :type   type
-                            :extent (aget layer "EX_GeographicBoundingBox")
-                            :date   (subs (.toISOString cur-date) 0 10)
-                            :time   (str (subs (.toISOString cur-date) 11 16) " UTC")
-                            :hour   (/ (- cur-date base-date) 1000 60 60)})))))))
+                            :extent  (aget layer "EX_GeographicBoundingBox")
+                            :js-date cur-date
+                            :date    (get-date-from-js cur-date)
+                            :time    (get-time-from-js cur-date)
+                            :hour    (/ (- cur-date base-date) 1000 60 60)})))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
@@ -138,7 +174,7 @@
   (go
     (reset! last-clicked-info
             (mapv (fn [pi li]
-                    (merge (select-keys li [:time :date :hour :type])
+                    (merge (select-keys li [:js-date :time :date :hour :type])
                            {:band (u/try-js-aget pi "properties" "GRAY_INDEX")}))
                   (-> (<p! (.json response))
                       (u/try-js-aget "features"))
@@ -193,6 +229,21 @@
   (reset! *base-map id)
   (ol/set-base-map-source! (u/find-key-by-id ol/base-map-options @*base-map :source)))
 
+(defn select-time-zone! [utc?]
+  (reset! show-utc? utc?)
+  (reset! layer-list
+          (mapv (fn [{:keys [js-date] :as layer}]
+                  (assoc layer
+                         :date (get-date-from-js js-date)
+                         :time (get-time-from-js js-date)))
+                @layer-list))
+  (reset! last-clicked-info
+          (mapv (fn [{:keys [js-date] :as layer}]
+                  (assoc layer
+                         :date (get-date-from-js js-date)
+                         :time (get-time-from-js js-date)))
+                @last-clicked-info)))
+
 (defn init-map! []
   (go
     (<! (get-layers!))
@@ -238,7 +289,8 @@
    :width            "1rem"})
 
 (defn $time-slider []
-  {:background-color "white"
+  {:align-items      "center"
+   :background-color "white"
    :border           "1px solid black"
    :border-radius    "5px"
    :display          "flex"
@@ -246,7 +298,7 @@
    :margin-left      "auto"
    :left             "0"
    :right            "0"
-   :padding          ".75rem"
+   :padding          ".5rem"
    :position         "absolute"
    :bottom           "1rem"
    :width            "fit-content"
@@ -347,27 +399,49 @@
    [:div {:style {:display "flex" :flex-direction "column"}}
     (doall (map-indexed (fn [i leg]
                           ^{:key i}
-                          [:div {:style ($/combine $/flex-row {:justify-content "flex-start"})}
+                          [:div {:style ($/combine $/flex-row {:justify-content "flex-start" :padding ".5rem"})}
                            [:div {:style ($legend-color (get leg "color"))}]
                            [:label (get leg "label")]])
                         @legend-list))]])
 
+(defn $radio [checked?]
+  (merge
+   (when checked? {:background-color ($/color-picker :black 0.6)})
+   {:border        "2px solid"
+    :border-color  ($/color-picker :black)
+    :border-radius "100%"
+    :height        "1rem"
+    :margin-right  ".4rem"
+    :width         "1rem"}))
+
+(defn radio [label state condition]
+  [:div {:style ($/flex-row)
+         :on-click #(select-time-zone! condition)}
+   [:div {:style ($/combine [$radio (= @state condition)])}]
+   [:label {:style {:font-size ".8rem" :margin-top "2px"}} label]])
+
 (defn time-slider []
   [:div#time-slider {:style ($time-slider)}
-   [:input {:style {:width "10rem"}
-            :type "range" :min "0" :max (dec (count (filtered-layers))) :value @*layer-idx
-            :on-change #(do (reset! *layer-idx (u/input-int-value %))
-                            (ol/swap-active-layer! (get-current-layer-name)))}]
-   [:button {:style {:padding "0 .25rem" :margin-left ".5rem"}
+   [:div {:style ($/combine $/flex-col {:align-items "flex-start" :margin-right "1rem"})}
+    [radio "UTC"   show-utc? true]
+    [radio "Local" show-utc? false]]
+   [:div {:style ($/flex-col)}
+    [:input {:style {:width "12rem"}
+             :type "range" :min "0" :max (dec (count (filtered-layers))) :value @*layer-idx
+             :on-change #(do (reset! *layer-idx (u/input-int-value %))
+                             (ol/swap-active-layer! (get-current-layer-name)))}]
+    [:label {:style {:font-size ".75rem"}}
+     (get-current-layer-full-time)]]
+   [:button {:style {:padding ".25rem" :margin-left ".5rem"}
              :type "button"
              :on-click #(cycle-layer! -1)}
     "<<"]
-   [:button {:style {:padding "0 .25rem"}
+   [:button {:style {:padding ".25rem"}
              :type "button"
              :on-click #(do (swap! animate? not)
                             (loop-animation!))}
     (if @animate? "Stop" "Play")]
-   [:button {:style {:padding "0 .25rem"}
+   [:button {:style {:padding ".25rem"}
              :type "button"
              :on-click #(cycle-layer! 1)}
     ">>"]
