@@ -239,15 +239,13 @@
    :display         "flex"
    :flex-direction  "row"
    :flex-wrap       "nowrap"
-   :justify-content "space-between"
-   :padding         ".5rem"})
+   :justify-content "space-between"})
 
 (defn flex-col []
-  {:align-content  "center"
-   :display        "flex"
-   :flex-direction "column"
-   :justify-items  "center"
-   :padding        "0 1rem"})
+  {:align-items     "center"
+   :display         "flex"
+   :flex-direction  "column"
+   :justify-content "flex-start"})
 
 (defn font [& modifiers]
   (apply merge
