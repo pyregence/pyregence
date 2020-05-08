@@ -59,24 +59,20 @@
     (filterv (fn [{:keys [type]}] (= type filter-text))
              @layer-list)))
 
+(defn current-layer []
+  (get (filtered-layers) @*layer-idx))
+
 (defn get-current-layer-name []
-  (or (:layer (get (filtered-layers) @*layer-idx))
-      ""))
+  (:layer (current-layer) ""))
 
 (defn get-current-layer-hour []
-  (or (:hour (get (filtered-layers) @*layer-idx))
-      0))
+  (:hour (current-layer) 0))
 
 (defn get-current-layer-full-time []
-  (str (or (:date (get (filtered-layers) @*layer-idx))
-           "")
-       "-"
-       (or (:time (get (filtered-layers) @*layer-idx))
-           "")))
+  (str/join "-" ((juxt :date :time) (current-layer))))
 
 (defn get-current-layer-extent []
-  (or (:extent (get (filtered-layers) @*layer-idx))
-      [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
+  (:extent (current-layer) [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
@@ -139,7 +135,7 @@
          (-> js-date
              (.toLocaleTimeString "en-us" #js {:timeZoneName "short"})
              (str/split " ")
-             (last)))))
+             (peek)))))
 
 (defn process-capabilities! [response]
   (go
@@ -390,6 +386,16 @@
    :width            "25rem"
    :z-index          "100"})
 
+(defn $radio [checked?]
+  (merge
+   (when checked? {:background-color ($/color-picker :black 0.6)})
+   {:border        "2px solid"
+    :border-color  ($/color-picker :black)
+    :border-radius "100%"
+    :height        "1rem"
+    :margin-right  ".4rem"
+    :width         "1rem"}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -403,16 +409,6 @@
                            [:div {:style ($legend-color (get leg "color"))}]
                            [:label (get leg "label")]])
                         @legend-list))]])
-
-(defn $radio [checked?]
-  (merge
-   (when checked? {:background-color ($/color-picker :black 0.6)})
-   {:border        "2px solid"
-    :border-color  ($/color-picker :black)
-    :border-radius "100%"
-    :height        "1rem"
-    :margin-right  ".4rem"
-    :width         "1rem"}))
 
 (defn radio [label state condition]
   [:div {:style ($/flex-row)
