@@ -373,17 +373,17 @@
    :width            "1rem"
    :z-index          "-1"})
 
-(defn $vega-box []
+(defn $vega-box [box-width box-height]
   {:background-color "white"
    :border           "1px solid black"
    :border-radius    "5px"
-   :height           "15rem"
+   :height            box-height
    :overflow         "hidden"
    :padding-top      "1rem"
    :position         "absolute"
    :right            ".5rem"
    :top              ".5rem"
-   :width            "25rem"
+   :width             box-width
    :z-index          "100"})
 
 (defn $radio [checked?]
@@ -527,6 +527,7 @@
   (let [units (u/find-key-by-id layer-types @*layer-type :units)]
     {:width    "container"
      :height   "container"
+     :autosize {:type "fit" :resize true}
      :padding  {:left "16" :top "0" :right "16" :bottom "32"}
      :data     {:values (or @last-clicked-info [])}
      :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "Hour"}
@@ -581,7 +582,7 @@
                                  (ol/swap-active-layer! (get-current-layer-name)))))))
         (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
 
-(defn vega-box [props]
+(defn vega-canvas [props]
   (r/create-class
    {:component-did-mount
     (fn [this] (render-vega (:spec props) (rd/dom-node this)))
@@ -590,7 +591,32 @@
     (fn [this _] (render-vega (:spec (r/props this)) (rd/dom-node this)))
 
     :render
-    (fn [] [:div#vega-box {:style ($vega-box)}])})) ; TODO render no data / loading message
+    (fn [this] [:div#vega-canvas
+                {:style {:height (:box-height (r/props this))
+                         :width  (:box-width  (r/props this))}}])})) ; TODO render no data / loading message
+
+(defn vega-box [parent]
+  (r/with-let [box-width     (r/atom 400)
+               box-height    (r/atom 200)
+               drag-started? (r/atom false)]
+    [:div#vega-box {:style ($vega-box @box-width @box-height)}
+     [vega-canvas {:spec (layer-line-plot) :box-height @box-height :box-width @box-width}]
+     [:div#drag-icon
+      {:style {:position "absolute" :bottom "-.5rem" :left "0" :font-size "1.25rem" :cursor "sw-resize"}
+       :draggable true
+       :on-drag #(if @drag-started?
+                   (reset! drag-started? false) ; ignore first value, fixes jumpy movement on start
+                   (let [p-height (.-clientHeight @parent)
+                         p-width  (.-clientWidth  @parent)
+                         mouse-x  (.-clientX %)
+                         mouse-y  (.-clientY %)
+                         y-offset (- (.-innerHeight js/window) p-height)]
+                     (when (< (/ p-width 3) mouse-x (- p-width 300))
+                       (reset! box-width (- p-width mouse-x)))
+                     (when (< (/ p-height 3) (- mouse-y y-offset) (- p-height 200))
+                       (reset! box-height (- mouse-y y-offset)))))
+       :on-drag-start #(reset! drag-started? true)}
+      "O"]]))
 
 (defn panel-dropdown [title state options call-back]
   [:div {:style {:display "flex" :flex-direction "column"}}
@@ -637,12 +663,19 @@
                                  (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
 
 (defn control-layer []
-  [:div {:style {:height "100%" :position "absolute" :width "100%"}}
-   [collapsible-panel]
-   [legend-box]
-   [vega-box {:spec (layer-line-plot)}]
-   [time-slider]
-   [zoom-slider]])
+  (let [myself (r/atom nil)]
+    (r/create-class
+     {:component-did-mount
+      (fn [this] (reset! myself (rd/dom-node this)))
+
+      :render
+      (fn []
+        [:div {:style {:height "100%" :position "absolute" :width "100%"}}
+         [collapsible-panel]
+         [legend-box]
+         (when @myself [vega-box myself])
+         [time-slider]
+         [zoom-slider]])})))
 
 (defn pop-up []
   [:div#popup
