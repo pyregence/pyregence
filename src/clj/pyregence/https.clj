@@ -30,10 +30,13 @@
   (io/make-parents (str dir "/dummy"))
   (sh/with-sh-dir dir
     (sh/with-sh-env (merge {:PATH path-env} env)
-      (doseq [cmd commands]
-        (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
-          (log-str out)
-          (log-str err))))))
+      (every?
+       (fn [cmd] (log-str cmd)
+         (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
+                   (log-str "out: "   out)
+                   (log-str "error: " err)
+                   (= err "")))
+       commands))))
 
 (defn -main [& [domain path]]
   (if domain
@@ -41,7 +44,7 @@
       (io/make-parents "./.key/dummy")
       (sh-wrapper "./"
                   {}
-                  (format-simple "sudo yes 2 | certbot certonly --webroot -w ./resources/public -d %1"
+                  (format-simple "sudo certbot certonly --quiet --non-interactive --agree-tos -m support@sig-gis.com --webroot -w ./resources/public -d %1"
                                  domain)
                   (format-simple (str "sudo openssl pkcs12 -export -out ./.key/keystore.pkcs12" ``" -in %1/fullchain.pem"
                                       " -inkey %2/privkey.pem"
