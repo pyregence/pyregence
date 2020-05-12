@@ -341,12 +341,12 @@
   {:background-color "white"
    :border           "1px solid black"
    :border-radius    "5px"
-   :right            "5rem"
+   :right            "4rem"
    :position         "absolute"
-   :bottom           "5rem"
+   :bottom           "6rem"
    :display          "flex"
    :transform        "rotate(270deg)"
-   :width            "10rem"
+   :width            "12rem"
    :height           "2rem"
    :z-index          "100"})
 
@@ -452,6 +452,11 @@
 
 (defn zoom-slider []
   [:div#zoom-slider {:style ($zoom-slider)}
+   [:span {:class (<class $p-zoom-button-common)
+           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
+           :title "Center on my location"
+           :on-click #(-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))} ; TODO should I also zoom to a min zoom level?
+    "M"]
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .75rem"})
            :on-click #(select-zoom! (dec @*zoom))}
