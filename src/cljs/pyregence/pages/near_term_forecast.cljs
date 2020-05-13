@@ -4,6 +4,7 @@
             [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]
+            [goog.string :refer [format]]
             [herb.core :refer [<class]]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
@@ -76,12 +77,7 @@
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
   (get-data process-legend!
-            (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                 "?SERVICE=WMS"
-                 "&VERSION=1.3.0"
-                 "&REQUEST=GetLegendGraphic"
-                 "&FORMAT=application/json"
-                 "&LAYER=" layer)))
+            (format c/get-legend-url layer)))
 
 (defn js-date-from-string [date time]
   (js/Date. (str (subs date 0 4) "-"
@@ -139,11 +135,7 @@
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
   (get-data process-capabilities!
-            (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                 "?SERVICE=WMS"
-                 "&VERSION=1.3.0"
-                 "&REQUEST=GetCapabilities"
-                 "&NAMESPACE=demo")))
+            c/get-capabilities-url))
 
 (defn process-point-info! [response]
   (go
@@ -161,22 +153,7 @@
   (when point-info
     (let [layer-str (u/find-key-by-id c/layer-types @*layer-type :filter)]
       (get-data process-point-info!
-                (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                     "?SERVICE=WMS"
-                     "&VERSION=1.3.0"
-                     "&REQUEST=GetFeatureInfo"
-                     "&INFO_FORMAT=application/json"
-                     "&LAYERS=demo:lg-" layer-str
-                     "&QUERY_LAYERS=demo:lg-" layer-str
-                     "&FEATURE_COUNT=1000"
-                     "&TILED=true"
-                     "&I=0"
-                     "&J=0"
-                     "&WIDTH=1"
-                     "&HEIGHT=1"
-                     "&CRS=EPSG:3857"
-                     "&STYLES="
-                     "&BBOX=" (str/join "," point-info))))))
+                (format c/point-info-url layer-str layer-str (str/join "," point-info))))))
 
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)

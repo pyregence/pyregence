@@ -1,5 +1,35 @@
 (ns pyregence.config)
 
+;; WMS Options
+
+(def get-legend-url       (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                               "?SERVICE=WMS"
+                               "&VERSION=1.3.0"
+                               "&REQUEST=GetLegendGraphic"
+                               "&FORMAT=application/json"
+                               "&LAYER=%s"))
+(def get-capabilities-url (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                               "?SERVICE=WMS"
+                               "&VERSION=1.3.0"
+                               "&REQUEST=GetCapabilities"
+                               "&NAMESPACE=demo"))
+(def point-info-url       (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
+                               "?SERVICE=WMS"
+                               "&VERSION=1.3.0"
+                               "&REQUEST=GetFeatureInfo"
+                               "&INFO_FORMAT=application/json"
+                               "&LAYERS=demo:lg-%s"
+                               "&QUERY_LAYERS=demo:lg-%s"
+                               "&FEATURE_COUNT=1000"
+                               "&TILED=true"
+                               "&I=0"
+                               "&J=0"
+                               "&WIDTH=1"
+                               "&HEIGHT=1"
+                               "&CRS=EPSG:3857"
+                               "&STYLES="
+                               "&BBOX=%s"))
+
 ;; Layer options
 
 (def layer-types [{:opt-id 0
