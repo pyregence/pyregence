@@ -7,6 +7,7 @@
             [herb.core :refer [<class]]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
+            [pyregence.config :as c]
             [pyregence.components.openlayers :as ol]
             [pyregence.components.vega       :refer [vega-box]]))
 
@@ -28,35 +29,12 @@
 (defonce show-utc?         (r/atom true))
 (defonce lon-lat           (r/atom [0 0]))
 
-;; Static Data
-
-(defonce layer-types [{:opt-id 0
-                       :opt-label "Fire Area"
-                       :filter "fire-area"
-                       :units "Acres"}
-                      {:opt-id 1
-                       :opt-label "Fire Volume"
-                       :filter "fire-volume"
-                       :units "Acre-ft"}
-                      {:opt-id 2
-                       :opt-label "Impacted Structures"
-                       :filter "impacted-structures"
-                       :units "Structures"}
-                      {:opt-id 3
-                       :opt-label "Times Burned"
-                       :filter "times-burned"
-                       :units "Times"}])
-(defonce speeds      [{:opt-id 0 :opt-label ".5x" :delay 2000}
-                      {:opt-id 1 :opt-label "1x"  :delay 1000}
-                      {:opt-id 2 :opt-label "2x"  :delay 500}
-                      {:opt-id 3 :opt-label "5x"  :delay 200}])
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn filtered-layers []
-  (let [filter-text (u/find-key-by-id layer-types @*layer-type :filter)]
+  (let [filter-text (u/find-key-by-id c/layer-types @*layer-type :filter)]
     (filterv (fn [{:keys [type]}] (= type filter-text))
              @layer-list)))
 
@@ -181,7 +159,7 @@
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
   (when point-info
-    (let [layer-str (u/find-key-by-id layer-types @*layer-type :filter)]
+    (let [layer-str (u/find-key-by-id c/layer-types @*layer-type :filter)]
       (get-data process-point-info!
                 (str "https://californiafireforecast.com:8443/geoserver/demo/wms"
                      "?SERVICE=WMS"
@@ -210,7 +188,7 @@
 (defn loop-animation! []
   (when @animate?
     (cycle-layer! 1)
-    (js/setTimeout loop-animation! (u/find-key-by-id speeds @*speed :delay))))
+    (js/setTimeout loop-animation! (u/find-key-by-id c/speeds @*speed :delay))))
 
 (defn select-zoom! [zoom]
   (when-not (= zoom @*zoom)
@@ -227,7 +205,7 @@
 
 (defn select-base-map! [id]
   (reset! *base-map id)
-  (ol/set-base-map-source! (u/find-key-by-id ol/base-map-options @*base-map :source)))
+  (ol/set-base-map-source! (u/find-key-by-id c/base-map-options @*base-map :source)))
 
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
@@ -448,7 +426,7 @@
              :on-change #(reset! *speed (u/input-int-value %))}
     (doall (map (fn [{:keys [opt-id opt-label]}]
                   [:option {:key opt-id :value opt-id} opt-label])
-                speeds))]])
+                c/speeds))]])
 
 (defn zoom-slider []
   [:div#zoom-slider {:style ($zoom-slider)}
@@ -487,7 +465,7 @@
              :on-change #(select-layer-type! (u/input-int-value %))}
     (doall (map (fn [{:keys [opt_id opt_label]}]
                   [:option {:key opt_id :value opt_id} opt_label])
-                layer-types))]])
+                c/layer-types))]])
 
 (defn panel-dropdown [title state options call-back]
   [:div {:style {:display "flex" :flex-direction "column"}}
@@ -510,7 +488,7 @@
       [:label {:style {:padding-top "2px"}} (if @show-panel? "<<" ">>")]]
      [:div {:style {:display "flex" :flex-direction "column" :padding "3rem"}}
       [:div#baselayer
-       [panel-dropdown "Base Layer" *base-map ol/base-map-options select-base-map!]
+       [panel-dropdown "Base Layer" *base-map c/base-map-options select-base-map!]
        [:div {:style {:margin-top ".5rem"}}
         [:div {:style {:display "flex"}}
          [:input {:style {:margin ".25rem .5rem 0 0"}
@@ -525,7 +503,7 @@
                     :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
                                     (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
       [:div#activelayer {:style {:margin-top "2rem"}}
-       [panel-dropdown "Active Layer" *layer-type layer-types select-layer-type!]
+       [panel-dropdown "Active Layer" *layer-type c/layer-types select-layer-type!]
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]
         [:input {:style {:width "100%"}
@@ -556,7 +534,7 @@
            [vega-box
             myself
             select-layer!
-            (u/find-key-by-id layer-types @*layer-type :units)
+            (u/find-key-by-id c/layer-types @*layer-type :units)
             (get-current-layer-hour)
             @legend-list
             @last-clicked-info])
@@ -570,7 +548,7 @@
     [:label (if @last-clicked-info
               (str (:band (get @last-clicked-info @*layer-idx))
                    " "
-                   (u/find-key-by-id layer-types @*layer-type :units))
+                   (u/find-key-by-id c/layer-types @*layer-type :units))
               "...")]]
    [:div {:style ($pop-up-arrow)}]])
 
