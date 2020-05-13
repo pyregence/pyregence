@@ -29,7 +29,9 @@
 
 (defglobal over-write-styles
   [:#header {:position "static"}]
-  [:#nav-row {:padding "0"}])
+  [:#nav-row {:padding "0"}]
+  [".ol-scale-line" {:padding ".4rem" :left "auto" :right "8px" :background-color "rgba(0, 0, 0, .7)"}]
+  [".ol-scale-line-inner" {:font-size ".75rem"}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
