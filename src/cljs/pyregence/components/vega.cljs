@@ -149,7 +149,7 @@
                                 :padding  "2rem"
                                 :position "absolute"
                                 :width    box-width
-                                :z-index  "1000"}}
+                                :z-index  "1"}}
    [:label "Loading..."]])
 
 (defn vega-box [parent layer-click! units current-hour legend-list last-clicked-info]
@@ -164,7 +164,7 @@
                      :layer-click! layer-click!}]
        [loading-cover @box-height @box-width])
      [:div#drag-icon
-      {:style {:position "absolute" :bottom "-.5rem" :left "0" :font-size "1.25rem" :cursor "sw-resize"}
+      {:style {:position "absolute" :bottom "-.5rem" :left "0" :font-size "1.25rem" :cursor "sw-resize" :z-index  "2"}
        :draggable true
        :on-drag #(if @drag-started?
                    (reset! drag-started? false) ; ignore first value, fixes jumpy movement on start
