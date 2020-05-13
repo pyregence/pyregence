@@ -4,7 +4,6 @@
 (def Map             js/ol.Map)
 (def View            js/ol.View)
 (def Overlay         js/ol.Overlay)
-(def MousePosition   js/ol.control.MousePosition)
 (def ScaleLine       js/ol.control.ScaleLine)
 (def fromLonLat      js/ol.proj.fromLonLat)
 (def toLonLat        js/ol.proj.toLonLat)
@@ -78,7 +77,7 @@
                                                     :params      #js {"LAYERS" (str "demo:" layer)}
                                                     :crossOrigin "anonymous"
                                                     :serverType  "geoserver"})})]
-                :controls #js [(ScaleLine.) (MousePosition.)]
+                :controls #js [(ScaleLine.)]
                 :view     (View.
                            #js {:projection "EPSG:3857"
                                 :center     (fromLonLat #js [-120.8958 38.8375] "EPSG:3857")
