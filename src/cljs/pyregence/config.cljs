@@ -64,7 +64,7 @@
 (def TileJSON        js/ol.source.TileJSON)
 (def XYZ             js/ol.source.XYZ)
 (def base-map-options [{:opt-id    0
-                        :opt-label "OpenStreetMaps"
+                        :opt-label "*OpenStreetMaps"
                         :source    (OSM.)}
                        {:opt-id    1
                         :opt-label "MapTiler Topographique"
@@ -94,4 +94,33 @@
                         :opt-label "BingMaps Aerial with Streets"
                         :source    (BingMaps.
                                     #js {:key "AjMtoHQV7tiC8tKyktN3OFi_qXUv_0i5TvtZFic3vkIOzR2iTFmYxVOPJKSZwjHq"
-                                         :imagerySet "AerialWithLabelsOnDemand"})}])
+                                         :imagerySet "AerialWithLabelsOnDemand"})}
+                       {:opt-id    7
+                        :opt-label "*USGS Street Topo"
+                        :source    (TileWMS.
+                                    #js {:url         "https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer"
+                                         :params      #js {"LAYERS" "0"}
+                                         :crossOrigin "anonymous"
+                                         :serverType  "geoserver"})}
+                       {:opt-id    8
+                        :opt-label "*USGS Satellite"
+                        :source    (TileWMS.
+                                    #js {:url         "https://basemap.nationalmap.gov/arcgis/services/USGSImageryOnly/MapServer/WMSServer"
+                                         :params      #js {"LAYERS" "0"}
+                                         :crossOrigin "anonymous"
+                                         :serverType  "geoserver"})}
+                       {:opt-id    9
+                        :opt-label "*USGS Satellite Topo"
+                        :source    (TileWMS.
+                                    #js {:url         "https://basemap.nationalmap.gov/arcgis/services/USGSImageryTopo/MapServer/WMSServer"
+                                         :params      #js {"LAYERS" "0"}
+                                         :crossOrigin "anonymous"
+                                         :serverType  "geoserver"})}
+                       {:opt-id    10
+                        :opt-label "Google Terrain"
+                        :source    (XYZ.
+                                    #js {:url "https://mt0.google.com/vt/lyrs=p&hl=en&x={x}&y={y}&z={z}&s=Ga"})}
+                       {:opt-id    11
+                        :opt-label "Google Satellite"
+                        :source    (XYZ.
+                                    #js {:url "https://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga"})}])
