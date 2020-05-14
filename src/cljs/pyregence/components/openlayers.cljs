@@ -176,6 +176,15 @@
       (.fit (clj->js (concat (fromLonLat #js [minx miny])
                              (fromLonLat #js [maxx maxy]))))))
 
-(defn center-on-overlay! []
-  (when-let [center (get-overlay-center)]
+(defn set-center! [center]
+  (when center
     (-> @the-map .getView (.setCenter center))))
+
+(defn center-on-overlay! []
+  (set-center! (get-overlay-center)))
+
+(defn set-center-my-location! [evt]
+  (let [coords (.-coords evt)
+        lon    (.-longitude coords)
+        lat    (.-latitude  coords)]
+    (set-center! (fromLonLat #js [lon lat] "EPSG:3857"))))
