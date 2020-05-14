@@ -530,11 +530,10 @@
 
 (defn mouse-info []
   [:div#mouse-info {:style ($mouse-info)}
-   [:div
-    [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
-     "Lat:" (u/to-precision 4 (get @lon-lat 1))]
-    [:label {:style {:width "50%" :text-align "left"}}
-     "Lon:" (u/to-precision 4 (get @lon-lat 0))]]])
+   [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
+    "Lat:" (u/to-precision 4 (get @lon-lat 1))]
+   [:label {:style {:width "50%" :text-align "left"}}
+    "Lon:" (u/to-precision 4 (get @lon-lat 0))]])
 
 (defn control-layer []
   (let [myself (r/atom nil)]
