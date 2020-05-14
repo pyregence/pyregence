@@ -139,17 +139,16 @@
 
     :render
     (fn [this]
-      [:<>
-       [:div#vega-canvas
-        {:style {:height (:box-height (r/props this))
-                 :width  (:box-width  (r/props this))}}]])})) ; TODO render no data / loading message
+      [:div#vega-canvas
+       {:style {:height (:box-height (r/props this))
+                :width  (:box-width  (r/props this))}}])})) ; TODO render no data / loading message
 
 (defn loading-cover [box-height box-width]
-  [:div#loading-cover {:style {:height    box-height
-                                :padding  "2rem"
-                                :position "absolute"
-                                :width    box-width
-                                :z-index  "1"}}
+  [:div#loading-cover {:style {:height   box-height
+                               :padding  "2rem"
+                               :position "absolute"
+                               :width    box-width
+                               :z-index  "1"}}
    [:label "Loading..."]])
 
 (defn vega-box [parent layer-click! units current-hour legend-list last-clicked-info]

@@ -1,6 +1,5 @@
 (ns pyregence.pages.near-term-forecast
-  (:require [cljsjs.vega-embed]
-            [reagent.core :as r]
+  (:require [reagent.core :as r]
             [reagent.dom :as rd]
             [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
