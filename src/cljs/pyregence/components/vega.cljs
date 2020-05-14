@@ -167,14 +167,15 @@
        :draggable true
        :on-drag #(if @drag-started?
                    (reset! drag-started? false) ; ignore first value, fixes jumpy movement on start
-                   (let [p-height (.-clientHeight @parent)
-                         p-width  (.-clientWidth  @parent)
-                         mouse-x  (.-clientX %)
-                         mouse-y  (.-clientY %)
-                         y-offset (- (.-innerHeight js/window) p-height)]
+                   (let [parent-rec (.getBoundingClientRect @parent)
+                         p-height   (aget parent-rec "height")
+                         p-width    (aget parent-rec "width")
+                         p-top      (aget parent-rec "top")
+                         mouse-x    (.-clientX %)
+                         mouse-y    (.-clientY %)]
                      (when (< (/ p-width 3) mouse-x (- p-width 300))
                        (reset! box-width (- p-width mouse-x)))
-                     (when (< (/ p-height 3) (- mouse-y y-offset) (- p-height 200))
-                       (reset! box-height (- mouse-y y-offset)))))
+                     (when (< (/ p-height 3) (- mouse-y p-top) (- p-height 200))
+                       (reset! box-height (- mouse-y p-top)))))
        :on-drag-start #(reset! drag-started? true)}
       "O"]]))
