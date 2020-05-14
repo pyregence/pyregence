@@ -1,14 +1,14 @@
 (ns pyregence.pages.near-term-forecast
-  (:require [cljsjs.vega-embed]
-            [reagent.core :as r]
+  (:require [reagent.core :as r]
             [reagent.dom :as rd]
             [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]
             [herb.core :refer [<class]]
-            [pyregence.components.openlayers :as ol]
             [pyregence.styles :as $]
-            [pyregence.utils  :as u]))
+            [pyregence.utils  :as u]
+            [pyregence.components.openlayers :as ol]
+            [pyregence.components.vega       :refer [vega-box]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -199,9 +199,12 @@
                      "&STYLES="
                      "&BBOX=" (str/join "," point-info))))))
 
-(defn cycle-layer! [change]
-  (swap! *layer-idx #(mod (+ change %) (count (filtered-layers))))
+(defn select-layer! [new-layer]
+  (reset! *layer-idx new-layer)
   (ol/swap-active-layer! (get-current-layer-name)))
+
+(defn cycle-layer! [change]
+  (select-layer! (mod (+ change @*layer-idx) (count (filtered-layers)))))
 
 (defn loop-animation! []
   (when @animate?
@@ -373,19 +376,6 @@
    :width            "1rem"
    :z-index          "-1"})
 
-(defn $vega-box [box-width box-height]
-  {:background-color "white"
-   :border           "1px solid black"
-   :border-radius    "5px"
-   :height            box-height
-   :overflow         "hidden"
-   :padding-top      "1rem"
-   :position         "absolute"
-   :right            ".5rem"
-   :top              ".5rem"
-   :width             box-width
-   :z-index          "100"})
-
 (defn $radio [checked?]
   (merge
    (when checked? {:background-color ($/color-picker :black 0.6)})
@@ -424,8 +414,7 @@
    [:div {:style ($/flex-col)}
     [:input {:style {:width "12rem"}
              :type "range" :min "0" :max (dec (count (filtered-layers))) :value @*layer-idx
-             :on-change #(do (reset! *layer-idx (u/input-int-value %))
-                             (ol/swap-active-layer! (get-current-layer-name)))}]
+             :on-change #(select-layer! (u/input-int-value %))}]
     [:label {:style {:font-size ".75rem"}}
      (get-current-layer-full-time)]]
    [:button {:style {:padding ".25rem" :margin-left ".5rem"}
@@ -482,142 +471,6 @@
                   [:option {:key opt_id :value opt_id} opt_label])
                 layer-types))]])
 
-(defn to-hex-str [num]
-  (let [hex-num (.toString (.round js/Math num) 16)]
-    (if (= 2 (count hex-num))
-      hex-num
-      (str "0" hex-num))))
-
-(defn interp-color [from to ratio]
-  (when (and from to)
-    (let [fr (js/parseInt (subs from 1 3) 16)
-          fg (js/parseInt (subs from 3 5) 16)
-          fb (js/parseInt (subs from 5 7) 16)
-          tr (js/parseInt (subs to   1 3) 16)
-          tg (js/parseInt (subs to   3 5) 16)
-          tb (js/parseInt (subs to   5 7) 16)]
-      (str "#"
-           (to-hex-str (+ fr (* ratio (- tr fr))))
-           (to-hex-str (+ fg (* ratio (- tg fg))))
-           (to-hex-str (+ fb (* ratio (- tb fb))))))))
-
-(defn create-stops []
-  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 @last-clicked-info)]
-    (reductions
-     (fn [last cur] (let [last-q (get last :quantity  0.0)
-                          cur-q  (get cur  "quantity" 0.0)]
-                      {:quantity cur-q
-                       :offset   (min (/ cur-q max-band) 1.0)
-                       :color    (if (< last-q max-band cur-q)
-                                   (interp-color (get last :color)
-                                                 (get cur  "color")
-                                                 (/ (- max-band last-q)
-                                                    (- cur-q last-q)))
-                                   (get cur "color"))}))
-     {:offset 0.0
-      :color  (get (first @legend-list) "color")}
-     (rest @legend-list))))
-
-(defn create-scale []
-  {:type   "linear"
-   :domain (mapv #(get % "quantity") @legend-list)
-   :range  (mapv #(get % "color")    @legend-list)})
-
-(defn layer-line-plot []
-  (let [units (u/find-key-by-id layer-types @*layer-type :units)]
-    {:width    "container"
-     :height   "container"
-     :autosize {:type "fit" :resize true}
-     :padding  {:left "16" :top "0" :right "16" :bottom "32"}
-     :data     {:values (or @last-clicked-info [])}
-     :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "Hour"}
-                            :y {:field "band" :type "quantitative" :title units}
-                            :tooltip [{:field "band" :title units  :type "nominal"}
-                                      {:field "date" :title "Date" :type "nominal"}
-                                      {:field "time" :title "Time" :type "nominal"}]}
-                 :layer [{:mark {:type        "line"
-                                 :interpolate "monotone"
-                                 :stroke      {:x2 0
-                                               :y1 1
-                                               :gradient "linear"
-                                               :stops    (create-stops)}}}
-                         ;; Layer with all points for selection
-                         {:mark      {:type   "point"
-                                      :opacity 0}
-                          :selection {:point-hover {:type  "single"
-                                                    :on    "mouseover"
-                                                    :empty "none"}}}
-                         {:transform [{:filter {:or [{:field "hour" :lt (get-current-layer-hour)}
-                                                     {:field "hour" :gt (get-current-layer-hour)}]}}]
-                          :mark     {:type   "point"
-                                     :filled true}
-                          :encoding {:size {:condition {:selection :point-hover :value 150}
-                                            :value 75}
-                                     :color {:field  "band"
-                                             :type   "quantitative"
-                                             :scale  (create-scale)
-                                             :legend false}}}
-                         {:transform [{:filter {:field "hour" :equal (get-current-layer-hour)}}]
-                          :mark {:type   "point"
-                                 :filled false
-                                 :fill   "black"
-                                 :stroke "black"}
-                          :encoding {:size {:condition {:selection :point-hover :value 150}
-                                            :value 75}}}]}]}))
-
-(defn render-vega [spec elem]
-  (when (and spec (seq (get-in spec [:data :values])))
-    (go
-      (try
-        (let [result (<p! (js/vegaEmbed elem
-                                        (clj->js spec)
-                                        (clj->js {:renderer "canvas"
-                                                  :mode     "vega-lite"})))]
-          (-> result .-view (.addEventListener
-                             "click"
-                             (fn [_ data]
-                               (when-let [index (or (u/try-js-aget data "datum" "datum" "_vgsid_")
-                                                    (u/try-js-aget data "datum" "_vgsid_"))]
-                                 (reset! *layer-idx (dec ^js/integer index))
-                                 (ol/swap-active-layer! (get-current-layer-name)))))))
-        (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
-
-(defn vega-canvas [props]
-  (r/create-class
-   {:component-did-mount
-    (fn [this] (render-vega (:spec props) (rd/dom-node this)))
-
-    :component-did-update
-    (fn [this _] (render-vega (:spec (r/props this)) (rd/dom-node this)))
-
-    :render
-    (fn [this] [:div#vega-canvas
-                {:style {:height (:box-height (r/props this))
-                         :width  (:box-width  (r/props this))}}])})) ; TODO render no data / loading message
-
-(defn vega-box [parent]
-  (r/with-let [box-width     (r/atom 400)
-               box-height    (r/atom 200)
-               drag-started? (r/atom false)]
-    [:div#vega-box {:style ($vega-box @box-width @box-height)}
-     [vega-canvas {:spec (layer-line-plot) :box-height @box-height :box-width @box-width}]
-     [:div#drag-icon
-      {:style {:position "absolute" :bottom "-.5rem" :left "0" :font-size "1.25rem" :cursor "sw-resize"}
-       :draggable true
-       :on-drag #(if @drag-started?
-                   (reset! drag-started? false) ; ignore first value, fixes jumpy movement on start
-                   (let [p-height (.-clientHeight @parent)
-                         p-width  (.-clientWidth  @parent)
-                         mouse-x  (.-clientX %)
-                         mouse-y  (.-clientY %)
-                         y-offset (- (.-innerHeight js/window) p-height)]
-                     (when (< (/ p-width 3) mouse-x (- p-width 300))
-                       (reset! box-width (- p-width mouse-x)))
-                     (when (< (/ p-height 3) (- mouse-y y-offset) (- p-height 200))
-                       (reset! box-height (- mouse-y y-offset)))))
-       :on-drag-start #(reset! drag-started? true)}
-      "O"]]))
-
 (defn panel-dropdown [title state options call-back]
   [:div {:style {:display "flex" :flex-direction "column"}}
    [:label title]
@@ -673,7 +526,14 @@
         [:div {:style {:height "100%" :position "absolute" :width "100%"}}
          [collapsible-panel]
          [legend-box]
-         (when @myself [vega-box myself])
+         (when @myself
+           [vega-box
+            myself
+            select-layer!
+            (u/find-key-by-id layer-types @*layer-type :units)
+            (get-current-layer-hour)
+            @legend-list
+            @last-clicked-info])
          [time-slider]
          [zoom-slider]])})))
 
