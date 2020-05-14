@@ -4,7 +4,9 @@
 (def Map             js/ol.Map)
 (def View            js/ol.View)
 (def Overlay         js/ol.Overlay)
+(def ScaleLine       js/ol.control.ScaleLine)
 (def fromLonLat      js/ol.proj.fromLonLat)
+(def toLonLat        js/ol.proj.toLonLat)
 (def TileLayer       js/ol.layer.Tile)
 (def BingMaps        js/ol.source.BingMaps)
 (def OSM             js/ol.source.OSM)
@@ -75,10 +77,10 @@
                                                     :params      #js {"LAYERS" (str "demo:" layer)}
                                                     :crossOrigin "anonymous"
                                                     :serverType  "geoserver"})})]
-                :controls #js []
+                :controls #js [(ScaleLine.)]
                 :view     (View.
                            #js {:projection "EPSG:3857"
-                                :center     (fromLonLat #js [-120.8958 38.8375])
+                                :center     (fromLonLat #js [-120.8958 38.8375] "EPSG:3857")
                                 :minZoom    6
                                 :maxZoom    18
                                 :zoom       10})
@@ -130,6 +132,14 @@
                res         (-> @the-map .getView .getResolution)]
            (.setPosition map-overlay coord)
            (call-back [x y (+ x res) (+ y res)])))))
+
+(defn add-map-mouse-move! [call-back]
+  (.on @the-map
+       "pointermove"
+       (fn [evt]
+         (call-back (-> (.-coordinate evt)
+                        (toLonLat "EPSG:3857")
+                        (js->clj))))))
 
 (defn add-map-zoom-end! [call-back]
   (.on @the-map

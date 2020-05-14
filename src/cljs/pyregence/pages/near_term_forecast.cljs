@@ -26,6 +26,7 @@
 (defonce *speed            (r/atom 1))
 (defonce *base-map         (r/atom 0))
 (defonce show-utc?         (r/atom true))
+(defonce lon-lat           (r/atom [0 0]))
 
 ;; Static Data
 
@@ -249,6 +250,7 @@
     (get-legend! (get-current-layer-name))
     (ol/init-map! (get-current-layer-name))
     (ol/add-map-single-click! get-point-info!)
+    (ol/add-map-mouse-move! #(reset! lon-lat %))
     (let [[cur min max] (ol/get-zoom-info)]
       (reset! *zoom cur)
       (reset! minZoom min)
@@ -355,6 +357,17 @@
      :font-weight   "bold"
      :transform     "rotate(90deg)"}
     {:pseudo {:hover {:background-color ($/color-picker :sig-brown 0.1)}}}))
+
+(defn $mouse-info []
+  {:background-color "white"
+   :bottom           "1rem"
+   :border           "1px solid black"
+   :border-radius    "5px"
+   :right            "12rem"
+   :padding          ".5rem"
+   :position         "absolute"
+   :width            "14rem"
+   :z-index          "100"})
 
 (defn $pop-up-box []
   {:background-color "white"
@@ -515,6 +528,13 @@
                  :on-change #(do (reset! active-opacity (u/input-int-value %))
                                  (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
 
+(defn mouse-info []
+  [:div#mouse-info {:style ($mouse-info)}
+   [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
+    "Lat:" (u/to-precision 4 (get @lon-lat 1))]
+   [:label {:style {:width "50%" :text-align "left"}}
+    "Lon:" (u/to-precision 4 (get @lon-lat 0))]])
+
 (defn control-layer []
   (let [myself (r/atom nil)]
     (r/create-class
@@ -535,7 +555,8 @@
             @legend-list
             @last-clicked-info])
          [time-slider]
-         [zoom-slider]])})))
+         [zoom-slider]
+         [mouse-info]])})))
 
 (defn pop-up []
   [:div#popup

@@ -222,3 +222,9 @@
      obj
      values)
     (catch js/Error e (js/console.log e))))
+
+(defn to-precision
+  "Round a double to n significant digits."
+  [n dbl]
+  (let [factor (.pow js/Math 10 n)]
+    (/ (Math/round (* dbl factor)) factor)))

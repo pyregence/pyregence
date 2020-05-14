@@ -163,7 +163,7 @@
                      :layer-click! layer-click!}]
        [loading-cover @box-height @box-width])
      [:div#drag-icon
-      {:style {:position "absolute" :bottom "-.5rem" :left "0" :font-size "1.25rem" :cursor "sw-resize" :z-index  "2"}
+      {:style {:position "absolute" :bottom "-.5rem" :left "0" :font-size "1.25rem" :cursor "sw-resize" :z-index "2"}
        :draggable true
        :on-drag #(if @drag-started?
                    (reset! drag-started? false) ; ignore first value, fixes jumpy movement on start
