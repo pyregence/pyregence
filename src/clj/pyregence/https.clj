@@ -33,9 +33,9 @@
       (every?
        (fn [cmd] (log-str cmd)
          (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
-                   (log-str "out: "   out)
-                   (log-str "error: " err)
-                   (= err "")))
+           (log-str "out: "   out)
+           (log-str "error: " err)
+           (= err "")))
        commands))))
 
 (defn -main [& [domain path]]
