@@ -137,7 +137,9 @@
   (.on @the-map
        "pointermove"
        (fn [evt]
-         (call-back (toLonLat (.-coordinate evt) "EPSG:3857")))))
+         (call-back (-> (.-coordinate evt)
+                        (toLonLat  "EPSG:3857")
+                        (js->clj))))))
 
 (defn add-map-zoom-end! [call-back]
   (.on @the-map
