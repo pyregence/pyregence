@@ -455,7 +455,7 @@
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
            :title "Center on my location"
-           :on-click #(-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))} ; TODO should I also zoom to a min zoom level?
+           :on-click #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))} ; TODO should I also zoom to a min zoom level?
     "M"]
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .75rem"})
