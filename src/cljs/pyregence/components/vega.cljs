@@ -151,31 +151,32 @@
                                :z-index  "1"}}
    [:label "Loading..."]])
 
-(defn vega-box [parent layer-click! units current-hour legend-list last-clicked-info]
+(defn vega-box [parent-rec layer-click! units current-hour legend-list last-clicked-info]
   (r/with-let [box-width     (r/atom 400)
                box-height    (r/atom 200)
                drag-started? (r/atom false)]
-    [:div#vega-box {:style ($vega-box @box-height @box-width)}
-     (if last-clicked-info
-       [vega-canvas {:spec         (layer-line-plot units current-hour legend-list last-clicked-info)
-                     :box-height   @box-height
-                     :box-width    @box-width
-                     :layer-click! layer-click!}]
-       [loading-cover @box-height @box-width])
-     [:div#drag-icon
-      {:style {:position "absolute" :bottom "-.5rem" :left "0" :font-size "1.25rem" :cursor "sw-resize" :z-index "2"}
-       :draggable true
-       :on-drag #(if @drag-started?
-                   (reset! drag-started? false) ; ignore first value, fixes jumpy movement on start
-                   (let [parent-rec (.getBoundingClientRect @parent)
-                         p-height   (aget parent-rec "height")
-                         p-width    (aget parent-rec "width")
-                         p-top      (aget parent-rec "top")
-                         mouse-x    (.-clientX %)
-                         mouse-y    (.-clientY %)]
-                     (when (< (/ p-width 3) mouse-x (- p-width 300))
-                       (reset! box-width (- p-width mouse-x)))
-                     (when (< (/ p-height 3) (- mouse-y p-top) (- p-height 200))
-                       (reset! box-height (- mouse-y p-top)))))
-       :on-drag-start #(reset! drag-started? true)}
-      "O"]]))
+    (let [p-height (aget parent-rec "height")
+          p-width  (aget parent-rec "width")
+          p-top    (aget parent-rec "top")]
+      (when (> @box-height (/ p-height 1.5)) (reset! box-height (/ p-height 1.5)))
+      (when (> @box-width  (/ p-width  1.5)) (reset! box-width  (/ p-width 1.5)))
+      [:div#vega-box {:style ($vega-box @box-height @box-width)}
+       (if last-clicked-info
+         [vega-canvas {:spec         (layer-line-plot units current-hour legend-list last-clicked-info)
+                       :box-height   @box-height
+                       :box-width    @box-width
+                       :layer-click! layer-click!}]
+         [loading-cover @box-height @box-width])
+       [:div#drag-icon
+        {:style {:position "absolute" :bottom "-.5rem" :left "0" :font-size "1.25rem" :cursor "sw-resize" :z-index "2"}
+         :draggable true
+         :on-drag #(if @drag-started?
+                     (reset! drag-started? false) ; ignore first value, fixes jumpy movement on start
+                     (let [mouse-x (.-clientX %)
+                           mouse-y (.-clientY %)]
+                       (when (< (/ p-width 3) mouse-x (- p-width 300))
+                         (reset! box-width (- p-width mouse-x)))
+                       (when (> (/ p-height 1.5) (- mouse-y p-top) 200)
+                         (reset! box-height (- mouse-y p-top)))))
+         :on-drag-start #(reset! drag-started? true)}
+        "O"]])))
