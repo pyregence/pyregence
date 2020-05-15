@@ -256,19 +256,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn control-layer []
-  (let [myself (r/atom nil)]
+  (let [my-box (r/atom #js {})]
     (r/create-class
      {:component-did-mount
-      (fn [this] (reset! myself (rd/dom-node this)))
+      (fn [this]
+        (let [this-node      (rd/dom-node this)
+              update-my-box! (fn [& _] (reset! my-box (.getBoundingClientRect this-node)))]
+          (update-my-box!)
+          (-> (js/ResizeObserver. update-my-box!)
+              (.observe this-node))))
 
       :render
       (fn []
         [:div {:style {:height "100%" :position "absolute" :width "100%"}}
          [mc/collapsible-panel *base-map select-base-map! *layer-type select-layer-type!]
          [mc/legend-box legend-list]
-         (when @myself
+         (when (aget @my-box "height")
            [vega-box
-            myself
+            @my-box
             select-layer!
             (u/find-key-by-id c/layer-types @*layer-type :units)
             (get-current-layer-hour)
