@@ -205,7 +205,8 @@
   (go
     (<! (get-layers!))
     (get-legend! (get-current-layer-name))
-    (ol/init-map! (get-current-layer-name))
+    (ol/init-map! (get-current-layer-name)
+                  (u/find-key-by-id c/base-map-options @*base-map :source))
     (ol/add-map-single-click! get-point-info!)
     (ol/add-map-mouse-move! #(reset! lon-lat %))
     (let [[cur min max] (ol/get-zoom-info)]
