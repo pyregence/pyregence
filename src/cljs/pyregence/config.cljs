@@ -63,7 +63,7 @@
   (str "https://api.mapbox.com/styles/v1/mspencer-sig/"
        map-id
        "/tiles/256/{z}/{x}/{y}"
-       "?access_token=pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThoa3J6aDBnMzMyeGxqbml3OWtlaDEifQ.vHjKFFXZxqwTELyyOIJNQA"))
+       "?access_token=pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw"))
 
 (def base-map-options [{:opt-id    0
                         :opt-label "MapBox Street Topo"
