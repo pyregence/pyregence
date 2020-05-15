@@ -254,22 +254,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn control-layer []
-  (let [my-box (r/atom {"height" 0})]
+  (let [my-box (r/atom #js {})]
     (r/create-class
      {:component-did-mount
       (fn [this]
-        (reset! my-box (-> (rd/dom-node this)
-                           (.getBoundingClientRect)))
-        (-> #(reset! my-box (.getBoundingClientRect (rd/dom-node this)))
-            (js/ResizeObserver.)
-            (.observe (rd/dom-node this))))
+        (let [this-node      (rd/dom-node this)
+              update-my-box! (fn [& _] (reset! my-box (.getBoundingClientRect this-node)))]
+          (update-my-box!)
+          (-> (js/ResizeObserver. update-my-box!)
+              (.observe this-node))))
 
       :render
       (fn []
         [:div {:style {:height "100%" :position "absolute" :width "100%"}}
          [mc/collapsible-panel *base-map select-base-map! *layer-type select-layer-type!]
          [mc/legend-box legend-list]
-         (when (pos? (aget @my-box "height"))
+         (when (aget @my-box "height")
            [vega-box
             @my-box
             select-layer!
