@@ -195,7 +195,6 @@
                  :on-change #(do (reset! active-opacity (u/input-int-value %))
                                  (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Zoom Slider
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -226,7 +225,7 @@
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
            :title "Center on my location"
-           :on-click #(-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))} ; TODO should I also zoom to a min zoom level?
+           :on-click #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))} ; TODO should I also zoom to a min zoom level?
     "M"]
    [:span {:class (<class $p-zoom-button-common)
            :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .75rem"})
@@ -267,8 +266,7 @@
 
 (defn mouse-info [lon-lat]
   [:div#mouse-info {:style ($mouse-info)}
-   [:div
-    [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
-     "Lat:" (u/to-precision 4 (get lon-lat 1))]
-    [:label {:style {:width "50%" :text-align "left"}}
-     "Lon:" (u/to-precision 4 (get lon-lat 0))]]])
+   [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
+    "Lat:" (u/to-precision 4 (get lon-lat 1))]
+   [:label {:style {:width "50%" :text-align "left"}}
+    "Lon:" (u/to-precision 4 (get lon-lat 0))]])
