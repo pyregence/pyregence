@@ -59,35 +59,21 @@
 (def TileJSON js/ol.source.TileJSON)
 (def XYZ      js/ol.source.XYZ)
 
+(defn get-map-box-url [map-id]
+  (str "https://api.mapbox.com/styles/v1/mspencer-sig/"
+       map-id
+       "/tiles/256/{z}/{x}/{y}"
+       "?access_token=pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThoa3J6aDBnMzMyeGxqbml3OWtlaDEifQ.vHjKFFXZxqwTELyyOIJNQA"))
+
 (def base-map-options [{:opt-id    0
-                        :opt-label "OpenStreetMaps"
-                        :source    (OSM.)}
-                       {:opt-id    1
-                        :opt-label "MapTiler Topographique"
-                        :source    (TileJSON.
-                                    #js {:url "https://api.maptiler.com/maps/topographique/tiles.json?key=aTxMH7uEmrp1p92D9slS"
-                                         :crossOrigin "anonymous"})}
-                       {:opt-id    2
-                        :opt-label "MapTiler Satellite"
-                        :source    (TileJSON.
-                                    #js {:url "https://api.maptiler.com/maps/hybrid/tiles.json?key=aTxMH7uEmrp1p92D9slS"
-                                         :crossOrigin "anonymous"})}
-                       {:opt-id    3
-                        :opt-label "Thunderforest Landscape"
+                        :opt-label "MapBox Street Topo"
                         :source    (XYZ.
-                                    #js {:url "https://tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=9dccbe884aab4483823c7cb6ab9b5f4d"})}
-                       {:opt-id    4
-                        :opt-label "BingMaps Street"
-                        :source    (BingMaps.
-                                    #js {:key "AjMtoHQV7tiC8tKyktN3OFi_qXUv_0i5TvtZFic3vkIOzR2iTFmYxVOPJKSZwjHq"
-                                         :imagerySet "RoadOnDemand"})}
-                       {:opt-id    5
-                        :opt-label "BingMaps Aerial"
-                        :source    (BingMaps.
-                                    #js {:key "AjMtoHQV7tiC8tKyktN3OFi_qXUv_0i5TvtZFic3vkIOzR2iTFmYxVOPJKSZwjHq"
-                                         :imagerySet "Aerial"})}
-                       {:opt-id    6
-                        :opt-label "BingMaps Aerial with Streets"
-                        :source    (BingMaps.
-                                    #js {:key "AjMtoHQV7tiC8tKyktN3OFi_qXUv_0i5TvtZFic3vkIOzR2iTFmYxVOPJKSZwjHq"
-                                         :imagerySet "AerialWithLabelsOnDemand"})}])
+                                    #js {:url (get-map-box-url "cka8jaky90i9m1iphwh79wr04")})}
+                       {:opt-id    1
+                        :opt-label "MapBox Satellite"
+                        :source    (XYZ.
+                                    #js {:url (get-map-box-url "cka8jm5161vcd1jn2g47k5yuo")})}
+                       {:opt-id    2
+                        :opt-label "MapBox Satellite Street"
+                        :source    (XYZ.
+                                    #js {:url (get-map-box-url "cka8hoo5v0gpy1iphg08hz7oj")})}])
