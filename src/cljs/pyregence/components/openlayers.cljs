@@ -1,4 +1,6 @@
-(ns pyregence.components.openlayers)
+(ns pyregence.components.openlayers
+  (:require
+   [pyregence.config :as c]))
 
 ;; OpenLayers aliases
 (def Map             js/ol.Map)
@@ -37,8 +39,8 @@
                                      :visible true
                                      :opacity 0.7
                                      :source  (TileWMS.
-                                               #js {:url         "https://californiafireforecast.com:8443/geoserver/demo/wms"
-                                                    :params      #js {"LAYERS" (str "demo:" layer)}
+                                               #js {:url         c/wms-url
+                                                    :params      #js {"LAYERS" layer}
                                                     :crossOrigin "anonymous"
                                                     :serverType  "geoserver"})})]
                 :controls #js [(ScaleLine.)]
@@ -121,7 +123,7 @@
 (defn swap-active-layer! [geo-layer]
   (-> (get-layer-by-title "active")
       .getSource
-      (.updateParams #js {"LAYERS" (str "demo:" geo-layer)})))
+      (.updateParams #js {"LAYERS" geo-layer})))
 
 (defn set-opacity-by-title! [title opacity]
   (-> (get-layer-by-title title)

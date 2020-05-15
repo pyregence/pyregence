@@ -77,7 +77,7 @@
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
   (get-data process-legend!
-            (format c/get-legend-url layer)))
+            (format c/legend-url layer)))
 
 (defn js-date-from-string [date time]
   (js/Date. (str (subs date 0 4) "-"
@@ -118,10 +118,11 @@
             (->> (-> (<p! (.text response))
                      ol/wms-capabilities
                      (u/try-js-aget "Capability" "Layer" "Layer"))
-                 (remove #(str/starts-with? (aget % "Name") "lg-"))
+                 (remove #(str/starts-with? (peek (str/split (aget % "Name") ":"))  "lg-"))
                  (mapv (fn [layer]
                          (let [full-name        (aget layer "Name")
-                               [type date time] (str/split full-name "_") ; TODO this might break if we expand file names
+                               [base date time] (str/split full-name "_") ; TODO this might break if we expand file names
+                               [_ type]         (str/split base ":")
                                cur-date         (js-date-from-string date time)
                                base-date        (js-date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
                            {:layer  full-name
@@ -135,7 +136,7 @@
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
   (get-data process-capabilities!
-            c/get-capabilities-url))
+            (format c/capabilities-url "demo")))
 
 (defn process-point-info! [response]
   (go
@@ -151,7 +152,7 @@
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
   (when point-info
-    (let [layer-str (u/find-key-by-id c/layer-types @*layer-type :filter)]
+    (let [layer-str (str "demo:lg-" (u/find-key-by-id c/layer-types @*layer-type :filter))]
       (get-data process-point-info!
                 (format c/point-info-url layer-str layer-str (str/join "," point-info))))))
 
