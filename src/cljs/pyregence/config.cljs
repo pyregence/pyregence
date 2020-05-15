@@ -55,7 +55,6 @@
 ;; Basemap options
 
 (def BingMaps js/ol.source.BingMaps)
-(def OSM      js/ol.source.OSM)
 (def TileJSON js/ol.source.TileJSON)
 (def XYZ      js/ol.source.XYZ)
 

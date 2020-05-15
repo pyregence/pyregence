@@ -9,7 +9,6 @@
 (def fromLonLat      js/ol.proj.fromLonLat)
 (def toLonLat        js/ol.proj.toLonLat)
 (def TileLayer       js/ol.layer.Tile)
-(def OSM             js/ol.source.OSM)
 (def TileWMS         js/ol.source.TileWMS)
 (def WMSCapabilities js/ol.format.WMSCapabilities)
 
