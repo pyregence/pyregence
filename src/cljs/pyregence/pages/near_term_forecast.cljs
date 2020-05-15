@@ -115,23 +115,24 @@
 (defn process-capabilities! [response]
   (go
     (reset! layer-list
-            (->> (-> (<p! (.text response))
-                     ol/wms-capabilities
-                     (u/try-js-aget "Capability" "Layer" "Layer"))
-                 (remove #(str/starts-with? (peek (str/split (aget % "Name") ":"))  "lg-"))
-                 (mapv (fn [layer]
-                         (let [full-name        (aget layer "Name")
-                               [base date time] (str/split full-name "_") ; TODO this might break if we expand file names
-                               [_ type]         (str/split base ":")
-                               cur-date         (js-date-from-string date time)
-                               base-date        (js-date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
-                           {:layer  full-name
-                            :type   type
-                            :extent  (aget layer "EX_GeographicBoundingBox")
-                            :js-date cur-date
-                            :date    (get-date-from-js cur-date)
-                            :time    (get-time-from-js cur-date)
-                            :hour    (/ (- cur-date base-date) 1000 60 60)})))))))
+            (as-> (<p! (.text response)) layers
+              (ol/wms-capabilities layers)
+              (u/try-js-aget layers "Capability" "Layer" "Layer")
+              (remove #(str/starts-with? (peek (str/split (aget % "Name") ":"))  "lg-") layers)
+              (mapv (fn [layer]
+                      (let [full-name        (aget layer "Name")
+                            [base date time] (str/split full-name "_") ; TODO this might break if we expand file names
+                            [_ type]         (str/split base ":")
+                            cur-date         (js-date-from-string date time)
+                            base-date        (js-date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
+                        {:layer  full-name
+                         :type   type
+                         :extent  (aget layer "EX_GeographicBoundingBox")
+                         :js-date cur-date
+                         :date    (get-date-from-js cur-date)
+                         :time    (get-time-from-js cur-date)
+                         :hour    (/ (- cur-date base-date) 1000 60 60)}))
+                    layers)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
