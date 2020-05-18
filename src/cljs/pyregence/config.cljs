@@ -4,46 +4,67 @@
 
 (def wms-url "https://californiafireforecast.com:8443/geoserver/wms?SERVICE=WMS&VERSION=1.3.0")
 
-(def legend-url       (str wms-url
-                           "&REQUEST=GetLegendGraphic"
-                           "&FORMAT=application/json"
-                           "&LAYER=%s"))
 (def capabilities-url (str wms-url
-                           "&REQUEST=GetCapabilities"
-                           "&NAMESPACE=%s"))
-(def point-info-url   (str wms-url
-                           "&REQUEST=GetFeatureInfo"
-                           "&INFO_FORMAT=application/json"
-                           "&LAYERS=%s"
-                           "&QUERY_LAYERS=%s"
-                           "&FEATURE_COUNT=1000"
-                           "&TILED=true"
-                           "&I=0"
-                           "&J=0"
-                           "&WIDTH=1"
-                           "&HEIGHT=1"
-                           "&CRS=EPSG:3857"
-                           "&STYLES="
-                           "&BBOX=%s"))
+                           "&REQUEST=GetCapabilities"))
+
+(defn legend-url [layer]
+  (str wms-url
+       "&REQUEST=GetLegendGraphic"
+       "&FORMAT=application/json"
+       "&LAYER=" layer))
+
+(defn point-info-url [layer-group bbox]
+  (str wms-url
+       "&REQUEST=GetFeatureInfo"
+       "&INFO_FORMAT=application/json"
+       "&LAYERS=" layer-group
+       "&QUERY_LAYERS=" layer-group
+       "&FEATURE_COUNT=1000"
+       "&TILED=true"
+       "&I=0"
+       "&J=0"
+       "&WIDTH=1"
+       "&HEIGHT=1"
+       "&CRS=EPSG:3857"
+       "&STYLES="
+       "&BBOX=" bbox))
 
 ;; Layer options
 
-(def layer-types [{:opt-id    0
-                   :opt-label "Fire Area"
-                   :filter    "fire-area"
-                   :units     "Acres"}
-                  {:opt-id    1
-                   :opt-label "Fire Volume"
-                   :filter    "fire-volume"
-                   :units     "Acre-ft"}
-                  {:opt-id    2
-                   :opt-label "Impacted Structures"
-                   :filter    "impacted-structures"
-                   :units     "Structures"}
-                  {:opt-id    3
-                   :opt-label "Times Burned"
-                   :filter    "times-burned"
-                   :units     "Times"}])
+(def output-types [{:opt-id   0
+                    :opt-label "Fire Area"
+                    :filter    "fire-area"
+                    :units     "Acres"}
+                   {:opt-id    1
+                    :opt-label "Fire Volume"
+                    :filter    "fire-volume"
+                    :units     "Acre-ft"}
+                   {:opt-id    2
+                    :opt-label "Impacted Structures"
+                    :filter    "impacted-structures"
+                    :units     "Structures"}
+                   {:opt-id    3
+                    :opt-label "Times Burned"
+                    :filter    "times-burned"
+                    :units     "Times"}])
+
+(def fuel-types [{:opt-id     0
+                  :opt-label "CFO"
+                  :filter    "cfo"}
+                 {:opt-id    1
+                  :opt-label "LandFire"
+                  :filter    "landfire"}])
+
+(def models [{:opt-id    0
+              :opt-label "Elmfire"
+              :filter    "elmfire"}])
+
+(def ign-patterns [{:opt-id    0
+                    :opt-label "All"
+                    :filter    "all"}
+                   {:opt-id    1
+                    :opt-label "Transmission Lines"
+                    :filter    "tline"}])
 
 ;; Scroll speeds for time slider
 
