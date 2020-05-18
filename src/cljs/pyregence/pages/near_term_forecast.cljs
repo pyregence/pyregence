@@ -44,7 +44,7 @@
         ign-pattern (u/find-key-by-id c/ign-patterns @*ign-pattern :filter)
         model       (u/find-key-by-id c/models       @*model       :filter)]
     (filterv (fn [{:keys [filter]}]
-               (set/subset? #{output-type fuel-type ign-pattern model "fire-risk-forecast" "20200516_06"}
+               (set/subset? #{output-type fuel-type ign-pattern model "fire-risk-forecast" "20200518_00"}
                             filter))
              @layer-list)))
 
@@ -129,8 +129,8 @@
   (let [[workspace base]    (str/split name-string ":")
         [forecast model]    (str/split workspace #"_(?=\d{8}_)")
         [model ingnition]   (str/split model "-")
-        [options date-time] (str/split base #"_(?=\d{6}_)") ; FIXME, this is temporary to match current layers (should be {8})
-        [date time]         (str/split (str "20" date-time) "_") ; FIXME, this is temporary to match current layers
+        [options date-time] (str/split base #"_(?=\d{8}_)")
+        [date time]         (str/split date-time "_")
         [b-date b-time]     (str/split model "_")
         base-date           (js-date-from-string b-date b-time)
         cur-date            (js-date-from-string date time)]
@@ -150,7 +150,7 @@
               (u/try-js-aget layers "Capability" "Layer" "Layer")
               (map (fn [layer]
                      (let [full-name (aget layer "Name")]
-                       (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{6}_\d{6}" full-name) ; FIXME, temp for bad script. Should be {8}
+                       (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
                          (merge
                           (split-layer-name full-name)
                           {:layer  full-name

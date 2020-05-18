@@ -2,19 +2,22 @@
 
 ;; WMS options
 
-(def wms-url "https://californiafireforecast.com:8443/geoserver/wms?SERVICE=WMS&VERSION=1.3.0")
+(def wms-url "https://californiafireforecast.com:8443/geoserver/wms")
 
 (def capabilities-url (str wms-url
+                           "?SERVICE=WMS&VERSION=1.3.0"
                            "&REQUEST=GetCapabilities"))
 
 (defn legend-url [layer]
   (str wms-url
+       "?SERVICE=WMS&VERSION=1.3.0"
        "&REQUEST=GetLegendGraphic"
        "&FORMAT=application/json"
        "&LAYER=" layer))
 
 (defn point-info-url [layer-group bbox]
   (str wms-url
+       "?SERVICE=WMS&VERSION=1.3.0"
        "&REQUEST=GetFeatureInfo"
        "&INFO_FORMAT=application/json"
        "&LAYERS=" layer-group
@@ -64,7 +67,7 @@
                     :filter    "all"}
                    {:opt-id    1
                     :opt-label "Transmission Lines"
-                    :filter    "tline"}])
+                    :filter    "tlines"}])
 
 ;; Scroll speeds for time slider
 
