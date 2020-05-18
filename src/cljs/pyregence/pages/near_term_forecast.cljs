@@ -31,6 +31,8 @@
 (defonce *output-type      (r/atom 0))
 (defonce *speed            (r/atom 1))
 (defonce *base-map         (r/atom 0))
+(defonce *model-time       (r/atom 0))
+(defonce model-times       (r/atom []))
 (defonce show-utc?         (r/atom true))
 (defonce lon-lat           (r/atom [0 0]))
 
@@ -42,9 +44,10 @@
   (let [output-type (u/find-key-by-id c/output-types @*output-type :filter)
         fuel-type   (u/find-key-by-id c/fuel-types   @*fuel-type   :filter)
         ign-pattern (u/find-key-by-id c/ign-patterns @*ign-pattern :filter)
-        model       (u/find-key-by-id c/models       @*model       :filter)]
+        model       (u/find-key-by-id c/models       @*model       :filter)
+        model-time  (u/find-key-by-id @model-times   @*model-time  :filter)]
     (filterv (fn [{:keys [filter]}]
-               (set/subset? #{output-type fuel-type ign-pattern model "fire-risk-forecast" "20200518_00"}
+               (set/subset? #{output-type fuel-type ign-pattern model model-time "fire-risk-forecast"}
                             filter))
              @layer-list)))
 
@@ -144,20 +147,30 @@
 
 (defn process-capabilities! [response]
   (go
-    (reset! layer-list
-            (as-> (<p! (.text response)) layers
-              (ol/wms-capabilities layers)
-              (u/try-js-aget layers "Capability" "Layer" "Layer")
-              (map (fn [layer]
-                     (let [full-name (aget layer "Name")]
-                       (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
-                         (merge
-                          (split-layer-name full-name)
-                          {:layer  full-name
-                           :extent (aget layer "EX_GeographicBoundingBox")}))))
-                   layers)
-              (remove nil? layers)
-              (vec layers)))))
+    (let [layers (as-> (<p! (.text response)) layers
+                   (ol/wms-capabilities layers)
+                   (u/try-js-aget layers "Capability" "Layer" "Layer")
+                   (map (fn [layer]
+                          (let [full-name (aget layer "Name")]
+                            (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
+                              (merge
+                               (split-layer-name full-name)
+                               {:layer  full-name
+                                :extent (aget layer "EX_GeographicBoundingBox")}))))
+                        layers)
+                   (remove nil? layers)
+                   (vec layers))]
+      (reset! model-times
+              (->> layers
+                   (map :model)
+                   (distinct)
+                   (sort)
+                   (reverse)
+                   (map-indexed (fn [i model]
+                                  {:opt-id    i
+                                   :opt-label (if (= 0 i) "Current" model)
+                                   :filter    model}))))
+      (reset! layer-list layers))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
@@ -296,7 +309,16 @@
       :render
       (fn []
         [:div {:style {:height "100%" :position "absolute" :width "100%"}}
-         [mc/collapsible-panel *base-map select-base-map! *model *fuel-type *ign-pattern *output-type select-layer-option!]
+         [mc/collapsible-panel
+          *base-map
+          select-base-map!
+          *model
+          *fuel-type
+          *ign-pattern
+          *output-type
+          *model-time
+          @model-times
+          select-layer-option!]
          [mc/legend-box legend-list]
          (when (aget @my-box "height")
            [vega-box

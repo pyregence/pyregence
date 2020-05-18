@@ -161,7 +161,15 @@
                   [:option {:key opt-id :value opt-id} opt-label])
                 options))]])
 
-(defn collapsible-panel [*base-map select-base-map! *model *fuel-type *ign-pattern *output-type select-layer-option!]
+(defn collapsible-panel [*base-map
+                         select-base-map!
+                         *model
+                         *fuel-type
+                         *ign-pattern
+                         *output-type
+                         *model-time
+                         model-times
+                         select-layer-option!]
   (r/with-let [show-panel?       (r/atom true)
                active-opacity    (r/atom 70.0)
                hillshade-opacity (r/atom 50.0)
@@ -187,10 +195,11 @@
                     :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
                                     (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
       [:div#activelayer {:style {:margin-top "2rem"}}
-       [panel-dropdown "Model"    *model       c/models       #(select-layer-option! *model       %)]
-       [panel-dropdown "Fuel"     *fuel-type   c/fuel-types   #(select-layer-option! *fuel-type   %)]
-       [panel-dropdown "Ignition" *ign-pattern c/ign-patterns #(select-layer-option! *ign-pattern %)]
-       [panel-dropdown "Output"   *output-type c/output-types #(select-layer-option! *output-type %)]
+       [panel-dropdown "Model"      *model       c/models       #(select-layer-option! *model       %)]
+       [panel-dropdown "Model Time" *model-time  model-times    #(select-layer-option! *model-time  %)]
+       [panel-dropdown "Fuel"       *fuel-type   c/fuel-types   #(select-layer-option! *fuel-type   %)]
+       [panel-dropdown "Ignition"   *ign-pattern c/ign-patterns #(select-layer-option! *ign-pattern %)]
+       [panel-dropdown "Output"     *output-type c/output-types #(select-layer-option! *output-type %)]
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]
         [:input {:style {:width "100%"}
