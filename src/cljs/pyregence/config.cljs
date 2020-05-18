@@ -58,21 +58,27 @@
 (def TileJSON js/ol.source.TileJSON)
 (def XYZ      js/ol.source.XYZ)
 
-(defn get-map-box-url [map-id]
+(defn get-map-box-static-url [map-id]
   (str "https://api.mapbox.com/styles/v1/mspencer-sig/"
        map-id
        "/tiles/256/{z}/{x}/{y}"
        "?access_token=pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw"))
 
+(defn get-map-box-raster-url [layer-name]
+  (str "https://api.mapbox.com/v4/"
+       layer-name
+       "/{z}/{x}/{y}.jpg90"
+       "?access_token=pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw"))
+
 (def base-map-options [{:opt-id    0
                         :opt-label "MapBox Street Topo"
                         :source    (XYZ.
-                                    #js {:url (get-map-box-url "cka8jaky90i9m1iphwh79wr04")})}
+                                    #js {:url (get-map-box-static-url "cka8jaky90i9m1iphwh79wr04")})}
                        {:opt-id    1
                         :opt-label "MapBox Satellite"
                         :source    (XYZ.
-                                    #js {:url (get-map-box-url "cka8jm5161vcd1jn2g47k5yuo")})}
+                                    #js {:url (get-map-box-static-url "cka8jm5161vcd1jn2g47k5yuo")})}
                        {:opt-id    2
                         :opt-label "MapBox Satellite Street"
                         :source    (XYZ.
-                                    #js {:url (get-map-box-url "cka8hoo5v0gpy1iphg08hz7oj")})}])
+                                    #js {:url (get-map-box-static-url "cka8hoo5v0gpy1iphg08hz7oj")})}])
