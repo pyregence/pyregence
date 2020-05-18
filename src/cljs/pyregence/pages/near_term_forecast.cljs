@@ -41,9 +41,10 @@
 (defn filtered-layers []
   (let [output-type (u/find-key-by-id c/output-types @*output-type :filter)
         fuel-type   (u/find-key-by-id c/fuel-types   @*fuel-type   :filter)
-        ign-pattern (u/find-key-by-id c/ign-patterns @*ign-pattern :filter)]
+        ign-pattern (u/find-key-by-id c/ign-patterns @*ign-pattern :filter)
+        model       (u/find-key-by-id c/models       @*model       :filter)]
     (filterv (fn [{:keys [filter]}]
-               (set/subset? #{output-type fuel-type ign-pattern "elmfire" "fire-risk-forecast" "20200516_06"}
+               (set/subset? #{output-type fuel-type ign-pattern model "fire-risk-forecast" "20200516_06"}
                             filter))
              @layer-list)))
 
