@@ -247,7 +247,7 @@
         (reset! minZoom min)
         (reset! maxZoom max))
       (ol/add-map-zoom-end! select-zoom!)
-      (time (<! layers-chan))
+      (<! layers-chan)
       (select-layer! 0)
       (ol/set-visible-by-title! "active" true)
       (get-legend! (get-current-layer-name)))))
