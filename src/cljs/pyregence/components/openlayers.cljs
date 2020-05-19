@@ -16,14 +16,13 @@
 
 ;; Creating objects
 
-(defn init-map! [layer-name basemap-source]
+(defn init-map! []
   (reset! the-map
           (Map.
            #js {:target   "map"
                 :layers   #js [(TileLayer.
                                 #js {:title   "basemap"
-                                     :visible true
-                                     :source  basemap-source})
+                                     :visible true})
                                (TileLayer.
                                 #js {:title   "hillshade"
                                      :visible false
@@ -34,11 +33,11 @@
                                                     :serverType "geoserver"})})
                                (TileLayer.
                                 #js {:title   "active"
-                                     :visible true
+                                     :visible false
                                      :opacity 0.7
                                      :source  (TileWMS.
                                                #js {:url         c/wms-url
-                                                    :params      #js {"LAYERS" layer-name}
+                                                    :params      #js {}
                                                     :crossOrigin "anonymous"
                                                     :serverType  "geoserver"})})]
                 :controls #js [(ScaleLine.)]
