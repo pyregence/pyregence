@@ -163,7 +163,7 @@
   (go
     (reset! last-clicked-info
             (mapv (fn [pi li]
-                    (merge (select-keys li [:sim-js-date :js-date :time :date :hour])
+                    (merge (select-keys li [:sim-js-date :time :date :hour])
                            {:band (u/try-js-aget pi "properties" "GRAY_INDEX")}))
                   (-> (<p! (.json response))
                       (u/try-js-aget "features"))
