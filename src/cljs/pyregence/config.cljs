@@ -55,10 +55,10 @@
                     :units     "Times"}])
 
 (def fuel-types [{:opt-id    0
-                  :opt-label "CFO"
+                  :opt-label "CA Forest Observatory"
                   :filter    "cfo"}
                  {:opt-id    1
-                  :opt-label "LandFire"
+                  :opt-label "LANDFIRE"
                   :filter    "landfire"}])
 
 (def models [{:opt-id    0
