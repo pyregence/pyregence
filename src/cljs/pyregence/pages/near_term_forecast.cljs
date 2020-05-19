@@ -2,9 +2,9 @@
   (:require [reagent.core :as r]
             [reagent.dom :as rd]
             [clojure.string :as str]
+            [clojure.set :as set]
             [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]
-            [goog.string :refer [format]]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
@@ -24,7 +24,10 @@
 (defonce *layer-idx        (r/atom 0))
 (defonce last-clicked-info (r/atom nil))
 (defonce animate?          (r/atom false))
-(defonce *layer-type       (r/atom 0))
+(defonce *model            (r/atom 0))
+(defonce *fuel-type        (r/atom 0))
+(defonce *ign-pattern      (r/atom 0))
+(defonce *output-type      (r/atom 0))
 (defonce *speed            (r/atom 1))
 (defonce *base-map         (r/atom 0))
 (defonce show-utc?         (r/atom true))
@@ -35,8 +38,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn filtered-layers []
-  (let [filter-text (u/find-key-by-id c/layer-types @*layer-type :filter)]
-    (filterv (fn [{:keys [type]}] (= type filter-text))
+  (let [output-type (u/find-key-by-id c/output-types @*output-type :filter)
+        fuel-type   (u/find-key-by-id c/fuel-types   @*fuel-type   :filter)
+        ign-pattern (u/find-key-by-id c/ign-patterns @*ign-pattern :filter)
+        model       (u/find-key-by-id c/models       @*model       :filter)]
+    (filterv (fn [{:keys [filter]}]
+               (set/subset? #{output-type fuel-type ign-pattern model "fire-risk-forecast" "20200519_00"}
+                            filter))
              @layer-list)))
 
 (defn current-layer []
@@ -53,6 +61,9 @@
 
 (defn get-current-layer-extent []
   (:extent (current-layer) [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
+
+(defn get-current-layer-group []
+  (:layer-group (current-layer) ""))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
@@ -76,8 +87,9 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
-  (get-data process-legend!
-            (format c/legend-url layer)))
+  (when (u/has-data? layer)
+    (get-data process-legend!
+              (c/legend-url layer))))
 
 (defn js-date-from-string [date time]
   (js/Date. (str (subs date 0 4) "-"
@@ -112,38 +124,46 @@
              (str/split " ")
              (peek)))))
 
+(defn split-layer-name [name-string]
+  (let [[workspace layer]           (str/split name-string #":")
+        [forecast model-run]        (str/split workspace   #"_(?=\d{8}_)")
+        [init-timestamp ignition]   (str/split model-run   #"-")
+        [layer-group sim-timestamp] (str/split layer       #"_(?=\d{8}_)")
+        init-js-date                (apply js-date-from-string (str/split init-timestamp #"_"))
+        sim-js-date                 (apply js-date-from-string (str/split sim-timestamp  #"_"))]
+    {:layer-group (str workspace ":" layer-group)
+     :filter      (into #{forecast ignition init-timestamp} (str/split layer-group #"_"))
+     :model-init  init-timestamp
+     :sim-js-date sim-js-date
+     :date        (get-date-from-js sim-js-date)
+     :time        (get-time-from-js sim-js-date)
+     :hour        (- (/ (- sim-js-date init-js-date) 1000 60 60) 6)}))
+
 (defn process-capabilities! [response]
   (go
     (reset! layer-list
             (as-> (<p! (.text response)) layers
               (ol/wms-capabilities layers)
               (u/try-js-aget layers "Capability" "Layer" "Layer")
-              (remove #(str/starts-with? (peek (str/split (aget % "Name") ":"))  "lg-") layers)
-              (mapv (fn [layer]
-                      (let [full-name        (aget layer "Name")
-                            [base date time] (str/split full-name "_") ; TODO this might break if we expand file names
-                            [_ type]         (str/split base ":")
-                            cur-date         (js-date-from-string date time)
-                            base-date        (js-date-from-string "20200424" "130000")] ; TODO find first date for each group. This may come with model information
-                        {:layer  full-name
-                         :type   type
-                         :extent  (aget layer "EX_GeographicBoundingBox")
-                         :js-date cur-date
-                         :date    (get-date-from-js cur-date)
-                         :time    (get-time-from-js cur-date)
-                         :hour    (/ (- cur-date base-date) 1000 60 60)}))
-                    layers)))))
+              (keep (fn [layer]
+                      (let [full-name (aget layer "Name")]
+                        (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
+                          (merge
+                           (split-layer-name full-name)
+                           {:layer  full-name
+                            :extent (aget layer "EX_GeographicBoundingBox")}))))
+                    layers)
+              (vec layers)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
-  (get-data process-capabilities!
-            (format c/capabilities-url "demo")))
+  (get-data process-capabilities! c/capabilities-url))
 
 (defn process-point-info! [response]
   (go
     (reset! last-clicked-info
             (mapv (fn [pi li]
-                    (merge (select-keys li [:js-date :time :date :hour :type])
+                    (merge (select-keys li [:js-date :time :date :hour])
                            {:band (u/try-js-aget pi "properties" "GRAY_INDEX")}))
                   (-> (<p! (.json response))
                       (u/try-js-aget "features"))
@@ -152,10 +172,11 @@
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
-  (when point-info
-    (let [layer-str (str "demo:lg-" (u/find-key-by-id c/layer-types @*layer-type :filter))]
+  (let [layer-group (get-current-layer-group)]
+    (when-not (u/missing-data? layer-group point-info)
       (get-data process-point-info!
-                (format c/point-info-url layer-str layer-str (str/join "," point-info))))))
+                (c/point-info-url layer-group
+                                  (str/join "," point-info))))))
 
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
@@ -176,8 +197,8 @@
                             zoom)))
     (ol/set-zoom! @*zoom)))
 
-(defn select-layer-type! [id]
-  (reset! *layer-type id)
+(defn select-layer-option! [*option id]
+  (reset! *option id)
   (ol/swap-active-layer! (get-current-layer-name))
   (get-point-info!       (ol/get-overlay-bbox))
   (get-legend!           (get-current-layer-name)))
@@ -189,16 +210,16 @@
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
   (reset! layer-list
-          (mapv (fn [{:keys [js-date] :as layer}]
+          (mapv (fn [{:keys [sim-js-date] :as layer}]
                   (assoc layer
-                         :date (get-date-from-js js-date)
-                         :time (get-time-from-js js-date)))
+                         :date (get-date-from-js sim-js-date)
+                         :time (get-time-from-js sim-js-date)))
                 @layer-list))
   (reset! last-clicked-info
-          (mapv (fn [{:keys [js-date] :as layer}]
+          (mapv (fn [{:keys [sim-js-date] :as layer}]
                   (assoc layer
-                         :date (get-date-from-js js-date)
-                         :time (get-time-from-js js-date)))
+                         :date (get-date-from-js sim-js-date)
+                         :time (get-time-from-js sim-js-date)))
                 @last-clicked-info)))
 
 (defn init-map! []
@@ -270,13 +291,13 @@
       :render
       (fn []
         [:div {:style {:height "100%" :position "absolute" :width "100%"}}
-         [mc/collapsible-panel *base-map select-base-map! *layer-type select-layer-type!]
+         [mc/collapsible-panel *base-map select-base-map! *model *fuel-type *ign-pattern *output-type select-layer-option!]
          [mc/legend-box legend-list]
          (when (aget @my-box "height")
            [vega-box
             @my-box
             select-layer!
-            (u/find-key-by-id c/layer-types @*layer-type :units)
+            (u/find-key-by-id c/output-types @*output-type :units)
             (get-current-layer-hour)
             @legend-list
             @last-clicked-info])
@@ -300,7 +321,7 @@
     [:label (if @last-clicked-info
               (str (:band (get @last-clicked-info @*layer-idx))
                    " "
-                   (u/find-key-by-id c/layer-types @*layer-type :units))
+                   (u/find-key-by-id c/output-types @*output-type :units))
               "...")]]
    [:div {:style ($pop-up-arrow)}]])
 

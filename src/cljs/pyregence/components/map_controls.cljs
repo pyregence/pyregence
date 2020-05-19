@@ -152,7 +152,7 @@
    :width            "2rem"})
 
 (defn panel-dropdown [title state options call-back]
-  [:div {:style {:display "flex" :flex-direction "column"}}
+  [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
    [:label title]
    [:select {:style ($dropdown)
              :value (or @state -1)
@@ -161,7 +161,7 @@
                   [:option {:key opt-id :value opt-id} opt-label])
                 options))]])
 
-(defn collapsible-panel [*base-map select-base-map! *layer-type select-layer-type!]
+(defn collapsible-panel [*base-map select-base-map! *model *fuel-type *ign-pattern *output-type select-layer-option!]
   (r/with-let [show-panel?       (r/atom true)
                active-opacity    (r/atom 70.0)
                hillshade-opacity (r/atom 50.0)
@@ -179,7 +179,7 @@
                   :type "checkbox"
                   :on-click #(do (swap! show-hillshade? not)
                                  (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
-         [:label "Show hill shade"]]
+         [:label "Hill shade overlay"]]
         (when @show-hillshade?
           [:<> [:label (str "Opacity: " @hillshade-opacity)]
            [:input {:style {:width "100%"}
@@ -187,7 +187,10 @@
                     :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
                                     (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
       [:div#activelayer {:style {:margin-top "2rem"}}
-       [panel-dropdown "Active Layer" *layer-type c/layer-types select-layer-type!]
+       [panel-dropdown "Model"    *model       c/models       #(select-layer-option! *model       %)]
+       [panel-dropdown "Fuel"     *fuel-type   c/fuel-types   #(select-layer-option! *fuel-type   %)]
+       [panel-dropdown "Ignition" *ign-pattern c/ign-patterns #(select-layer-option! *ign-pattern %)]
+       [panel-dropdown "Output"   *output-type c/output-types #(select-layer-option! *output-type %)]
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]
         [:input {:style {:width "100%"}
