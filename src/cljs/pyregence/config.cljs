@@ -5,19 +5,22 @@
 (def wms-url "https://californiafireforecast.com:8443/geoserver/wms")
 
 (def capabilities-url (str wms-url
-                           "?SERVICE=WMS&VERSION=1.3.0"
+                           "?SERVICE=WMS"
+                           "&VERSION=1.3.0"
                            "&REQUEST=GetCapabilities"))
 
 (defn legend-url [layer]
   (str wms-url
-       "?SERVICE=WMS&VERSION=1.3.0"
+       "?SERVICE=WMS"
+       "&VERSION=1.3.0"
        "&REQUEST=GetLegendGraphic"
        "&FORMAT=application/json"
        "&LAYER=" layer))
 
 (defn point-info-url [layer-group bbox]
   (str wms-url
-       "?SERVICE=WMS&VERSION=1.3.0"
+       "?SERVICE=WMS"
+       "&VERSION=1.3.0"
        "&REQUEST=GetFeatureInfo"
        "&INFO_FORMAT=application/json"
        "&LAYERS=" layer-group
@@ -34,7 +37,7 @@
 
 ;; Layer options
 
-(def output-types [{:opt-id   0
+(def output-types [{:opt-id    0
                     :opt-label "Fire Area"
                     :filter    "fire-area"
                     :units     "Acres"}
@@ -51,7 +54,7 @@
                     :filter    "times-burned"
                     :units     "Times"}])
 
-(def fuel-types [{:opt-id     0
+(def fuel-types [{:opt-id    0
                   :opt-label "CFO"
                   :filter    "cfo"}
                  {:opt-id    1
@@ -59,7 +62,7 @@
                   :filter    "landfire"}])
 
 (def models [{:opt-id    0
-              :opt-label "Elmfire"
+              :opt-label "ELMFIRE"
               :filter    "elmfire"}])
 
 (def ign-patterns [{:opt-id    0
