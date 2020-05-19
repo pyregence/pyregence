@@ -77,7 +77,7 @@
                        {:opt-id    1
                         :opt-label "MapBox Satellite"
                         :source    (XYZ.
-                                    #js {:url (get-map-box-static-url "cka8jm5161vcd1jn2g47k5yuo")})}
+                                    #js {:url (get-map-box-raster-url "mapbox.satellite")})}
                        {:opt-id    2
                         :opt-label "MapBox Satellite Street"
                         :source    (XYZ.
