@@ -120,9 +120,9 @@
           (-> result .-view (.addEventListener
                              "click"
                              (fn [_ data]
-                               (when-let [index (or (u/try-js-aget data "datum" "datum" "_vgsid_")
-                                                    (u/try-js-aget data "datum" "_vgsid_"))]
-                                 (layer-click! (dec ^js/integer index)))))))
+                               (when-let [hour (or (u/try-js-aget data "datum" "datum" "hour")
+                                                   (u/try-js-aget data "datum" "hour"))]
+                                 (layer-click! (dec ^js/integer hour)))))))
         (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
 
 (defn vega-canvas []
