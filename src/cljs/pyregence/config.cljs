@@ -5,19 +5,22 @@
 (def wms-url "https://californiafireforecast.com:8443/geoserver/wms")
 
 (def capabilities-url (str wms-url
-                           "?SERVICE=WMS&VERSION=1.3.0"
+                           "?SERVICE=WMS"
+                           "&VERSION=1.3.0"
                            "&REQUEST=GetCapabilities"))
 
 (defn legend-url [layer]
   (str wms-url
-       "?SERVICE=WMS&VERSION=1.3.0"
+       "?SERVICE=WMS"
+       "&VERSION=1.3.0"
        "&REQUEST=GetLegendGraphic"
        "&FORMAT=application/json"
        "&LAYER=" layer))
 
 (defn point-info-url [layer-group bbox]
   (str wms-url
-       "?SERVICE=WMS&VERSION=1.3.0"
+       "?SERVICE=WMS"
+       "&VERSION=1.3.0"
        "&REQUEST=GetFeatureInfo"
        "&INFO_FORMAT=application/json"
        "&LAYERS=" layer-group
@@ -34,7 +37,7 @@
 
 ;; Layer options
 
-(def output-types [{:opt-id   0
+(def output-types [{:opt-id    0
                     :opt-label "Fire Area"
                     :filter    "fire-area"
                     :units     "Acres"}
@@ -51,7 +54,7 @@
                     :filter    "times-burned"
                     :units     "Times"}])
 
-(def fuel-types [{:opt-id     0
+(def fuel-types [{:opt-id    0
                   :opt-label "CFO"
                   :filter    "cfo"}
                  {:opt-id    1
@@ -59,7 +62,7 @@
                   :filter    "landfire"}])
 
 (def models [{:opt-id    0
-              :opt-label "Elmfire"
+              :opt-label "ELMFIRE"
               :filter    "elmfire"}])
 
 (def ign-patterns [{:opt-id    0
@@ -82,21 +85,27 @@
 (def TileJSON js/ol.source.TileJSON)
 (def XYZ      js/ol.source.XYZ)
 
-(defn get-map-box-url [map-id]
+(defn get-map-box-static-url [map-id]
   (str "https://api.mapbox.com/styles/v1/mspencer-sig/"
        map-id
        "/tiles/256/{z}/{x}/{y}"
        "?access_token=pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw"))
 
+(defn get-map-box-raster-url [layer-name]
+  (str "https://api.mapbox.com/v4/"
+       layer-name
+       "/{z}/{x}/{y}.jpg90"
+       "?access_token=pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw"))
+
 (def base-map-options [{:opt-id    0
                         :opt-label "MapBox Street Topo"
                         :source    (XYZ.
-                                    #js {:url (get-map-box-url "cka8jaky90i9m1iphwh79wr04")})}
+                                    #js {:url (get-map-box-static-url "cka8jaky90i9m1iphwh79wr04")})}
                        {:opt-id    1
                         :opt-label "MapBox Satellite"
                         :source    (XYZ.
-                                    #js {:url (get-map-box-url "cka8jm5161vcd1jn2g47k5yuo")})}
+                                    #js {:url (get-map-box-raster-url "mapbox.satellite")})}
                        {:opt-id    2
                         :opt-label "MapBox Satellite Street"
                         :source    (XYZ.
-                                    #js {:url (get-map-box-url "cka8hoo5v0gpy1iphg08hz7oj")})}])
+                                    #js {:url (get-map-box-static-url "cka8hoo5v0gpy1iphg08hz7oj")})}])

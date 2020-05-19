@@ -5,7 +5,6 @@
             [clojure.set :as set]
             [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]
-            [goog.string :refer [format]]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
@@ -129,40 +128,37 @@
              (peek)))))
 
 (defn split-layer-name [name-string]
-  (let [[workspace base]    (str/split name-string ":")
-        [forecast model]    (str/split workspace #"_(?=\d{8}_)")
-        [model ingnition]   (str/split model "-")
-        [options date-time] (str/split base #"_(?=\d{8}_)")
-        [date time]         (str/split date-time "_")
-        [b-date b-time]     (str/split model "_")
-        base-date           (js-date-from-string b-date b-time)
-        cur-date            (js-date-from-string date time)]
-    {:layer-group (str workspace ":" options)
-     :filter      (set/union #{forecast ingnition model} (set (str/split options "_")))
-     :model       model
-     :js-date     cur-date
-     :date        (get-date-from-js cur-date)
-     :time        (get-time-from-js cur-date)
-     :hour        (- (/ (- cur-date base-date) 1000 60 60) 6)}))
+  (let [[workspace layer]           (str/split name-string #":")
+        [forecast model-run]        (str/split workspace   #"_(?=\d{8}_)")
+        [init-timestamp ignition]   (str/split model-run   #"-")
+        [layer-group sim-timestamp] (str/split layer       #"_(?=\d{8}_)")
+        init-js-date                (apply js-date-from-string (str/split init-timestamp #"_"))
+        sim-js-date                 (apply js-date-from-string (str/split sim-timestamp  #"_"))]
+    {:layer-group (str workspace ":" layer-group)
+     :filter      (into #{forecast ignition init-timestamp} (str/split layer-group #"_"))
+     :model-init  init-timestamp
+     :sim-js-date sim-js-date
+     :date        (get-date-from-js sim-js-date)
+     :time        (get-time-from-js sim-js-date)
+     :hour        (- (/ (- sim-js-date init-js-date) 1000 60 60) 6)}))
 
 (defn process-capabilities! [response]
   (go
     (let [layers (as-> (<p! (.text response)) layers
                    (ol/wms-capabilities layers)
                    (u/try-js-aget layers "Capability" "Layer" "Layer")
-                   (map (fn [layer]
-                          (let [full-name (aget layer "Name")]
-                            (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
-                              (merge
-                               (split-layer-name full-name)
-                               {:layer  full-name
-                                :extent (aget layer "EX_GeographicBoundingBox")}))))
-                        layers)
-                   (remove nil? layers)
+                   (keep (fn [layer]
+                           (let [full-name (aget layer "Name")]
+                             (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
+                               (merge
+                                (split-layer-name full-name)
+                                {:layer  full-name
+                                 :extent (aget layer "EX_GeographicBoundingBox")}))))
+                         layers)
                    (vec layers))]
       (reset! model-times
               (->> layers
-                   (map :model)
+                   (map :model-init)
                    (distinct)
                    (sort)
                    (reverse)
@@ -174,14 +170,13 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
-  (get-data process-capabilities!
-            (format c/capabilities-url)))
+  (get-data process-capabilities! c/capabilities-url))
 
 (defn process-point-info! [response]
   (go
     (reset! last-clicked-info
             (mapv (fn [pi li]
-                    (merge (select-keys li [:js-date :time :date :hour])
+                    (merge (select-keys li [:sim-js-date :time :date :hour])
                            {:band (u/try-js-aget pi "properties" "GRAY_INDEX")}))
                   (-> (<p! (.json response))
                       (u/try-js-aget "features"))
@@ -228,16 +223,16 @@
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
   (reset! layer-list
-          (mapv (fn [{:keys [js-date] :as layer}]
+          (mapv (fn [{:keys [sim-js-date] :as layer}]
                   (assoc layer
-                         :date (get-date-from-js js-date)
-                         :time (get-time-from-js js-date)))
+                         :date (get-date-from-js sim-js-date)
+                         :time (get-time-from-js sim-js-date)))
                 @layer-list))
   (reset! last-clicked-info
-          (mapv (fn [{:keys [js-date] :as layer}]
+          (mapv (fn [{:keys [sim-js-date] :as layer}]
                   (assoc layer
-                         :date (get-date-from-js js-date)
-                         :time (get-time-from-js js-date)))
+                         :date (get-date-from-js sim-js-date)
+                         :time (get-time-from-js sim-js-date)))
                 @last-clicked-info)))
 
 (defn init-map! []
