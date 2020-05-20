@@ -241,7 +241,7 @@
   (go
     (let [layers-chan (get-layers!)]
       (ol/init-map!)
-      (select-base-map! 0)
+      (select-base-map! @*base-map)
       (ol/add-map-single-click! get-point-info!)
       (ol/add-map-mouse-move! #(reset! lon-lat %))
       (let [[cur min max] (ol/get-zoom-info)]
@@ -250,7 +250,7 @@
         (reset! maxZoom max))
       (ol/add-map-zoom-end! select-zoom!)
       (<! layers-chan)
-      (select-layer! 0)
+      (select-layer! @*layer-idx)
       (ol/set-visible-by-title! "active" true)
       (get-legend! (get-current-layer-name)))))
 
