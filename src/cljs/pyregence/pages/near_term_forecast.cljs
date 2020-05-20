@@ -144,15 +144,17 @@
 
 (defn process-capabilities! [response]
   (go
-    (let [layers (->> (<p! (.text response))
-                      (re-find #"(?sm)(?<=<Layer).*(?=</Layer>)")
-                      (re-seq #"(?sm)(?<=<Layer).+?(?=</Layer>)")
+    (let [layers (->> (str/replace (<p! (.text response)) #"\n" "")
+                      (re-find #"<Layer>.*(?=</Layer>)")
+                      (#(str/replace-first % "<Layer>" ""))
+                      (re-seq #"<Layer.+?</Layer>")
                       (keep (fn [layer]
-                              (let [full-name (re-find #"(?<=<Name>).+?(?=</Name>)" layer)
-                                    coords    (-> (re-find #"(?s)(?<=<BoundingBox CRS=\"CRS:84).+?(?=\"/>)" layer)
-                                                  (str/split #"\".+?\"")
-                                                  (rest)
-                                                  (vec))]
+                              (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
+                                                   (str/replace #"<Name>" ""))
+                                    coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
+                                                   (re-seq #"[\d|\.|-]+")
+                                                   (rest)
+                                                   (vec))]
                                 (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
                                   (merge
                                    (split-layer-name full-name)
