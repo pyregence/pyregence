@@ -144,18 +144,20 @@
 
 (defn process-capabilities! [response]
   (go
-    (let [layers (as-> (<p! (.text response)) layers
-                   (ol/wms-capabilities layers)
-                   (u/try-js-aget layers "Capability" "Layer" "Layer")
-                   (keep (fn [layer]
-                           (let [full-name (aget layer "Name")]
-                             (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
-                               (merge
-                                (split-layer-name full-name)
-                                {:layer  full-name
-                                 :extent (aget layer "EX_GeographicBoundingBox")}))))
-                         layers)
-                   (vec layers))]
+    (let [layers (->> (<p! (.text response))
+                      (re-find #"(?sm)(?<=<Layer).*(?=</Layer>)")
+                      (re-seq #"(?sm)(?<=<Layer).+?(?=</Layer>)")
+                      (keep (fn [layer]
+                              (let [full-name (re-find #"(?<=<Name>).+?(?=</Name>)" layer)
+                                    coords    (-> (re-find #"(?s)(?<=<BoundingBox CRS=\"CRS:84).+?(?=\"/>)" layer)
+                                                  (str/split #"\".+?\"")
+                                                  (rest)
+                                                  (vec))]
+                                (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
+                                  (merge
+                                   (split-layer-name full-name)
+                                   {:layer  full-name
+                                    :extent coords}))))))]
       (reset! model-times
               (->> layers
                    (map :model-init)

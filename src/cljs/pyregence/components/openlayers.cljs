@@ -72,11 +72,6 @@
     (let [res (-> @the-map .getView .getResolution)]
       [x y (+ x res) (+ y res)])))
 
-(defn wms-capabilities
-  "Converts capabilities xml to a js object"
-  [text]
-  (.read (WMSCapabilities.) text))
-
 (defn get-layer-by-title [title]
   (-> @the-map
       .getLayers
