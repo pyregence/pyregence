@@ -237,17 +237,20 @@
 
 (defn init-map! []
   (go
-    (<! (get-layers!))
-    (get-legend! (get-current-layer-name))
-    (ol/init-map! (get-current-layer-name)
-                  (u/find-key-by-id c/base-map-options @*base-map :source))
-    (ol/add-map-single-click! get-point-info!)
-    (ol/add-map-mouse-move! #(reset! lon-lat %))
-    (let [[cur min max] (ol/get-zoom-info)]
-      (reset! *zoom cur)
-      (reset! minZoom min)
-      (reset! maxZoom max))
-    (ol/add-map-zoom-end! select-zoom!)))
+    (let [layers-chan (get-layers!)]
+      (ol/init-map!)
+      (select-base-map! @*base-map)
+      (ol/add-map-single-click! get-point-info!)
+      (ol/add-map-mouse-move! #(reset! lon-lat %))
+      (let [[cur min max] (ol/get-zoom-info)]
+        (reset! *zoom cur)
+        (reset! minZoom min)
+        (reset! maxZoom max))
+      (ol/add-map-zoom-end! select-zoom!)
+      (<! layers-chan)
+      (select-layer! @*layer-idx)
+      (ol/set-visible-by-title! "active" true)
+      (get-legend! (get-current-layer-name)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
