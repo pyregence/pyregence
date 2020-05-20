@@ -144,7 +144,7 @@
 
 (defn process-capabilities! [response]
   (go
-    (let [layers (->> (str/replace (<p! (.text response)) #"\n" "")
+    (let [layers (->> (str/replace (<p! (.text response)) "\n" "")
                       (re-find #"<Layer>.*(?=</Layer>)")
                       (#(str/replace-first % "<Layer>" ""))
                       (re-seq #"<Layer.+?</Layer>")
