@@ -144,18 +144,20 @@
 
 (defn process-capabilities! [response]
   (go
-    (let [layers (as-> (<p! (.text response)) layers
-                   (ol/wms-capabilities layers)
-                   (u/try-js-aget layers "Capability" "Layer" "Layer")
+    (let [layers (as-> (<p! (.text response)) xml
+                   (re-find #"(?sm)(?<=<Layer).*(?=</Layer>)" xml)
+                   (re-seq #"(?sm)(?<=<Layer).+?(?=</Layer>)" xml)
                    (keep (fn [layer]
-                           (let [full-name (aget layer "Name")]
+                           (let [full-name (re-find #"(?<=<Name>).+?(?=</Name>)" layer)
+                                 coords (as-> (re-find #"(?s)(?<=<BoundingBox CRS=\"CRS:84).+?(?=\"/>)" layer) c-str
+                                          (str/split c-str #"\".+?\"")
+                                          (vec (rest c-str)))]
                              (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
                                (merge
                                 (split-layer-name full-name)
                                 {:layer  full-name
-                                 :extent (aget layer "EX_GeographicBoundingBox")}))))
-                         layers)
-                   (vec layers))]
+                                 :extent coords}))))
+                         xml))]
       (reset! model-times
               (->> layers
                    (map :model-init)
@@ -247,7 +249,7 @@
         (reset! minZoom min)
         (reset! maxZoom max))
       (ol/add-map-zoom-end! select-zoom!)
-      (time (<! layers-chan))
+      (<! layers-chan)
       (select-layer! 0)
       (ol/set-visible-by-title! "active" true)
       (get-legend! (get-current-layer-name)))))
