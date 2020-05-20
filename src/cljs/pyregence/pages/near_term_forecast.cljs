@@ -92,7 +92,7 @@
 (defn get-legend! [layer]
   (when (u/has-data? layer)
     (get-data process-legend!
-              (c/legend-url layer))))
+              (c/legend-url (str/replace layer "tlines" "all")))))
 
 (defn js-date-from-string [date time]
   (js/Date. (str (subs date 0 4) "-"
@@ -175,12 +175,19 @@
 (defn process-point-info! [response]
   (go
     (reset! last-clicked-info
-            (mapv (fn [pi li]
-                    (merge (select-keys li [:sim-js-date :time :date :hour])
-                           {:band (u/try-js-aget pi "properties" "GRAY_INDEX")}))
-                  (-> (<p! (.json response))
-                      (u/try-js-aget "features"))
-                  (filtered-layers)))))
+            (as-> (<p! (.json response)) pi
+              (u/try-js-aget pi "features")
+              (map (fn [pi-layer]
+                     {:band   (first (.values js/Object (u/try-js-aget pi-layer "properties")))
+                      :vec-id (peek  (str/split (u/try-js-aget pi-layer "id") #"\."))})
+                   pi)
+              (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first pi))))
+                      pi)
+              (mapv (fn [pi-layer f-layer]
+                      (merge (select-keys f-layer [:sim-js-date :time :date :hour])
+                             pi-layer))
+                    pi
+                    (filtered-layers))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
