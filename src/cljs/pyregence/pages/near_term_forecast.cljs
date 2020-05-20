@@ -144,22 +144,24 @@
 
 (defn process-capabilities! [response]
   (go
-    (let [layers (->> (str/replace (<p! (.text response)) "\n" "")
-                      (re-find #"<Layer>.*(?=</Layer>)")
-                      (#(str/replace-first % "<Layer>" ""))
-                      (re-seq #"<Layer.+?</Layer>")
-                      (keep (fn [layer]
-                              (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
-                                                   (str/replace #"<Name>" ""))
-                                    coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
-                                                   (re-seq #"[\d|\.|-]+")
-                                                   (rest)
-                                                   (vec))]
-                                (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
-                                  (merge
-                                   (split-layer-name full-name)
-                                   {:layer  full-name
-                                    :extent coords}))))))]
+    (let [layers (as-> (<p! (.text response)) xml
+                   (str/replace xml "\n" "")
+                   (re-find #"<Layer>.*(?=</Layer>)" xml)
+                   (str/replace-first xml "<Layer>" "")
+                   (re-seq #"<Layer.+?</Layer>" xml)
+                   (keep (fn [layer]
+                           (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
+                                                (str/replace #"<Name>" ""))
+                                 coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
+                                                (re-seq #"[\d|\.|-]+")
+                                                (rest)
+                                                (vec))]
+                             (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
+                               (merge
+                                (split-layer-name full-name)
+                                {:layer  full-name
+                                 :extent coords}))))
+                         xml))]
       (reset! model-times
               (->> layers
                    (map :model-init)
