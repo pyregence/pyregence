@@ -350,7 +350,8 @@
           animate?
           loop-animation!
           *speed]
-         [mc/zoom-slider @minZoom @maxZoom @*zoom select-zoom! get-current-layer-extent]
+         [mc/tool-bar]
+         [mc/zoom-bar @*zoom select-zoom! get-current-layer-extent]
          [mc/mouse-info @lon-lat]])})))
 
 (defn pop-up []

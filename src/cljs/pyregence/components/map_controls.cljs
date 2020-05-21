@@ -7,8 +7,10 @@
             [pyregence.components.openlayers :as ol]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Common Styles
+;; Common
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce show-panel? (r/atom true))
 
 (defn $dropdown []
   {:background-color "white"
@@ -25,7 +27,7 @@
 
 (defn $legend-box []
   {:background-color "white"
-   :bottom           "1rem"
+   :bottom           "3rem"
    :border           "1px solid black"
    :border-radius    "5px"
    :right            ".5rem"
@@ -132,24 +134,18 @@
   {:background-color "white"
    :border-right     "2px solid black"
    :height           "100%"
+   :left             (if show? "0" "-18rem")
+   :overflow         "auto"
    :position         "absolute"
    :transition       "all 200ms ease-in"
-   :width            "20rem"
-   :z-index          "1000"
-   :left             (if show? "0" "-20rem")})
+   :width            "18rem"
+   :z-index          "1000"})
 
-(defn $collapse-button []
-  {:background-color "white"
-   :border-right     "2px solid black"
-   :border-top       "2px solid black"
-   :border-bottom    "2px solid black"
-   :border-left      "4px solid white"
-   :border-radius    "0 5px 5px 0"
-   :height           "2rem"
-   :position         "absolute"
-   :right            "-2rem"
-   :top              ".5rem"
-   :width            "2rem"})
+(defn layer-section []
+  {:border        "1px solid black"
+   :border-radius "3px"
+   :margin        ".75rem"
+   :padding       ".75rem"})
 
 (defn panel-dropdown [title state options call-back]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
@@ -170,96 +166,90 @@
                          *model-time
                          model-times
                          select-layer-option!]
-  (r/with-let [show-panel?       (r/atom true)
-               active-opacity    (r/atom 70.0)
+  (r/with-let [active-opacity    (r/atom 70.0)
                hillshade-opacity (r/atom 50.0)
                show-hillshade?   (r/atom false)]
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
-     [:div {:style ($collapse-button)
-            :on-click #(swap! show-panel? not)}
-      [:label {:style {:padding-top "2px"}} (if @show-panel? "<<" ">>")]]
-     [:div {:style {:display "flex" :flex-direction "column" :padding "3rem"}}
-      [:div#baselayer
-       [panel-dropdown "Base Layer" *base-map c/base-map-options select-base-map!]
-       [:div {:style {:margin-top ".5rem"}}
-        [:div {:style {:display "flex"}}
-         [:input {:style {:margin ".25rem .5rem 0 0"}
-                  :type "checkbox"
-                  :on-click #(do (swap! show-hillshade? not)
-                                 (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
-         [:label "Hill shade overlay"]]
-        (when @show-hillshade?
-          [:<> [:label (str "Opacity: " @hillshade-opacity)]
-           [:input {:style {:width "100%"}
-                    :type "range" :min "0" :max "100" :value @hillshade-opacity
-                    :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
-                                    (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
-      [:div#activelayer {:style {:margin-top "2rem"}}
-       [panel-dropdown "Model"      *model       c/models       #(select-layer-option! *model       %)]
-       [panel-dropdown "Model Time" *model-time  model-times    #(select-layer-option! *model-time  %)]
-       [panel-dropdown "Fuel"       *fuel-type   c/fuel-types   #(select-layer-option! *fuel-type   %)]
-       [panel-dropdown "Ignition"   *ign-pattern c/ign-patterns #(select-layer-option! *ign-pattern %)]
-       [panel-dropdown "Output"     *output-type c/output-types #(select-layer-option! *output-type %)]
-       [:div {:style {:margin-top ".5rem"}}
-        [:label (str "Opacity: " @active-opacity)]
-        [:input {:style {:width "100%"}
-                 :type "range" :min "0" :max "100" :value @active-opacity
-                 :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                 (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
+     [:div {:style {:overflow "auto"}}
+      [:div#baselayer {:style (layer-section)}
+      [:h4 "Base Map"]
+      [panel-dropdown "Map" *base-map c/base-map-options select-base-map!]
+      [:div {:style {:margin-top ".5rem"}}
+       [:div {:style {:display "flex"}}
+        [:input {:style {:margin ".25rem .5rem 0 0"}
+                 :type "checkbox"
+                 :on-click #(do (swap! show-hillshade? not)
+                                (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
+        [:label "Hill shade overlay"]]
+       (when @show-hillshade?
+         [:<> [:label (str "Opacity: " @hillshade-opacity)]
+          [:input {:style {:width "100%"}
+                   :type "range" :min "0" :max "100" :value @hillshade-opacity
+                   :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
+                                   (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
+     [:div#activelayer {:style ($/combine (layer-section) {:margin-top "1rem"})}
+      [:h4 "Fire Layer"]
+      [panel-dropdown "Model"      *model       c/models       #(select-layer-option! *model       %)]
+      [panel-dropdown "Model Time" *model-time  model-times    #(select-layer-option! *model-time  %)]
+      [panel-dropdown "Fuel"       *fuel-type   c/fuel-types   #(select-layer-option! *fuel-type   %)]
+      [panel-dropdown "Ignition"   *ign-pattern c/ign-patterns #(select-layer-option! *ign-pattern %)]
+      [panel-dropdown "Output"     *output-type c/output-types #(select-layer-option! *output-type %)]
+      [:div {:style {:margin-top ".5rem"}}
+       [:label (str "Opacity: " @active-opacity)]
+       [:input {:style {:width "100%"}
+                :type "range" :min "0" :max "100" :value @active-opacity
+                :on-change #(do (reset! active-opacity (u/input-int-value %))
+                                (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Zoom Slider
+;; Toolbars
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $zoom-slider []
+(defn $tool-bar [panel-open?]
   {:background-color "white"
    :border           "1px solid black"
    :border-radius    "5px"
-   :right            "4rem"
-   :position         "absolute"
-   :bottom           "6rem"
    :display          "flex"
-   :transform        "rotate(270deg)"
-   :width            "12rem"
-   :height           "2rem"
+   :flex-direction   "column"
+   :left             (if panel-open? "19rem" "1rem")
+   :position         "absolute"
+   :transition       "all 200ms ease-in"
    :z-index          "100"})
 
-(defn $p-zoom-button-common []
+(defn $p-tb-button []
   (with-meta
     {:border-radius "4px"
      :cursor        "pointer"
      :font-weight   "bold"
-     :transform     "rotate(90deg)"}
+     :font-size     "1.5rem"
+     :text-align    "center"}
     {:pseudo {:hover {:background-color ($/color-picker :sig-brown 0.1)}}}))
 
-(defn zoom-slider [minZoom maxZoom *zoom select-zoom! get-current-layer-extent]
-  [:div#zoom-slider {:style ($zoom-slider)}
-   [:span {:class (<class $p-zoom-button-common)
-           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
-           :title "Center on my location"
-           :on-click #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))} ; TODO should I also zoom to a min zoom level?
-    "M"]
-   [:span {:class (<class $p-zoom-button-common)
-           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .75rem"})
-           :on-click #(select-zoom! (dec *zoom))}
-    "-"]
-   [:input {:style {:min-width "0"}
-            :type "range" :min minZoom :max maxZoom :value *zoom
-            :on-change #(select-zoom! (u/input-int-value %))}]
-   [:span {:class (<class $p-zoom-button-common)
-           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".15rem 0 0 .5rem"})
-           :on-click #(select-zoom! (inc *zoom))}
-    "+"]
-   [:span {:class (<class $p-zoom-button-common)
-           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".25rem 0 0 .5rem" :font-size ".9rem"})
-           :title "Center on selected point"
-           :on-click #(ol/center-on-overlay!)}
-    "C"]
-   [:span {:class (<class $p-zoom-button-common)
-           :style ($/combine ($/fixed-size "1.75rem") {:margin "1px" :padding ".25rem 0 0 .5rem" :font-size ".9rem"})
-           :title "Zoom to fit layer"
-           :on-click #(ol/zoom-to-extent! (get-current-layer-extent))}
-    "E"]])
+(defn tool-bar-button [icon title on-click]
+  [:span {:class (<class $p-tb-button)
+          :style ($/combine ($/fixed-size "2.5rem") {:padding-top ".25rem"})
+          :title title
+          :on-click on-click}
+   icon])
+
+(defn hs-str [hide?]
+  (if hide? "Hide" "Show"))
+
+(defn tool-bar []
+  [:div#tool-bar {:style ($/combine ($tool-bar @show-panel?) {:top "1rem"})}
+   (map-indexed (fn [i [icon title on-click]]
+                  ^{:key i} (tool-bar-button icon title on-click))
+                [["L" (str (hs-str @show-panel?) " layer selection") #(swap! show-panel? not)]])])
+
+(defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
+  [:div#zoom-bar {:style ($/combine ($tool-bar @show-panel?) {:bottom "1rem"})}
+   (map-indexed (fn [i [icon title on-click]]
+                  ^{:key i} (tool-bar-button icon title on-click))
+                [["M" "Center on my location"    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
+                ;;  ["C" "Center on selected point" #(ol/center-on-overlay!)] ; TODO add this action the the information panel
+                 ["E" "Zoom to fit layer"        #(ol/zoom-to-extent! (get-current-layer-extent))]
+                 ["+" "Zoom in"                  #(select-zoom! (inc *zoom))]
+                 ["-" "Zoom out"                 #(select-zoom! (dec *zoom))]])])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mouse Location Information
