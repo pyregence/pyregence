@@ -9,8 +9,7 @@
             [pyregence.utils  :as u]
             [pyregence.config :as c]
             [pyregence.components.map-controls :as mc]
-            [pyregence.components.openlayers   :as ol]
-            [pyregence.components.vega         :refer [vega-box]]))
+            [pyregence.components.openlayers   :as ol]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -332,7 +331,7 @@
           select-layer-option!]
          [mc/legend-box legend-list]
          (when (aget @my-box "height")
-           [vega-box
+           [mc/information-tool
             @my-box
             select-layer!
             (u/find-key-by-id c/output-types @*output-type :units)
@@ -352,7 +351,7 @@
           *speed]
          [mc/tool-bar]
          [mc/zoom-bar @*zoom select-zoom! get-current-layer-extent]
-         [mc/mouse-info @lon-lat]])})))
+         [mc/measure-tool @lon-lat]])})))
 
 (defn pop-up []
   [:div#popup
