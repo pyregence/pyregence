@@ -246,7 +246,7 @@
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
                 [["M" "Center on my location"    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
-                ;;  ["C" "Center on selected point" #(ol/center-on-overlay!)] ; TODO add this action the the information panel
+                 ["C" "Center on selected point" #(ol/center-on-overlay!)] ; TODO move this action the the information panel
                  ["E" "Zoom to fit layer"        #(ol/zoom-to-extent! (get-current-layer-extent))]
                  ["+" "Zoom in"                  #(select-zoom! (inc *zoom))]
                  ["-" "Zoom out"                 #(select-zoom! (dec *zoom))]])])
