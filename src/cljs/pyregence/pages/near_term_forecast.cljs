@@ -346,7 +346,8 @@
             (get-current-layer-hour)
             @legend-list
             @last-clicked-info])
-         (when @show-measure? [mc/measure-tool @lon-lat])
+         (when (and @show-measure? (aget @my-box "height"))
+           [mc/measure-tool @my-box @lon-lat])
          [mc/legend-box legend-list]
          [mc/time-slider
           filtered-layers
