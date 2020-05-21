@@ -172,34 +172,34 @@
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style {:overflow "auto"}}
       [:div#baselayer {:style (layer-section)}
-      [:h4 "Base Map"]
-      [panel-dropdown "Map" *base-map c/base-map-options select-base-map!]
-      [:div {:style {:margin-top ".5rem"}}
-       [:div {:style {:display "flex"}}
-        [:input {:style {:margin ".25rem .5rem 0 0"}
-                 :type "checkbox"
-                 :on-click #(do (swap! show-hillshade? not)
-                                (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
-        [:label "Hill shade overlay"]]
-       (when @show-hillshade?
-         [:<> [:label (str "Opacity: " @hillshade-opacity)]
-          [:input {:style {:width "100%"}
-                   :type "range" :min "0" :max "100" :value @hillshade-opacity
-                   :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
-                                   (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
-     [:div#activelayer {:style ($/combine (layer-section) {:margin-top "1rem"})}
-      [:h4 "Fire Layer"]
-      [panel-dropdown "Model"      *model       c/models       #(select-layer-option! *model       %)]
-      [panel-dropdown "Model Time" *model-time  model-times    #(select-layer-option! *model-time  %)]
-      [panel-dropdown "Fuel"       *fuel-type   c/fuel-types   #(select-layer-option! *fuel-type   %)]
-      [panel-dropdown "Ignition"   *ign-pattern c/ign-patterns #(select-layer-option! *ign-pattern %)]
-      [panel-dropdown "Output"     *output-type c/output-types #(select-layer-option! *output-type %)]
-      [:div {:style {:margin-top ".5rem"}}
-       [:label (str "Opacity: " @active-opacity)]
-       [:input {:style {:width "100%"}
-                :type "range" :min "0" :max "100" :value @active-opacity
-                :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
+       [:h4 "Base Map"]
+       [panel-dropdown "Map" *base-map c/base-map-options select-base-map!]
+       [:div {:style {:margin-top ".5rem"}}
+        [:div {:style {:display "flex"}}
+         [:input {:style {:margin ".25rem .5rem 0 0"}
+                  :type "checkbox"
+                  :on-click #(do (swap! show-hillshade? not)
+                                 (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
+         [:label "Hill shade overlay"]]
+        (when @show-hillshade?
+          [:<> [:label (str "Opacity: " @hillshade-opacity)]
+           [:input {:style {:width "100%"}
+                    :type "range" :min "0" :max "100" :value @hillshade-opacity
+                    :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
+                                    (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
+      [:div#activelayer {:style ($/combine (layer-section) {:margin-top "1rem"})}
+       [:h4 "Fire Layer"]
+       [panel-dropdown "Model"      *model       c/models       #(select-layer-option! *model       %)]
+       [panel-dropdown "Model Time" *model-time  model-times    #(select-layer-option! *model-time  %)]
+       [panel-dropdown "Fuel"       *fuel-type   c/fuel-types   #(select-layer-option! *fuel-type   %)]
+       [panel-dropdown "Ignition"   *ign-pattern c/ign-patterns #(select-layer-option! *ign-pattern %)]
+       [panel-dropdown "Output"     *output-type c/output-types #(select-layer-option! *output-type %)]
+       [:div {:style {:margin-top ".5rem"}}
+        [:label (str "Opacity: " @active-opacity)]
+        [:input {:style {:width "100%"}
+                 :type "range" :min "0" :max "100" :value @active-opacity
+                 :on-change #(do (reset! active-opacity (u/input-int-value %))
+                                 (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars
