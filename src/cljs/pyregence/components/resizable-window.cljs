@@ -24,7 +24,7 @@
     :left     "0"
     :z-index  "3"}))
 
-(defn dra-sw-icon [p-height p-width p-top box-height box-width]
+(defn drag-sw-icon [p-height p-width p-top box-height box-width]
   (r/with-let [drag-started? (r/atom false)]
     [:<>
      [:div#drag-icon
@@ -53,4 +53,4 @@
       (when (> @box-width  (/ p-width  1.5)) (reset! box-width  (/ p-width 1.5)))
       [:div#resizable {:style ($resizable-window @box-height @box-width)}
        (content @box-height @box-width)
-       [dra-sw-icon p-height p-width p-top box-height box-width]])))
+       [drag-sw-icon p-height p-width p-top box-height box-width]])))
