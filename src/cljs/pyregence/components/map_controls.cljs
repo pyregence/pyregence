@@ -16,14 +16,13 @@
 (defonce show-legend? (r/atom false))
 
 (defn $dropdown []
-  {:background-color "white"
+  {:background-color ($/color-picker :bg-color)
    :border           "1px solid"
-   :border-color     ($/color-picker :sig-brown)
+   :border-color     ($/color-picker :border-color)
    :border-radius    "2px"
    :font-family      "inherit"
    :height           "2rem"
    :padding          ".25rem .5rem"})
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Time Slider
@@ -41,19 +40,14 @@
 
 (defn $time-slider []
   {:align-items      "center"
-   :background-color "white"
-   :border           "1px solid black"
-   :border-radius    "5px"
    :display          "flex"
    :margin-right     "auto"
    :margin-left      "auto"
    :left             "0"
    :right            "0"
    :padding          ".5rem"
-   :position         "absolute"
    :bottom           "1rem"
-   :width            "fit-content"
-   :z-index          "100"})
+   :width            "fit-content"})
 
 (defn radio [label state condition select-time-zone!]
   [:div {:style ($/flex-row)
@@ -71,7 +65,7 @@
                    animate?
                    loop-animation!
                    *speed]
-  [:div#time-slider {:style ($time-slider)}
+  [:div#time-slider {:style ($/combine $/tool ($time-slider))}
    [:div {:style ($/combine $/flex-col {:align-items "flex-start" :margin-right "1rem"})}
     [radio "UTC"   show-utc? true  select-time-zone!]
     [radio "Local" show-utc? false select-time-zone!]]
@@ -106,8 +100,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn $collapsible-panel [show?]
-  {:background-color "white"
-   :border-right     "2px solid black"
+  {:background-color ($/color-picker :bg-color)
+   :border-right     (str "1px solid " ($/color-picker :border-color))
+   :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
    :height           "100%"
    :left             (if show? "0" "-18rem")
    :overflow         "auto"
@@ -117,7 +112,7 @@
    :z-index          "1000"})
 
 (defn layer-section []
-  {:border        "1px solid black"
+  {:border        (str "1px solid " ($/color-picker :border-color))
    :border-radius "3px"
    :margin        ".75rem"
    :padding       ".75rem"})
@@ -181,15 +176,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn $tool-bar [panel-open?]
-  {:background-color "white"
-   :border           "1px solid black"
-   :border-radius    "5px"
-   :display          "flex"
-   :flex-direction   "column"
-   :left             (if panel-open? "19rem" "1rem")
-   :position         "absolute"
-   :transition       "all 200ms ease-in"
-   :z-index          "100"})
+  {:display        "flex"
+   :flex-direction "column"
+   :left           (if panel-open? "19rem" "1rem")
+   :transition     "all 200ms ease-in"})
 
 (defn $p-tb-button []
   (with-meta
@@ -211,7 +201,7 @@
   (if hide? "Hide" "Show"))
 
 (defn tool-bar [show-info? show-measure?]
-  [:div#tool-bar {:style ($/combine ($tool-bar @show-panel?) {:top "1rem"})}
+  [:div#tool-bar {:style ($/combine $/tool ( $tool-bar @show-panel?) {:top "1rem"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
                 [["L" (str (hs-str @show-panel?) " layer selection")   #(swap! show-panel? not)]
@@ -222,7 +212,7 @@
                  ["L" (str (hs-str @show-panel?) " legend")            #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
-  [:div#zoom-bar {:style ($/combine ($tool-bar @show-panel?) {:bottom "1rem"})}
+  [:div#zoom-bar {:style ($/combine $/tool ( $tool-bar @show-panel?) {:bottom "1rem"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
                 [["M" "Center on my location"    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
@@ -234,17 +224,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Measure Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn $measure-tool []
-  {:background-color "white"
-   :border           "1px solid black"
-   :border-radius    "5px"
-   :right            "1rem"
-   :padding          ".5rem"
-   :position         "absolute"
-   :top              "1rem"
-   :width            "14rem"
-   :z-index          "100"})
 
 (defn measure-tool [my-box lon-lat]
   [:div#measure-tool
@@ -293,15 +272,6 @@
 ;; Legend Box
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $legend-box []
-  {:background-color "white"
-   :bottom           "3rem"
-   :border           "1px solid black"
-   :border-radius    "5px"
-   :right            ".5rem"
-   :position         "absolute"
-   :z-index          "100"})
-
 (defn $legend-color [color]
   {:background-color color
    :height           "1rem"
@@ -310,7 +280,7 @@
 
 (defn legend-box [legend-list]
   (when @show-legend?
-    [:div#legend-box {:style ($legend-box)}
+    [:div#legend-box {:style ($/combine $/tool {:bottom "3rem" :right  ".5rem"})}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (doall (map-indexed (fn [i leg]
                             ^{:key i}

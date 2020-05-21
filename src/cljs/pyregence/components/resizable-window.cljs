@@ -3,17 +3,12 @@
             [pyregence.styles :as $]))
 
 (defn $resizable-window [box-height box-width]
-  {:background-color "white"
-   :border           "1px solid black"
-   :border-radius    "5px"
-   :height            box-height
-   :overflow         "hidden"
-   :padding-top      "1rem"
-   :position         "absolute"
-   :right            "1rem"
-   :top              "1rem"
-   :width             box-width
-   :z-index          "100"})
+  {:height      box-height
+   :overflow    "hidden"
+   :padding-top "1rem"
+   :right       "1rem"
+   :top         "1rem"
+   :width       box-width})
 
 (defn $sw-drag []
   (merge
@@ -51,6 +46,6 @@
           p-top    (aget parent-rec "top")]
       (when (> @box-height (/ p-height 1.5)) (reset! box-height (/ p-height 1.5)))
       (when (> @box-width  (/ p-width  1.5)) (reset! box-width  (/ p-width 1.5)))
-      [:div#resizable {:style ($resizable-window @box-height @box-width)}
+      [:div#resizable {:style ($/combine $/tool ($resizable-window @box-height @box-width))}
        (content @box-height @box-width)
        [drag-sw-icon p-height p-width p-top box-height box-width]])))

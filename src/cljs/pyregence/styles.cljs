@@ -5,10 +5,48 @@
             [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helper Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn combine [& styles]
+  (apply merge
+         (for [style styles]
+           (cond
+             (map? style)    style
+             (fn? style)     (style)
+             (vector? style) (apply (first style) (rest style))))))
+
+;; FIXME: Remove :sig-* colors since Pyregence is a CEC-EPIC product.
+(defn color-picker
+  ([color]
+   (color-picker color 1))
+  ([color alpha]
+   (case color
+     :bg-color        "white" ; Use for dark theme (str "rgba(50, 50, 50, .9)")
+     :border-color    "black" ; Use for dark theme "white"
+     :blue            (str "rgba(0, 0, 175, "     alpha ")")
+     :black           (str "rgba(0, 0, 0, "       alpha ")")
+     :box-tan         (str "rgba(249, 248, 242, " alpha ")")
+     :dark-green      (str "rgba(0, 100, 0, "     alpha ")")
+     :light-gray      (str "rgba(230, 230, 230, " alpha ")")
+     :header-tan      (str "rgba(237, 234, 219, " alpha ")")
+     :red             (str "rgba(200, 0, 0, "     alpha ")")
+     :sig-brown       (str "rgba(96, 64, 26, "    alpha ")")
+     :sig-orange      (str "rgba(252, 178, 61, "  alpha ")")
+     :sig-light-green (str "rgba(202, 217, 70, "  alpha ")")
+     :sig-tan         (str "rgba(177, 162, 91, "  alpha ")")
+     :sig-green       (str "rgba(106, 148, 71, "  alpha ")")
+     :white           (str "rgba(255, 255, 255, " alpha ")")
+     color)))
+
+(defn to-merge? [modifiers key return]
+  (when (contains? (set modifiers) key) return))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defglobal general
+(defglobal general ; Use for dark theme :color "white"
   [:* {:box-sizing "border-box"
        :padding    "0px"
        :margin     "0px"}]
@@ -30,44 +68,15 @@
 (defglobal over-write-styles
   [:#header {:position "static"}]
   [:#nav-row {:padding "0"}]
-  [".ol-scale-line" {:padding ".4rem" :left "auto" :right "8px" :background-color "rgba(0, 0, 0, .7)"}]
-  [".ol-scale-line-inner" {:font-size ".75rem"}])
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helper Functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn combine [& styles]
-  (apply merge
-         (for [style styles]
-           (cond
-             (map? style)    style
-             (fn? style)     (style)
-             (vector? style) (apply (first style) (rest style))))))
-
-;; FIXME: Remove :sig-* colors since Pyregence is a CEC-EPIC product.
-(defn color-picker
-  ([color]
-   (color-picker color 1))
-  ([color alpha]
-   (case color
-     :blue            (str "rgba(0, 0, 175, "     alpha ")")
-     :black           (str "rgba(0, 0, 0, "       alpha ")")
-     :box-tan         (str "rgba(249, 248, 242, " alpha ")")
-     :dark-green      (str "rgba(0, 100, 0, "     alpha ")")
-     :light-gray      (str "rgba(230, 230, 230, " alpha ")")
-     :header-tan      (str "rgba(237, 234, 219, " alpha ")")
-     :red             (str "rgba(200, 0, 0, "     alpha ")")
-     :sig-brown       (str "rgba(96, 64, 26, "    alpha ")")
-     :sig-orange      (str "rgba(252, 178, 61, "  alpha ")")
-     :sig-light-green (str "rgba(202, 217, 70, "  alpha ")")
-     :sig-tan         (str "rgba(177, 162, 91, "  alpha ")")
-     :sig-green       (str "rgba(106, 148, 71, "  alpha ")")
-     :white           (str "rgba(255, 255, 255, " alpha ")")
-     color)))
-
-(defn to-merge? [modifiers key return]
-  (when (contains? (set modifiers) key) return))
+  [".ol-scale-line" {:background-color (color-picker :bg-color)
+                     :border           (str "1px solid " (color-picker :border-color))
+                     :box-shadow       (str "0 0 0 2px " (color-picker :bg-color))
+                     :left             "auto"
+                     :padding          ".4rem"
+                     :right            "8px"}]
+  [".ol-scale-line-inner" {:border-color (color-picker :border-color)
+                           :color        (color-picker :border-color)
+                           :font-size    ".75rem"}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Pseudo / Class Functions
@@ -297,3 +306,11 @@
    :min-height size
    :min-width  size
    :width      size})
+
+(defn tool []
+  {:background-color (color-picker :bg-color)
+   :border           (str "1px solid " (color-picker :border-color))
+   :border-radius    "5px"
+   :box-shadow       (str "0 0 0 2px " (color-picker :bg-color))
+   :position         "absolute"
+   :z-index          "100"})
