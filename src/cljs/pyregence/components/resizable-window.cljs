@@ -6,7 +6,7 @@
   {:height      box-height
    :overflow    "hidden"
    :padding-top "1rem"
-   :right       "1rem"
+   :right       "4.5rem"
    :top         "1rem"
    :width       box-width})
 
@@ -29,8 +29,8 @@
                    (reset! drag-started? false) ; ignore first value, fixes jumpy movement on start
                    (let [mouse-x (.-clientX %)
                          mouse-y (.-clientY %)]
-                     (when (< (/ p-width 3) mouse-x (- p-width 50))
-                       (reset! box-width (- p-width mouse-x)))
+                     (when (< (/ p-width 3) (+ mouse-x 54) (- p-width 50))
+                       (reset! box-width (- p-width (+ mouse-x 54))))
                      (when (> (/ p-height 1.5) (- mouse-y p-top) 50)
                        (reset! box-height (- mouse-y p-top)))))
        :on-drag-start #(reset! drag-started? true)}]

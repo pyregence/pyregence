@@ -13,7 +13,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce show-panel?  (r/atom true))
-(defonce show-legend? (r/atom false))
+(defonce show-legend? (r/atom true))
 
 (defn $dropdown []
   {:background-color ($/color-picker :bg-color)
@@ -175,10 +175,10 @@
 ;; Toolbars
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $tool-bar [panel-open?]
+(defn $tool-bar []
   {:display        "flex"
    :flex-direction "column"
-   :left           (if panel-open? "19rem" "1rem")
+   :right          "1rem"
    :transition     "all 200ms ease-in"})
 
 (defn $p-tb-button []
@@ -201,7 +201,7 @@
   (if hide? "Hide" "Show"))
 
 (defn tool-bar [show-info? show-measure?]
-  [:div#tool-bar {:style ($/combine $/tool ( $tool-bar @show-panel?) {:top "1rem"})}
+  [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "1rem"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
                 [["L" (str (hs-str @show-panel?) " layer selection")   #(swap! show-panel? not)]
@@ -212,7 +212,7 @@
                  ["L" (str (hs-str @show-panel?) " legend")            #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
-  [:div#zoom-bar {:style ($/combine $/tool ( $tool-bar @show-panel?) {:bottom "1rem"})}
+  [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:top "12rem"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
                 [["M" "Center on my location"    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
@@ -280,11 +280,11 @@
 
 (defn legend-box [legend-list]
   (when @show-legend?
-    [:div#legend-box {:style ($/combine $/tool {:bottom "3rem" :right  ".5rem"})}
+    [:div#legend-box {:style ($/combine $/tool {:bottom "4rem" :right "1rem" :padding ".25rem"})}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (doall (map-indexed (fn [i leg]
                             ^{:key i}
-                            [:div {:style ($/combine $/flex-row {:justify-content "flex-start" :padding ".5rem"})}
+                            [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
                              [:div {:style ($legend-color (get leg "color"))}]
                              [:label (get leg "label")]])
                           @legend-list))]]))
