@@ -10,8 +10,8 @@
    :overflow         "hidden"
    :padding-top      "1rem"
    :position         "absolute"
-   :right            ".5rem"
-   :top              ".5rem"
+   :right            "1rem"
+   :top              "1rem"
    :width             box-width
    :z-index          "100"})
 
