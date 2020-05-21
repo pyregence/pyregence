@@ -235,17 +235,6 @@
 ;; Measure Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $measure-tool []
-  {:background-color "white"
-   :border           "1px solid black"
-   :border-radius    "5px"
-   :right            "1rem"
-   :padding          ".5rem"
-   :position         "absolute"
-   :top              "1rem"
-   :width            "14rem"
-   :z-index          "100"})
-
 (defn measure-tool [my-box lon-lat]
   [:div#measure-tool
    [resizable-window
