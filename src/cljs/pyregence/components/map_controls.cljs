@@ -172,9 +172,9 @@
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style {:overflow "auto"}}
       [:div#baselayer {:style (layer-section)}
-       [:h4 "Base Map"]
+       [:h4 "Base Layer"]
        [panel-dropdown "Map" *base-map c/base-map-options select-base-map!]
-       [:div {:style {:margin-top ".5rem"}}
+       [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
         [:div {:style {:display "flex"}}
          [:input {:style {:margin ".25rem .5rem 0 0"}
                   :type "checkbox"
