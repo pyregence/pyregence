@@ -4,8 +4,9 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.openlayers :as ol]
-            [pyregence.components.vega       :refer [vega-box]]))
+            [pyregence.components.openlayers       :as ol]
+            [pyregence.components.resizable-window :refer [resizable-window]]
+            [pyregence.components.vega             :refer [vega-box]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Common
@@ -234,37 +235,48 @@
 ;; Measure Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $measure-tool []
-  {:background-color "white"
-   :border           "1px solid black"
-   :border-radius    "5px"
-   :right            "1rem"
-   :padding          ".5rem"
-   :position         "absolute"
-   :top              "1rem"
-   :width            "14rem"
-   :z-index          "100"})
-
-(defn measure-tool [lon-lat]
-  [:div#measure-tool {:style ($measure-tool)}
-   [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
-    "Lat:" (u/to-precision 4 (get lon-lat 1))]
-   [:label {:style {:width "50%" :text-align "left"}}
-    "Lon:" (u/to-precision 4 (get lon-lat 0))]])
+(defn measure-tool [my-box lon-lat]
+  [:div#measure-tool
+   [resizable-window
+    my-box
+    75
+    250
+    (fn [_ _]
+      [:div
+       [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
+        "Lat:" (u/to-precision 4 (get lon-lat 1))]
+       [:label {:style {:width "50%" :text-align "left"}}
+        "Lon:" (u/to-precision 4 (get lon-lat 0))]])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Information Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn loading-cover [box-height box-width]
+  [:div#loading-cover {:style {:height   box-height
+                               :padding  "2rem"
+                               :position "absolute"
+                               :width    box-width
+                               :z-index  "1"}}
+   [:label "Loading..."]])
+
 (defn information-tool [my-box select-layer! units cur-hour legend-list last-clicked-info]
   [:div#info-tool
-   [vega-box
+   [resizable-window
     my-box
-    select-layer!
-    units
-    cur-hour
-    legend-list
-    last-clicked-info]])
+    200
+    400
+    (fn [box-height box-width]
+      (if last-clicked-info
+        [vega-box
+         box-height
+         box-width
+         select-layer!
+         units
+         cur-hour
+         legend-list
+         last-clicked-info]
+        [loading-cover box-height box-width]))]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Legend Box
