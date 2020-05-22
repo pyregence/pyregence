@@ -113,7 +113,7 @@
    :width            "18rem"
    :z-index          "1000"})
 
-(defn layer-section []
+(defn $layer-section []
   {:border        (str "1px solid " ($/color-picker :border-color))
    :border-radius "3px"
    :margin        ".75rem"
@@ -143,10 +143,10 @@
                show-hillshade?   (r/atom false)]
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style {:overflow "auto"}}
-      [:div#baselayer {:style (layer-section)}
-       [:h4 "Base Map"]
+      [:div#baselayer {:style ($layer-section)}
+       [:h4 "Base Layer"]
        [panel-dropdown "Map" *base-map c/base-map-options select-base-map!]
-       [:div {:style {:margin-top ".5rem"}}
+       [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
         [:div {:style {:display "flex"}}
          [:input {:style {:margin ".25rem .5rem 0 0"}
                   :type "checkbox"
@@ -159,7 +159,7 @@
                     :type "range" :min "0" :max "100" :value @hillshade-opacity
                     :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
                                     (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
-      [:div#activelayer {:style ($/combine (layer-section) {:margin-top "1rem"})}
+      [:div#activelayer {:style ($/combine ($layer-section) {:margin-top "1rem"})}
        [:h4 "Fire Layer"]
        [panel-dropdown "Model"      *model       c/models       #(select-layer-option! *model       %)]
        [panel-dropdown "Model Time" *model-time  model-times    #(select-layer-option! *model-time  %)]
@@ -218,7 +218,7 @@
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
                 [["M" "Center on my location"    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
-                ;;  ["C" "Center on selected point" #(ol/center-on-overlay!)] ; TODO add this action the the information panel
+                 ["C" "Center on selected point" #(ol/center-on-overlay!)] ; TODO move this action the the information panel
                  ["E" "Zoom to fit layer"        #(ol/zoom-to-extent! (get-current-layer-extent))]
                  ["+" "Zoom in"                  #(select-zoom! (inc *zoom))]
                  ["-" "Zoom out"                 #(select-zoom! (dec *zoom))]])])
