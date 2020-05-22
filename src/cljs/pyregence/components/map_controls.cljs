@@ -191,12 +191,12 @@
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
-                [["L" (str (hs-str @show-panel?) " layer selection")   #(swap! show-panel? not)]
-                 ["i" (str (hs-str @show-panel?) " point information") #(do (swap! show-info? not)
+                [["L" (str (hs-str @show-panel?)   " layer selection")   #(swap! show-panel? not)]
+                 ["i" (str (hs-str @show-info?)    " point information") #(do (swap! show-info? not)
                                                                             (reset! show-measure? false))]
-                 ["M" (str (hs-str @show-panel?) " measure tool")      #(do (swap! show-measure? not)
+                 ["M" (str (hs-str @show-measure?) " measure tool")      #(do (swap! show-measure? not)
                                                                             (reset! show-info? false))]
-                 ["L" (str (hs-str @show-panel?) " legend")            #(swap! show-legend? not)]])])
+                 ["L" (str (hs-str @show-legend?)  " legend")            #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
   [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:top "192px"})}
