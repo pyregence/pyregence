@@ -4,6 +4,7 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
+            [pyregence.components.common           :refer [radio]]
             [pyregence.components.openlayers       :as ol]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.vega             :refer [vega-box]]))
@@ -29,16 +30,6 @@
 ;; Time Slider
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $radio [checked?]
-  (merge
-   (when checked? {:background-color ($/color-picker :black 0.6)})
-   {:border        "2px solid"
-    :border-color  ($/color-picker :black)
-    :border-radius "100%"
-    :height        "1rem"
-    :margin-right  ".4rem"
-    :width         "1rem"}))
-
 (defn $time-slider []
   {:align-items      "center"
    :display          "flex"
@@ -49,12 +40,6 @@
    :padding          ".5rem"
    :bottom           "1rem"
    :width            "fit-content"})
-
-(defn radio [label state condition select-time-zone!]
-  [:div {:style ($/flex-row)
-         :on-click #(select-time-zone! condition)}
-   [:div {:style ($/combine [$radio (= @state condition)])}]
-   [:label {:style {:font-size ".8rem" :margin-top "2px"}} label]])
 
 (defn time-slider [filtered-layers
                    *layer-idx
@@ -68,8 +53,8 @@
                    *speed]
   [:div#time-slider {:style ($/combine $/tool ($time-slider))}
    [:div {:style ($/combine $/flex-col {:align-items "flex-start" :margin-right "1rem"})}
-    [radio "UTC"   show-utc? true  select-time-zone!]
-    [radio "Local" show-utc? false select-time-zone!]]
+    [radio "UTC"   show-utc? true  #(select-time-zone! %)]
+    [radio "Local" show-utc? false #(select-time-zone! %)]]
    [:div {:style ($/flex-col)}
     [:input {:style {:width "12rem"}
              :type "range" :min "0" :max (dec (count (filtered-layers))) :value *layer-idx
@@ -203,7 +188,7 @@
   (if hide? "Hide" "Show"))
 
 (defn tool-bar [show-info? show-measure?]
-  [:div#tool-bar {:style ($/combine $/tool ( $tool-bar @show-panel?) {:top "1rem"})}
+  [:div#tool-bar {:style ($/combine $/tool ($tool-bar @show-panel?) {:top "1rem"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
                 [["L" (str (hs-str @show-panel?) " layer selection")   #(swap! show-panel? not)]
@@ -214,7 +199,7 @@
                  ["L" (str (hs-str @show-panel?) " legend")            #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
-  [:div#zoom-bar {:style ($/combine $/tool ( $tool-bar @show-panel?) {:bottom "1rem"})}
+  [:div#zoom-bar {:style ($/combine $/tool ($tool-bar @show-panel?) {:bottom "1rem"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
                 [["M" "Center on my location"    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
@@ -282,7 +267,7 @@
 
 (defn legend-box [legend-list]
   (when @show-legend?
-    [:div#legend-box {:style ($/combine $/tool {:bottom "3rem" :right  ".5rem"})}
+    [:div#legend-box {:style ($/combine $/tool {:bottom "3rem" :right ".5rem"})}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (doall (map-indexed (fn [i leg]
                             ^{:key i}

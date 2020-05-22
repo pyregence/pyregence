@@ -9,7 +9,7 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def light? (r/atom false))
+(defonce light? (r/atom false))
 
 (defn combine [& styles]
   (apply merge
