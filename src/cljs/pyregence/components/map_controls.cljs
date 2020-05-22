@@ -4,13 +4,17 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.openlayers :as ol]))
+            [pyregence.components.openlayers :as ol]
+            [pyregence.components.vega       :refer [vega-box]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Common
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce show-panel? (r/atom true))
+(defonce show-panel?   (r/atom true))
+(defonce show-info?    (r/atom false))
+(defonce show-measure? (r/atom false))
+(defonce show-legend?  (r/atom false))
 
 (defn $dropdown []
   {:background-color "white"
@@ -21,34 +25,6 @@
    :height           "2rem"
    :padding          ".25rem .5rem"})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Legend Box
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn $legend-box []
-  {:background-color "white"
-   :bottom           "3rem"
-   :border           "1px solid black"
-   :border-radius    "5px"
-   :right            ".5rem"
-   :position         "absolute"
-   :z-index          "100"})
-
-(defn $legend-color [color]
-  {:background-color color
-   :height           "1rem"
-   :margin-right     ".5rem"
-   :width            "1rem"})
-
-(defn legend-box [legend-list]
-  [:div#legend-box {:style ($legend-box)}
-   [:div {:style {:display "flex" :flex-direction "column"}}
-    (doall (map-indexed (fn [i leg]
-                          ^{:key i}
-                          [:div {:style ($/combine $/flex-row {:justify-content "flex-start" :padding ".5rem"})}
-                           [:div {:style ($legend-color (get leg "color"))}]
-                           [:label (get leg "label")]])
-                        @legend-list))]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Time Slider
@@ -239,7 +215,12 @@
   [:div#tool-bar {:style ($/combine ($tool-bar @show-panel?) {:top "1rem"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
-                [["L" (str (hs-str @show-panel?) " layer selection") #(swap! show-panel? not)]])])
+                [["L" (str (hs-str @show-panel?) " layer selection")   #(swap! show-panel? not)]
+                 ["i" (str (hs-str @show-panel?) " point information") #(do (swap! show-info? not)
+                                                                            (reset! show-measure? false))]
+                 ["M" (str (hs-str @show-panel?) " measure tool")      #(do (swap! show-measure? not)
+                                                                            (reset! show-info? false))]
+                 ["L" (str (hs-str @show-panel?) " legend")            #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
   [:div#zoom-bar {:style ($/combine ($tool-bar @show-panel?) {:bottom "1rem"})}
@@ -252,23 +233,69 @@
                  ["-" "Zoom out"                 #(select-zoom! (dec *zoom))]])])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mouse Location Information
+;; Measure Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $mouse-info []
+(defn $measure-tool []
   {:background-color "white"
-   :bottom           "1rem"
    :border           "1px solid black"
    :border-radius    "5px"
-   :right            "12rem"
+   :right            "1rem"
    :padding          ".5rem"
    :position         "absolute"
+   :top              "1rem"
    :width            "14rem"
    :z-index          "100"})
 
-(defn mouse-info [lon-lat]
-  [:div#mouse-info {:style ($mouse-info)}
-   [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
-    "Lat:" (u/to-precision 4 (get lon-lat 1))]
-   [:label {:style {:width "50%" :text-align "left"}}
-    "Lon:" (u/to-precision 4 (get lon-lat 0))]])
+(defn measure-tool [lon-lat]
+  (when @show-measure?
+    [:div#measure-tool {:style ($measure-tool)}
+     [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
+      "Lat:" (u/to-precision 4 (get lon-lat 1))]
+     [:label {:style {:width "50%" :text-align "left"}}
+      "Lon:" (u/to-precision 4 (get lon-lat 0))]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Information Tool
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn information-tool [my-box select-layer! units cur-hour legend-list last-clicked-info]
+  (when @show-info?
+    [:div#info-tool
+     [vega-box
+      my-box
+      select-layer!
+      units
+      cur-hour
+      legend-list
+      last-clicked-info]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Legend Box
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn $legend-box []
+  {:background-color "white"
+   :bottom           "3rem"
+   :border           "1px solid black"
+   :border-radius    "5px"
+   :right            ".5rem"
+   :position         "absolute"
+   :z-index          "100"})
+
+(defn $legend-color [color]
+  {:background-color color
+   :height           "1rem"
+   :margin-right     ".5rem"
+   :width            "1rem"})
+
+(defn legend-box [legend-list]
+  (when @show-legend?
+    [:div#legend-box {:style ($legend-box)}
+     [:div {:style {:display "flex" :flex-direction "column"}}
+      (doall (map-indexed (fn [i leg]
+                            ^{:key i}
+                            [:div {:style ($/combine $/flex-row {:justify-content "flex-start" :padding ".5rem"})}
+                             [:div {:style ($legend-color (get leg "color"))}]
+                             [:label (get leg "label")]])
+                          @legend-list))]]))
