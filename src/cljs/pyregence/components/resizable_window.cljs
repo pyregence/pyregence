@@ -6,13 +6,13 @@
   {:background-color "white"
    :border           "1px solid black"
    :border-radius    "5px"
-   :height            box-height
+   :height           box-height
    :overflow         "hidden"
    :padding-top      "1rem"
    :position         "absolute"
    :right            "1rem"
    :top              "1rem"
-   :width             box-width
+   :width            box-width
    :z-index          "100"})
 
 (defn $sw-drag []
@@ -43,7 +43,7 @@
       {:style {:position "absolute" :bottom "-.5rem" :left "0" :font-size "1.25rem" :z-index "2"}}
       "O"]]))
 
-(defn resizable-window [parent-rec init-height init-width content]
+(defn resizable-window [parent-rec init-height init-width render-content]
   (r/with-let [box-height (r/atom init-height)
                box-width  (r/atom init-width)]
     (let [p-height (aget parent-rec "height")
@@ -52,5 +52,5 @@
       (when (> @box-height (/ p-height 1.5)) (reset! box-height (/ p-height 1.5)))
       (when (> @box-width  (/ p-width  1.5)) (reset! box-width  (/ p-width 1.5)))
       [:div#resizable {:style ($resizable-window @box-height @box-width)}
-       (content @box-height @box-width)
+       (render-content @box-height @box-width)
        [drag-sw-icon p-height p-width p-top box-height box-width]])))
