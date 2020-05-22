@@ -7,23 +7,6 @@
             [pyregence.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI Styles
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn $vega-box [box-height box-width]
-  {:background-color "white"
-   :border           "1px solid black"
-   :border-radius    "5px"
-   :height            box-height
-   :overflow         "hidden"
-   :padding-top      "1rem"
-   :position         "absolute"
-   :right            ".5rem"
-   :top              ".5rem"
-   :width             box-width
-   :z-index          "100"})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
