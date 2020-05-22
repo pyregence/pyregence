@@ -6,7 +6,7 @@
   {:height      box-height
    :overflow    "hidden"
    :padding-top "1rem"
-   :right       "4.5rem"
+   :right       "72px"
    :top         "1rem"
    :width       box-width})
 
@@ -29,10 +29,10 @@
                    (reset! drag-started? false) ; ignore first value, fixes jumpy movement on start
                    (let [mouse-x (.-clientX %)
                          mouse-y (.-clientY %)]
-                     (when (< (/ p-width 3) (+ mouse-x 54) (- p-width 50))
-                       (reset! box-width (- p-width (+ mouse-x 54))))
-                     (when (> (/ p-height 1.5) (- mouse-y p-top) 50)
-                       (reset! box-height (- mouse-y p-top)))))
+                     (when (< (/ p-width 3) (+ mouse-x 68) (- p-width 50))
+                       (reset! box-width (- p-width (+ mouse-x 68))))
+                     (when (> (/ p-height 1.5) (- mouse-y p-top 12) 50)
+                       (reset! box-height (- mouse-y p-top 12)))))
        :on-drag-start #(reset! drag-started? true)}]
      [:div
       {:style {:position "absolute" :bottom "-.5rem" :left "0" :font-size "1.25rem" :z-index "2"}}
