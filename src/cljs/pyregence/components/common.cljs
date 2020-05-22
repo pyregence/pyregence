@@ -1,7 +1,6 @@
 (ns pyregence.components.common
   (:require [pyregence.styles :as $]))
 
-
 (defn $radio [checked?]
   (merge
    (when checked? {:background-color ($/color-picker :black 0.6)})
