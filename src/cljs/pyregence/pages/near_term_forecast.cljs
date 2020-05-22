@@ -308,6 +308,16 @@
    :position "absolute"
    :width    "100%"})
 
+(defn $radio [checked?]
+  (merge
+   (when checked? {:background-color ($/color-picker :black 0.6)})
+   {:border        "2px solid"
+    :border-color  ($/color-picker :black)
+    :border-radius "100%"
+    :height        "1rem"
+    :margin-right  ".4rem"
+    :width         "1rem"}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -381,6 +391,19 @@
                :on-mouse-down #(reset! mouse-down? true)
                :on-mouse-up #(reset! mouse-down? false)}]))
 
+;; TODO Radio can probably be a common component
+(defn radio [label state condition]
+  [:div {:style ($/flex-row)
+         :on-click #(reset! $/light? condition)}
+   [:div {:style ($/combine [$radio (= @state condition)])}]
+   [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]])
+
+(defn theme-select []
+  [:div {:style {:position "absolute" :left "3rem" :display "flex"}}
+   [:label {:style {:margin "4px .5rem 0"}} "Theme:"]
+   [radio "Light" $/light? true]
+   [radio "Dark" $/light? false]])
+
 (defn root-component [_]
   (r/create-class
    {:component-did-mount
@@ -391,6 +414,7 @@
       [:div {:style ($/combine $/root {:height "100%" :padding 0})}
        [:div {:class "bg-yellow"
               :style ($app-header)}
+        [theme-select]
         [:span
          [:label {:style ($tool-label false)} "Fire Weather"]
          [:label {:style ($/combine [$tool-label false] [$/margin "2rem" :h])} "Active Fire Forecast"]

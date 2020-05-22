@@ -2,11 +2,14 @@
   (:require-macros [herb.core :refer [defglobal]]
                    pyregence.herb-patch)
   (:require herb.runtime
+            [reagent.core :as r]
             [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def light? (r/atom false))
 
 (defn combine [& styles]
   (apply merge
@@ -22,8 +25,9 @@
    (color-picker color 1))
   ([color alpha]
    (case color
-     :bg-color        "white" ; Use for dark theme (str "rgba(50, 50, 50, .9)")
-     :border-color    "black" ; Use for dark theme "white"
+     :bg-color        (if @light? "white" (str "rgba(50, 50, 50, .9)"))
+     :border-color    (if @light? "black" "white")
+     :font-color      (if @light? (color-picker :sig-brown) "white")
      :blue            (str "rgba(0, 0, 175, "     alpha ")")
      :black           (str "rgba(0, 0, 0, "       alpha ")")
      :box-tan         (str "rgba(249, 248, 242, " alpha ")")
@@ -46,7 +50,7 @@
 ;; Global Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defglobal general ; Use for dark theme :color "white"
+(defglobal general
   [:* {:box-sizing "border-box"
        :padding    "0px"
        :margin     "0px"}]
@@ -312,5 +316,6 @@
    :border           (str "1px solid " (color-picker :border-color))
    :border-radius    "5px"
    :box-shadow       (str "0 0 0 2px " (color-picker :bg-color))
+   :color            (color-picker :font-color)
    :position         "absolute"
    :z-index          "100"})

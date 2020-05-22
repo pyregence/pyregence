@@ -20,6 +20,7 @@
    :border           "1px solid"
    :border-color     ($/color-picker :border-color)
    :border-radius    "2px"
+   :color            ($/color-picker :font-color)
    :font-family      "inherit"
    :height           "2rem"
    :padding          ".25rem .5rem"})
@@ -103,6 +104,7 @@
   {:background-color ($/color-picker :bg-color)
    :border-right     (str "1px solid " ($/color-picker :border-color))
    :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
+   :color            ($/color-picker :font-color)
    :height           "100%"
    :left             (if show? "0" "-18rem")
    :overflow         "auto"
