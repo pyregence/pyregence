@@ -33,6 +33,8 @@
 (defonce model-times       (r/atom []))
 (defonce show-utc?         (r/atom true))
 (defonce lon-lat           (r/atom [0 0]))
+(defonce show-info?        (r/atom false))
+(defonce show-measure?     (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -301,6 +303,11 @@
    :width            "1rem"
    :z-index          "-1"})
 
+(defn $control-layer []
+  {:height   "100%"
+   :position "absolute"
+   :width    "100%"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -318,7 +325,9 @@
 
       :render
       (fn []
-        [:div {:style {:height "100%" :position "absolute" :width "100%"}}
+        [:div {:style ($control-layer)}
+         [mc/tool-bar show-info? show-measure?]
+         [mc/zoom-bar @*zoom select-zoom! get-current-layer-extent]
          [mc/collapsible-panel
           *base-map
           select-base-map!
@@ -329,8 +338,7 @@
           *model-time
           @model-times
           select-layer-option!]
-         [mc/legend-box legend-list]
-         (when (aget @my-box "height")
+         (when (and @show-info? (aget @my-box "height"))
            [mc/information-tool
             @my-box
             select-layer!
@@ -338,6 +346,8 @@
             (get-current-layer-hour)
             @legend-list
             @last-clicked-info])
+         (when @show-measure? [mc/measure-tool @lon-lat])
+         [mc/legend-box legend-list]
          [mc/time-slider
           filtered-layers
           @*layer-idx
@@ -348,10 +358,7 @@
           select-time-zone!
           animate?
           loop-animation!
-          *speed]
-         [mc/tool-bar]
-         [mc/zoom-bar @*zoom select-zoom! get-current-layer-extent]
-         [mc/measure-tool @lon-lat]])})))
+          *speed]])})))
 
 (defn pop-up []
   [:div#popup
@@ -362,6 +369,16 @@
                    (u/find-key-by-id c/output-types @*output-type :units))
               "...")]]
    [:div {:style ($pop-up-arrow)}]])
+
+(defn map-layer []
+  (r/with-let [mouse-down? (r/atom false)
+               cursor-fn   #(cond
+                              @mouse-down?                    "grabbing"
+                              (or @show-info? @show-measure?) "crosshair" ; TODO get custom cursor image from Ryan
+                              :else                           "grab")]
+    [:div#map {:style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
+               :on-mouse-down #(reset! mouse-down? true)
+               :on-mouse-up #(reset! mouse-down? false)}]))
 
 (defn root-component [_]
   (r/create-class
@@ -380,5 +397,5 @@
         [:label {:style {:position "absolute" :right "3rem"}} "Login"]]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         [control-layer]
-        [:div#map {:style {:height "100%" :position "absolute" :width "100%"}}
-         [pop-up]]]])}))
+        [map-layer]
+        [pop-up]]])}))

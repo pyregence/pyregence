@@ -11,10 +11,8 @@
 ;; Common
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce show-panel?   (r/atom true))
-(defonce show-info?    (r/atom false))
-(defonce show-measure? (r/atom false))
-(defonce show-legend?  (r/atom false))
+(defonce show-panel?  (r/atom true))
+(defonce show-legend? (r/atom false))
 
 (defn $dropdown []
   {:background-color "white"
@@ -211,7 +209,7 @@
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
-(defn tool-bar []
+(defn tool-bar [show-info? show-measure?]
   [:div#tool-bar {:style ($/combine ($tool-bar @show-panel?) {:top "1rem"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} (tool-bar-button icon title on-click))
@@ -248,27 +246,25 @@
    :z-index          "100"})
 
 (defn measure-tool [lon-lat]
-  (when @show-measure?
-    [:div#measure-tool {:style ($measure-tool)}
-     [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
-      "Lat:" (u/to-precision 4 (get lon-lat 1))]
-     [:label {:style {:width "50%" :text-align "left"}}
-      "Lon:" (u/to-precision 4 (get lon-lat 0))]]))
+  [:div#measure-tool {:style ($measure-tool)}
+   [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
+    "Lat:" (u/to-precision 4 (get lon-lat 1))]
+   [:label {:style {:width "50%" :text-align "left"}}
+    "Lon:" (u/to-precision 4 (get lon-lat 0))]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Information Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn information-tool [my-box select-layer! units cur-hour legend-list last-clicked-info]
-  (when @show-info?
-    [:div#info-tool
-     [vega-box
-      my-box
-      select-layer!
-      units
-      cur-hour
-      legend-list
-      last-clicked-info]]))
+  [:div#info-tool
+   [vega-box
+    my-box
+    select-layer!
+    units
+    cur-hour
+    legend-list
+    last-clicked-info]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Legend Box
