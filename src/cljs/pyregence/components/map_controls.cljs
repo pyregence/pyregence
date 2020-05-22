@@ -53,8 +53,8 @@
                    *speed]
   [:div#time-slider {:style ($/combine $/tool ($time-slider))}
    [:div {:style ($/combine $/flex-col {:align-items "flex-start" :margin-right "1rem"})}
-    [radio "UTC"   show-utc? true  #(select-time-zone! %)]
-    [radio "Local" show-utc? false #(select-time-zone! %)]]
+    [radio "UTC"   show-utc? true  select-time-zone!]
+    [radio "Local" show-utc? false select-time-zone!]]
    [:div {:style ($/flex-col)}
     [:input {:style {:width "12rem"}
              :type "range" :min "0" :max (dec (count (filtered-layers))) :value *layer-idx
