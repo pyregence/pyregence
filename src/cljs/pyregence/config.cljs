@@ -37,47 +37,46 @@
 
 ;; Layer options
 
-(def output-types [{:opt-id    0
-                    :opt-label "Fire Area"
-                    :filter    "fire-area"
-                    :units     "Acres"}
-                   {:opt-id    1
-                    :opt-label "Fire Volume"
-                    :filter    "fire-volume"
-                    :units     "Acre-ft"}
-                   {:opt-id    2
-                    :opt-label "Impacted Structures"
-                    :filter    "impacted-structures"
-                    :units     "Structures"}
-                   {:opt-id    3
-                    :opt-label "Times Burned"
-                    :filter    "times-burned"
-                    :units     "Times"}])
-
-(def fuel-types [{:opt-id    0
-                  :opt-label "CA Forest Observatory"
-                  :filter    "cfo"}
-                 {:opt-id    1
-                  :opt-label "LANDFIRE"
-                  :filter    "landfire"}])
-
-(def models [{:opt-id    0
-              :opt-label "ELMFIRE"
-              :filter    "elmfire"}])
-
-(def ign-patterns [{:opt-id    0
-                    :opt-label "All"
-                    :filter    "all"}
-                   {:opt-id    1
-                    :opt-label "Transmission Lines"
-                    :filter    "tlines"}])
+(def forecast-options [{:opt-label "Active Fire Forcast"
+                        :filter    "fire-spread-forecast"
+                        :params    []}
+                       {:opt-label "Risk Forecast"
+                        :filter    "fire-risk-forecast"
+                        :params    [{:opt-label "Model"
+                                     :options   [{:opt-label "ELMFIRE"
+                                                  :filter    "elmfire"}]}
+                                    {:opt-label "Model Time"
+                                     :options   []}
+                                    {:opt-label "Fuel"
+                                     :options   [{:opt-label "CA Forest Observatory"
+                                                  :filter    "cfo"}
+                                                 {:opt-label "LANDFIRE"
+                                                  :filter    "landfire"}]}
+                                    {:opt-label "Ignition Pattern"
+                                     :options   [{:opt-label "All"
+                                                  :filter    "all"}
+                                                 {:opt-label "Transmission Lines"
+                                                  :filter    "tlines"}]}
+                                    {:opt-label "Output"
+                                     :options   [{:opt-label "Fire Area"
+                                                  :filter    "fire-area"
+                                                  :units     "Acres"}
+                                                 {:opt-label "Fire Volume"
+                                                  :filter    "fire-volume"
+                                                  :units     "Acre-ft"}
+                                                 {:opt-label "Impacted Structures"
+                                                  :filter    "impacted-structures"
+                                                  :units     "Structures"}
+                                                 {:opt-label "Times Burned"
+                                                  :filter    "times-burned"
+                                                  :units     "Times"}]}]}])
 
 ;; Scroll speeds for time slider
 
-(def speeds [{:opt-id 0 :opt-label ".5x" :delay 2000}
-             {:opt-id 1 :opt-label "1x"  :delay 1000}
-             {:opt-id 2 :opt-label "2x"  :delay 500}
-             {:opt-id 3 :opt-label "5x"  :delay 200}])
+(def speeds [{:opt-label ".5x" :delay 2000}
+             {:opt-label "1x"  :delay 1000}
+             {:opt-label "2x"  :delay 500}
+             {:opt-label "5x"  :delay 200}])
 
 ;; Basemap options
 
@@ -97,15 +96,12 @@
        "/{z}/{x}/{y}.jpg90"
        "?access_token=pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw"))
 
-(def base-map-options [{:opt-id    0
-                        :opt-label "MapBox Street Topo"
+(def base-map-options [{:opt-label "MapBox Street Topo"
                         :source    (XYZ.
                                     #js {:url (get-map-box-static-url "cka8jaky90i9m1iphwh79wr04")})}
-                       {:opt-id    1
-                        :opt-label "MapBox Satellite"
+                       {:opt-label "MapBox Satellite"
                         :source    (XYZ.
                                     #js {:url (get-map-box-raster-url "mapbox.satellite")})}
-                       {:opt-id    2
-                        :opt-label "MapBox Satellite Street"
+                       {:opt-label "MapBox Satellite Street"
                         :source    (XYZ.
                                     #js {:url (get-map-box-static-url "cka8hoo5v0gpy1iphg08hz7oj")})}])

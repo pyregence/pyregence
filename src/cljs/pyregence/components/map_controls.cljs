@@ -77,9 +77,9 @@
    [:select {:style ($/combine $dropdown)
              :value (or @*speed 1)
              :on-change #(reset! *speed (u/input-int-value %))}
-    (doall (map (fn [{:keys [opt-id opt-label]}]
-                  [:option {:key opt-id :value opt-id} opt-label])
-                c/speeds))]])
+    (map-indexed (fn [id {:keys [opt-label]}]
+                   [:option {:key id :value id} opt-label])
+                 c/speeds)]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Collapsible Panel
@@ -104,25 +104,21 @@
    :margin        ".75rem"
    :padding       ".75rem"})
 
-(defn panel-dropdown [title state options call-back]
+(defn panel-dropdown [title val options call-back]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
    [:label title]
    [:select {:style ($dropdown)
-             :value (or @state -1)
+             :value (or val -1)
              :on-change #(call-back (u/input-int-value %))}
-    (doall (map (fn [{:keys [opt-id opt-label]}]
-                  [:option {:key opt-id :value opt-id} opt-label])
-                options))]])
+    (map-indexed (fn [i {:keys [opt-label]}]
+                   [:option {:key i :value i} opt-label])
+                 options)]])
 
 (defn collapsible-panel [*base-map
                          select-base-map!
-                         *model
-                         *fuel-type
-                         *ign-pattern
-                         *output-type
-                         *model-time
-                         model-times
-                         select-layer-option!]
+                         *params
+                         select-param!
+                         param-options]
   (r/with-let [active-opacity    (r/atom 70.0)
                hillshade-opacity (r/atom 50.0)
                show-hillshade?   (r/atom false)]
@@ -146,11 +142,9 @@
                                     (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
       [:div#activelayer {:style ($/combine ($layer-section) {:margin-top "1rem"})}
        [:h4 "Fire Layer"]
-       [panel-dropdown "Model"      *model       c/models       #(select-layer-option! *model       %)]
-       [panel-dropdown "Model Time" *model-time  model-times    #(select-layer-option! *model-time  %)]
-       [panel-dropdown "Fuel"       *fuel-type   c/fuel-types   #(select-layer-option! *fuel-type   %)]
-       [panel-dropdown "Ignition"   *ign-pattern c/ign-patterns #(select-layer-option! *ign-pattern %)]
-       [panel-dropdown "Output"     *output-type c/output-types #(select-layer-option! *output-type %)]
+       (map-indexed (fn [i {:keys [opt-label options]}]
+                      ^{:key i} [panel-dropdown opt-label (get *params i) options #(select-param! i %)])
+                    param-options)
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]
         [:input {:style {:width "100%"}
@@ -190,18 +184,18 @@
 (defn tool-bar [show-info? show-measure?]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (map-indexed (fn [i [icon title on-click]]
-                  ^{:key i} (tool-bar-button icon title on-click))
+                  ^{:key i} [tool-bar-button icon title on-click])
                 [["L" (str (hs-str @show-panel?)   " layer selection")   #(swap! show-panel? not)]
                  ["i" (str (hs-str @show-info?)    " point information") #(do (swap! show-info? not)
-                                                                            (reset! show-measure? false))]
+                                                                              (reset! show-measure? false))]
                  ["M" (str (hs-str @show-measure?) " measure tool")      #(do (swap! show-measure? not)
-                                                                            (reset! show-info? false))]
+                                                                              (reset! show-info? false))]
                  ["L" (str (hs-str @show-legend?)  " legend")            #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
   [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:top "192px"})}
    (map-indexed (fn [i [icon title on-click]]
-                  ^{:key i} (tool-bar-button icon title on-click))
+                  ^{:key i} [tool-bar-button icon title on-click])
                 [["M" "Center on my location"    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
                  ["C" "Center on selected point" #(ol/center-on-overlay!)] ; TODO move this action the the information panel
                  ["E" "Zoom to fit layer"        #(ol/zoom-to-extent! (get-current-layer-extent))]
@@ -269,9 +263,9 @@
   (when @show-legend?
     [:div#legend-box {:style ($/combine $/tool {:bottom "3rem" :right ".5rem"})}
      [:div {:style {:display "flex" :flex-direction "column"}}
-      (doall (map-indexed (fn [i leg]
-                            ^{:key i}
-                            [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
-                             [:div {:style ($legend-color (get leg "color"))}]
-                             [:label (get leg "label")]])
-                          @legend-list))]]))
+      (map-indexed (fn [i leg]
+                     ^{:key i}
+                     [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
+                      [:div {:style ($legend-color (get leg "color"))}]
+                      [:label (get leg "label")]])
+                   @legend-list)]]))
