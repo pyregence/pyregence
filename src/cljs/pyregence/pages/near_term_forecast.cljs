@@ -131,13 +131,12 @@
 
 (defn split-layer-name [name-string]
   (let [[workspace layer]           (str/split name-string #":")
-        [forecast model-run]        (str/split workspace   #"_(?=\d{8}_)")
-        [init-timestamp ignition]   (str/split model-run   #"-")
+        [forecast init-timestamp]   (str/split workspace   #"_(?=\d{8}_)")
         [layer-group sim-timestamp] (str/split layer       #"_(?=\d{8}_)")
         init-js-date                (apply js-date-from-string (str/split init-timestamp #"_"))
         sim-js-date                 (apply js-date-from-string (str/split sim-timestamp  #"_"))]
     {:layer-group (str workspace ":" layer-group)
-     :filter      (into #{forecast ignition init-timestamp} (str/split layer-group #"_"))
+     :filter      (into #{forecast init-timestamp} (str/split layer-group #"_"))
      :model-init  init-timestamp
      :sim-js-date sim-js-date
      :date        (get-date-from-js sim-js-date)
@@ -158,7 +157,7 @@
                                                 (re-seq #"[\d|\.|-]+")
                                                 (rest)
                                                 (vec))]
-                             (when (re-matches #"[a-z|-]+_\d{8}_\d{2}-[a-z|-]+:[a-z|-]+_[a-z|-]+_[a-z|-]+_\d{8}_\d{6}" full-name)
+                             (when (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
                                (merge
                                 (split-layer-name full-name)
                                 {:layer  full-name
