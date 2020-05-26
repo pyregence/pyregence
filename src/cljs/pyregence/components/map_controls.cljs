@@ -190,7 +190,7 @@
 (defn tool-bar [show-info? show-measure?]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (map-indexed (fn [i [icon title on-click]]
-                  ^{:key i} (tool-bar-button icon title on-click))
+                  ^{:key i} [tool-bar-button icon title on-click])
                 [["L" (str (hs-str @show-panel?)   " layer selection")   #(swap! show-panel? not)]
                  ["i" (str (hs-str @show-info?)    " point information") #(do (swap! show-info? not)
                                                                               (reset! show-measure? false))]
@@ -201,7 +201,7 @@
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
   [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:top "192px"})}
    (map-indexed (fn [i [icon title on-click]]
-                  ^{:key i} (tool-bar-button icon title on-click))
+                  ^{:key i} [tool-bar-button icon title on-click])
                 [["M" "Center on my location"    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
                  ["C" "Center on selected point" #(ol/center-on-overlay!)] ; TODO move this action the the information panel
                  ["E" "Zoom to fit layer"        #(ol/zoom-to-extent! (get-current-layer-extent))]
