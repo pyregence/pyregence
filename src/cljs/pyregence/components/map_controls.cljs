@@ -53,8 +53,8 @@
                    *speed]
   [:div#time-slider {:style ($/combine $/tool ($time-slider))}
    [:div {:style ($/combine $/flex-col {:align-items "flex-start" :margin-right "1rem"})}
-    [radio "UTC"   show-utc? true  select-time-zone!]
-    [radio "Local" show-utc? false select-time-zone!]]
+    [radio "UTC"   show-utc? true  select-time-zone! true]
+    [radio "Local" show-utc? false select-time-zone! true]]
    [:div {:style ($/flex-col)}
     [:input {:style {:width "12rem"}
              :type "range" :min "0" :max (dec (count (filtered-layers))) :value *layer-idx
@@ -193,9 +193,9 @@
                   ^{:key i} (tool-bar-button icon title on-click))
                 [["L" (str (hs-str @show-panel?)   " layer selection")   #(swap! show-panel? not)]
                  ["i" (str (hs-str @show-info?)    " point information") #(do (swap! show-info? not)
-                                                                            (reset! show-measure? false))]
+                                                                              (reset! show-measure? false))]
                  ["M" (str (hs-str @show-measure?) " measure tool")      #(do (swap! show-measure? not)
-                                                                            (reset! show-info? false))]
+                                                                              (reset! show-info? false))]
                  ["L" (str (hs-str @show-legend?)  " legend")            #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
@@ -267,7 +267,7 @@
 
 (defn legend-box [legend-list]
   (when @show-legend?
-    [:div#legend-box {:style ($/combine $/tool {:bottom "3rem" :right ".5rem"})}
+    [:div#legend-box {:style ($/combine $/tool {:bottom "60px" :right "16px" :padding ".25rem"})}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (doall (map-indexed (fn [i leg]
                             ^{:key i}

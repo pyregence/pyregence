@@ -26,7 +26,9 @@
   ([color alpha]
    (case color
      :bg-color        (if @light? "white" (str "rgba(50, 50, 50, .9)"))
-     :border-color    (if @light? "black" "white")
+     :border-color    (if @light?
+                        (str "rgba(0, 0, 0, "       alpha ")")
+                        (str "rgba(255, 255, 255, " alpha ")"))
      :font-color      (if @light? (color-picker :sig-brown) "white")
      :blue            (str "rgba(0, 0, 175, "     alpha ")")
      :black           (str "rgba(0, 0, 0, "       alpha ")")
@@ -74,11 +76,11 @@
   [:#nav-row {:padding "0"}]
   [".ol-scale-line" {:background-color (color-picker :bg-color)
                      :border           (str "1px solid " (color-picker :border-color))
-                     :bottom           "1rem"
+                     :bottom           "16px"
                      :box-shadow       (str "0 0 0 2px " (color-picker :bg-color))
                      :left             "auto"
-                     :padding          ".4rem"
-                     :right            "1rem"}]
+                     :height           "28px"
+                     :right            "16px"}]
   [".ol-scale-line-inner" {:border-color (color-picker :border-color)
                            :color        (color-picker :border-color)
                            :font-size    ".75rem"}])
