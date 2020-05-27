@@ -55,7 +55,7 @@
   {:width    "container"
    :height   "container"
    :autosize {:type "fit" :resize true}
-   :padding  {:left "16" :top "0" :right "16" :bottom "32"}
+   :padding  {:left "16" :top "16" :right "16" :bottom "16"}
    :data     {:values (or last-clicked-info [])}
    :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "Hour"}
                           :y {:field "band" :type "quantitative" :title units}

@@ -214,7 +214,7 @@
     250
     (fn [_ _]
       [:div
-       [:label {:style {:width "50%" :text-align "left" :padding-left ".5rem"}}
+       [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
         "Lat:" (u/to-precision 4 (get lon-lat 1))]
        [:label {:style {:width "50%" :text-align "left"}}
         "Lon:" (u/to-precision 4 (get lon-lat 0))]])]])
