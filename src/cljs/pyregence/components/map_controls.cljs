@@ -181,15 +181,15 @@
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
-(defn tool-bar [show-info? show-measure?]
+(defn tool-bar [show-info? show-measure? set-show-info!]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} [tool-bar-button icon title on-click])
                 [["L" (str (hs-str @show-panel?)   " layer selection")   #(swap! show-panel? not)]
-                 ["i" (str (hs-str @show-info?)    " point information") #(do (swap! show-info? not)
+                 ["i" (str (hs-str @show-info?)    " point information") #(do (set-show-info! (not @show-info?))
                                                                               (reset! show-measure? false))]
                  ["M" (str (hs-str @show-measure?) " measure tool")      #(do (swap! show-measure? not)
-                                                                              (reset! show-info? false))]
+                                                                              (set-show-info! false))]
                  ["L" (str (hs-str @show-legend?)  " legend")            #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
@@ -229,7 +229,7 @@
                                :position "absolute"
                                :width    box-width
                                :z-index  "1"}}
-   [:label "Loading..."]])
+   [:label "Click on the map to see a change over time graph."]])
 
 (defn information-tool [my-box select-layer! units cur-hour legend-list last-clicked-info]
   [:div#info-tool

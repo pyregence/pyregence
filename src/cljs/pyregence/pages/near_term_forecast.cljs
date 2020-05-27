@@ -267,11 +267,15 @@
                             zoom)))
     (ol/set-zoom! @*zoom)))
 
+(defn clear-info! []
+  (ol/clear-point!)
+  (reset! last-clicked-info nil))
+
 (defn change-type! [clear?]
   (ol/swap-active-layer! (get-current-layer-name))
   (get-legend!           (get-current-layer-name))
   (if clear?
-    (ol/clear-point!)
+    (clear-info!)
     (get-point-info! (ol/get-overlay-bbox))))
 
 (defn select-param! [idx val]
@@ -282,6 +286,13 @@
   (reset! *forecast id)
   (reset! *params (mapv (constantly 0) (get-in c/forecast-options [@*forecast :params])))
   (change-type! true))
+
+(defn set-show-info! [show?]
+  (reset! show-info? show?)
+  (if show?
+    (ol/add-popup-on-single-click! get-point-info!)
+    (do (ol/remove-popup-on-single-click!)
+        (clear-info!))))
 
 (defn select-base-map! [id]
   (reset! *base-map id)
@@ -307,7 +318,6 @@
     (let [layers-chan (get-layers!)]
       (ol/init-map!)
       (select-base-map! @*base-map)
-      (ol/add-map-single-click! get-point-info!)
       (ol/add-map-mouse-move! #(reset! lon-lat %))
       (let [[cur min max] (ol/get-zoom-info)]
         (reset! *zoom cur)
@@ -380,7 +390,7 @@
       :render
       (fn []
         [:div {:style ($control-layer)}
-         [mc/tool-bar show-info? show-measure?]
+         [mc/tool-bar show-info? show-measure? set-show-info!]
          [mc/zoom-bar @*zoom select-zoom! get-current-layer-extent]
          [mc/collapsible-panel
           @*base-map

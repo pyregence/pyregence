@@ -11,8 +11,10 @@
 (def TileLayer       js/ol.layer.Tile)
 (def TileWMS         js/ol.source.TileWMS)
 (def WMSCapabilities js/ol.format.WMSCapabilities)
+(def unByKey         js/ol.Observable.unByKey)
 
-(defonce the-map (atom nil))
+(defonce the-map        (atom nil))
+(defonce singleclick-on (atom nil))
 
 ;; Creating objects
 
@@ -80,16 +82,20 @@
 
 ;; Modifying objects
 
-(defn add-map-single-click! [call-back]
-  (.on @the-map
-       "singleclick"
-       (fn [evt]
-         (let [map-overlay (.getOverlayById @the-map "popup")
-               coord       (.-coordinate evt)
-               [x y]       coord
-               res         (-> @the-map .getView .getResolution)]
-           (.setPosition map-overlay coord)
-           (call-back [x y (+ x res) (+ y res)])))))
+(defn add-popup-on-single-click! [call-back]
+  (reset! singleclick-on
+          (.on @the-map
+               "singleclick"
+               (fn [evt]
+                 (let [map-overlay (.getOverlayById @the-map "popup")
+                       coord       (.-coordinate evt)
+                       [x y]       coord
+                       res         (-> @the-map .getView .getResolution)]
+                   (.setPosition map-overlay coord)
+                   (call-back [x y (+ x res) (+ y res)]))))))
+
+(defn remove-popup-on-single-click! []
+  (unByKey @singleclick-on))
 
 (defn add-map-mouse-move! [call-back]
   (.on @the-map
