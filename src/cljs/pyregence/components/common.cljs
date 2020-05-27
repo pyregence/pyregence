@@ -3,7 +3,7 @@
 
 (defn $radio [checked? themed?]
   (merge
-   (when checked? {:background-color ($/color-picker (if themed? :border-color  :black) 0.6)})
+   (when checked? {:background-color ($/color-picker (if themed? :border-color :black) 0.6)})
    {:border        "2px solid"
     :border-color  ($/color-picker (if themed? :border-color :black))
     :border-radius "100%"
