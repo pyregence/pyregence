@@ -36,23 +36,33 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn get-options-by-key [key-name]
+  (let [forecast (get-in c/forecast-options [@*forecast :filter])]
+    (->> @layer-list
+         (filter (fn [layer] (= forecast (:forecast layer))))
+         (map key-name)
+         (distinct)
+         (sort)
+         (reverse)
+         (map-indexed (fn [i option]
+                        {:opt-label (if (and (= key-name :model-init) (= 0 i))
+                                      "Current"
+                                      option)
+                         :filter    option}))
+         (vec))))
+
 (defn get-processed-params []
-  (let [forecast    (get-in c/forecast-options [@*forecast :filter])
-        model-times (->> @layer-list
-                         (filter (fn [layer] (= forecast (:forecast layer))))
-                         (map :model-init)
-                         (distinct)
-                         (sort)
-                         (reverse)
-                         (map-indexed (fn [i model-init]
-                                        {:opt-label (if (= 0 i) "Current" model-init)
-                                         :filter    model-init}))
-                         (vec))]
-    (->> (get-in c/forecast-options [@*forecast :params])
-         (mapv (fn [{:keys [opt-label] :as param}]
-                 (if (= "Model Time" opt-label)
-                   (assoc param :options model-times)
-                   param))))))
+  (->> (get-in c/forecast-options [@*forecast :params])
+       (mapv (fn [{:keys [opt-label] :as param}]
+               (cond
+                 (= "Model Time" opt-label)
+                 (assoc param :options (get-options-by-key :model-init))
+
+                 (= "Fire Name" opt-label)
+                 (assoc param :options (get-options-by-key :fire-name))
+
+                 :else
+                 param)))))
 
 (defn filtered-layers []
   (let [selected-set (-> (map (fn [*option {:keys [options]}]
@@ -150,7 +160,7 @@
              (str/split " ")
              (peek)))))
 
-(defn split-layer-name [name-string]
+(defn split-risk-layer-name [name-string]
   (let [[workspace layer]           (str/split name-string #":")
         [forecast init-timestamp]   (str/split workspace   #"_(?=\d{8}_)")
         [layer-group sim-timestamp] (str/split layer       #"_(?=\d{8}_)")
@@ -159,6 +169,23 @@
     {:layer-group (str workspace ":" layer-group)
      :forecast    forecast
      :filter-set  (into #{forecast init-timestamp} (str/split layer-group #"_"))
+     :model-init  init-timestamp
+     :sim-js-date sim-js-date
+     :date        (get-date-from-js sim-js-date)
+     :time        (get-time-from-js sim-js-date)
+     :hour        (- (/ (- sim-js-date init-js-date) 1000 60 60) 6)}))
+
+(defn split-active-layer-name [name-string]
+  (let [[workspace layer]    (str/split name-string #":")
+        [forecast fire-name] (str/split workspace   #"_")
+        params               (str/split layer       #"_")
+        init-timestamp       (str (get params 0) "_" (get params 1))
+        init-js-date         (js-date-from-string (get params 0) (get params 1))
+        sim-js-date          (js-date-from-string (get params 6) (get params 7))]
+    {:layer-group ""  ; FIXME, should we have a layer group? If not block info panel from selecting point.
+     :forecast    forecast
+     :fire-name   fire-name
+     :filter-set  (into #{forecast fire-name init-timestamp} (subvec params 2 6))
      :model-init  init-timestamp
      :sim-js-date sim-js-date
      :date        (get-date-from-js sim-js-date)
@@ -180,11 +207,15 @@
                                            (re-seq #"[\d|\.|-]+")
                                            (rest)
                                            (vec))]
-                        (when (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
-                          (merge
-                           (split-layer-name full-name)
-                           {:layer  full-name
-                            :extent coords}))))
+                        (merge
+                         (cond
+                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
+                           (split-risk-layer-name full-name)
+
+                           (re-matches #"([a-z|-]+_)[a-z|-|\d]+:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                           (split-active-layer-name full-name))
+                         {:layer  full-name
+                          :extent coords})))
                     xml)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
@@ -227,7 +258,7 @@
 (defn loop-animation! []
   (when @animate?
     (cycle-layer! 1)
-    (js/setTimeout loop-animation! (u/find-key-by-id c/speeds @*speed :delay))))
+    (js/setTimeout loop-animation! (get-in c/speeds [@*speed :delay]))))
 
 (defn select-zoom! [zoom]
   (when-not (= zoom @*zoom)
@@ -248,7 +279,8 @@
 
 (defn select-forecast! [id]
   (reset! *forecast id)
-  (reset! *params (mapv (constantly 0) (get-in c/forecast-options [@*forecast :params]))))
+  (reset! *params (mapv (constantly 0) (get-in c/forecast-options [@*forecast :params])))
+  (select-layer! @*layer-idx))
 
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
@@ -269,7 +301,6 @@
   (go
     (let [layers-chan (get-layers!)]
       (ol/init-map!)
-      (select-forecast! @*forecast)
       (select-base-map! @*base-map)
       (ol/add-map-single-click! get-point-info!)
       (ol/add-map-mouse-move! #(reset! lon-lat %))
@@ -279,7 +310,7 @@
         (reset! maxZoom max))
       (ol/add-map-zoom-end! select-zoom!)
       (<! layers-chan)
-      (select-layer! @*layer-idx)
+      (select-forecast! @*forecast)
       (ol/set-visible-by-title! "active" true)
       (get-legend! (get-current-layer-name)))))
 
