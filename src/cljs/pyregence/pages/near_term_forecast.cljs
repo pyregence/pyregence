@@ -297,7 +297,7 @@
    :position        "relative"
    :width           "100%"})
 
-(defn $tool-label [selected?]
+(defn $forecast-label [selected?]
   (if selected?
     {:color "white"}
     {}))
@@ -417,7 +417,7 @@
          (doall (map-indexed
                  (fn [i {:keys [opt-label]}]
                    ^{:key i}
-                   [:label {:style ($/combine [$tool-label (= @*forecast i)]
+                   [:label {:style ($/combine [$forecast-label (= @*forecast i)]
                                               [$/margin "1rem" :h]
                                               {:cursor "pointer"})
                             :on-click #(select-forecast! i)}
