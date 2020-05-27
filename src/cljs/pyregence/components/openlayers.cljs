@@ -148,3 +148,8 @@
         lon    (.-longitude coords)
         lat    (.-latitude  coords)]
     (set-center! (fromLonLat #js [lon lat] "EPSG:3857") 12.0)))
+
+(defn clear-point! []
+  (-> @the-map
+      (.getOverlayById "popup")
+      (.setPosition nil)))

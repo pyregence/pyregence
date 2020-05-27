@@ -92,10 +92,10 @@
 (defn get-current-layer-group []
   (:layer-group (current-layer) ""))
 
-(defn get-current-layer-units []
+(defn get-current-layer-key [key-name]
   (->>
    (map (fn [*option {:keys [options]}]
-          (get-in options [*option :units]))
+          (get-in options [*option key-name]))
         @*params
         (get-in c/forecast-options [@*forecast :params]))
    (remove nil?)
@@ -267,20 +267,25 @@
                             zoom)))
     (ol/set-zoom! @*zoom)))
 
+(defn change-type! [clear?]
+  (ol/swap-active-layer! (get-current-layer-name))
+  (get-legend!           (get-current-layer-name))
+  (if clear?
+    (ol/clear-point!)
+    (get-point-info! (ol/get-overlay-bbox))))
+
 (defn select-param! [idx val]
   (swap! *params assoc idx val)
-  (ol/swap-active-layer! (get-current-layer-name))
-  (get-point-info!       (ol/get-overlay-bbox))    ; TODO when switching to a tline from non tline, clear the point
-  (get-legend!           (get-current-layer-name)))
-
-(defn select-base-map! [id]
-  (reset! *base-map id)
-  (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))
+  (change-type! (get-current-layer-key :clear-point?)))
 
 (defn select-forecast! [id]
   (reset! *forecast id)
   (reset! *params (mapv (constantly 0) (get-in c/forecast-options [@*forecast :params])))
-  (select-layer! @*layer-idx))
+  (change-type! true))
+
+(defn select-base-map! [id]
+  (reset! *base-map id)
+  (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))
 
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
@@ -387,13 +392,13 @@
            [mc/information-tool
             @my-box
             select-layer!
-            (get-current-layer-units)
+            (get-current-layer-key :units)
             (get-current-layer-hour)
             @legend-list
             @last-clicked-info])
          (when (and @show-measure? (aget @my-box "height"))
            [mc/measure-tool @my-box @lon-lat])
-         [mc/legend-box legend-list]
+         [mc/legend-box legend-list (get-in c/forecast-options [@*forecast :reverse-legend?])]
          [mc/time-slider
           filtered-layers
           @*layer-idx
@@ -412,7 +417,7 @@
     [:label (if @last-clicked-info
               (str (:band (get @last-clicked-info @*layer-idx))
                    " "
-                   (get-current-layer-units))
+                   (get-current-layer-key :units))
               "...")]]
    [:div {:style ($pop-up-arrow)}]])
 

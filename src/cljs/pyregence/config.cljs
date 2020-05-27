@@ -72,36 +72,38 @@
                                      :options   [{:opt-label "Burned Area"
                                                   :filter    "burned-area"
                                                   :units     "Hours"}]}]}
-                       {:opt-label "Risk Forecast"
-                        :filter    "fire-risk-forecast"
-                        :params    [{:opt-label "Model"
-                                     :options   [{:opt-label "ELMFIRE"
-                                                  :filter    "elmfire"}]}
-                                    {:opt-label "Model Time"
-                                     :options   []}
-                                    {:opt-label "Fuel"
-                                     :options   [{:opt-label "CA Forest Observatory"
-                                                  :filter    "cfo"}
-                                                 {:opt-label "LANDFIRE"
-                                                  :filter    "landfire"}]}
-                                    {:opt-label "Ignition Pattern"
-                                     :options   [{:opt-label "All"
-                                                  :filter    "all"}
-                                                 {:opt-label "Transmission Lines"
-                                                  :filter    "tlines"}]}
-                                    {:opt-label "Output"
-                                     :options   [{:opt-label "Fire Area"
-                                                  :filter    "fire-area"
-                                                  :units     "Acres"}
-                                                 {:opt-label "Fire Volume"
-                                                  :filter    "fire-volume"
-                                                  :units     "Acre-ft"}
-                                                 {:opt-label "Impacted Structures"
-                                                  :filter    "impacted-structures"
-                                                  :units     "Structures"}
-                                                 {:opt-label "Times Burned"
-                                                  :filter    "times-burned"
-                                                  :units     "Times"}]}]}])
+                       {:opt-label       "Risk Forecast"
+                        :filter          "fire-risk-forecast"
+                        :reverse-legend? true
+                        :params          [{:opt-label "Model"
+                                           :options   [{:opt-label "ELMFIRE"
+                                                        :filter    "elmfire"}]}
+                                          {:opt-label "Model Time"
+                                           :options   []}
+                                          {:opt-label "Fuel"
+                                           :options   [{:opt-label "CA Forest Observatory"
+                                                        :filter    "cfo"}
+                                                       {:opt-label "LANDFIRE"
+                                                        :filter    "landfire"}]}
+                                          {:opt-label "Ignition Pattern"
+                                           :options   [{:opt-label    "All"
+                                                        :filter       "all"}
+                                                       {:opt-label    "Transmission Lines"
+                                                        :filter       "tlines"
+                                                        :clear-point? true}]}
+                                          {:opt-label "Output"
+                                           :options   [{:opt-label "Fire Area"
+                                                        :filter    "fire-area"
+                                                        :units     "Acres"}
+                                                       {:opt-label "Fire Volume"
+                                                        :filter    "fire-volume"
+                                                        :units     "Acre-ft"}
+                                                       {:opt-label "Impacted Structures"
+                                                        :filter    "impacted-structures"
+                                                        :units     "Structures"}
+                                                       {:opt-label "Times Burned"
+                                                        :filter    "times-burned"
+                                                        :units     "Times"}]}]}])
 
 ;; Scroll speeds for time slider
 

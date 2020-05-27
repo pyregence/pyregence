@@ -259,7 +259,7 @@
    :margin-right     ".5rem"
    :width            "1rem"})
 
-(defn legend-box [legend-list]
+(defn legend-box [legend-list reverse?]
   (when @show-legend?
     [:div#legend-box {:style ($/combine $/tool {:bottom "60px" :right "16px" :padding ".25rem"})}
      [:div {:style {:display "flex" :flex-direction "column"}}
@@ -268,4 +268,6 @@
                      [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
                       [:div {:style ($legend-color (get leg "color"))}]
                       [:label (get leg "label")]])
-                   (reverse @legend-list))]]))
+                   (if reverse?
+                     (reverse @legend-list)
+                     @legend-list))]]))
