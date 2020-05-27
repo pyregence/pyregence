@@ -29,7 +29,9 @@
      :border-color    (if @light?
                         (str "rgba(0, 0, 0, "       alpha ")")
                         (str "rgba(255, 255, 255, " alpha ")"))
-     :font-color      (if @light? (color-picker :sig-brown) "white")
+     :font-color      (if @light?
+                        (color-picker :sig-brown)
+                        "rgb(235, 235, 235)")
      :blue            (str "rgba(0, 0, 175, "     alpha ")")
      :black           (str "rgba(0, 0, 0, "       alpha ")")
      :box-tan         (str "rgba(249, 248, 242, " alpha ")")
