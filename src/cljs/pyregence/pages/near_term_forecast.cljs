@@ -2,7 +2,6 @@
   (:require [reagent.core :as r]
             [reagent.dom :as rd]
             [clojure.string :as str]
-            [clojure.set :as set]
             [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]
             [pyregence.styles :as $]
@@ -24,32 +23,45 @@
 (defonce *layer-idx        (r/atom 0))
 (defonce last-clicked-info (r/atom nil))
 (defonce animate?          (r/atom false))
-(defonce *model            (r/atom 0))
-(defonce *fuel-type        (r/atom 0))
-(defonce *ign-pattern      (r/atom 0))
-(defonce *output-type      (r/atom 0))
 (defonce *speed            (r/atom 1))
 (defonce *base-map         (r/atom 0))
-(defonce *model-time       (r/atom 0))
-(defonce model-times       (r/atom []))
 (defonce show-utc?         (r/atom true))
 (defonce lon-lat           (r/atom [0 0]))
 (defonce show-info?        (r/atom false))
 (defonce show-measure?     (r/atom false))
+(defonce *forecast         (r/atom 1))
+(defonce *params           (r/atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn get-processed-params []
+  (let [forecast    (get-in c/forecast-options [@*forecast :filter])
+        model-times (->> @layer-list
+                         (filter (fn [layer] (= forecast (:forecast layer))))
+                         (map :model-init)
+                         (distinct)
+                         (sort)
+                         (reverse)
+                         (map-indexed (fn [i model-init]
+                                        {:opt-label (if (= 0 i) "Current" model-init)
+                                         :filter    model-init}))
+                         (vec))]
+    (->> (get-in c/forecast-options [@*forecast :params])
+         (mapv (fn [{:keys [opt-label] :as param}]
+                 (if (= "Model Time" opt-label)
+                   (assoc param :options model-times)
+                   param))))))
+
 (defn filtered-layers []
-  (let [output-type (u/find-key-by-id c/output-types @*output-type :filter)
-        fuel-type   (u/find-key-by-id c/fuel-types   @*fuel-type   :filter)
-        ign-pattern (u/find-key-by-id c/ign-patterns @*ign-pattern :filter)
-        model       (u/find-key-by-id c/models       @*model       :filter)
-        model-time  (u/find-key-by-id @model-times   @*model-time  :filter)]
-    (filterv (fn [{:keys [filter]}]
-               (set/subset? #{output-type fuel-type ign-pattern model model-time "fire-risk-forecast"}
-                            filter))
+  (let [selected-set (-> (map (fn [*option {:keys [options]}]
+                                (get-in options [*option :filter]))
+                              @*params
+                              (get-processed-params))
+                         (set)
+                         (conj (get-in c/forecast-options [@*forecast :filter])))]
+    (filterv (fn [{:keys [filter-set]}] (= selected-set filter-set))
              @layer-list)))
 
 (defn current-layer []
@@ -69,6 +81,15 @@
 
 (defn get-current-layer-group []
   (:layer-group (current-layer) ""))
+
+(defn get-current-layer-units []
+  (->>
+   (map (fn [*option {:keys [options]}]
+          (get-in options [*option :units]))
+        @*params
+        (get-in c/forecast-options [@*forecast :params]))
+   (remove nil?)
+   (first)))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
@@ -136,7 +157,8 @@
         init-js-date                (apply js-date-from-string (str/split init-timestamp #"_"))
         sim-js-date                 (apply js-date-from-string (str/split sim-timestamp  #"_"))]
     {:layer-group (str workspace ":" layer-group)
-     :filter      (into #{forecast init-timestamp} (str/split layer-group #"_"))
+     :forecast    forecast
+     :filter-set  (into #{forecast init-timestamp} (str/split layer-group #"_"))
      :model-init  init-timestamp
      :sim-js-date sim-js-date
      :date        (get-date-from-js sim-js-date)
@@ -145,35 +167,25 @@
 
 (defn process-capabilities! [response]
   (go
-    (let [layers (as-> (<p! (.text response)) xml
-                   (str/replace xml "\n" "")
-                   (re-find #"<Layer>.*(?=</Layer>)" xml)
-                   (str/replace-first xml "<Layer>" "")
-                   (re-seq #"<Layer.+?</Layer>" xml)
-                   (keep (fn [layer]
-                           (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
-                                                (str/replace #"<Name>" ""))
-                                 coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
-                                                (re-seq #"[\d|\.|-]+")
-                                                (rest)
-                                                (vec))]
-                             (when (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
-                               (merge
-                                (split-layer-name full-name)
-                                {:layer  full-name
-                                 :extent coords}))))
-                         xml))]
-      (reset! model-times
-              (->> layers
-                   (map :model-init)
-                   (distinct)
-                   (sort)
-                   (reverse)
-                   (map-indexed (fn [i model]
-                                  {:opt-id    i
-                                   :opt-label (if (= 0 i) "Current" model)
-                                   :filter    model}))))
-      (reset! layer-list layers))))
+    (reset! layer-list
+            (as-> (<p! (.text response)) xml
+              (str/replace xml "\n" "")
+              (re-find #"<Layer>.*(?=</Layer>)" xml)
+              (str/replace-first xml "<Layer>" "")
+              (re-seq #"<Layer.+?</Layer>" xml)
+              (keep (fn [layer]
+                      (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
+                                           (str/replace #"<Name>" ""))
+                            coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
+                                           (re-seq #"[\d|\.|-]+")
+                                           (rest)
+                                           (vec))]
+                        (when (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
+                          (merge
+                           (split-layer-name full-name)
+                           {:layer  full-name
+                            :extent coords}))))
+                    xml)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
@@ -224,15 +236,19 @@
                             zoom)))
     (ol/set-zoom! @*zoom)))
 
-(defn select-layer-option! [*option id]
-  (reset! *option id)
+(defn select-param! [idx val]
+  (swap! *params assoc idx val)
   (ol/swap-active-layer! (get-current-layer-name))
-  (get-point-info!       (ol/get-overlay-bbox))
+  (get-point-info!       (ol/get-overlay-bbox))    ; TODO when switching to a tline from non tline, clear the point
   (get-legend!           (get-current-layer-name)))
 
 (defn select-base-map! [id]
   (reset! *base-map id)
-  (ol/set-base-map-source! (u/find-key-by-id c/base-map-options @*base-map :source)))
+  (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))
+
+(defn select-forecast! [id]
+  (reset! *forecast id)
+  (reset! *params (mapv (constantly 0) (get-in c/forecast-options [@*forecast :params]))))
 
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
@@ -253,6 +269,7 @@
   (go
     (let [layers-chan (get-layers!)]
       (ol/init-map!)
+      (select-forecast! @*forecast)
       (select-base-map! @*base-map)
       (ol/add-map-single-click! get-point-info!)
       (ol/add-map-mouse-move! #(reset! lon-lat %))
@@ -278,10 +295,11 @@
    :position        "relative"
    :width           "100%"})
 
-(defn $tool-label [selected?]
-  (if selected?
-    {:color "white"}
-    {}))
+(defn $forecast-label [selected?]
+  (merge
+   {:cursor "pointer"
+    :margin "0 1rem 0 1rem"}
+   (when selected? {:color "white"})))
 
 (defn $pop-up-box []
   {:background-color "white"
@@ -329,20 +347,16 @@
          [mc/tool-bar show-info? show-measure?]
          [mc/zoom-bar @*zoom select-zoom! get-current-layer-extent]
          [mc/collapsible-panel
-          *base-map
+          @*base-map
           select-base-map!
-          *model
-          *fuel-type
-          *ign-pattern
-          *output-type
-          *model-time
-          @model-times
-          select-layer-option!]
+          @*params
+          select-param!
+          (get-processed-params)]
          (when (and @show-info? (aget @my-box "height"))
            [mc/information-tool
             @my-box
             select-layer!
-            (u/find-key-by-id c/output-types @*output-type :units)
+            (get-current-layer-units)
             (get-current-layer-hour)
             @legend-list
             @last-clicked-info])
@@ -367,7 +381,7 @@
     [:label (if @last-clicked-info
               (str (:band (get @last-clicked-info @*layer-idx))
                    " "
-                   (u/find-key-by-id c/output-types @*output-type :units))
+                   (get-current-layer-units))
               "...")]]
    [:div {:style ($pop-up-arrow)}]])
 
@@ -399,9 +413,12 @@
               :style ($app-header)}
         [theme-select]
         [:span
-         [:label {:style ($tool-label false)} "Fire Weather"]
-         [:label {:style ($/combine [$tool-label false] [$/margin "2rem" :h])} "Active Fire Forecast"]
-         [:label {:style ($tool-label true)} "Risk Forecast"]]
+         (doall (map-indexed (fn [i {:keys [opt-label]}]
+                               [:label {:key i
+                                        :style ($forecast-label (= @*forecast i))
+                                        :on-click #(select-forecast! i)}
+                                opt-label])
+                             c/forecast-options))]
         [:label {:style {:position "absolute" :right "3rem"}} "Login"]]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         [control-layer]
