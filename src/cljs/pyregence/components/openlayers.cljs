@@ -13,8 +13,8 @@
 (def WMSCapabilities js/ol.format.WMSCapabilities)
 (def unByKey         js/ol.Observable.unByKey)
 
-(defonce the-map        (atom nil))
-(defonce singleclick-on (atom nil))
+(defonce the-map         (atom nil))
+(defonce single-click-on (atom nil))
 
 ;; Creating objects
 
@@ -83,7 +83,7 @@
 ;; Modifying objects
 
 (defn add-popup-on-single-click! [call-back]
-  (reset! singleclick-on
+  (reset! single-click-on
           (.on @the-map
                "singleclick"
                (fn [evt]
@@ -95,7 +95,7 @@
                    (call-back [x y (+ x res) (+ y res)]))))))
 
 (defn remove-popup-on-single-click! []
-  (unByKey @singleclick-on))
+  (unByKey @single-click-on))
 
 (defn add-map-mouse-move! [call-back]
   (.on @the-map
