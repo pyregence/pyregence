@@ -268,4 +268,4 @@
                      [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
                       [:div {:style ($legend-color (get leg "color"))}]
                       [:label (get leg "label")]])
-                   @legend-list)]]))
+                   (reverse @legend-list))]]))
