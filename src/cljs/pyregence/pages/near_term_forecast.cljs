@@ -206,16 +206,14 @@
                             coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
                                            (re-seq #"[\d|\.|-]+")
                                            (rest)
-                                           (vec))]
-                        (merge
-                         (cond
-                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
-                           (split-risk-layer-name full-name)
+                                           (vec))
+                            merge-fn  #(merge % {:layer  full-name :extent coords})]
+                        (cond
+                          (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
+                          (merge-fn (split-risk-layer-name full-name))
 
-                           (re-matches #"([a-z|-]+_)[a-z|-|\d]+:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
-                           (split-active-layer-name full-name))
-                         {:layer  full-name
-                          :extent coords})))
+                          (re-matches #"([a-z|-]+_)[a-z|-|\d]+:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                          (merge-fn (split-active-layer-name full-name)))))
                     xml)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
