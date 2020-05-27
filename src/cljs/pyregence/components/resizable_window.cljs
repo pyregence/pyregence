@@ -5,7 +5,6 @@
 (defn $resizable-window [box-height box-width]
   {:height      box-height
    :overflow    "hidden"
-   :padding-top "1rem"
    :right       "72px"
    :top         "1rem"
    :width       box-width})
