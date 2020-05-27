@@ -44,9 +44,9 @@
                          (distinct)
                          (sort)
                          (reverse)
-                         (map-indexed (fn [i model]
-                                        {:opt-label (if (= 0 i) "Current" model)
-                                         :filter    model}))
+                         (map-indexed (fn [i model-init]
+                                        {:opt-label (if (= 0 i) "Current" model-init)
+                                         :filter    model-init}))
                          (vec))]
     (->> (get-in c/forecast-options [@*forecast :params])
          (mapv (fn [{:keys [opt-label] :as param}]
@@ -55,13 +55,13 @@
                    param))))))
 
 (defn filtered-layers []
-  (let [selected-set (conj (set (map
-                                 (fn [*option {:keys [options]}]
-                                   (get-in options [*option :filter]))
-                                 @*params
-                                 (get-processed-params)))
-                           (get-in c/forecast-options [@*forecast :filter]))]
-    (filterv (fn [{:keys [filter-set]}] (every? selected-set filter-set))
+  (let [selected-set (-> (map (fn [*option {:keys [options]}]
+                                (get-in options [*option :filter]))
+                              @*params
+                              (get-processed-params))
+                         (set)
+                         (conj (get-in c/forecast-options [@*forecast :filter])))]
+    (filterv (fn [{:keys [filter-set]}] (= selected-set filter-set))
              @layer-list)))
 
 (defn current-layer []
@@ -84,11 +84,10 @@
 
 (defn get-current-layer-units []
   (->>
-   (map
-    (fn [*option {:keys [options]}]
-      (get-in options [*option :units]))
-    @*params
-    (get-in c/forecast-options [@*forecast :params]))
+   (map (fn [*option {:keys [options]}]
+          (get-in options [*option :units]))
+        @*params
+        (get-in c/forecast-options [@*forecast :params]))
    (remove nil?)
    (first)))
 
@@ -168,25 +167,25 @@
 
 (defn process-capabilities! [response]
   (go
-    (let [layers (as-> (<p! (.text response)) xml
-                   (str/replace xml "\n" "")
-                   (re-find #"<Layer>.*(?=</Layer>)" xml)
-                   (str/replace-first xml "<Layer>" "")
-                   (re-seq #"<Layer.+?</Layer>" xml)
-                   (keep (fn [layer]
-                           (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
-                                                (str/replace #"<Name>" ""))
-                                 coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
-                                                (re-seq #"[\d|\.|-]+")
-                                                (rest)
-                                                (vec))]
-                             (when (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
-                               (merge
-                                (split-layer-name full-name)
-                                {:layer  full-name
-                                 :extent coords}))))
-                         xml))]
-      (reset! layer-list layers))))
+    (reset! layer-list
+            (as-> (<p! (.text response)) xml
+              (str/replace xml "\n" "")
+              (re-find #"<Layer>.*(?=</Layer>)" xml)
+              (str/replace-first xml "<Layer>" "")
+              (re-seq #"<Layer.+?</Layer>" xml)
+              (keep (fn [layer]
+                      (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
+                                           (str/replace #"<Name>" ""))
+                            coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
+                                           (re-seq #"[\d|\.|-]+")
+                                           (rest)
+                                           (vec))]
+                        (when (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
+                          (merge
+                           (split-layer-name full-name)
+                           {:layer  full-name
+                            :extent coords}))))
+                    xml)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
@@ -249,8 +248,7 @@
 
 (defn select-forecast! [id]
   (reset! *forecast id)
-  (reset! *params (mapv (fn [_] 0)
-                        (get-in c/forecast-options [@*forecast :params]))))
+  (reset! *params (mapv (constantly 0) (get-in c/forecast-options [@*forecast :params]))))
 
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
@@ -298,9 +296,10 @@
    :width           "100%"})
 
 (defn $forecast-label [selected?]
-  (if selected?
-    {:color "white"}
-    {}))
+  (merge
+   {:cursor "pointer"
+    :margin "0 1rem 0 1rem"}
+   (when selected? {:color "white"})))
 
 (defn $pop-up-box []
   {:background-color "white"
@@ -414,15 +413,12 @@
               :style ($app-header)}
         [theme-select]
         [:span
-         (doall (map-indexed
-                 (fn [i {:keys [opt-label]}]
-                   ^{:key i}
-                   [:label {:style ($/combine [$forecast-label (= @*forecast i)]
-                                              [$/margin "1rem" :h]
-                                              {:cursor "pointer"})
-                            :on-click #(select-forecast! i)}
-                    opt-label])
-                 c/forecast-options))]
+         (doall (map-indexed (fn [i {:keys [opt-label]}]
+                               [:label {:key i
+                                        :style ($forecast-label (= @*forecast i))
+                                        :on-click #(select-forecast! i)}
+                                opt-label])
+                             c/forecast-options))]
         [:label {:style {:position "absolute" :right "3rem"}} "Login"]]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         [control-layer]

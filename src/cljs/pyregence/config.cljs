@@ -37,7 +37,7 @@
 
 ;; Layer options
 
-(def forecast-options [{:opt-label "Active Fire Forcast"
+(def forecast-options [{:opt-label "Active Fire Forecast"
                         :filter    "fire-spread-forecast"
                         :params    []}
                        {:opt-label "Risk Forecast"
