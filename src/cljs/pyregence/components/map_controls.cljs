@@ -220,7 +220,7 @@
                   #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
-  [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:top "176px"})}
+  [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom "60px"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} [tool-button icon title on-click])
                 [[:my-location
@@ -298,7 +298,7 @@
 
 (defn legend-box [legend-list reverse?]
   (when @show-legend?
-    [:div#legend-box {:style ($/combine $/tool {:bottom "60px" :right "16px" :padding ".25rem"})}
+    [:div#legend-box {:style ($/combine $/tool {:bottom "60px" :right "70px" :padding ".25rem"})}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (map-indexed (fn [i leg]
                      ^{:key i}
