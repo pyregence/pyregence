@@ -33,7 +33,7 @@
 
 (defn $close-button [height]
   {:fill     ($/color-picker :font-color)
-   :right    ".5rem"
+   :right    ".25rem"
    :height   height
    :position "absolute"
    :width    height})
