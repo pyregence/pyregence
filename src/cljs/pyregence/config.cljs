@@ -37,41 +37,43 @@
 
 ;; Layer options
 
-(def forecast-options [{:opt-label "Active Fire Forecast"
-                        :filter    "fire-spread-forecast"
-                        :params    [{:opt-label "Fire Name"
-                                     :options   []}
-                                    {:opt-label "Model"
-                                     :options   [{:opt-label "ELMFIRE"
-                                                  :filter    "elmfire"}]}
-                                    {:opt-label "Model Time"
-                                     :options   []}
-                                    {:opt-label "Fuel"
-                                     :options   [{:opt-label "LANDFIRE"
-                                                  :filter    "landfire"}]}
-                                    {:opt-label "Burn Probability"
-                                     :options   [{:opt-label "90"
-                                                  :filter    "90"}
-                                                 {:opt-label "80"
-                                                  :filter    "80"}
-                                                 {:opt-label "70"
-                                                  :filter    "70"}
-                                                 {:opt-label "60"
-                                                  :filter    "60"}
-                                                 {:opt-label "50"
-                                                  :filter    "50"}
-                                                 {:opt-label "40"
-                                                  :filter    "40"}
-                                                 {:opt-label "30"
-                                                  :filter    "30"}
-                                                 {:opt-label "20"
-                                                  :filter    "20"}
-                                                 {:opt-label "10"
-                                                  :filter    "10"}]}
-                                    {:opt-label "Output"
-                                     :options   [{:opt-label "Burned Area"
-                                                  :filter    "burned-area"
-                                                  :units     "Hours"}]}]}
+(def forecast-options [{:opt-label   "Active Fire Forecast"
+                        :filter      "fire-spread-forecast"
+                        :auto-zoom?  true
+                        :block-info? true
+                        :params      [{:opt-label "Fire Name"
+                                       :options   []}
+                                      {:opt-label "Model"
+                                       :options   [{:opt-label "ELMFIRE"
+                                                    :filter    "elmfire"}]}
+                                      {:opt-label "Model Time"
+                                       :options   []}
+                                      {:opt-label "Fuel"
+                                       :options   [{:opt-label "LANDFIRE"
+                                                    :filter    "landfire"}]}
+                                      {:opt-label "Burn Probability"
+                                       :options   [{:opt-label "90"
+                                                    :filter    "90"}
+                                                   {:opt-label "80"
+                                                    :filter    "80"}
+                                                   {:opt-label "70"
+                                                    :filter    "70"}
+                                                   {:opt-label "60"
+                                                    :filter    "60"}
+                                                   {:opt-label "50"
+                                                    :filter    "50"}
+                                                   {:opt-label "40"
+                                                    :filter    "40"}
+                                                   {:opt-label "30"
+                                                    :filter    "30"}
+                                                   {:opt-label "20"
+                                                    :filter    "20"}
+                                                   {:opt-label "10"
+                                                    :filter    "10"}]}
+                                      {:opt-label "Output"
+                                       :options   [{:opt-label "Burned Area"
+                                                    :filter    "burned-area"
+                                                    :units     "Hours"}]}]}
                        {:opt-label       "Risk Forecast"
                         :filter          "fire-risk-forecast"
                         :reverse-legend? true
