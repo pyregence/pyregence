@@ -42,8 +42,7 @@
   (with-meta
     {}
     {:pseudo {:hover {:background-color ($/color-picker :border-color 0.2)
-                      :border-radius    "4px"}}
-     :group true}))
+                      :border-radius    "4px"}}}))
 
 (defn tool-button [type tooltip callback]
   (if (= type :none)
