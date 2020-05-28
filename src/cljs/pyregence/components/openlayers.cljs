@@ -45,10 +45,10 @@
                 :controls #js [(ScaleLine.)]
                 :view     (View.
                            #js {:projection "EPSG:3857"
-                                :center     (fromLonLat #js [-120.8958 38.8375] "EPSG:3857")
+                                :center     (fromLonLat #js [-119.509444 37.229722] "EPSG:3857")
                                 :minZoom    6
                                 :maxZoom    18
-                                :zoom       10})
+                                :zoom       6.4})
                 :overlays #js [(Overlay.
                                 #js {:id               "popup"
                                      :element          (.getElementById js/document "popup")
