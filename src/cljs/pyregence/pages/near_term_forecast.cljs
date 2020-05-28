@@ -9,6 +9,9 @@
             [pyregence.config :as c]
             [pyregence.components.common       :refer [radio]]
             [pyregence.components.map-controls :as mc]
+            [pyregence.components.messaging    :refer [toast-message
+                                                       toast-message!
+                                                       process-toast-messages!]]
             [pyregence.components.openlayers   :as ol]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -36,8 +39,11 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn get-forcast-opt [key-name]
+  (get-in c/forecast-options [@*forecast key-name]))
+
 (defn get-options-by-key [key-name]
-  (let [forecast (get-in c/forecast-options [@*forecast :filter])]
+  (let [forecast (get-forcast-opt :filter)]
     (->> @layer-list
          (filter (fn [layer] (= forecast (:forecast layer))))
          (map key-name)
@@ -52,7 +58,7 @@
          (vec))))
 
 (defn get-processed-params []
-  (->> (get-in c/forecast-options [@*forecast :params])
+  (->> (get-forcast-opt :params)
        (mapv (fn [{:keys [opt-label] :as param}]
                (cond
                  (= "Model Time" opt-label)
@@ -70,7 +76,7 @@
                               @*params
                               (get-processed-params))
                          (set)
-                         (conj (get-in c/forecast-options [@*forecast :filter])))]
+                         (conj (get-forcast-opt :filter)))]
     (filterv (fn [{:keys [filter-set]}] (= selected-set filter-set))
              @layer-list)))
 
@@ -97,7 +103,7 @@
    (map (fn [*option {:keys [options]}]
           (get-in options [*option key-name]))
         @*params
-        (get-in c/forecast-options [@*forecast :params]))
+        (get-forcast-opt :params))
    (remove nil?)
    (first)))
 
@@ -269,14 +275,18 @@
 
 (defn clear-info! []
   (ol/clear-point!)
-  (reset! last-clicked-info nil))
+  (reset! last-clicked-info nil)
+  (when (get-forcast-opt :block-info?)
+    (reset! show-info? false)))
 
 (defn change-type! [clear?]
   (ol/swap-active-layer! (get-current-layer-name))
   (get-legend!           (get-current-layer-name))
   (if clear?
     (clear-info!)
-    (get-point-info! (ol/get-overlay-bbox))))
+    (get-point-info! (ol/get-overlay-bbox)))
+  (when (get-forcast-opt :auto-zoom?)
+    (ol/zoom-to-extent! (get-current-layer-extent))))
 
 (defn select-param! [idx val]
   (swap! *params assoc idx val)
@@ -284,15 +294,17 @@
 
 (defn select-forecast! [id]
   (reset! *forecast id)
-  (reset! *params (mapv (constantly 0) (get-in c/forecast-options [@*forecast :params])))
+  (reset! *params (mapv (constantly 0) (get-forcast-opt :params)))
   (change-type! true))
 
 (defn set-show-info! [show?]
-  (reset! show-info? show?)
-  (if show?
-    (ol/add-popup-on-single-click! get-point-info!)
-    (do (ol/remove-popup-on-single-click!)
-        (clear-info!))))
+  (if (get-forcast-opt :block-info?)
+    (toast-message! "There currently no point information available for this layer.")
+    (do (reset! show-info? show?)
+        (if show?
+          (ol/add-popup-on-single-click! get-point-info!)
+          (do (ol/remove-popup-on-single-click!)
+              (clear-info!))))))
 
 (defn select-base-map! [id]
   (reset! *base-map id)
@@ -408,7 +420,7 @@
             @last-clicked-info])
          (when (and @show-measure? (aget @my-box "height"))
            [mc/measure-tool @my-box @lon-lat])
-         [mc/legend-box legend-list (get-in c/forecast-options [@*forecast :reverse-legend?])]
+         [mc/legend-box legend-list (get-forcast-opt :reverse-legend?)]
          [mc/time-slider
           filtered-layers
           @*layer-idx
@@ -454,7 +466,9 @@
 
     :reagent-render
     (fn [_]
+      (process-toast-messages!)
       [:div {:style ($/combine $/root {:height "100%" :padding 0})}
+       [toast-message]
        [:div {:class "bg-yellow"
               :style ($app-header)}
         [theme-select]
