@@ -1,5 +1,6 @@
 (ns pyregence.components.openlayers
-  (:require [pyregence.config :as c]))
+  (:require [pyregence.config :as c]
+            [pyregence.components.svg-icons :refer [pin]]))
 
 ;; OpenLayers aliases
 (def Map             js/ol.Map)
@@ -51,7 +52,7 @@
                                 :zoom       10})
                 :overlays #js [(Overlay.
                                 #js {:id               "popup"
-                                     :element          (.getElementById js/document "popup")
+                                     :element          (.getElementById js/document "pin")
                                      :position         nil
                                      :positioning      "bottom-center"
                                      :offset           #js [0 -4]

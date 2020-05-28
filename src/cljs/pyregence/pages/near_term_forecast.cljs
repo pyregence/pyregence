@@ -12,7 +12,8 @@
             [pyregence.components.messaging    :refer [toast-message
                                                        toast-message!
                                                        process-toast-messages!]]
-            [pyregence.components.openlayers   :as ol]))
+            [pyregence.components.openlayers   :as ol]
+            [pyregence.components.svg-icons    :refer [pin]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -432,14 +433,8 @@
           *speed]])})))
 
 (defn pop-up []
-  [:div#popup
-   [:div {:style ($pop-up-box)}
-    [:label (if @last-clicked-info
-              (str (:band (get @last-clicked-info @*layer-idx))
-                   " "
-                   (get-current-layer-key :units))
-              "...")]]
-   [:div {:style ($pop-up-arrow)}]])
+  [:div#pin {:style ($/fixed-size "2rem")}
+   [pin]])
 
 (defn map-layer []
   (r/with-let [mouse-down? (r/atom false)
