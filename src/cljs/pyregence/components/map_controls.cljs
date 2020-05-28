@@ -25,7 +25,7 @@
    :color            ($/color-picker :font-color)
    :font-family      "inherit"
    :height           "1.9rem"
-   :padding          "3px"})
+   :padding          ".2rem .3rem"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tool Buttons
