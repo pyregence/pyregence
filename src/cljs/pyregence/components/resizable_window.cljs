@@ -31,6 +31,13 @@
    :width        "1rem"
    :z-index      "2"})
 
+(defn $close-button [height]
+  {:fill     ($/color-picker :font-color)
+   :right    ".5rem"
+   :height   height
+   :position "absolute"
+   :width    height})
+
 (defn drag-sw-icon [p-height p-width p-top box-height box-width]
   (r/with-let [drag-started? (r/atom false)]
     [:<>
@@ -67,8 +74,7 @@
       [:div {:style {:border-bottom (str "1px solid " ($/color-picker :border-color)) :width "100%"}}
        [:label {:style {:margin-left ".5rem"}} title]
        [:span {:class (<class $/p-button-hover)
-               :style ($/combine ($/fixed-size "1rem")
-                                 {:position "absolute" :right ".5rem" :fill ($/color-picker :font-color)})
+               :style ($close-button @title-height)
                :on-click on-click}
         [close]]])}))
 
