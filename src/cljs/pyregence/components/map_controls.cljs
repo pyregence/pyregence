@@ -7,6 +7,7 @@
             [pyregence.components.common           :refer [radio]]
             [pyregence.components.openlayers       :as ol]
             [pyregence.components.resizable-window :refer [resizable-window]]
+            [pyregence.components.svg-icons        :as svg]
             [pyregence.components.vega             :refer [vega-box]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -25,6 +26,46 @@
    :font-family      "inherit"
    :height           "2rem"
    :padding          ".25rem .5rem"})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tool Buttons
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn $tool-button []
+  {:cursor  "pointer"
+   :height  "100%"
+   :padding ".25rem"
+   :width   "100%"
+   :fill    ($/color-picker :font-color)})
+
+(defn $p-button-hover []
+  (with-meta
+    {}
+    {:pseudo {:hover {:background-color ($/color-picker :border-color 0.2)
+                      :border-radius    "4px"}}}))
+
+(defn tool-button [type tooltip callback]
+  (if (= type :none)
+    [:span {:style ($/fixed-size "36px")}]
+    [:span {:class (<class $p-button-hover)
+            :style ($/combine $tool-button ($/fixed-size "36px"))
+            :title tooltip
+            :on-click callback}
+     (case type
+       :layers          [svg/layers]
+       :center-on-point [svg/center-on-point]
+       :extent          [svg/extent]
+       :info            [svg/info]
+       :legend          [svg/legend]
+       :measure         [svg/measure]
+       :my-location     [svg/my-location]
+       :next-button     [svg/next-button]
+       :pause-button    [svg/pause-button]
+       :play-button     [svg/play-button]
+       :previous-button [svg/previous-button]
+       :zoom-in         [svg/zoom-in]
+       :zoom-out        [svg/zoom-out]
+       [:<>])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Time Slider
@@ -52,28 +93,22 @@
                    loop-animation!
                    *speed]
   [:div#time-slider {:style ($/combine $/tool ($time-slider))}
-   [:div {:style ($/combine $/flex-col {:align-items "flex-start" :margin-right "1rem"})}
+   [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
     [radio "UTC"   show-utc? true  select-time-zone! true]
     [radio "Local" show-utc? false select-time-zone! true]]
    [:div {:style ($/flex-col)}
-    [:input {:style {:width "12rem"}
+    [:input {:style {:margin "0 1rem" :width "12rem"}
              :type "range" :min "0" :max (dec (count (filtered-layers))) :value *layer-idx
              :on-change #(select-layer! (u/input-int-value %))}]
     [:label {:style {:font-size ".75rem"}}
      (get-current-layer-full-time)]]
-   [:button {:style {:padding ".25rem" :margin-left ".5rem"}
-             :type "button"
-             :on-click #(cycle-layer! -1)}
-    "<<"]
-   [:button {:style {:padding ".25rem"}
-             :type "button"
-             :on-click #(do (swap! animate? not)
-                            (loop-animation!))}
-    (if @animate? "Stop" "Play")]
-   [:button {:style {:padding ".25rem"}
-             :type "button"
-             :on-click #(cycle-layer! 1)}
-    ">>"]
+   [tool-button :previous-button "Previous layer" #(cycle-layer! -1)]
+   [tool-button
+    (if @animate? :pause-button :play-button)
+    (str (if @animate? "Pause" "Play") "animation")
+    #(do (swap! animate? not)
+         (loop-animation!))]
+   [tool-button :next-button "Next layer" #(cycle-layer! 1)]
    [:select {:style ($/combine $dropdown)
              :value (or @*speed 1)
              :on-change #(reset! *speed (u/input-int-value %))}
@@ -162,45 +197,47 @@
    :right          "16px"
    :transition     "all 200ms ease-in"})
 
-(defn $p-tb-button []
-  (with-meta
-    {:border-radius "4px"
-     :cursor        "pointer"
-     :font-weight   "bold"
-     :font-size     "1.5rem"
-     :text-align    "center"}
-    {:pseudo {:hover {:background-color ($/color-picker :sig-brown 0.1)}}}))
-
-(defn tool-bar-button [icon title on-click]
-  [:span {:class (<class $p-tb-button)
-          :style ($/combine ($/fixed-size "40px") {:padding-top ".25rem"})
-          :title title
-          :on-click on-click}
-   icon])
-
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
 (defn tool-bar [show-info? show-measure? set-show-info!]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (map-indexed (fn [i [icon title on-click]]
-                  ^{:key i} [tool-bar-button icon title on-click])
-                [["L" (str (hs-str @show-panel?)   " layer selection")   #(swap! show-panel? not)]
-                 ["i" (str (hs-str @show-info?)    " point information") #(do (set-show-info! (not @show-info?))
-                                                                              (reset! show-measure? false))]
-                 ["M" (str (hs-str @show-measure?) " measure tool")      #(do (swap! show-measure? not)
-                                                                              (set-show-info! false))]
-                 ["L" (str (hs-str @show-legend?)  " legend")            #(swap! show-legend? not)]])])
+                  ^{:key i} [tool-button icon title on-click])
+                [[:layers
+                  (str (hs-str @show-panel?) " layer selection")
+                  #(swap! show-panel? not)]
+                 [:info
+                  (str (hs-str @show-info?) " point information")
+                  #(do (set-show-info! (not @show-info?))
+                       (reset! show-measure? false))]
+                 [:measure
+                  (str (hs-str @show-measure?) " measure tool")
+                  #(do (swap! show-measure? not)
+                       (set-show-info! false))]
+                 [:legend
+                  (str (hs-str @show-legend?) " legend")
+                  #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
-  [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:top "192px"})}
+  [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:top "176px"})}
    (map-indexed (fn [i [icon title on-click]]
-                  ^{:key i} [tool-bar-button icon title on-click])
-                [["M" "Center on my location"    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
-                 ["C" "Center on selected point" #(ol/center-on-overlay!)] ; TODO move this action the the information panel
-                 ["E" "Zoom to fit layer"        #(ol/zoom-to-extent! (get-current-layer-extent))]
-                 ["+" "Zoom in"                  #(select-zoom! (inc *zoom))]
-                 ["-" "Zoom out"                 #(select-zoom! (dec *zoom))]])])
+                  ^{:key i} [tool-button icon title on-click])
+                [[:my-location
+                  "Center on my location"
+                  #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
+                 [:center-on-point
+                  "Center on selected point"
+                  #(ol/center-on-overlay!)] ; TODO move this action the the information panel
+                 [:extent
+                  "Zoom to fit layer"
+                  #(ol/zoom-to-extent! (get-current-layer-extent))]
+                 [:zoom-in
+                  "Zoom in"
+                  #(select-zoom! (inc *zoom))]
+                 [:zoom-out
+                  "Zoom out"
+                  #(select-zoom! (dec *zoom))]])])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Measure Tool

@@ -440,7 +440,7 @@
                :on-mouse-up #(reset! mouse-down? false)}]))
 
 (defn theme-select []
-  [:div {:style {:position "absolute" :left "3rem" :display "flex"}}
+  [:div {:style {:position "absolute" :right "3rem" :display "flex"}}
    [:label {:style {:margin "4px .5rem 0"}} "Theme:"]
    [radio "Light" $/light? true  #(reset! $/light? %)]
    [radio "Dark"  $/light? false #(reset! $/light? %)]])
@@ -462,8 +462,7 @@
                                         :style ($forecast-label (= @*forecast i))
                                         :on-click #(select-forecast! i)}
                                 opt-label])
-                             c/forecast-options))]
-        [:label {:style {:position "absolute" :right "3rem"}} "Login"]]
+                             c/forecast-options))]]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         [control-layer]
         [map-layer]
