@@ -1,6 +1,5 @@
 (ns pyregence.components.openlayers
-  (:require [pyregence.config :as c]
-            [pyregence.components.svg-icons :refer [pin]]))
+  (:require [pyregence.config :as c]))
 
 ;; OpenLayers aliases
 (def Map             js/ol.Map)
