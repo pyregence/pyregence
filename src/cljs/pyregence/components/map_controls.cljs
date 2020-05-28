@@ -1,5 +1,6 @@
 (ns pyregence.components.map-controls
   (:require [reagent.core :as r]
+            [reagent.dom  :as rd]
             [herb.core :refer [<class]]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
@@ -269,7 +270,38 @@
                                :z-index  "1"}}
    [:label "Click on the map to see a change over time graph."]])
 
-(defn information-tool [my-box select-layer! units cur-hour legend-list last-clicked-info]
+(defn information-div [last-clicked-info *layer-idx units info-height]
+  (r/create-class
+   {:component-did-mount
+    (fn [this]
+      (reset! info-height
+              (-> this
+                  (rd/dom-node)
+                  (.getBoundingClientRect)
+                  (aget "height"))))
+
+    :render
+    (fn [_]
+      [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
+       [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
+        (str (:band (get last-clicked-info @*layer-idx))
+             " "
+             units)]])}))
+
+(defn vega-information [box-height box-width *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
+  (r/with-let [info-height (r/atom 0)]
+    [:<>
+     [vega-box
+      (- box-height @info-height)
+      box-width
+      select-layer!
+      units
+      cur-hour
+      legend-list
+      last-clicked-info]
+     [information-div last-clicked-info *layer-idx units info-height]]))
+
+(defn information-tool [my-box *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
   [:div#info-tool
    [resizable-window
     my-box
@@ -278,9 +310,10 @@
     "Point Information"
     (fn [box-height box-width]
       (if last-clicked-info
-        [vega-box
+        [vega-information
          box-height
          box-width
+         *layer-idx
          select-layer!
          units
          cur-hour

@@ -412,6 +412,7 @@
          (when (and @show-info? (aget @my-box "height"))
            [mc/information-tool
             @my-box
+            *layer-idx
             select-layer!
             (get-current-layer-key :units)
             (get-current-layer-hour)
