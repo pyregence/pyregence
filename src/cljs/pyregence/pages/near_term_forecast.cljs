@@ -264,11 +264,10 @@
     (js/setTimeout loop-animation! (get-in c/speeds [@*speed :delay]))))
 
 (defn select-zoom! [zoom]
-  (when-not (= zoom @*zoom)
-    (reset! *zoom (max @minZoom
-                       (min @maxZoom
-                            zoom)))
-    (ol/set-zoom! @*zoom)))
+  (reset! *zoom (max @minZoom
+                     (min @maxZoom
+                          zoom)))
+  (ol/set-zoom! @*zoom))
 
 (defn clear-info! []
   (ol/clear-point!)
@@ -332,7 +331,7 @@
         (reset! *zoom cur)
         (reset! minZoom min)
         (reset! maxZoom max))
-      (ol/add-map-zoom-end! select-zoom!)
+      (ol/add-map-zoom-end! #(reset! *zoom %))
       (<! layers-chan)
       (select-forecast! @*forecast)
       (ol/set-visible-by-title! "active" true)
