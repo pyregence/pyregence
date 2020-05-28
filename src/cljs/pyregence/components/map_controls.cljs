@@ -262,13 +262,13 @@
 ;; Information Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn loading-cover [box-height box-width]
+(defn loading-cover [box-height box-width message]
   [:div#loading-cover {:style {:height   box-height
                                :padding  "2rem"
                                :position "absolute"
                                :width    box-width
                                :z-index  "1"}}
-   [:label "Click on the map to see a change over time graph."]])
+   [:label message]])
 
 (defn information-div [last-clicked-info *layer-idx units info-height]
   (r/create-class
@@ -309,17 +309,33 @@
     400
     "Point Information"
     (fn [box-height box-width]
-      (if last-clicked-info
-        [vega-information
-         box-height
-         box-width
-         *layer-idx
-         select-layer!
-         units
-         cur-hour
-         legend-list
-         last-clicked-info]
-        [loading-cover box-height box-width]))]])
+      (let [has-point? (ol/get-overlay-center)]
+        (cond
+          (not has-point?)
+          [loading-cover
+           box-height
+           box-width
+           "Click on the map to see a change over time graph."]
+
+          (nil? last-clicked-info)
+          [loading-cover box-height box-width "Loading..."]
+
+          (seq last-clicked-info)
+          [vega-information
+           box-height
+           box-width
+           *layer-idx
+           select-layer!
+           units
+           cur-hour
+           legend-list
+           last-clicked-info]
+
+          :else
+          [loading-cover
+           box-height
+           box-width
+           "This point does not have any information."])))]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Legend Box

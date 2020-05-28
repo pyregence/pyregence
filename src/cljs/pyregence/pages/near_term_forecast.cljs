@@ -25,7 +25,7 @@
 (defonce legend-list       (r/atom []))
 (defonce layer-list        (r/atom []))
 (defonce *layer-idx        (r/atom 0))
-(defonce last-clicked-info (r/atom nil))
+(defonce last-clicked-info (r/atom []))
 (defonce animate?          (r/atom false))
 (defonce *speed            (r/atom 1))
 (defonce *base-map         (r/atom 0))
@@ -274,7 +274,7 @@
 
 (defn clear-info! []
   (ol/clear-point!)
-  (reset! last-clicked-info nil)
+  (reset! last-clicked-info [])
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))
 
