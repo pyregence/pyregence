@@ -1,7 +1,9 @@
 (ns pyregence.components.resizable-window
   (:require [reagent.core     :as r]
             [reagent.dom      :as rd]
-            [pyregence.styles :as $]))
+            [herb.core :refer [<class]]
+            [pyregence.styles :as $]
+            [pyregence.components.svg-icons :refer [close]]))
 
 (defn $resizable-window [box-height box-width]
   {:height      box-height
@@ -50,7 +52,7 @@
                       :margin-right "2px"
                       :border-right (str "1px solid " ($/color-picker :border-color))}}]]]))
 
-(defn title-div [title title-height]
+(defn title-div [title title-height on-click]
   (r/create-class
    {:component-did-mount
     (fn [this]
@@ -63,9 +65,14 @@
     :render
     (fn [_]
       [:div {:style {:border-bottom (str "1px solid " ($/color-picker :border-color)) :width "100%"}}
-       [:label {:style {:margin-left ".5rem"}} title]])}))
+       [:label {:style {:margin-left ".5rem"}} title]
+       [:span {:class (<class $/p-button-hover)
+               :style ($/combine ($/fixed-size "1rem")
+                                 {:position "absolute" :right ".5rem" :fill ($/color-picker :font-color)})
+               :on-click on-click}
+        [close]]])}))
 
-(defn resizable-window [parent-rec init-height init-width title render-content]
+(defn resizable-window [parent-rec init-height init-width title close-fn! render-content]
   (r/with-let [box-height   (r/atom init-height)
                box-width    (r/atom init-width)
                title-height (r/atom 0)]
@@ -75,6 +82,6 @@
       (when (> @box-height (/ p-height 1.5)) (reset! box-height (/ p-height 1.5)))
       (when (> @box-width  (/ p-width  1.5)) (reset! box-width  (/ p-width 1.5)))
       [:div#resizable {:style ($/combine $/tool ($resizable-window @box-height @box-width))}
-       [title-div title title-height]
+       [title-div title title-height close-fn!]
        (render-content (- @box-height @title-height) @box-width)
        [drag-sw-icon p-height p-width p-top box-height box-width]])))

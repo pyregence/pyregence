@@ -417,9 +417,10 @@
             (get-current-layer-key :units)
             (get-current-layer-hour)
             @legend-list
-            @last-clicked-info])
+            @last-clicked-info
+            #(set-show-info! false)])
          (when (and @show-measure? (aget @my-box "height"))
-           [mc/measure-tool @my-box @lon-lat])
+           [mc/measure-tool @my-box @lon-lat #(reset! show-measure? false)])
          [mc/legend-box legend-list (get-forecast-opt :reverse-legend?)]
          [mc/time-slider
           filtered-layers
