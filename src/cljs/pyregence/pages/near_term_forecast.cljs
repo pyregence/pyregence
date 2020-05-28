@@ -207,7 +207,7 @@
                                            (re-seq #"[\d|\.|-]+")
                                            (rest)
                                            (vec))
-                            merge-fn  #(merge % {:layer  full-name :extent coords})]
+                            merge-fn  #(merge % {:layer full-name :extent coords})]
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-layer-name full-name))
