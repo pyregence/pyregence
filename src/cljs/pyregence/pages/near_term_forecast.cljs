@@ -186,9 +186,8 @@
         [forecast fire-name] (str/split workspace   #"_")
         params               (str/split layer       #"_")
         init-timestamp       (str (get params 0) "_" (get params 1))
-        init-js-date         (js-date-from-string (get params 0) (get params 1))
         sim-js-date          (js-date-from-string (get params 6) (get params 7))]
-    {:layer-group ""  ; FIXME, should we have a layer group? If not block info panel from selecting point.
+    {:layer-group ""
      :forecast    forecast
      :fire-name   fire-name
      :filter-set  (into #{forecast fire-name init-timestamp} (subvec params 2 6))
@@ -196,7 +195,7 @@
      :sim-js-date sim-js-date
      :date        (get-date-from-js sim-js-date)
      :time        (get-time-from-js sim-js-date)
-     :hour        (- (/ (- sim-js-date init-js-date) 1000 60 60) 6)}))
+     :hour        0}))
 
 (defn process-capabilities! [response]
   (go
