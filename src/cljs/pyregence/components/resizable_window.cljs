@@ -5,6 +5,10 @@
             [pyregence.styles :as $]
             [pyregence.components.svg-icons :refer [close]]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UI Styles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn $resizable-window [box-height box-width]
   {:height      box-height
    :overflow    "hidden"
@@ -37,6 +41,10 @@
    :height   height
    :position "absolute"
    :width    height})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UI Components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn drag-sw-icon [p-height p-width p-top box-height box-width]
   (r/with-let [drag-started? (r/atom false)]
