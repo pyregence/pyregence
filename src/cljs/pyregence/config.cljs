@@ -84,6 +84,7 @@
                                            :options   [{:opt-label "ELMFIRE"
                                                         :filter    "elmfire"}]}
                                           {:opt-label "Model Time"
+                                           :first-opt "Current"
                                            :options   []}
                                           {:opt-label "Fuel"
                                            :options   [{:opt-label "CA Forest Observatory"
