@@ -24,8 +24,8 @@
    :border-radius    "2px"
    :color            ($/color-picker :font-color)
    :font-family      "inherit"
-   :height           "2rem"
-   :padding          ".25rem .5rem"})
+   :height           "1.9rem"
+   :padding          ".2rem .3rem"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tool Buttons
@@ -97,18 +97,19 @@
     [radio "UTC"   show-utc? true  select-time-zone! true]
     [radio "Local" show-utc? false select-time-zone! true]]
    [:div {:style ($/flex-col)}
-    [:input {:style {:margin "0 1rem" :width "12rem"}
+    [:input {:style {:width "12rem"}
              :type "range" :min "0" :max (dec (count (filtered-layers))) :value *layer-idx
              :on-change #(select-layer! (u/input-int-value %))}]
     [:label {:style {:font-size ".75rem"}}
      (get-current-layer-full-time)]]
-   [tool-button :previous-button "Previous layer" #(cycle-layer! -1)]
-   [tool-button
-    (if @animate? :pause-button :play-button)
-    (str (if @animate? "Pause" "Play") "animation")
-    #(do (swap! animate? not)
-         (loop-animation!))]
-   [tool-button :next-button "Next layer" #(cycle-layer! 1)]
+   [:span {:style {:margin "0 1rem"}}
+    [tool-button :previous-button "Previous layer" #(cycle-layer! -1)]
+    [tool-button
+     (if @animate? :pause-button :play-button)
+     (str (if @animate? "Pause" "Play") " animation")
+     #(do (swap! animate? not)
+          (loop-animation!))]
+    [tool-button :next-button "Next layer" #(cycle-layer! 1)]]
    [:select {:style ($/combine $dropdown)
              :value (or @*speed 1)
              :on-change #(reset! *speed (u/input-int-value %))}
@@ -160,7 +161,7 @@
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style {:overflow "auto"}}
       [:div#baselayer {:style ($layer-section)}
-       [:h4 "Base Layer"]
+       [:label {:style {:font-size "1.25rem"}} "Base Layer"]
        [panel-dropdown "Map" *base-map c/base-map-options select-base-map!]
        [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
         [:div {:style {:display "flex"}}
@@ -176,7 +177,7 @@
                     :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
                                     (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
       [:div#activelayer {:style ($/combine ($layer-section) {:margin-top "1rem"})}
-       [:h4 "Fire Layer"]
+       [:label {:style {:font-size "1.25rem"}} "Fire Layer"]
        (map-indexed (fn [i {:keys [opt-label options]}]
                       ^{:key i} [panel-dropdown opt-label (get *params i) options #(select-param! i %)])
                     param-options)
