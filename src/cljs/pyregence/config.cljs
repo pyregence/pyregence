@@ -46,8 +46,11 @@
                                       {:opt-label "Model"
                                        :options   [{:opt-label "ELMFIRE"
                                                     :filter    "elmfire"}]}
-                                      {:opt-label "Model Time"
-                                       :options   []}
+                                      {:opt-label  "Model Time"
+                                       :filter-on  0
+                                       :filter-key :model-init
+                                       :first-opt  "Current"
+                                       :options    []}
                                       {:opt-label "Fuel"
                                        :options   [{:opt-label "LANDFIRE"
                                                     :filter    "landfire"}]}
