@@ -301,7 +301,7 @@
                                (let [{:keys [filter-on filter-key filter options]} (get @processed-params idx)
                                      filter-set (get-in @processed-params [filter-on :options cur-param filter-key])]
                                  (if (and filter-on (not (contains? filter-set filter)))
-                                   (find-index-vec-map :filter (first filter-set) options)
+                                   (or (find-index-vec-map :filter (first filter-set) options) -1)
                                    cur-param))))
                 (vec)))))
 
