@@ -51,7 +51,7 @@
                                 :zoom       6.4})
                 :overlays #js [(Overlay.
                                 #js {:id               "popup"
-                                     :element          (.getElementById js/document "popup")
+                                     :element          (.getElementById js/document "pin")
                                      :position         nil
                                      :positioning      "bottom-center"
                                      :offset           #js [0 -4]
