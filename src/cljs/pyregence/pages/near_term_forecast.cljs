@@ -35,6 +35,7 @@
 (defonce show-measure?     (r/atom false))
 (defonce *forecast         (r/atom 1))
 (defonce *params           (r/atom {}))
+(defonce processed-params  (r/atom []))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -58,24 +59,25 @@
                          :filter    option}))
          (vec))))
 
-(defn get-processed-params []
-  (->> (get-forecast-opt :params)
-       (mapv (fn [{:keys [opt-label] :as param}]
-               (cond
-                 (= "Model Time" opt-label)
-                 (assoc param :options (get-options-by-key :model-init))
+(defn process-params! []
+  (reset! processed-params
+          (->> (get-forecast-opt :params)
+               (mapv (fn [{:keys [opt-label] :as param}]
+                       (cond
+                         (= "Model Time" opt-label)
+                         (assoc param :options (get-options-by-key :model-init))
 
-                 (= "Fire Name" opt-label)
-                 (assoc param :options (get-options-by-key :fire-name))
+                         (= "Fire Name" opt-label)
+                         (assoc param :options (get-options-by-key :fire-name))
 
-                 :else
-                 param)))))
+                         :else
+                         param))))))
 
 (defn filtered-layers []
   (let [selected-set (-> (map (fn [*option {:keys [options]}]
                                 (get-in options [*option :filter]))
                               @*params
-                              (get-processed-params))
+                              @processed-params)
                          (set)
                          (conj (get-forecast-opt :filter)))]
     (filterv (fn [{:keys [filter-set]}] (= selected-set filter-set))
@@ -291,7 +293,8 @@
 
 (defn select-forecast! [id]
   (reset! *forecast id)
-  (reset! *params (mapv (constantly 0) (get-forecast-opt :params)))
+  (process-params!)
+  (reset! *params (mapv (constantly 0) @processed-params)) ; TODO, move this to process-params
   (change-type! true))
 
 (defn set-show-info! [show?]
@@ -386,7 +389,7 @@
           select-base-map!
           @*params
           select-param!
-          (get-processed-params)]
+          @processed-params]
          (when (and @show-info? (aget @my-box "height"))
            [mc/information-tool
             @my-box
