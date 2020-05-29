@@ -358,26 +358,6 @@
     :margin "0 1rem 0 1rem"}
    (when selected? {:color "white"})))
 
-(defn $pop-up-box []
-  {:background-color "white"
-   :border-radius    "5px"
-   :box-shadow       "0 0 2px 1px rgba(0,0,0,0.1)"
-   :margin-bottom    ".5rem"
-   :padding          ".25rem .5rem"})
-
-(defn $pop-up-arrow []
-  {:background-color "white"
-   :bottom           "0"
-   :height           "1rem"
-   :left             "0"
-   :margin-left      "auto"
-   :margin-right     "auto"
-   :right            "0"
-   :position         "absolute"
-   :transform        "rotate(45deg)"
-   :width            "1rem"
-   :z-index          "-1"})
-
 (defn $control-layer []
   {:height   "100%"
    :position "absolute"
