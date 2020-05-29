@@ -250,6 +250,7 @@
     my-box
     75
     250
+    "Measure Tool"
     (fn [_ _]
       [:div
        [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
@@ -275,6 +276,7 @@
     my-box
     200
     400
+    "Point Information"
     (fn [box-height box-width]
       (if last-clicked-info
         [vega-box
