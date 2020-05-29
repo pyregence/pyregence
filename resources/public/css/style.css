@@ -563,6 +563,9 @@ article.documents-single .document-meta {
         justify-content: flex-end;
         align-items: centered;
     }
+    .mobilenav {
+        display: block !important;
+    }
 }
 @media only screen and (max-width: 991px) {
     .value-prop1 .features div:not(:last-child) {
