@@ -289,11 +289,9 @@
     (reset! show-info? false)))
 
 (defn find-index-vec-map [key-name val coll]
-  (apply min (map-indexed (fn [i entry]
-                            (if (= val (get entry key-name))
-                              i
-                              99999))
-                          coll)))
+  (first (keep-indexed (fn [i entry]
+                         (when (= val (get entry key-name)) i))
+                       coll)))
 
 (defn check-param-filter []
   (swap! *params
