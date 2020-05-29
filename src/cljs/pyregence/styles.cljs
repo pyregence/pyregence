@@ -324,3 +324,9 @@
    :color            (color-picker :font-color)
    :position         "absolute"
    :z-index          "100"})
+
+(defn p-button-hover []
+  (with-meta
+    {}
+    {:pseudo {:hover {:background-color (color-picker :border-color 0.2)
+                      :border-radius    "4px"}}}))

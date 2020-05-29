@@ -1,7 +1,10 @@
 (ns pyregence.components.openlayers
   (:require [pyregence.config :as c]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OpenLayers aliases
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def Map             js/ol.Map)
 (def View            js/ol.View)
 (def Overlay         js/ol.Overlay)
@@ -16,7 +19,9 @@
 (defonce the-map         (atom nil))
 (defonce single-click-on (atom nil))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Creating objects
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn init-map! []
   (reset! the-map
@@ -58,7 +63,9 @@
                                      :autoPan          true
                                      :autoPanAnimation #js {:duration 250}})]})))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Getting object information
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-zoom-info []
   (let [map-view (.getView @the-map)]
@@ -80,7 +87,9 @@
       .getArray
       (.find (fn [layer] (= title (.get layer "title"))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modifying objects
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn add-popup-on-single-click! [call-back]
   (reset! single-click-on

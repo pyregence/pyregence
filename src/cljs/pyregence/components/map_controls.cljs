@@ -39,16 +39,10 @@
    :width   "100%"
    :fill    ($/color-picker :font-color)})
 
-(defn $p-button-hover []
-  (with-meta
-    {}
-    {:pseudo {:hover {:background-color ($/color-picker :border-color 0.2)
-                      :border-radius    "4px"}}}))
-
 (defn tool-button [type tooltip callback]
   (if (= type :none)
     [:span {:style ($/fixed-size "36px")}]
-    [:span {:class (<class $p-button-hover)
+    [:span {:class (<class $/p-button-hover)
             :style ($/combine $tool-button ($/fixed-size "36px"))
             :title tooltip
             :on-click callback}
@@ -245,13 +239,14 @@
 ;; Measure Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn measure-tool [my-box lon-lat]
+(defn measure-tool [my-box lon-lat close-fn!]
   [:div#measure-tool
    [resizable-window
     my-box
     75
     250
     "Measure Tool"
+    close-fn!
     (fn [_ _]
       [:div
        [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
@@ -302,13 +297,14 @@
       last-clicked-info]
      [information-div last-clicked-info *layer-idx units info-height]]))
 
-(defn information-tool [my-box *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
+(defn information-tool [my-box *layer-idx select-layer! units cur-hour legend-list last-clicked-info close-fn!]
   [:div#info-tool
    [resizable-window
     my-box
     200
     400
     "Point Information"
+    close-fn!
     (fn [box-height box-width]
       (let [has-point? (ol/get-overlay-center)]
         (cond

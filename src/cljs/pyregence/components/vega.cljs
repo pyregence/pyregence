@@ -7,7 +7,7 @@
             [pyregence.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI Components
+;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn to-hex-str [num]
@@ -107,6 +107,10 @@
                                                    (u/try-js-aget data "datum" "hour"))]
                                  (layer-click! (dec ^js/integer hour)))))))
         (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UI Components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn vega-canvas []
   (r/create-class
