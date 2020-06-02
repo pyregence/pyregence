@@ -41,6 +41,11 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn find-index-vec-map [key-name val coll]
+  (first (keep-indexed (fn [i entry]
+                         (when (= val (get entry key-name)) i))
+                       coll)))
+
 (defn get-forecast-opt [key-name]
   (get-in c/forecast-options [@*forecast key-name]))
 
@@ -69,18 +74,13 @@
           (let [forecast-filter (get-forecast-opt :filter)
                 forecast-layers (filter (fn [layer]
                                           (= forecast-filter (:forecast layer)))
-                                        @layer-list)]
-            (->> (get-forecast-opt :params)
-                 (mapv (fn [{:keys [opt-label] :as param}]
-                         (cond
-                           (= "Model Time" opt-label)
-                           (assoc param :options (get-model-times forecast-layers))
-
-                           (= "Fire Name" opt-label)
-                           (assoc param :options (get-fire-names forecast-layers))
-
-                           :else
-                           param)))))))
+                                        @layer-list)
+                params    (get-forecast-opt :params)
+                model-idx (find-index-vec-map :opt-label "Model Time" params)
+                fire-idx  (find-index-vec-map :opt-label "Fire Name" params)]
+            (cond-> params
+              fire-idx  (assoc-in [fire-idx  :options] (get-fire-names  forecast-layers))
+              model-idx (assoc-in [model-idx :options] (get-model-times forecast-layers))))))
 
 (defn filtered-layers []
   (let [selected-set (-> (map (fn [*option {:keys [options]}]
@@ -286,11 +286,6 @@
   (reset! last-clicked-info [])
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))
-
-(defn find-index-vec-map [key-name val coll]
-  (first (keep-indexed (fn [i entry]
-                         (when (= val (get entry key-name)) i))
-                       coll)))
 
 (defn check-param-filter []
   (swap! *params
