@@ -44,34 +44,43 @@
 (defn get-forecast-opt [key-name]
   (get-in c/forecast-options [@*forecast key-name]))
 
-(defn get-options-by-key [key-name]
-  (let [forecast (get-forecast-opt :filter)]
-    (->> @layer-list
-         (filter (fn [layer] (= forecast (:forecast layer))))
-         (map key-name)
-         (distinct)
-         (sort)
-         (reverse)
-         (map-indexed (fn [i option]
-                        {:opt-label (if (and (= key-name :model-init) (= 0 i))
-                                      "Current"
-                                      option)
-                         :filter    option}))
-         (vec))))
+(defn get-fire-names [forecast-layers]
+  (->> forecast-layers
+       (group-by :fire-name)
+       (mapv (fn [[fire-name opt-vec]]
+               {:opt-label  fire-name
+                :filter     fire-name
+                :model-init (->> opt-vec
+                                 (map :model-init)
+                                 (set))}))))
+
+(defn get-model-times [forecast-layers]
+  (->> forecast-layers
+       (map :model-init)
+       (distinct)
+       (sort)
+       (reverse)
+       (mapv (fn [option]
+               {:opt-label option
+                :filter    option}))))
 
 (defn process-params! []
   (reset! processed-params
-          (->> (get-forecast-opt :params)
-               (mapv (fn [{:keys [opt-label] :as param}]
-                       (cond
-                         (= "Model Time" opt-label)
-                         (assoc param :options (get-options-by-key :model-init))
+          (let [forecast-filter (get-forecast-opt :filter)
+                forecast-layers (filter (fn [layer]
+                                          (= forecast-filter (:forecast layer)))
+                                        @layer-list)]
+            (->> (get-forecast-opt :params)
+                 (mapv (fn [{:keys [opt-label] :as param}]
+                         (cond
+                           (= "Model Time" opt-label)
+                           (assoc param :options (get-model-times forecast-layers))
 
-                         (= "Fire Name" opt-label)
-                         (assoc param :options (get-options-by-key :fire-name))
+                           (= "Fire Name" opt-label)
+                           (assoc param :options (get-fire-names forecast-layers))
 
-                         :else
-                         param))))))
+                           :else
+                           param)))))))
 
 (defn filtered-layers []
   (let [selected-set (-> (map (fn [*option {:keys [options]}]
@@ -278,7 +287,25 @@
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))
 
+(defn find-index-vec-map [key-name val coll]
+  (first (keep-indexed (fn [i entry]
+                         (when (= val (get entry key-name)) i))
+                       coll)))
+
+(defn check-param-filter []
+  (swap! *params
+         (fn [params]
+           (->> params
+                (map-indexed (fn [idx cur-param]
+                               (let [{:keys [filter-on filter-key filter options]} (get @processed-params idx)
+                                     filter-set (get-in @processed-params [filter-on :options cur-param filter-key])]
+                                 (if (and filter-on (not (contains? filter-set filter)))
+                                   (or (find-index-vec-map :filter (first filter-set) options) -1)
+                                   cur-param))))
+                (vec)))))
+
 (defn change-type! [clear?]
+  (check-param-filter)
   (ol/swap-active-layer! (get-current-layer-name))
   (get-legend!           (get-current-layer-name))
   (if clear?

@@ -173,8 +173,12 @@
                                     (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
       [:div#activelayer {:style ($/combine ($layer-section) {:margin-top "1rem"})}
        [:label {:style {:font-size "1.25rem"}} "Fire Layer"]
-       (map-indexed (fn [i {:keys [opt-label options]}]
-                      ^{:key i} [panel-dropdown opt-label (get *params i) options #(select-param! i %)])
+       (map-indexed (fn [i {:keys [opt-label options filter-on filter-key first-opt]}]
+                      (let [filter-set       (get-in param-options [filter-on :options (get *params filter-on) filter-key])
+                            filtered-options (cond->> options
+                                               filter-set (filterv (fn [{:keys [filter]}] (contains? filter-set filter)))
+                                               first-opt  (#(assoc-in % [0 :opt-label] first-opt)))]
+                        ^{:key i} [panel-dropdown opt-label (get *params i) filtered-options #(select-param! i %)]))
                     param-options)
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]
