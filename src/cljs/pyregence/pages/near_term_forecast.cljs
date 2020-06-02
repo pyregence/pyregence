@@ -79,10 +79,9 @@
                 params    (get-forecast-opt :params)
                 model-idx (find-index-vec-map :opt-label "Model Time" params)
                 fire-idx  (find-index-vec-map :opt-label "Fire Name" params)]
-            (-> (if fire-idx
-                  (assoc-in params [fire-idx :options] (get-fire-names forecast-layers))
-                  params)
-                (assoc-in [model-idx :options] (get-model-times forecast-layers))))))
+            (cond-> params
+              fire-idx  (assoc-in [fire-idx  :options] (get-fire-names  forecast-layers))
+              model-idx (assoc-in [model-idx :options] (get-model-times forecast-layers))))))
 
 (defn filtered-layers []
   (let [selected-set (-> (map (fn [*option {:keys [options]}]
