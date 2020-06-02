@@ -52,7 +52,6 @@
                 :filter     fire-name
                 :model-init (->> opt-vec
                                  (map :model-init)
-                                 (distinct)
                                  (set))}))))
 
 (defn get-model-times [forecast-layers]
