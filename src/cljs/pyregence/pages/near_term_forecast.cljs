@@ -108,8 +108,9 @@
   (:hour (current-layer) 0))
 
 (defn get-current-layer-full-time []
-  (let [{:keys [js-time]} (current-layer)]
-    (str (u/get-date-from-js js-time @show-utc?) "-" (u/get-time-from-js js-time @show-utc?))))
+  (if-let [js-time (:js-time (current-layer))]
+    (str (u/get-date-from-js js-time @show-utc?) "-" (u/get-time-from-js js-time @show-utc?))
+    ""))
 
 (defn get-current-layer-extent []
   (:extent (current-layer) [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
