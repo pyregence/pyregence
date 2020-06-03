@@ -176,7 +176,7 @@
        (map-indexed (fn [i {:keys [opt-label options filter-on filter-key]}]
                       (let [filter-set       (get-in param-options [filter-on :options (get *params filter-on) filter-key])
                             filtered-options (if filter-set
-                                               (filterv (fn [{:keys [filter]}] (contains? filter-set filter)) options)
+                                               (filterv #(filter-set (:filter %)) options)
                                                options)]
                         ^{:key i} [panel-dropdown opt-label (get *params i) filtered-options #(select-param! i %)]))
                     param-options)
