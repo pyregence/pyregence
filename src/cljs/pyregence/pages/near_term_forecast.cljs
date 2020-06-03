@@ -388,8 +388,10 @@
 
 (defn $message-modal []
   {:background-color "white"
-   :margin    "15% auto"
-   :width     "25rem"})
+   :border-radius    "3px"
+   :margin           "15% auto"
+   :overflow         "hidden"
+   :width            "25rem"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
@@ -467,8 +469,9 @@
     (when @show-me?
       [:div#message-modal {:style ($/modal "absolute")}
        [:div {:style ($message-modal)}
-        [:div {:style {:border-bottom (str "1px solid " ($/color-picker :brown)) :width "100%"}}
-         [:label {:style {:padding ".5rem" :font-size "1.5rem"}}
+        [:div {:class "bg-yellow"
+               :style {:width "100%"}}
+         [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
           "Disclaimer"]]
         [:label {:style {:padding ".5rem"}}
          "The Forecast Tool is currently under development and is intended for demonstration purposes only. \n
