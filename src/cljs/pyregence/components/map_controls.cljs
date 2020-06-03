@@ -41,9 +41,9 @@
 
 (defn tool-button [type tooltip callback]
   (if (= type :none)
-    [:span {:style ($/fixed-size "36px")}]
+    [:span {:style ($/fixed-size "32px")}]
     [:span {:class (<class $/p-button-hover)
-            :style ($/combine $tool-button ($/fixed-size "36px"))
+            :style ($/combine $tool-button ($/fixed-size "32px"))
             :title tooltip
             :on-click callback}
      (case type
@@ -127,7 +127,7 @@
    :position         "absolute"
    :transition       "all 200ms ease-in"
    :width            "18rem"
-   :z-index          "1000"})
+   :z-index          "101"})
 
 (defn $layer-section []
   {:border        (str "1px solid " ($/color-picker :border-color))
@@ -220,7 +220,7 @@
                   #(swap! show-legend? not)]])])
 
 (defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
-  [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom "60px"})}
+  [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom "36px"})}
    (map-indexed (fn [i [icon title on-click]]
                   ^{:key i} [tool-button icon title on-click])
                 [[:my-location
@@ -348,9 +348,15 @@
    :margin-right     ".5rem"
    :width            "1rem"})
 
+(defn $legend-location [show?]
+  {:top        "16px"
+   :left       (if show? "19rem" "1rem")
+   :transition "all 200ms ease-in"
+   :padding    ".25rem"})
+
 (defn legend-box [legend-list reverse?]
-  (when @show-legend?
-    [:div#legend-box {:style ($/combine $/tool {:bottom "60px" :right "70px" :padding ".25rem"})}
+  (when (and @show-legend? (seq legend-list))
+    [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel?))}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (map-indexed (fn [i leg]
                      ^{:key i}
@@ -358,5 +364,5 @@
                       [:div {:style ($legend-color (get leg "color"))}]
                       [:label (get leg "label")]])
                    (if reverse?
-                     (reverse @legend-list)
-                     @legend-list))]]))
+                     (reverse legend-list)
+                     legend-list))]]))
