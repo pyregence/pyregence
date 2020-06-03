@@ -108,7 +108,8 @@
   (:hour (current-layer) 0))
 
 (defn get-current-layer-full-time []
-  (str/join "-" ((juxt :date :time) (current-layer))))
+  (let [{:keys [js-time]} (current-layer)]
+    (str (u/get-date-from-js js-time @show-utc?) "-" (u/get-time-from-js js-time @show-utc?))))
 
 (defn get-current-layer-extent []
   (:extent (current-layer) [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
@@ -162,8 +163,6 @@
      :filter-set  (into #{forecast init-timestamp} (str/split layer-group #"_"))
      :model-init  init-timestamp
      :js-time     sim-js-time
-     :date        (u/get-date-from-js sim-js-time @show-utc?)
-     :time        (u/get-time-from-js sim-js-time @show-utc?)
      :hour        (- (/ (- sim-js-time init-js-time) 1000 60 60) 6)}))
 
 (defn split-active-layer-name [name-string]
@@ -178,8 +177,6 @@
      :filter-set  (into #{forecast fire-name init-timestamp} (subvec params 2 6))
      :model-init  init-timestamp
      :js-time     sim-js-time
-     :date        (u/get-date-from-js sim-js-time @show-utc?)
-     :time        (u/get-time-from-js sim-js-time @show-utc?)
      :hour        0}))
 
 (defn process-capabilities! [response]
@@ -221,8 +218,11 @@
                    pi)
               (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first pi))))
                       pi)
-              (mapv (fn [pi-layer f-layer]
-                      (merge (select-keys f-layer [:js-time :time :date :hour])
+              (mapv (fn [pi-layer {:keys [js-time hour]}]
+                      (merge {:js-time js-time
+                              :date    (u/get-date-from-js js-time @show-utc?)
+                              :time    (u/get-time-from-js js-time @show-utc?)
+                              :hour    hour}
                              pi-layer))
                     pi
                     (filtered-layers))))))
@@ -305,27 +305,22 @@
   (reset! *base-map id)
   (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))
 
-(defn update-time [time-list & add-opt-label?]
+(defn update-time [time-list]
   (mapv (fn [{:keys [js-time] :as layer}]
           (let [date (u/get-date-from-js js-time @show-utc?)
                 time (u/get-time-from-js js-time @show-utc?)]
-            (cond-> layer
-              :always        (assoc
-                              :date date
-                              :time time)
-              add-opt-label? (assoc :opt-label (str date "-" time)))))
+            (assoc layer
+                   :date      (u/get-date-from-js js-time @show-utc?)
+                   :time      (u/get-time-from-js js-time @show-utc?)
+                   :opt-label (str date "-" time))))
         time-list))
 
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
-  (reset! layer-list
-          (update-time @layer-list))
   (reset! last-clicked-info
           (update-time @last-clicked-info))
   (let [model-idx (find-index-vec-map :opt-label "Forecast Start Time" @processed-params)]
-    (reset! processed-params (update-in @processed-params
-                                        [model-idx :options]
-                                        (fn [opts] (update-time opts true))))))
+    (reset! processed-params (update-in @processed-params [model-idx :options] update-time))))
 
 (defn init-map! []
   (go
