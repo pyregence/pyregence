@@ -2,8 +2,7 @@
   (:require-macros [herb.core :refer [defglobal]]
                    pyregence.herb-patch)
   (:require herb.runtime
-            [reagent.core :as r]
-            [clojure.string :as str]))
+            [reagent.core :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -19,32 +18,26 @@
              (fn? style)     (style)
              (vector? style) (apply (first style) (rest style))))))
 
-;; FIXME: Remove :sig-* colors since Pyregence is a CEC-EPIC product.
 (defn color-picker
   ([color]
    (color-picker color 1))
   ([color alpha]
    (case color
-     :bg-color        (if @light? "white" (str "rgba(50, 50, 50, .9)"))
-     :border-color    (if @light?
-                        (str "rgba(0, 0, 0, "       alpha ")")
-                        (str "rgba(255, 255, 255, " alpha ")"))
-     :font-color      (if @light?
-                        (color-picker :sig-brown)
-                        "rgb(235, 235, 235)")
-     :blue            (str "rgba(0, 0, 175, "     alpha ")")
-     :black           (str "rgba(0, 0, 0, "       alpha ")")
-     :box-tan         (str "rgba(249, 248, 242, " alpha ")")
-     :dark-green      (str "rgba(0, 100, 0, "     alpha ")")
-     :light-gray      (str "rgba(230, 230, 230, " alpha ")")
-     :header-tan      (str "rgba(237, 234, 219, " alpha ")")
-     :red             (str "rgba(200, 0, 0, "     alpha ")")
-     :sig-brown       (str "rgba(96, 64, 26, "    alpha ")")
-     :sig-orange      (str "rgba(252, 178, 61, "  alpha ")")
-     :sig-light-green (str "rgba(202, 217, 70, "  alpha ")")
-     :sig-tan         (str "rgba(177, 162, 91, "  alpha ")")
-     :sig-green       (str "rgba(106, 148, 71, "  alpha ")")
-     :white           (str "rgba(255, 255, 255, " alpha ")")
+     :bg-color     (if @light? "white" (str "rgba(50, 50, 50, .9)"))
+     :border-color (if @light?
+                     (str "rgba(0, 0, 0, "       alpha ")")
+                     (str "rgba(255, 255, 255, " alpha ")"))
+     :font-color   (if @light?
+                     (color-picker :brown)
+                     "rgb(235, 235, 235)")
+     :blue         (str "rgba(0, 0, 175, "     alpha ")")
+     :black        (str "rgba(0, 0, 0, "       alpha ")")
+     :brown        (str "rgba(96, 65, 31, "    alpha ")")
+     :box-tan      (str "rgba(249, 248, 242, " alpha ")")
+     :dark-green   (str "rgba(0, 100, 0, "     alpha ")")
+     :light-gray   (str "rgba(230, 230, 230, " alpha ")")
+     :red          (str "rgba(200, 0, 0, "     alpha ")")
+     :white        (str "rgba(255, 255, 255, " alpha ")")
      color)))
 
 (defn to-merge? [modifiers key return]
@@ -86,74 +79,6 @@
   [".ol-scale-line-inner" {:border-color (color-picker :border-color)
                            :color        (color-picker :border-color)
                            :font-size    ".75rem"}])
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Pseudo / Class Functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn p-bordered-input [& modifiers]
-  (let [base-style     {:background-color "white"
-                        :border           "1px solid"
-                        :border-color     (color-picker :sig-brown)
-                        :border-radius    "2px"
-                        :height           "1.75rem"
-                        :padding          ".25rem .5rem"}
-        flex-style     {:width            "100%"}
-        multi-style    {:font-family      "inherit"
-                        :height           "inherit"
-                        :padding          ".3rem .5rem"
-                        :resize           "vertical"}
-        login-style    {:border-radius    "1.5px"
-                        :border-color     (color-picker :header-tan)
-                        :height           "2rem"}
-        disabled-style {:background-color "rgb(236, 236, 236)"
-                        :color            "black"}]
-    (with-meta
-      (merge base-style
-             (to-merge? modifiers :flex-style  flex-style)
-             (to-merge? modifiers :multi-style multi-style)
-             (to-merge? modifiers :login-style login-style))
-      {:key    (str/join "-" (sort modifiers))
-       :group  true
-       :pseudo {:disabled disabled-style}})))
-
-(defn p-button [& modifiers]
-  (let [base-style     {:border-width  "0"
-                        :border-radius "3px"
-                        :color         "white"
-                        :cursor        "pointer"
-                        :font-size     ".9rem"
-                        :font-weight   "normal"
-                        :min-width     "10rem"
-                        :text-align    "center"
-                        :padding       ".5rem .75rem"}
-        disabled-style {:cursor        "not-allowed"
-                        :opacity       "0.5"}]
-    (with-meta
-      (if (contains? (set modifiers) :disabled)
-        (merge base-style disabled-style)
-        base-style)
-      {:key    (str/join "-" (sort modifiers))
-       :group  true
-       :pseudo {:disabled disabled-style}})))
-
-(defn p-dark-link []
-  (with-meta
-    {:color           (color-picker :sig-green)
-     :cursor          "pointer"
-     :text-decoration "none"}
-    {:pseudo {:hover {:color (color-picker :sig-light-green)}}}))
-
-(defn p-selectable [selected?]
-  (with-meta
-    {:background-color (if selected?
-                         (color-picker :sig-light-green 0.5)
-                         "white")}
-    {:pseudo (if selected?
-               {}
-               {:hover {:background-color (color-picker :sig-light-green 0.1)}})
-     :key    selected?
-     :group  true}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style Functions
@@ -288,8 +213,8 @@
    :flex           "1 1 0"
    :overflow       "auto"})
 
-(defn modal []
-  {:position         "fixed"
+(defn modal [position]
+  {:position         position
    :z-index          "1000"
    :left             "0"
    :top              "0"

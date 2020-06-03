@@ -127,7 +127,7 @@
    :position         "absolute"
    :transition       "all 200ms ease-in"
    :width            "18rem"
-   :z-index          "1000"})
+   :z-index          "100"})
 
 (defn $layer-section []
   {:border        (str "1px solid " ($/color-picker :border-color))

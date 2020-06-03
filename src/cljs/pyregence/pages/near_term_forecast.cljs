@@ -386,6 +386,11 @@
    :position "absolute"
    :width    "100%"})
 
+(defn $message-modal []
+  {:background-color "white"
+   :margin    "15% auto"
+   :width     "25rem"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -457,6 +462,27 @@
    [radio "Light" $/light? true  #(reset! $/light? %)]
    [radio "Dark"  $/light? false #(reset! $/light? %)]])
 
+(defn message-modal []
+  (r/with-let [show-me? (r/atom (not (str/includes? (-> js/window .-location .-origin) "local")))]
+    (when @show-me?
+      [:div#message-modal {:style ($/modal "absolute")}
+       [:div {:style ($message-modal)}
+        [:div {:style {:border-bottom (str "1px solid " ($/color-picker :brown)) :width "100%"}}
+         [:label {:style {:padding ".5rem" :font-size "1.5rem"}}
+          "Disclaimer"]]
+        [:label {:style {:padding ".5rem"}}
+         "The Forecast Tool is currently under development and is intended for demonstration purposes only. \n
+               It is NOT intended to inform operational planning at this time"]
+        [:div {:style ($/combine $/flex-row {:justify-content "flex-end"})}
+         [:span
+          [:label {:class "btn border-yellow text-brown"
+                   :on-click #(set! (.-location js/window) "/")}
+           "Decline"]
+          [:label {:class "btn border-yellow text-brown"
+                   :style {:margin ".5rem"}
+                   :on-click #(reset! show-me? false)}
+           "Accept"]]]]])))
+
 (defn root-component [_]
   (r/create-class
    {:component-did-mount
@@ -466,8 +492,9 @@
 
     :reagent-render
     (fn [_]
-      [:div {:style ($/combine $/root {:height "100%" :padding 0})}
+      [:div {:style ($/combine $/root {:height "100%" :padding 0 :position "relative"})}
        [toast-message]
+       [message-modal]
        [:div {:class "bg-yellow"
               :style ($app-header)}
         [theme-select]
