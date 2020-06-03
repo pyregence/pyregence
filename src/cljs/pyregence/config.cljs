@@ -46,10 +46,9 @@
                                       {:opt-label "Model"
                                        :options   [{:opt-label "ELMFIRE"
                                                     :filter    "elmfire"}]}
-                                      {:opt-label  "Model Time"
+                                      {:opt-label  "Forecast Start Time"
                                        :filter-on  0
                                        :filter-key :model-init
-                                       :first-opt  "Current"
                                        :options    []}
                                       {:opt-label "Fuel"
                                        :options   [{:opt-label "LANDFIRE"
@@ -74,7 +73,7 @@
                                                    {:opt-label "10"
                                                     :filter    "10"}]}
                                       {:opt-label "Output"
-                                       :options   [{:opt-label "Burned Area"
+                                       :options   [{:opt-label "Burned area"
                                                     :filter    "burned-area"
                                                     :units     "Hours"}]}]}
                        {:opt-label       "Risk Forecast"
@@ -83,31 +82,28 @@
                         :params          [{:opt-label "Model"
                                            :options   [{:opt-label "ELMFIRE"
                                                         :filter    "elmfire"}]}
-                                          {:opt-label "Model Time"
-                                           :first-opt "Current"
+                                          {:opt-label "Forecast Start Time"
                                            :options   []}
                                           {:opt-label "Fuel"
-                                           :options   [{:opt-label "CA Forest Observatory"
-                                                        :filter    "cfo"}
-                                                       {:opt-label "LANDFIRE"
+                                           :options   [{:opt-label "LANDFIRE"
                                                         :filter    "landfire"}]}
                                           {:opt-label "Ignition Pattern"
-                                           :options   [{:opt-label    "All"
+                                           :options   [{:opt-label    "Human-caused ignitions"
                                                         :filter       "all"}
-                                                       {:opt-label    "Transmission Lines"
+                                                       {:opt-label    "Transmission lines"
                                                         :filter       "tlines"
                                                         :clear-point? true}]}
                                           {:opt-label "Output"
-                                           :options   [{:opt-label "Fire Area"
+                                           :options   [{:opt-label "Fire area"
                                                         :filter    "fire-area"
                                                         :units     "Acres"}
-                                                       {:opt-label "Fire Volume"
+                                                       {:opt-label "Fire volume"
                                                         :filter    "fire-volume"
                                                         :units     "Acre-ft"}
-                                                       {:opt-label "Impacted Structures"
+                                                       {:opt-label "Impacted structures"
                                                         :filter    "impacted-structures"
                                                         :units     "Structures"}
-                                                       {:opt-label "Times Burned"
+                                                       {:opt-label "Relative burn probability"
                                                         :filter    "times-burned"
                                                         :units     "Times"}]}]}])
 

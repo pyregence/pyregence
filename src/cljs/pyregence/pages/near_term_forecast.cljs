@@ -76,7 +76,7 @@
                                           (= forecast-filter (:forecast layer)))
                                         @layer-list)
                 params    (get-forecast-opt :params)
-                model-idx (find-index-vec-map :opt-label "Model Time" params)
+                model-idx (find-index-vec-map :opt-label "Forecast Start Time" params)
                 fire-idx  (find-index-vec-map :opt-label "Fire Name" params)]
             (cond-> params
               fire-idx  (assoc-in [fire-idx  :options] (get-fire-names  forecast-layers))
