@@ -136,11 +136,11 @@
        "/{z}/{x}/{y}.jpg90"
        "?access_token=pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw"))
 
-(def mapboxAttributionText
+(def mapbox-attribution-text
   "<div class=\"mapbox-attribution-container\"
         style=\"font-size: 12px\"
     >
-        <a href=\"http://mapbox.com/about/maps\"
+        <a href=\"https://mapbox.com/about/maps\"
             class=\"mapbox-wordmark\"
             target=\"_blank\"
             style=\"  position: absolute;
@@ -157,9 +157,9 @@
                 background-position: 0 0;
                 background-size: 91px 28px;\"
         ></a>
-        © <a href=\"https://www.mapbox.com/about/maps/\">Mapbox</a>
-        © <a href=\"http://www.openstreetmap.org/copyright\">OpenStreetMap</a>
-        <a href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">
+        © <a href=\"https://www.mapbox.com/about/maps\">Mapbox</a>
+        © <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>
+        <a href=\"https://www.mapbox.com/map-feedback\" target=\"_blank\">
             <strong>Improve this map</strong>
         </a>
     </div>")
@@ -167,15 +167,15 @@
 (def base-map-options [{:opt-label "MapBox Street Topo"
                         :source    (XYZ.
                                     #js {:url (get-map-box-static-url "cka8jaky90i9m1iphwh79wr04")
-                                         :attributions mapboxAttributionText
+                                         :attributions mapbox-attribution-text
                                          :attributionsCollapsible false})}
                        {:opt-label "MapBox Satellite"
                         :source    (XYZ.
                                     #js {:url (get-map-box-raster-url "mapbox.satellite")
-                                         :attributions mapboxAttributionText
+                                         :attributions mapbox-attribution-text
                                          :attributionsCollapsible false})}
                        {:opt-label "MapBox Satellite Street"
                         :source    (XYZ.
                                     #js {:url (get-map-box-static-url "cka8hoo5v0gpy1iphg08hz7oj")
-                                         :attributions mapboxAttributionText
+                                         :attributions mapbox-attribution-text
                                          :attributionsCollapsible false})}])
