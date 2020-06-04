@@ -66,8 +66,14 @@
        (sort)
        (reverse)
        (mapv (fn [option]
-               {:opt-label option
-                :filter    option}))))
+               (let [model-js-time (apply u/js-date-from-string (str/split option #"_"))
+                     date          (u/get-date-from-js model-js-time @show-utc?)
+                     time          (u/get-time-from-js model-js-time @show-utc?)]
+                 {:opt-label (str date "-" time)
+                  :js-time   model-js-time
+                  :date      date
+                  :time      time
+                  :filter    option})))))
 
 (defn process-params! []
   (reset! processed-params
@@ -102,7 +108,9 @@
   (:hour (current-layer) 0))
 
 (defn get-current-layer-full-time []
-  (str/join "-" ((juxt :date :time) (current-layer))))
+  (if-let [js-time (:js-time (current-layer))]
+    (str (u/get-date-from-js js-time @show-utc?) "-" (u/get-time-from-js js-time @show-utc?))
+    ""))
 
 (defn get-current-layer-extent []
   (:extent (current-layer) [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
@@ -145,68 +153,31 @@
     (get-data process-legend!
               (c/legend-url (str/replace layer "tlines" "all")))))
 
-(defn js-date-from-string [date time]
-  (js/Date. (str (subs date 0 4) "-"
-                 (subs date 4 6) "-"
-                 (subs date 6 8) "T"
-                 (subs time 0 2) ":00:00.000z")))
-
-(defn pad-zero [num]
-  (let [num-str (str num)]
-    (if (= 2 (count num-str))
-      num-str
-      (str "0" num-str))))
-
-(defn get-date-from-js [js-date]
-  (if @show-utc?
-    (subs (.toISOString js-date) 0 10)
-    (str (.getFullYear js-date)
-         "-"
-         (pad-zero (+ 1 (.getMonth js-date)))
-         "-"
-         (pad-zero (.getDate js-date)))))
-
-(defn get-time-from-js [js-date]
-  (if @show-utc?
-    (str (subs (.toISOString js-date) 11 16) " UTC")
-    (str (pad-zero (.getHours js-date))
-         ":"
-         (pad-zero (.getMinutes js-date))
-         " "
-         (-> js-date
-             (.toLocaleTimeString "en-us" #js {:timeZoneName "short"})
-             (str/split " ")
-             (peek)))))
-
 (defn split-risk-layer-name [name-string]
   (let [[workspace layer]           (str/split name-string #":")
         [forecast init-timestamp]   (str/split workspace   #"_(?=\d{8}_)")
         [layer-group sim-timestamp] (str/split layer       #"_(?=\d{8}_)")
-        init-js-date                (apply js-date-from-string (str/split init-timestamp #"_"))
-        sim-js-date                 (apply js-date-from-string (str/split sim-timestamp  #"_"))]
+        init-js-time                (apply u/js-date-from-string (str/split init-timestamp #"_"))
+        sim-js-time                 (apply u/js-date-from-string (str/split sim-timestamp  #"_"))]
     {:layer-group (str workspace ":" layer-group)
      :forecast    forecast
      :filter-set  (into #{forecast init-timestamp} (str/split layer-group #"_"))
      :model-init  init-timestamp
-     :sim-js-date sim-js-date
-     :date        (get-date-from-js sim-js-date)
-     :time        (get-time-from-js sim-js-date)
-     :hour        (- (/ (- sim-js-date init-js-date) 1000 60 60) 6)}))
+     :js-time     sim-js-time
+     :hour        (- (/ (- sim-js-time init-js-time) 1000 60 60) 6)}))
 
 (defn split-active-layer-name [name-string]
   (let [[workspace layer]    (str/split name-string #":")
         [forecast fire-name] (str/split workspace   #"_")
         params               (str/split layer       #"_")
         init-timestamp       (str (get params 0) "_" (get params 1))
-        sim-js-date          (js-date-from-string (get params 6) (get params 7))]
+        sim-js-time          (u/js-date-from-string (get params 6) (get params 7))]
     {:layer-group ""
      :forecast    forecast
      :fire-name   fire-name
      :filter-set  (into #{forecast fire-name init-timestamp} (subvec params 2 6))
      :model-init  init-timestamp
-     :sim-js-date sim-js-date
-     :date        (get-date-from-js sim-js-date)
-     :time        (get-time-from-js sim-js-date)
+     :js-time     sim-js-time
      :hour        0}))
 
 (defn process-capabilities! [response]
@@ -248,8 +219,11 @@
                    pi)
               (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first pi))))
                       pi)
-              (mapv (fn [pi-layer f-layer]
-                      (merge (select-keys f-layer [:sim-js-date :time :date :hour])
+              (mapv (fn [pi-layer {:keys [js-time hour]}]
+                      (merge {:js-time js-time
+                              :date    (u/get-date-from-js js-time @show-utc?)
+                              :time    (u/get-time-from-js js-time @show-utc?)
+                              :hour    hour}
                              pi-layer))
                     pi
                     (filtered-layers))))))
@@ -332,20 +306,22 @@
   (reset! *base-map id)
   (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))
 
+(defn update-time [time-list]
+  (mapv (fn [{:keys [js-time] :as layer}]
+          (let [date (u/get-date-from-js js-time @show-utc?)
+                time (u/get-time-from-js js-time @show-utc?)]
+            (assoc layer
+                   :date      (u/get-date-from-js js-time @show-utc?)
+                   :time      (u/get-time-from-js js-time @show-utc?)
+                   :opt-label (str date "-" time))))
+        time-list))
+
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
-  (reset! layer-list
-          (mapv (fn [{:keys [sim-js-date] :as layer}]
-                  (assoc layer
-                         :date (get-date-from-js sim-js-date)
-                         :time (get-time-from-js sim-js-date)))
-                @layer-list))
   (reset! last-clicked-info
-          (mapv (fn [{:keys [sim-js-date] :as layer}]
-                  (assoc layer
-                         :date (get-date-from-js sim-js-date)
-                         :time (get-time-from-js sim-js-date)))
-                @last-clicked-info)))
+          (update-time @last-clicked-info))
+  (let [model-idx (find-index-vec-map :opt-label "Forecast Start Time" @processed-params)]
+    (reset! processed-params (update-in @processed-params [model-idx :options] update-time))))
 
 (defn init-map! []
   (go

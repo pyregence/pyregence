@@ -171,6 +171,41 @@
 
 (def sql-primitive (comp val first first))
 
+;;; Time processing
+
+(defn pad-zero [num]
+  (let [num-str (str num)]
+    (if (= 2 (count num-str))
+      num-str
+      (str "0" num-str))))
+
+(defn get-date-from-js [js-date show-utc?]
+  (if show-utc?
+    (subs (.toISOString js-date) 0 10)
+    (str (.getFullYear js-date)
+         "-"
+         (pad-zero (+ 1 (.getMonth js-date)))
+         "-"
+         (pad-zero (.getDate js-date)))))
+
+(defn get-time-from-js [js-date show-utc?]
+  (if show-utc?
+    (str (subs (.toISOString js-date) 11 16) " UTC")
+    (str (pad-zero (.getHours js-date))
+         ":"
+         (pad-zero (.getMinutes js-date))
+         " "
+         (-> js-date
+             (.toLocaleTimeString "en-us" #js {:timeZoneName "short"})
+             (str/split " ")
+             (peek)))))
+
+(defn js-date-from-string [date time]
+  (js/Date. (str (subs date 0 4) "-"
+                 (subs date 4 6) "-"
+                 (subs date 6 8) "T"
+                 (subs time 0 2) ":00:00.000z")))
+
 ;;; Misc Functions
 
 (defn no-data? [x]
