@@ -475,11 +475,11 @@
           "Disclaimer"]]
         [:label {:style {:padding ".5rem"}}
          "The Forecast Tool is currently under development and is intended for demonstration purposes only. \n
-               It is NOT intended to inform operational planning at this time"]
+               It is NOT intended to inform operational planning at this time."]
         [:div {:style ($/combine $/flex-row {:justify-content "flex-end"})}
          [:span
           [:label {:class "btn border-yellow text-brown"
-                   :on-click #(set! (.-location js/window) "/")}
+                   :on-click #(jump-to-url! "/")}
            "Decline"]
           [:label {:class "btn border-yellow text-brown"
                    :style {:margin ".5rem"}
