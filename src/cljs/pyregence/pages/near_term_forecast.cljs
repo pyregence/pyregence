@@ -455,7 +455,7 @@
         [:div {:style ($/combine $/flex-row {:justify-content "flex-end"})}
          [:span
           [:label {:class "btn border-yellow text-brown"
-                   :on-click #(jump-to-url! "/")}
+                   :on-click #(u/jump-to-url! "/")}
            "Decline"]
           [:label {:class "btn border-yellow text-brown"
                    :style {:margin ".5rem"}
