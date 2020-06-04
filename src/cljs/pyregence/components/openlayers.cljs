@@ -8,6 +8,7 @@
 (def Map             js/ol.Map)
 (def View            js/ol.View)
 (def Overlay         js/ol.Overlay)
+(def Attribution     js/ol.control.Attribution)
 (def ScaleLine       js/ol.control.ScaleLine)
 (def fromLonLat      js/ol.proj.fromLonLat)
 (def toLonLat        js/ol.proj.toLonLat)
@@ -47,7 +48,7 @@
                                                     :params      #js {}
                                                     :crossOrigin "anonymous"
                                                     :serverType  "geoserver"})})]
-                :controls #js [(ScaleLine.)]
+                :controls #js [(ScaleLine.) (Attribution.)]
                 :view     (View.
                            #js {:projection "EPSG:3857"
                                 :center     (fromLonLat #js [-119.509444 37.229722] "EPSG:3857")

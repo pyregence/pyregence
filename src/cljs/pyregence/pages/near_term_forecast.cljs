@@ -149,6 +149,7 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
+  (reset! legend-list [])
   (when (u/has-data? layer)
     (get-data process-legend!
               (c/legend-url (str/replace layer "tlines" "all")))))
@@ -206,6 +207,7 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-layers! []
+  (reset! layer-list [])
   (get-data process-capabilities! c/capabilities-url))
 
 (defn process-point-info! [response]
@@ -387,8 +389,6 @@
       :render
       (fn []
         [:div {:style ($control-layer)}
-         [mc/tool-bar show-info? show-measure? set-show-info!]
-         [mc/zoom-bar @*zoom select-zoom! get-current-layer-extent]
          [mc/collapsible-panel
           @*base-map
           select-base-map!
@@ -407,7 +407,9 @@
             #(set-show-info! false)])
          (when (and @show-measure? (aget @my-box "height"))
            [mc/measure-tool @my-box @lon-lat #(reset! show-measure? false)])
-         [mc/legend-box legend-list (get-forecast-opt :reverse-legend?)]
+         [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?)]
+         [mc/zoom-bar @*zoom select-zoom! get-current-layer-extent]
+         [mc/tool-bar show-info? show-measure? set-show-info!]
          [mc/time-slider
           filtered-layers
           @*layer-idx

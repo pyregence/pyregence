@@ -71,11 +71,11 @@
   [:#nav-row {:padding "0"}]
   [".ol-scale-line" {:background-color (color-picker :bg-color)
                      :border           (str "1px solid " (color-picker :border-color))
-                     :bottom           "16px"
+                     :bottom           "36px"
                      :box-shadow       (str "0 0 0 2px " (color-picker :bg-color))
                      :left             "auto"
                      :height           "28px"
-                     :right            "16px"}]
+                     :right            "64px"}]
   [".ol-scale-line-inner" {:border-color (color-picker :border-color)
                            :color        (color-picker :border-color)
                            :font-size    ".75rem"}])
