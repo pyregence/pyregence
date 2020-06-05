@@ -452,8 +452,8 @@
          [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
           "Disclaimer"]]
         [:label {:style {:padding ".5rem"}}
-         "The Forecast Tool is currently under development and is intended for demonstration purposes only. \n
-               It is NOT intended to inform operational planning at this time."]
+         "Forecast Tools are open source, offered as-is, without warranty and liability for damages is expressly disclaimed. \n\n
+          At this time, the Forecast Tools are under development and should not be relied on for any fire-safety decision."]
         [:div {:style ($/combine $/flex-row {:justify-content "flex-end"})}
          [:span
           [:label {:class "btn border-yellow text-brown"
