@@ -12,8 +12,10 @@
 (def ScaleLine       js/ol.control.ScaleLine)
 (def fromLonLat      js/ol.proj.fromLonLat)
 (def toLonLat        js/ol.proj.toLonLat)
+(def ImageLayer      js/ol.layer.Image)
 (def TileLayer       js/ol.layer.Tile)
 (def TileWMS         js/ol.source.TileWMS)
+(def Raster          js/ol.source.Raster)
 (def WMSCapabilities js/ol.format.WMSCapabilities)
 (def unByKey         js/ol.Observable.unByKey)
 
@@ -31,14 +33,18 @@
                 :layers   #js [(TileLayer.
                                 #js {:title   "basemap"
                                      :visible true})
-                               (TileLayer.
+                               (ImageLayer.
                                 #js {:title   "hillshade"
                                      :visible false
-                                     :opacity 0.5
-                                     :source  (TileWMS.
-                                               #js {:url        "https://basemap.nationalmap.gov/arcgis/services/USGSShadedReliefOnly/MapServer/WMSServer"
-                                                    :params     #js {"LAYERS" "0" "TRANSPARENT" "FALSE"}
-                                                    :serverType "geoserver"})})
+                                     :opacity 1
+                                     :source  (Raster.
+                                               #js {:sources   #js [(TileWMS.
+                                                                     #js {:url         "https://basemap.nationalmap.gov/arcgis/services/USGSShadedReliefOnly/MapServer/WMSServer"
+                                                                          :params      #js {"LAYERS" "0" "TRANSPARENT" "FALSE"}
+                                                                          :serverType  "geoserver"
+                                                                          :crossOrigin "anonymous"})]
+                                                    :operation (fn [pixel] #js [0 0 0 (- 255 (aget (aget pixel 0) 0))])})})
+
                                (TileLayer.
                                 #js {:title   "active"
                                      :visible false

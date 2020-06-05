@@ -151,7 +151,7 @@
                          select-param!
                          param-options]
   (r/with-let [active-opacity    (r/atom 70.0)
-               hillshade-opacity (r/atom 50.0)
+               hillshade-opacity (r/atom 100.0)
                show-hillshade?   (r/atom false)]
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style {:overflow "auto"}}
