@@ -36,7 +36,6 @@
                                (ImageLayer.
                                 #js {:title   "hillshade"
                                      :visible false
-                                     :opacity 1
                                      :source  (Raster.
                                                #js {:sources   #js [(TileWMS.
                                                                      #js {:url         "https://basemap.nationalmap.gov/arcgis/services/USGSShadedReliefOnly/MapServer/WMSServer"
