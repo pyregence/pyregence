@@ -136,7 +136,7 @@
   "<div class=\"mapbox-attribution-container\"
         style=\"font-size: 12px\"
     >
-        <a href=\"https://mapbox.com/about/maps\"
+        <a href=\"https://www.mapbox.com/about/maps\"
             class=\"mapbox-wordmark\"
             target=\"_blank\"
             style=\"  position: absolute;
@@ -160,17 +160,17 @@
         </a>
     </div>")
 
-(def base-map-options [{:opt-label "MapBox Street Topo"
+(def base-map-options [{:opt-label "Mapbox Street Topo"
                         :source    (XYZ.
                                     #js {:url (get-map-box-static-url "cka8jaky90i9m1iphwh79wr04")
                                          :attributions mapbox-attribution-text
                                          :attributionsCollapsible false})}
-                       {:opt-label "MapBox Satellite"
+                       {:opt-label "Mapbox Satellite"
                         :source    (XYZ.
                                     #js {:url (get-map-box-raster-url "mapbox.satellite")
                                          :attributions mapbox-attribution-text
                                          :attributionsCollapsible false})}
-                       {:opt-label "MapBox Satellite Street"
+                       {:opt-label "Mapbox Satellite Street"
                         :source    (XYZ.
                                     #js {:url (get-map-box-static-url "cka8hoo5v0gpy1iphg08hz7oj")
                                          :attributions mapbox-attribution-text
