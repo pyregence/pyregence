@@ -268,9 +268,9 @@
          (fn [params]
            (->> params
                 (map-indexed (fn [idx cur-param]
-                               (let [{:keys [filter-on filter-key filter options]} (get @processed-params idx)
-                                     filter-set (get-in @processed-params [filter-on :options cur-param filter-key])]
-                                 (if (and filter-on (not (contains? filter-set filter)))
+                               (let [{:keys [filter-on filter-key options]} (@processed-params idx)
+                                     filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
+                                 (if (and filter-on (not (filter-set (get-in options [cur-param :filter]))))
                                    (or (find-index-vec-map :filter (first filter-set) options) -1)
                                    cur-param))))
                 (vec)))))
