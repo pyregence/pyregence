@@ -19,18 +19,12 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce minZoom           (r/atom 0))
-(defonce maxZoom           (r/atom 28))
-(defonce *zoom             (r/atom 10))
 (defonce legend-list       (r/atom []))
 (defonce layer-list        (r/atom []))
 (defonce *layer-idx        (r/atom 0))
 (defonce last-clicked-info (r/atom []))
-(defonce animate?          (r/atom false))
-(defonce *speed            (r/atom 1))
 (defonce *base-map         (r/atom 0))
 (defonce show-utc?         (r/atom true))
-(defonce lon-lat           (r/atom [0 0]))
 (defonce show-info?        (r/atom false))
 (defonce show-measure?     (r/atom false))
 (defonce *forecast         (r/atom 1))
@@ -86,7 +80,8 @@
                 fire-idx  (find-index-vec-map :opt-label "Fire Name" params)]
             (cond-> params
               fire-idx  (assoc-in [fire-idx  :options] (get-fire-names  forecast-layers))
-              model-idx (assoc-in [model-idx :options] (get-model-times forecast-layers))))))
+              model-idx (assoc-in [model-idx :options] (get-model-times forecast-layers)))))
+  (reset! *params (mapv (constantly 0) @processed-params)))
 
 (defn filtered-layers []
   (let [selected-set (-> (map (fn [*option {:keys [options]}]
@@ -243,20 +238,6 @@
   (reset! *layer-idx new-layer)
   (ol/swap-active-layer! (get-current-layer-name)))
 
-(defn cycle-layer! [change]
-  (select-layer! (mod (+ change @*layer-idx) (count (filtered-layers)))))
-
-(defn loop-animation! []
-  (when @animate?
-    (cycle-layer! 1)
-    (js/setTimeout loop-animation! (get-in c/speeds [@*speed :delay]))))
-
-(defn select-zoom! [zoom]
-  (reset! *zoom (max @minZoom
-                     (min @maxZoom
-                          zoom)))
-  (ol/set-zoom! @*zoom))
-
 (defn clear-info! []
   (ol/clear-point!)
   (reset! last-clicked-info [])
@@ -292,7 +273,6 @@
 (defn select-forecast! [id]
   (reset! *forecast id)
   (process-params!)
-  (reset! *params (mapv (constantly 0) @processed-params)) ; TODO, move this to process-params
   (change-type! true))
 
 (defn set-show-info! [show?]
@@ -330,16 +310,9 @@
     (let [layers-chan (get-layers!)]
       (ol/init-map!)
       (select-base-map! @*base-map)
-      (ol/add-map-mouse-move! #(reset! lon-lat %))
-      (let [[cur min max] (ol/get-zoom-info)]
-        (reset! *zoom cur)
-        (reset! minZoom min)
-        (reset! maxZoom max))
-      (ol/add-map-zoom-end! #(reset! *zoom %))
       (<! layers-chan)
       (select-forecast! @*forecast)
-      (ol/set-visible-by-title! "active" true)
-      (get-legend! (get-current-layer-name)))))
+      (ol/set-visible-by-title! "active" true))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -406,21 +379,17 @@
             @last-clicked-info
             #(set-show-info! false)])
          (when (and @show-measure? (aget @my-box "height"))
-           [mc/measure-tool @my-box @lon-lat #(reset! show-measure? false)])
+           [mc/measure-tool @my-box #(reset! show-measure? false)])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?)]
-         [mc/zoom-bar @*zoom select-zoom! get-current-layer-extent]
+         [mc/zoom-bar get-current-layer-extent]
          [mc/tool-bar show-info? show-measure? set-show-info!]
          [mc/time-slider
           filtered-layers
-          @*layer-idx
-          get-current-layer-full-time
+          *layer-idx
+          (get-current-layer-full-time)
           select-layer!
-          cycle-layer!
           show-utc?
-          select-time-zone!
-          animate?
-          loop-animation!
-          *speed]])})))
+          select-time-zone!]])})))
 
 (defn pop-up []
   [:div#pin {:style ($/fixed-size "2rem")}
@@ -487,6 +456,6 @@
                                 opt-label])
                              c/forecast-options))]]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
-        [control-layer]
+        (when @ol/the-map [control-layer])
         [map-layer]
         [pop-up]]])}))

@@ -1,5 +1,6 @@
 (ns pyregence.components.openlayers
-  (:require [pyregence.config :as c]))
+  (:require [pyregence.config :as c]
+            [reagent.core :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OpenLayers aliases
@@ -19,7 +20,7 @@
 (def WMSCapabilities js/ol.format.WMSCapabilities)
 (def unByKey         js/ol.Observable.unByKey)
 
-(defonce the-map         (atom nil))
+(defonce the-map         (r/atom nil))
 (defonce single-click-on (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
