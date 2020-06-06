@@ -42,10 +42,9 @@
                                                                           :params      #js {"LAYERS" "0" "TRANSPARENT" "FALSE"}
                                                                           :serverType  "geoserver"
                                                                           :crossOrigin "anonymous"})]
-                                                    :operation (fn [pixel] (let [color (aget (aget pixel 0) 0)]
-                                                                             (if (< 0 color)
-                                                                               #js [0 0 0 (- 255 color)]
-                                                                               #js [0 0 0 0])))})})
+                                                    :operation (fn [pixel] (if (< 0 (aget pixel 0 3))
+                                                                             #js [0 0 0 (- 255 (aget pixel 0 0))]
+                                                                             #js [0 0 0 0]))})})
 
                                (TileLayer.
                                 #js {:title   "active"
