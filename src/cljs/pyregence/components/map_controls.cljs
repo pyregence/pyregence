@@ -151,7 +151,6 @@
                          select-param!
                          param-options]
   (r/with-let [active-opacity    (r/atom 70.0)
-               hillshade-opacity (r/atom 50.0)
                show-hillshade?   (r/atom false)]
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style {:overflow "auto"}}
@@ -164,13 +163,7 @@
                   :type "checkbox"
                   :on-click #(do (swap! show-hillshade? not)
                                  (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
-         [:label "Hill shade overlay"]]
-        (when @show-hillshade?
-          [:<> [:label (str "Opacity: " @hillshade-opacity)]
-           [:input {:style {:width "100%"}
-                    :type "range" :min "0" :max "100" :value @hillshade-opacity
-                    :on-change #(do (reset! hillshade-opacity (u/input-int-value %))
-                                    (ol/set-opacity-by-title! "hillshade" (/ @hillshade-opacity 100.0)))}]])]]
+         [:label "Hill shade overlay"]]]]
       [:div#activelayer {:style ($/combine ($layer-section) {:margin-top "1rem"})}
        [:label {:style {:font-size "1.25rem"}} "Fire Layer"]
        (map-indexed (fn [i {:keys [opt-label options filter-on filter-key]}]
