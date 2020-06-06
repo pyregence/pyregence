@@ -23,7 +23,6 @@
 (defonce layer-list        (r/atom []))
 (defonce *layer-idx        (r/atom 0))
 (defonce last-clicked-info (r/atom []))
-(defonce *base-map         (r/atom 0))
 (defonce show-utc?         (r/atom true))
 (defonce show-info?        (r/atom false))
 (defonce show-measure?     (r/atom false))
@@ -284,10 +283,6 @@
           (do (ol/remove-popup-on-single-click!)
               (clear-info!))))))
 
-(defn select-base-map! [id]
-  (reset! *base-map id)
-  (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))
-
 (defn update-time [time-list]
   (mapv (fn [{:keys [js-time] :as layer}]
           (let [date (u/get-date-from-js js-time @show-utc?)
@@ -309,7 +304,6 @@
   (go
     (let [layers-chan (get-layers!)]
       (ol/init-map!)
-      (select-base-map! @*base-map)
       (<! layers-chan)
       (select-forecast! @*forecast)
       (ol/set-visible-by-title! "active" true))))
@@ -362,12 +356,7 @@
       :render
       (fn []
         [:div {:style ($control-layer)}
-         [mc/collapsible-panel
-          @*base-map
-          select-base-map!
-          @*params
-          select-param!
-          @processed-params]
+         [mc/collapsible-panel @*params select-param! @processed-params]
          (when (and @show-info? (aget @my-box "height"))
            [mc/information-tool
             @my-box

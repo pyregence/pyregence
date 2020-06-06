@@ -78,38 +78,38 @@
    :width            "fit-content"})
 
 (defn time-slider [filtered-layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone!]
-  (r/with-let [animate? (r/atom false)
-               *speed   (r/atom 1)]
-    (let [cycle-layer!    (fn [change]
-                            (select-layer! (mod (+ change @*layer-idx) (count (filtered-layers)))))
-          loop-animation! (fn la []
-                            (when @animate?
-                              (cycle-layer! 1)
-                              (js/setTimeout la (get-in c/speeds [@*speed :delay]))))]
-      [:div#time-slider {:style ($/combine $/tool ($time-slider))}
-       [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
-        [radio "UTC"   show-utc? true  select-time-zone! true]
-        [radio "Local" show-utc? false select-time-zone! true]]
-       [:div {:style ($/flex-col)}
-        [:input {:style {:width "12rem"}
-                 :type "range" :min "0" :max (dec (count (filtered-layers))) :value @*layer-idx
-                 :on-change #(select-layer! (u/input-int-value %))}]
-        [:label {:style {:font-size ".75rem"}}
-         layer-full-time]]
-       [:span {:style {:margin "0 1rem"}}
-        [tool-button :previous-button "Previous layer" #(cycle-layer! -1)]
-        [tool-button
-         (if @animate? :pause-button :play-button)
-         (str (if @animate? "Pause" "Play") " animation")
-         #(do (swap! animate? not)
-              (loop-animation!))]
-        [tool-button :next-button "Next layer" #(cycle-layer! 1)]]
-       [:select {:style ($/combine $dropdown)
-                 :value (or @*speed 1)
-                 :on-change #(reset! *speed (u/input-int-value %))}
-        (map-indexed (fn [id {:keys [opt-label]}]
-                       [:option {:key id :value id} opt-label])
-                     c/speeds)]])))
+  (r/with-let [animate?        (r/atom false)
+               *speed          (r/atom 1)
+               cycle-layer!    (fn [change]
+                                 (select-layer! (mod (+ change @*layer-idx) (count (filtered-layers)))))
+               loop-animation! (fn la []
+                                 (when @animate?
+                                   (cycle-layer! 1)
+                                   (js/setTimeout la (get-in c/speeds [@*speed :delay]))))]
+    [:div#time-slider {:style ($/combine $/tool ($time-slider))}
+     [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
+      [radio "UTC"   show-utc? true  select-time-zone! true]
+      [radio "Local" show-utc? false select-time-zone! true]]
+     [:div {:style ($/flex-col)}
+      [:input {:style {:width "12rem"}
+               :type "range" :min "0" :max (dec (count (filtered-layers))) :value (or @*layer-idx 0)
+               :on-change #(select-layer! (u/input-int-value %))}]
+      [:label {:style {:font-size ".75rem"}}
+       layer-full-time]]
+     [:span {:style {:margin "0 1rem"}}
+      [tool-button :previous-button "Previous layer" #(cycle-layer! -1)]
+      [tool-button
+       (if @animate? :pause-button :play-button)
+       (str (if @animate? "Pause" "Play") " animation")
+       #(do (swap! animate? not)
+            (loop-animation!))]
+      [tool-button :next-button "Next layer" #(cycle-layer! 1)]]
+     [:select {:style ($/combine $dropdown)
+               :value (or @*speed 1)
+               :on-change #(reset! *speed (u/input-int-value %))}
+      (map-indexed (fn [id {:keys [opt-label]}]
+                     [:option {:key id :value id} opt-label])
+                   c/speeds)]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Collapsible Panel
@@ -144,18 +144,19 @@
                    [:option {:key i :value i} opt-label])
                  options)]])
 
-(defn collapsible-panel [*base-map
-                         select-base-map!
-                         *params
-                         select-param!
-                         param-options]
-  (r/with-let [active-opacity    (r/atom 70.0)
-               show-hillshade?   (r/atom false)]
+(defn collapsible-panel [*params select-param! param-options]
+  (r/with-let [active-opacity   (r/atom 70.0)
+               show-hillshade?  (r/atom false)
+               *base-map        (r/atom 0)
+               select-base-map! (fn [id]
+                                  (reset! *base-map id)
+                                  (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
+    (select-base-map! @*base-map)
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style {:overflow "auto"}}
       [:div#baselayer {:style ($layer-section)}
        [:label {:style {:font-size "1.25rem"}} "Base Layer"]
-       [panel-dropdown "Map" *base-map c/base-map-options select-base-map!]
+       [panel-dropdown "Map" @*base-map c/base-map-options select-base-map!]
        [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
         [:div {:style {:display "flex"}}
          [:input {:style {:margin ".25rem .5rem 0 0"}
