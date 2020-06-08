@@ -17,6 +17,10 @@
   [event]
   (js/parseFloat (input-value event)))
 
+(defn input-keyword
+  [event]
+  (keyword (input-value event)))
+
 (defn input-file
   "Return the file of the target property of an event."
   [event]

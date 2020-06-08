@@ -43,70 +43,72 @@
                  :auto-zoom?  true
                  :block-info? true
                  :params      {:fire-name  {:opt-label "Fire Name"
-                                            :options   []}
+                                            :options   {:loading {:opt-label "Loading..."}}}
                                :model      {:opt-label "Model"
-                                            :options   [{:opt-label "ELMFIRE"
-                                                         :filter    "elmfire"}]}
+                                            :options   {:elmfire {:opt-label "ELMFIRE"
+                                                                  :filter    "elmfire"}}}
                                :model-init {:opt-label  "Forecast Start Time"
                                             :filter-on  :fire-name
                                             :filter-key :model-init
-                                            :options    []}
+                                            :options    {:loading {:opt-label "Loading..."}}}
                                :fuel       {:opt-label "Fuel"
-                                            :options   [{:opt-label "LANDFIRE"
-                                                         :filter    "landfire"}]}
-                               :burn-pct   {:opt-label "Burn Probability"
-                                            :options   [{:opt-label "90"
-                                                         :filter    "90"}
-                                                        {:opt-label "80"
-                                                         :filter    "80"}
-                                                        {:opt-label "70"
-                                                         :filter    "70"}
-                                                        {:opt-label "60"
-                                                         :filter    "60"}
-                                                        {:opt-label "50"
-                                                         :filter    "50"}
-                                                        {:opt-label "40"
-                                                         :filter    "40"}
-                                                        {:opt-label "30"
-                                                         :filter    "30"}
-                                                        {:opt-label "20"
-                                                         :filter    "20"}
-                                                        {:opt-label "10"
-                                                         :filter    "10"}]}
+                                            :options   {:landfire {:opt-label "LANDFIRE"
+                                                                   :filter    "landfire"}}}
+                               :burn-pct   {:opt-label      "Burn Probability"
+                                            :default-option :50
+                                            :options        (array-map
+                                                             :90 {:opt-label "90"
+                                                                  :filter    "90"}
+                                                             :80 {:opt-label "80"
+                                                                  :filter    "80"}
+                                                             :70 {:opt-label "70"
+                                                                  :filter    "70"}
+                                                             :60 {:opt-label "60"
+                                                                  :filter    "60"}
+                                                             :50 {:opt-label "50"
+                                                                  :filter    "50"}
+                                                             :40 {:opt-label "40"
+                                                                  :filter    "40"}
+                                                             :30 {:opt-label "30"
+                                                                  :filter    "30"}
+                                                             :20 {:opt-label "20"
+                                                                  :filter    "20"}
+                                                             :10 {:opt-label "10"
+                                                                  :filter    "10"})}
                                :output     {:opt-label "Output"
-                                            :options   [{:opt-label "Burned area"
-                                                         :filter    "burned-area"
-                                                         :units     "Hours"}]}}}
+                                            :options   {:burned {:opt-label "Burned area"
+                                                                 :filter    "burned-area"
+                                                                 :units     "Hours"}}}}}
    :fire-risk {:opt-label       "Risk Forecast"
                :filter          "fire-risk-forecast"
                :reverse-legend? true
                :params          {:model      {:opt-label "Model"
-                                              :options   [{:opt-label "ELMFIRE"
-                                                           :filter    "elmfire"}]}
+                                              :options   {:elmfire {:opt-label "ELMFIRE"
+                                                                    :filter    "elmfire"}}}
                                  :model-init {:opt-label "Forecast Start Time"
-                                              :options   []}
+                                              :options   {:loading {:opt-label "Loading..."}}}
                                  :fuel       {:opt-label "Fuel"
-                                              :options   [{:opt-label "LANDFIRE"
-                                                           :filter    "landfire"}]}
+                                              :options   {:landfire {:opt-label "LANDFIRE"
+                                                                     :filter    "landfire"}}}
                                  :pattern    {:opt-label "Ignition Pattern"
-                                              :options   [{:opt-label    "Human-caused ignitions"
-                                                           :filter       "all"}
-                                                          {:opt-label    "Transmission lines"
-                                                           :filter       "tlines"
-                                                           :clear-point? true}]}
+                                              :options   {:all   {:opt-label    "Human-caused ignitions"
+                                                                  :filter       "all"}
+                                                          :tline {:opt-label    "Transmission lines"
+                                                                  :filter       "tlines"
+                                                                  :clear-point? true}}}
                                  :output     {:opt-label "Output"
-                                              :options   [{:opt-label "Fire area"
-                                                           :filter    "fire-area"
-                                                           :units     "Acres"}
-                                                          {:opt-label "Fire volume"
-                                                           :filter    "fire-volume"
-                                                           :units     "Acre-ft"}
-                                                          {:opt-label "Impacted structures"
-                                                           :filter    "impacted-structures"
-                                                           :units     "Structures"}
-                                                          {:opt-label "Relative burn probability"
-                                                           :filter    "times-burned"
-                                                           :units     "Times"}]}}}})
+                                              :options   {:fire-area    {:opt-label "Fire area"
+                                                                         :filter    "fire-area"
+                                                                         :units     "Acres"}
+                                                          :fire-volume  {:opt-label "Fire volume"
+                                                                         :filter    "fire-volume"
+                                                                         :units     "Acre-ft"}
+                                                          :impacted     {:opt-label "Impacted structures"
+                                                                         :filter    "impacted-structures"
+                                                                         :units     "Structures"}
+                                                          :times-burned {:opt-label "Relative burn probability"
+                                                                         :filter    "times-burned"
+                                                                         :units     "Times"}}}}}})
 
 ;; Scroll speeds for time slider
 
@@ -159,18 +161,19 @@
         </a>
     </div>")
 
-(def base-map-options [{:opt-label "Mapbox Street Topo"
-                        :source    (XYZ.
-                                    #js {:url (get-map-box-static-url "cka8jaky90i9m1iphwh79wr04")
-                                         :attributions mapbox-attribution-text
-                                         :attributionsCollapsible false})}
-                       {:opt-label "Mapbox Satellite"
-                        :source    (XYZ.
-                                    #js {:url (get-map-box-raster-url "mapbox.satellite")
-                                         :attributions mapbox-attribution-text
-                                         :attributionsCollapsible false})}
-                       {:opt-label "Mapbox Satellite Street"
-                        :source    (XYZ.
-                                    #js {:url (get-map-box-static-url "cka8hoo5v0gpy1iphg08hz7oj")
-                                         :attributions mapbox-attribution-text
-                                         :attributionsCollapsible false})}])
+(def base-map-options
+  {:mb-topo       {:opt-label "Mapbox Street Topo"
+                   :source    (XYZ.
+                               #js {:url (get-map-box-static-url "cka8jaky90i9m1iphwh79wr04")
+                                    :attributions mapbox-attribution-text
+                                    :attributionsCollapsible false})}
+   :mb-satellite  {:opt-label "Mapbox Satellite"
+                   :source    (XYZ.
+                               #js {:url (get-map-box-raster-url "mapbox.satellite")
+                                    :attributions mapbox-attribution-text
+                                    :attributionsCollapsible false})}
+   :mb-sat-street {:opt-label "Mapbox Satellite Street"
+                   :source    (XYZ.
+                               #js {:url (get-map-box-static-url "cka8hoo5v0gpy1iphg08hz7oj")
+                                    :attributions mapbox-attribution-text
+                                    :attributionsCollapsible false})}})

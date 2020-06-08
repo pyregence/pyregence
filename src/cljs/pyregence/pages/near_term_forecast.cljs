@@ -45,12 +45,15 @@
 (defn get-fire-names [forecast-layers]
   (->> forecast-layers
        (group-by :fire-name)
-       (mapv (fn [[fire-name opt-vec]]
-               {:opt-label  fire-name
-                :filter     fire-name
-                :model-init (->> opt-vec
-                                 (map :model-init)
-                                 (set))}))))
+       (reduce (fn [acc [fire-name opt-vec]]
+                 (assoc acc
+                        (keyword fire-name)
+                        {:opt-label  fire-name
+                         :filter     fire-name
+                         :model-init (->> opt-vec
+                                          (map :model-init)
+                                          (set))}))
+               {})))
 
 (defn get-model-times [forecast-layers]
   (->> forecast-layers
@@ -58,15 +61,18 @@
        (distinct)
        (sort)
        (reverse)
-       (mapv (fn [option]
-               (let [model-js-time (apply u/js-date-from-string (str/split option #"_"))
-                     date          (u/get-date-from-js model-js-time @show-utc?)
-                     time          (u/get-time-from-js model-js-time @show-utc?)]
-                 {:opt-label (str date "-" time)
-                  :js-time   model-js-time
-                  :date      date
-                  :time      time
-                  :filter    option})))))
+       (reduce (fn [acc option]
+                 (let [model-js-time (apply u/js-date-from-string (str/split option #"_"))
+                       date          (u/get-date-from-js model-js-time @show-utc?)
+                       time          (u/get-time-from-js model-js-time @show-utc?)]
+                   (assoc acc
+                          (keyword option)
+                          {:opt-label (str date "-" time)
+                           :js-time   model-js-time
+                           :date      date
+                           :time      time
+                           :filter    option})))
+               {})))
 
 (defn process-params! []
   (reset! processed-params
@@ -74,11 +80,15 @@
                 forecast-layers (filter (fn [layer]
                                           (= forecast-filter (:forecast layer)))
                                         @layer-list)
-                params          (get-forecast-opt :params)]
+                params          (get-forecast-opt :params)
+                has-fire-name?  (get-in params [:fire-name])]
             (cond-> params
-              (get-in params [:fire-name]) (assoc-in [:fire-name  :options] (get-fire-names  forecast-layers))
-              :always                      (assoc-in [:model-init :options] (get-model-times forecast-layers)))))
-  (reset! *params (reduce-kv (fn [acc k _] (assoc acc k 0)) {} @processed-params)))
+              has-fire-name? (assoc-in [:fire-name  :options] (get-fire-names  forecast-layers))
+              :always        (assoc-in [:model-init :options] (get-model-times forecast-layers)))))
+  (reset! *params (into {} (map (fn [[k]]
+                                  {k (or (get-in @processed-params [k :default-option])
+                                         (ffirst (get-in @processed-params [k :options])))})
+                                @processed-params))))
 
 (defn filtered-layers []
   (let [selected-set (-> (map (fn [[key {:keys [options]}]]
@@ -241,16 +251,13 @@
 
 (defn check-param-filter []
   (reset! *params
-          (reduce-kv (fn [acc k v]
-                       (let [{:keys [filter-on filter-key options]} (@processed-params k)
-                             filter-set (get-in @processed-params [filter-on :options (@*params filter-on) filter-key])]
-                         (assoc acc
-                                k
-                                (if (and filter-on (not (filter-set (get-in options [v :filter]))))
-                                  (or (find-index-vec-map :filter (first filter-set) options) -1)
-                                  v))))
-                     {}
-                     @*params)))
+          (into {} (map (fn [[k v]]
+                          (let [{:keys [filter-on filter-key options]} (@processed-params k)
+                                filter-set (get-in @processed-params [filter-on :options (@*params filter-on) filter-key])]
+                            {k (if (and filter-on (not (filter-set (get-in options [v :filter]))))
+                                 (keyword (first filter-set))
+                                 v)}))
+                        @*params))))
 
 (defn change-type! [clear?]
   (check-param-filter)
@@ -292,9 +299,8 @@
 
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
-  (reset! last-clicked-info
-          (update-time @last-clicked-info))
-  (reset! processed-params (update-in @processed-params [:model-init :options] update-time)))
+  (reset! last-clicked-info (update-time @last-clicked-info))
+  (reset! processed-params  (update-in @processed-params [:model-init :options] update-time)))
 
 (defn init-map! []
   (go

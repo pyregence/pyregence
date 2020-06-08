@@ -138,16 +138,16 @@
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
    [:label title]
    [:select {:style ($dropdown)
-             :value (or val -1)
-             :on-change #(call-back (u/input-int-value %))}
-    (map-indexed (fn [i {:keys [opt-label]}]
-                   [:option {:key i :value i} opt-label])
-                 options)]])
+             :value (or val :none)
+             :on-change #(call-back (u/input-keyword %))}
+    (map (fn [[key {:keys [opt-label]}]]
+           [:option {:key key :value key} opt-label])
+         options)]])
 
 (defn collapsible-panel [*params select-param! param-options]
   (r/with-let [active-opacity   (r/atom 70.0)
                show-hillshade?  (r/atom false)
-               *base-map        (r/atom 0)
+               *base-map        (r/atom :mb-topo)
                select-base-map! (fn [id]
                                   (reset! *base-map id)
                                   (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
@@ -169,7 +169,8 @@
        (map (fn [[key {:keys [opt-label options filter-on filter-key]}]]
               (let [filter-set       (get-in param-options [filter-on :options (*params filter-on) filter-key])
                     filtered-options (if filter-set
-                                       (filterv #(filter-set (:filter %)) options)
+                                       (into {} (filter (fn [[_ v]] (filter-set (:filter v)))
+                                                        options))
                                        options)]
                 ^{:key key} [panel-dropdown opt-label (*params key) filtered-options #(select-param! key %)]))
             param-options)
