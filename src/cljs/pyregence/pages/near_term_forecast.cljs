@@ -76,9 +76,8 @@
 
 (defn process-params! []
   (reset! processed-params
-          (let [forecast-filter (get-forecast-opt :filter)
-                forecast-layers (filter (fn [layer]
-                                          (= forecast-filter (:forecast layer)))
+          (let [forecast-layers (filter (fn [layer]
+                                          (= (get-forecast-opt :filter) (:forecast layer)))
                                         @layer-list)
                 params          (get-forecast-opt :params)
                 has-fire-name?  (get-in params [:fire-name])]
