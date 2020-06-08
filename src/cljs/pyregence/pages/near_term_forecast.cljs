@@ -258,24 +258,25 @@
                                  v)}))
                         @*params))))
 
-(defn change-type! [clear?]
+(defn change-type! [clear? zoom?]
   (check-param-filter)
   (ol/swap-active-layer! (get-current-layer-name))
   (get-legend!           (get-current-layer-name))
   (if clear?
     (clear-info!)
     (get-point-info! (ol/get-overlay-bbox)))
-  (when (get-forecast-opt :auto-zoom?)
+  (when zoom?
     (ol/zoom-to-extent! (get-current-layer-extent))))
 
 (defn select-param! [key val]
   (swap! *params assoc key val)
-  (change-type! (get-current-layer-key :clear-point?)))
+  (change-type! (get-current-layer-key :clear-point?)
+                (get-in @processed-params [key :auto-zoom?])))
 
 (defn select-forecast! [key]
   (reset! *forecast key)
   (process-params!)
-  (change-type! true))
+  (change-type! true (get-forecast-opt :auto-zoom?)))
 
 (defn set-show-info! [show?]
   (if (get-forecast-opt :block-info?)
