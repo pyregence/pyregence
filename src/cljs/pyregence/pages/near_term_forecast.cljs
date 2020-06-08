@@ -272,8 +272,8 @@
   (swap! *params assoc key val)
   (change-type! (get-current-layer-key :clear-point?)))
 
-(defn select-forecast! [id]
-  (reset! *forecast id)
+(defn select-forecast! [key]
+  (reset! *forecast key)
   (process-params!)
   (change-type! true))
 
