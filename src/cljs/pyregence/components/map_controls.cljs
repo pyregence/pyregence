@@ -166,13 +166,13 @@
          [:label "Hill shade overlay"]]]]
       [:div#activelayer {:style ($/combine ($layer-section) {:margin-top "1rem"})}
        [:label {:style {:font-size "1.25rem"}} "Fire Layer"]
-       (map-indexed (fn [i {:keys [opt-label options filter-on filter-key]}]
-                      (let [filter-set       (get-in param-options [filter-on :options (get *params filter-on) filter-key])
-                            filtered-options (if filter-set
-                                               (filterv #(filter-set (:filter %)) options)
-                                               options)]
-                        ^{:key i} [panel-dropdown opt-label (get *params i) filtered-options #(select-param! i %)]))
-                    param-options)
+       (map (fn [[key {:keys [opt-label options filter-on filter-key]}]]
+              (let [filter-set       (get-in param-options [filter-on :options (*params filter-on) filter-key])
+                    filtered-options (if filter-set
+                                       (filterv #(filter-set (:filter %)) options)
+                                       options)]
+                ^{:key key} [panel-dropdown opt-label (*params key) filtered-options #(select-param! key %)]))
+            param-options)
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]
         [:input {:style {:width "100%"}
