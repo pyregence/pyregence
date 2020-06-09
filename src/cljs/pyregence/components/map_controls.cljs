@@ -77,40 +77,39 @@
    :bottom           "1rem"
    :width            "fit-content"})
 
-(defn time-slider [filtered-layers
-                   *layer-idx
-                   get-current-layer-full-time
-                   select-layer!
-                   cycle-layer!
-                   show-utc?
-                   select-time-zone!
-                   animate?
-                   loop-animation!
-                   *speed]
-  [:div#time-slider {:style ($/combine $/tool ($time-slider))}
-   [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
-    [radio "UTC"   show-utc? true  select-time-zone! true]
-    [radio "Local" show-utc? false select-time-zone! true]]
-   [:div {:style ($/flex-col)}
-    [:input {:style {:width "12rem"}
-             :type "range" :min "0" :max (dec (count (filtered-layers))) :value *layer-idx
-             :on-change #(select-layer! (u/input-int-value %))}]
-    [:label {:style {:font-size ".75rem"}}
-     (get-current-layer-full-time)]]
-   [:span {:style {:margin "0 1rem"}}
-    [tool-button :previous-button "Previous layer" #(cycle-layer! -1)]
-    [tool-button
-     (if @animate? :pause-button :play-button)
-     (str (if @animate? "Pause" "Play") " animation")
-     #(do (swap! animate? not)
-          (loop-animation!))]
-    [tool-button :next-button "Next layer" #(cycle-layer! 1)]]
-   [:select {:style ($/combine $dropdown)
-             :value (or @*speed 1)
-             :on-change #(reset! *speed (u/input-int-value %))}
-    (map-indexed (fn [id {:keys [opt-label]}]
-                   [:option {:key id :value id} opt-label])
-                 c/speeds)]])
+(defn time-slider [filtered-layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone!]
+  (r/with-let [animate?        (r/atom false)
+               *speed          (r/atom 1)
+               cycle-layer!    (fn [change]
+                                 (select-layer! (mod (+ change @*layer-idx) (count (filtered-layers)))))
+               loop-animation! (fn la []
+                                 (when @animate?
+                                   (cycle-layer! 1)
+                                   (js/setTimeout la (get-in c/speeds [@*speed :delay]))))]
+    [:div#time-slider {:style ($/combine $/tool ($time-slider))}
+     [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
+      [radio "UTC"   show-utc? true  select-time-zone! true]
+      [radio "Local" show-utc? false select-time-zone! true]]
+     [:div {:style ($/flex-col)}
+      [:input {:style {:width "12rem"}
+               :type "range" :min "0" :max (dec (count (filtered-layers))) :value (or @*layer-idx 0)
+               :on-change #(select-layer! (u/input-int-value %))}]
+      [:label {:style {:font-size ".75rem"}}
+       layer-full-time]]
+     [:span {:style {:margin "0 1rem"}}
+      [tool-button :previous-button "Previous layer" #(cycle-layer! -1)]
+      [tool-button
+       (if @animate? :pause-button :play-button)
+       (str (if @animate? "Pause" "Play") " animation")
+       #(do (swap! animate? not)
+            (loop-animation!))]
+      [tool-button :next-button "Next layer" #(cycle-layer! 1)]]
+     [:select {:style ($/combine $dropdown)
+               :value (or @*speed 1)
+               :on-change #(reset! *speed (u/input-int-value %))}
+      (map-indexed (fn [id {:keys [opt-label]}]
+                     [:option {:key id :value id} opt-label])
+                   c/speeds)]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Collapsible Panel
@@ -145,18 +144,19 @@
                    [:option {:key i :value i} opt-label])
                  options)]])
 
-(defn collapsible-panel [*base-map
-                         select-base-map!
-                         *params
-                         select-param!
-                         param-options]
-  (r/with-let [active-opacity    (r/atom 70.0)
-               show-hillshade?   (r/atom false)]
+(defn collapsible-panel [*params select-param! param-options]
+  (r/with-let [active-opacity   (r/atom 70.0)
+               show-hillshade?  (r/atom false)
+               *base-map        (r/atom 0)
+               select-base-map! (fn [id]
+                                  (reset! *base-map id)
+                                  (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
+    (select-base-map! @*base-map)
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style {:overflow "auto"}}
       [:div#baselayer {:style ($layer-section)}
        [:label {:style {:font-size "1.25rem"}} "Base Layer"]
-       [panel-dropdown "Map" *base-map c/base-map-options select-base-map!]
+       [panel-dropdown "Map" @*base-map c/base-map-options select-base-map!]
        [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
         [:div {:style {:display "flex"}}
          [:input {:style {:margin ".25rem .5rem 0 0"}
@@ -212,44 +212,59 @@
                   (str (hs-str @show-legend?) " legend")
                   #(swap! show-legend? not)]])])
 
-(defn zoom-bar [*zoom select-zoom! get-current-layer-extent]
-  [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom "36px"})}
-   (map-indexed (fn [i [icon title on-click]]
-                  ^{:key i} [tool-button icon title on-click])
-                [[:my-location
-                  "Center on my location"
-                  #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
-                 [:center-on-point
-                  "Center on selected point"
-                  #(ol/center-on-overlay!)] ; TODO move this action the the information panel
-                 [:extent
-                  "Zoom to fit layer"
-                  #(ol/zoom-to-extent! (get-current-layer-extent))]
-                 [:zoom-in
-                  "Zoom in"
-                  #(select-zoom! (inc *zoom))]
-                 [:zoom-out
-                  "Zoom out"
-                  #(select-zoom! (dec *zoom))]])])
+(defn zoom-bar [get-current-layer-extent]
+  (r/with-let [minZoom      (r/atom 0)
+               maxZoom      (r/atom 28)
+               *zoom        (r/atom 10)
+               select-zoom! (fn [zoom]
+                              (reset! *zoom (max @minZoom
+                                                 (min @maxZoom
+                                                      zoom)))
+                              (ol/set-zoom! @*zoom))]
+    (let [[cur min max] (ol/get-zoom-info)]
+      (reset! *zoom cur)
+      (reset! minZoom min)
+      (reset! maxZoom max))
+    (ol/add-map-zoom-end! #(reset! *zoom %))
+    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom "36px"})}
+     (map-indexed (fn [i [icon title on-click]]
+                    ^{:key i} [tool-button icon title on-click])
+                  [[:my-location
+                    "Center on my location"
+                    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
+                   [:center-on-point
+                    "Center on selected point"
+                    #(ol/center-on-overlay!)] ; TODO move this action the the information panel
+                   [:extent
+                    "Zoom to fit layer"
+                    #(ol/zoom-to-extent! (get-current-layer-extent))]
+                   [:zoom-in
+                    "Zoom in"
+                    #(select-zoom! (inc @*zoom))]
+                   [:zoom-out
+                    "Zoom out"
+                    #(select-zoom! (dec @*zoom))]])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Measure Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn measure-tool [my-box lon-lat close-fn!]
-  [:div#measure-tool
-   [resizable-window
-    my-box
-    75
-    250
-    "Measure Tool"
-    close-fn!
-    (fn [_ _]
-      [:div
-       [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
-        "Lat:" (u/to-precision 4 (get lon-lat 1))]
-       [:label {:style {:width "50%" :text-align "left"}}
-        "Lon:" (u/to-precision 4 (get lon-lat 0))]])]])
+(defn measure-tool [parent-box close-fn!]
+  (r/with-let [lon-lat (r/atom [0 0])]
+    (ol/add-map-mouse-move! #(reset! lon-lat %))
+    [:div#measure-tool
+     [resizable-window
+      parent-box
+      75
+      250
+      "Measure Tool"
+      close-fn!
+      (fn [_ _]
+        [:div
+         [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
+          "Lat:" (u/to-precision 4 (get @lon-lat 1))]
+         [:label {:style {:width "50%" :text-align "left"}}
+          "Lon:" (u/to-precision 4 (get @lon-lat 0))]])]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Information Tool
@@ -294,10 +309,10 @@
       last-clicked-info]
      [information-div last-clicked-info *layer-idx units info-height]]))
 
-(defn information-tool [my-box *layer-idx select-layer! units cur-hour legend-list last-clicked-info close-fn!]
+(defn information-tool [parent-box *layer-idx select-layer! units cur-hour legend-list last-clicked-info close-fn!]
   [:div#info-tool
    [resizable-window
-    my-box
+    parent-box
     200
     400
     "Point Information"
