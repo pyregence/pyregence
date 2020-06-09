@@ -279,20 +279,28 @@
           (do (ol/remove-popup-on-single-click!)
               (clear-info!))))))
 
-(defn update-time [time-list]
-  (mapv (fn [{:keys [js-time] :as layer}]
-          (let [date (u/get-date-from-js js-time @show-utc?)
-                time (u/get-time-from-js js-time @show-utc?)]
-            (assoc layer
-                   :date      (u/get-date-from-js js-time @show-utc?)
-                   :time      (u/get-time-from-js js-time @show-utc?)
-                   :opt-label (str date "-" time))))
-        time-list))
-
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
-  (reset! last-clicked-info (update-time @last-clicked-info))
-  (reset! processed-params  (update-in @processed-params [:model-init :options] update-time)))
+  (reset! last-clicked-info (mapv (fn [{:keys [js-time] :as layer}]
+                                    (let [date (u/get-date-from-js js-time @show-utc?)
+                                          time (u/get-time-from-js js-time @show-utc?)]
+                                      (assoc layer
+                                             :date      (u/get-date-from-js js-time @show-utc?)
+                                             :time      (u/get-time-from-js js-time @show-utc?)
+                                             :opt-label (str date "-" time))))
+                                  @last-clicked-info))
+  (reset! processed-params (update-in @processed-params
+                                      [:model-init :options]
+                                      #(reduce-kv (fn [acc k {:keys [js-time] :as v}]
+                                                    (assoc acc
+                                                           k
+                                                           (assoc v
+                                                                  :opt-label
+                                                                  (str (u/get-date-from-js js-time @show-utc?)
+                                                                       "-"
+                                                                       (u/get-time-from-js js-time @show-utc?)))))
+                                                  {}
+                                                  %))))
 
 (defn init-map! []
   (go
