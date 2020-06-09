@@ -119,12 +119,14 @@
   (:layer-group (current-layer) ""))
 
 (defn get-current-layer-key [key-name]
-  (->>
-   (map (fn [[key {:keys [options]}]]
+  (some (fn [[key {:keys [options]}]]
           (get-in options [(@*params key) key-name]))
-        (get-forecast-opt :params))
-   (remove nil?)
-   (first)))
+        (get-forecast-opt :params)))
+
+(defn get-options-key [key-name]
+  (some (fn [[_ val]]
+          (when-let [value (get val key-name)] value))
+        (get-forecast-opt :params)))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
@@ -276,7 +278,7 @@
 (defn select-forecast! [key]
   (reset! *forecast key)
   (process-params!)
-  (change-type! true (get-forecast-opt :auto-zoom?)))
+  (change-type! true (get-options-key :auto-zoom?)))
 
 (defn set-show-info! [show?]
   (if (get-forecast-opt :block-info?)

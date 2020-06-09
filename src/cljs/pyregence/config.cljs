@@ -40,7 +40,6 @@
 (def forecast-options
   {:active-fire {:opt-label   "Active Fire Forecast"
                  :filter      "fire-spread-forecast"
-                 :auto-zoom?  true
                  :block-info? true
                  :params      {:fire-name  {:opt-label  "Fire Name"
                                             :auto-zoom? true
