@@ -45,9 +45,7 @@
                         (keyword fire-name)
                         {:opt-label  fire-name
                          :filter     fire-name
-                         :model-init (->> opt-vec
-                                          (map :model-init)
-                                          (set))}))
+                         :model-init (into #{} (map :model-init) opt-vec)}))
                {})))
 
 (defn get-model-times [forecast-layers]
