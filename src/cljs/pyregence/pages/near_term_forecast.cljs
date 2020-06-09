@@ -34,11 +34,6 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn find-index-vec-map [key-name val coll]
-  (first (keep-indexed (fn [i entry]
-                         (when (= val (get entry key-name)) i))
-                       coll)))
-
 (defn get-forecast-opt [key-name]
   (get-in c/forecast-options [@*forecast key-name]))
 
