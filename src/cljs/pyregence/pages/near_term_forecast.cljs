@@ -21,14 +21,15 @@
 
 (defonce legend-list       (r/atom []))
 (defonce layer-list        (r/atom []))
-(defonce *layer-idx        (r/atom 0))
 (defonce last-clicked-info (r/atom []))
 (defonce show-utc?         (r/atom true))
 (defonce show-info?        (r/atom false))
 (defonce show-measure?     (r/atom false))
 (defonce *forecast         (r/atom :fire-risk))
-(defonce *params           (r/atom {}))
 (defonce processed-params  (r/atom []))
+(defonce *params           (r/atom {}))
+(defonce filtered-layers   (r/atom []))
+(defonce *layer-idx        (r/atom 0))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -82,17 +83,18 @@
                                          (ffirst (get-in @processed-params [k :options])))})
                                 @processed-params))))
 
-(defn filtered-layers []
+(defn filter-layers! []
   (let [selected-set (-> (map (fn [[key {:keys [options]}]]
                                 (get-in options [(@*params key) :filter]))
                               @processed-params)
                          (set)
                          (conj (get-forecast-opt :filter)))]
-    (filterv (fn [{:keys [filter-set]}] (= selected-set filter-set))
-             @layer-list)))
+    (reset! filtered-layers
+            (filterv (fn [{:keys [filter-set]}] (= selected-set filter-set))
+                     @layer-list))))
 
 (defn current-layer []
-  (get (filtered-layers) @*layer-idx))
+  (get @filtered-layers @*layer-idx))
 
 (defn get-current-layer-name []
   (:layer (current-layer) ""))
@@ -220,7 +222,7 @@
                               :hour    hour}
                              pi-layer))
                     pi
-                    (filtered-layers))))))
+                    @filtered-layers)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
@@ -253,6 +255,7 @@
 
 (defn change-type! [clear?]
   (check-param-filter)
+  (filter-layers!)
   (ol/swap-active-layer! (get-current-layer-name))
   (get-legend!           (get-current-layer-name))
   (if clear?
@@ -375,7 +378,7 @@
          [mc/zoom-bar get-current-layer-extent]
          [mc/tool-bar show-info? show-measure? set-show-info!]
          [mc/time-slider
-          filtered-layers
+          (count @filtered-layers)
           *layer-idx
           (get-current-layer-full-time)
           select-layer!
