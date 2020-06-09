@@ -40,13 +40,11 @@
 (defn get-fire-names [forecast-layers]
   (->> forecast-layers
        (group-by :fire-name)
-       (reduce (fn [acc [fire-name opt-vec]]
-                 (assoc acc
-                        (keyword fire-name)
-                        {:opt-label  fire-name
-                         :filter     fire-name
-                         :model-init (into #{} (map :model-init) opt-vec)}))
-               {})))
+       (u/mmap (fn [[fire-name opt-vec]]
+                 [(keyword fire-name)
+                  {:opt-label  fire-name
+                   :filter     fire-name
+                   :model-init (into #{} (map :model-init) opt-vec)}]))))
 
 (defn get-model-times [forecast-layers]
   (->> forecast-layers
@@ -54,18 +52,16 @@
        (distinct)
        (sort)
        (reverse)
-       (reduce (fn [acc option]
+       (u/mmap (fn [option]
                  (let [model-js-time (apply u/js-date-from-string (str/split option #"_"))
                        date          (u/get-date-from-js model-js-time @show-utc?)
                        time          (u/get-time-from-js model-js-time @show-utc?)]
-                   (assoc acc
-                          (keyword option)
-                          {:opt-label (str date "-" time)
-                           :js-time   model-js-time
-                           :date      date
-                           :time      time
-                           :filter    option})))
-               {})))
+                   [(keyword option)
+                    {:opt-label (str date "-" time)
+                     :js-time   model-js-time
+                     :date      date
+                     :time      time
+                     :filter    option}])))))
 
 (defn process-params! []
   (reset! processed-params
@@ -244,17 +240,16 @@
     (reset! show-info? false)))
 
 (defn check-param-filter []
-  (swap! *params
-         (fn [params]
-           (reduce-kv (fn [acc k v]
-                        (let [{:keys [filter-on filter-key options]} (@processed-params k)
-                              filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
-                          (assoc acc k
-                                 (if (and filter-on (not (filter-set (get-in options [v :filter]))))
-                                   (keyword (first filter-set))
-                                   v))))
-                      {}
-                      params))))
+  (reset! *params
+          (fn [params]
+            (u/mmap (fn [[k v]]
+                      (let [{:keys [filter-on filter-key options]} (@processed-params k)
+                            filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
+                        [k
+                         (if (and filter-on (not (filter-set (get-in options [v :filter]))))
+                           (keyword (first filter-set))
+                           v)]))
+                    params))))
 
 (defn change-type! [clear?]
   (check-param-filter)

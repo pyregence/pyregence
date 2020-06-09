@@ -210,6 +210,14 @@
                  (subs date 6 8) "T"
                  (subs time 0 2) ":00:00.000z")))
 
+;;; ->map HOF
+
+(defn mmap [pred coll]
+  (persistent! (reduce (fn [acc cur]
+                         (let [[key val] (pred cur)] (assoc! acc key val)))
+                       (transient {})
+                       coll)))
+
 ;;; Misc Functions
 
 (defn no-data? [x]
