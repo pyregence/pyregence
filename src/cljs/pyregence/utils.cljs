@@ -212,7 +212,7 @@
 
 ;;; ->map HOF
 
-(defn mmap [pred coll]
+(defn mapm [pred coll]
   (persistent! (reduce (fn [acc cur]
                          (let [[key val] (pred cur)] (assoc! acc key val)))
                        (transient {})
