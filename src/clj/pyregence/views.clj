@@ -10,6 +10,9 @@
      :body    (html5
                [:head
                 (slurp "resources/html/~head.html")
+                [:title "Near Term Forecasting Tool - Pyregence"]
+                [:meta {:name "description"
+                        :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
                 (include-css "/css/ol.css")
                 (include-js "/js/ol.js" "/cljs/app.js")]
                [:body
@@ -32,25 +35,26 @@
    "/scenario-analyses" "scenario-analyses.html"
    "/team"              "team.html"})
 
-(defn recur-separate-scripts [hiccup]
+(defn recur-separate-tags [hiccup]
   (if (vector? hiccup)
     (let [[tag meta & children] hiccup]
       (cond
-        (#{:script :link} tag) {:head-tags [hiccup]
-                                :body-tags nil}
+        (#{:script :link :title :meta} tag)
+        {:head-tags [hiccup] :body-tags nil}
 
-        children               (let [x (map recur-separate-scripts children)]
-                                 {:head-tags (apply concat (map :head-tags x))
-                                  :body-tags (into [tag meta] (keep :body-tags x))})
+        children
+        (let [x (map recur-separate-tags children)]
+          {:head-tags (apply concat (map :head-tags x))
+           :body-tags (into [tag meta] (keep :body-tags x))})
 
-        :else                  {:head-tags nil
-                                :body-tags hiccup}))
+        :else
+        {:head-tags nil :body-tags hiccup}))
     {:head-tags nil
      :body-tags hiccup}))
 
 (defn render-static [uri]
   (fn [_]
-    (let [{:keys [head-tags body-tags]} (recur-separate-scripts (parse (str "resources/html/" (uri->html uri))))]
+    (let [{:keys [head-tags body-tags]} (recur-separate-tags (parse (str "resources/html/" (uri->html uri))))]
     {:status  (if (= uri "/not-found") 404 200)
      :headers {"Content-Type" "text/html"}
      :body    (html5
