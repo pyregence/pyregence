@@ -36,7 +36,7 @@
   (if (vector? hiccup)
     (let [[tag meta & children] hiccup]
       (cond
-        (#{:script :link} tag) {:head-tags [hiccup]
+        (#{:script :link :title :meta } tag) {:head-tags [hiccup]
                                 :body-tags nil}
 
         children               (let [x (map recur-separate-scripts children)]
