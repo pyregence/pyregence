@@ -46,7 +46,8 @@
                   {}
                   (format-simple "sudo certbot certonly --quiet --non-interactive --agree-tos -m support@sig-gis.com --webroot -w ./resources/public -d %1"
                                  domain)
-                  (format-simple (str "sudo openssl pkcs12 -export -out ./.key/keystore.pkcs12" ``" -in %1/fullchain.pem"
+                  (format-simple (str "sudo openssl pkcs12 -export -out ./.key/keystore.pkcs12"
+                                      " -in %1/fullchain.pem"
                                       " -inkey %2/privkey.pem"
                                       " -passout pass:foobar")
                                  certbot-path
