@@ -114,12 +114,13 @@
   (:layer-group (current-layer) ""))
 
 (defn get-current-layer-key [key-name]
-  (->>
-   (map (fn [[key {:keys [options]}]]
+  (some (fn [[key {:keys [options]}]]
           (get-in options [(@*params key) key-name]))
-        (get-forecast-opt :params))
-   (remove nil?)
-   (first)))
+        (get-forecast-opt :params)))
+
+(defn get-options-key [key-name]
+  (some #(get % key-name)
+        (vals (get-forecast-opt :params))))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
@@ -256,24 +257,25 @@
                       {}
                       params))))
 
-(defn change-type! [clear?]
+(defn change-type! [clear? zoom?]
   (check-param-filter)
   (ol/swap-active-layer! (get-current-layer-name))
   (get-legend!           (get-current-layer-name))
   (if clear?
     (clear-info!)
     (get-point-info! (ol/get-overlay-bbox)))
-  (when (get-forecast-opt :auto-zoom?)
+  (when zoom?
     (ol/zoom-to-extent! (get-current-layer-extent))))
 
 (defn select-param! [key val]
   (swap! *params assoc key val)
-  (change-type! (get-current-layer-key :clear-point?)))
+  (change-type! (get-current-layer-key :clear-point?)
+                (get-in @processed-params [key :auto-zoom?])))
 
 (defn select-forecast! [key]
   (reset! *forecast key)
   (process-params!)
-  (change-type! true))
+  (change-type! true (get-options-key :auto-zoom?)))
 
 (defn set-show-info! [show?]
   (if (get-forecast-opt :block-info?)

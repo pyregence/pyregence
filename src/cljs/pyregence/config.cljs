@@ -40,10 +40,10 @@
 (def forecast-options
   {:active-fire {:opt-label   "Active Fire Forecast"
                  :filter      "fire-spread-forecast"
-                 :auto-zoom?  true
                  :block-info? true
-                 :params      {:fire-name  {:opt-label "Fire Name"
-                                            :options   {:loading {:opt-label "Loading..."}}}
+                 :params      {:fire-name  {:opt-label  "Fire Name"
+                                            :auto-zoom? true
+                                            :options    {:loading {:opt-label "Loading..."}}}
                                :model      {:opt-label "Model"
                                             :options   {:elmfire {:opt-label "ELMFIRE"
                                                                   :filter    "elmfire"}}}
