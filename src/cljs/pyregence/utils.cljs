@@ -212,11 +212,12 @@
 
 ;;; ->map HOF
 
-(defn mapm [pred coll]
-  (persistent! (reduce (fn [acc cur]
-                         (let [[key val] (pred cur)] (assoc! acc key val)))
-                       (transient {})
-                       coll)))
+(defn mapm [f coll]
+  (persistent!
+   (reduce (fn [acc cur]
+             (conj! acc (f cur)))
+           (transient {})
+           coll)))
 
 ;;; Misc Functions
 

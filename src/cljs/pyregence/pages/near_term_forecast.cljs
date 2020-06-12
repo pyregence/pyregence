@@ -292,13 +292,12 @@
   (swap! processed-params #(update-in %
                                       [:model-init :options]
                                       (fn [options]
-                                        (u/mapm (fn [entry]
-                                                  (let [js-time (get-in entry [1 :js-time])]
-                                                    (assoc-in entry
-                                                              [1 :opt-label]
-                                                              (str (u/get-date-from-js js-time @show-utc?)
-                                                                   "-"
-                                                                   (u/get-time-from-js js-time @show-utc?)))))
+                                        (u/mapm (fn [[k {:keys [js-time] :as v}]]
+                                                  [k (assoc v
+                                                            :opt-label
+                                                            (str (u/get-date-from-js js-time @show-utc?)
+                                                                 "-"
+                                                                 (u/get-time-from-js js-time @show-utc?)))])
                                                 options)))))
 
 (defn init-map! []
