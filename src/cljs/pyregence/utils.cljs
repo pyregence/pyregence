@@ -17,6 +17,10 @@
   [event]
   (js/parseFloat (input-value event)))
 
+(defn input-keyword
+  [event]
+  (keyword (input-value event)))
+
 (defn input-file
   "Return the file of the target property of an event."
   [event]
@@ -209,6 +213,15 @@
 (defn time-zone-iso-date [date-str show-utc?]
   (let [js-date (js-date-from-string date-str)]
     (str (get-date-from-js js-date show-utc?) "-" (get-time-from-js js-date show-utc?))))
+
+;;; ->map HOF
+
+(defn mapm [f coll]
+  (persistent!
+   (reduce (fn [acc cur]
+             (conj! acc (f cur)))
+           (transient {})
+           coll)))
 
 ;;; Misc Functions
 

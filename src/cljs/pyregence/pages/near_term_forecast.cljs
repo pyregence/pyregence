@@ -21,23 +21,19 @@
 
 (defonce legend-list       (r/atom []))
 (defonce layer-list        (r/atom []))
-(defonce *layer-idx        (r/atom 0))
 (defonce last-clicked-info (r/atom []))
 (defonce show-utc?         (r/atom true))
 (defonce show-info?        (r/atom false))
 (defonce show-measure?     (r/atom false))
-(defonce *forecast         (r/atom 1))
-(defonce *params           (r/atom {}))
+(defonce *forecast         (r/atom :fire-risk))
 (defonce processed-params  (r/atom []))
+(defonce *params           (r/atom {}))
+(defonce filtered-layers   (r/atom []))
+(defonce *layer-idx        (r/atom 0))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn find-index-vec-map [key-name val coll]
-  (first (keep-indexed (fn [i entry]
-                         (when (= val (get entry key-name)) i))
-                       coll)))
 
 (defn get-forecast-opt [key-name]
   (get-in c/forecast-options [@*forecast key-name]))
@@ -45,12 +41,11 @@
 (defn get-fire-names [forecast-layers]
   (->> forecast-layers
        (group-by :fire-name)
-       (mapv (fn [[fire-name opt-vec]]
-               {:opt-label  fire-name
-                :filter     fire-name
-                :model-init (->> opt-vec
-                                 (map :model-init)
-                                 (set))}))))
+       (u/mapm (fn [[fire-name opt-vec]]
+                 [(keyword fire-name)
+                  {:opt-label  fire-name
+                   :filter     fire-name
+                   :model-init (into #{} (map :model-init) opt-vec)}]))))
 
 (defn get-model-times [forecast-layers]
   (->> forecast-layers
@@ -58,15 +53,16 @@
        (distinct)
        (sort)
        (reverse)
-       (mapv (fn [option]
-               (let [model-js-time (u/js-date-from-string option)
-                     date          (u/get-date-from-js model-js-time @show-utc?)
-                     time          (u/get-time-from-js model-js-time @show-utc?)]
-                 {:opt-label (str date "-" time)
-                  :js-time   model-js-time
-                  :date      date
-                  :time      time
-                  :filter    option})))))
+       (u/mapm (fn [option]
+                 (let [model-js-time (apply u/js-date-from-string option)
+                       date          (u/get-date-from-js model-js-time @show-utc?)
+                       time          (u/get-time-from-js model-js-time @show-utc?)]
+                   [(keyword option)
+                    {:opt-label (str date "-" time)
+                     :js-time   model-js-time
+                     :date      date
+                     :time      time
+                     :filter    option}])))))
 
 (defn process-params! []
   (reset! processed-params
@@ -74,26 +70,28 @@
                 forecast-layers (filter (fn [layer]
                                           (= forecast-filter (:forecast layer)))
                                         @layer-list)
-                params    (get-forecast-opt :params)
-                model-idx (find-index-vec-map :opt-label "Forecast Start Time" params)
-                fire-idx  (find-index-vec-map :opt-label "Fire Name" params)]
+                params          (get-forecast-opt :params)
+                has-fire-name?  (get-in params [:fire-name])]
             (cond-> params
-              fire-idx  (assoc-in [fire-idx  :options] (get-fire-names  forecast-layers))
-              model-idx (assoc-in [model-idx :options] (get-model-times forecast-layers)))))
-  (reset! *params (mapv (constantly 0) @processed-params)))
+              has-fire-name? (assoc-in [:fire-name  :options] (get-fire-names  forecast-layers))
+              :always        (assoc-in [:model-init :options] (get-model-times forecast-layers)))))
+  (reset! *params (u/mapm (fn [[k v]]
+                            [k
+                             (or (:default-option v)
+                                 (ffirst (:options v)))])
+                          @processed-params)))
 
-(defn filtered-layers []
-  (let [selected-set (-> (map (fn [*option {:keys [options]}]
-                                (get-in options [*option :filter]))
-                              @*params
-                              @processed-params)
-                         (set)
-                         (conj (get-forecast-opt :filter)))]
-    (filterv (fn [{:keys [filter-set]}] (= selected-set filter-set))
-             @layer-list)))
+(defn filter-layers! []
+  (let [selected-set (into #{(get-forecast-opt :filter)}
+                           (map (fn [[key {:keys [options]}]]
+                                  (get-in options [(@*params key) :filter])))
+                           @processed-params)]
+    (reset! filtered-layers
+            (filterv (fn [{:keys [filter-set]}] (= selected-set filter-set))
+                     @layer-list))))
 
 (defn current-layer []
-  (get (filtered-layers) @*layer-idx))
+  (get @filtered-layers @*layer-idx))
 
 (defn get-current-layer-name []
   (:layer (current-layer) ""))
@@ -113,13 +111,13 @@
   (:layer-group (current-layer) ""))
 
 (defn get-current-layer-key [key-name]
-  (->>
-   (map (fn [*option {:keys [options]}]
-          (get-in options [*option key-name]))
-        @*params
-        (get-forecast-opt :params))
-   (remove nil?)
-   (first)))
+  (some (fn [[key {:keys [options]}]]
+          (get-in options [(@*params key) key-name]))
+        (get-forecast-opt :params)))
+
+(defn get-options-key [key-name]
+  (some #(get % key-name)
+        (vals (get-forecast-opt :params))))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
@@ -166,7 +164,7 @@
                               :hour    hour}
                              pi-layer))
                     pi
-                    (filtered-layers))))))
+                    @filtered-layers)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
@@ -190,33 +188,35 @@
 (defn check-param-filter []
   (swap! *params
          (fn [params]
-           (->> params
-                (map-indexed (fn [idx cur-param]
-                               (let [{:keys [filter-on filter-key options]} (@processed-params idx)
-                                     filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
-                                 (if (and filter-on filter-set (not (filter-set (get-in options [cur-param :filter]))))
-                                   (or (find-index-vec-map :filter (first filter-set) options) -1)
-                                   cur-param))))
-                (vec)))))
+           (u/mapm (fn [[k v]]
+                     (let [{:keys [filter-on filter-key options]} (@processed-params k)
+                           filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
+                       [k
+                        (if (and filter-on filter-set (not (filter-set (get-in options [v :filter]))))
+                          (keyword (first filter-set))
+                          v)]))
+                   params))))
 
-(defn change-type! [clear?]
+(defn change-type! [clear? zoom?]
   (check-param-filter)
+  (filter-layers!)
   (ol/swap-active-layer! (get-current-layer-name))
   (get-legend!           (get-current-layer-name))
   (if clear?
     (clear-info!)
     (get-point-info! (ol/get-overlay-bbox)))
-  (when (get-forecast-opt :auto-zoom?)
+  (when zoom?
     (ol/zoom-to-extent! (get-current-layer-extent))))
 
-(defn select-param! [idx val]
-  (swap! *params assoc idx val)
-  (change-type! (get-current-layer-key :clear-point?)))
+(defn select-param! [key val]
+  (swap! *params assoc key val)
+  (change-type! (get-current-layer-key :clear-point?)
+                (get-in @processed-params [key :auto-zoom?])))
 
-(defn select-forecast! [id]
-  (reset! *forecast id)
+(defn select-forecast! [key]
+  (reset! *forecast key)
   (process-params!)
-  (change-type! true))
+  (change-type! true (get-options-key :auto-zoom?)))
 
 (defn set-show-info! [show?]
   (if (get-forecast-opt :block-info?)
@@ -227,22 +227,26 @@
           (do (ol/remove-popup-on-single-click!)
               (clear-info!))))))
 
-(defn update-time [time-list]
-  (mapv (fn [{:keys [js-time] :as layer}]
-          (let [date (u/get-date-from-js js-time @show-utc?)
-                time (u/get-time-from-js js-time @show-utc?)]
-            (assoc layer
-                   :date      (u/get-date-from-js js-time @show-utc?)
-                   :time      (u/get-time-from-js js-time @show-utc?)
-                   :opt-label (str date "-" time))))
-        time-list))
-
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
-  (reset! last-clicked-info
-          (update-time @last-clicked-info))
-  (let [model-idx (find-index-vec-map :opt-label "Forecast Start Time" @processed-params)]
-    (reset! processed-params (update-in @processed-params [model-idx :options] update-time))))
+  (swap! last-clicked-info #(mapv (fn [{:keys [js-time] :as layer}]
+                                    (let [date (u/get-date-from-js js-time @show-utc?)
+                                          time (u/get-time-from-js js-time @show-utc?)]
+                                      (assoc layer
+                                             :date      (u/get-date-from-js js-time @show-utc?)
+                                             :time      (u/get-time-from-js js-time @show-utc?)
+                                             :opt-label (str date "-" time))))
+                                  @last-clicked-info))
+  (swap! processed-params #(update-in %
+                                      [:model-init :options]
+                                      (fn [options]
+                                        (u/mapm (fn [[k {:keys [js-time] :as v}]]
+                                                  [k (assoc v
+                                                            :opt-label
+                                                            (str (u/get-date-from-js js-time @show-utc?)
+                                                                 "-"
+                                                                 (u/get-time-from-js js-time @show-utc?)))])
+                                                options)))))
 
 (defn init-map! []
   (go
@@ -317,7 +321,7 @@
          [mc/zoom-bar get-current-layer-extent]
          [mc/tool-bar show-info? show-measure? set-show-info!]
          [mc/time-slider
-          filtered-layers
+          (count @filtered-layers)
           *layer-idx
           (get-current-layer-full-time)
           select-layer!
@@ -354,8 +358,9 @@
          [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
           "Disclaimer"]]
         [:label {:style {:padding ".5rem"}}
-         "Forecast Tools are open source, offered as-is, without warranty and liability for damages is expressly disclaimed. \n\n
-          At this time, the Forecast Tools are under development and should not be relied on for any fire-safety decision."]
+         "Pyregence fire forecast tools are experimental and should not be relied upon
+          for fire management operations or fire safety decisions. These tools
+          are offered as-is without warranty, and liability for damages is expressly disclaimed."]
         [:div {:style ($/combine $/flex-row {:justify-content "flex-end"})}
          [:span
           [:label {:class "btn border-yellow text-brown"
@@ -382,12 +387,12 @@
               :style ($app-header)}
         [theme-select]
         [:span
-         (doall (map-indexed (fn [i {:keys [opt-label]}]
-                               [:label {:key i
-                                        :style ($forecast-label (= @*forecast i))
-                                        :on-click #(select-forecast! i)}
-                                opt-label])
-                             c/forecast-options))]]
+         (doall (map (fn [[key {:keys [opt-label]}]]
+                       [:label {:key key
+                                :style ($forecast-label (= @*forecast key))
+                                :on-click #(select-forecast! key)}
+                        opt-label])
+                     c/forecast-options))]]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when @ol/the-map [control-layer])
         [map-layer]

@@ -77,11 +77,11 @@
    :bottom           "1rem"
    :width            "fit-content"})
 
-(defn time-slider [filtered-layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone!]
+(defn time-slider [layer-count *layer-idx layer-full-time select-layer! show-utc? select-time-zone!]
   (r/with-let [animate?        (r/atom false)
                *speed          (r/atom 1)
                cycle-layer!    (fn [change]
-                                 (select-layer! (mod (+ change @*layer-idx) (count (filtered-layers)))))
+                                 (select-layer! (mod (+ change @*layer-idx) layer-count)))
                loop-animation! (fn la []
                                  (when @animate?
                                    (cycle-layer! 1)
@@ -92,7 +92,7 @@
       [radio "Local" show-utc? false select-time-zone! true]]
      [:div {:style ($/flex-col)}
       [:input {:style {:width "12rem"}
-               :type "range" :min "0" :max (dec (count (filtered-layers))) :value (or @*layer-idx 0)
+               :type "range" :min "0" :max (dec layer-count) :value (or @*layer-idx 0)
                :on-change #(select-layer! (u/input-int-value %))}]
       [:label {:style {:font-size ".75rem"}}
        layer-full-time]]
@@ -138,16 +138,16 @@
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
    [:label title]
    [:select {:style ($dropdown)
-             :value (or val -1)
-             :on-change #(call-back (u/input-int-value %))}
-    (map-indexed (fn [i {:keys [opt-label]}]
-                   [:option {:key i :value i} opt-label])
-                 options)]])
+             :value (or val :none)
+             :on-change #(call-back (u/input-keyword %))}
+    (map (fn [[key {:keys [opt-label]}]]
+           [:option {:key key :value key} opt-label])
+         options)]])
 
 (defn collapsible-panel [*params select-param! param-options]
   (r/with-let [active-opacity   (r/atom 70.0)
                show-hillshade?  (r/atom false)
-               *base-map        (r/atom 0)
+               *base-map        (r/atom :mb-topo)
                select-base-map! (fn [id]
                                   (reset! *base-map id)
                                   (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
@@ -166,13 +166,14 @@
          [:label "Hill shade overlay"]]]]
       [:div#activelayer {:style ($/combine ($layer-section) {:margin-top "1rem"})}
        [:label {:style {:font-size "1.25rem"}} "Fire Layer"]
-       (map-indexed (fn [i {:keys [opt-label options filter-on filter-key]}]
-                      (let [filter-set       (get-in param-options [filter-on :options (get *params filter-on) filter-key])
-                            filtered-options (if filter-set
-                                               (filterv #(filter-set (:filter %)) options)
-                                               options)]
-                        ^{:key i} [panel-dropdown opt-label (get *params i) filtered-options #(select-param! i %)]))
-                    param-options)
+       (map (fn [[key {:keys [opt-label options filter-on filter-key]}]]
+              (let [filter-set       (get-in param-options [filter-on :options (*params filter-on) filter-key])
+                    filtered-options (if filter-set
+                                       (into {} (filter (fn [[_ v]] (filter-set (:filter v)))
+                                                        options))
+                                       options)]
+                ^{:key key} [panel-dropdown opt-label (*params key) filtered-options #(select-param! key %)]))
+            param-options)
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]
         [:input {:style {:width "100%"}
