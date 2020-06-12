@@ -124,9 +124,8 @@
         (get-forecast-opt :params)))
 
 (defn get-options-key [key-name]
-  (some (fn [[_ val]]
-          (when-let [value (get val key-name)] value))
-        (get-forecast-opt :params)))
+  (some #(get % key-name)
+        (vals (get-forecast-opt :params))))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
