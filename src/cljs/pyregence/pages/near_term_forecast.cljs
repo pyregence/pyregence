@@ -411,8 +411,8 @@
           "Disclaimer"]]
         [:label {:style {:padding ".5rem"}}
          "Pyregence fire forecast tools are experimental and should not be relied upon
-          for on for fire management operations or fire safety decisions. These tools
-          are offered as-is without warranty and liability for damages is expressly disclaimed."]
+          for fire management operations or fire safety decisions. These tools
+          are offered as-is without warranty, and liability for damages is expressly disclaimed."]
         [:div {:style ($/combine $/flex-row {:justify-content "flex-end"})}
          [:span
           [:label {:class "btn border-yellow text-brown"
