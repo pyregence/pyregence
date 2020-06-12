@@ -1,8 +1,9 @@
 (ns pyregence.capabilities
   (:require [clojure.string :as str]
-            [pyregence.views :refer [data-response]]))
+            [pyregence.views   :refer [data-response]]
+            [pyregence.logging :refer [log-str]]))
 
-(def capabilities (atom []))
+(defonce capabilities (atom []))
 
 (defn java-date-from-string [date-str]
   (.parse (java.text.SimpleDateFormat. "yyyyMMdd_hhmmss") date-str))
@@ -57,7 +58,8 @@
                         (re-matches #"([a-z|-]+_)[a-z|-|\d]+:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
                         (merge-fn (split-active-layer-name full-name)))))
                   xml)
-            (vec xml))))
+            (vec xml)))
+  (log-str (count @capabilities) " layers added to capabilities."))
 
 (defn get-capabilities []
   (when-not (seq @capabilities) (set-capabilities!))

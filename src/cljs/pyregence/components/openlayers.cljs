@@ -60,7 +60,7 @@
                 :view     (View.
                            #js {:projection "EPSG:3857"
                                 :center     (fromLonLat #js [-119.509444 37.229722] "EPSG:3857")
-                                :minZoom    6
+                                :minZoom    5.5
                                 :maxZoom    18
                                 :zoom       6.4})
                 :overlays #js [(Overlay.

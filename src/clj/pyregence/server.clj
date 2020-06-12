@@ -1,8 +1,9 @@
 (ns pyregence.server
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
-            [pyregence.handler :refer [development-app production-app]]
-            [pyregence.logging :refer [log-str]]
+            [pyregence.capabilities :refer [set-capabilities!]]
+            [pyregence.handler      :refer [development-app production-app]]
+            [pyregence.logging      :refer [log-str]]
             [ring.adapter.jetty :refer [run-jetty]]))
 
 (defonce server           (atom nil))
@@ -55,7 +56,8 @@
     (if (and (not has-key?) (= mode "prod"))
       (println "ERROR: there is no SSL key for enabling HTTPS! Create a SSL key for HTTPS or run with the \"dev\" option.")
       (do (reset! server (run-jetty handler config))
-          (reset! clean-up-service (start-clean-up-service!))))))
+          (reset! clean-up-service (start-clean-up-service!))
+          (set-capabilities!)))))
 
 (defn stop-server! []
   (when @clean-up-service
