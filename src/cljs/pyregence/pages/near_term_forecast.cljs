@@ -84,11 +84,10 @@
                                 @processed-params))))
 
 (defn filter-layers! []
-  (let [selected-set (-> (map (fn [[key {:keys [options]}]]
-                                (get-in options [(@*params key) :filter]))
-                              @processed-params)
-                         (set)
-                         (conj (get-forecast-opt :filter)))]
+  (let [selected-set (into #{(get-forecast-opt :filter)}
+                           (map (fn [[key {:keys [options]}]]
+                                  (get-in options [(@*params key) :filter])))
+                           @processed-params)]
     (reset! filtered-layers
             (filterv (fn [{:keys [filter-set]}] (= selected-set filter-set))
                      @layer-list))))
