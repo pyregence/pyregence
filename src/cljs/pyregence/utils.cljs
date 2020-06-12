@@ -200,11 +200,15 @@
              (str/split " ")
              (peek)))))
 
-(defn js-date-from-string [date time]
-  (js/Date. (str (subs date 0 4) "-"
-                 (subs date 4 6) "-"
-                 (subs date 6 8) "T"
-                 (subs time 0 2) ":00:00.000z")))
+(defn js-date-from-string [date-str]
+  (js/Date. (str (subs date-str 0 4) "-"
+                 (subs date-str 4 6) "-"
+                 (subs date-str 6 8) "T"
+                 (subs date-str 9 11) ":00:00.000z")))
+
+(defn time-zone-iso-date [date-str show-utc?]
+  (let [js-date (js-date-from-string date-str)]
+    (str (get-date-from-js js-date show-utc?) "-" (get-time-from-js js-date show-utc?))))
 
 ;;; Misc Functions
 

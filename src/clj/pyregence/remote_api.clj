@@ -2,12 +2,14 @@
   (:require [clojure.data.json :as json]
             [clojure.repl :refer [demunge]]
             [clojure.string :as str]
+            [pyregence.capabilities :refer [get-capabilities set-capabilities!]]
             [pyregence.email :refer [send-email]]
             [pyregence.logging :refer [log-str]]
             [pyregence.views :refer [data-response]]))
 
-;; FIXME: Add more functions as necessary.
-(def name->fn {"send-email" send-email})
+(def name->fn {"send-email"       send-email
+               "get-capabilities" get-capabilities
+               "set-capabilities" set-capabilities!})
 
 (defn fn->sym [f]
   (-> (str f)

@@ -59,7 +59,7 @@
        (sort)
        (reverse)
        (mapv (fn [option]
-               (let [model-js-time (apply u/js-date-from-string (str/split option #"_"))
+               (let [model-js-time (u/js-date-from-string option)
                      date          (u/get-date-from-js model-js-time @show-utc?)
                      time          (u/get-time-from-js model-js-time @show-utc?)]
                  {:opt-label (str date "-" time)
@@ -102,8 +102,8 @@
   (:hour (current-layer) 0))
 
 (defn get-current-layer-full-time []
-  (if-let [js-time (:js-time (current-layer))]
-    (str (u/get-date-from-js js-time @show-utc?) "-" (u/get-time-from-js js-time @show-utc?))
+  (if-let [simt-time (:sim-time (current-layer))]
+    (u/time-zone-iso-date simt-time @show-utc?)
     ""))
 
 (defn get-current-layer-extent []
@@ -147,62 +147,6 @@
   (when (u/has-data? layer)
     (get-data process-legend!
               (c/legend-url (str/replace layer "tlines" "all")))))
-
-(defn split-risk-layer-name [name-string]
-  (let [[workspace layer]           (str/split name-string #":")
-        [forecast init-timestamp]   (str/split workspace   #"_(?=\d{8}_)")
-        [layer-group sim-timestamp] (str/split layer       #"_(?=\d{8}_)")
-        init-js-time                (apply u/js-date-from-string (str/split init-timestamp #"_"))
-        sim-js-time                 (apply u/js-date-from-string (str/split sim-timestamp  #"_"))]
-    {:layer-group (str workspace ":" layer-group)
-     :forecast    forecast
-     :filter-set  (into #{forecast init-timestamp} (str/split layer-group #"_"))
-     :model-init  init-timestamp
-     :js-time     sim-js-time
-     :hour        (- (/ (- sim-js-time init-js-time) 1000 60 60) 6)}))
-
-(defn split-active-layer-name [name-string]
-  (let [[workspace layer]    (str/split name-string #":")
-        [forecast fire-name] (str/split workspace   #"_")
-        params               (str/split layer       #"_")
-        init-timestamp       (str (get params 0) "_" (get params 1))
-        sim-js-time          (u/js-date-from-string (get params 6) (get params 7))]
-    {:layer-group ""
-     :forecast    forecast
-     :fire-name   fire-name
-     :filter-set  (into #{forecast fire-name init-timestamp} (subvec params 2 6))
-     :model-init  init-timestamp
-     :js-time     sim-js-time
-     :hour        0}))
-
-(defn process-capabilities! [response]
-  (go
-    (reset! layer-list
-            (as-> (<p! (.text response)) xml
-              (str/replace xml "\n" "")
-              (re-find #"<Layer>.*(?=</Layer>)" xml)
-              (str/replace-first xml "<Layer>" "")
-              (re-seq #"<Layer.+?</Layer>" xml)
-              (keep (fn [layer]
-                      (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
-                                           (str/replace #"<Name>" ""))
-                            coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
-                                           (re-seq #"[\d|\.|-]+")
-                                           (rest)
-                                           (vec))
-                            merge-fn  #(merge % {:layer full-name :extent coords})]
-                        (cond
-                          (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_){4}\d{8}_\d{6}" full-name)
-                          (merge-fn (split-risk-layer-name full-name))
-
-                          (re-matches #"([a-z|-]+_)[a-z|-|\d]+:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
-                          (merge-fn (split-active-layer-name full-name)))))
-                    xml)))))
-
-;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
-(defn get-layers! []
-  (reset! layer-list [])
-  (get-data process-capabilities! c/capabilities-url))
 
 (defn process-point-info! [response]
   (go
@@ -250,7 +194,7 @@
                 (map-indexed (fn [idx cur-param]
                                (let [{:keys [filter-on filter-key options]} (@processed-params idx)
                                      filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
-                                 (if (and filter-on (not (filter-set (get-in options [cur-param :filter]))))
+                                 (if (and filter-on filter-set (not (filter-set (get-in options [cur-param :filter]))))
                                    (or (find-index-vec-map :filter (first filter-set) options) -1)
                                    cur-param))))
                 (vec)))))
@@ -302,9 +246,9 @@
 
 (defn init-map! []
   (go
-    (let [layers-chan (get-layers!)]
+    (let [layers-chan (u/call-clj-async! "get-capabilities")]
       (ol/init-map!)
-      (<! layers-chan)
+      (reset! layer-list (:message (<! layers-chan)))
       (select-forecast! @*forecast)
       (ol/set-visible-by-title! "active" true))))
 

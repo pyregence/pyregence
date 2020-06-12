@@ -37,7 +37,17 @@
 
 ;; Layer options
 
-(def forecast-options [{:opt-label   "Active Fire Forecast"
+(def forecast-options [{:opt-label       "Weather Forecast"
+                        :filter          "fire-weather-forecast"
+                        :reverse-legend? true
+                        :params          [{:opt-label "Forecast Start Time"
+                                           :options   []}
+                                          {:opt-label "Output"
+                                           :options   [{:opt-label "What?"
+                                                        :filter    "ffwi"
+                                                        :units     "Acres"}
+                                                       ]}]}
+                       {:opt-label   "Active Fire Forecast"
                         :filter      "fire-spread-forecast"
                         :auto-zoom?  true
                         :block-info? true
