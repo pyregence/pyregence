@@ -210,6 +210,15 @@
                  (subs date 6 8) "T"
                  (subs time 0 2) ":00:00.000z")))
 
+;;; ->map HOF
+
+(defn mapm [f coll]
+  (persistent!
+   (reduce (fn [acc cur]
+             (conj! acc (f cur)))
+           (transient {})
+           coll)))
+
 ;;; Misc Functions
 
 (defn no-data? [x]
