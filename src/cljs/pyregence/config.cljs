@@ -91,11 +91,11 @@
                                               :options   {:landfire {:opt-label "LANDFIRE"
                                                                      :filter    "landfire"}}}
                                  :pattern    {:opt-label "Ignition Pattern"
-                                              :options   {:all   {:opt-label    "Human-caused ignitions"
-                                                                  :filter       "all"}
-                                                          :tline {:opt-label    "Transmission lines"
-                                                                  :filter       "tlines"
-                                                                  :clear-point? true}}}
+                                              :options   {:all    {:opt-label    "Human-caused ignitions"
+                                                                   :filter       "all"}
+                                                          :tlines {:opt-label    "Transmission lines"
+                                                                   :filter       "tlines"
+                                                                   :clear-point? true}}}
                                  :output     {:opt-label "Output"
                                               :options   {:fire-area    {:opt-label "Fire area"
                                                                          :filter    "fire-area"

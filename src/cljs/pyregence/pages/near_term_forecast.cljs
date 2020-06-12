@@ -69,18 +69,20 @@
 
 (defn process-params! []
   (reset! processed-params
-          (let [forecast-layers (filter (fn [layer]
-                                          (= (get-forecast-opt :filter) (:forecast layer)))
+          (let [forecast-filter (get-forecast-opt :filter)
+                forecast-layers (filter (fn [layer]
+                                          (= forecast-filter (:forecast layer)))
                                         @layer-list)
                 params          (get-forecast-opt :params)
                 has-fire-name?  (get-in params [:fire-name])]
             (cond-> params
               has-fire-name? (assoc-in [:fire-name  :options] (get-fire-names  forecast-layers))
               :always        (assoc-in [:model-init :options] (get-model-times forecast-layers)))))
-  (reset! *params (into {} (map (fn [[k]]
-                                  {k (or (get-in @processed-params [k :default-option])
-                                         (ffirst (get-in @processed-params [k :options])))})
-                                @processed-params))))
+  (reset! *params (reduce-kv (fn [acc k v]
+                               (assoc acc k (or (:default-option v)
+                                                (ffirst (:options v)))))
+                             {}
+                             @processed-params)))
 
 (defn filtered-layers []
   (let [selected-set (-> (map (fn [[key {:keys [options]}]]
@@ -242,14 +244,17 @@
     (reset! show-info? false)))
 
 (defn check-param-filter []
-  (reset! *params
-          (into {} (map (fn [[k v]]
-                          (let [{:keys [filter-on filter-key options]} (@processed-params k)
-                                filter-set (get-in @processed-params [filter-on :options (@*params filter-on) filter-key])]
-                            {k (if (and filter-on (not (filter-set (get-in options [v :filter]))))
-                                 (keyword (first filter-set))
-                                 v)}))
-                        @*params))))
+  (swap! *params
+         (fn [params]
+           (reduce-kv (fn [acc k v]
+                        (let [{:keys [filter-on filter-key options]} (@processed-params k)
+                              filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
+                          (assoc acc k
+                                 (if (and filter-on (not (filter-set (get-in options [v :filter]))))
+                                   (keyword (first filter-set))
+                                   v))))
+                      {}
+                      params))))
 
 (defn change-type! [clear?]
   (check-param-filter)
@@ -281,26 +286,26 @@
 
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
-  (reset! last-clicked-info (mapv (fn [{:keys [js-time] :as layer}]
+  (swap! last-clicked-info #(mapv (fn [{:keys [js-time] :as layer}]
                                     (let [date (u/get-date-from-js js-time @show-utc?)
                                           time (u/get-time-from-js js-time @show-utc?)]
                                       (assoc layer
                                              :date      (u/get-date-from-js js-time @show-utc?)
                                              :time      (u/get-time-from-js js-time @show-utc?)
                                              :opt-label (str date "-" time))))
-                                  @last-clicked-info))
-  (reset! processed-params (update-in @processed-params
-                                      [:model-init :options]
-                                      #(reduce-kv (fn [acc k {:keys [js-time] :as v}]
-                                                    (assoc acc
-                                                           k
-                                                           (assoc v
-                                                                  :opt-label
-                                                                  (str (u/get-date-from-js js-time @show-utc?)
-                                                                       "-"
-                                                                       (u/get-time-from-js js-time @show-utc?)))))
-                                                  {}
-                                                  %))))
+                                  %))
+  (swap! processed-params  #(update-in %
+                                       [:model-init :options]
+                                       (fn [options]
+                                         (reduce (fn [acc k]
+                                                   (let [js-time (get-in acc [k :js-time])]
+                                                     (assoc-in acc
+                                                               [k :opt-label]
+                                                               (str (u/get-date-from-js js-time @show-utc?)
+                                                                    "-"
+                                                                    (u/get-time-from-js js-time @show-utc?)))))
+                                                 options
+                                                 (keys options))))))
 
 (defn init-map! []
   (go
