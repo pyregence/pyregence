@@ -2,13 +2,15 @@
 
 ** Installation Requirements
 
-TODO FILL IN
+- [[http://geoserver.org/download/][GeoServer]]
+- [[https://certbot.eff.org/][certbot]]
+- [[https://www.openssl.org/source/][openssl]]
 
 ** Configuration
 
 *** Allowing Cross-Origin Resource Sharing (CORS)
 
-Open [GeoServer location]/webapps/GeoServer/WEB-INF/web.xml for editing.
+Open $GEOSERVER_HOME/webapps/geoserver/WEB-INF/web.xml for editing.
 Uncomment the following 2 blocks:
 
 #+begin_src sh
@@ -35,22 +37,33 @@ editing the allowedOrigins param.
 
 *** Enable SSL/HTTPS
 
+**** Create Certificate
+
+#+begin_src sh
+sudo certbot certonly --quiet --non-interactive --agree-tos -m support@sig-gis.com --webroot -w ./resources/public -d data.pyregence.org
+sudo openssl pkcs12 -export -out ./.key/keystore.pkcs12 -in /etc/letsencrypt/live/data.pyregence.org/fullchain.pem -inkey /etc/letsencrypt/live/data.pyregence.org/privkey.pem -passout pass:foobar
+sudo chown geoserver keystore.pkcs12
+#+end_src
+
+**** Enable  in GeoServer
 The GeoServer v2.16 seems to have mismatched versions of the required https and
-ssl files. To correct this, download the Jetty distribution file. This example uses:
-https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/9.2.13.v20150730/
+ssl files. To correct this, download the Jetty distribution file that matches the
+version used by GeoServer.
+
 Copy the following files from the archive to the coresponding GeoServer directory
 
 - $GEOSERVER_HOME/modules/ssl.mod
 - $GEOSERVER_HOME/etc/jetty-https.xml
 - $GEOSERVER_HOME/etc/jetty-ssl.xml
+- $GEOSERVER_HOME/etc/jetty-ssl-context.xml
 
-Edit ssl.mod and jetty-ssl.xml to use the correct values for keystore location and
+Edit jetty-ssl-context.xml to use the correct values for keystore location and
 password.
 
-Edit jetty-https.xml, jetty-ssl.xml, and jetty.xml to update https port.
+Edit jetty-ssl.xml, and jetty.xml to update https port.
 
 Add the following to $GEOSERVER_HOME/start.ini
 #+begin_src sh
---module=ssh
+--module=ssl
 --module=https
 #+end_src

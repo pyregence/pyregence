@@ -2,7 +2,7 @@
 
 ;; WMS options
 
-(def wms-url "https://californiafireforecast.com:8443/geoserver/wms")
+(def wms-url "https://data.pyregence.org:8443/geoserver/wms")
 
 (def capabilities-url (str wms-url
                            "?SERVICE=WMS"
