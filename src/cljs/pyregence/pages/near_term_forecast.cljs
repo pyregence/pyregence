@@ -26,7 +26,7 @@
 (defonce show-utc?         (r/atom true))
 (defonce show-info?        (r/atom false))
 (defonce show-measure?     (r/atom false))
-(defonce *forecast         (r/atom 1))
+(defonce *forecast         (r/atom :fire-risk))
 (defonce *params           (r/atom {}))
 (defonce processed-params  (r/atom []))
 
@@ -34,23 +34,19 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn find-index-vec-map [key-name val coll]
-  (first (keep-indexed (fn [i entry]
-                         (when (= val (get entry key-name)) i))
-                       coll)))
-
 (defn get-forecast-opt [key-name]
   (get-in c/forecast-options [@*forecast key-name]))
 
 (defn get-fire-names [forecast-layers]
   (->> forecast-layers
        (group-by :fire-name)
-       (mapv (fn [[fire-name opt-vec]]
-               {:opt-label  fire-name
-                :filter     fire-name
-                :model-init (->> opt-vec
-                                 (map :model-init)
-                                 (set))}))))
+       (reduce (fn [acc [fire-name opt-vec]]
+                 (assoc acc
+                        (keyword fire-name)
+                        {:opt-label  fire-name
+                         :filter     fire-name
+                         :model-init (into #{} (map :model-init) opt-vec)}))
+               {})))
 
 (defn get-model-times [forecast-layers]
   (->> forecast-layers
@@ -58,15 +54,18 @@
        (distinct)
        (sort)
        (reverse)
-       (mapv (fn [option]
-               (let [model-js-time (apply u/js-date-from-string (str/split option #"_"))
-                     date          (u/get-date-from-js model-js-time @show-utc?)
-                     time          (u/get-time-from-js model-js-time @show-utc?)]
-                 {:opt-label (str date "-" time)
-                  :js-time   model-js-time
-                  :date      date
-                  :time      time
-                  :filter    option})))))
+       (reduce (fn [acc option]
+                 (let [model-js-time (apply u/js-date-from-string (str/split option #"_"))
+                       date          (u/get-date-from-js model-js-time @show-utc?)
+                       time          (u/get-time-from-js model-js-time @show-utc?)]
+                   (assoc acc
+                          (keyword option)
+                          {:opt-label (str date "-" time)
+                           :js-time   model-js-time
+                           :date      date
+                           :time      time
+                           :filter    option})))
+               {})))
 
 (defn process-params! []
   (reset! processed-params
@@ -74,18 +73,20 @@
                 forecast-layers (filter (fn [layer]
                                           (= forecast-filter (:forecast layer)))
                                         @layer-list)
-                params    (get-forecast-opt :params)
-                model-idx (find-index-vec-map :opt-label "Forecast Start Time" params)
-                fire-idx  (find-index-vec-map :opt-label "Fire Name" params)]
+                params          (get-forecast-opt :params)
+                has-fire-name?  (get-in params [:fire-name])]
             (cond-> params
-              fire-idx  (assoc-in [fire-idx  :options] (get-fire-names  forecast-layers))
-              model-idx (assoc-in [model-idx :options] (get-model-times forecast-layers)))))
-  (reset! *params (mapv (constantly 0) @processed-params)))
+              has-fire-name? (assoc-in [:fire-name  :options] (get-fire-names  forecast-layers))
+              :always        (assoc-in [:model-init :options] (get-model-times forecast-layers)))))
+  (reset! *params (reduce-kv (fn [acc k v]
+                               (assoc acc k (or (:default-option v)
+                                                (ffirst (:options v)))))
+                             {}
+                             @processed-params)))
 
 (defn filtered-layers []
-  (let [selected-set (-> (map (fn [*option {:keys [options]}]
-                                (get-in options [*option :filter]))
-                              @*params
+  (let [selected-set (-> (map (fn [[key {:keys [options]}]]
+                                (get-in options [(@*params key) :filter]))
                               @processed-params)
                          (set)
                          (conj (get-forecast-opt :filter)))]
@@ -114,9 +115,8 @@
 
 (defn get-current-layer-key [key-name]
   (->>
-   (map (fn [*option {:keys [options]}]
-          (get-in options [*option key-name]))
-        @*params
+   (map (fn [[key {:keys [options]}]]
+          (get-in options [(@*params key) key-name]))
         (get-forecast-opt :params))
    (remove nil?)
    (first)))
@@ -164,13 +164,13 @@
 (defn split-active-layer-name [name-string]
   (let [[workspace layer]    (str/split name-string #":")
         [forecast fire-name] (str/split workspace   #"_")
-        params               (str/split layer       #"_")
-        init-timestamp       (str (get params 0) "_" (get params 1))
-        sim-js-time          (u/js-date-from-string (get params 6) (get params 7))]
+        params-str           (str/split layer       #"_")
+        init-timestamp       (str (get params-str 0) "_" (get params-str 1))
+        sim-js-time          (u/js-date-from-string (get params-str 6) (get params-str 7))]
     {:layer-group ""
      :forecast    forecast
      :fire-name   fire-name
-     :filter-set  (into #{forecast fire-name init-timestamp} (subvec params 2 6))
+     :filter-set  (into #{forecast fire-name init-timestamp} (subvec params-str 2 6))
      :model-init  init-timestamp
      :js-time     sim-js-time
      :hour        0}))
@@ -246,14 +246,15 @@
 (defn check-param-filter []
   (swap! *params
          (fn [params]
-           (->> params
-                (map-indexed (fn [idx cur-param]
-                               (let [{:keys [filter-on filter-key options]} (@processed-params idx)
-                                     filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
-                                 (if (and filter-on (not (filter-set (get-in options [cur-param :filter]))))
-                                   (or (find-index-vec-map :filter (first filter-set) options) -1)
-                                   cur-param))))
-                (vec)))))
+           (reduce-kv (fn [acc k v]
+                        (let [{:keys [filter-on filter-key options]} (@processed-params k)
+                              filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
+                          (assoc acc k
+                                 (if (and filter-on (not (filter-set (get-in options [v :filter]))))
+                                   (keyword (first filter-set))
+                                   v))))
+                      {}
+                      params))))
 
 (defn change-type! [clear?]
   (check-param-filter)
@@ -265,12 +266,12 @@
   (when (get-forecast-opt :auto-zoom?)
     (ol/zoom-to-extent! (get-current-layer-extent))))
 
-(defn select-param! [idx val]
-  (swap! *params assoc idx val)
+(defn select-param! [key val]
+  (swap! *params assoc key val)
   (change-type! (get-current-layer-key :clear-point?)))
 
-(defn select-forecast! [id]
-  (reset! *forecast id)
+(defn select-forecast! [key]
+  (reset! *forecast key)
   (process-params!)
   (change-type! true))
 
@@ -283,22 +284,28 @@
           (do (ol/remove-popup-on-single-click!)
               (clear-info!))))))
 
-(defn update-time [time-list]
-  (mapv (fn [{:keys [js-time] :as layer}]
-          (let [date (u/get-date-from-js js-time @show-utc?)
-                time (u/get-time-from-js js-time @show-utc?)]
-            (assoc layer
-                   :date      (u/get-date-from-js js-time @show-utc?)
-                   :time      (u/get-time-from-js js-time @show-utc?)
-                   :opt-label (str date "-" time))))
-        time-list))
-
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
-  (reset! last-clicked-info
-          (update-time @last-clicked-info))
-  (let [model-idx (find-index-vec-map :opt-label "Forecast Start Time" @processed-params)]
-    (reset! processed-params (update-in @processed-params [model-idx :options] update-time))))
+  (swap! last-clicked-info #(mapv (fn [{:keys [js-time] :as layer}]
+                                    (let [date (u/get-date-from-js js-time @show-utc?)
+                                          time (u/get-time-from-js js-time @show-utc?)]
+                                      (assoc layer
+                                             :date      (u/get-date-from-js js-time @show-utc?)
+                                             :time      (u/get-time-from-js js-time @show-utc?)
+                                             :opt-label (str date "-" time))))
+                                  %))
+  (swap! processed-params  #(update-in %
+                                       [:model-init :options]
+                                       (fn [options]
+                                         (reduce (fn [acc k]
+                                                   (let [js-time (get-in acc [k :js-time])]
+                                                     (assoc-in acc
+                                                               [k :opt-label]
+                                                               (str (u/get-date-from-js js-time @show-utc?)
+                                                                    "-"
+                                                                    (u/get-time-from-js js-time @show-utc?)))))
+                                                 options
+                                                 (keys options))))))
 
 (defn init-map! []
   (go
@@ -438,12 +445,12 @@
               :style ($app-header)}
         [theme-select]
         [:span
-         (doall (map-indexed (fn [i {:keys [opt-label]}]
-                               [:label {:key i
-                                        :style ($forecast-label (= @*forecast i))
-                                        :on-click #(select-forecast! i)}
-                                opt-label])
-                             c/forecast-options))]]
+         (doall (map (fn [[key {:keys [opt-label]}]]
+                       [:label {:key key
+                                :style ($forecast-label (= @*forecast key))
+                                :on-click #(select-forecast! key)}
+                        opt-label])
+                     c/forecast-options))]]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when @ol/the-map [control-layer])
         [map-layer]
