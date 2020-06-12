@@ -10,7 +10,7 @@
 
 *** Allowing Cross-Origin Resource Sharing (CORS)
 
-Open [GeoServer location]/webapps/geoserver/WEB-INF/web.xml for editing.
+Open $GEOSERVER_HOME/webapps/geoserver/WEB-INF/web.xml for editing.
 Uncomment the following 2 blocks:
 
 #+begin_src sh
