@@ -240,16 +240,16 @@
     (reset! show-info? false)))
 
 (defn check-param-filter []
-  (reset! *params
-          (fn [params]
-            (u/mapm (fn [[k v]]
-                      (let [{:keys [filter-on filter-key options]} (@processed-params k)
-                            filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
-                        [k
-                         (if (and filter-on (not (filter-set (get-in options [v :filter]))))
-                           (keyword (first filter-set))
-                           v)]))
-                    params))))
+  (swap! *params
+         (fn [params]
+           (u/mapm (fn [[k v]]
+                     (let [{:keys [filter-on filter-key options]} (@processed-params k)
+                           filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
+                       [k
+                        (if (and filter-on (not (filter-set (get-in options [v :filter]))))
+                          (keyword (first filter-set))
+                          v)]))
+                   params))))
 
 (defn change-type! [clear?]
   (check-param-filter)
