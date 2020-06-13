@@ -100,8 +100,8 @@
   (:hour (current-layer) 0))
 
 (defn get-current-layer-full-time []
-  (if-let [simt-time (:sim-time (current-layer))]
-    (u/time-zone-iso-date simt-time @show-utc?)
+  (if-let [sim-time (:sim-time (current-layer))]
+    (u/time-zone-iso-date sim-time @show-utc?)
     ""))
 
 (defn get-current-layer-extent []

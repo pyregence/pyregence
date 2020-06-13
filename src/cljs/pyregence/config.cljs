@@ -4,11 +4,6 @@
 
 (def wms-url "https://data.pyregence.org:8443/geoserver/wms")
 
-(def capabilities-url (str wms-url
-                           "?SERVICE=WMS"
-                           "&VERSION=1.3.0"
-                           "&REQUEST=GetCapabilities"))
-
 (defn legend-url [layer]
   (str wms-url
        "?SERVICE=WMS"
