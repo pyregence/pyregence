@@ -1,6 +1,7 @@
 (ns pyregence.pages.near-term-forecast
   (:require [reagent.core :as r]
             [reagent.dom :as rd]
+            [cognitect.transit :as t]
             [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]
@@ -253,7 +254,7 @@
   (go
     (let [layers-chan (u/call-clj-async! "get-capabilities")]
       (ol/init-map!)
-      (reset! layer-list (:message (<! layers-chan)))
+      (reset! layer-list (t/read (t/reader :json) (:message (<! layers-chan))))
       (select-forecast! @*forecast)
       (ol/set-visible-by-title! "active" true)
       (reset! loading? false))))
