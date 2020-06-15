@@ -77,11 +77,11 @@
    :bottom           "1rem"
    :width            "fit-content"})
 
-(defn time-slider [layer-count *layer-idx layer-full-time select-layer! show-utc? select-time-zone!]
+(defn time-slider [layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone!]
   (r/with-let [animate?        (r/atom false)
                *speed          (r/atom 1)
                cycle-layer!    (fn [change]
-                                 (select-layer! (mod (+ change @*layer-idx) layer-count)))
+                                 (select-layer! (mod (+ change @*layer-idx) (count @layers))))
                loop-animation! (fn la []
                                  (when @animate?
                                    (cycle-layer! 1)
@@ -92,7 +92,7 @@
       [radio "Local" show-utc? false select-time-zone! true]]
      [:div {:style ($/flex-col)}
       [:input {:style {:width "12rem"}
-               :type "range" :min "0" :max (dec layer-count) :value (or @*layer-idx 0)
+               :type "range" :min "0" :max (dec (count @layers)) :value (or @*layer-idx 0)
                :on-change #(select-layer! (u/input-int-value %))}]
       [:label {:style {:font-size ".75rem"}}
        layer-full-time]]

@@ -322,7 +322,7 @@
          [mc/zoom-bar get-current-layer-extent]
          [mc/tool-bar show-info? show-measure? set-show-info!]
          [mc/time-slider
-          (count @filtered-layers)
+          filtered-layers
           *layer-idx
           (get-current-layer-full-time)
           select-layer!
