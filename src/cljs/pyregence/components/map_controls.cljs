@@ -169,8 +169,11 @@
        (map (fn [[key {:keys [opt-label options filter-on filter-key]}]]
               (let [filter-set       (get-in param-options [filter-on :options (*params filter-on) filter-key])
                     filtered-options (if filter-set
-                                       (into {} (filter (fn [[_ v]] (filter-set (:filter v)))
-                                                        options))
+                                       (->> (filter (fn [[_ v]] (filter-set (:filter v)))
+                                                    options)
+                                            (into {})
+                                            (sort)
+                                            (reverse))
                                        options)]
                 ^{:key key} [panel-dropdown opt-label (*params key) filtered-options #(select-param! key %)]))
             param-options)

@@ -193,7 +193,7 @@
                            filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
                        [k
                         (if (and filter-on filter-set (not (filter-set (get-in options [v :filter]))))
-                          (keyword (first filter-set))
+                          (keyword (first (reverse (sort filter-set))))
                           v)]))
                    params))))
 
