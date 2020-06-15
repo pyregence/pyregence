@@ -392,8 +392,8 @@
     (fn [_]
       [:div {:style ($/combine $/root {:height "100%" :padding 0 :position "relative"})}
        [toast-message]
-       [message-modal]
        (when @loading? [loading-modal])
+       [message-modal]
        [:div {:class "bg-yellow"
               :style ($app-header)}
         [theme-select]
