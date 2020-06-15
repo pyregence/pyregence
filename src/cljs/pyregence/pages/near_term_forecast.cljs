@@ -30,6 +30,7 @@
 (defonce *params           (r/atom {}))
 (defonce filtered-layers   (r/atom []))
 (defonce *layer-idx        (r/atom 0))
+(defonce loading?          (r/atom true))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -254,7 +255,8 @@
       (ol/init-map!)
       (reset! layer-list (:message (<! layers-chan)))
       (select-forecast! @*forecast)
-      (ol/set-visible-by-title! "active" true))))
+      (ol/set-visible-by-title! "active" true)
+      (reset! loading? false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -371,6 +373,11 @@
                    :on-click #(reset! show-me? false)}
            "Accept"]]]]])))
 
+(defn loading-modal []
+  [:div#message-modal {:style ($/modal "absolute")}
+   [:div {:style ($message-modal)}
+    [:h3 {:style {:padding "1rem"}} "Loading..."]]])
+
 (defn root-component [_]
   (r/create-class
    {:component-did-mount
@@ -383,6 +390,7 @@
       [:div {:style ($/combine $/root {:height "100%" :padding 0 :position "relative"})}
        [toast-message]
        [message-modal]
+       (when @loading? [loading-modal])
        [:div {:class "bg-yellow"
               :style ($app-header)}
         [theme-select]
