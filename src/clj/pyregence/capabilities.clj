@@ -34,32 +34,34 @@
      :hour        0}))
 
 (defn set-capabilities! []
-  (reset! capabilities
-          (as-> (slurp (str "https://data.pyregence.org:8443/geoserver/wms"
-                            "?SERVICE=WMS"
-                            "&VERSION=1.3.0"
-                            "&REQUEST=GetCapabilities")) xml
-            (str/replace xml "\n" "")
-            (re-find #"<Layer>.*(?=</Layer>)" xml)
-            (str/replace-first xml "<Layer>" "")
-            (re-seq #"<Layer.+?</Layer>" xml)
-            (keep (fn [layer]
-                    (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
-                                         (str/replace #"<Name>" ""))
-                          coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
-                                         (re-seq #"[\d|\.|-]+")
-                                         (rest)
-                                         (vec))
-                          merge-fn  #(merge % {:layer full-name :extent coords})]
-                      (cond
-                        (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+_)+\d{8}_\d{6}" full-name)
-                        (merge-fn (split-risk-layer-name full-name))
+  (if-let [response (slurp (str "https://data.pyregence.org:8443/geoserver/wms"
+                                "?SERVICE=WMS"
+                                "&VERSION=1.3.0"
+                                "&REQUEST=GetCapabilities"))]
+    (do (reset! capabilities
+                (as-> response xml
+                  (str/replace xml "\n" "")
+                  (re-find #"<Layer>.*(?=</Layer>)" xml)
+                  (str/replace-first xml "<Layer>" "")
+                  (re-seq #"<Layer.+?</Layer>" xml)
+                  (keep (fn [layer]
+                          (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
+                                               (str/replace #"<Name>" ""))
+                                coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
+                                               (re-seq #"[\d|\.|-]+")
+                                               (rest)
+                                               (vec))
+                                merge-fn  #(merge % {:layer full-name :extent coords})]
+                            (cond
+                              (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
+                              (merge-fn (split-risk-layer-name full-name))
 
-                        (re-matches #"([a-z|-]+_)[a-z|-|\d]+:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
-                        (merge-fn (split-active-layer-name full-name)))))
-                  xml)
-            (vec xml)))
-  (log-str (count @capabilities) " layers added to capabilities."))
+                              (re-matches #"([a-z|-]+_)[a-z|-]+\d*:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                              (merge-fn (split-active-layer-name full-name)))))
+                        xml)
+                  (vec xml)))
+        (log-str (count @capabilities) " layers added to capabilities."))
+    (log-str "Failed to load capabilities.")))
 
 (defn get-capabilities []
   (when-not (seq @capabilities) (set-capabilities!))

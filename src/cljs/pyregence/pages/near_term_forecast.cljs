@@ -30,6 +30,7 @@
 (defonce *params           (r/atom {}))
 (defonce filtered-layers   (r/atom []))
 (defonce *layer-idx        (r/atom 0))
+(defonce loading?          (r/atom true))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -41,11 +42,13 @@
 (defn get-fire-names [forecast-layers]
   (->> forecast-layers
        (group-by :fire-name)
-       (u/mapm (fn [[fire-name opt-vec]]
+       (sort)
+       (mapcat (fn [[fire-name opt-vec]]
                  [(keyword fire-name)
                   {:opt-label  fire-name
                    :filter     fire-name
-                   :model-init (into #{} (map :model-init) opt-vec)}]))))
+                   :model-init (into #{} (map :model-init) opt-vec)}]))
+       (apply array-map)))
 
 (defn get-model-times [forecast-layers]
   (->> forecast-layers
@@ -53,7 +56,7 @@
        (distinct)
        (sort)
        (reverse)
-       (u/mapm (fn [option]
+       (mapcat (fn [option]
                  (let [model-js-time (u/js-date-from-string option)
                        date          (u/get-date-from-js model-js-time @show-utc?)
                        time          (u/get-time-from-js model-js-time @show-utc?)]
@@ -62,7 +65,8 @@
                      :js-time   model-js-time
                      :date      date
                      :time      time
-                     :filter    option}])))))
+                     :filter    option}])))
+       (apply array-map)))
 
 (defn process-params! []
   (reset! processed-params
@@ -194,7 +198,7 @@
                            filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
                        [k
                         (if (and filter-on filter-set (not (filter-set (get-in options [v :filter]))))
-                          (keyword (first filter-set))
+                          (keyword (last (sort filter-set)))
                           v)]))
                    params))))
 
@@ -255,7 +259,8 @@
       (ol/init-map!)
       (reset! layer-list (:message (<! layers-chan)))
       (select-forecast! @*forecast)
-      (ol/set-visible-by-title! "active" true))))
+      (ol/set-visible-by-title! "active" true)
+      (reset! loading? false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -372,6 +377,11 @@
                    :on-click #(reset! show-me? false)}
            "Accept"]]]]])))
 
+(defn loading-modal []
+  [:div#message-modal {:style ($/modal "absolute")}
+   [:div {:style ($message-modal)}
+    [:h3 {:style {:padding "1rem"}} "Loading..."]]])
+
 (defn root-component [_]
   (r/create-class
    {:component-did-mount
@@ -383,6 +393,7 @@
     (fn [_]
       [:div {:style ($/combine $/root {:height "100%" :padding 0 :position "relative"})}
        [toast-message]
+       (when @loading? [loading-modal])
        [message-modal]
        [:div {:class "bg-yellow"
               :style ($app-header)}
