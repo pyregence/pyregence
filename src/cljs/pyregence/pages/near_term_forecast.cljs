@@ -157,12 +157,13 @@
                    pi)
               (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first pi))))
                       pi)
-              (mapv (fn [pi-layer {:keys [js-time hour]}]
-                      (merge {:js-time js-time
-                              :date    (u/get-date-from-js js-time @show-utc?)
-                              :time    (u/get-time-from-js js-time @show-utc?)
-                              :hour    hour}
-                             pi-layer))
+              (mapv (fn [pi-layer {:keys [sim-time hour]}]
+                      (let [js-time (u/js-date-from-string sim-time)]
+                        (merge {:js-time js-time
+                                :date    (u/get-date-from-js js-time @show-utc?)
+                                :time    (u/get-time-from-js js-time @show-utc?)
+                                :hour    hour}
+                               pi-layer)))
                     pi
                     @filtered-layers)))))
 
