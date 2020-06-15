@@ -193,6 +193,7 @@
          (pad-zero (.getDate js-date)))))
 
 (defn get-time-from-js [js-date show-utc?]
+  (println js-date)
   (if show-utc?
     (str (subs (.toISOString js-date) 11 16) " UTC")
     (str (pad-zero (.getHours js-date))
@@ -205,6 +206,13 @@
              (peek)))))
 
 (defn js-date-from-string [date-str]
+  (println (type date-str))
+  (println date-str)
+  (println (subs "20200614_18" 0 4))
+  (println (subs date-str 0 111))
+  (println (subs (str date-str) 4 6))
+  (println (subs (str date-str) 6 8))
+  (println (subs (str date-str) 9 11))
   (js/Date. (str (subs date-str 0 4) "-"
                  (subs date-str 4 6) "-"
                  (subs date-str 6 8) "T"

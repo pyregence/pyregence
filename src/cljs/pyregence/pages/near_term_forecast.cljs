@@ -54,7 +54,7 @@
        (sort)
        (reverse)
        (u/mapm (fn [option]
-                 (let [model-js-time (apply u/js-date-from-string option)
+                 (let [model-js-time (u/js-date-from-string option)
                        date          (u/get-date-from-js model-js-time @show-utc?)
                        time          (u/get-time-from-js model-js-time @show-utc?)]
                    [(keyword option)
