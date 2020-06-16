@@ -9,9 +9,6 @@
 (defonce capabilities (atom []))
 (defonce out-str      (atom []))
 
-(def out    (ByteArrayOutputStream. 4096))
-(def writer (transit/writer out :json))
-
 (defn java-date-from-string [date-str]
   (.parse (java.text.SimpleDateFormat. "yyyyMMdd_hhmmss") date-str))
 
