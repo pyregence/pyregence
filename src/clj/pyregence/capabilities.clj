@@ -1,7 +1,9 @@
 (ns pyregence.capabilities
-  (:require [clojure.string :as str]
+  (:require [clojure.string    :as str]
+            [cognitect.transit :as transit]
             [pyregence.views   :refer [data-response]]
-            [pyregence.logging :refer [log-str]]))
+            [pyregence.logging :refer [log-str]])
+  (:import [java.io ByteArrayOutputStream]))
 
 (defonce capabilities (atom []))
 
@@ -65,4 +67,7 @@
 
 (defn get-capabilities []
   (when-not (seq @capabilities) (set-capabilities!))
-  (data-response 200 @capabilities))
+  (let [out    (ByteArrayOutputStream. 4096)
+        writer (transit/writer out :json)]
+    (transit/write writer @capabilities)
+    (data-response 200 (.toString out) :transit)))

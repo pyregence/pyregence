@@ -134,11 +134,31 @@
          :status  nil
          :message ""}))))
 
+(defmethod call-remote! :post-text [_ url data]
+  (go
+    (let [fetch-params {:method "post"
+                        :headers (merge {"Accept" "application/edn"}
+                                        (when-not (= (type data) js/FormData)
+                                          {"Content-Type" "application/edn"}))
+                        :body (cond
+                                (= js/FormData (type data)) data
+                                data                        (pr-str data)
+                                :else                       nil)}
+          response      (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+                                   fetch-params))]
+      (if response
+        {:success (.-ok response)
+         :status  (.-status response)
+         :message (or (<p! (.text response)) "")}
+        {:success false
+         :status  nil
+         :message ""}))))
+
 (defmethod call-remote! :default [method _ _]
   (throw (ex-info (str "No such method (" method ") defined for pyregence.utils/call-remote!") {})))
 
 (defn call-clj-async! [clj-fn-name & args]
-  (call-remote! :post
+  (call-remote! :post-text
                 (str "/clj/" clj-fn-name)
                 (if (= js/FormData (type (first args))) (first args) {:clj-args args})))
 
