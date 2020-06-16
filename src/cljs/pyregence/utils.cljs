@@ -137,7 +137,7 @@
 (defmethod call-remote! :post-text [_ url data]
   (go
     (let [fetch-params {:method "post"
-                        :headers (merge {"Accept" "application/edn"}
+                        :headers (merge {"Accept" "application/transit+json"}
                                         (when-not (= (type data) js/FormData)
                                           {"Content-Type" "application/edn"}))
                         :body (cond
