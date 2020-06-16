@@ -51,22 +51,27 @@
                 (re-find #"<Layer>.*(?=</Layer>)" xml)
                 (str/replace-first xml "<Layer>" "")
                 (re-seq #"<Layer.+?</Layer>" xml)
-                (pmap (fn [layer]
-                        (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
-                                             (str/replace #"<Name>" ""))
-                              coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
-                                             (re-seq #"[\d|\.|-]+")
-                                             (rest)
-                                             (vec))
-                              merge-fn  #(merge % {:layer full-name :extent coords})]
-                          (cond
-                            (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
-                            (merge-fn (split-risk-layer-name full-name))
+                (partition-all 1000 xml)
+                (pmap (fn [layer-group]
+                        (->> layer-group
+                             (keep
+                              (fn [layer]
+                                (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
+                                                     (str/replace #"<Name>" ""))
+                                      coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
+                                                     (re-seq #"[\d|\.|-]+")
+                                                     (rest)
+                                                     (vec))
+                                      merge-fn  #(merge % {:layer full-name :extent coords})]
+                                  (cond
+                                    (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
+                                    (merge-fn (split-risk-layer-name full-name))
 
-                            (re-matches #"([a-z|-]+_)[a-z|-]+\d*:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
-                            (merge-fn (split-active-layer-name full-name)))))
+                                    (re-matches #"([a-z|-]+_)[a-z|-]+\d*:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                                    (merge-fn (split-active-layer-name full-name))))))
+                             (vec)))
                       xml)
-                (remove nil? xml)
+                (apply concat xml)
                 (vec xml)))
       (transit/write writer @capabilities)
       (reset! out-str (.toString out))
