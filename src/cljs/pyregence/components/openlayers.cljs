@@ -141,6 +141,16 @@
       .getSource
       (.updateParams #js {"LAYERS" geo-layer})))
 
+(defn reset-active-layer-wms! [geo-layer]
+  (-> (get-layer-by-title "active")
+      (.setSource (if geo-layer
+                    (TileWMS.
+                     #js {:url         c/wms-url
+                          :params      #js {"LAYERS" geo-layer}
+                          :crossOrigin "anonymous"
+                          :serverType  "geoserver"})
+                    nil))))
+
 (defn set-opacity-by-title! [title opacity]
   (-> (get-layer-by-title title)
       (.setOpacity opacity)))
