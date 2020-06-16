@@ -53,7 +53,7 @@
                 (time (re-seq #"<Layer.+?</Layer>" xml))
                 (time (partition-all 8000 xml))
                 (time (pmap (fn [layer-group]
-                        (keep
+                        (mapv
                          (fn [layer]
                            (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
                                                 (str/replace #"<Name>" ""))
