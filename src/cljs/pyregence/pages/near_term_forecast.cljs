@@ -398,6 +398,7 @@
        [message-modal]
        [:div {:class "bg-yellow"
               :style ($app-header)}
+        [:label {:on-click #(u/call-clj-async! "set-capabilities")} "0 set 0"]
         [theme-select]
         [:span
          (doall (map (fn [[key {:keys [opt-label]}]]
