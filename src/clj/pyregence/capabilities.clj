@@ -41,12 +41,12 @@
   (try
     (let [out      (ByteArrayOutputStream. 4096)
           writer   (transit/writer out :json)
-          responce (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
+          response (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
                                            "?SERVICE=WMS"
                                            "&VERSION=1.3.0"
                                            "&REQUEST=GetCapabilities")))]
       (reset! capabilities
-              (as-> responce xml
+              (as-> response xml
                 (str/replace xml "\n" "")
                 (re-find #"<Layer>.*(?=</Layer>)" xml)
                 (str/replace-first xml "<Layer>" "")
