@@ -1,11 +1,16 @@
 (ns pyregence.capabilities
   (:require [clojure.string    :as str]
             [cognitect.transit :as transit]
+            [clj-http.client   :as client]
             [pyregence.views   :refer [data-response]]
             [pyregence.logging :refer [log-str]])
   (:import [java.io ByteArrayOutputStream]))
 
 (defonce capabilities (atom []))
+(defonce out-str      (atom []))
+
+(def out    (ByteArrayOutputStream. 4096))
+(def writer (transit/writer out :json))
 
 (defn java-date-from-string [date-str]
   (.parse (java.text.SimpleDateFormat. "yyyyMMdd_hhmmss") date-str))
@@ -36,38 +41,42 @@
      :hour        0}))
 
 (defn set-capabilities! []
-  (if-let [response (slurp (str "https://data.pyregence.org:8443/geoserver/wms"
-                                "?SERVICE=WMS"
-                                "&VERSION=1.3.0"
-                                "&REQUEST=GetCapabilities"))]
-    (do (reset! capabilities
-                (as-> response xml
-                  (str/replace xml "\n" "")
-                  (re-find #"<Layer>.*(?=</Layer>)" xml)
-                  (str/replace-first xml "<Layer>" "")
-                  (re-seq #"<Layer.+?</Layer>" xml)
-                  (keep (fn [layer]
-                          (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
-                                               (str/replace #"<Name>" ""))
-                                coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
-                                               (re-seq #"[\d|\.|-]+")
-                                               (rest)
-                                               (vec))
-                                merge-fn  #(merge % {:layer full-name :extent coords})]
-                            (cond
-                              (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
-                              (merge-fn (split-risk-layer-name full-name))
+  (try
+    (let [out      (ByteArrayOutputStream. 4096)
+          writer   (transit/writer out :json)
+          response (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
+                                           "?SERVICE=WMS"
+                                           "&VERSION=1.3.0"
+                                           "&REQUEST=GetCapabilities")))]
+      (reset! capabilities
+              (as-> response xml
+                (str/replace xml "\n" "")
+                (re-find #"<Layer>.*(?=</Layer>)" xml)
+                (str/replace-first xml "<Layer>" "")
+                (re-seq #"<Layer.+?</Layer>" xml)
+                (pmap (fn [layer]
+                        (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
+                                             (str/replace #"<Name>" ""))
+                              coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
+                                             (re-seq #"[\d|\.|-]+")
+                                             (rest)
+                                             (vec))
+                              merge-fn  #(merge % {:layer full-name :extent coords})]
+                          (cond
+                            (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
+                            (merge-fn (split-risk-layer-name full-name))
 
-                              (re-matches #"([a-z|-]+_)[a-z|-]+\d*:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
-                              (merge-fn (split-active-layer-name full-name)))))
-                        xml)
-                  (vec xml)))
-        (log-str (count @capabilities) " layers added to capabilities."))
-    (log-str "Failed to load capabilities.")))
+                            (re-matches #"([a-z|-]+_)[a-z|-]+\d*:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                            (merge-fn (split-active-layer-name full-name)))))
+                      xml)
+                (remove nil? xml)
+                (vec xml)))
+      (transit/write writer @capabilities)
+      (reset! out-str (.toString out))
+      (log-str (count @capabilities) " layers added to capabilities."))
+    (catch Exception e
+      (log-str "Failed to load capabilities."))))
 
 (defn get-capabilities []
   (when-not (seq @capabilities) (set-capabilities!))
-  (let [out    (ByteArrayOutputStream. 4096)
-        writer (transit/writer out :json)]
-    (transit/write writer @capabilities)
-    (data-response 200 (.toString out) :transit)))
+  (data-response 200 @out-str :transit))

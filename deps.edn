@@ -2,6 +2,7 @@
 
  :deps {bk/ring-gzip               {:mvn/version "0.3.0"}
         clj-tagsoup/clj-tagsoup    {:mvn/version "0.3.0" :exclusions [org.clojure/data.xml org.clojure/clojure]}
+        clj-http/clj-http          {:mvn/version "3.10.1"}
         cljsjs/vega-embed          {:mvn/version "6.0.0-0"}
         com.cognitect/transit-clj  {:mvn/version "1.0.324"}
         com.cognitect/transit-cljs {:mvn/version "0.8.264"}
