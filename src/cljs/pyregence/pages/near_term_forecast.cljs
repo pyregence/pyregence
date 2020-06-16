@@ -202,8 +202,8 @@
 (defn change-type! [clear? zoom?]
   (check-param-filter)
   (filter-layers!)
-  (ol/reset-active-layer-wms! (get-current-layer-name))
-  (get-legend!                (get-current-layer-name))
+  (ol/reset-active-layer! (get-current-layer-name))
+  (get-legend!            (get-current-layer-name))
   (if clear?
     (clear-info!)
     (get-point-info! (ol/get-overlay-bbox)))

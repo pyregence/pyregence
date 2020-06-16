@@ -51,11 +51,7 @@
                                 #js {:title   "active"
                                      :visible false
                                      :opacity 0.7
-                                     :source  (TileWMS.
-                                               #js {:url         c/wms-url
-                                                    :params      #js {}
-                                                    :crossOrigin "anonymous"
-                                                    :serverType  "geoserver"})})]
+                                     :source  nil})]
                 :controls #js [(ScaleLine.) (Attribution.)]
                 :view     (View.
                            #js {:projection "EPSG:3857"
@@ -137,11 +133,10 @@
       (.setSource source)))
 
 (defn swap-active-layer! [geo-layer]
-  (-> (get-layer-by-title "active")
-      .getSource
-      (.updateParams #js {"LAYERS" geo-layer})))
+  (when-let [source (.getSource (get-layer-by-title "active"))]
+    (.updateParams source #js {"LAYERS" geo-layer})))
 
-(defn reset-active-layer-wms! [geo-layer]
+(defn reset-active-layer! [geo-layer]
   (-> (get-layer-by-title "active")
       (.setSource (if geo-layer
                     (TileWMS.
