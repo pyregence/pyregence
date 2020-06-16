@@ -72,8 +72,14 @@
 
 (defn data-response
   ([status body]
-   (data-response status body true))
-  ([status body edn?]
+   (data-response status body :edn))
+  ([status body type]
    {:status  status
-    :headers {"Content-Type" (if edn? "application/edn" "application/json")}
-    :body    (if edn? (pr-str body) (json/write-str body))}))
+    :headers {"Content-Type" (condp = type
+                               :edn     "application/edn"
+                               :transit "application/transit+json"
+                               :json    "application/json")}
+    :body    (condp = type
+               :edn     (pr-str body)
+               :transit body
+               :json    (json/write-str body))}))

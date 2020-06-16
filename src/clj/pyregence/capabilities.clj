@@ -66,7 +66,8 @@
     (log-str "Failed to load capabilities.")))
 
 (defn get-capabilities []
+  (when-not (seq @capabilities) (set-capabilities!))
   (let [out    (ByteArrayOutputStream. 4096)
         writer (transit/writer out :json)]
     (transit/write writer @capabilities)
-    (data-response 200 (.toString out))))
+    (data-response 200 (.toString out) :transit)))

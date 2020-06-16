@@ -11,9 +11,9 @@
 (defn log [data & {:keys [newline pprint] :or {newline true pprint false}}]
   (let [timestamp (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.))]
     (send-off synchronized-log-writer
-              (cond pprint  (fn [_] (print (str timestamp " ")) (pp/pprint (max-length data 1000)))
-                    newline (fn [_] (println timestamp (max-length data 1000)))
-                    :else   (fn [_] (print timestamp (max-length data 1000))))))
+              (cond pprint  (fn [_] (print (str timestamp " ")) (pp/pprint (max-length data 500)))
+                    newline (fn [_] (println timestamp (max-length data 500)))
+                    :else   (fn [_] (print timestamp (max-length data 500))))))
   nil)
 
 (defn log-str [& data]
