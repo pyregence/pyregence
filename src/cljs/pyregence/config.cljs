@@ -39,12 +39,12 @@
                                            :options   {:loading {:opt-label "Loading..."}}}
                               :band       {:opt-label "Weather Band"
                                            :options   (array-map
-                                                       :apcp01 {:opt-label "Accumulated precipitation (1 hour)"
-                                                                :filter    "apcp01"
-                                                                :units     "inches"}
                                                        :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                 :filter    "ffwi"
                                                                 :units     ""}
+                                                       :apcp01 {:opt-label "Accumulated precipitation (1 hour)"
+                                                                :filter    "apcp01"
+                                                                :units     "inches"}
                                                        :meq    {:opt-label "Equilibrium moisture content"
                                                                 :filter    "meq"
                                                                 :units     "%"}
