@@ -42,27 +42,28 @@
                                                        :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                 :filter    "ffwi"
                                                                 :units     ""}
+                                                       :tmpf   {:opt-label "Temperature (2m)"
+                                                                :filter    "tmpf"
+                                                                :units     "deg F"}
+                                                       :rh     {:opt-label "Relative humidity (2m)"
+                                                                :filter    "rh"
+                                                                :units     "%"}
+                                                       :ws     {:opt-label "Sustained wind speed (20-ft)"
+                                                                :filter    "ws"
+                                                                :units     "mph"}
+                                                       :wg     {:opt-label "Wind gust (20-ft)"
+                                                                :filter    "wg"
+                                                                :units     "mph"}
+                                                       :wd     {:opt-label "Wind direction"
+                                                                :filter    "wd"
+                                                                :units     "deg from N"}
                                                        :apcp01 {:opt-label "Accumulated precipitation (1 hour)"
                                                                 :filter    "apcp01"
                                                                 :units     "inches"}
                                                        :meq    {:opt-label "Equilibrium moisture content"
                                                                 :filter    "meq"
                                                                 :units     "%"}
-                                                       :rh     {:opt-label "Relative humidity (2m)"
-                                                                :filter    "rh"
-                                                                :units     "%"}
-                                                       :tmpf   {:opt-label "Temperature (2m)"
-                                                                :filter    "tmpf"
-                                                                :units     "deg F"}
-                                                       :wd     {:opt-label "Wind direction"
-                                                                :filter    "wd"
-                                                                :units     "deg"}
-                                                       :wg     {:opt-label "Wind gust (20-ft)"
-                                                                :filter    "wg"
-                                                                :units     "mph"}
-                                                       :ws     {:opt-label "Sustained wind speed (20-ft)"
-                                                                :filter    "ws"
-                                                                :units     "mph"})}}}
+                                                       )}}}
    :active-fire {:opt-label   "Active Fire Forecast"
                  :filter      "fire-spread-forecast"
                  :block-info? true
