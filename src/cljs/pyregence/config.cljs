@@ -33,7 +33,37 @@
 ;; Layer options
 
 (def forecast-options
-  {:active-fire {:opt-label   "Active Fire Forecast"
+  {:fire-weather {:opt-label "Fire Weather"
+                  :filter    "fire-weather-forecast"
+                  :params    {:model-init {:opt-label "Forecast Start Time"
+                                           :options   {:loading {:opt-label "Loading..."}}}
+                              :band       {:opt-label "Weather Band"
+                                           :options   (array-map
+                                                       :apcp01 {:opt-label "Accumulated precipitation (1 hour)"
+                                                                :filter    "apcp01"
+                                                                :units     "inches"}
+                                                       :ffwi   {:opt-label "Fosberg Fire Weather Index"
+                                                                :filter    "ffwi"
+                                                                :units     ""}
+                                                       :meq    {:opt-label "Equilibrium moisture content"
+                                                                :filter    "meq"
+                                                                :units     "%"}
+                                                       :rh     {:opt-label "Relative humidity (2m)"
+                                                                :filter    "rh"
+                                                                :units     "%"}
+                                                       :tmpf   {:opt-label "Temperature (2m)"
+                                                                :filter    "tmpf"
+                                                                :units     "deg F"}
+                                                       :wd     {:opt-label "Wind direction"
+                                                                :filter    "wd"
+                                                                :units     "deg"}
+                                                       :wg     {:opt-label "Wind gust (20-ft)"
+                                                                :filter    "wg"
+                                                                :units     "mph"}
+                                                       :ws     {:opt-label "Sustained wind speed (20-ft)"
+                                                                :filter    "ws"
+                                                                :units     "mph"})}}}
+   :active-fire {:opt-label   "Active Fire Forecast"
                  :filter      "fire-spread-forecast"
                  :block-info? true
                  :params      {:fire-name  {:opt-label  "Fire Name"
@@ -51,25 +81,16 @@
                                                                    :filter    "landfire"}}}
                                :burn-pct   {:opt-label      "Burn Probability"
                                             :default-option :50
-                                            :options        (array-map
-                                                             :90 {:opt-label "90"
+                                            :options        {:90 {:opt-label "90"
                                                                   :filter    "90"}
-                                                             :80 {:opt-label "80"
-                                                                  :filter    "80"}
                                                              :70 {:opt-label "70"
                                                                   :filter    "70"}
-                                                             :60 {:opt-label "60"
-                                                                  :filter    "60"}
                                                              :50 {:opt-label "50"
                                                                   :filter    "50"}
-                                                             :40 {:opt-label "40"
-                                                                  :filter    "40"}
                                                              :30 {:opt-label "30"
                                                                   :filter    "30"}
-                                                             :20 {:opt-label "20"
-                                                                  :filter    "20"}
                                                              :10 {:opt-label "10"
-                                                                  :filter    "10"})}
+                                                                  :filter    "10"}}}
                                :output     {:opt-label "Output"
                                             :options   {:burned {:opt-label "Burned area"
                                                                  :filter    "burned-area"

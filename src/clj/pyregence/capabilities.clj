@@ -25,16 +25,16 @@
                            (.getTime (java-date-from-string (str init-timestamp "0000")))) 1000 60 60) 6)}))
 
 (defn split-active-layer-name [name-string]
-  (let [[workspace layer]    (str/split name-string #":")
-        [forecast fire-name] (str/split workspace   #"_")
-        params               (str/split layer       #"_")
-        init-timestamp       (str (get params 0) "_" (get params 1))]
+  (let [[workspace layer]                      (str/split name-string #":")
+        [forecast fire-name init-ts1 init-ts2] (str/split workspace   #"_")
+        [layer-group sim-timestamp]            (str/split layer       #"_(?=\d{8}_)")
+        init-timestamp                         (str init-ts1 "_" init-ts2)]
     {:layer-group ""
      :forecast    forecast
      :fire-name   fire-name
-     :filter-set  (into #{forecast fire-name init-timestamp} (subvec params 2 6))
+     :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
      :model-init  init-timestamp
-     :sim-time    (str (get params 6) "_" (get params 7))
+     :sim-time    sim-timestamp
      :hour        0}))
 
 (defn set-capabilities! []
@@ -67,7 +67,7 @@
                                     (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
                                     (merge-fn (split-risk-layer-name full-name))
 
-                                    (re-matches #"([a-z|-]+_)[a-z|-]+\d*:\d{8}_\d{6}_([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                                    (re-matches #"([a-z|-]+_)[a-z|-]+\d*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
                                     (merge-fn (split-active-layer-name full-name))))))
                              (vec)))
                       xml)
