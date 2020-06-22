@@ -1,0 +1,159 @@
+* ffwi: Fosberg Fire Weather Index (unitless)
+  - Range: 0 - 100
+  - [[file:./weatherbell-examples/hrrr-conus-california-t2m_f-1977600.png][temp map]]
+    #+begin_src css
+    * {
+        raster-channels: auto;
+        raster-color-map: color-map-entry(#000000, -100, 0.0, "nodata")
+                          color-map-entry(#000000,   -1, 0.0, "nodata")
+                          color-map-entry(#3d1691,    0, 1.0, "Very Low")
+                          color-map-entry(#c8726a,   20, 1.0, "Low")
+                          color-map-entry(#7bbee0,   40, 1.0, "Moderate")
+                          color-map-entry(#ffff78,   60, 1.0, "High")
+                          color-map-entry(#c93300,   80, 1.0, "Very High")
+                          color-map-entry(#b2877f,  100, 1.0, "Extreme")
+                          color-map-entry(#000000,  101, 0.0, "nodata")
+                          color-map-entry(#000000,  200, 0.0, "nodata");
+        raster-color-map-type: ramp; /* ramp, intervals, values */
+        raster-contrast-enhancement: none; /* none, normalize, histogram */
+        raster-gamma: 1.0; /* < 1 = brighten, > 1 = darken */
+    }
+    #+end_src
+* tmpf: 2m air temperature (deg F)
+  - Range: -20 - 120
+  - [[file:./weatherbell-examples/hrrr-conus-california-t2m_f-1977600.png][temp map]]
+    #+begin_src css
+    * {
+        raster-channels: auto;
+        raster-color-map: color-map-entry(#000000, -100, 0.0, "nodata")
+                          color-map-entry(#000000,  -21, 0.0, "nodata")
+                          color-map-entry(#266664,  -20, 1.0, "Very Low")
+                          color-map-entry(#3d1691,    0, 1.0, "Very Low")
+                          color-map-entry(#c8726a,   20, 1.0, "Low")
+                          color-map-entry(#7bbee0,   40, 1.0, "Moderate")
+                          color-map-entry(#ffff78,   60, 1.0, "High")
+                          color-map-entry(#c93300,   80, 1.0, "Very High")
+                          color-map-entry(#b2877f,  100, 1.0, "Extreme")
+                          color-map-entry(#454a44,  120, 1.0, "Extreme")
+                          color-map-entry(#000000,  121, 0.0, "nodata")
+                          color-map-entry(#000000,  200, 0.0, "nodata");
+        raster-color-map-type: ramp; /* ramp, intervals, values */
+        raster-contrast-enhancement: none; /* none, normalize, histogram */
+        raster-gamma: 1.0; /* < 1 = brighten, > 1 = darken */
+    }
+    #+end_src
+* rh: 2m Relative humidity (%)
+  - Range: 0% - 100%
+  - [[file:./weatherbell-examples/hrrr-conus-california-rh2m-1977600.png][rh map]]
+    #+begin_src css
+    * {
+        raster-channels: auto;
+        raster-color-map: color-map-entry(#000000,  -1, 0.0, "nodata")
+                          color-map-entry(#472e17,   0, 1.0, "Very Low")
+                          color-map-entry(#c6a175,  20, 1.0, "Low")
+                          color-map-entry(#d0d3ba,  40, 1.0, "Moderate")
+                          color-map-entry(#afc69a,  60, 1.0, "High")
+                          color-map-entry(#58929a,  80, 1.0, "Very High")
+                          color-map-entry(#6c4a97, 100, 1.0, "Extreme");
+        raster-color-map-type: ramp; /* ramp, intervals, values */
+        raster-contrast-enhancement: none; /* none, normalize, histogram */
+        raster-gamma: 1.0; /* < 1 = brighten, > 1 = darken */
+    }
+    #+end_src
+* ws: 20 ft wind speed (mph)
+  - Range: 0 - 145
+  - [[file:./weatherbell-examples/hrrr-conus-california-gust_mph-1977600.png][wg map]]
+    #+begin_src css
+    * {
+        raster-channels: auto;
+        raster-color-map: color-map-entry(#000000,  -1, 0.0, "nodata")
+                          color-map-entry(#ffffff,   0, 1.0, "0")
+                          color-map-entry(#969696,  15, 1.0, "15")
+                          color-map-entry(#96d2fa,  30, 1.0, "30")
+                          color-map-entry(#b4faaa,  45, 1.0, "45")
+                          color-map-entry(#ff6000,  60, 1.0, "60")
+                          color-map-entry(#8b6359,  75, 1.0, "75")
+                          color-map-entry(#ffc8c8,  90, 1.0, "90")
+                          color-map-entry(#dc3e3e, 105, 1.0, "105")
+                          color-map-entry(#b23131, 120, 1.0, "120")
+                          color-map-entry(#977474, 135, 1.0, "135")
+                          color-map-entry(#7d7e7e, 150, 1.0, "150")
+                          color-map-entry(#000000, 151, 0.0, "nodata")
+                          color-map-entry(#000000, 200, 0.0, "nodata");
+        raster-color-map-type: ramp; /* ramp, intervals, values */
+        raster-contrast-enhancement: none; /* none, normalize, histogram */
+        raster-gamma: 1.0; /* < 1 = brighten, > 1 = darken */
+    }
+    #+end_src
+* wg: 20 ft wind gust (mph)
+  - Range: 0 - 145
+  - [[file:./weatherbell-examples/hrrr-conus-california-gust_mph-1977600.png][wg map]]
+    #+begin_src css
+    * {
+        raster-channels: auto;
+        raster-color-map: color-map-entry(#000000,  -1, 0.0, "nodata")
+                          color-map-entry(#ffffff,   0, 1.0, "0")
+                          color-map-entry(#969696,  15, 1.0, "15")
+                          color-map-entry(#96d2fa,  30, 1.0, "30")
+                          color-map-entry(#b4faaa,  45, 1.0, "45")
+                          color-map-entry(#ff6000,  60, 1.0, "60")
+                          color-map-entry(#8b6359,  75, 1.0, "75")
+                          color-map-entry(#ffc8c8,  90, 1.0, "90")
+                          color-map-entry(#dc3e3e, 105, 1.0, "105")
+                          color-map-entry(#b23131, 120, 1.0, "120")
+                          color-map-entry(#977474, 135, 1.0, "135")
+                          color-map-entry(#7d7e7e, 150, 1.0, "150")
+                          color-map-entry(#000000, 151, 0.0, "nodata")
+                          color-map-entry(#000000, 200, 0.0, "nodata");
+        raster-color-map-type: ramp; /* ramp, intervals, values */
+        raster-contrast-enhancement: none; /* none, normalize, histogram */
+        raster-gamma: 1.0; /* < 1 = brighten, > 1 = darken */
+    }
+    #+end_src
+* wd: 20 ft wind direction (deg, meteorological convention)
+  - Range: 0 - 360
+  - No need for a style for wind direction as those fancy moving & dancing wind vectors will be used instead
+* apcp01: Accumulated 1-hour precipitation (in)
+  - Range: 0 - 20
+    [[file:./weatherbell-examples/hrrr_conus_conus_total_precip_inch_2506800.png][precip map]]
+    #+begin_src css
+    * {
+        raster-channels: auto;
+        raster-color-map: color-map-entry(#000000,  -1, 0.0, "nodata")
+                          color-map-entry(#ffffff,   0, 1.0, "0")
+                          color-map-entry(#0fa00f, 0.5, 1.0, "0.5")
+                          color-map-entry(#fffaaa,   1, 1.0, "1")
+                          color-map-entry(#ff3200,   2, 1.0, "2")
+                          color-map-entry(#c00000,   3, 1.0, "3")
+                          color-map-entry(#870000,   4, 1.0, "4")
+                          color-map-entry(#633b31,   5, 1.0, "5")
+                          color-map-entry(#cfc8df,  10, 1.0, "10")
+                          color-map-entry(#770077,  15, 1.0, "15")
+                          color-map-entry(#db00db,  20, 1.0, "20")
+                          color-map-entry(#000000,  21, 0.0, "nodata")
+                          color-map-entry(#000000, 100, 0.0, "nodata");
+        raster-color-map-type: ramp; /* ramp, intervals, values */
+        raster-contrast-enhancement: none; /* none, normalize, histogram */
+        raster-gamma: 1.0; /* < 1 = brighten, > 1 = darken */
+    }
+    #+end_src
+* meq: Equilibrium dead fuel moisture content (%)
+  - Range: 0% - 30%
+  - [[file:./weatherbell-examples/hrrr-conus-california-rh2m-1977600.png][rh map]]
+    #+begin_src css
+    * {
+        raster-channels: auto;
+        raster-color-map: color-map-entry(#000000,  -1, 0.0, "nodata")
+                          color-map-entry(#472e17,   0, 1.0, "Very Low")
+                          color-map-entry(#c6a175,   6, 1.0, "Low")
+                          color-map-entry(#d0d3ba,  12, 1.0, "Moderate")
+                          color-map-entry(#afc69a,  18, 1.0, "High")
+                          color-map-entry(#58929a,  24, 1.0, "Very High")
+                          color-map-entry(#6c4a97,  30, 1.0, "Extreme")
+                          color-map-entry(#000000,  31, 0.0, "nodata")
+                          color-map-entry(#000000, 100, 0.0, "nodata");
+        raster-color-map-type: ramp; /* ramp, intervals, values */
+        raster-contrast-enhancement: none; /* none, normalize, histogram */
+        raster-gamma: 1.0; /* < 1 = brighten, > 1 = darken */
+    }
+    #+end_src
