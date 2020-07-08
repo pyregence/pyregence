@@ -10,7 +10,7 @@
 (defonce out-str      (atom []))
 
 (defn java-date-from-string [date-str]
-  (.parse (java.text.SimpleDateFormat. "yyyyMMdd_hhmmss") date-str))
+  (.parse (java.text.SimpleDateFormat. "yyyyMMdd_HHmmss") date-str))
 
 (defn split-risk-layer-name [name-string]
   (let [[workspace layer]           (str/split name-string #":")
@@ -21,8 +21,9 @@
      :filter-set  (into #{forecast init-timestamp} (str/split layer-group #"_"))
      :model-init  init-timestamp
      :sim-time    sim-timestamp
-     :hour        (- (/ (- (.getTime (java-date-from-string sim-timestamp))
-                           (.getTime (java-date-from-string (str init-timestamp "0000")))) 1000 60 60) 6)}))
+     :hour        (/ (- (.getTime (java-date-from-string sim-timestamp))
+                        (.getTime (java-date-from-string (str init-timestamp "0000"))))
+                     1000 60 60)}))
 
 (defn split-active-layer-name [name-string]
   (let [[workspace layer]                      (str/split name-string #":")

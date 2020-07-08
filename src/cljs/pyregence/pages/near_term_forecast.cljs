@@ -40,13 +40,19 @@
 (defn get-forecast-opt [key-name]
   (get-in c/forecast-options [@*forecast key-name]))
 
+(defn fire-name-capitalization [fire-name]
+  (let [parts (str/split fire-name #"-")]
+    (str/join " "
+              (into [(str/upper-case (first parts))]
+                    (map str/capitalize (rest parts))))))
+
 (defn get-fire-names [forecast-layers]
   (->> forecast-layers
        (group-by :fire-name)
        (sort)
        (mapcat (fn [[fire-name opt-vec]]
                  [(keyword fire-name)
-                  {:opt-label  fire-name
+                  {:opt-label  (fire-name-capitalization fire-name)
                    :filter     fire-name
                    :model-init (into #{} (map :model-init) opt-vec)}]))
        (apply array-map)))
@@ -62,7 +68,7 @@
                        date          (u/get-date-from-js model-js-time @show-utc?)
                        time          (u/get-time-from-js model-js-time @show-utc?)]
                    [(keyword option)
-                    {:opt-label (str date "-" time)
+                    {:opt-label (str date " " time)
                      :js-time   model-js-time
                      :date      date
                      :time      time
@@ -157,7 +163,7 @@
             (as-> (<p! (.json response)) pi
               (u/try-js-aget pi "features")
               (map (fn [pi-layer]
-                     {:band   (first (.values js/Object (u/try-js-aget pi-layer "properties")))
+                     {:band   (u/to-precision 1 (first (.values js/Object (u/try-js-aget pi-layer "properties"))))
                       :vec-id (peek  (str/split (u/try-js-aget pi-layer "id") #"\."))})
                    pi)
               (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first pi))))
@@ -184,6 +190,11 @@
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
   (ol/swap-active-layer! (get-current-layer-name)))
+
+(defn select-layer-by-hour! [hour]
+  (select-layer! (first (keep-indexed (fn [idx layer]
+                                        (when (= hour (:hour layer)) idx))
+                                      @filtered-layers))))
 
 (defn clear-info! []
   (ol/clear-point!)
@@ -316,7 +327,7 @@
            [mc/information-tool
             @my-box
             *layer-idx
-            select-layer!
+            select-layer-by-hour!
             (get-current-layer-key :units)
             (get-current-layer-hour)
             @legend-list

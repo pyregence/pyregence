@@ -105,7 +105,7 @@
                              (fn [_ data]
                                (when-let [hour (or (u/try-js-aget data "datum" "datum" "hour")
                                                    (u/try-js-aget data "datum" "hour"))]
-                                 (layer-click! (dec ^js/integer hour)))))))
+                                 (layer-click! hour))))))
         (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

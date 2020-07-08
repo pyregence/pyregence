@@ -235,7 +235,7 @@
 
 (defn time-zone-iso-date [date-str show-utc?]
   (let [js-date (js-date-from-string date-str)]
-    (str (get-date-from-js js-date show-utc?) "-" (get-time-from-js js-date show-utc?))))
+    (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?))))
 
 ;;; ->map HOF
 
