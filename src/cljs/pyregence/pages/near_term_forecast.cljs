@@ -260,6 +260,7 @@
       (ol/init-map!)
       (reset! layer-list (t/read (t/reader :json) (:message (<! layers-chan))))
       (select-forecast! @*forecast)
+      (ol/add-layer-load-fail! #(toast-message! "One or more of the map tiles has failed to load."))
       (ol/set-visible-by-title! "active" true)
       (reset! loading? false))))
 
