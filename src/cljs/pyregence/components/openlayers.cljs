@@ -22,6 +22,7 @@
 
 (defonce the-map         (r/atom nil))
 (defonce single-click-on (atom nil))
+(defonce loading-errors? (atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Creating objects
@@ -127,6 +128,16 @@
              .getView
              .getZoom
              call-back))))
+
+(defn add-layer-load-fail! [call-back]
+  (.on (.getSource (get-layer-by-title "active"))
+       "tileloaderror"
+       #(reset! loading-errors? true))
+  (.on @the-map
+       "rendercomplete"
+       (fn [_]
+         (when @loading-errors? (call-back))
+         (reset! loading-errors? false))))
 
 (defn set-base-map-source! [source]
   (-> (get-layer-by-title "basemap")
