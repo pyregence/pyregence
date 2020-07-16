@@ -74,8 +74,8 @@
   ([body]
    (data-response body {}))
   ([body {:keys [status type session]
-          :as params
-          :or {:status 200 :type :edn}}]
+          :or {status 200 type :edn}
+          :as params}]
    (merge (when (contains? params :session) {:session session})
           {:status  status
            :headers {"Content-Type" (condp = type
