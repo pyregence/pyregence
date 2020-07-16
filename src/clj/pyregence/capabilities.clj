@@ -81,4 +81,4 @@
 
 (defn get-capabilities []
   (when-not (seq @capabilities) (set-capabilities!))
-  (data-response {:body @out-str :type :transit}))
+  (data-response @out-str {:type :transit}))

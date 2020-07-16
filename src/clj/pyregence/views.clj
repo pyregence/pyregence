@@ -70,20 +70,20 @@
                        (+ 1900 (.getYear (java.util.Date.)))
                        " Pyregence - All Rights Reserved | Terms")]]])})))
 
-(defn data-response [{:keys [status body type session]
-                      :as params
-                      :or {:status 200 :body "" :type :edn}}]
-  (merge
-   {:status  status
-    :headers {"Content-Type" (condp = type
-                               :edn     "application/edn"
-                               :transit "application/transit+json"
-                               :json    "application/json"
-                               "application/edn"  "application/edn"
-                               "application/json" "application/json")}
-    :body    (condp = type
-               :edn     (pr-str body)
-               :transit body
-               :json    (json/write-str body))}
-   (when (contains? params :session)
-     {:session session})))
+(defn data-response
+  ([body]
+   (data-response body {}))
+  ([body {:keys [status type session]
+          :as params
+          :or {:status 200 :type :edn}}]
+   (merge (when (contains? params :session) {:session session})
+          {:status  status
+           :headers {"Content-Type" (condp = type
+                                      :edn     "application/edn"
+                                      :transit "application/transit+json"
+                                      :json    "application/json"
+                                      type)}
+           :body    (condp = type
+                      :edn     (pr-str body)
+                      :transit body
+                      :json    (json/write-str body))})))
