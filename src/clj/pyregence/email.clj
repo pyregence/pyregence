@@ -31,7 +31,7 @@
                     :subject subject
                     :body    (message-fn (:site-url mail-config) username reset-key)})]
     (call-sql "contact.set_reset_key" username reset-key)
-    (data-response {:status (if (= :SUCCESS (:error result)) 200 400) :body username})))
+    (data-response {:status (when-not (= :SUCCESS (:error result)) 400) :body username})))
 
 (defn send-email [username email-type]
   (let [mail-config (get-mail-config)]
