@@ -70,7 +70,7 @@
                             (:sql-args params [])
                             (json/read-str (:sql-args params "[]")))
         sql-result        (apply call-sql (str schema "." function) sql-args)]
-    (data-response 200 sql-result (if (= content-type "application/edn") :edn :json))))
+    (data-response sql-result {:type (if (= content-type "application/edn") :edn :json)})))
 
 ;;; Insert Queries
 

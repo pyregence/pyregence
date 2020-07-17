@@ -31,7 +31,7 @@
                     :subject subject
                     :body    (message-fn (:site-url mail-config) username reset-key)})]
     (call-sql "contact.set_reset_key" username reset-key)
-    (data-response (if (= :SUCCESS (:error result)) 200 400) username)))
+    (data-response username {:status (when-not (= :SUCCESS (:error result)) 400)})))
 
 (defn send-email [username email-type]
   (let [mail-config (get-mail-config)]
@@ -44,4 +44,4 @@
                                        username
                                        "Pyregence New User"
                                        get-new-user-message)
-      (data-response 400 "Invalid email type."))))
+      (data-response "Invalid email type." {:status 400}))))
