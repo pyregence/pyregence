@@ -162,35 +162,6 @@
                 (str "/clj/" clj-fn-name)
                 (if (= js/FormData (type (first args))) (first args) {:clj-args args})))
 
-;; FIXME: toast-message is not yet defined.
-(defn- show-sql-error! [error]
-  ;; (toast-message!
-  ;;  (cond
-  ;;    (str/includes? error "duplicate key")
-  ;;    "This action cannot be completed because it would create a duplicate entry where this is prohibited."
-
-  ;;    (and (str/includes? error "violates foreign key")
-  ;;         (str/includes? error "still referenced from table"))
-  ;;    (let [message-start (+ (str/index-of error "from table \"") 11)
-  ;;          message-end   (+ 1 (str/index-of error "\"" (+ 1 message-start)))
-  ;;          table-str     (subs error message-start message-end)]
-  ;;      (str "This action cannot be completed because this value is being referenced by table " table-str "."))
-
-  ;;    (str/includes? error "violates foreign key")
-  ;;    "This action cannot be completed because the value selected is not valid."
-
-  ;;    :else
-  ;;    error))
-  (js/alert error))
-
-(defn call-sql-async! [sql-fn-name & args]
-  (go
-    (let [[schema function]         (str/split sql-fn-name #"\.")
-          {:keys [success message]} (<! (call-remote! :post
-                                                      (str "/sql/" schema "/" function)
-                                                      {:sql-args args}))]
-      (if success message (do (show-sql-error! message) [{}])))))
-
 ;;; Process Returned Results
 
 (def sql-primitive (comp val first first))

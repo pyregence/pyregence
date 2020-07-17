@@ -30,6 +30,7 @@
      :font-color   (if @light?
                      (color-picker :brown)
                      "rgb(235, 235, 235)")
+     :yellow       (str "rgba(249, 175, 59, "  alpha ")")
      :blue         (str "rgba(0, 0, 175, "     alpha ")")
      :black        (str "rgba(0, 0, 0, "       alpha ")")
      :brown        (str "rgba(96, 65, 31, "    alpha ")")
@@ -255,3 +256,28 @@
     {}
     {:pseudo {:hover {:background-color (color-picker :border-color 0.2)
                       :border-radius    "4px"}}}))
+
+(def light-border (str "1.2px solid " (color-picker :brown)))
+
+(defn action-box []
+  {:background-color (color-picker :white)
+   :border           light-border
+   :border-radius    "5px"
+   :overflow         "hidden"
+   :display          "flex"
+   :flex-direction   "column"
+   :height           "100%"
+   :padding          "0"
+   :width            "100%"})
+
+(defn action-header []
+  {:background-color (color-picker :yellow)
+   :border-bottom    light-border
+   :align-items      "center"
+   :display          "flex"
+   :flex-direction   "row"
+   :flex-wrap        "nowrap"
+   :height           "2.5rem"
+   :justify-content  "space-between"
+   :padding          ".25rem .7rem"
+   :width            "100%"})

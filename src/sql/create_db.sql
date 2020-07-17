@@ -4,6 +4,4 @@ CREATE ROLE pyregence WITH LOGIN CREATEDB PASSWORD 'pyregence';
 CREATE DATABASE pyregence WITH OWNER pyregence;
 \c pyregence
 CREATE EXTENSION pgcrypto;
-CREATE EXTENSION postgis;
-CREATE EXTENSION postgis_raster;
-CREATE EXTENSION postgis_topology;
+CREATE SCHEMA pyre AUTHORIZATION pyregence;
