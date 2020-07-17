@@ -30,4 +30,4 @@
     (log-str "CLJ Call: " (cons (fn->sym function) clj-args))
     (if (:status clj-result)
       clj-result
-      (data-response clj-result {:type "application/edn"}))))
+      (data-response clj-result {:type (if (= content-type "application/edn") :edn :json)}))))

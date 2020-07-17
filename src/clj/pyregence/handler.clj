@@ -43,11 +43,11 @@
 (defn token-resp [{:keys [auth-token]} handler]
   (if (= auth-token "883kljlsl36dnll9s9l2ls8xksl")
     handler
-    (constantly (data-response "Forbidden" {:type 403}))))
+    (constantly (data-response "Forbidden" {:status 403}))))
 
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
-                       (bad-uri? uri)                 (constantly (data-response "Forbidden" {:type 403}))
+                       (bad-uri? uri)                 (constantly (data-response "Forbidden" {:status 403}))
                        (contains? static-routes uri)  (render-static uri)
                        (contains? dynamic-routes uri) (render-dynamic)
                        (str/starts-with? uri "/clj/") (token-resp params clj-handler)

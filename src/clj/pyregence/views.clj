@@ -3,7 +3,7 @@
             [cognitect.transit :as transit]
             [hiccup.page :refer [html5 include-css include-js]]
             [pl.danieljanus.tagsoup :refer [parse]])
-  (:import [java.io ByteArrayOutputStream]))
+  (:import java.io.ByteArrayOutputStream))
 
 (defn render-dynamic []
   (fn [request]
@@ -79,7 +79,7 @@
 
 (defn data-response
   "Create a response object.
-   Body is required, status, type, and session are optional.
+   Body is required. Status, type, and session are optional.
    When a type keyword is passed, the body is converted to that type,
    otherwise the body and type are passed through."
   ([body]
