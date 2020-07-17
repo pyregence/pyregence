@@ -1,7 +1,9 @@
 (ns pyregence.views
   (:require [clojure.data.json :as json]
+            [cognitect.transit :as transit]
             [hiccup.page :refer [html5 include-css include-js]]
-            [pl.danieljanus.tagsoup :refer [parse]]))
+            [pl.danieljanus.tagsoup :refer [parse]])
+  (:import [java.io ByteArrayOutputStream]))
 
 (defn render-dynamic []
   (fn [request]
@@ -70,7 +72,16 @@
                        (+ 1900 (.getYear (java.util.Date.)))
                        " Pyregence - All Rights Reserved | Terms")]]])})))
 
+(defn body->transit [body]
+  (let [out    (ByteArrayOutputStream. 4096)
+        writer (transit/writer out :json)]
+    (.toString (transit/write writer body))))
+
 (defn data-response
+  "Create a response object.
+   Body is required, status, type, and session are optional.
+   When a type keyword is passed, the body is converted to that type,
+   otherwise the body and type are passed through."
   ([body]
    (data-response body {}))
   ([body {:keys [status type session]
@@ -84,6 +95,7 @@
                                       :json    "application/json"
                                       type)}
            :body    (condp = type
-                      :edn     (pr-str body)
-                      :transit body
-                      :json    (json/write-str body))})))
+                      :edn     (pr-str         body)
+                      :transit (body->transit  body)
+                      :json    (json/write-str body)
+                      body)})))
