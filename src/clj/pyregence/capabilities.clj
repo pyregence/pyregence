@@ -81,4 +81,4 @@
 
 (defn get-capabilities []
   (when-not (seq @capabilities) (set-capabilities!))
-  (data-response @out-str {:type :transit}))
+  (data-response @out-str {:type "application/transit+json"}))
