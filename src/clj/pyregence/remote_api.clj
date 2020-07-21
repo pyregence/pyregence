@@ -8,12 +8,13 @@
                                               set-user-password
                                               user-email-exists
                                               verify-user-email]]
-            [pyregence.capabilities :refer [get-capabilities set-capabilities!]]
+            [pyregence.capabilities :refer [get-capabilities get-layers set-capabilities!]]
             [pyregence.email :refer [send-email]]
             [pyregence.logging :refer [log-str]]
             [pyregence.views :refer [data-response]]))
 
 (def name->fn {"get-capabilities"  get-capabilities
+               "get-layers"        get-layers
                "insert-user"       insert-user
                "log-in"            log-in
                "log-out"           log-out
