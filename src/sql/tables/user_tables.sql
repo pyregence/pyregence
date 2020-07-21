@@ -16,6 +16,7 @@ CREATE TABLE pyre.users (
 CREATE TABLE pyre.organizations (
     organization_uid    SERIAL PRIMARY KEY,
     org_name            text NOT NULL,
+    email_domains       text,
     settings            text,
     archived            boolean DEFAULT FALSE,
     created_date        date DEFAULT NOW(),

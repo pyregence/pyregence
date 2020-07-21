@@ -1,12 +1,12 @@
 -- NAMESPACE: default
 
 INSERT INTO pyre.organizations
-    (org_name, settings)
+    (org_name, email_domains, settings)
 VALUES
     -- 1
-    ('Public', '{:auto-add? false :domains []'),
+    ('Public', '', '{:auto-add? false, :auto-accept? flase'),
     -- 2
-    ('Pyregence Consortium', '{:auto-add? false :domains []');
+    ('Pyregence Consortium', '' '{:auto-add? false, :auto-accept?');
 
 INSERT INTO pyre.users
     (email, name, password, settings)
