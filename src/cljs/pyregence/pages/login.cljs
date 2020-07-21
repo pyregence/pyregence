@@ -25,7 +25,7 @@
   (go
     (if (:success (<! (u/call-clj-async! "log-in" @email @password)))
       (let [url (:redirect-from (u/get-session-storage) "/near-term-forecast")]
-        (u/clear-session-storage)
+        (u/clear-session-storage!)
         (u/jump-to-url! url))
       (toast-message! "Invalid login credentials. Please try again."))))
 

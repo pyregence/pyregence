@@ -2,7 +2,8 @@
   (:require-macros [herb.core :refer [defglobal]]
                    pyregence.herb-patch)
   (:require herb.runtime
-            [reagent.core :as r]))
+            [reagent.core :as r]
+            [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -80,6 +81,32 @@
   [".ol-scale-line-inner" {:border-color (color-picker :border-color)
                            :color        (color-picker :border-color)
                            :font-size    ".75rem"}])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Pseudo / Class Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn p-bordered-input [& modifiers]
+  (let [base-style     {:background-color "white"
+                        :border           "1px solid"
+                        :border-color     (color-picker :sig-brown)
+                        :border-radius    "2px"
+                        :font-family      "inherit"
+                        :height           "1.75rem"
+                        :padding          ".25rem .5rem"}
+        flex-style     {:width            "100%"}
+        multi-style    {:height           "inherit"
+                        :padding          ".3rem .5rem"
+                        :resize           "vertical"}
+        disabled-style {:background-color "rgb(236, 236, 236)"
+                        :color            "black"}]
+    (with-meta
+      (merge base-style
+             (to-merge? modifiers :flex-style  flex-style)
+             (to-merge? modifiers :multi-style multi-style))
+      {:key    (str/join "-" (sort modifiers))
+       :group  true
+       :pseudo {:disabled disabled-style}})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style Functions
