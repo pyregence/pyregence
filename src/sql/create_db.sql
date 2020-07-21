@@ -4,4 +4,3 @@ CREATE ROLE pyregence WITH LOGIN CREATEDB PASSWORD 'pyregence';
 CREATE DATABASE pyregence WITH OWNER pyregence;
 \c pyregence
 CREATE EXTENSION pgcrypto;
-CREATE SCHEMA pyre AUTHORIZATION pyregence;

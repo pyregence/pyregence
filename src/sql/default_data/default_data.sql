@@ -1,6 +1,6 @@
 -- NAMESPACE: default
 
-INSERT INTO pyre.organizations
+INSERT INTO organizations
     (org_name, email_domains, settings)
 VALUES
     -- 1
@@ -8,7 +8,7 @@ VALUES
     -- 2
     ('Pyregence Consortium', '' '{:auto-add? false, :auto-accept?');
 
-INSERT INTO pyre.users
+INSERT INTO users
     (email, name, password, settings)
 VALUES
     ('mspencer@sig-gis.com', 'Matt Spencer', 'changeme', '{:theme :dark, :timezone :utc}'),
