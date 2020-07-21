@@ -14,7 +14,7 @@ CREATE OR REPLACE FUNCTION pyre.lower_trim(_str text)
 
 $$ LANGUAGE SQL;
 
--- Returns true if user name and password match
+-- Returns user info user name and password match
 CREATE OR REPLACE FUNCTION pyre.verify_user_login(_email text, _password text)
  RETURNS TABLE (user_id integer, org_id integer) AS $$
 
@@ -26,7 +26,7 @@ CREATE OR REPLACE FUNCTION pyre.verify_user_login(_email text, _password text)
 
 $$ LANGUAGE SQL;
 
--- Returns true if user information is taken
+-- Returns true if user information is taken, excludes user_id
 CREATE OR REPLACE FUNCTION pyre.user_email_exists(_email text, _user_id integer)
  RETURNS boolean AS $$
 
@@ -91,7 +91,7 @@ CREATE OR REPLACE FUNCTION pyre.set_user_password(_email text, _password text, _
 
 $$ LANGUAGE SQL;
 
--- Sets the password for a user, if the reset key is valid
+-- Sets verified to true, if the reset key is valid
 CREATE OR REPLACE FUNCTION pyre.verify_user_email(_email text, _reset_key text)
  RETURNS TABLE (user_id integer, org_id integer) AS $$
 
