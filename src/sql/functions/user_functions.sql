@@ -81,6 +81,7 @@ CREATE OR REPLACE FUNCTION pyre.set_user_password(_email text, _password text, _
             reset_key = NULL
         WHERE email = pyre.lower_trim(_email)
             AND reset_key = _reset_key
+            AND reset_key IS NOT NULL
         RETURNING user_uid
     )
 
@@ -101,6 +102,7 @@ CREATE OR REPLACE FUNCTION pyre.verify_user_email(_email text, _reset_key text)
             reset_key = NULL
         WHERE email = pyre.lower_trim(_email)
             AND reset_key = _reset_key
+            AND reset_key IS NOT NULL
         RETURNING user_uid
     )
 
