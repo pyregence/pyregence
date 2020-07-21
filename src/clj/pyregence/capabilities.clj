@@ -53,7 +53,6 @@
 (defn process-capabilities! []
   (reset! capabilities
           (mapm (fn [[key vals]]
-                  (log-str (count @layers))
                   (let [forecast-layers
                         (filter (fn [{:keys [forecast]}]
                                   (= (:filter vals) forecast))
