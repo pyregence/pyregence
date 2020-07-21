@@ -5,7 +5,9 @@
             [pyregence.utils  :as u]
             [pyregence.styles :as $]
             [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]))
+            [pyregence.components.messaging :refer [toast-message!
+                                                    toast-message
+                                                    process-toast-messages!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -52,18 +54,21 @@
        :onClick #(reset! forgot? true)} "Forgot Password?"])
 
 (defn root-component []
-  [:div {:style ($/combine ($/disabled-group @pending?)
-                           {:display "flex" :justify-content "center" :margin "5rem"})}
-   (if @forgot?
-     [simple-form
-      "Request New Password"
-      "Submit"
-      [["Email" email "text"]]
-      request-password!]
-     [simple-form
-      "Log in"
-      "Log in"
-      [["Email"    email "text"]
-       ["Password" password "password"]]
-      log-in!
-      reset-link])])
+  (process-toast-messages!)
+  (fn []
+    [:div {:style ($/combine ($/disabled-group @pending?)
+                             {:display "flex" :justify-content "center" :margin "5rem"})}
+     [toast-message]
+     (if @forgot?
+       [simple-form
+        "Request New Password"
+        "Submit"
+        [["Email" email "text"]]
+        request-password!]
+       [simple-form
+        "Log in"
+        "Log in"
+        [["Email"    email "text"]
+         ["Password" password "password"]]
+        log-in!
+        reset-link])]))

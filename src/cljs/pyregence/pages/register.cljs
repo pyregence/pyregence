@@ -5,7 +5,9 @@
             [pyregence.utils  :as u]
             [pyregence.styles :as $]
             [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]))
+            [pyregence.components.messaging :refer [toast-message!
+                                                    toast-message
+                                                    process-toast-messages!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -60,13 +62,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn root-component []
-  [:div {:style ($/combine ($/disabled-group @pending?)
-                           {:display "flex" :justify-content "center" :margin "5rem"})}
-   [simple-form
-    "Register"
-    "Register"
-    [["Email"             email       "text"]
-     ["Full Name"         full-name   "text"]
-     ["Password"          password    "password"]
-     ["Re-enter Password" re-password "password"]]
-    register!]])
+  (process-toast-messages!)
+  (fn []
+    [:div {:style ($/combine ($/disabled-group @pending?)
+                             {:display "flex" :justify-content "center" :margin "5rem"})}
+     [toast-message]
+     [simple-form
+      "Register"
+      "Register"
+      [["Email"             email       "text"]
+       ["Full Name"         full-name   "text"]
+       ["Password"          password    "password"]
+       ["Re-enter Password" re-password "password"]]
+      register!]]))
