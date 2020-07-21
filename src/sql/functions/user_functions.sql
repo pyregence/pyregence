@@ -48,7 +48,7 @@ CREATE OR REPLACE FUNCTION pyre.insert_user(
  ) RETURNS integer AS $$
 
     INSERT INTO pyre.users
-        (email, name, settings, password)
+        (email, name, password, settings)
     VALUES (
         pyre.lower_trim(_email),
         _name,

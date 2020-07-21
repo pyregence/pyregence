@@ -39,7 +39,7 @@
 (defn register! []
   (go
     (reset! pending? true)
-    (let [email-chan (u/call-clj-async! "user-email-exists" -1 @email)
+    (let [email-chan (u/call-clj-async! "user-email-exists" @email)
           errors     (remove nil?
                              [(when (u/missing-data? @email @password @re-password)
                                 "You must fill in all required information to continue.")
