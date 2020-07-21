@@ -29,19 +29,20 @@
       (let [url (:redirect-from (u/get-session-storage) "/near-term-forecast")]
         (u/clear-session-storage!)
         (u/jump-to-url! url))
-      (toast-message! "Invalid login credentials. Please try again."))))
+      ;; TODO, it would be helpful to show the user which of the two errors it actually is.
+      (toast-message! ["Invalid login credentials. Please try again."
+                       "If you feel this is an error, check your email for the verification email."]))))
 
 (defn request-password! []
   (go
     (reset! pending? true)
     (toast-message! "Submitting request. This may take a moment...")
     (if (:success (<! (u/call-clj-async! "send-email" @email :reset)))
-      (do (toast-message! ["Your account has been created successfully."
-                           "Please check your email for a registration confirmation."])
+      (do (toast-message! "Please check your email for a password reset link.")
           (<! (timeout 4000))
           (u/jump-to-url! "/near-term-forecast"))
-      (do (toast-message! ["An error occurred in registering"
-                           "Please contact support@pyregence.org for help."])
+      (do (toast-message! ["An error occurred."
+                           "Please try again shortly or contact support@pyregence.org for help."])
           (reset! pending? false)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
