@@ -252,7 +252,7 @@
                                       (assoc layer
                                              :date      (u/get-date-from-js js-time @show-utc?)
                                              :time      (u/get-time-from-js js-time @show-utc?)
-                                             :opt-label (str date "-" time))))
+                                             :opt-label (str date " " time))))
                                   @last-clicked-info))
   (swap! processed-params #(update-in %
                                       [:model-init :options]
@@ -261,7 +261,7 @@
                                                   [k (assoc v
                                                             :opt-label
                                                             (str (u/get-date-from-js js-time @show-utc?)
-                                                                 "-"
+                                                                 " "
                                                                  (u/get-time-from-js js-time @show-utc?)))])
                                                 options)))))
 
