@@ -19,6 +19,15 @@
            (transient {})
            coll)))
 
+(defn filterm [pred coll]
+  (persistent!
+   (reduce (fn [acc cur]
+             (if (pred cur)
+               (conj! acc cur)
+               acc))
+           (transient {})
+           coll)))
+
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]
     (str/join " "
@@ -137,9 +146,23 @@
                            (= workspace workspace-name))
                          %)))
 
-(defn get-capabilities []
+(defn filter-options [user-id]
+  (mapm (fn [[key val]]
+          [key
+           (update val
+                   :params
+                   (fn [params] (mapm (fn [[key val]]
+                                        [key
+                                         (update val
+                                                 :options
+                                                 #(filterm (fn [[_ {:keys [org-id]}]] (or user-id (not org-id))) %))])
+                                      params)))])
+        @capabilities))
+
+
+(defn get-capabilities [user-id]
   (when-not (seq @capabilities) (set-capabilities!))
-  (data-response @capabilities {:type :transit}))
+  (data-response (filter-options user-id) {:type :transit}))
 
 ;; Check if layers still exist in capabilities and respond with an error if not.
 (defn get-layers [selected-set-str]
