@@ -59,13 +59,14 @@
   (reset! reset-key (:reset-key params ""))
   (process-toast-messages!)
   (fn [_]
-    [:div {:style ($/combine ($/disabled-group @pending?)
-                             {:display "flex" :justify-content "center" :margin "5rem"})}
+    [:<>
      [toast-message]
+     [:div {:style ($/combine ($/disabled-group @pending?)
+                             {:display "flex" :justify-content "center" :margin "5rem"})}
      [simple-form
       "Reset Password"
       "Reset Password"
       [["Email"                 email       "text"]
        ["New Password"          password    "password"]
        ["Re-enter New Password" re-password "password"]]
-      reset-password!]]))
+      reset-password!]]]))

@@ -27,7 +27,7 @@
 (defn add-user! []
   (go
     (toast-message! "Creating new account. This may take a moment...")
-    (if (and (:success (<! (u/call-clj-async! "insert-contact" @email @full-name @password)))
+    (if (and (:success (<! (u/call-clj-async! "insert-user" @email @full-name @password)))
              (:success (<! (u/call-clj-async! "send-email" @email :new-user))))
       (do (toast-message! ["Your account has been created successfully."
                            "Please check your email for a registration confirmation."])
@@ -64,14 +64,15 @@
 (defn root-component []
   (process-toast-messages!)
   (fn []
-    [:div {:style ($/combine ($/disabled-group @pending?)
-                             {:display "flex" :justify-content "center" :margin "5rem"})}
+    [:<>
      [toast-message]
-     [simple-form
-      "Register"
-      "Register"
-      [["Email"             email       "text"]
-       ["Full Name"         full-name   "text"]
-       ["Password"          password    "password"]
-       ["Re-enter Password" re-password "password"]]
-      register!]]))
+     [:div {:style ($/combine ($/disabled-group @pending?)
+                              {:display "flex" :justify-content "center" :margin "5rem"})}
+      [simple-form
+       "Register"
+       "Register"
+       [["Email"             email       "text"]
+        ["Full Name"         full-name   "text"]
+        ["Password"          password    "password"]
+        ["Re-enter Password" re-password "password"]]
+       register!]]]))
