@@ -4,7 +4,7 @@
             [clojure.core.async :refer [go <! timeout]]
             [pyregence.utils  :as u]
             [pyregence.styles :as $]
-            [pyregence.components.common :refer [simple-form]]
+            [pyregence.components.common    :refer [simple-form]]
             [pyregence.components.messaging :refer [toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -41,6 +41,9 @@
           errors     (remove nil?
                              [(when (u/missing-data? @email @password @re-password)
                                 "You must fill in all required information to continue.")
+
+                              (when (< (count @password) 8)
+                                "Your password must be at least 8 charactors long.")
 
                               (when-not (= @password @re-password)
                                 "The passwords you have entered do not match.")

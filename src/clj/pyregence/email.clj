@@ -8,6 +8,7 @@
 (defn get-mail-config []
   (edn/read-string (slurp "email-server.edn")))
 
+;; TODO get name for greeting line.
 (defn get-password-reset-message [url email reset-key]
   (str "Hi " email ",\n\n"
        "  To reset your password, simply click the following link:\n\n"

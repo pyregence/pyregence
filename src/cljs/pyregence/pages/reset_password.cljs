@@ -4,7 +4,7 @@
             [clojure.core.async :refer [go <! timeout]]
             [pyregence.utils  :as u]
             [pyregence.styles :as $]
-            [pyregence.components.common :refer [simple-form]]
+            [pyregence.components.common    :refer [simple-form]]
             [pyregence.components.messaging :refer [toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -25,23 +25,28 @@
 (defn reset-password! []
   (go
     (reset! pending? true)
-    (cond
-      (u/missing-data? @email @password @re-password)
-      (toast-message! "Please fill in all the information.")
+    (let [errors (remove nil?
+                         [(when (u/missing-data? @email @password @re-password)
+                            "Please fill in all the information.")
 
-      (not= @password @re-password)
-      (toast-message! "Password fields do not match.")
+                          (when (< (count @password) 8)
+                            "Your password must be at least 8 charactors long.")
 
-      (not (:success (<! (u/call-clj-async! "user-email-exists" @email -1))))
-      (toast-message! (str "The email '" @email "' does not exist."))
+                          (when (not= @password @re-password)
+                            "Password fields do not match.")
 
-      :else
-      (if (:success (<! (u/call-clj-async! "set-user-password" @email @password @reset-key)))
-        (do (toast-message! "Your password has been reset successfully.")
-            (<! (timeout 2000))
-            (u/jump-to-url! "/near-term-forecast"))
-        (do (toast-message! (str "That is not the correct reset key for user " @email "."))
-            (reset! pending? false))))))
+                          (when-not (:success (<! (u/call-clj-async! "user-email-exists" @email -1)))
+                            (str "The email '" @email "' does not exist."))])]
+
+      (if (pos? (count errors))
+        (do (toast-message! errors)
+            (reset! pending? false))
+        (if (:success (<! (u/call-clj-async! "set-user-password" @email @password @reset-key)))
+          (do (toast-message! "Your password has been reset successfully.")
+              (<! (timeout 2000))
+              (u/jump-to-url! "/near-term-forecast"))
+          (do (toast-message! (str "Error reseting password for " @email "."))
+              (reset! pending? false)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components

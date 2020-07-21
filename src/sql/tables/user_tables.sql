@@ -6,7 +6,7 @@ CREATE TABLE pyre.users (
     email          text NOT NULL UNIQUE,
     name           text NOT NULL,
     password       varchar(72) NOT NULL,
-    settings       jsonb,
+    settings       text,
     super_admin    boolean DEFAULT FALSE,
     verified       boolean DEFAULT false,
     reset_key      text DEFAULT NULL

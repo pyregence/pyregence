@@ -20,7 +20,7 @@
      (data-response "" {:status 401}))))
 
 (defn set-user-password [email password reset-key]
-  (if-let [user (sql-primitive (call-sql "pyre.set_user_password" email password reset-key))]
+  (if-let [user (first (call-sql "pyre.set_user_password" email password reset-key))]
     (data-response "" {:session {:user-id (:user_id user) :org-id (:org_id user)}})
     (data-response "" {:status 401})))
 
@@ -30,6 +30,8 @@
     (data-response "" {:status 401})))
 
 (defn insert-user [email name password]
-  (if (sql-primitive (call-sql "pyre.insert_user" email name password))
-    (data-response "")
-    (data-response "" {:status 401})))
+  (let [settings (pr-str {:theme    :dark
+                          :timezone :utc})]
+    (if (sql-primitive (call-sql "pyre.insert_user" email name password settings))
+      (data-response "")
+      (data-response "" {:status 401}))))

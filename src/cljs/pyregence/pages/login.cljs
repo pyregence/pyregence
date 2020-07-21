@@ -4,7 +4,7 @@
             [clojure.core.async :refer [go <! timeout]]
             [pyregence.utils  :as u]
             [pyregence.styles :as $]
-            [pyregence.components.common :refer [simple-form]]
+            [pyregence.components.common    :refer [simple-form]]
             [pyregence.components.messaging :refer [toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -24,7 +24,9 @@
 (defn log-in! []
   (go
     (if (:success (<! (u/call-clj-async! "log-in" @email @password)))
-      (u/jump-to-url! (:redirect-from (u/get-session-storage) "/near-term-forecast"))
+      (let [url (:redirect-from (u/get-session-storage) "/near-term-forecast")]
+        (u/clear-session-storage)
+        (u/jump-to-url! url))
       (toast-message! "Invalid login credentials. Please try again."))))
 
 (defn request-password! []

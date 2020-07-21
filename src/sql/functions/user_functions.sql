@@ -43,17 +43,17 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pyre.insert_user(
     _email       text,
     _name        text,
-    _password    text
+    _password    text,
+    _settings    text
  ) RETURNS integer AS $$
 
     INSERT INTO pyre.users
-        (email, name, password, settings)
+        (email, name, settings, password)
     VALUES (
         pyre.lower_trim(_email),
         _name,
         crypt(_password, gen_salt('bf')),
-        '{"theme": "dark",
-          "time-zone": "utc"}'::jsonb
+        _settings
     )
 
     RETURNING user_uid
