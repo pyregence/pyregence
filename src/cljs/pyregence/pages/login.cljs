@@ -69,7 +69,7 @@
         [simple-form
          "Log in"
          "Log in"
-         [["Email"    email "text"]
+         [["Email"    email    "text"]
           ["Password" password "password"]]
          log-in!
          reset-link])]]))
