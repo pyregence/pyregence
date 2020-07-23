@@ -50,7 +50,7 @@
                                            :opt-label
                                            (u/time-zone-iso-date utc-time @show-utc?))])
                                options))))
-  ;; TODO, maybe we should remember the params between forcast types so the user can switch between to comapre
+  ;; TODO, maybe we should remember the params between forecast types so the user can switch between to comapre
   (reset! *params (u/mapm (fn [[k v]]
                             [k
                              (or (:default-option v)

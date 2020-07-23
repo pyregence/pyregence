@@ -66,10 +66,9 @@
 (defn process-capabilities! []
   (reset! capabilities
           (mapm (fn [[key vals]]
-                  (let [forecast-layers
-                        (filter (fn [{:keys [forecast]}]
-                                  (= (:filter vals) forecast))
-                                @layers)
+                  (let [forecast-layers (filter (fn [{:keys [forecast]}]
+                                                  (= (:filter vals) forecast))
+                                                @layers)
                         has-fire-name?  (get-in vals [:params :fire-name])]
                     [key (cond-> vals
                            has-fire-name? (assoc-in [:params :fire-name  :options]
@@ -152,9 +151,9 @@
 
 ;; TODO make this route available for Chris to remove layers before he deletes them from the geoserver
 (defn remove-workspace! [workspace-name]
-  (swap! layers #(remove (fn [{:keys [workspace]}]
-                           (= workspace workspace-name))
-                         %))
+  (swap! layers #(filterv (fn [{:keys [workspace]}]
+                            (not= workspace workspace-name))
+                          %))
   (process-capabilities!))
 
 (defn get-capabilities [user-id]
@@ -167,7 +166,7 @@
                                                 [key (update val
                                                              :options
                                                              #(filterm (fn [[_ {:keys [org-id]}]]
-                                                                         (or user-id (not org-id)))
+                                                                         (or user-id (not org-id))) ;TODO Connect user id and org instead of allowing all logged in users to see all orgs
                                                                        %))])
                                               params)))])
                        @capabilities)
