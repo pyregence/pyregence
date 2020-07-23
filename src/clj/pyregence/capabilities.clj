@@ -9,6 +9,8 @@
 (defonce capabilities (atom []))
 (defonce layers       (atom []))
 
+;;; Helper Functions
+
 (defn java-date-from-string [date-str]
   (.parse (java.text.SimpleDateFormat. "yyyyMMdd_HHmmss") date-str))
 
@@ -27,6 +29,8 @@
                acc))
            (transient {})
            coll)))
+
+;;; Capabilities
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]
@@ -67,11 +71,14 @@
                                   (= (:filter vals) forecast))
                                 @layers)
                         has-fire-name?  (get-in vals [:params :fire-name])]
-                    [key
-                     (cond-> vals
-                       has-fire-name? (assoc-in [:params :fire-name  :options] (get-fire-names  forecast-layers))
-                       :always        (assoc-in [:params :model-init :options] (get-model-times forecast-layers)))]))
+                    [key (cond-> vals
+                           has-fire-name? (assoc-in [:params :fire-name  :options]
+                                                    (get-fire-names  forecast-layers))
+                           :always        (assoc-in [:params :model-init :options]
+                                                    (get-model-times forecast-layers)))]))
                 forecast-options)))
+
+;;; Layers
 
 (defn split-risk-layer-name [name-string]
   (let [[workspace layer]           (str/split name-string #":")
@@ -99,42 +106,45 @@
      :sim-time    sim-timestamp
      :hour        0}))
 
-(defn process-layers! [xml-response]
-  (reset! layers
-          (as-> xml-response xml
-            (str/replace xml "\n" "")
-            (re-find #"<Layer>.*(?=</Layer>)" xml)
-            (str/replace-first xml "<Layer>" "")
-            (re-seq #"<Layer.+?</Layer>" xml)
-            (partition-all 1000 xml)
-            (pmap (fn [layer-group]
-                    (->> layer-group
-                         (keep
-                          (fn [layer]
-                            (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
-                                                 (str/replace #"<Name>" ""))
-                                  coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
-                                                 (re-seq #"[\d|\.|-]+")
-                                                 (rest)
-                                                 (vec))
-                                  merge-fn  #(merge % {:layer full-name :extent coords})]
-                              (cond
-                                (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
-                                (merge-fn (split-risk-layer-name full-name))
+(defn process-layers! []
+  (let [xml-response (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
+                                             "?SERVICE=WMS"
+                                             "&VERSION=1.3.0"
+                                             "&REQUEST=GetCapabilities")))]
+    (reset! layers
+            (as-> xml-response xml
+              (str/replace xml "\n" "")
+              (re-find #"<Layer>.*(?=</Layer>)" xml)
+              (str/replace-first xml "<Layer>" "")
+              (re-seq #"<Layer.+?</Layer>" xml)
+              (partition-all 1000 xml)
+              (pmap (fn [layer-group]
+                      (->> layer-group
+                           (keep
+                            (fn [layer]
+                              (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
+                                                   (str/replace #"<Name>" ""))
+                                    coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
+                                                   (re-seq #"[\d|\.|-]+")
+                                                   (rest)
+                                                   (vec))
+                                    merge-fn  #(merge % {:layer full-name :extent coords})]
+                                (cond
+                                  (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
+                                  (merge-fn (split-risk-layer-name full-name))
 
-                                (re-matches #"([a-z|-]+_)[a-z|-]+\d*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
-                                (merge-fn (split-active-layer-name full-name))))))
-                         (vec)))
-                  xml)
-            (apply concat xml)
-            (vec xml))))
+                                  (re-matches #"([a-z|-]+_)[a-z|-]+\d*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                                  (merge-fn (split-active-layer-name full-name))))))
+                           (vec)))
+                    xml)
+              (apply concat xml)
+              (vec xml)))))
+
+;;; Routes
 
 (defn set-capabilities! []
   (try
-    (process-layers! (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
-                                             "?SERVICE=WMS"
-                                             "&VERSION=1.3.0"
-                                             "&REQUEST=GetCapabilities"))))
+    (process-layers!)
     (process-capabilities!)
     (log-str (count @layers) " layers added to capabilities.")
     (catch Exception e
@@ -144,27 +154,26 @@
 (defn remove-workspace! [workspace-name]
   (swap! layers #(remove (fn [{:keys [workspace]}]
                            (= workspace workspace-name))
-                         %)))
-
-(defn filter-options [user-id]
-  (mapm (fn [[key val]]
-          [key
-           (update val
-                   :params
-                   (fn [params] (mapm (fn [[key val]]
-                                        [key
-                                         (update val
-                                                 :options
-                                                 #(filterm (fn [[_ {:keys [org-id]}]] (or user-id (not org-id))) %))])
-                                      params)))])
-        @capabilities))
-
+                         %))
+  (process-capabilities!))
 
 (defn get-capabilities [user-id]
   (when-not (seq @capabilities) (set-capabilities!))
-  (data-response (filter-options user-id) {:type :transit}))
+  (data-response (mapm (fn [[key val]]
+                         [key (update val
+                                      :params
+                                      (fn [params]
+                                        (mapm (fn [[key val]]
+                                                [key (update val
+                                                             :options
+                                                             #(filterm (fn [[_ {:keys [org-id]}]]
+                                                                         (or user-id (not org-id)))
+                                                                       %))])
+                                              params)))])
+                       @capabilities)
+                 {:type :transit}))
 
-;; Check if layers still exist in capabilities and respond with an error if not.
+;; TODO Check if layers still exist in capabilities and respond with an error if not.
 (defn get-layers [selected-set-str]
   (let [selected-set (edn/read-string selected-set-str)]
     (data-response (filterv (fn [{:keys [filter-set]}]
