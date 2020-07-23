@@ -89,7 +89,7 @@
 (defn p-bordered-input [& modifiers]
   (let [base-style     {:background-color "white"
                         :border           "1px solid"
-                        :border-color     (color-picker :sig-brown)
+                        :border-color     (color-picker :brown)
                         :border-radius    "2px"
                         :font-family      "inherit"
                         :height           "1.75rem"
@@ -107,6 +107,12 @@
       {:key    (str/join "-" (sort modifiers))
        :group  true
        :pseudo {:disabled disabled-style}})))
+
+(defn p-button-hover []
+  (with-meta
+    {}
+    {:pseudo {:hover {:background-color (color-picker :border-color 0.2)
+                      :border-radius    "4px"}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style Functions
@@ -277,12 +283,6 @@
    :color            (color-picker :font-color)
    :position         "absolute"
    :z-index          "100"})
-
-(defn p-button-hover []
-  (with-meta
-    {}
-    {:pseudo {:hover {:background-color (color-picker :border-color 0.2)
-                      :border-radius    "4px"}}}))
 
 (def light-border (str "1.2px solid " (color-picker :brown)))
 

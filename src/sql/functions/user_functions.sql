@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
     FROM users
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
-        AND verified = true
+        AND verified = TRUE
 
 $$ LANGUAGE SQL;
 
@@ -56,7 +56,6 @@ CREATE OR REPLACE FUNCTION insert_user(
         crypt(_password, gen_salt('bf')),
         _settings
     )
-
     RETURNING user_uid
 
 $$ LANGUAGE SQL;
@@ -78,7 +77,7 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset
     WITH user_ids AS (
         UPDATE users
         SET password = crypt(_password, gen_salt('bf')),
-            verified = true,
+            verified = TRUE,
             reset_key = NULL
         WHERE email = lower_trim(_email)
             AND reset_key = _reset_key
@@ -89,7 +88,7 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset
     SELECT user_uid, 1
     FROM users
     WHERE email = lower_trim(_email)
-        AND verified = true
+        AND verified = TRUE
 
 $$ LANGUAGE SQL;
 
@@ -99,7 +98,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
 
     WITH user_ids AS (
         UPDATE users
-        SET verified = true,
+        SET verified = TRUE,
             reset_key = NULL
         WHERE email = lower_trim(_email)
             AND reset_key = _reset_key
@@ -110,6 +109,6 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
     SELECT user_uid, 1
     FROM users
     WHERE email = lower_trim(_email)
-        AND verified = true
+        AND verified = TRUE
 
 $$ LANGUAGE SQL;

@@ -8,7 +8,7 @@ CREATE TABLE users (
     password       varchar(72) NOT NULL,
     settings       text,
     super_admin    boolean DEFAULT FALSE,
-    verified       boolean DEFAULT false,
+    verified       boolean DEFAULT FALSE,
     reset_key      text DEFAULT NULL
 );
 
@@ -32,7 +32,7 @@ CREATE TABLE roles (
 -- Creates a relationship between users and organizations
 -- organizations -> many organization_users <- users
 CREATE TABLE organization_users (
-    org_user_uid       SERIAL PRIMARY KEY,
+    org_user_uid        SERIAL PRIMARY KEY,
     organization_rid    integer NOT NULL REFERENCES organizations (organization_uid) ON DELETE CASCADE ON UPDATE CASCADE,
     user_rid            integer NOT NULL REFERENCES users (user_uid) ON DELETE CASCADE ON UPDATE CASCADE,
     role_rid            integer NOT NULL REFERENCES roles (role_uid),
