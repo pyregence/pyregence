@@ -1,6 +1,5 @@
 (ns pyregence.pages.login
-  (:require herb.core
-            [reagent.core :as r]
+  (:require [reagent.core :as r]
             [clojure.core.async :refer [go <! timeout]]
             [pyregence.utils  :as u]
             [pyregence.styles :as $]
@@ -29,19 +28,20 @@
       (let [url (:redirect-from (u/get-session-storage) "/near-term-forecast")]
         (u/clear-session-storage!)
         (u/jump-to-url! url))
-      (toast-message! "Invalid login credentials. Please try again."))))
+      ;; TODO, it would be helpful to show the user which of the two errors it actually is.
+      (toast-message! ["Invalid login credentials. Please try again."
+                       "If you feel this is an error, check your email for the verification email."]))))
 
 (defn request-password! []
   (go
     (reset! pending? true)
     (toast-message! "Submitting request. This may take a moment...")
     (if (:success (<! (u/call-clj-async! "send-email" @email :reset)))
-      (do (toast-message! ["Your account has been created successfully."
-                           "Please check your email for a registration confirmation."])
+      (do (toast-message! "Please check your email for a password reset link.")
           (<! (timeout 4000))
           (u/jump-to-url! "/near-term-forecast"))
-      (do (toast-message! ["An error occurred in registering"
-                           "Please contact support@pyregence.org for help."])
+      (do (toast-message! ["An error occurred."
+                           "Please try again shortly or contact support@pyregence.org for help."])
           (reset! pending? false)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -51,25 +51,25 @@
 (defn reset-link []
   [:a {:style ($/align :block :left)
        :href "#"
-       :onClick #(reset! forgot? true)} "Forgot Password?"])
+       :on-click #(reset! forgot? true)} "Forgot Password?"])
 
-(defn root-component []
+(defn root-component [_]
   (process-toast-messages!)
-  (fn []
+  (fn [_]
     [:<>
      [toast-message]
      [:div {:style ($/combine ($/disabled-group @pending?)
-                             {:display "flex" :justify-content "center" :margin "5rem"})}
-     (if @forgot?
-       [simple-form
-        "Request New Password"
-        "Submit"
-        [["Email" email "text"]]
-        request-password!]
-       [simple-form
-        "Log in"
-        "Log in"
-        [["Email"    email "text"]
-         ["Password" password "password"]]
-        log-in!
-        reset-link])]]))
+                              {:display "flex" :justify-content "center" :margin "5rem"})}
+      (if @forgot?
+        [simple-form
+         "Request New Password"
+         "Submit"
+         [["Email" email "text"]]
+         request-password!]
+        [simple-form
+         "Log in"
+         "Log in"
+         [["Email"    email    "text"]
+          ["Password" password "password"]]
+         log-in!
+         reset-link])]]))

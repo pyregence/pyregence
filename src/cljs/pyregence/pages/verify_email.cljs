@@ -1,6 +1,5 @@
 (ns pyregence.pages.verify-email
-  (:require herb.core
-            [reagent.core :as r]
+  (:require [reagent.core :as r]
             [clojure.core.async :refer [go <! timeout]]
             [pyregence.utils :as u]))
 
@@ -14,7 +13,7 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn verify-accout! [email reset-key]
+(defn verify-account! [email reset-key]
   (go
     (if (:success (<! (u/call-clj-async! "verify-user-email" email reset-key)))
       (do
@@ -27,8 +26,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn root-component [params]
-  (verify-accout! (or (:email params) "") (or (:reset-key params) ""))
+  (verify-account! (or (:email params) "") (or (:reset-key params) ""))
   [:div {:style {:display "flex" :justify-content "center" :margin "5rem"}}
    [:h4 (if @pending?
-          "Thank you for verifying your email. You will be automatically redirect to the near term forecast tool."
+          "Thank you for verifying your email. You will be automatically redirected to the near term forecast tool."
           "Email verification has failed. Please contact support@pyregence.org for help.")]])

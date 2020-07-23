@@ -1,6 +1,5 @@
 (ns pyregence.pages.register
-  (:require herb.core
-            [reagent.core :as r]
+  (:require [reagent.core :as r]
             [clojure.core.async :refer [go <! timeout]]
             [pyregence.utils  :as u]
             [pyregence.styles :as $]
@@ -30,10 +29,10 @@
     (if (and (:success (<! (u/call-clj-async! "insert-user" @email @full-name @password)))
              (:success (<! (u/call-clj-async! "send-email" @email :new-user))))
       (do (toast-message! ["Your account has been created successfully."
-                           "Please check your email for a registration confirmation."])
+                           "Please check your email for a link to complete registration."])
           (<! (timeout 4000))
           (u/jump-to-url! "/near-term-forecast"))
-      (toast-message! ["An error occurred in registering"
+      (toast-message! ["An error occurred while registering."
                        "Please contact support@pyregence.org for help."]))))
 
 (defn register! []
@@ -61,9 +60,9 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn root-component []
+(defn root-component [_]
   (process-toast-messages!)
-  (fn []
+  (fn [_]
     [:<>
      [toast-message]
      [:div {:style ($/combine ($/disabled-group @pending?)

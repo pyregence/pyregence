@@ -1,6 +1,5 @@
 (ns pyregence.pages.reset-password
-  (:require herb.core
-            [reagent.core :as r]
+  (:require [reagent.core :as r]
             [clojure.core.async :refer [go <! timeout]]
             [pyregence.utils  :as u]
             [pyregence.styles :as $]
@@ -62,11 +61,11 @@
     [:<>
      [toast-message]
      [:div {:style ($/combine ($/disabled-group @pending?)
-                             {:display "flex" :justify-content "center" :margin "5rem"})}
-     [simple-form
-      "Reset Password"
-      "Reset Password"
-      [["Email"                 email       "text"]
-       ["New Password"          password    "password"]
-       ["Re-enter New Password" re-password "password"]]
-      reset-password!]]]))
+                              {:display "flex" :justify-content "center" :margin "5rem"})}
+      [simple-form
+       "Reset Password"
+       "Reset Password"
+       [["Email"                 email       "text"]
+        ["New Password"          password    "password"]
+        ["Re-enter New Password" re-password "password"]]
+       reset-password!]]]))

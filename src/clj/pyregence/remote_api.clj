@@ -32,10 +32,10 @@
       (symbol)))
 
 (defn clj-handler [{:keys [uri params content-type]}]
-  (if-let [function   (->> (str/split uri #"/")
-                           (remove str/blank?)
-                           (second)
-                           (name->fn))]
+  (if-let [function (->> (str/split uri #"/")
+                         (remove str/blank?)
+                         (second)
+                         (name->fn))]
     (let [clj-args   (if (= content-type "application/edn")
                        (:clj-args params [])
                        (json/read-str (:clj-args params "[]")))
