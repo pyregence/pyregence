@@ -2,7 +2,8 @@
   (:require-macros [herb.core :refer [defglobal]]
                    pyregence.herb-patch)
   (:require herb.runtime
-            [reagent.core :as r]))
+            [reagent.core :as r]
+            [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -30,6 +31,7 @@
      :font-color   (if @light?
                      (color-picker :brown)
                      "rgb(235, 235, 235)")
+     :yellow       (str "rgba(249, 175, 59, "  alpha ")")
      :blue         (str "rgba(0, 0, 175, "     alpha ")")
      :black        (str "rgba(0, 0, 0, "       alpha ")")
      :brown        (str "rgba(96, 65, 31, "    alpha ")")
@@ -79,6 +81,38 @@
   [".ol-scale-line-inner" {:border-color (color-picker :border-color)
                            :color        (color-picker :border-color)
                            :font-size    ".75rem"}])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Pseudo / Class Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn p-bordered-input [& modifiers]
+  (let [base-style     {:background-color "white"
+                        :border           "1px solid"
+                        :border-color     (color-picker :brown)
+                        :border-radius    "2px"
+                        :font-family      "inherit"
+                        :height           "1.75rem"
+                        :padding          ".25rem .5rem"}
+        flex-style     {:width            "100%"}
+        multi-style    {:height           "inherit"
+                        :padding          ".3rem .5rem"
+                        :resize           "vertical"}
+        disabled-style {:background-color "rgb(236, 236, 236)"
+                        :color            "black"}]
+    (with-meta
+      (merge base-style
+             (to-merge? modifiers :flex-style  flex-style)
+             (to-merge? modifiers :multi-style multi-style))
+      {:key    (str/join "-" (sort modifiers))
+       :group  true
+       :pseudo {:disabled disabled-style}})))
+
+(defn p-button-hover []
+  (with-meta
+    {}
+    {:pseudo {:hover {:background-color (color-picker :border-color 0.2)
+                      :border-radius    "4px"}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style Functions
@@ -250,8 +284,27 @@
    :position         "absolute"
    :z-index          "100"})
 
-(defn p-button-hover []
-  (with-meta
-    {}
-    {:pseudo {:hover {:background-color (color-picker :border-color 0.2)
-                      :border-radius    "4px"}}}))
+(def light-border (str "1.2px solid " (color-picker :brown)))
+
+(defn action-box []
+  {:background-color (color-picker :white)
+   :border           light-border
+   :border-radius    "5px"
+   :overflow         "hidden"
+   :display          "flex"
+   :flex-direction   "column"
+   :height           "100%"
+   :padding          "0"
+   :width            "100%"})
+
+(defn action-header []
+  {:background-color (color-picker :yellow)
+   :border-bottom    light-border
+   :align-items      "center"
+   :display          "flex"
+   :flex-direction   "row"
+   :flex-wrap        "nowrap"
+   :height           "2.5rem"
+   :justify-content  "space-between"
+   :padding          ".25rem .7rem"
+   :width            "100%"})

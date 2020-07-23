@@ -362,7 +362,7 @@
                :on-mouse-up #(reset! mouse-down? false)}]))
 
 (defn theme-select []
-  [:div {:style {:position "absolute" :right "3rem" :display "flex"}}
+  [:div {:style {:position "absolute" :left "3rem" :display "flex"}}
    [:label {:style {:margin "4px .5rem 0"}} "Theme:"]
    [radio "Light" $/light? true  #(reset! $/light? %)]
    [radio "Dark"  $/light? false #(reset! $/light? %)]])
@@ -395,7 +395,7 @@
    [:div {:style ($message-modal)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
-(defn root-component [_]
+(defn root-component [{:keys [user-id]}]
   (r/create-class
    {:component-did-mount
     (fn [_]
@@ -417,7 +417,20 @@
                                 :style ($forecast-label (= @*forecast key))
                                 :on-click #(select-forecast! key)}
                         opt-label])
-                     c/forecast-options))]]
+                     c/forecast-options))]
+        (if user-id
+          [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
+           [:label {:style {:margin-right "1rem" :cursor "pointer"}
+                    :on-click (fn []
+                                (go (<! (u/call-clj-async! "log-out"))
+                                    (-> js/window .-location .reload)))}
+            "Log Out"]]
+          [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
+           ;; TODO, this is commented out until we are ready for users to create an account
+           ;;  [:label {:style {:margin-right "1rem" :cursor "pointer"}
+           ;;           :on-click #(u/jump-to-url! "/register")} "Register"]
+           [:label {:style {:cursor "pointer"}
+                    :on-click #(u/jump-to-url! "/login")} "Log In"]])]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when @ol/the-map [control-layer])
         [map-layer]
