@@ -8,28 +8,28 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.common       :refer [radio]]
             [pyregence.components.map-controls :as mc]
-            [pyregence.components.messaging    :refer [toast-message
-                                                       toast-message!
-                                                       process-toast-messages!]]
             [pyregence.components.openlayers   :as ol]
-            [pyregence.components.svg-icons    :refer [pin]]))
+            [pyregence.components.common    :refer [radio]]
+            [pyregence.components.messaging :refer [toast-message
+                                                    toast-message!
+                                                    process-toast-messages!]]
+            [pyregence.components.svg-icons :refer [pin]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce legend-list       (r/atom []))
-(defonce layer-list        (r/atom []))
 (defonce last-clicked-info (r/atom []))
 (defonce show-utc?         (r/atom true))
 (defonce show-info?        (r/atom false))
 (defonce show-measure?     (r/atom false))
+(defonce capabilities      (r/atom []))
 (defonce *forecast         (r/atom :fire-risk))
 (defonce processed-params  (r/atom []))
 (defonce *params           (r/atom {}))
-(defonce filtered-layers   (r/atom []))
+(defonce param-layers      (r/atom []))
 (defonce *layer-idx        (r/atom 0))
 (defonce loading?          (r/atom true))
 
@@ -38,71 +38,37 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-forecast-opt [key-name]
-  (get-in c/forecast-options [@*forecast key-name]))
-
-(defn fire-name-capitalization [fire-name]
-  (let [parts (str/split fire-name #"-")]
-    (str/join " "
-              (into [(str/upper-case (first parts))]
-                    (map str/capitalize (rest parts))))))
-
-(defn get-fire-names [forecast-layers]
-  (->> forecast-layers
-       (group-by :fire-name)
-       (sort)
-       (mapcat (fn [[fire-name opt-vec]]
-                 [(keyword fire-name)
-                  {:opt-label  (fire-name-capitalization fire-name)
-                   :filter     fire-name
-                   :model-init (into #{} (map :model-init) opt-vec)}]))
-       (apply array-map)))
-
-(defn get-model-times [forecast-layers]
-  (->> forecast-layers
-       (map :model-init)
-       (distinct)
-       (sort)
-       (reverse)
-       (mapcat (fn [option]
-                 (let [model-js-time (u/js-date-from-string option)
-                       date          (u/get-date-from-js model-js-time @show-utc?)
-                       time          (u/get-time-from-js model-js-time @show-utc?)]
-                   [(keyword option)
-                    {:opt-label (str date " " time)
-                     :js-time   model-js-time
-                     :date      date
-                     :time      time
-                     :filter    option}])))
-       (apply array-map)))
+  (get-in @capabilities [@*forecast key-name]))
 
 (defn process-params! []
   (reset! processed-params
-          (let [forecast-filter (get-forecast-opt :filter)
-                forecast-layers (filter (fn [layer]
-                                          (= forecast-filter (:forecast layer)))
-                                        @layer-list)
-                params          (get-forecast-opt :params)
-                has-fire-name?  (get-in params [:fire-name])]
-            (cond-> params
-              has-fire-name? (assoc-in [:fire-name  :options] (get-fire-names  forecast-layers))
-              :always        (assoc-in [:model-init :options] (get-model-times forecast-layers)))))
+          (update-in (get-forecast-opt :params)
+                     [:model-init :options]
+                     (fn [options]
+                       (u/mapm (fn [[k {:keys [utc-time] :as v}]]
+                                 [k (assoc v
+                                           :opt-label
+                                           (u/time-zone-iso-date utc-time @show-utc?))])
+                               options))))
+  ;; TODO, maybe we should remember the params between forecast types so the user can switch between to comapre
   (reset! *params (u/mapm (fn [[k v]]
                             [k
                              (or (:default-option v)
                                  (ffirst (:options v)))])
                           @processed-params)))
 
-(defn filter-layers! []
-  (let [selected-set (into #{(get-forecast-opt :filter)}
-                           (map (fn [[key {:keys [options]}]]
-                                  (get-in options [(@*params key) :filter])))
-                           @processed-params)]
-    (reset! filtered-layers
-            (filterv (fn [{:keys [filter-set]}] (= selected-set filter-set))
-                     @layer-list))))
+(defn get-layers! []
+  (go
+    (let [selected-set (into #{(get-forecast-opt :filter)}
+                             (map (fn [[key {:keys [options]}]]
+                                    (get-in options [(@*params key) :filter])))
+                             @processed-params)]
+      (reset! param-layers
+              (t/read (t/reader :json) (:message (<! (u/call-clj-async! "get-layers" (pr-str selected-set))))))
+      (swap! *layer-idx #(min % (- (count @param-layers) 1))))))
 
 (defn current-layer []
-  (get @filtered-layers @*layer-idx))
+  (get @param-layers @*layer-idx))
 
 (defn get-current-layer-name []
   (:layer (current-layer) ""))
@@ -176,7 +142,7 @@
                                 :hour    hour}
                                pi-layer)))
                     pi
-                    @filtered-layers)))))
+                    @param-layers)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
@@ -194,7 +160,7 @@
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
                                         (when (= hour (:hour layer)) idx))
-                                      @filtered-layers))))
+                                      @param-layers))))
 
 (defn clear-info! []
   (ol/clear-point!)
@@ -215,15 +181,16 @@
                    params))))
 
 (defn change-type! [clear? zoom?]
-  (check-param-filter)
-  (filter-layers!)
-  (ol/reset-active-layer! (get-current-layer-name))
-  (get-legend!            (get-current-layer-name))
-  (if clear?
-    (clear-info!)
-    (get-point-info! (ol/get-overlay-bbox)))
-  (when zoom?
-    (ol/zoom-to-extent! (get-current-layer-extent))))
+  (go
+    (check-param-filter)
+    (<! (get-layers!))
+    (ol/reset-active-layer! (get-current-layer-name))
+    (get-legend!            (get-current-layer-name))
+    (if clear?
+      (clear-info!)
+      (get-point-info! (ol/get-overlay-bbox)))
+    (when zoom?
+      (ol/zoom-to-extent! (get-current-layer-extent)))))
 
 (defn select-param! [key val]
   (swap! *params assoc key val)
@@ -231,9 +198,9 @@
                 (get-in @processed-params [key :auto-zoom?])))
 
 (defn select-forecast! [key]
-  (reset! *forecast key)
-  (process-params!)
-  (change-type! true (get-options-key :auto-zoom?)))
+  (go (reset! *forecast key)
+      (process-params!)
+      (<! (change-type! true (get-options-key :auto-zoom?)))))
 
 (defn set-show-info! [show?]
   (if (get-forecast-opt :block-info?)
@@ -247,30 +214,25 @@
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
   (swap! last-clicked-info #(mapv (fn [{:keys [js-time] :as layer}]
-                                    (let [date (u/get-date-from-js js-time @show-utc?)
-                                          time (u/get-time-from-js js-time @show-utc?)]
-                                      (assoc layer
-                                             :date      (u/get-date-from-js js-time @show-utc?)
-                                             :time      (u/get-time-from-js js-time @show-utc?)
-                                             :opt-label (str date " " time))))
+                                    (assoc layer
+                                           :date (u/get-date-from-js js-time @show-utc?)
+                                           :time (u/get-time-from-js js-time @show-utc?)))
                                   @last-clicked-info))
-  (swap! processed-params #(update-in %
-                                      [:model-init :options]
-                                      (fn [options]
-                                        (u/mapm (fn [[k {:keys [js-time] :as v}]]
-                                                  [k (assoc v
-                                                            :opt-label
-                                                            (str (u/get-date-from-js js-time @show-utc?)
-                                                                 " "
-                                                                 (u/get-time-from-js js-time @show-utc?)))])
-                                                options)))))
+  (swap! processed-params  #(update-in %
+                                       [:model-init :options]
+                                       (fn [options]
+                                         (u/mapm (fn [[k {:keys [utc-time] :as v}]]
+                                                   [k (assoc v
+                                                             :opt-label
+                                                             (u/time-zone-iso-date utc-time @show-utc?))])
+                                                 options)))))
 
-(defn init-map! []
+(defn init-map! [user-id]
   (go
-    (let [layers-chan (u/call-clj-async! "get-capabilities")]
+    (let [capabilities-chan (u/call-clj-async! "get-capabilities" user-id)] ; TODO get user-id from session
       (ol/init-map!)
-      (reset! layer-list (t/read (t/reader :json) (:message (<! layers-chan))))
-      (select-forecast! @*forecast)
+      (reset! capabilities (t/read (t/reader :json) (:message (<! capabilities-chan))))
+      (<! (select-forecast! @*forecast))
       (ol/add-layer-load-fail! #(toast-message! "One or more of the map tiles has failed to load."))
       (ol/set-visible-by-title! "active" true)
       (reset! loading? false))))
@@ -340,7 +302,7 @@
          [mc/zoom-bar get-current-layer-extent]
          [mc/tool-bar show-info? show-measure? set-show-info!]
          [mc/time-slider
-          filtered-layers
+          param-layers
           *layer-idx
           (get-current-layer-full-time)
           select-layer!
@@ -400,7 +362,7 @@
    {:component-did-mount
     (fn [_]
       (process-toast-messages!)
-      (init-map!))
+      (init-map! user-id))
 
     :reagent-render
     (fn [_]
@@ -417,7 +379,7 @@
                                 :style ($forecast-label (= @*forecast key))
                                 :on-click #(select-forecast! key)}
                         opt-label])
-                     c/forecast-options))]
+                     @capabilities))]
         (if user-id
           [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
            [:label {:style {:margin-right "1rem" :cursor "pointer"}
