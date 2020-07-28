@@ -65,7 +65,7 @@
                              @processed-params)]
       (reset! param-layers
               (t/read (t/reader :json) (:message (<! (u/call-clj-async! "get-layers" (pr-str selected-set))))))
-      (swap! *layer-idx #(min % (- (count @param-layers) 1))))))
+      (swap! *layer-idx #(max 0 (min % (- (count @param-layers) 1)))))))
 
 (defn current-layer []
   (get @param-layers @*layer-idx))
