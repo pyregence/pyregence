@@ -6,7 +6,7 @@ VALUES
     -- 1
     ('Public', '', '{:auto-add? false, :auto-accept? false}'),
     -- 2
-    ('Pyregence Consortium', '' '{:auto-add? false, :auto-accept? false}');
+    ('Pyregence Consortium', '', '{:auto-add? false, :auto-accept? false}');
 
 INSERT INTO users
     (email, name, password, settings)
