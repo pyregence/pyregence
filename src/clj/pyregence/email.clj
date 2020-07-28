@@ -29,7 +29,7 @@
                     :to      email
                     :subject subject
                     :body    (message-fn (:site-url mail-config) email reset-key)})]
-    (call-sql "pyre.set_reset_key" email reset-key)
+    (call-sql "set_reset_key" email reset-key)
     (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
 
 (defn send-email [email email-type]
