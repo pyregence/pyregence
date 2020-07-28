@@ -8,27 +8,27 @@
                   :reverse-legend? true
                   :params          {:model-init {:opt-label "Forecast Start Time"
                                                  :options   {:loading {:opt-label "Loading..."}}}
-                                    :band       {:opt-label "Weather Band"
+                                    :band       {:opt-label "Weather Parameter"
                                                  :options   (array-map
                                                              :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                       :filter    "ffwi"
                                                                       :units     ""}
-                                                             :tmpf   {:opt-label "Temperature (2m)"
+                                                             :tmpf   {:opt-label "Temperature (F)"
                                                                       :filter    "tmpf"
                                                                       :units     "deg F"}
-                                                             :rh     {:opt-label "Relative humidity (2m)"
+                                                             :rh     {:opt-label "Relative humidity (%)"
                                                                       :filter    "rh"
                                                                       :units     "%"}
-                                                             :ws     {:opt-label "Sustained wind speed (20-ft)"
+                                                             :ws     {:opt-label "Sustained wind speed (mph)"
                                                                       :filter    "ws"
                                                                       :units     "mph"}
-                                                             :wg     {:opt-label "Wind gust (20-ft)"
+                                                             :wg     {:opt-label "Wind gust (mph)"
                                                                       :filter    "wg"
                                                                       :units     "mph"}
-                                                             :apcp01 {:opt-label "Accumulated precipitation (1 hour)"
+                                                             :apcp01 {:opt-label "1-hour precipitation (in)"
                                                                       :filter    "apcp01"
                                                                       :units     "inches"}
-                                                             :meq    {:opt-label "Equilibrium moisture content"
+                                                             :meq    {:opt-label "Fine dead fuel moisture (%)"
                                                                       :filter    "meq"
                                                                       :units     "%"})}}}
    :active-fire {:opt-label   "Active Fire Forecast"
