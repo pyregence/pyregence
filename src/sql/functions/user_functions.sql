@@ -74,21 +74,18 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset_key text)
  RETURNS TABLE (user_id integer, org_id integer) AS $$
 
-    WITH user_ids AS (
-        UPDATE users
-        SET password = crypt(_password, gen_salt('bf')),
-            verified = TRUE,
-            reset_key = NULL
-        WHERE email = lower_trim(_email)
-            AND reset_key = _reset_key
-            AND reset_key IS NOT NULL
-        RETURNING user_uid
-    )
+    UPDATE users
+    SET password = crypt(_password, gen_salt('bf')),
+        verified = TRUE,
+        reset_key = NULL
+    WHERE email = lower_trim(_email)
+        AND reset_key = _reset_key
+        AND reset_key IS NOT NULL;
 
     SELECT user_uid, 1
     FROM users
     WHERE email = lower_trim(_email)
-        AND verified = TRUE
+        AND verified = TRUE;
 
 $$ LANGUAGE SQL;
 
@@ -96,19 +93,16 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
  RETURNS TABLE (user_id integer, org_id integer) AS $$
 
-    WITH user_ids AS (
-        UPDATE users
-        SET verified = TRUE,
-            reset_key = NULL
-        WHERE email = lower_trim(_email)
-            AND reset_key = _reset_key
-            AND reset_key IS NOT NULL
-        RETURNING user_uid
-    )
+    UPDATE users
+    SET verified = TRUE,
+        reset_key = NULL
+    WHERE email = lower_trim(_email)
+        AND reset_key = _reset_key
+        AND reset_key IS NOT NULL;
 
     SELECT user_uid, 1
     FROM users
     WHERE email = lower_trim(_email)
-        AND verified = TRUE
+        AND verified = TRUE;
 
 $$ LANGUAGE SQL;
