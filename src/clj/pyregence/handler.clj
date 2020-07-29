@@ -67,7 +67,7 @@
 (defn wrap-request-logging [handler]
   (fn [request]
     (let [{:keys [uri request-method params]} request
-          param-str (pr-str (dissoc params :auth-token))]
+          param-str (pr-str (dissoc params :auth-token :password :re-password))]
       (log-str "Request(" (name request-method) "): \"" uri "\" " param-str)
       (handler request))))
 
