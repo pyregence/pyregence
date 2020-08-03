@@ -227,9 +227,9 @@
                                                              (u/time-zone-iso-date utc-time @show-utc?))])
                                                  options)))))
 
-(defn init-map! [user-id]
+(defn init-map! [org-id]
   (go
-    (let [capabilities-chan (u/call-clj-async! "get-capabilities" user-id)] ; TODO get user-id from session
+    (let [capabilities-chan (u/call-clj-async! "get-capabilities" org-id)]
       (ol/init-map!)
       (reset! capabilities (t/read (t/reader :json) (:message (<! capabilities-chan))))
       (<! (select-forecast! @*forecast))
@@ -357,12 +357,12 @@
    [:div {:style ($message-modal)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
-(defn root-component [{:keys [user-id]}]
+(defn root-component [{:keys [user-id org-id]}]
   (r/create-class
    {:component-did-mount
     (fn [_]
       (process-toast-messages!)
-      (init-map! user-id))
+      (init-map! org-id))
 
     :reagent-render
     (fn [_]

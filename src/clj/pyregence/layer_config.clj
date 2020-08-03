@@ -87,7 +87,7 @@
                                                           :pacificorp {:opt-label   "Pacificorp Distribution Lines"
                                                                        :filter      "pacificorp"
                                                                        :clear-point? true
-                                                                       :org-id       3}}}
+                                                                       :org-id       4}}}
                                  :output     {:opt-label "Output"
                                               :options   {:fire-area    {:opt-label "Fire area"
                                                                          :filter    "fire-area"
