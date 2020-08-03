@@ -18,6 +18,9 @@ VALUES
 INSERT INTO users
     (email, name, password, settings)
 VALUES
-    ('mspencer@sig-gis.com', 'Matt Spencer', 'changeme', '{:theme :dark, :timezone :utc}'),
-    ('gjonson@sig-gis.com', 'Gary Johnson', 'changeme', '{:theme :dark, :timezone :utc}'),
-    ('lautenberger@reaxengineering.com', 'Chris Lautenberger', 'changeme', '{:theme :dark, :timezone :utc}');
+
+INSERT INTO organization_layers
+    (organization_rid, layer_path, layer_config)
+VALUES
+    (3, '[:fire-risk :params :pattern :options :liberty]', '{:opt-label "Liberty Distribution Lines", :filter "liberty", :clear-point? true}'),
+    (4, '[:fire-risk :params :pattern :options :pacificorp]', '{:opt-label "PacificCorp Distribution Lines", :filter "pacificorp", :clear-point? true}');

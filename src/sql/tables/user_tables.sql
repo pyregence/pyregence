@@ -38,3 +38,11 @@ CREATE TABLE organization_users (
     role_rid            integer NOT NULL REFERENCES roles (role_uid),
     CONSTRAINT per_organization_per_user UNIQUE(organization_rid, user_rid)
 );
+
+-- Stores information about layers available to an organization
+CREATE TABLE organization_layers (
+    org_layer_uid       SERIAL PRIMARY KEY,
+    organization_rid    integer NOT NULL REFERENCES organizations (organization_uid) ON DELETE CASCADE ON UPDATE CASCADE,
+    layer_path          text,
+    layer_config        text
+);

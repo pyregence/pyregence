@@ -17,12 +17,11 @@ $$ LANGUAGE SQL;
 
 -- Returns user info user name and password match
 CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
- RETURNS TABLE (user_id integer, org_id integer) AS $$
+ RETURNS TABLE (user_id integer) AS $$
 
-    SELECT user_uid, organization_rid
-    FROM users, organization_users
-    WHERE user_uid = user_rid
-        AND email = lower_trim(_email)
+    SELECT user_uid
+    FROM users
+    WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
         AND verified = TRUE
 
@@ -73,7 +72,7 @@ $$ LANGUAGE SQL;
 
 -- Sets the password for a user, if the reset key is valid
 CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset_key text)
- RETURNS TABLE (user_id integer, org_id integer) AS $$
+ RETURNS TABLE (user_id integer) AS $$
 
     UPDATE users
     SET password = crypt(_password, gen_salt('bf')),
@@ -83,17 +82,16 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset
         AND reset_key = _reset_key
         AND reset_key IS NOT NULL;
 
-    SELECT user_uid, organization_rid
-    FROM users, organization_users
-    WHERE user_uid = user_rid
-        AND email = lower_trim(_email)
+    SELECT user_uid
+    FROM users
+    WHERE email = lower_trim(_email)
         AND verified = TRUE;
 
 $$ LANGUAGE SQL;
 
 -- Sets verified to true, if the reset key is valid
 CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
- RETURNS TABLE (user_id integer, org_id integer) AS $$
+ RETURNS TABLE (user_id integer) AS $$
 
     UPDATE users
     SET verified = TRUE,
@@ -102,10 +100,41 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
         AND reset_key = _reset_key
         AND reset_key IS NOT NULL;
 
-    SELECT user_uid, organization_rid
-    FROM users, organization_users
-    WHERE user_uid = user_rid
-        AND email = lower_trim(_email)
+    SELECT user_uid
+    FROM users
+    WHERE email = lower_trim(_email)
         AND verified = TRUE;
+
+$$ LANGUAGE SQL;
+
+---
+---  Organization Layers
+---
+
+CREATE OR REPLACE FUNCTION get_user_layers_list(_user_id integer)
+ RETURNS TABLE (
+    org_layer_id    integer,
+    layer_path      text,
+    layer_config    text
+ ) AS $$
+
+    SELECT org_layer_uid, layer_path, layer_config
+    FROM organization_layers ol, organization_users ou
+    WHERE ol.organization_rid = ou.organization_rid
+        AND ou.user_rid = _user_id
+
+$$ LANGUAGE SQL;
+
+-- This simplifies adding a new layer even though its not hooked in the UI
+CREATE OR REPLACE FUNCTION add_org_layer(
+    _org_id          integer,
+    _layer_path      text,
+    _layer_config    text
+ ) RETURNS void AS $$
+
+    INSERT INTO organization_layers
+        (organization_rid, layer_path, layer_config)
+    VALUES
+        (_org_id, _layer_path, _layer_config)
 
 $$ LANGUAGE SQL;

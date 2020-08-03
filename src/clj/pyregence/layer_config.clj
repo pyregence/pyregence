@@ -84,15 +84,7 @@
                                                                        :filter       "all"}
                                                           :tlines     {:opt-label    "Transmission lines"
                                                                        :filter       "tlines"
-                                                                       :clear-point? true}
-                                                          :liberty    {:opt-label   "Liberty Distribution Lines"
-                                                                       :filter      "liberty"
-                                                                       :clear-point? true
-                                                                       :org-id       3}
-                                                          :pacificorp {:opt-label   "Pacificorp Distribution Lines"
-                                                                       :filter      "pacificorp"
-                                                                       :clear-point? true
-                                                                       :org-id       4}}}
+                                                                       :clear-point? true}}}
                                  :fuel       {:opt-label "Fuel"
                                               :options   {:landfire {:opt-label "LANDFIRE"
                                                                      :filter    "landfire"}}}

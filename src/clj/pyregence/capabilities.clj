@@ -1,10 +1,25 @@
 (ns pyregence.capabilities
-  (:require [clojure.string  :as str]
-            [clojure.edn     :as edn]
-            [clj-http.client :as client]
+  (:require [clojure.string     :as str]
+            [clojure.edn        :as edn]
+            [clojure.spec.alpha :as s]
+            [clj-http.client    :as client]
+            [pyregence.database     :refer [call-sql]]
             [pyregence.layer-config :refer [forecast-options]]
             [pyregence.logging      :refer [log-str]]
             [pyregence.views        :refer [data-response]]))
+
+;;; Spec
+
+(s/def ::opt-label    string?)
+(s/def ::filter       string?)
+(s/def ::units        string?)
+(s/def ::layer-config (s/keys :req-un [::opt-label ::filter] :opt-un [::units]))
+(s/def ::layer-path   (s/and (s/coll-of keyword? :kind vector? :min-count 3)
+                             (s/cat :forecast #{:fire-risk :active-fire :fire-weather}
+                                    :params   #(= % :params)
+                                    :etc      (s/+ keyword?))))
+
+;;; State
 
 (defonce capabilities (atom []))
 (defonce layers       (atom []))
@@ -53,8 +68,7 @@
   (->> forecast-layers
        (map :model-init)
        (distinct)
-       (sort)
-       (reverse)
+       (sort #(compare %2 %1))
        (mapcat (fn [option]
                  [(keyword option)
                   {:opt-label option ; This label will get overwritten on the front end when time-zone is processed
@@ -63,6 +77,7 @@
        (apply array-map)))
 
 ;; TODO this will need to get more complex if we start adding private layers with different model times than the rest.
+;; TODO Lets poll for the available model times for each set so we can show the most current and not have users picking through the list to find a valid time
 (defn process-capabilities! []
   (reset! capabilities
           (mapm (fn [[key vals]]
@@ -156,22 +171,19 @@
                           %))
   (process-capabilities!))
 
-(defn get-capabilities [user-org]
+(defn get-capabilities [user-id]
   (when-not (seq @capabilities) (set-capabilities!))
-  (data-response (mapm (fn [[key val]]
-                         [key (update val
-                                      :params
-                                      (fn [params]
-                                        (mapm (fn [[key val]]
-                                                [key (update val
-                                                             :options
-                                                             #(filterm (fn [[_ {:keys [org-id]}]]
-                                                                         (or (nil? org-id)
-                                                                             (= 2 user-org) ; TODO eventually all consortium members wont necessarily see all layers
-                                                                             (= user-org org-id)))
-                                                                       %))])
-                                              params)))])
-                       @capabilities)
+  (data-response (reduce (fn [acc {:keys [layer_path layer_config]}]
+                           (let [layer-path   (edn/read-string layer_path)
+                                 layer-config (edn/read-string layer_config)]
+                             (s/explain ::layer-path layer-path)
+                             (s/explain ::layer-config layer-config)
+                             (if (and (s/valid? ::layer-path layer-path)
+                                      (s/valid? ::layer-config layer-config))
+                               (assoc-in acc layer-path layer-config)
+                               acc)))
+                         @capabilities
+                         (call-sql "get_user_layers_list" user-id))
                  {:type :transit}))
 
 ;; TODO Check if layers still exist in capabilities and respond with an error if not.

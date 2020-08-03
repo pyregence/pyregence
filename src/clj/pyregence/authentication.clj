@@ -6,7 +6,7 @@
 
 (defn log-in [email password]
   (if-let [user (first (call-sql "verify_user_login" email password))]
-    (data-response "" {:session {:user-id (:user_id user) :org-id (:org_id user)}})
+    (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
 (defn log-out [] (data-response "" {:session nil}))
@@ -21,12 +21,12 @@
 
 (defn set-user-password [email password reset-key]
   (if-let [user (first (call-sql "set_user_password" email password reset-key))]
-    (data-response "" {:session {:user-id (:user_id user) :org-id (:org_id user)}})
+    (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
 (defn verify-user-email [email reset-key]
   (if-let [user (first (call-sql "verify_user_email" email reset-key))]
-    (data-response "" {:session {:user-id (:user_id user) :org-id (:org_id user)}})
+    (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
 (defn insert-user [email name password]
