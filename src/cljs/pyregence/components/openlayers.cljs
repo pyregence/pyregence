@@ -53,7 +53,7 @@
                                      :visible false
                                      :opacity 0.7
                                      :source  nil})]
-                :controls #js [(ScaleLine.) (Attribution.)]
+                :controls #js [(ScaleLine. #js {:units "us"}) (Attribution.)]
                 :view     (View.
                            #js {:projection "EPSG:3857"
                                 :center     (fromLonLat #js [-119.509444 37.229722] "EPSG:3857")
