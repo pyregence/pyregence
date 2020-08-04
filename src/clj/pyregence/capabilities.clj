@@ -156,7 +156,7 @@
                           %))
   (process-capabilities!))
 
-(defn get-capabilities [user-id]
+(defn get-capabilities [user-org]
   (when-not (seq @capabilities) (set-capabilities!))
   (data-response (mapm (fn [[key val]]
                          [key (update val
@@ -166,7 +166,9 @@
                                                 [key (update val
                                                              :options
                                                              #(filterm (fn [[_ {:keys [org-id]}]]
-                                                                         (or user-id (not org-id))) ;TODO Connect user id and org instead of allowing all logged in users to see all orgs
+                                                                         (or (nil? org-id)
+                                                                             (= 2 user-org) ; TODO eventually all consortium members wont necessarily see all layers
+                                                                             (= user-org org-id)))
                                                                        %))])
                                               params)))])
                        @capabilities)

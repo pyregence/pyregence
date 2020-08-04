@@ -19,9 +19,10 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
  RETURNS TABLE (user_id integer, org_id integer) AS $$
 
-    SELECT user_uid, 1
-    FROM users
-    WHERE email = lower_trim(_email)
+    SELECT user_uid, organization_rid
+    FROM users, organization_users
+    WHERE user_uid = user_rid
+        AND email = lower_trim(_email)
         AND password = crypt(_password, password)
         AND verified = TRUE
 
@@ -82,9 +83,10 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset
         AND reset_key = _reset_key
         AND reset_key IS NOT NULL;
 
-    SELECT user_uid, 1
-    FROM users
-    WHERE email = lower_trim(_email)
+    SELECT user_uid, organization_rid
+    FROM users, organization_users
+    WHERE user_uid = user_rid
+        AND email = lower_trim(_email)
         AND verified = TRUE;
 
 $$ LANGUAGE SQL;
@@ -100,9 +102,10 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
         AND reset_key = _reset_key
         AND reset_key IS NOT NULL;
 
-    SELECT user_uid, 1
-    FROM users
-    WHERE email = lower_trim(_email)
+    SELECT user_uid, organization_rid
+    FROM users, organization_users
+    WHERE user_uid = user_rid
+        AND email = lower_trim(_email)
         AND verified = TRUE;
 
 $$ LANGUAGE SQL;

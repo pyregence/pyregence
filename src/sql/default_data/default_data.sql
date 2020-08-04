@@ -1,5 +1,12 @@
 -- NAMESPACE: default
 
+INSERT INTO roles
+    (role_uid, title)
+VALUES
+    (1, 'Admin'),
+    (2, 'Member'),
+    (3, 'Pending');
+
 INSERT INTO organizations
     (org_name, email_domains, settings)
 VALUES
