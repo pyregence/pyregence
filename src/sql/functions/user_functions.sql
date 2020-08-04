@@ -201,6 +201,22 @@ CREATE OR REPLACE FUNCTION add_org_user(
 
 $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION auto_add_org_user(
+    _user_id    integer,
+    _domain     text
+ ) RETURNS void AS $$
+
+    INSERT INTO organization_users
+        (organization_rid, user_rid, role_rid)
+    (SELECT organization_uid,
+        _user_id,
+        CASE WHEN auto_accept THEN 2 ELSE 3 END
+    FROM organizations
+    WHERE email_domains LIKE '%' || _domain || '%'
+        AND auto_add = TRUE)
+
+$$ LANGUAGE SQL;
+
 CREATE OR REPLACE FUNCTION update_org_user_role(
     _org_user_id    integer,
     _role_id        integer

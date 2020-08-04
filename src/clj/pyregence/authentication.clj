@@ -29,14 +29,17 @@
     (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
-(defn- auto-add-user-to-org [email] )
-
-;; TODO auto add user to domains
 (defn add-new-user [email name password]
-  (let [settings (pr-str {:theme    :dark
-                          :timezone :utc})]
-    (if (sql-primitive (call-sql "add_new_user" email name password settings))
-      (data-response "")
+  (let [default-settings (pr-str {:theme    :dark
+                                  :timezone :utc})
+        new-user-id      (sql-primitive (call-sql "add_new_user"
+                                                  email
+                                                  name
+                                                  password
+                                                  default-settings))]
+    (if new-user-id
+      (do (call-sql "auto_add_org_user" new-user-id (re-find #"@{1}.+" email))
+          (data-response ""))
       (data-response "" {:status 403}))))
 
 ;; TODO hook into UI

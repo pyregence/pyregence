@@ -116,7 +116,7 @@
      [:div {:style {:overflow "auto"}}
       [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
        [labeled-input "Name" _opt-label]
-       [labeled-input "Email Domains" _email-domains] ; TODO, this as a freeform box, but I saved an array.
+       [labeled-input "Email Domains (comma separated)" _email-domains]
        [check-box "Auto add user to organization" _auto-add?]
        [check-box "Auto accept user as member" _auto-accept?]
        [:input {:class "btn border-yellow text-brown"
