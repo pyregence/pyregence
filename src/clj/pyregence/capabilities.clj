@@ -166,7 +166,7 @@
                                                 [key (update val
                                                              :options
                                                              #(filterm (fn [[_ {:keys [org-id]}]]
-                                                                         (or (not org-id)
+                                                                         (or (nil? org-id)
                                                                              (= 2 user-org) ; TODO eventually all consortium members wont necessarily see all layers
                                                                              (= user-org org-id)))
                                                                        %))])

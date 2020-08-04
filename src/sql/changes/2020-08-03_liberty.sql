@@ -14,7 +14,7 @@ INSERT INTO organizations
     (org_name, email_domains, settings)
 VALUES
     -- 3
-    ('Liberty', '[@libery.com]', '{:auto-add? false, :auto-accept? false}');
+    ('Liberty', '[@liberty.com]', '{:auto-add? false, :auto-accept? false}');
 
 INSERT INTO organization_users
     (organization_rid, user_rid, role_rid)
