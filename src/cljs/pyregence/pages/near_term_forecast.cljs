@@ -121,7 +121,7 @@
   (reset! legend-list [])
   (when (u/has-data? layer)
     (get-data process-legend!
-              (c/legend-url (str/replace layer "tlines" "all")))))
+              (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all"))))) ; TODO make a more generic way to do this.
 
 (defn process-point-info! [response]
   (go
