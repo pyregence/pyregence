@@ -65,7 +65,9 @@
                              @processed-params)]
       (reset! param-layers
               (t/read (t/reader :json) (:message (<! (u/call-clj-async! "get-layers" (pr-str selected-set))))))
-      (swap! *layer-idx #(max 0 (min % (- (count @param-layers) 1)))))))
+      (swap! *layer-idx #(max 0 (min % (- (count @param-layers) 1))))
+      (when-not (seq @param-layers)
+        (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
 
 (defn current-layer []
   (get @param-layers @*layer-idx))
