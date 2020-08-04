@@ -76,8 +76,6 @@
                    :filter    option}]))
        (apply array-map)))
 
-;; TODO this will need to get more complex if we start adding private layers with different model times than the rest.
-;; TODO Lets poll for the available model times for each set so we can show the most current and not have users picking through the list to find a valid time
 (defn process-capabilities! []
   (reset! capabilities
           (mapm (fn [[key vals]]
@@ -164,7 +162,6 @@
     (catch Exception e
       (log-str "Failed to load capabilities."))))
 
-;; TODO make this route available for Chris to remove layers before he deletes them from the geoserver
 (defn remove-workspace! [workspace-name]
   (swap! layers #(filterv (fn [{:keys [workspace]}]
                             (not= workspace workspace-name))
@@ -176,9 +173,7 @@
   (data-response (reduce (fn [acc {:keys [layer_path layer_config]}]
                            (let [layer-path   (edn/read-string layer_path)
                                  layer-config (edn/read-string layer_config)]
-                             (s/explain ::layer-path layer-path)
-                             (s/explain ::layer-config layer-config)
-                             (if (and (s/valid? ::layer-path layer-path)
+                             (if (and (s/valid? ::layer-path   layer-path)
                                       (s/valid? ::layer-config layer-config))
                                (assoc-in acc layer-path layer-config)
                                acc)))

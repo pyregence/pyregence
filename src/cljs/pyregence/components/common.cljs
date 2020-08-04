@@ -22,7 +22,7 @@
   {:display        "flex"
    :flex           1
    :flex-direction "column"
-   :margin         "0 .25rem .5rem .25rem"
+   :padding-bottom ".5rem"
    :width          "100%"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,6 +47,15 @@
           :on-click #(on-click condition)}
     [:div {:style ($/combine [$radio (= @state condition) themed?])}]
     [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]]))
+
+(defn check-box
+  [label-text state]
+  [:span {:style {:margin-bottom ".5rem"}}
+   [:input {:style {:margin-right ".25rem"}
+            :type "checkbox"
+            :checked @state
+            :on-change #(swap! state not)}]
+   [:label label-text]])
 
 (defn labeled-input
   ([label-text state]

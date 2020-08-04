@@ -29,19 +29,17 @@ $$ LANGUAGE SQL;
 
 -- Returns true if user information is taken, excludes user_id
 CREATE OR REPLACE FUNCTION user_email_exists(_email text, _user_id integer)
- RETURNS boolean AS $$
+ RETURNS integer AS $$
 
-    SELECT EXISTS (
-        SELECT 1
-        FROM users
-        WHERE user_uid != _user_id
-            AND email = lower_trim(_email)
-    )
+    SELECT user_uid
+    FROM users
+    WHERE user_uid != _user_id
+        AND email = lower_trim(_email)
 
 $$ LANGUAGE SQL;
 
 -- Inserts a new user with its info
-CREATE OR REPLACE FUNCTION insert_user(
+CREATE OR REPLACE FUNCTION add_new_user(
     _email       text,
     _name        text,
     _password    text,
@@ -107,6 +105,122 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
 
 $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION get_user_info(_user_id integer)
+ RETURNS TABLE (settings text) AS $$
+
+    SELECT settings
+    FROM users
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION update_user_info(
+    _user_id     integer,
+    _settings    text
+ ) RETURNS void AS $$
+
+    UPDATE users
+    SET settings = _settings
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
+---
+---  Organizations
+---
+
+CREATE OR REPLACE FUNCTION get_org_list(_user_id integer)
+ RETURNS TABLE (
+    org_id           integer,
+    org_name         text,
+    email_domains    text,
+    auto_add         boolean,
+    auto_accept      boolean
+ ) AS $$
+
+    SELECT organization_uid,
+        org_name,
+        email_domains,
+        auto_add,
+        auto_accept
+    FROM organizations, organization_users
+    WHERE organization_uid = organization_rid
+        AND user_rid = _user_id
+        AND role_rid = 1
+    ORDER BY org_name
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION update_org_info(
+    _org_id           integer,
+    _org_name         text,
+    _email_domains    text,
+    _auto_add         boolean,
+    _auto_accept      boolean
+ ) RETURNS void AS $$
+
+    UPDATE organizations
+    SET org_name = _org_name,
+        email_domains = _email_domains,
+        auto_add = _auto_add,
+        auto_accept = _auto_accept
+    WHERE
+        organization_uid = _org_id
+
+$$ LANGUAGE SQL;
+
+---
+---  Organization Users
+---
+
+CREATE OR REPLACE FUNCTION get_org_users_list(_org_id integer)
+ RETURNS TABLE (
+    org_user_id    integer,
+    name           text,
+    email          text,
+    role_id        integer
+ ) AS $$
+
+    SELECT org_user_uid, name, email, role_rid
+    FROM users, organization_users, organizations
+    WHERE organization_uid = _org_id
+        AND organization_rid = organization_uid
+        AND user_uid = user_rid
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION add_org_user(
+    _org_id     integer,
+    _user_id    integer
+ ) RETURNS void AS $$
+
+    INSERT INTO organization_users
+        (organization_rid, user_rid, role_rid)
+    VALUES
+        (_org_id, _user_id, 2)
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION update_org_user_role(
+    _org_user_id    integer,
+    _role_id        integer
+ ) RETURNS void AS $$
+
+    UPDATE organization_users
+    SET role_rid = _role_id
+    WHERE org_user_uid = _org_user_id
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION remove_org_user(_org_user_id integer)
+ RETURNS void AS $$
+
+    DELETE
+    FROM organization_users
+    WHERE org_user_uid = _org_user_id
+
+$$ LANGUAGE SQL;
+
 ---
 ---  Organization Layers
 ---
@@ -122,6 +236,7 @@ CREATE OR REPLACE FUNCTION get_user_layers_list(_user_id integer)
     FROM organization_layers ol, organization_users ou
     WHERE ol.organization_rid = ou.organization_rid
         AND ou.user_rid = _user_id
+        AND role_rid < 3
 
 $$ LANGUAGE SQL;
 

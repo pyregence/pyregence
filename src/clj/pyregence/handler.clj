@@ -37,7 +37,8 @@
                      "/team"})
 
 ;; FIXME: Fill these in as you make app pages.
-(def dynamic-routes #{"/login"
+(def dynamic-routes #{"/admin"
+                      "/login"
                       "/forecast"
                       "/near-term-forecast"
                       "/register"
