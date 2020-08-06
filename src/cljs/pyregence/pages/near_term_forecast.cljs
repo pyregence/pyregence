@@ -1,6 +1,7 @@
 (ns pyregence.pages.near-term-forecast
   (:require [reagent.core :as r]
             [reagent.dom :as rd]
+            [herb.core :refer [<class]]
             [cognitect.transit :as t]
             [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
@@ -267,6 +268,28 @@
    :overflow         "hidden"
    :width            "25rem"})
 
+(def ol-scale-line
+  {:background-color ($/color-picker :bg-color)
+   :border           (str "1px solid " ($/color-picker :border-color))
+   :bottom           "36px"
+   :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
+   :left             "auto"
+   :height           "28px"
+   :right            "64px"})
+
+(def ol-scale-line-inner
+  {:border-color ($/color-picker :border-color)
+   :color        ($/color-picker :border-color)
+   :font-size    ".75rem"})
+
+(defn $p-ol-control []
+  (with-meta
+    {:height   "100%"
+     :position "absolute"
+     :width    "100%"}
+    {:combinators {[:descendant :.ol-scale-line]       ol-scale-line
+                   [:descendant :.ol-scale-line-inner] ol-scale-line-inner}}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -319,7 +342,8 @@
                               @mouse-down?                    "grabbing"
                               (or @show-info? @show-measure?) "crosshair" ; TODO get custom cursor image from Ryan
                               :else                           "grab")]
-    [:div#map {:style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
+    [:div#map {:class (<class $p-ol-control)
+               :style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
                :on-mouse-down #(reset! mouse-down? true)
                :on-mouse-up #(reset! mouse-down? false)}]))
 
