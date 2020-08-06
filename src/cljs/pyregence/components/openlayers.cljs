@@ -51,7 +51,6 @@
                                (TileLayer.
                                 #js {:title   "active"
                                      :visible false
-                                     :opacity 0.7
                                      :source  nil})]
                 :controls #js [(ScaleLine.) (Attribution.)]
                 :view     (View.

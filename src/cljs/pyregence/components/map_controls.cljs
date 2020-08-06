@@ -94,8 +94,7 @@
       [:input {:style {:width "12rem"}
                :type "range" :min "0" :max (dec (count @layers)) :value (or @*layer-idx 0)
                :on-change #(select-layer! (u/input-int-value %))}]
-      [:label {:style {:font-size ".75rem"}}
-       layer-full-time]]
+      [:label layer-full-time]]
      [:span {:style {:margin "0 1rem"}}
       [tool-button :previous-button "Previous layer" #(cycle-layer! -1)]
       [tool-button
@@ -121,31 +120,32 @@
    :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
    :color            ($/color-picker :font-color)
    :height           "100%"
-   :left             (if show? "0" "-18rem")
+   :left             (if show? "0" "calc(-18rem + 2px)")
    :overflow         "auto"
    :position         "absolute"
    :transition       "all 200ms ease-in"
    :width            "18rem"
    :z-index          "101"})
 
-(defn $layer-section []
-  {:border        (str "1px solid " ($/color-picker :border-color))
-   :border-radius "3px"
-   :margin        ".75rem"
-   :padding       ".75rem"})
+(defn $layer-selection []
+  {:border-bottom (str "2px solid " ($/color-picker :border-color))
+   :font-size     "1.5rem"
+   :margin-bottom ".5rem"
+   :width         "100%"})
 
-(defn panel-dropdown [title val options call-back]
+(defn panel-dropdown [title val options disabled? call-back]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
    [:label title]
    [:select {:style ($dropdown)
              :value (or val :none)
+             :disabled disabled?
              :on-change #(call-back (u/input-keyword %))}
     (map (fn [[key {:keys [opt-label]}]]
            [:option {:key key :value key} opt-label])
          options)]])
 
 (defn collapsible-panel [*params select-param! param-options]
-  (r/with-let [active-opacity   (r/atom 70.0)
+  (r/with-let [active-opacity   (r/atom 100.0)
                show-hillshade?  (r/atom false)
                *base-map        (r/atom :mb-topo)
                select-base-map! (fn [id]
@@ -154,31 +154,34 @@
     (select-base-map! @*base-map)
     [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
      [:div {:style {:overflow "auto"}}
-      [:div#baselayer {:style ($layer-section)}
-       [:label {:style {:font-size "1.25rem"}} "Base Layer"]
-       [panel-dropdown "Map" @*base-map c/base-map-options select-base-map!]
-       [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
-        [:div {:style {:display "flex"}}
-         [:input {:style {:margin ".25rem .5rem 0 0"}
-                  :type "checkbox"
-                  :on-click #(do (swap! show-hillshade? not)
-                                 (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
-         [:label "Hill shade overlay"]]]]
-      [:div#activelayer {:style ($/combine ($layer-section) {:margin-top "1rem"})}
-       [:label {:style {:font-size "1.25rem"}} "Fire Layer"]
+      [:div#layer-selection {:style {:padding "1rem"}}
+       [:label {:style ($layer-selection)} "Layer Selection"]
        (map (fn [[key {:keys [opt-label options filter-on filter-key]}]]
               (let [filter-set       (get-in param-options [filter-on :options (*params filter-on) filter-key])
                     filtered-options (if filter-set
                                        (apply array-map (flatten (filter (fn [[_ v]] (filter-set (:filter v))) options)))
                                        options)]
-                ^{:key key} [panel-dropdown opt-label (*params key) filtered-options #(select-param! key %)]))
+                ^{:key key} [panel-dropdown
+                             opt-label
+                             (*params key)
+                             filtered-options
+                             (= 1 (count filtered-options))
+                             #(select-param! key %)]))
             param-options)
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]
         [:input {:style {:width "100%"}
                  :type "range" :min "0" :max "100" :value @active-opacity
                  :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                 (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]]))
+                                 (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
+       [panel-dropdown "Base Map" @*base-map c/base-map-options false select-base-map!]
+       [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
+        [:div {:style {:display "flex"}}
+         [:input {:style {:margin ".25rem .5rem 0 0"}
+                  :type "checkbox"
+                  :on-click #(do (swap! show-hillshade? not)
+                                 (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
+         [:label "Hill shade overlay"]]]]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars

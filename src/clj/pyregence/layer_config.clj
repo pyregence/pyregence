@@ -37,43 +37,48 @@
                  :params      {:fire-name  {:opt-label  "Fire Name"
                                             :auto-zoom? true
                                             :options    {:loading {:opt-label "Loading..."}}}
+                               :output     {:opt-label "Output"
+                                            :options   {:burned {:opt-label "Burned area"
+                                                                 :filter    "burned-area"
+                                                                 :units     "Hours"}}}
+                               :burn-pct   {:opt-label      "Burn Probability"
+                                            :default-option :50
+                                            :options        {:90 {:opt-label "90%"
+                                                                  :filter    "90"}
+                                                             :70 {:opt-label "70%"
+                                                                  :filter    "70"}
+                                                             :50 {:opt-label "50%"
+                                                                  :filter    "50"}
+                                                             :30 {:opt-label "30%"
+                                                                  :filter    "30%"}
+                                                             :10 {:opt-label "10%"
+                                                                  :filter    "10"}}}
+                               :fuel       {:opt-label "Fuel"
+                                            :options   {:landfire {:opt-label "LANDFIRE"
+                                                                   :filter    "landfire"}}}
                                :model      {:opt-label "Model"
                                             :options   {:elmfire {:opt-label "ELMFIRE"
                                                                   :filter    "elmfire"}}}
                                :model-init {:opt-label  "Forecast Start Time"
                                             :filter-on  :fire-name
                                             :filter-key :model-init
-                                            :options    {:loading {:opt-label "Loading..."}}}
-                               :fuel       {:opt-label "Fuel"
-                                            :options   {:landfire {:opt-label "LANDFIRE"
-                                                                   :filter    "landfire"}}}
-                               :burn-pct   {:opt-label      "Burn Probability"
-                                            :default-option :50
-                                            :options        {:90 {:opt-label "90"
-                                                                  :filter    "90"}
-                                                             :70 {:opt-label "70"
-                                                                  :filter    "70"}
-                                                             :50 {:opt-label "50"
-                                                                  :filter    "50"}
-                                                             :30 {:opt-label "30"
-                                                                  :filter    "30"}
-                                                             :10 {:opt-label "10"
-                                                                  :filter    "10"}}}
-                               :output     {:opt-label "Output"
-                                            :options   {:burned {:opt-label "Burned area"
-                                                                 :filter    "burned-area"
-                                                                 :units     "Hours"}}}}}
+                                            :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk {:opt-label       "Risk Forecast"
                :filter          "fire-risk-forecast"
                :reverse-legend? true
-               :params          {:model      {:opt-label "Model"
-                                              :options   {:elmfire {:opt-label "ELMFIRE"
-                                                                    :filter    "elmfire"}}}
-                                 :model-init {:opt-label "Forecast Start Time"
-                                              :options   {:loading {:opt-label "Loading..."}}}
-                                 :fuel       {:opt-label "Fuel"
-                                              :options   {:landfire {:opt-label "LANDFIRE"
-                                                                     :filter    "landfire"}}}
+               :params          {:output     {:opt-label "Output"
+                                              :options   {:impacted     {:opt-label "Impacted structures"
+                                                                         :filter    "impacted-structures"
+                                                                         :units     "Structures"}
+                                                          :times-burned {:opt-label "Relative burn probability"
+                                                                         :filter    "times-burned"
+                                                                         :units     "Times"}
+                                                          :fire-area    {:opt-label "Fire area"
+                                                                         :filter    "fire-area"
+                                                                         :units     "Acres"}
+                                                          :fire-volume  {:opt-label "Fire volume"
+                                                                         :filter    "fire-volume"
+                                                                         :units     "Acre-ft"}}}
                                  :pattern    {:opt-label "Ignition Pattern"
                                               :options   {:all        {:opt-label    "Human-caused ignitions"
                                                                        :filter       "all"}
@@ -88,16 +93,11 @@
                                                                        :filter      "pacificorp"
                                                                        :clear-point? true
                                                                        :org-id       4}}}
-                                 :output     {:opt-label "Output"
-                                              :options   {:fire-area    {:opt-label "Fire area"
-                                                                         :filter    "fire-area"
-                                                                         :units     "Acres"}
-                                                          :fire-volume  {:opt-label "Fire volume"
-                                                                         :filter    "fire-volume"
-                                                                         :units     "Acre-ft"}
-                                                          :impacted     {:opt-label "Impacted structures"
-                                                                         :filter    "impacted-structures"
-                                                                         :units     "Structures"}
-                                                          :times-burned {:opt-label "Relative burn probability"
-                                                                         :filter    "times-burned"
-                                                                         :units     "Times"}}}}}})
+                                 :fuel       {:opt-label "Fuel"
+                                              :options   {:landfire {:opt-label "LANDFIRE"
+                                                                     :filter    "landfire"}}}
+                                 :model      {:opt-label "Model"
+                                              :options   {:elmfire {:opt-label "ELMFIRE"
+                                                                    :filter    "elmfire"}}}
+                                 :model-init {:opt-label "Forecast Start Time"
+                                              :options   {:loading {:opt-label "Loading..."}}}}}})
