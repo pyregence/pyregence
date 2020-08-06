@@ -18,7 +18,7 @@
     (if (:success (<! (u/call-clj-async! "verify-user-email" email reset-key)))
       (do
         (<! (timeout 2000))
-        (u/jump-to-url! "/near-term-forecast"))
+        (u/jump-to-url! "/forecast"))
       (reset! pending? false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

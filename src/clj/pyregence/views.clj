@@ -12,7 +12,7 @@
      :body    (html5
                [:head
                 (slurp "resources/html/~head.html")
-                [:title "Near Term Forecasting Tool - Pyregence"]
+                [:title "Wildfire forecasts - Pyregence"]
                 [:meta {:name "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
                 (include-css "/css/ol.css")

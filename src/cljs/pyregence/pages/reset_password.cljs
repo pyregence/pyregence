@@ -45,7 +45,7 @@
         (if (:success (<! (u/call-clj-async! "set-user-password" @email @password @reset-key)))
           (do (toast-message! "Your password has been reset successfully.")
               (<! (timeout 2000))
-              (u/jump-to-url! "/near-term-forecast"))
+              (u/jump-to-url! "/forecast"))
           (do (toast-message! (str "Error reseting password for " @email "."))
               (reset! pending? false)))))))
 
