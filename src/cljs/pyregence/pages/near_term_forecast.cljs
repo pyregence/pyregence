@@ -284,9 +284,7 @@
 
 (defn $p-ol-control []
   (with-meta
-    {:height   "100%"
-     :position "absolute"
-     :width    "100%"}
+    {}
     {:combinators {[:descendant :.ol-scale-line]       ol-scale-line
                    [:descendant :.ol-scale-line-inner] ol-scale-line-inner}}))
 
