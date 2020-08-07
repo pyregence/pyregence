@@ -2,27 +2,43 @@
   (:require [clojure.data.json :as json]
             [clojure.repl :refer [demunge]]
             [clojure.string :as str]
-            [pyregence.authentication :refer [insert-user
+            [pyregence.authentication :refer [add-new-user
+                                              add-org-user
+                                              get-org-list
+                                              get-org-users-list
+                                              get-user-info
                                               log-in
                                               log-out
+                                              remove-org-user
                                               set-user-password
-                                              user-email-exists
+                                              user-email-taken
+                                              update-org-info
+                                              update-org-user-role
+                                              update-user-info
                                               verify-user-email]]
             [pyregence.capabilities :refer [get-capabilities get-layers set-capabilities!]]
             [pyregence.email :refer [send-email]]
             [pyregence.logging :refer [log-str]]
             [pyregence.views :refer [data-response]]))
 
-(def name->fn {"get-capabilities"  get-capabilities
-               "get-layers"        get-layers
-               "insert-user"       insert-user
-               "log-in"            log-in
-               "log-out"           log-out
-               "send-email"        send-email
-               "set-capabilities"  set-capabilities!
-               "set-user-password" set-user-password
-               "user-email-exists" user-email-exists
-               "verify-user-email" verify-user-email})
+(def name->fn {"add-org-user"         add-org-user
+               "add-new-user"         add-new-user
+               "get-capabilities"     get-capabilities
+               "get-layers"           get-layers
+               "get-org-list"         get-org-list
+               "get-org-users-list"   get-org-users-list
+               "get-user-info"        get-user-info
+               "log-in"               log-in
+               "log-out"              log-out
+               "remove-org-user"      remove-org-user
+               "send-email"           send-email
+               "set-capabilities"     set-capabilities!
+               "set-user-password"    set-user-password
+               "user-email-taken"     user-email-taken
+               "update-org-info"      update-org-info
+               "update-org-user-role" update-org-user-role
+               "update-user-info"     update-user-info
+               "verify-user-email"    verify-user-email})
 
 (defn fn->sym [f]
   (-> (str f)

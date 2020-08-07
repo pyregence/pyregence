@@ -26,7 +26,7 @@
 (defn add-user! []
   (go
     (toast-message! "Creating new account. This may take a moment...")
-    (if (and (:success (<! (u/call-clj-async! "insert-user" @email @full-name @password)))
+    (if (and (:success (<! (u/call-clj-async! "add-new-user" @email @full-name @password)))
              (:success (<! (u/call-clj-async! "send-email" @email :new-user))))
       (do (toast-message! ["Your account has been created successfully."
                            "Please check your email for a link to complete registration."])
@@ -38,7 +38,7 @@
 (defn register! []
   (go
     (reset! pending? true)
-    (let [email-chan (u/call-clj-async! "user-email-exists" @email)
+    (let [email-chan (u/call-clj-async! "user-email-taken" @email)
           errors     (remove nil?
                              [(when (u/missing-data? @email @password @re-password)
                                 "You must fill in all required information to continue.")

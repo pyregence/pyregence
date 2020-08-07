@@ -1,5 +1,11 @@
 -- NAMESPACE: user
 
+-- Stores text values for roles
+CREATE TABLE roles (
+    role_uid    integer PRIMARY KEY,
+    title       text NOT NULL
+);
+
 -- Stores information about users
 CREATE TABLE users (
     user_uid       SERIAL PRIMARY KEY,
@@ -17,16 +23,11 @@ CREATE TABLE organizations (
     organization_uid    SERIAL PRIMARY KEY,
     org_name            text NOT NULL,
     email_domains       text,
-    settings            text,
+    auto_add            boolean,
+    auto_accept         boolean,
     archived            boolean DEFAULT FALSE,
     created_date        date DEFAULT NOW(),
     archived_date       date
-);
-
--- Stores text values for roles
-CREATE TABLE roles (
-    role_uid    SERIAL PRIMARY KEY,
-    title       text NOT NULL
 );
 
 -- Creates a relationship between users and organizations
@@ -37,4 +38,12 @@ CREATE TABLE organization_users (
     user_rid            integer NOT NULL REFERENCES users (user_uid) ON DELETE CASCADE ON UPDATE CASCADE,
     role_rid            integer NOT NULL REFERENCES roles (role_uid),
     CONSTRAINT per_organization_per_user UNIQUE(organization_rid, user_rid)
+);
+
+-- Stores information about layers available to an organization
+CREATE TABLE organization_layers (
+    org_layer_uid       SERIAL PRIMARY KEY,
+    organization_rid    integer NOT NULL REFERENCES organizations (organization_uid) ON DELETE CASCADE ON UPDATE CASCADE,
+    layer_path          text,
+    layer_config        text
 );
