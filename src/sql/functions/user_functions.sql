@@ -38,7 +38,7 @@ CREATE OR REPLACE FUNCTION user_email_taken(_email text, _user_id_to_ignore inte
 
 $$ LANGUAGE SQL;
 
--- Returns true if user information is taken, excludes user_id
+-- Returns user id for a given email
 CREATE OR REPLACE FUNCTION get_user_id_by_email(_email text)
  RETURNS integer AS $$
 

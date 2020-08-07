@@ -126,7 +126,7 @@
                 :on-click #(update-org-info! opt-id @_opt-label @_email-domains @_auto-add? @_auto-accept?)}]]]]))
 
 (defn user-item [org-user-id opt-label email role-id]
-  (r/with-let [_role-id   (r/atom role-id)]
+  (r/with-let [_role-id (r/atom role-id)]
     [:div {:style {:display "flex" :padding ".25rem" :align-items "center"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
       [:label opt-label]
