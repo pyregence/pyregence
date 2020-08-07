@@ -13,7 +13,7 @@
 (s/def ::opt-label    string?)
 (s/def ::filter       string?)
 (s/def ::units        string?)
-(s/def ::layer-config (s/keys :req-un [::opt-label ::filter] :opt-un [::units]))
+(s/def ::layer-config (s/keys :req-un [::opt-label ::filter] :opt-un [::units ::clear-point?]))
 (s/def ::layer-path   (s/and (s/coll-of keyword? :kind vector? :min-count 3)
                              (s/cat :forecast #{:fire-risk :active-fire :fire-weather}
                                     :params   #(= % :params)
