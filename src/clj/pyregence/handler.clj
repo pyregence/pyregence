@@ -38,6 +38,7 @@
 
 ;; FIXME: Fill these in as you make app pages.
 (def dynamic-routes #{"/login"
+                      "/forecast"
                       "/near-term-forecast"
                       "/register"
                       "/reset-password"

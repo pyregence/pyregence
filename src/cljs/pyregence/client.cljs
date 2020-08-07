@@ -10,6 +10,7 @@
 
 (def uri->root-component
   {"/login"              login/root-component
+   "/forecast"           ntf/root-component
    "/near-term-forecast" ntf/root-component
    "/register"           register/root-component
    "/reset-password"     reset-password/root-component

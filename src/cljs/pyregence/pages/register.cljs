@@ -31,7 +31,7 @@
       (do (toast-message! ["Your account has been created successfully."
                            "Please check your email for a link to complete registration."])
           (<! (timeout 4000))
-          (u/jump-to-url! "/near-term-forecast"))
+          (u/jump-to-url! "/forecast"))
       (toast-message! ["An error occurred while registering."
                        "Please contact support@pyregence.org for help."]))))
 

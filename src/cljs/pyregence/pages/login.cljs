@@ -25,7 +25,7 @@
 (defn log-in! []
   (go
     (if (:success (<! (u/call-clj-async! "log-in" @email @password)))
-      (let [url (:redirect-from (u/get-session-storage) "/near-term-forecast")]
+      (let [url (:redirect-from (u/get-session-storage) "/forecast")]
         (u/clear-session-storage!)
         (u/jump-to-url! url))
       ;; TODO, it would be helpful to show the user which of the two errors it actually is.
@@ -39,7 +39,7 @@
     (if (:success (<! (u/call-clj-async! "send-email" @email :reset)))
       (do (toast-message! "Please check your email for a password reset link.")
           (<! (timeout 4000))
-          (u/jump-to-url! "/near-term-forecast"))
+          (u/jump-to-url! "/forecast"))
       (do (toast-message! ["An error occurred."
                            "Please try again shortly or contact support@pyregence.org for help."])
           (reset! pending? false)))))
