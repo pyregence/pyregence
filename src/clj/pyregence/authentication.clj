@@ -77,7 +77,7 @@
   (data-response ""))
 
 (defn add-org-user [org-id email]
-  (if-let [user-id (sql-primitive (call-sql "user_email_exists" email -1))]
+  (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
     (do (call-sql "add_org_user" org-id user-id)
         (data-response ""))
     (data-response (str "There is no user with the email " email)

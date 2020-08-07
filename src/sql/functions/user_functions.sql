@@ -29,12 +29,22 @@ $$ LANGUAGE SQL;
 
 -- Returns true if user information is taken, excludes user_id
 CREATE OR REPLACE FUNCTION user_email_exists(_email text, _user_id integer)
+ RETURNS boolean AS $$
+
+    SELECT count(1) > 0
+    FROM users
+    WHERE user_uid != _user_id
+        AND email = lower_trim(_email)
+
+$$ LANGUAGE SQL;
+
+-- Returns true if user information is taken, excludes user_id
+CREATE OR REPLACE FUNCTION get_user_id_by_email(_email text)
  RETURNS integer AS $$
 
     SELECT user_uid
     FROM users
-    WHERE user_uid != _user_id
-        AND email = lower_trim(_email)
+    WHERE email = lower_trim(_email)
 
 $$ LANGUAGE SQL;
 
