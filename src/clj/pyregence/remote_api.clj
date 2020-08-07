@@ -11,7 +11,7 @@
                                               log-out
                                               remove-org-user
                                               set-user-password
-                                              user-email-exists
+                                              user-email-taken
                                               update-org-info
                                               update-org-user-role
                                               update-user-info
@@ -34,7 +34,7 @@
                "send-email"           send-email
                "set-capabilities"     set-capabilities!
                "set-user-password"    set-user-password
-               "user-email-exists"    user-email-exists
+               "user-email-taken"     user-email-taken
                "update-org-info"      update-org-info
                "update-org-user-role" update-org-user-role
                "update-user-info"     update-user-info

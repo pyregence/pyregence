@@ -11,11 +11,11 @@
 
 (defn log-out [] (data-response "" {:session nil}))
 
-(defn user-email-exists
+(defn user-email-taken
   ([email]
-   (user-email-exists email -1))
-  ([email user-id]
-   (if (sql-primitive (call-sql "user_email_exists" email user-id))
+   (user-email-taken email -1))
+  ([email user-id-to-ignore]
+   (if (sql-primitive (call-sql "user_email_taken" email user-id-to-ignore))
      (data-response "")
      (data-response "" {:status 403}))))
 

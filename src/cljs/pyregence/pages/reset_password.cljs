@@ -36,7 +36,7 @@
                           (when (not= @password @re-password)
                             "Password fields do not match.")
 
-                          (when-not (:success (<! (u/call-clj-async! "user-email-exists" @email -1)))
+                          (when-not (:success (<! (u/call-clj-async! "user-email-taken" @email -1)))
                             (str "The email '" @email "' does not exist."))])]
 
       (if (pos? (count errors))
