@@ -50,7 +50,7 @@
                                                              :50 {:opt-label "50%"
                                                                   :filter    "50"}
                                                              :30 {:opt-label "30%"
-                                                                  :filter    "30%"}
+                                                                  :filter    "30"}
                                                              :10 {:opt-label "10%"
                                                                   :filter    "10"}}}
                                :fuel       {:opt-label "Fuel"
@@ -67,12 +67,12 @@
                :filter          "fire-risk-forecast"
                :reverse-legend? true
                :params          {:output     {:opt-label "Output"
-                                              :options   {:impacted     {:opt-label "Impacted structures"
-                                                                         :filter    "impacted-structures"
-                                                                         :units     "Structures"}
-                                                          :times-burned {:opt-label "Relative burn probability"
+                                              :options   {:times-burned {:opt-label "Relative burn probability"
                                                                          :filter    "times-burned"
                                                                          :units     "Times"}
+                                                          :impacted     {:opt-label "Impacted structures"
+                                                                         :filter    "impacted-structures"
+                                                                         :units     "Structures"}
                                                           :fire-area    {:opt-label "Fire area"
                                                                          :filter    "fire-area"
                                                                          :units     "Acres"}
