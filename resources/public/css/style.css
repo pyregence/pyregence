@@ -544,6 +544,10 @@ article.documents-single .document-meta {
 .data-single h3 a:hover, .data-single h3 a:active {
     text-decoration: underline;
 }
+.text-white a:link, .text-white a:visited {
+    color: #ffffff;
+    border-color: #ffffff;
+}
 /*——Media Queries——*/
 @media (min-width: 768px) {
     .subtitle {
