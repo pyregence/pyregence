@@ -96,7 +96,8 @@
   (let [[workspace layer]           (str/split name-string #":")
         [forecast init-timestamp]   (str/split workspace   #"_(?=\d{8}_)")
         [layer-group sim-timestamp] (str/split layer       #"_(?=\d{8}_)")]
-    {:layer-group (str workspace ":" layer-group)
+    {:workspace   workspace
+     :layer-group (str workspace ":" layer-group)
      :forecast    forecast
      :filter-set  (into #{forecast init-timestamp} (str/split layer-group #"_"))
      :model-init  init-timestamp
@@ -110,7 +111,8 @@
         [forecast fire-name init-ts1 init-ts2] (str/split workspace   #"_")
         [layer-group sim-timestamp]            (str/split layer       #"_(?=\d{8}_)")
         init-timestamp                         (str init-ts1 "_" init-ts2)]
-    {:layer-group ""
+    {:workspace   workspace
+     :layer-group ""
      :forecast    forecast
      :fire-name   fire-name
      :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
@@ -166,7 +168,8 @@
   (swap! layers #(filterv (fn [{:keys [workspace]}]
                             (not= workspace workspace-name))
                           %))
-  (process-capabilities!))
+  (process-capabilities!)
+  (data-response (str workspace-name " removed.")))
 
 (defn get-capabilities [user-id]
   (when-not (seq @capabilities) (set-capabilities!))

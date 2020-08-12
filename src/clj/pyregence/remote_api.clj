@@ -16,7 +16,10 @@
                                               update-org-user-role
                                               update-user-info
                                               verify-user-email]]
-            [pyregence.capabilities :refer [get-capabilities get-layers set-capabilities!]]
+            [pyregence.capabilities :refer [get-capabilities
+                                            get-layers
+                                            set-capabilities!
+                                            remove-workspace!]]
             [pyregence.email :refer [send-email]]
             [pyregence.logging :refer [log-str]]
             [pyregence.views :refer [data-response]]))
@@ -34,6 +37,7 @@
                "send-email"           send-email
                "set-capabilities"     set-capabilities!
                "set-user-password"    set-user-password
+               "remove-workspace"     remove-workspace!
                "user-email-taken"     user-email-taken
                "update-org-info"      update-org-info
                "update-org-user-role" update-org-user-role
