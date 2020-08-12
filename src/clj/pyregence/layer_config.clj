@@ -6,9 +6,7 @@
   {:fire-weather {:opt-label       "Fire Weather"
                   :filter          "fire-weather-forecast"
                   :reverse-legend? true
-                  :params          {:model-init {:opt-label "Forecast Start Time"
-                                                 :options   {:loading {:opt-label "Loading..."}}}
-                                    :band       {:opt-label "Weather Parameter"
+                  :params          {:band       {:opt-label "Weather Parameter"
                                                  :options   (array-map
                                                              :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                       :filter    "ffwi"
@@ -30,7 +28,9 @@
                                                                       :units     "inches"}
                                                              :meq    {:opt-label "Fine dead fuel moisture (%)"
                                                                       :filter    "meq"
-                                                                      :units     "%"})}}}
+                                                                      :units     "%"})}
+                                    :model-init {:opt-label "Forecast Start Time"
+                                                 :options   {:loading {:opt-label "Loading..."}}}}}
    :active-fire {:opt-label   "Active Fire Forecast"
                  :filter      "fire-spread-forecast"
                  :block-info? true

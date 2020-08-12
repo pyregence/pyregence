@@ -1,6 +1,7 @@
 (ns pyregence.capabilities
-  (:require [clojure.string     :as str]
-            [clojure.edn        :as edn]
+  (:require [clojure.edn        :as edn]
+            [clojure.string     :as str]
+            [clojure.set        :as set]
             [clojure.spec.alpha :as s]
             [clj-http.client    :as client]
             [pyregence.database     :refer [call-sql]]
@@ -53,43 +54,29 @@
               (into [(str/upper-case (first parts))]
                     (map str/capitalize (rest parts))))))
 
-(defn get-fire-names [forecast-layers]
-  (->> forecast-layers
-       (group-by :fire-name)
-       (sort)
-       (mapcat (fn [[fire-name opt-vec]]
-                 [(keyword fire-name)
-                  {:opt-label  (fire-name-capitalization fire-name)
-                   :filter     fire-name
-                   :model-init (into #{} (map :model-init) opt-vec)}]))
-       (apply array-map)))
-
-(defn get-model-times [forecast-layers]
-  (->> forecast-layers
-       (map :model-init)
+(defn get-fire-names []
+  (->> @layers
+       (filter (fn [{:keys [forecast]}]
+                 (= "fire-spread-forecast" forecast)))
+       (map :fire-name)
        (distinct)
-       (sort #(compare %2 %1))
-       (mapcat (fn [option]
-                 [(keyword option)
-                  {:opt-label option ; This label will get overwritten on the front end when time-zone is processed
-                   :utc-time  option
-                   :filter    option}]))
+       (sort)
+       (mapcat (fn [fire-name]
+                 [(keyword fire-name)
+                  {:opt-label (fire-name-capitalization fire-name)
+                   :filter    fire-name}]))
        (apply array-map)))
 
 (defn process-capabilities! []
-  (reset! capabilities
-          (mapm (fn [[key vals]]
-                  (let [forecast-layers (filter (fn [{:keys [forecast]}]
-                                                  (= (:filter vals) forecast))
-                                                @layers)
-                        has-fire-name?  (get-in vals [:params :fire-name])]
-                    [key (cond-> vals
-                           has-fire-name? (assoc-in [:params :fire-name  :options]
-                                                    (get-fire-names  forecast-layers))
-                           :always        (assoc-in [:params :model-init :options]
-                                                    (get-model-times forecast-layers)))]))
-                forecast-options)))
-
+  (let [fire-names (get-fire-names)
+        cal-fire   (some (fn [[k {:keys [filter]}]]
+                           (when (str/starts-with? filter "ca") filter)) fire-names)]
+    (reset! capabilities
+            (cond-> forecast-options
+              cal-fire (assoc-in [:active-fire :params :fire-name :default-option]
+                                 (keyword cal-fire))
+              :always  (assoc-in [:active-fire :params :fire-name :options]
+                                 (get-fire-names))))))
 ;;; Layers
 
 (defn split-risk-layer-name [name-string]
@@ -181,10 +168,17 @@
                          (call-sql "get_user_layers_list" user-id))
                  {:type :transit}))
 
-;; TODO Check if layers still exist in capabilities and respond with an error if not.
+;; TODO update remote_api handler so individual params dont need edn/read-string
 (defn get-layers [selected-set-str]
-  (let [selected-set (edn/read-string selected-set-str)]
-    (data-response (filterv (fn [{:keys [filter-set]}]
-                              (= selected-set filter-set))
-                            @layers)
+  (let [selected-set (edn/read-string selected-set-str)
+        available    (filterv (fn [layer] (clojure.set/subset? selected-set (:filter-set layer))) @layers)
+        model-times  (sort #(compare %2 %1) (distinct (map :model-init available)))]
+    (data-response (if (selected-set (first model-times))
+                     {:layers available}
+                     (let [max-time     (first model-times)
+                           complete-set (conj selected-set max-time)]
+                       {:layers (filterv (fn [{:keys [filter-set]}]
+                                           (= complete-set filter-set))
+                                         available)
+                        :model-times model-times}))
                    {:type :transit})))
