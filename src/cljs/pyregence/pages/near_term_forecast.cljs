@@ -128,7 +128,8 @@
 
 (defn process-point-info! [response]
   (go
-    (reset! last-clicked-info
+    (try
+      (reset! last-clicked-info
             (as-> (<p! (.json response)) pi
               (u/try-js-aget pi "features")
               (map (fn [pi-layer]
@@ -145,7 +146,10 @@
                                 :hour    hour}
                                pi-layer)))
                     pi
-                    @param-layers)))))
+                    @param-layers)))
+      (catch ExceptionInfo _
+        (toast-message! "Error retreiving point information.")
+        (reset! last-clicked-info [])))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
