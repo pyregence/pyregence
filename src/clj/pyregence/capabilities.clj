@@ -70,13 +70,14 @@
 (defn process-capabilities! []
   (let [fire-names (get-fire-names)
         cal-fire   (some (fn [[k {:keys [filter]}]]
-                           (when (str/starts-with? filter "ca") filter)) fire-names)]
+                           (when (str/starts-with? filter "ca") filter))
+                         fire-names)]
     (reset! capabilities
             (cond-> forecast-options
               cal-fire (assoc-in [:active-fire :params :fire-name :default-option]
                                  (keyword cal-fire))
               :always  (assoc-in [:active-fire :params :fire-name :options]
-                                 (get-fire-names))))))
+                                 fire-names)))))
 ;;; Layers
 
 (defn split-risk-layer-name [name-string]
@@ -171,7 +172,7 @@
 ;; TODO update remote_api handler so individual params dont need edn/read-string
 (defn get-layers [selected-set-str]
   (let [selected-set (edn/read-string selected-set-str)
-        available    (filterv (fn [layer] (clojure.set/subset? selected-set (:filter-set layer))) @layers)
+        available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer))) @layers)
         model-times  (sort #(compare %2 %1) (distinct (map :model-init available)))]
     (data-response (if (selected-set (first model-times))
                      {:layers available}
