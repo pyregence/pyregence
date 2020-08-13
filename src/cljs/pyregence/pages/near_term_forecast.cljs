@@ -41,31 +41,39 @@
 (defn get-forecast-opt [key-name]
   (get-in @capabilities [@*forecast key-name]))
 
-(defn process-params! []
-  (reset! processed-params
-          (update-in (get-forecast-opt :params)
-                     [:model-init :options]
-                     (fn [options]
-                       (u/mapm (fn [[k {:keys [utc-time] :as v}]]
-                                 [k (assoc v
-                                           :opt-label
-                                           (u/time-zone-iso-date utc-time @show-utc?))])
-                               options))))
-  ;; TODO, maybe we should remember the params between forecast types so the user can switch between to comapre
+(defn reset-params! []
+  (reset! processed-params (get-forecast-opt :params))
   (reset! *params (u/mapm (fn [[k v]]
-                            [k
-                             (or (:default-option v)
+                            [k (or (:default-option v)
                                  (ffirst (:options v)))])
                           @processed-params)))
 
-(defn get-layers! []
+(defn process-model-times! [model-times]
+  (let [processed-times (u/mapm (fn [utc-time]
+                                  [(keyword utc-time)
+                                   {:opt-label (u/time-zone-iso-date utc-time @show-utc?)
+                                    :utc-time  utc-time ; TODO is utc-time redundant?
+                                    :filter    utc-time}])
+                                model-times)]
+    (reset! processed-params
+            (assoc-in (get-forecast-opt :params)
+                      [:model-init :options]
+                      processed-times))
+    (swap! *params assoc :model-init (ffirst processed-times))))
+
+(defn get-layers! [get-model-times?]
   (go
-    (let [selected-set (into #{(get-forecast-opt :filter)}
-                             (map (fn [[key {:keys [options]}]]
-                                    (get-in options [(@*params key) :filter])))
-                             @processed-params)]
-      (reset! param-layers
-              (t/read (t/reader :json) (:message (<! (u/call-clj-async! "get-layers" (pr-str selected-set))))))
+    (let [params       (dissoc @*params (when get-model-times? :model-init))
+          selected-set (into #{(get-forecast-opt :filter)}
+                             (->> @processed-params
+                                  (map (fn [[key {:keys [options]}]]
+                                         (get-in options [(params key) :filter])))
+                                  (remove nil?)))
+          {:keys [layers model-times]} (t/read (t/reader :json)
+                                               (:message (<! (u/call-clj-async! "get-layers"
+                                                                                (pr-str selected-set)))))]
+      (when (seq model-times) (process-model-times! model-times))
+      (reset! param-layers layers)
       (swap! *layer-idx #(max 0 (min % (- (count @param-layers) 1))))
       (when-not (seq @param-layers)
         (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
@@ -171,22 +179,9 @@
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))
 
-(defn check-param-filter []
-  (swap! *params
-         (fn [params]
-           (u/mapm (fn [[k v]]
-                     (let [{:keys [filter-on filter-key options]} (@processed-params k)
-                           filter-set (get-in @processed-params [filter-on :options (params filter-on) filter-key])]
-                       [k
-                        (if (and filter-on filter-set (not (filter-set (get-in options [v :filter]))))
-                          (keyword (last (sort filter-set)))
-                          v)]))
-                   params))))
-
-(defn change-type! [clear? zoom?]
+(defn change-type! [get-model-times? clear? zoom?]
   (go
-    (check-param-filter)
-    (<! (get-layers!))
+    (<! (get-layers! get-model-times?))
     (ol/reset-active-layer! (get-current-layer-name))
     (get-legend!            (get-current-layer-name))
     (if clear?
@@ -197,13 +192,14 @@
 
 (defn select-param! [key val]
   (swap! *params assoc key val)
-  (change-type! (get-current-layer-key :clear-point?)
+  (change-type! (not (= key :model-init))
+                (get-current-layer-key :clear-point?)
                 (get-in @processed-params [key :auto-zoom?])))
 
 (defn select-forecast! [key]
   (go (reset! *forecast key)
-      (process-params!)
-      (<! (change-type! true (get-options-key :auto-zoom?)))))
+      (reset-params!)
+      (<! (change-type! true true (get-options-key :auto-zoom?)))))
 
 (defn set-show-info! [show?]
   (if (get-forecast-opt :block-info?)
