@@ -110,14 +110,13 @@
                                   "Content-Type" "application/json"}}
                        process-fn))
 
-(defn wrap-wms-errors [response success-fn]
+(defn wrap-wms-errors [type response success-fn]
   (go
     (let [json-res (<p! (.json response))]
       (if-let [exceptions (u/try-js-aget json-res "exceptions")]
         (do
           (println exceptions)
-          (toast-message! "Error retreiving point information. See console for more details.")
-          (reset! last-clicked-info []))
+          (toast-message! (str "Error retrieving " type ". See console for more details.")))
         (success-fn json-res)))))
 
 (defn process-legend! [json-res]
@@ -132,10 +131,11 @@
 (defn get-legend! [layer]
   (reset! legend-list [])
   (when (u/has-data? layer)
-    (get-data #(wrap-wms-errors % process-legend!)
+    (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all"))))) ; TODO make a more generic way to do this.
 
 (defn process-point-info! [json-res]
+  (reset! last-clicked-info [])
   (reset! last-clicked-info
           (as-> json-res pi
             (u/try-js-aget pi "features")
@@ -160,7 +160,7 @@
   (reset! last-clicked-info nil)
   (let [layer-group (get-current-layer-group)]
     (when-not (u/missing-data? layer-group point-info)
-      (get-data #(wrap-wms-errors % process-point-info!)
+      (get-data #(wrap-wms-errors " point information " % process-point-info!)
                 (c/point-info-url layer-group
                                   (str/join "," point-info))))))
 
