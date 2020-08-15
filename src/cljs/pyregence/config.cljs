@@ -7,6 +7,7 @@
 (defn legend-url [layer]
   (str wms-url
        "?SERVICE=WMS"
+       "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
        "&REQUEST=GetLegendGraphic"
        "&FORMAT=application/json"
@@ -15,6 +16,7 @@
 (defn point-info-url [layer-group bbox]
   (str wms-url
        "?SERVICE=WMS"
+       "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
        "&REQUEST=GetFeatureInfo"
        "&INFO_FORMAT=application/json"

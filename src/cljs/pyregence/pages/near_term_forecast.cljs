@@ -118,49 +118,57 @@
                                   "Content-Type" "application/json"}}
                        process-fn))
 
-(defn process-legend! [response]
+(defn wrap-wms-errors [type response success-fn]
   (go
-    (reset! legend-list
-            (as-> (<p! (.json response)) data
-              (u/try-js-aget data "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
-              (js->clj data)
-              (remove (fn [leg] (= "nodata" (get leg "label"))) data)
-              (doall data)))))
+    (let [json-res (<p! (.json response))]
+      (if-let [exceptions (u/try-js-aget json-res "exceptions")]
+        (do
+          (println exceptions)
+          (toast-message! (str "Error retrieving " type ". See console for more details.")))
+        (success-fn json-res)))))
+
+(defn process-legend! [json-res]
+  (reset! legend-list
+          (as-> json-res data
+            (u/try-js-aget data "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
+            (js->clj data)
+            (remove (fn [leg] (= "nodata" (get leg "label"))) data)
+            (doall data))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
   (reset! legend-list [])
   (when (u/has-data? layer)
-    (get-data process-legend!
+    (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all"))))) ; TODO make a more generic way to do this.
 
-(defn process-point-info! [response]
-  (go
-    (reset! last-clicked-info
-            (as-> (<p! (.json response)) pi
-              (u/try-js-aget pi "features")
-              (map (fn [pi-layer]
-                     {:band   (u/to-precision 1 (first (.values js/Object (u/try-js-aget pi-layer "properties"))))
-                      :vec-id (peek  (str/split (u/try-js-aget pi-layer "id") #"\."))})
-                   pi)
-              (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first pi))))
-                      pi)
-              (mapv (fn [pi-layer {:keys [sim-time hour]}]
-                      (let [js-time (u/js-date-from-string sim-time)]
-                        (merge {:js-time js-time
-                                :date    (u/get-date-from-js js-time @show-utc?)
-                                :time    (u/get-time-from-js js-time @show-utc?)
-                                :hour    hour}
-                               pi-layer)))
-                    pi
-                    @param-layers)))))
+(defn process-point-info! [json-res]
+  (reset! last-clicked-info [])
+  (reset! last-clicked-info
+          (as-> json-res pi
+            (u/try-js-aget pi "features")
+            (map (fn [pi-layer]
+                   {:band   (u/to-precision 1 (first (.values js/Object (u/try-js-aget pi-layer "properties"))))
+                    :vec-id (peek  (str/split (u/try-js-aget pi-layer "id") #"\."))})
+                 pi)
+            (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first pi))))
+                    pi)
+            (mapv (fn [pi-layer {:keys [sim-time hour]}]
+                    (let [js-time (u/js-date-from-string sim-time)]
+                      (merge {:js-time js-time
+                              :date    (u/get-date-from-js js-time @show-utc?)
+                              :time    (u/get-time-from-js js-time @show-utc?)
+                              :hour    hour}
+                             pi-layer)))
+                  pi
+                  @param-layers))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
   (let [layer-group (get-current-layer-group)]
     (when-not (u/missing-data? layer-group point-info)
-      (get-data process-point-info!
+      (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer-group
                                   (str/join "," point-info))))))
 
