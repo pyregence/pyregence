@@ -160,7 +160,7 @@
   (reset! last-clicked-info nil)
   (let [layer-group (get-current-layer-group)]
     (when-not (u/missing-data? layer-group point-info)
-      (get-data #(wrap-wms-errors " point information " % process-point-info!)
+      (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer-group
                                   (str/join "," point-info))))))
 
