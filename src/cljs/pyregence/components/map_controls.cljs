@@ -156,11 +156,11 @@
      [:div {:style {:overflow "auto"}}
       [:div#layer-selection {:style {:padding "1rem"}}
        [:label {:style ($layer-selection)} "Layer Selection"]
-       (map (fn [[key {:keys [opt-label options filter-on filter-key]}]]
+       (map (fn [[key {:keys [opt-label options filter-on filter-key sort?]}]]
               (let [filter-set       (get-in param-options [filter-on :options (*params filter-on) filter-key])
-                    filtered-options (if filter-set
-                                       (apply array-map (flatten (filter (fn [[_ v]] (filter-set (:filter v))) options)))
-                                       options)]
+                    filtered-options (cond-> options
+                                       filter-set (apply array-map (flatten (filter (fn [[_ v]] (filter-set (:filter v))) options)))
+                                       sort?      (sort))]
                 ^{:key key} [panel-dropdown
                              opt-label
                              (*params key)

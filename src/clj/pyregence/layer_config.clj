@@ -36,6 +36,7 @@
                  :block-info? true
                  :params      {:fire-name  {:opt-label  "Fire Name"
                                             :auto-zoom? true
+                                            :sort?      true
                                             :options    {:loading {:opt-label "Loading..."}}}
                                :output     {:opt-label "Output"
                                             :options   {:burned {:opt-label "Burned area"
