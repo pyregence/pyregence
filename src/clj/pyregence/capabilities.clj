@@ -135,7 +135,7 @@
                                   (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
                                   (merge-fn (split-risk-layer-name full-name))
 
-                                  (re-matches #"([a-z|-]+_)[a-z|-]+\d*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                                  (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
                                   (merge-fn (split-active-layer-name full-name))))))
                            (vec)))
                     xml)
