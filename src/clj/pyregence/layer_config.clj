@@ -61,8 +61,6 @@
                                             :options   {:elmfire {:opt-label "ELMFIRE"
                                                                   :filter    "elmfire"}}}
                                :model-init {:opt-label  "Forecast Start Time"
-                                            :filter-on  :fire-name
-                                            :filter-key :model-init
                                             :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk {:opt-label       "Risk Forecast"
                :filter          "fire-risk-forecast"

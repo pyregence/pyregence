@@ -156,16 +156,13 @@
      [:div {:style {:overflow "auto"}}
       [:div#layer-selection {:style {:padding "1rem"}}
        [:label {:style ($layer-selection)} "Layer Selection"]
-       (map (fn [[key {:keys [opt-label options filter-on filter-key sort?]}]]
-              (let [filter-set       (get-in param-options [filter-on :options (*params filter-on) filter-key])
-                    filtered-options (cond-> options
-                                       filter-set (apply array-map (flatten (filter (fn [[_ v]] (filter-set (:filter v))) options)))
-                                       sort?      (sort))]
+       (map (fn [[key {:keys [opt-label options sort?]}]]
+              (let [sorted-options (if sort? (sort options) options)]
                 ^{:key key} [panel-dropdown
                              opt-label
                              (*params key)
-                             filtered-options
-                             (= 1 (count filtered-options))
+                             sorted-options
+                             (= 1 (count sorted-options))
                              #(select-param! key %)]))
             param-options)
        [:div {:style {:margin-top ".5rem"}}
