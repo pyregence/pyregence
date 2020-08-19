@@ -36,6 +36,7 @@
                  :block-info? true
                  :params      {:fire-name  {:opt-label  "Fire Name"
                                             :auto-zoom? true
+                                            :sort?      true
                                             :options    {:loading {:opt-label "Loading..."}}}
                                :output     {:opt-label "Output"
                                             :options   {:burned {:opt-label "Burned area"
@@ -60,8 +61,6 @@
                                             :options   {:elmfire {:opt-label "ELMFIRE"
                                                                   :filter    "elmfire"}}}
                                :model-init {:opt-label  "Forecast Start Time"
-                                            :filter-on  :fire-name
-                                            :filter-key :model-init
                                             :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk {:opt-label       "Risk Forecast"
                :filter          "fire-risk-forecast"
