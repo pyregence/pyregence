@@ -270,8 +270,11 @@
 (defn $message-modal []
   {:background-color "white"
    :border-radius    "3px"
-   :margin           "15% auto"
+   :display          "flex"
+   :flex-direction   "column"
+   :margin           "8rem auto"
    :overflow         "hidden"
+   :max-height       "50%"
    :width            "25rem"})
 
 (def ol-scale-line
@@ -358,7 +361,7 @@
    [radio "Dark"  $/light? false #(reset! $/light? %)]])
 
 (defn message-modal []
-  (r/with-let [show-me? (r/atom (not (str/includes? (-> js/window .-location .-origin) "local")))]
+  (r/with-let [show-me? (r/atom true)];(r/atom (not (str/includes? (-> js/window .-location .-origin) "local")))]
     (when @show-me?
       [:div#message-modal {:style ($/modal "absolute")}
        [:div {:style ($message-modal)}
@@ -366,7 +369,7 @@
                :style {:width "100%"}}
          [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
           "Disclaimer"]]
-        [:label {:style {:padding ".5rem"}}
+         [:label {:style {:padding ".5rem" :overflow "auto"}}
          "Your use of this web site is undertaken at your sole risk.
           This site is available on an “as is” and “as available” basis without warranty of any kind.
           We do not warrant that this site will (i) be uninterrupted or error-free; or (ii) result in any desired outcome.
