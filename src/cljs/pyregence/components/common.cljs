@@ -98,8 +98,12 @@
                  :on-click on-click}]
         (when footer (footer))]]]]]))
 
-(defn $arrow [arrow-x arrow-y]
-  {:background-color ($/color-picker :tool-tip-bg)
+(defn $arrow [arrow-x arrow-y arrow-position]
+  {:background-color ($/color-picker :font-color)
+   :border-top       (when (#{:top :right} arrow-position)    (str "1.5px solid " ($/color-picker :bg-color)))
+   :border-right     (when (#{:bottom :right} arrow-position) (str "1.5px solid " ($/color-picker :bg-color)))
+   :border-bottom    (when (#{:left :bottom} arrow-position)  (str "1.5px solid " ($/color-picker :bg-color)))
+   :border-left      (when (#{:top :left} arrow-position)     (str "1.5px solid " ($/color-picker :bg-color)))
    :content          "close-quote"
    :height           "16px"
    :left             arrow-x
@@ -107,19 +111,20 @@
    :top              arrow-y
    :transform        "rotate(45deg)"
    :width            "16px"
-   :z-index          2000})
+   :z-index          2001})
 
 (defn $tool-tip [letter-count tip-x tip-y arrow-position]
-  {:background-color ($/color-picker :tool-tip-bg)
-   :border-radius    "4px"
-   :color            ($/color-picker :tool-tip-font)
+  {:background-color ($/color-picker :font-color)
+   :border           (str "1.5px solid " ($/color-picker :bg-color))
+   :border-radius    "6px"
+   :color            ($/color-picker :bg-color)
    :left             tip-x
    :top              tip-y
    :position         "fixed"
    :padding          ".5rem"
    :width            (str (min (if (#{:top :bottom} arrow-position) 20 30)
                                (- (/ letter-count 1.5) 1)) "rem")
-   :z-index          2001})
+   :z-index          2000})
 
 (defn sibling-wrapper [sibling sibling-ref]
   (r/create-class
@@ -140,17 +145,20 @@
                 (str/split text #"\n"))]
     [:<> (interpose-react [:br] items)]))
 
-(defn tool-tip [tool-box tool-tip-text tip-x tip-y arrow-position]
+(defn tool-tip [tool-box tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position]
   (r/create-class
    {:component-did-mount
     (fn [this] (reset! tool-box (.getBoundingClientRect (rd/dom-node this))))
 
     :reagent-render
-    (fn [_ tool-tip-text tip-x tip-y arrow-position]
+    (fn [_ tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position]
       [:div {:style ($tool-tip (count tool-tip-text) tip-x tip-y arrow-position)}
-       [show-line-break tool-tip-text]])}))
+       [:div {:style ($arrow arrow-x arrow-y arrow-position)}]
+       [:div {:style {:position "relative" :z-index 2002}}
+        [show-line-break tool-tip-text]]])}))
 
 ;; TODO abstract this to take content for things like a dropdown log in.
+;; TODO calculate max widths and heights.
 (defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
   (let [show?       (r/atom false)
         tool-box    (r/atom #js {})
@@ -174,10 +182,10 @@
 
                                    #{:left}
                                    (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
-                                     [(+ sibling-x 4.7) (+ sibling-x 11.3)])
+                                     [(+ sibling-x 4.7) (+ sibling-x 13)])
 
                                    (let [sibling-x (aget sibling-box "x")]
-                                     [(- sibling-x 22.6) (- sibling-x tool-width 11.3)]))
+                                     [(- sibling-x 22.6) (- sibling-x tool-width 13)]))
                  [arrow-y tip-y] (condp #(%1 %2) arrow-position
                                    #{:left :right}
                                    (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
@@ -185,15 +193,15 @@
 
                                    #{:top}
                                    (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
-                                     [(+ sibling-y 4.7) (+ sibling-y 11.3)])
+                                     [(+ sibling-y 4.7) (+ sibling-y 13)])
 
                                    (let [sibling-y (aget sibling-box "y")]
-                                     [(- sibling-y 22.6) (- sibling-y tool-height 11.3)]))]
-             [:<>
-              [:div {:style ($arrow (if @show? arrow-x -1000) arrow-y)}]
-              [tool-tip
-               tool-box
-               tool-tip-text
-               (if @show? (max 6 (min tip-x max-x)) -1000)
-               (max 6 (min tip-y max-y))
-               arrow-position]]))])})))
+                                     [(- sibling-y 22.6) (- sibling-y tool-height 13)]))]
+             [tool-tip
+              tool-box
+              tool-tip-text
+              (if @show? (max 6 (min tip-x max-x)) -1000)
+              (max 6 (min tip-y max-y))
+              (if @show? arrow-x -1000)
+              arrow-y
+              arrow-position]))])})))

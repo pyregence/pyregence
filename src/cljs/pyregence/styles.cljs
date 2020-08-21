@@ -31,8 +31,6 @@
      :font-color    (if @light?
                      (color-picker :brown)
                      "rgb(235, 235, 235)")
-     :tool-tip-bg   "black"
-     :tool-tip-font "white"
      :yellow        (str "rgba(249, 175, 59, "  alpha ")")
      :blue          (str "rgba(0, 0, 175, "     alpha ")")
      :black         (str "rgba(0, 0, 0, "       alpha ")")
