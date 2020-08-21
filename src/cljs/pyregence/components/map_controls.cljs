@@ -39,12 +39,11 @@
    :width   "100%"
    :fill    ($/color-picker :font-color)})
 
-(defn tool-button [type tooltip callback]
+(defn tool-button [type callback]
   (if (= type :none)
     [:span {:style ($/fixed-size "32px")}]
     [:span {:class (<class $/p-button-hover)
             :style ($/combine $tool-button ($/fixed-size "32px"))
-            :title tooltip
             :on-click callback}
      (case type
        :layers          [svg/layers]
@@ -95,14 +94,22 @@
                :type "range" :min "0" :max (dec (count @layers)) :value (or @*layer-idx 0)
                :on-change #(select-layer! (u/input-int-value %))}]
       [:label layer-full-time]]
-     [:span {:style {:margin "0 1rem"}}
-      [tool-button :previous-button "Previous layer" #(cycle-layer! -1)]
-      [tool-button
-       (if @animate? :pause-button :play-button)
+     [:span {:style {:display "flex" :margin "0 1rem"}}
+      [tool-tip-wrapper
+       "Previous layer"
+       :bottom
+       [tool-button :previous-button  #(cycle-layer! -1)]]
+      [tool-tip-wrapper
        (str (if @animate? "Pause" "Play") " animation")
-       #(do (swap! animate? not)
-            (loop-animation!))]
-      [tool-button :next-button "Next layer" #(cycle-layer! 1)]]
+       :bottom
+       [tool-button
+        (if @animate? :pause-button :play-button)
+        #(do (swap! animate? not)
+             (loop-animation!))]]
+      [tool-tip-wrapper
+       "Next layer"
+       :bottom
+       [tool-button :next-button #(cycle-layer! 1)]]]
      [:select {:style ($/combine $dropdown)
                :value (or @*speed 1)
                :on-change #(reset! *speed (u/input-int-value %))}
@@ -204,8 +211,11 @@
 
 (defn tool-bar [show-info? show-measure? set-show-info!]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
-   (map-indexed (fn [i [icon title on-click]]
-                  ^{:key i} [tool-button icon title on-click])
+   (map-indexed (fn [i [icon hover-text on-click]]
+                  ^{:key i} [tool-tip-wrapper
+                             hover-text
+                             :right
+                             [tool-button icon on-click]])
                 [[:layers
                   (str (hs-str @show-panel?) " layer selection")
                   #(swap! show-panel? not)]
@@ -236,8 +246,11 @@
       (reset! maxZoom max))
     (ol/add-map-zoom-end! #(reset! *zoom %))
     [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom "36px"})}
-     (map-indexed (fn [i [icon title on-click]]
-                    ^{:key i} [tool-button icon title on-click])
+     (map-indexed (fn [i [icon hover-text on-click]]
+                    ^{:key i} [tool-tip-wrapper
+                               hover-text
+                               :right
+                               [tool-button icon on-click]])
                   [[:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]

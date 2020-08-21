@@ -113,7 +113,7 @@
    :width            "16px"
    :z-index          2001})
 
-(defn $tool-tip [letter-count tip-x tip-y arrow-position]
+(defn $tool-tip [tip-x tip-y arrow-position]
   {:background-color ($/color-picker :font-color)
    :border           (str "1.5px solid " ($/color-picker :bg-color))
    :border-radius    "6px"
@@ -122,8 +122,7 @@
    :top              tip-y
    :position         "fixed"
    :padding          ".5rem"
-   :width            (str (min (if (#{:top :bottom} arrow-position) 20 30)
-                               (- (/ letter-count 1.5) 1)) "rem")
+   :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
    :z-index          2000})
 
 (defn sibling-wrapper [sibling sibling-ref]
@@ -152,9 +151,9 @@
 
     :reagent-render
     (fn [_ tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position]
-      [:div {:style ($tool-tip (count tool-tip-text) tip-x tip-y arrow-position)}
+      [:div {:style ($tool-tip tip-x tip-y arrow-position)}
        [:div {:style ($arrow arrow-x arrow-y arrow-position)}]
-       [:div {:style {:position "relative" :z-index 2002}}
+       [:div {:style {:position "relative" :width "fit-content" :z-index 2002}}
         [show-line-break tool-tip-text]]])}))
 
 ;; TODO abstract this to take content for things like a dropdown log in.
@@ -185,7 +184,7 @@
                                      [(+ sibling-x 4.7) (+ sibling-x 13)])
 
                                    (let [sibling-x (aget sibling-box "x")]
-                                     [(- sibling-x 22.6) (- sibling-x tool-width 13)]))
+                                     [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
                  [arrow-y tip-y] (condp #(%1 %2) arrow-position
                                    #{:left :right}
                                    (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
@@ -196,7 +195,7 @@
                                      [(+ sibling-y 4.7) (+ sibling-y 13)])
 
                                    (let [sibling-y (aget sibling-box "y")]
-                                     [(- sibling-y 22.6) (- sibling-y tool-height 13)]))]
+                                     [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
              [tool-tip
               tool-box
               tool-tip-text
