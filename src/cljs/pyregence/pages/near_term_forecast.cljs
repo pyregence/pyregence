@@ -11,7 +11,7 @@
             [pyregence.config :as c]
             [pyregence.components.map-controls :as mc]
             [pyregence.components.openlayers   :as ol]
-            [pyregence.components.common    :refer [radio]]
+            [pyregence.components.common    :refer [radio tool-tip-wrapper]]
             [pyregence.components.messaging :refer [toast-message
                                                     toast-message!
                                                     process-toast-messages!]]
@@ -411,12 +411,15 @@
        [:div {:class "bg-yellow"
               :style ($app-header)}
         [theme-select]
-        [:span
-         (doall (map (fn [[key {:keys [opt-label]}]]
-                       [:label {:key key
-                                :style ($forecast-label (= @*forecast key))
-                                :on-click #(select-forecast! key)}
-                        opt-label])
+        [:span {:style {:display "flex"}}
+         (doall (map (fn [[key {:keys [opt-label hover-text]}]]
+                       ^{:key key}
+                       [tool-tip-wrapper
+                        hover-text
+                        :top
+                        [:label {:style ($forecast-label (= @*forecast key))
+                                 :on-click #(select-forecast! key)}
+                        opt-label]])
                      @capabilities))]
         (if user-id
           [:span {:style {:position "absolute" :right "3rem" :display "flex"}}

@@ -5,7 +5,7 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.common           :refer [radio]]
+            [pyregence.components.common           :refer [radio tool-tip-wrapper]]
             [pyregence.components.openlayers       :as ol]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.svg-icons        :as svg]
@@ -125,7 +125,7 @@
    :position         "absolute"
    :transition       "all 200ms ease-in"
    :width            "18rem"
-   :z-index          "101"})
+   :z-index          "1001"})
 
 (defn $layer-selection []
   {:border-bottom (str "2px solid " ($/color-picker :border-color))
@@ -133,9 +133,17 @@
    :margin-bottom ".5rem"
    :width         "100%"})
 
-(defn panel-dropdown [title val options disabled? call-back]
+(defn panel-dropdown [title tool-tip-text val options disabled? call-back]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
-   [:label title]
+   [:div {:style {:display "flex" :justify-content "space-between"}}
+    [:label title]
+    [tool-tip-wrapper
+     tool-tip-text
+     :left
+     [:div {:style ($/combine ($/fixed-size "1rem")
+                              {:margin "0 .25rem 4px 0"
+                               :fill    ($/color-picker :font-color)})}
+      [svg/help]]]]
    [:select {:style ($dropdown)
              :value (or val :none)
              :disabled disabled?
@@ -156,14 +164,15 @@
      [:div {:style {:overflow "auto"}}
       [:div#layer-selection {:style {:padding "1rem"}}
        [:label {:style ($layer-selection)} "Layer Selection"]
-       (map (fn [[key {:keys [opt-label options sort?]}]]
+       (map (fn [[key {:keys [opt-label hover-text options sort?]}]]
               (let [sorted-options (if sort? (sort options) options)]
-                ^{:key key} [panel-dropdown
-                             opt-label
-                             (*params key)
-                             sorted-options
-                             (= 1 (count sorted-options))
-                             #(select-param! key %)]))
+                ^{:key hover-text} [panel-dropdown
+                                    opt-label
+                                    hover-text
+                                    (*params key)
+                                    sorted-options
+                                    (= 1 (count sorted-options))
+                                    #(select-param! key %)]))
             param-options)
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]
@@ -171,7 +180,7 @@
                  :type "range" :min "0" :max "100" :value @active-opacity
                  :on-change #(do (reset! active-opacity (u/input-int-value %))
                                  (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-       [panel-dropdown "Base Map" @*base-map c/base-map-options false select-base-map!]
+       [panel-dropdown "Base Map" "Underlying map source." @*base-map  c/base-map-options false select-base-map!]
        [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
         [:div {:style {:display "flex"}}
          [:input {:style {:margin ".25rem .5rem 0 0"}

@@ -1,6 +1,9 @@
 (ns pyregence.components.common
   (:require-macros [pyregence.herb-patch :refer [style->class]])
   (:require herb.core
+            [reagent.core :as r]
+            [reagent.dom :as rd]
+            [clojure.string :as str]
             [pyregence.styles :as $]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -57,6 +60,7 @@
             :on-change #(swap! state not)}]
    [:label label-text]])
 
+;; FIXME take in a map instead of having so many overloads
 (defn labeled-input
   ([label-text state]
    [labeled-input label-text state "text" false #(reset! state (input-value %))])
@@ -93,3 +97,103 @@
                  :value button-text
                  :on-click on-click}]
         (when footer (footer))]]]]]))
+
+(defn $arrow [arrow-x arrow-y]
+  {:background-color ($/color-picker :tool-tip-bg)
+   :content          "close-quote"
+   :height           "16px"
+   :left             arrow-x
+   :position         "fixed"
+   :top              arrow-y
+   :transform        "rotate(45deg)"
+   :width            "16px"
+   :z-index          2000})
+
+(defn $tool-tip [letter-count tip-x tip-y arrow-position]
+  {:background-color ($/color-picker :tool-tip-bg)
+   :border-radius    "4px"
+   :color            ($/color-picker :tool-tip-font)
+   :left             tip-x
+   :top              tip-y
+   :position         "fixed"
+   :padding          ".5rem"
+   :width            (str (min (if (#{:top :bottom} arrow-position) 20 30)
+                               (- (/ letter-count 1.5) 1)) "rem")
+   :z-index          2001})
+
+(defn sibling-wrapper [sibling sibling-ref]
+  (r/create-class
+   {:component-did-mount
+    (fn [this] (reset! sibling-ref (rd/dom-node this)))
+
+    :render
+    (fn [_] sibling)}))
+
+(defn interpose-react [tag items]
+  [:<> (for [i (butlast items)]
+         ^{:key i} [:<> i tag])
+   (last items)])
+
+(defn show-line-break [text]
+  (let [items (if (coll? text)
+                (vec text)
+                (str/split text #"\n"))]
+    [:<> (interpose-react [:br] items)]))
+
+(defn tool-tip [tool-box tool-tip-text tip-x tip-y arrow-position]
+  (r/create-class
+   {:component-did-mount
+    (fn [this] (reset! tool-box (.getBoundingClientRect (rd/dom-node this))))
+
+    :reagent-render
+    (fn [_ tool-tip-text tip-x tip-y arrow-position]
+      [:div {:style ($tool-tip (count tool-tip-text) tip-x tip-y arrow-position)}
+       [show-line-break tool-tip-text]])}))
+
+;; TODO abstract this to take content for things like a dropdown log in.
+(defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
+  (let [show?       (r/atom false)
+        tool-box    (r/atom #js {})
+        sibling-ref (r/atom nil)]
+    (r/create-class
+     {:render
+      (fn [_]
+        [:div {:on-mouse-over  #(reset! show? true)
+               :on-mouse-leave #(reset! show? false)}
+         [sibling-wrapper sibling sibling-ref]
+         (when @sibling-ref
+           (let [sibling-box (.getBoundingClientRect @sibling-ref)
+                 tool-width  (aget @tool-box "width")
+                 tool-height (aget @tool-box "height")
+                 max-x       (- (.-innerWidth js/window) tool-width 6)
+                 max-y       (- (.-innerHeight js/window) tool-height 6)
+                 [arrow-x tip-x] (condp #(%1 %2) arrow-position
+                                   #{:top :bottom}
+                                   (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
+                                     [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
+
+                                   #{:left}
+                                   (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
+                                     [(+ sibling-x 4.7) (+ sibling-x 11.3)])
+
+                                   (let [sibling-x (aget sibling-box "x")]
+                                     [(- sibling-x 22.6) (- sibling-x tool-width 11.3)]))
+                 [arrow-y tip-y] (condp #(%1 %2) arrow-position
+                                   #{:left :right}
+                                   (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
+                                     [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
+
+                                   #{:top}
+                                   (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
+                                     [(+ sibling-y 4.7) (+ sibling-y 11.3)])
+
+                                   (let [sibling-y (aget sibling-box "y")]
+                                     [(- sibling-y 22.6) (- sibling-y tool-height 11.3)]))]
+             [:<>
+              [:div {:style ($arrow (if @show? arrow-x -1000) arrow-y)}]
+              [tool-tip
+               tool-box
+               tool-tip-text
+               (if @show? (max 6 (min tip-x max-x)) -1000)
+               (max 6 (min tip-y max-y))
+               arrow-position]]))])})))
