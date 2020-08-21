@@ -66,14 +66,15 @@
                    :filter    fire-name}]))
        (apply array-map)
        (merge
-        {:calfire-incidents
-         {:opt-label  "*CALFIRE Incidents"
-          :filter-set #{"fire-detections" "calfire-incidents"}}})))
+        {:calfire-incidents {:opt-label  "*CALFIRE Incidents"
+                             :filter-set #{"fire-detections" "calfire-incidents"}}
+         :nifc-large-fires  {:opt-label  "*NIFC Large Fires"
+                             :filter-set #{"fire-detections" "nifc-large-fires"}}})))
 
 (defn process-capabilities! []
   (let [fire-names (get-fire-names)
         cal-fire   (some (fn [[k {:keys [filter]}]]
-                           (when (str/starts-with? filter "ca") filter))
+                           (when (str/starts-with? (or filter "") "ca") filter))
                          fire-names)]
     (reset! capabilities
             (cond-> forecast-options
