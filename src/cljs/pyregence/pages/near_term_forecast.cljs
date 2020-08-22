@@ -64,15 +64,18 @@
 (defn get-layers! [get-model-times?]
   (go
     (let [params       (dissoc @*params (when get-model-times? :model-init))
-          selected-set (into #{(get-forecast-opt :filter)}
-                             (->> @processed-params
-                                  (map (fn [[key {:keys [options]}]]
-                                         (get-in options [(params key) :filter])))
-                                  (remove nil?)))
+          selected-set (or (some (fn [[key {:keys [options]}]]
+                                   (get-in options [(params key) :filter-set]))
+                                 @processed-params)
+                           (into #{(get-forecast-opt :filter)}
+                                 (->> @processed-params
+                                      (map (fn [[key {:keys [options]}]]
+                                             (get-in options [(params key) :filter])))
+                                      (remove nil?))))
           {:keys [layers model-times]} (t/read (t/reader :json)
                                                (:message (<! (u/call-clj-async! "get-layers"
                                                                                 (pr-str selected-set)))))]
-      (when (seq model-times) (process-model-times! model-times))
+      (when model-times (process-model-times! model-times))
       (reset! param-layers layers)
       (swap! *layer-idx #(max 0 (min % (- (count @param-layers) 1))))
       (when-not (seq @param-layers)

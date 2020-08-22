@@ -60,22 +60,26 @@
                  (= "fire-spread-forecast" forecast)))
        (map :fire-name)
        (distinct)
-       (sort)
        (mapcat (fn [fire-name]
                  [(keyword fire-name)
                   {:opt-label (fire-name-capitalization fire-name)
                    :filter    fire-name}]))
-       (apply array-map)))
+       (apply array-map)
+       (merge
+        {:calfire-incidents {:opt-label  "*CALFIRE Incidents"
+                             :filter-set #{"fire-detections" "calfire-incidents"}}
+         :nifc-large-fires  {:opt-label  "*NIFC Large Fires"
+                             :filter-set #{"fire-detections" "nifc-large-fires"}}})))
 
 (defn process-capabilities! []
   (let [fire-names (get-fire-names)
         cal-fire   (some (fn [[k {:keys [filter]}]]
-                           (when (str/starts-with? filter "ca") filter))
+                           (when (str/starts-with? (or filter "") "ca") filter))
                          fire-names)]
     (reset! capabilities
             (cond-> forecast-options
               cal-fire (assoc-in [:active-fire :params :fire-name :default-option]
-                                 (keyword cal-fire))
+                                 :calfire-incidents)
               :always  (assoc-in [:active-fire :params :fire-name :options]
                                  fire-names)))))
 ;;; Layers
@@ -108,6 +112,16 @@
      :sim-time    sim-timestamp
      :hour        0}))
 
+(defn split-fire-detections [name-string]
+  (let [workspace (first (str/split name-string #":"))
+        [forecast source] (str/split workspace #"_")]
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    forecast
+     :source      source
+     :filter-set  #{forecast source}
+     :hour        0}))
+
 (defn process-layers! []
   (let [xml-response (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
                                              "?SERVICE=WMS"
@@ -136,7 +150,10 @@
                                   (merge-fn (split-risk-layer-name full-name))
 
                                   (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
-                                  (merge-fn (split-active-layer-name full-name))))))
+                                  (merge-fn (split-active-layer-name full-name))
+
+                                  (str/starts-with? full-name "fire-detections")
+                                  (merge-fn (split-fire-detections full-name))))))
                            (vec)))
                     xml)
               (apply concat xml)
@@ -176,13 +193,19 @@
 (defn get-layers [selected-set-str]
   (let [selected-set (edn/read-string selected-set-str)
         available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer))) @layers)
-        model-times  (sort #(compare %2 %1) (distinct (map :model-init available)))]
+        model-times  (->> available
+                          (map :model-init)
+                          (distinct)
+                          (remove nil?)
+                          (sort #(compare %2 %1)))]
     (data-response (if (selected-set (first model-times))
                      {:layers available}
                      (let [max-time     (first model-times)
-                           complete-set (conj selected-set max-time)]
+                           complete-set (if max-time
+                                          (conj selected-set max-time)
+                                          selected-set)]
                        {:layers (filterv (fn [{:keys [filter-set]}]
                                            (= complete-set filter-set))
                                          available)
-                        :model-times model-times}))
+                        :model-times (seq model-times)}))
                    {:type :transit})))

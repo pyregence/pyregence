@@ -172,7 +172,7 @@
       [:div#layer-selection {:style {:padding "1rem"}}
        [:label {:style ($layer-selection)} "Layer Selection"]
        (map (fn [[key {:keys [opt-label hover-text options sort?]}]]
-              (let [sorted-options (if sort? (sort options) options)]
+              (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
                 ^{:key hover-text} [panel-dropdown
                                     opt-label
                                     hover-text
