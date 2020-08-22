@@ -72,7 +72,7 @@
                                                                     :filter    "landfire"}}}
                                :model      {:opt-label  "Model"
                                             :hover-text "Computer fire spread model used to generate active fire and risk forecasts.\n
-                                                         ELMFIRE - Cloud-based operational fire spread model spread developed at Reax Engineering Inc. (https://doi.org/10.1016/j.firesaf.2013.08.014)."
+                                                         ELMFIRE - Cloud-based operational fire spread model developed at Reax Engineering Inc. (https://doi.org/10.1016/j.firesaf.2013.08.014)."
                                             :options    {:elmfire {:opt-label "ELMFIRE"
                                                                    :filter    "elmfire"}}}
                                :model-init {:opt-label  "Forecast Start Time"
@@ -84,9 +84,9 @@
                :hover-text      "5-day forecast of fire consequence maps. Every day over 500 million hypothetical fires are ignited across California to evaluate potential fire risk.\n"
                :params          {:output     {:opt-label  "Output"
                                               :hover-text "Key fire spread model outputs based on modeling 6-hours of fire spread without fire suppression activities within 6 hours of time shown in time slider. Options include:\n
-                                                           Relative Burn Probability - Relatively likelihood that an area is burned by fires that have not yet ignited within the next six hours of time shown in time slider.\n
+                                                           Relative Burn Probability - Relative likelihood that an area is burned by fires that have not yet ignited within the next six hours of time shown in time slider.\n
                                                            Impacted Structures - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future.\n
-                                                           Fire area - Modeled fire size in acres by ignition location and time of ignition.\n
+                                                           Fire Area - Modeled fire size in acres by ignition location and time of ignition.\n
                                                            Fire Volume - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."
                                               :options    {:times-burned {:opt-label "Relative burn probability"
                                                                           :filter    "times-burned"
@@ -116,7 +116,7 @@
                                                                       :filter    "landfire"}}}
                                  :model      {:opt-label  "Model"
                                               :hover-text "Computer fire spread model used to generate active fire and risk forecasts.\n
-                                                           ELMFIRE	Cloud-based operational fire spread model spread developed at Reax Engineering Inc. (https://doi.org/10.1016/j.firesaf.2013.08.014)."
+                                                           ELMFIRE - Cloud-based operational fire spread model developed at Reax Engineering Inc. (https://doi.org/10.1016/j.firesaf.2013.08.014)."
                                               :options    {:elmfire {:opt-label "ELMFIRE"
                                                                      :filter    "elmfire"}}}
                                  :model-init {:opt-label  "Forecast Start Time"

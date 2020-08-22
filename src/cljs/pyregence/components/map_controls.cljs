@@ -98,7 +98,7 @@
       [tool-tip-wrapper
        "Previous layer"
        :bottom
-       [tool-button :previous-button  #(cycle-layer! -1)]]
+       [tool-button :previous-button #(cycle-layer! -1)]]
       [tool-tip-wrapper
        (str (if @animate? "Pause" "Play") " animation")
        :bottom
@@ -149,7 +149,7 @@
      :left
      [:div {:style ($/combine ($/fixed-size "1rem")
                               {:margin "0 .25rem 4px 0"
-                               :fill    ($/color-picker :font-color)})}
+                               :fill   ($/color-picker :font-color)})}
       [svg/help]]]]
    [:select {:style ($dropdown)
              :value (or val :none)
@@ -187,7 +187,7 @@
                  :type "range" :min "0" :max "100" :value @active-opacity
                  :on-change #(do (reset! active-opacity (u/input-int-value %))
                                  (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-       [panel-dropdown "Base Map" "Underlying map source." @*base-map  c/base-map-options false select-base-map!]
+       [panel-dropdown "Base Map" "Underlying map source." @*base-map c/base-map-options false select-base-map!]
        [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
         [:div {:style {:display "flex"}}
          [:input {:style {:margin ".25rem .5rem 0 0"}

@@ -142,7 +142,7 @@
   (let [items (if (coll? text)
                 (vec text)
                 (str/split text #"\n"))]
-    [:<> (interpose-react [:br] items)]))
+    (interpose-react [:br] items)))
 
 (defn tool-tip [tool-box tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position]
   (r/create-class
@@ -159,48 +159,45 @@
 ;; TODO abstract this to take content for things like a dropdown log in.
 ;; TODO calculate max widths and heights.
 (defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
-  (let [show?       (r/atom false)
-        tool-box    (r/atom #js {})
-        sibling-ref (r/atom nil)]
-    (r/create-class
-     {:render
-      (fn [_]
-        [:div {:on-mouse-over  #(reset! show? true)
-               :on-mouse-leave #(reset! show? false)}
-         [sibling-wrapper sibling sibling-ref]
-         (when @sibling-ref
-           (let [sibling-box (.getBoundingClientRect @sibling-ref)
-                 tool-width  (aget @tool-box "width")
-                 tool-height (aget @tool-box "height")
-                 max-x       (- (.-innerWidth js/window) tool-width 6)
-                 max-y       (- (.-innerHeight js/window) tool-height 6)
-                 [arrow-x tip-x] (condp #(%1 %2) arrow-position
-                                   #{:top :bottom}
-                                   (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
-                                     [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
+  (r/with-let [show?       (r/atom false)
+               tool-box    (r/atom #js {})
+               sibling-ref (r/atom nil)]
+    [:div {:on-mouse-over  #(reset! show? true)
+           :on-mouse-leave #(reset! show? false)}
+     [sibling-wrapper sibling sibling-ref]
+     (when @sibling-ref
+       (let [sibling-box (.getBoundingClientRect @sibling-ref)
+             tool-width  (aget @tool-box "width")
+             tool-height (aget @tool-box "height")
+             max-x       (- (.-innerWidth js/window) tool-width 6)
+             max-y       (- (.-innerHeight js/window) tool-height 6)
+             [arrow-x tip-x] (condp #(%1 %2) arrow-position
+                               #{:top :bottom}
+                               (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
+                                 [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
 
-                                   #{:left}
-                                   (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
-                                     [(+ sibling-x 4.7) (+ sibling-x 13)])
+                               #{:left}
+                               (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
+                                 [(+ sibling-x 4.7) (+ sibling-x 13)])
 
-                                   (let [sibling-x (aget sibling-box "x")]
-                                     [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
-                 [arrow-y tip-y] (condp #(%1 %2) arrow-position
-                                   #{:left :right}
-                                   (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
-                                     [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
+                               (let [sibling-x (aget sibling-box "x")]
+                                 [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
+             [arrow-y tip-y] (condp #(%1 %2) arrow-position
+                               #{:left :right}
+                               (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
+                                 [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
 
-                                   #{:top}
-                                   (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
-                                     [(+ sibling-y 4.7) (+ sibling-y 13)])
+                               #{:top}
+                               (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
+                                 [(+ sibling-y 4.7) (+ sibling-y 13)])
 
-                                   (let [sibling-y (aget sibling-box "y")]
-                                     [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
-             [tool-tip
-              tool-box
-              tool-tip-text
-              (if @show? (max 6 (min tip-x max-x)) -1000)
-              (max 6 (min tip-y max-y))
-              (if @show? arrow-x -1000)
-              arrow-y
-              arrow-position]))])})))
+                               (let [sibling-y (aget sibling-box "y")]
+                                 [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
+         [tool-tip
+          tool-box
+          tool-tip-text
+          (if @show? (max 6 (min tip-x max-x)) -1000)
+          (max 6 (min tip-y max-y))
+          (if @show? arrow-x -1000)
+          arrow-y
+          arrow-position]))]))

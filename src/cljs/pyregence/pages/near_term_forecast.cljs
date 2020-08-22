@@ -419,7 +419,7 @@
                         :top
                         [:label {:style ($forecast-label (= @*forecast key))
                                  :on-click #(select-forecast! key)}
-                        opt-label]])
+                         opt-label]])
                      @capabilities))]
         (if user-id
           [:span {:style {:position "absolute" :right "3rem" :display "flex"}}

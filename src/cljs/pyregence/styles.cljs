@@ -24,22 +24,22 @@
    (color-picker color 1))
   ([color alpha]
    (case color
-     :bg-color      (if @light? "white" (str "rgba(50, 50, 50, .9)"))
-     :border-color  (if @light?
+     :bg-color     (if @light? "white" (str "rgba(50, 50, 50, .9)"))
+     :border-color (if @light?
                      (str "rgba(0, 0, 0, "       alpha ")")
                      (str "rgba(255, 255, 255, " alpha ")"))
-     :font-color    (if @light?
+     :font-color   (if @light?
                      (color-picker :brown)
                      "rgb(235, 235, 235)")
-     :yellow        (str "rgba(249, 175, 59, "  alpha ")")
-     :blue          (str "rgba(0, 0, 175, "     alpha ")")
-     :black         (str "rgba(0, 0, 0, "       alpha ")")
-     :brown         (str "rgba(96, 65, 31, "    alpha ")")
-     :box-tan       (str "rgba(249, 248, 242, " alpha ")")
-     :dark-green    (str "rgba(0, 100, 0, "     alpha ")")
-     :light-gray    (str "rgba(230, 230, 230, " alpha ")")
-     :red           (str "rgba(200, 0, 0, "     alpha ")")
-     :white         (str "rgba(255, 255, 255, " alpha ")")
+     :yellow       (str "rgba(249, 175, 59, "  alpha ")")
+     :blue         (str "rgba(0, 0, 175, "     alpha ")")
+     :black        (str "rgba(0, 0, 0, "       alpha ")")
+     :brown        (str "rgba(96, 65, 31, "    alpha ")")
+     :box-tan      (str "rgba(249, 248, 242, " alpha ")")
+     :dark-green   (str "rgba(0, 100, 0, "     alpha ")")
+     :light-gray   (str "rgba(230, 230, 230, " alpha ")")
+     :red          (str "rgba(200, 0, 0, "     alpha ")")
+     :white        (str "rgba(255, 255, 255, " alpha ")")
      color)))
 
 (defn to-merge? [modifiers key return]
