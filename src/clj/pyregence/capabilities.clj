@@ -114,7 +114,7 @@
 
 (defn split-fire-detections [name-string]
   (let [workspace (first (str/split name-string #":"))
-        [forecast source] (str/split workspace   #"_")]
+        [forecast source] (str/split workspace #"_")]
     {:workspace   workspace
      :layer-group ""
      :forecast    forecast

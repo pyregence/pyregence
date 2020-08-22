@@ -46,7 +46,7 @@
                                             :auto-zoom? true
                                             :sort?      true
                                             :hover-text "Fire name as listed in the CALFIRE incident report.\n
-                                                         Options with * are overviews provided by CALFIRE and NIFC."
+                                                         Options prefixed with * are overviews provided by CALFIRE and NIFC."
                                             :options    {:loading {:opt-label "Loading..."}}}
                                :output     {:opt-label  "Output"
                                             :hover-text "Burned Area - Area burned by fire. Colors represent how long before the time shown in the time slider that an area burned."
