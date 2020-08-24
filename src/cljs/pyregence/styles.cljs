@@ -237,14 +237,14 @@
    :flex           "1 1 0"
    :overflow       "auto"})
 
-(defn modal [position]
-  {:position         position
-   :z-index          "1000"
+(defn modal []
+  {:background-color "rgba(0,0,0,0.4)"
    :left             "0"
+   :height           "100%"
+   :position         "absolute"
    :top              "0"
    :width            "100%"
-   :height           "100%"
-   :background-color "rgba(0,0,0,0.4)"})
+   :z-index          "5000"})
 
 (defn outline [color]
   (let [rgb (color-picker color)]
@@ -272,7 +272,7 @@
    :box-shadow       (str "0 0 0 2px " (color-picker :bg-color))
    :color            (color-picker :font-color)
    :position         "absolute"
-   :z-index          "1000"})
+   :z-index          "100"})
 
 (def light-border (str "1.2px solid " (color-picker :brown)))
 

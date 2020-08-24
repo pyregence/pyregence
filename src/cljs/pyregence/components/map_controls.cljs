@@ -46,10 +46,11 @@
             :style ($/combine $tool-button ($/fixed-size "32px"))
             :on-click callback}
      (case type
-       :layers          [svg/layers]
        :center-on-point [svg/center-on-point]
+       :close           [svg/close]
        :extent          [svg/extent]
        :info            [svg/info]
+       :layers          [svg/layers]
        :legend          [svg/legend]
        :measure         [svg/measure]
        :my-location     [svg/my-location]
@@ -66,17 +67,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn $time-slider []
-  {:align-items      "center"
-   :display          "flex"
-   :margin-right     "auto"
-   :margin-left      "auto"
-   :left             "0"
-   :right            "0"
-   :padding          ".5rem"
-   :bottom           "1rem"
-   :width            "fit-content"})
+  {:align-items  "center"
+   :display      "flex"
+   :margin-right "auto"
+   :margin-left  "auto"
+   :left         "0"
+   :right        "0"
+   :padding      ".5rem"
+   :bottom       "1rem"
+   :width        "min-content"})
 
-(defn time-slider [layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone!]
+(defn time-slider [layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone! mobile?]
   (r/with-let [animate?        (r/atom false)
                *speed          (r/atom 1)
                cycle-layer!    (fn [change]
@@ -86,9 +87,10 @@
                                    (cycle-layer! 1)
                                    (js/setTimeout la (get-in c/speeds [@*speed :delay]))))]
     [:div#time-slider {:style ($/combine $/tool ($time-slider))}
-     [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
-      [radio "UTC"   show-utc? true  select-time-zone! true]
-      [radio "Local" show-utc? false select-time-zone! true]]
+     (when-not mobile?
+       [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
+        [radio "UTC"   show-utc? true  select-time-zone! true]
+        [radio "Local" show-utc? false select-time-zone! true]])
      [:div {:style ($/flex-col)}
       [:input {:style {:width "12rem"}
                :type "range" :min "0" :max (dec (count @layers)) :value (or @*layer-idx 0)
@@ -121,18 +123,22 @@
 ;; Collapsible Panel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $collapsible-panel [show?]
+(defn $collapsible-panel [show? mobile?]
   {:background-color ($/color-picker :bg-color)
    :border-right     (str "1px solid " ($/color-picker :border-color))
    :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
    :color            ($/color-picker :font-color)
    :height           "100%"
-   :left             (if show? "0" "calc(-18rem + 2px)")
+   :left             (if show?
+                       "0"
+                       (if mobile?
+                         "calc(-100% + 2px)"
+                         "calc(-18rem + 2px)"))
    :overflow         "auto"
    :position         "absolute"
    :transition       "all 200ms ease-in"
-   :width            "18rem"
-   :z-index          "1001"})
+   :width            (if mobile? "100%" "18rem")
+   :z-index          "101"})
 
 (defn $layer-selection []
   {:border-bottom (str "2px solid " ($/color-picker :border-color))
@@ -159,42 +165,47 @@
            [:option {:key key :value key} opt-label])
          options)]])
 
-(defn collapsible-panel [*params select-param! param-options]
-  (r/with-let [active-opacity   (r/atom 100.0)
-               show-hillshade?  (r/atom false)
-               *base-map        (r/atom :mb-topo)
-               select-base-map! (fn [id]
-                                  (reset! *base-map id)
-                                  (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
-    (select-base-map! @*base-map)
-    [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
-     [:div {:style {:overflow "auto"}}
-      [:div#layer-selection {:style {:padding "1rem"}}
-       [:label {:style ($layer-selection)} "Layer Selection"]
-       (map (fn [[key {:keys [opt-label hover-text options sort?]}]]
-              (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                ^{:key hover-text} [panel-dropdown
-                                    opt-label
-                                    hover-text
-                                    (*params key)
-                                    sorted-options
-                                    (= 1 (count sorted-options))
-                                    #(select-param! key %)]))
-            param-options)
-       [:div {:style {:margin-top ".5rem"}}
-        [:label (str "Opacity: " @active-opacity)]
-        [:input {:style {:width "100%"}
-                 :type "range" :min "0" :max "100" :value @active-opacity
-                 :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                 (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-       [panel-dropdown "Base Map" "Underlying map source." @*base-map c/base-map-options false select-base-map!]
-       [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
-        [:div {:style {:display "flex"}}
-         [:input {:style {:margin ".25rem .5rem 0 0"}
-                  :type "checkbox"
-                  :on-click #(do (swap! show-hillshade? not)
-                                 (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
-         [:label "Hill shade overlay"]]]]]]))
+(defn collapsible-panel [*params select-param! param-options mobile?]
+  (let [active-opacity   (r/atom 100.0)
+        show-hillshade?  (r/atom false)
+        *base-map        (r/atom :mb-topo)
+        select-base-map! (fn [id]
+                           (reset! *base-map id)
+                           (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
+    (reset! show-panel? (not mobile?))
+    (fn [*params select-param! param-options _]
+      (select-base-map! @*base-map)
+      [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
+       [:div {:style {:overflow "auto"}}
+        [:div#layer-selection {:style {:padding "1rem"}}
+         [:div {:style {:display "flex" :justify-content "space-between"}}
+          [:label {:style ($layer-selection)} "Layer Selection"]
+          [:span {:style {:margin-right "-.5rem"}}
+           [tool-button :close #(reset! show-panel? false)]]]
+         (map (fn [[key {:keys [opt-label hover-text options sort?]}]]
+                (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                  ^{:key hover-text} [panel-dropdown
+                                      opt-label
+                                      hover-text
+                                      (*params key)
+                                      sorted-options
+                                      (= 1 (count sorted-options))
+                                      #(select-param! key %)]))
+              param-options)
+         [:div {:style {:margin-top ".5rem"}}
+          [:label (str "Opacity: " @active-opacity)]
+          [:input {:style {:width "100%"}
+                   :type "range" :min "0" :max "100" :value @active-opacity
+                   :on-change #(do (reset! active-opacity (u/input-int-value %))
+                                   (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
+         [panel-dropdown "Base Map" "Underlying map source." @*base-map c/base-map-options false select-base-map!]
+         [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
+          [:div {:style {:display "flex"}}
+           [:input {:style {:margin ".25rem .5rem 0 0"}
+                    :type "checkbox"
+                    :on-click #(do (swap! show-hillshade? not)
+                                   (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
+           [:label "Hill shade overlay"]]]]]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars
@@ -203,35 +214,37 @@
 (defn $tool-bar []
   {:display        "flex"
    :flex-direction "column"
-   :right          "16px"
-   :transition     "all 200ms ease-in"})
+   :right          "16px"})
 
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
-(defn tool-bar [show-info? show-measure? set-show-info!]
+(defn tool-bar [show-info? show-measure? set-show-info! mobile?]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
-   (map-indexed (fn [i [icon hover-text on-click]]
-                  ^{:key i} [tool-tip-wrapper
-                             hover-text
-                             :right
-                             [tool-button icon on-click]])
-                [[:layers
-                  (str (hs-str @show-panel?) " layer selection")
-                  #(swap! show-panel? not)]
-                 [:info
-                  (str (hs-str @show-info?) " point information")
-                  #(do (set-show-info! (not @show-info?))
-                       (reset! show-measure? false))]
-                 [:measure
-                  (str (hs-str @show-measure?) " measure tool")
-                  #(do (swap! show-measure? not)
-                       (set-show-info! false))]
-                 [:legend
-                  (str (hs-str @show-legend?) " legend")
-                  #(swap! show-legend? not)]])])
+   (->> [[:layers
+          (str (hs-str @show-panel?) " layer selection")
+          #(swap! show-panel? not)]
+         (when-not mobile?
+           [:info
+            (str (hs-str @show-info?) " point information")
+            #(do (set-show-info! (not @show-info?))
+                 (reset! show-measure? false))])
+         (when-not mobile?
+           [:measure
+            (str (hs-str @show-measure?) " measure tool")
+            #(do (swap! show-measure? not)
+                 (set-show-info! false))])
+         [:legend
+          (str (hs-str @show-legend?) " legend")
+          #(swap! show-legend? not)]]
+        (remove nil?)
+        (map-indexed (fn [i [icon hover-text on-click]]
+                       ^{:key i} [tool-tip-wrapper
+                                  hover-text
+                                  :right
+                                  [tool-button icon on-click]])))])
 
-(defn zoom-bar [get-current-layer-extent]
+(defn zoom-bar [get-current-layer-extent mobile?]
   (r/with-let [minZoom      (r/atom 0)
                maxZoom      (r/atom 28)
                *zoom        (r/atom 10)
@@ -245,7 +258,7 @@
       (reset! minZoom min)
       (reset! maxZoom max))
     (ol/add-map-zoom-end! #(reset! *zoom %))
-    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom "36px"})}
+    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if mobile? "90px" "36px")})}
      (map-indexed (fn [i [icon hover-text on-click]]
                     ^{:key i} [tool-tip-wrapper
                                hover-text
@@ -254,9 +267,10 @@
                   [[:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
-                   [:center-on-point
-                    "Center on selected point"
-                    #(ol/center-on-overlay!)] ; TODO move this action the the information panel
+                   ;; TODO move this action the the information panel
+                   ;;  [:center-on-point
+                   ;;   "Center on selected point"
+                   ;;   #(ol/center-on-overlay!)]
                    [:extent
                     "Zoom to fit layer"
                     #(ol/zoom-to-extent! (get-current-layer-extent))]

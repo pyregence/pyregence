@@ -21,6 +21,7 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce mobile?           (r/atom false))
 (defonce legend-list       (r/atom []))
 (defonce last-clicked-info (r/atom []))
 (defonce show-utc?         (r/atom true))
@@ -45,7 +46,7 @@
   (reset! processed-params (get-forecast-opt :params))
   (reset! *params (u/mapm (fn [[k v]]
                             [k (or (:default-option v)
-                                 (ffirst (:options v)))])
+                                   (ffirst (:options v)))])
                           @processed-params)))
 
 (defn process-model-times! [model-times]
@@ -254,15 +255,15 @@
 (defn $app-header []
   {:align-items     "center"
    :display         "flex"
-   :height          "2.5rem"
    :justify-content "center"
    :position        "relative"
    :width           "100%"})
 
 (defn $forecast-label [selected?]
   (merge
-   {:cursor "pointer"
-    :margin "0 1rem 0 1rem"}
+   {:cursor  "pointer"
+    :margin  "0 1rem 0 1rem"
+    :padding ".25rem 0"}
    (when selected? {:color "white"})))
 
 (defn $control-layer []
@@ -270,20 +271,20 @@
    :position "absolute"
    :width    "100%"})
 
-(defn $message-modal []
+(defn $message-modal [mobile?]
   {:background-color "white"
    :border-radius    "3px"
    :display          "flex"
    :flex-direction   "column"
-   :margin           "8rem auto"
+   :margin           (if mobile? ".25rem" "8rem auto")
    :overflow         "hidden"
-   :max-height       "50%"
-   :width            "25rem"})
+   :max-height       (if mobile? "calc(100% - .5rem)" "50%")
+   :width            (if mobile? "unset" "25rem")})
 
 (def ol-scale-line
   {:background-color ($/color-picker :bg-color)
    :border           (str "1px solid " ($/color-picker :border-color))
-   :bottom           "36px"
+   :bottom           (if @mobile? "90px" "36px")
    :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
    :left             "auto"
    :height           "28px"
@@ -318,7 +319,7 @@
       :render
       (fn []
         [:div {:style ($control-layer)}
-         [mc/collapsible-panel @*params select-param! @processed-params]
+         [mc/collapsible-panel @*params select-param! @processed-params @mobile?]
          (when (and @show-info? (aget @my-box "height"))
            [mc/information-tool
             @my-box
@@ -332,15 +333,16 @@
          (when (and @show-measure? (aget @my-box "height"))
            [mc/measure-tool @my-box #(reset! show-measure? false)])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?)]
-         [mc/zoom-bar get-current-layer-extent]
-         [mc/tool-bar show-info? show-measure? set-show-info!]
+         [mc/tool-bar show-info? show-measure? set-show-info! @mobile?]
+         [mc/zoom-bar get-current-layer-extent @mobile?]
          [mc/time-slider
           param-layers
           *layer-idx
           (get-current-layer-full-time)
           select-layer!
           show-utc?
-          select-time-zone!]])})))
+          select-time-zone!
+          @mobile?]])})))
 
 (defn pop-up []
   [:div#pin {:style ($/fixed-size "2rem")}
@@ -366,8 +368,8 @@
 (defn message-modal []
   (r/with-let [show-me? (r/atom (not (str/includes? (-> js/window .-location .-origin) "local")))]
     (when @show-me?
-      [:div#message-modal {:style ($/modal "absolute")}
-       [:div {:style ($message-modal)}
+      [:div#message-modal {:style ($/modal)}
+       [:div {:style ($message-modal @mobile?)}
         [:div {:class "bg-yellow"
                :style {:width "100%"}}
          [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
@@ -375,7 +377,7 @@
         [:span {:style {:padding ".5rem" :overflow "auto"}}
          [:label {:style {:margin-bottom ".5rem"}}
           "This site is currently a work in progress and is in a Beta testing phase.
-           It provides access to an experimental fire spread forecast tools. Use at your own risk."]
+           It provides access to an experimental fire spread forecast tool. Use at your own risk."]
          [:label
           "Your use of this web site is undertaken at your sole risk.
            This site is available on an “as is” and “as available” basis without warranty of any kind.
@@ -398,14 +400,28 @@
            "Accept"]]]]])))
 
 (defn loading-modal []
-  [:div#message-modal {:style ($/modal "absolute")}
-   [:div {:style ($message-modal)}
+  [:div#message-modal {:style ($/modal)}
+   [:div {:style ($message-modal false)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
+
+(defn forecast-selectors []
+  [:span {:style {:display "flex"}}
+   (doall (map (fn [[key {:keys [opt-label hover-text]}]]
+                 ^{:key key}
+                 [tool-tip-wrapper
+                  hover-text
+                  :top
+                  [:label {:style ($forecast-label (= @*forecast key))
+                           :on-click #(select-forecast! key)}
+                   opt-label]])
+               @capabilities))])
 
 (defn root-component [{:keys [user-id]}]
   (r/create-class
    {:component-did-mount
-    (fn [_]
+    (fn [this]
+      (-> (js/ResizeObserver. #(reset! mobile? (> 700.0 (.-innerWidth js/window))))
+          (.observe (rd/dom-node this)))
       (process-toast-messages!)
       (init-map! user-id))
 
@@ -417,30 +433,22 @@
        [message-modal]
        [:div {:class "bg-yellow"
               :style ($app-header)}
-        [theme-select]
-        [:span {:style {:display "flex"}}
-         (doall (map (fn [[key {:keys [opt-label hover-text]}]]
-                       ^{:key key}
-                       [tool-tip-wrapper
-                        hover-text
-                        :top
-                        [:label {:style ($forecast-label (= @*forecast key))
-                                 :on-click #(select-forecast! key)}
-                         opt-label]])
-                     @capabilities))]
-        (if user-id
-          [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-           [:label {:style {:margin-right "1rem" :cursor "pointer"}
-                    :on-click (fn []
-                                (go (<! (u/call-clj-async! "log-out"))
-                                    (-> js/window .-location .reload)))}
-            "Log Out"]]
-          [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
+        (when-not @mobile? [theme-select])
+        [forecast-selectors @*forecast]
+        (when-not @mobile?
+          (if user-id
+            [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
+             [:label {:style {:margin-right "1rem" :cursor "pointer"}
+                      :on-click (fn []
+                                  (go (<! (u/call-clj-async! "log-out"))
+                                      (-> js/window .-location .reload)))}
+              "Log Out"]]
+            [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
            ;; TODO, this is commented out until we are ready for users to create an account
            ;;  [:label {:style {:margin-right "1rem" :cursor "pointer"}
            ;;           :on-click #(u/jump-to-url! "/register")} "Register"]
-           [:label {:style {:cursor "pointer"}
-                    :on-click #(u/jump-to-url! "/login")} "Log In"]])]
+             [:label {:style {:cursor "pointer"}
+                      :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when @ol/the-map [control-layer])
         [map-layer]
