@@ -202,7 +202,7 @@
                  (subs date-str 6 8) "T"
                  (subs date-str 9 11) ":"
                  (if (= 2 (count minutes)) minutes "00")
-                 ":00.000z"))))
+                 ":00.000Z"))))
 
 (defn time-zone-iso-date [date-str show-utc?]
   (let [js-date (js-date-from-string date-str)]
