@@ -372,17 +372,21 @@
                :style {:width "100%"}}
          [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
           "Disclaimer"]]
-         [:label {:style {:padding ".5rem" :overflow "auto"}}
+        [:span {:style {:padding ".5rem" :overflow "auto"}}
+         [:label {:style {:margin-bottom ".5rem"}}
+          "This site is currently a work in progress and is in a Beta testing phase.
+           It provides access to an experimental fire spread forecast tools. Use at your own risk."]
+         [:label
           "Your use of this web site is undertaken at your sole risk.
-          This site is available on an “as is” and “as available” basis without warranty of any kind.
-          We do not warrant that this site will (i) be uninterrupted or error-free; or (ii) result in any desired outcome.
-          We are not responsible for the availability or content of other services, data or public information
-          that may be used by or linked to this site. To the fullest extent permitted by law, the Pyregence Consortium,
-          and each and every individual, entity and collaborator therein, hereby disclaims (for itself, its affiliates,
-          subcontractors, and licensors) all representations and warranties, whether express or implied, oral or written,
-          with respect to this site, including without limitation, all implied warranties of title, non-infringement,
-          quiet enjoyment, accuracy, integration, merchantability or fitness for any particular purpose,
-          and all warranties arising from any course of dealing, course of performance, or usage of trade."]
+           This site is available on an “as is” and “as available” basis without warranty of any kind.
+           We do not warrant that this site will (i) be uninterrupted or error-free; or (ii) result in any desired outcome.
+           We are not responsible for the availability or content of other services, data or public information
+           that may be used by or linked to this site. To the fullest extent permitted by law, the Pyregence Consortium,
+           and each and every individual, entity and collaborator therein, hereby disclaims (for itself, its affiliates,
+           subcontractors, and licensors) all representations and warranties, whether express or implied, oral or written,
+           with respect to this site, including without limitation, all implied warranties of title, non-infringement,
+           quiet enjoyment, accuracy, integration, merchantability or fitness for any particular purpose,
+           and all warranties arising from any course of dealing, course of performance, or usage of trade."]]
         [:div {:style ($/combine $/flex-row {:justify-content "flex-end"})}
          [:span
           [:label {:class "btn border-yellow text-brown"
