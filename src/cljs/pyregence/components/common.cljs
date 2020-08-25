@@ -98,7 +98,7 @@
                  :on-click on-click}]
         (when footer (footer))]]]]]))
 
-(defn $arrow [arrow-x arrow-y arrow-position]
+(defn $arrow [arrow-x arrow-y arrow-position show?]
   {:background-color ($/color-picker :font-color)
    :border-top       (when (#{:top :right} arrow-position)    (str "1.5px solid " ($/color-picker :bg-color)))
    :border-right     (when (#{:bottom :right} arrow-position) (str "1.5px solid " ($/color-picker :bg-color)))
@@ -107,31 +107,40 @@
    :content          "close-quote"
    :height           "16px"
    :left             arrow-x
+   :opacity          (if show? 1.0 0.0)
    :position         "fixed"
    :top              arrow-y
    :transform        "rotate(45deg)"
+   :transition       "opacity 300ms"
    :width            "16px"
    :z-index          201})
 
-(defn $tool-tip [tip-x tip-y arrow-position]
+(defn $tool-tip [tip-x tip-y arrow-position show?]
+  (println show?)
   {:background-color ($/color-picker :font-color)
    :border           (str "1.5px solid " ($/color-picker :bg-color))
    :border-radius    "6px"
    :color            ($/color-picker :bg-color)
    :left             tip-x
+   :opacity          (if show? 1.0 0.0)
    :top              tip-y
+   :transition       "opacity 300ms ease-in"
    :position         "fixed"
+   :pointer-events   "none"
    :padding          ".5rem"
    :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
    :z-index          200})
 
-(defn sibling-wrapper [sibling sibling-ref]
+(defn sibling-wrapper [sibling sibling-ref show?]
   (r/create-class
    {:component-did-mount
     (fn [this] (reset! sibling-ref (rd/dom-node this)))
 
     :reagent-render
-    (fn [sibling _] sibling)}))
+    (fn [sibling _ show?]
+      [:div {:on-mouse-over  #(reset! show? true)
+             :on-mouse-leave #(reset! show? false)}
+       sibling])}))
 
 (defn interpose-react [tag items]
   [:<> (doall
@@ -146,23 +155,25 @@
                 (str/split text #"\n"))]
     (interpose-react [:br] items)))
 
-(defn tool-tip [tool-box tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position]
+(defn tool-tip [tool-ref tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position show?]
   (r/create-class
    {:component-did-mount
-    (fn [this] (reset! tool-box (.getBoundingClientRect (rd/dom-node this))))
+    (fn [this] (reset! tool-ref (rd/dom-node this)))
 
     :reagent-render
-    (fn [_ tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position]
-      [:div {:style ($tool-tip tip-x tip-y arrow-position)}
-       [:div {:style ($arrow arrow-x arrow-y arrow-position)}]
-       [:div {:style {:position "relative" :width "fit-content" :z-index 2002}}
+    (fn [_ tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position show?]
+      [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
+       [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
+       [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
         [show-line-break tool-tip-text]]])}))
 
-(defn calc-tool-position [sibling-ref tool-box arrow-position show?]
-  (if show?
+(defn calc-tool-position [sibling-ref tool-ref arrow-position]
+  (if tool-ref
     (let [sibling-box (.getBoundingClientRect sibling-ref)
-          tool-width  (or (aget @tool-box "width") 100)
-          tool-height (or (aget @tool-box "height") 100)
+          tool-box    (.getBoundingClientRect tool-ref)
+          tool-width  (aget tool-box "width")
+          _ (println tool-width)
+          tool-height (aget tool-box "height")
           max-x       (- (.-innerWidth js/window) tool-width 6)
           max-y       (- (.-innerHeight js/window) tool-height 6)
           [arrow-x tip-x] (condp #(%1 %2) arrow-position
@@ -188,16 +199,16 @@
                             (let [sibling-y (aget sibling-box "y")]
                               [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
       [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y])
-    [-1000 -1000 -1000 -1000]))
+    [-10000 -10000 -10000 -10000]))
 
 ;; TODO abstract this to take content for things like a dropdown log in.
 (defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
   (r/with-let [show?       (r/atom false)
-               tool-box    (r/atom #js {})
+               tool-ref    (r/atom nil)
                sibling-ref (r/atom nil)]
-    [:div {:on-mouse-over  #(reset! show? true)
-           :on-mouse-leave #(reset! show? false)}
-     [sibling-wrapper sibling sibling-ref]
+    [:<>
+     [sibling-wrapper sibling sibling-ref show?]
      (when @sibling-ref
-       (let [[tip-x tip-y arrow-x arrow-y] (calc-tool-position @sibling-ref tool-box arrow-position @show?)]
-         [tool-tip tool-box tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position]))]))
+       (let [[tip-x tip-y arrow-x arrow-y] (calc-tool-position @sibling-ref @tool-ref arrow-position)]
+         (println [tip-x tip-y arrow-x arrow-y])
+         [tool-tip tool-ref tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position @show?]))]))
