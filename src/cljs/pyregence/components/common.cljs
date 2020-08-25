@@ -111,12 +111,11 @@
    :position         "fixed"
    :top              arrow-y
    :transform        "rotate(45deg)"
-   :transition       "opacity 300ms"
+   :transition       "opacity 300ms ease-in"
    :width            "16px"
    :z-index          201})
 
 (defn $tool-tip [tip-x tip-y arrow-position show?]
-  (println show?)
   {:background-color ($/color-picker :font-color)
    :border           (str "1.5px solid " ($/color-picker :bg-color))
    :border-radius    "6px"
@@ -155,60 +154,64 @@
                 (str/split text #"\n"))]
     (interpose-react [:br] items)))
 
-(defn tool-tip [tool-ref tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position show?]
-  (r/create-class
+(defn calc-tool-position [sibling-ref tool-ref arrow-position]
+  (let [sibling-box (.getBoundingClientRect sibling-ref)
+        tool-box    (.getBoundingClientRect tool-ref)
+        tool-width  (aget tool-box "width")
+        tool-height (aget tool-box "height")
+        max-x       (- (.-innerWidth js/window) tool-width 6)
+        max-y       (- (.-innerHeight js/window) tool-height 6)
+        [arrow-x tip-x] (condp #(%1 %2) arrow-position
+                          #{:top :bottom}
+                          (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
+                            [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
+
+                          #{:left}
+                          (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
+                            [(+ sibling-x 4.7) (+ sibling-x 13)])
+
+                          (let [sibling-x (aget sibling-box "x")]
+                            [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
+        [arrow-y tip-y] (condp #(%1 %2) arrow-position
+                          #{:left :right}
+                          (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
+                            [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
+
+                          #{:top}
+                          (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
+                            [(+ sibling-y 4.7) (+ sibling-y 13)])
+
+                          (let [sibling-y (aget sibling-box "y")]
+                            [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
+    [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y]))
+
+(defn tool-tip [tool-tip-text sibling-ref arrow-position show?]
+  (let [tool-ref (r/atom nil)
+        position (r/atom [-1000 -1000 -1000 -1000])]
+   (r/create-class
    {:component-did-mount
-    (fn [this] (reset! tool-ref (rd/dom-node this)))
+    (fn [this]
+      (reset! tool-ref (rd/dom-node this))
+      (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position)))
+
+    :component-did-update
+    (fn [_ [prev-tool-tip-text & _]]
+      (when-not (= tool-tip-text prev-tool-tip-text)
+        (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position))))
 
     :reagent-render
-    (fn [_ tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position show?]
-      [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
-       [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
-       [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
-        [show-line-break tool-tip-text]]])}))
-
-(defn calc-tool-position [sibling-ref tool-ref arrow-position]
-  (if tool-ref
-    (let [sibling-box (.getBoundingClientRect sibling-ref)
-          tool-box    (.getBoundingClientRect tool-ref)
-          tool-width  (aget tool-box "width")
-          _ (println tool-width)
-          tool-height (aget tool-box "height")
-          max-x       (- (.-innerWidth js/window) tool-width 6)
-          max-y       (- (.-innerHeight js/window) tool-height 6)
-          [arrow-x tip-x] (condp #(%1 %2) arrow-position
-                            #{:top :bottom}
-                            (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
-                              [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
-
-                            #{:left}
-                            (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
-                              [(+ sibling-x 4.7) (+ sibling-x 13)])
-
-                            (let [sibling-x (aget sibling-box "x")]
-                              [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
-          [arrow-y tip-y] (condp #(%1 %2) arrow-position
-                            #{:left :right}
-                            (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
-                              [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
-
-                            #{:top}
-                            (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
-                              [(+ sibling-y 4.7) (+ sibling-y 13)])
-
-                            (let [sibling-y (aget sibling-box "y")]
-                              [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
-      [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y])
-    [-10000 -10000 -10000 -10000]))
+    (fn [tool-tip-text _ arrow-position show?]
+      (let [[tip-x tip-y arrow-x arrow-y] @position]
+        [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
+         [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
+         [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
+          [show-line-break tool-tip-text]]]))})))
 
 ;; TODO abstract this to take content for things like a dropdown log in.
 (defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
   (r/with-let [show?       (r/atom false)
-               tool-ref    (r/atom nil)
                sibling-ref (r/atom nil)]
     [:<>
      [sibling-wrapper sibling sibling-ref show?]
      (when @sibling-ref
-       (let [[tip-x tip-y arrow-x arrow-y] (calc-tool-position @sibling-ref @tool-ref arrow-position)]
-         (println [tip-x tip-y arrow-x arrow-y])
-         [tool-tip tool-ref tool-tip-text tip-x tip-y arrow-x arrow-y arrow-position @show?]))]))
+       [tool-tip tool-tip-text @sibling-ref arrow-position @show?])]))
