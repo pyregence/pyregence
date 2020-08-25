@@ -42,12 +42,22 @@
                  :filter      "fire-spread-forecast"
                  :block-info? true
                  :hover-text  "3-day forecasts of active fires with burning areas established from satellite-based heat detection."
-                 :params      {:fire-name  {:opt-label  "Fire Name"
-                                            :auto-zoom? true
-                                            :sort?      true
-                                            :hover-text "Fire name as listed in the CALFIRE incident report.\n
-                                                         Options prefixed with * are overviews provided by CALFIRE and NIFC."
-                                            :options    {:loading {:opt-label "Loading..."}}}
+                 :params      {:fire-name  {:opt-label      "Fire Name"
+                                            :auto-zoom?     true
+                                            :sort?          true
+                                            :hover-text     "Fire name as listed in the CALFIRE incident report.\n
+                                                             Options prefixed with * are overviews provided by CALFIRE and NIFC."
+                                            :underlays      {:nifs-perimeters   {:opt-label  "NIFS Perimeters"
+                                                                                 :filter-set #{"fire-detections" "nifs-perimeters"}}
+                                                             :viirs-hotspots    {:opt-label  "VIIRS Hotspots"
+                                                                                 :filter-set #{"fire-detections" "viirs-timestamped"}}
+                                                             :modis-hotspots    {:opt-label  "MODIS Hotspots"
+                                                                                 :filter-set #{"fire-detections" "modis-timestamped"}}}
+                                            :default-option :calfire-incidents
+                                            :options        {:calfire-incidents {:opt-label  "*CALFIRE Incidents"
+                                                                                 :filter-set #{"fire-detections" "calfire-incidents"}}
+                                                             :nifc-large-fires  {:opt-label  "*NIFC Large Fires"
+                                                                                 :filter-set #{"fire-detections" "nifc-large-fires"}}}}
                                :output     {:opt-label  "Output"
                                             :hover-text "Burned Area - Area burned by fire. Colors represent how long before the time shown in the time slider that an area burned."
                                             :options    {:burned {:opt-label "Burned area"

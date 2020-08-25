@@ -64,24 +64,15 @@
                  [(keyword fire-name)
                   {:opt-label (fire-name-capitalization fire-name)
                    :filter    fire-name}]))
-       (apply array-map)
-       (merge
-        {:calfire-incidents {:opt-label  "*CALFIRE Incidents"
-                             :filter-set #{"fire-detections" "calfire-incidents"}}
-         :nifc-large-fires  {:opt-label  "*NIFC Large Fires"
-                             :filter-set #{"fire-detections" "nifc-large-fires"}}})))
+       (apply array-map)))
 
 (defn process-capabilities! []
-  (let [fire-names (get-fire-names)
-        cal-fire   (some (fn [[k {:keys [filter]}]]
-                           (when (str/starts-with? (or filter "") "ca") filter))
-                         fire-names)]
+  (let [fire-names (get-fire-names)]
     (reset! capabilities
-            (cond-> forecast-options
-              cal-fire (assoc-in [:active-fire :params :fire-name :default-option]
-                                 :calfire-incidents)
-              :always  (assoc-in [:active-fire :params :fire-name :options]
-                                 fire-names)))))
+            (update-in forecast-options
+                       [:active-fire :params :fire-name :options]
+                       merge
+                       fire-names))))
 ;;; Layers
 
 (defn split-risk-layer-name [name-string]
@@ -113,13 +104,15 @@
      :hour        0}))
 
 (defn split-fire-detections [name-string]
-  (let [workspace (first (str/split name-string #":"))
-        [forecast source] (str/split workspace #"_")]
+  (let [[workspace layer]   (str/split name-string #":")
+        [forecast type]     (str/split workspace #"_")
+        [filter model-init] (str/split layer #"_")]
     {:workspace   workspace
      :layer-group ""
      :forecast    forecast
-     :source      source
-     :filter-set  #{forecast source}
+     :type        type
+     :filter-set  #{forecast filter}
+     :model-init  model-init
      :hour        0}))
 
 (defn process-layers! []
@@ -209,3 +202,11 @@
                                          available)
                         :model-times (seq model-times)}))
                    {:type :transit})))
+
+(defn get-layer-name [selected-set-str]
+  (let [selected-set (edn/read-string selected-set-str)]
+    (data-response (->> @layers
+                        (filter (fn [layer] (= (:filter-set layer) selected-set)))
+                        (sort #(compare (:model-init %2) (:model-init %1)))
+                        (first)
+                        (:layer)))))

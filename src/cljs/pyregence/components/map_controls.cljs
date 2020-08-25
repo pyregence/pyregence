@@ -2,6 +2,8 @@
   (:require [reagent.core :as r]
             [reagent.dom  :as rd]
             [herb.core :refer [<class]]
+            [clojure.edn :as edn]
+            [clojure.core.async :refer [go <!]]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
@@ -159,10 +161,27 @@
            [:option {:key key :value key} opt-label])
          options)]])
 
+(defn optional-layer [opt-label filter-set]
+  (let [show-layer? (r/atom false)
+        layer-name  (r/atom "")]
+    (go
+      (reset! layer-name (edn/read-string (:message (<! (u/call-clj-async! "get-layer-name"
+                                                                           (pr-str filter-set)))))))
+    (fn []
+      [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
+       [:div {:style {:display "flex"}}
+        [:input {:style {:margin ".25rem .5rem 0 0"}
+                 :type "checkbox"
+                 :on-click #(do (swap! show-layer? not)
+                                (if @show-layer?
+                                  (ol/create-wms-layer! @layer-name @layer-name)
+                                  (ol/set-visible-by-title! @layer-name false)))}]
+        [:label opt-label]]])))
+
 (defn collapsible-panel [*params select-param! param-options]
   (r/with-let [active-opacity   (r/atom 100.0)
                show-hillshade?  (r/atom false)
-               *base-map        (r/atom :mb-topo)
+               *base-map        (r/atom :mapbox-topo)
                select-base-map! (fn [id]
                                   (reset! *base-map id)
                                   (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
@@ -171,15 +190,21 @@
      [:div {:style {:overflow "auto"}}
       [:div#layer-selection {:style {:padding "1rem"}}
        [:label {:style ($layer-selection)} "Layer Selection"]
-       (map (fn [[key {:keys [opt-label hover-text options sort?]}]]
+       (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
               (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                ^{:key hover-text} [panel-dropdown
-                                    opt-label
-                                    hover-text
-                                    (*params key)
-                                    sorted-options
-                                    (= 1 (count sorted-options))
-                                    #(select-param! key %)]))
+                ^{:key hover-text}
+                [:<>
+                 [panel-dropdown
+                  opt-label
+                  hover-text
+                  (*params key)
+                  sorted-options
+                  (= 1 (count sorted-options))
+                  #(select-param! key %)]
+                 (when underlays
+                   (map (fn [[key {:keys [opt-label filter-set]}]]
+                          ^{:key key} [optional-layer opt-label filter-set])
+                        underlays))]))
             param-options)
        [:div {:style {:margin-top ".5rem"}}
         [:label (str "Opacity: " @active-opacity)]

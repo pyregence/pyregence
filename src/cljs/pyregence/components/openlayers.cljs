@@ -47,16 +47,16 @@
                                                     :operation (fn [pixel] (if (< 0 (aget pixel 0 3))
                                                                              #js [0 0 0 (- 255 (aget pixel 0 0))]
                                                                              #js [0 0 0 0]))})})
-
                                (TileLayer.
                                 #js {:title   "active"
                                      :visible false
+                                     :zIndex 5
                                      :source  nil})]
                 :controls #js [(ScaleLine. #js {:units "us"}) (Attribution.)]
                 :view     (View.
                            #js {:projection "EPSG:3857"
                                 :center     (fromLonLat #js [-119.509444 37.229722] "EPSG:3857")
-                                :minZoom    5.5
+                                :minZoom    3.5
                                 :maxZoom    18
                                 :zoom       6.4})
                 :overlays #js [(Overlay.
@@ -141,6 +141,19 @@
 (defn set-base-map-source! [source]
   (-> (get-layer-by-title "basemap")
       (.setSource source)))
+
+(defn create-wms-layer! [ol-layer geo-layer]
+  (if-let [layer (get-layer-by-title ol-layer)]
+    (.setVisible layer true)
+    (-> @the-map
+        (.addLayer (TileLayer.
+                    #js {:title   ol-layer
+                         :zIndex 1
+                         :source  (TileWMS.
+                                   #js {:url         c/wms-url
+                                        :params      #js {"LAYERS" geo-layer}
+                                        :crossOrigin "anonymous"
+                                        :serverType  "geoserver"})})))))
 
 (defn swap-active-layer! [geo-layer]
   (when-let [source (.getSource (get-layer-by-title "active"))]

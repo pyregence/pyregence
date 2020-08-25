@@ -18,6 +18,7 @@
                                               verify-user-email]]
             [pyregence.capabilities :refer [get-capabilities
                                             get-layers
+                                            get-layer-name
                                             set-capabilities!
                                             remove-workspace!]]
             [pyregence.email :refer [send-email]]
@@ -28,6 +29,7 @@
                "add-new-user"         add-new-user
                "get-capabilities"     get-capabilities
                "get-layers"           get-layers
+               "get-layer-name"       get-layer-name
                "get-org-list"         get-org-list
                "get-org-users-list"   get-org-users-list
                "get-user-info"        get-user-info
