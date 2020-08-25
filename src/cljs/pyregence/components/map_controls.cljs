@@ -167,7 +167,7 @@
     (go
       (reset! layer-name (edn/read-string (:message (<! (u/call-clj-async! "get-layer-name"
                                                                            (pr-str filter-set)))))))
-    (fn []
+    (fn [opt-label _]
       [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
        [:div {:style {:display "flex"}}
         [:input {:style {:margin ".25rem .5rem 0 0"}

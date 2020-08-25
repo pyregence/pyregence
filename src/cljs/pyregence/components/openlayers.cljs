@@ -50,7 +50,7 @@
                                (TileLayer.
                                 #js {:title   "active"
                                      :visible false
-                                     :zIndex 5
+                                     :zIndex  5
                                      :source  nil})]
                 :controls #js [(ScaleLine. #js {:units "us"}) (Attribution.)]
                 :view     (View.
@@ -147,13 +147,13 @@
     (.setVisible layer true)
     (-> @the-map
         (.addLayer (TileLayer.
-                    #js {:title   ol-layer
+                    #js {:title  ol-layer
                          :zIndex 1
-                         :source  (TileWMS.
-                                   #js {:url         c/wms-url
-                                        :params      #js {"LAYERS" geo-layer}
-                                        :crossOrigin "anonymous"
-                                        :serverType  "geoserver"})})))))
+                         :source (TileWMS.
+                                  #js {:url         c/wms-url
+                                       :params      #js {"LAYERS" geo-layer}
+                                       :crossOrigin "anonymous"
+                                       :serverType  "geoserver"})})))))
 
 (defn swap-active-layer! [geo-layer]
   (when-let [source (.getSource (get-layer-by-title "active"))]
