@@ -106,12 +106,12 @@
 (defn split-fire-detections [name-string]
   (let [[workspace layer]   (str/split name-string #":")
         [forecast type]     (str/split workspace #"_")
-        [filter model-init] (str/split layer #"_")]
+        [filter model-init] (str/split layer #"_(?=\d{8}_)")]
     {:workspace   workspace
      :layer-group ""
      :forecast    forecast
      :type        type
-     :filter-set  #{forecast filter}
+     :filter-set  #{forecast filter model-init}
      :model-init  model-init
      :hour        0}))
 
@@ -206,7 +206,7 @@
 (defn get-layer-name [selected-set-str]
   (let [selected-set (edn/read-string selected-set-str)]
     (data-response (->> @layers
-                        (filter (fn [layer] (= (:filter-set layer) selected-set)))
+                        (filter (fn [layer] (set/subset? selected-set (:filter-set layer))))
                         (sort #(compare (:model-init %2) (:model-init %1)))
                         (first)
                         (:layer)))))
