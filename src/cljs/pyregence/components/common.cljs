@@ -125,21 +125,10 @@
    :top              tip-y
    :transition       "opacity 300ms ease-in"
    :position         "fixed"
-   :pointer-events   "none"
+   :pointer-events   (if show? "auto" "none")
    :padding          ".5rem"
    :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
    :z-index          200})
-
-(defn sibling-wrapper [sibling sibling-ref show?]
-  (r/create-class
-   {:component-did-mount
-    (fn [this] (reset! sibling-ref (rd/dom-node this)))
-
-    :reagent-render
-    (fn [sibling _ show?]
-      [:div {:on-mouse-over  #(reset! show? true)
-             :on-mouse-leave #(reset! show? false)}
-       sibling])}))
 
 (defn interpose-react [tag items]
   [:<> (doall
@@ -179,7 +168,7 @@
 
                           #{:top}
                           (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
-                            [(+ sibling-y 4.7) (+ sibling-y 13)])
+                            [(+ sibling-y 3) (+ sibling-y 11)])
 
                           (let [sibling-y (aget sibling-box "y")]
                             [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
@@ -207,11 +196,20 @@
          [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
           [show-line-break tool-tip-text]]]))})))
 
+(defn sibling-wrapper [sibling sibling-ref]
+  (r/create-class
+   {:component-did-mount
+    (fn [this] (reset! sibling-ref (rd/dom-node this)))
+
+    :reagent-render
+    (fn [sibling _] sibling)}))
+
 ;; TODO abstract this to take content for things like a dropdown log in.
 (defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
   (r/with-let [show?       (r/atom false)
                sibling-ref (r/atom nil)]
-    [:<>
+    [:div {:on-mouse-over  #(reset! show? true)
+           :on-mouse-leave #(reset! show? false)}
      [sibling-wrapper sibling sibling-ref show?]
      (when @sibling-ref
        [tool-tip tool-tip-text @sibling-ref arrow-position @show?])]))

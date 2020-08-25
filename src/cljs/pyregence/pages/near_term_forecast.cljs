@@ -262,8 +262,7 @@
 (defn $forecast-label [selected?]
   (merge
    {:cursor  "pointer"
-    :margin  "0 1rem 0 1rem"
-    :padding ".25rem 0"}
+    :margin  "0 1rem 0 1rem"}
    (when selected? {:color "white"})))
 
 (defn $control-layer []
@@ -405,7 +404,7 @@
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
 (defn forecast-selectors []
-  [:span {:style {:display "flex"}}
+  [:span {:style {:display "flex" :padding ".25rem 0"}}
    (doall (map (fn [[key {:keys [opt-label hover-text]}]]
                  ^{:key key}
                  [tool-tip-wrapper
