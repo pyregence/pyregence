@@ -172,29 +172,29 @@
 
                           (let [sibling-y (aget sibling-box "y")]
                             [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
-    [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y]))
+    [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y])) ; There is a 56px y offset for the header
 
 (defn tool-tip [tool-tip-text sibling-ref arrow-position show?]
   (let [tool-ref (r/atom nil)
         position (r/atom [-1000 -1000 -1000 -1000])]
    (r/create-class
-   {:component-did-mount
-    (fn [this]
-      (reset! tool-ref (rd/dom-node this))
-      (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position)))
+    {:component-did-mount
+     (fn [this]
+       (reset! tool-ref (rd/dom-node this))
+       (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position)))
 
-    :component-did-update
-    (fn [_ [prev-tool-tip-text & _]]
-      (when-not (= tool-tip-text prev-tool-tip-text)
-        (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position))))
+     :component-did-update
+     (fn [_ [prev-tool-tip-text & _]]
+       (when-not (= tool-tip-text prev-tool-tip-text)
+         (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position))))
 
-    :reagent-render
-    (fn [tool-tip-text _ arrow-position show?]
-      (let [[tip-x tip-y arrow-x arrow-y] @position]
-        [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
-         [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
-         [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
-          [show-line-break tool-tip-text]]]))})))
+     :reagent-render
+     (fn [tool-tip-text _ arrow-position show?]
+       (let [[tip-x tip-y arrow-x arrow-y] @position]
+         [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
+          [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
+          [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
+           [show-line-break tool-tip-text]]]))})))
 
 (defn sibling-wrapper [sibling sibling-ref]
   (r/create-class
@@ -210,6 +210,6 @@
                sibling-ref (r/atom nil)]
     [:div {:on-mouse-over  #(reset! show? true)
            :on-mouse-leave #(reset! show? false)}
-     [sibling-wrapper sibling sibling-ref show?]
+     [sibling-wrapper sibling sibling-ref]
      (when @sibling-ref
        [tool-tip tool-tip-text @sibling-ref arrow-position @show?])]))

@@ -294,7 +294,7 @@
                   [[:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
-                   ;; TODO move this action the the information panel
+                   ;; TODO move this action to the information panel
                    ;;  [:center-on-point
                    ;;   "Center on selected point"
                    ;;   #(ol/center-on-overlay!)]

@@ -261,8 +261,8 @@
 
 (defn $forecast-label [selected?]
   (merge
-   {:cursor  "pointer"
-    :margin  "0 1rem 0 1rem"}
+   {:cursor "pointer"
+    :margin "0 1rem 0 1rem"}
    (when selected? {:color "white"})))
 
 (defn $control-layer []
@@ -403,18 +403,6 @@
    [:div {:style ($message-modal false)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
-(defn forecast-selectors []
-  [:span {:style {:display "flex" :padding ".25rem 0"}}
-   (doall (map (fn [[key {:keys [opt-label hover-text]}]]
-                 ^{:key key}
-                 [tool-tip-wrapper
-                  hover-text
-                  :top
-                  [:label {:style ($forecast-label (= @*forecast key))
-                           :on-click #(select-forecast! key)}
-                   opt-label]])
-               @capabilities))])
-
 (defn root-component [{:keys [user-id]}]
   (r/create-class
    {:component-did-mount
@@ -433,7 +421,16 @@
        [:div {:class "bg-yellow"
               :style ($app-header)}
         (when-not @mobile? [theme-select])
-        [forecast-selectors @*forecast]
+        [:span {:style {:display "flex" :padding ".25rem 0"}}
+         (doall (map (fn [[key {:keys [opt-label hover-text]}]]
+                       ^{:key key}
+                       [tool-tip-wrapper
+                        hover-text
+                        :top
+                        [:label {:style ($forecast-label (= @*forecast key))
+                                 :on-click #(select-forecast! key)}
+                         opt-label]])
+                     @capabilities))]
         (when-not @mobile?
           (if user-id
             [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
@@ -443,9 +440,9 @@
                                       (-> js/window .-location .reload)))}
               "Log Out"]]
             [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-           ;; TODO, this is commented out until we are ready for users to create an account
-           ;;  [:label {:style {:margin-right "1rem" :cursor "pointer"}
-           ;;           :on-click #(u/jump-to-url! "/register")} "Register"]
+             ;; TODO, this is commented out until we are ready for users to create an account
+             ;;  [:label {:style {:margin-right "1rem" :cursor "pointer"}
+             ;;           :on-click #(u/jump-to-url! "/register")} "Register"]
              [:label {:style {:cursor "pointer"}
                       :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
