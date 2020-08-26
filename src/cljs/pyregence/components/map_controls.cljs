@@ -167,20 +167,20 @@
            [:option {:key key :value key} opt-label])
          options)]])
 
-(defn optional-layer [opt-label filter-set]
+(defn optional-layer [opt-label filter-set z-index]
   (let [show-layer? (r/atom false)
         layer-name  (r/atom "")]
     (go
       (reset! layer-name (edn/read-string (:message (<! (u/call-clj-async! "get-layer-name"
                                                                            (pr-str filter-set)))))))
-    (fn [opt-label _]
+    (fn [opt-label _ z-index]
       [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
        [:div {:style {:display "flex"}}
         [:input {:style {:margin ".25rem .5rem 0 0"}
                  :type "checkbox"
                  :on-click #(do (swap! show-layer? not)
                                 (if @show-layer?
-                                  (ol/create-wms-layer! @layer-name @layer-name)
+                                  (ol/create-wms-layer! @layer-name @layer-name z-index)
                                   (ol/set-visible-by-title! @layer-name false)))}]
         [:label opt-label]]])))
 
@@ -215,8 +215,8 @@
                     (= 1 (count sorted-options))
                     #(select-param! key %)]
                    (when underlays
-                     (map (fn [[key {:keys [opt-label filter-set]}]]
-                            ^{:key key} [optional-layer opt-label filter-set])
+                     (map (fn [[key {:keys [opt-label filter-set z-index]}]]
+                            ^{:key key} [optional-layer opt-label filter-set z-index])
                           underlays))]))
               param-options)
          [:div {:style {:margin-top ".5rem"}}

@@ -48,10 +48,13 @@
                                             :hover-text     "Fire name as listed in the CALFIRE incident report.\n
                                                              Options prefixed with * are overviews provided by CALFIRE and NIFC."
                                             :underlays      {:nifs-perimeters   {:opt-label  "NIFS Perimeters"
+                                                                                 :z-index    10
                                                                                  :filter-set #{"fire-detections" "nifs-perimeters"}}
                                                              :viirs-hotspots    {:opt-label  "VIIRS Hotspots"
+                                                                                 :z-index    9
                                                                                  :filter-set #{"fire-detections" "viirs-timestamped"}}
                                                              :modis-hotspots    {:opt-label  "MODIS Hotspots"
+                                                                                 :z-index    8
                                                                                  :filter-set #{"fire-detections" "modis-timestamped"}}}
                                             :default-option :calfire-incidents
                                             :options        {:calfire-incidents {:opt-label  "*CALFIRE Incidents"

@@ -50,7 +50,7 @@
                                (TileLayer.
                                 #js {:title   "active"
                                      :visible false
-                                     :zIndex  5
+                                     :zIndex  50
                                      :source  nil})]
                 :controls #js [(ScaleLine. #js {:units "us"}) (Attribution.)]
                 :view     (View.
@@ -142,13 +142,13 @@
   (-> (get-layer-by-title "basemap")
       (.setSource source)))
 
-(defn create-wms-layer! [ol-layer geo-layer]
+(defn create-wms-layer! [ol-layer geo-layer z-index]
   (if-let [layer (get-layer-by-title ol-layer)]
     (.setVisible layer true)
     (-> @the-map
         (.addLayer (TileLayer.
                     #js {:title  ol-layer
-                         :zIndex 1
+                         :zIndex z-index
                          :source (TileWMS.
                                   #js {:url         c/wms-url
                                        :params      #js {"LAYERS" geo-layer}
