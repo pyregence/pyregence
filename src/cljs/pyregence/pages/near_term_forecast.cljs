@@ -214,13 +214,10 @@
       (<! (change-type! true true (get-options-key :auto-zoom?)))))
 
 (defn set-show-info! [show?]
-  (if (get-forecast-opt :block-info?)
+  (if (and show? (get-forecast-opt :block-info?))
     (toast-message! "There is currently no point information available for this layer.")
     (do (reset! show-info? show?)
-        (if show?
-          (ol/add-popup-on-single-click! get-point-info!)
-          (do (ol/remove-popup-on-single-click!)
-              (clear-info!))))))
+        (clear-info!))))
 
 (defn select-time-zone! [utc?]
   (reset! show-utc? utc?)
@@ -321,6 +318,7 @@
          [mc/collapsible-panel @*params select-param! @processed-params @mobile?]
          (when (and @show-info? (aget @my-box "height"))
            [mc/information-tool
+            get-point-info!
             @my-box
             *layer-idx
             select-layer-by-hour!

@@ -21,7 +21,6 @@
 (def unByKey         js/ol.Observable.unByKey)
 
 (defonce the-map         (r/atom nil))
-(defonce single-click-on (atom nil))
 (defonce loading-errors? (atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -96,22 +95,21 @@
 ;; Modifying objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn add-popup-on-single-click! [call-back]
-  (reset! single-click-on
-          (.on @the-map
-               "singleclick"
-               (fn [evt]
-                 (let [map-overlay (.getOverlayById @the-map "popup")
-                       coord       (.-coordinate evt)
-                       [x y]       coord
-                       res         (-> @the-map .getView .getResolution)]
-                   (.setPosition map-overlay coord)
-                   (call-back [x y (+ x res) (+ y res)]))))))
+(defn remove-event! [evt-key]
+  (unByKey evt-key))
 
-(defn remove-popup-on-single-click! []
-  (unByKey @single-click-on))
+(defn add-single-click-popup! [call-back]
+  (.on @the-map
+       "singleclick"
+       (fn [evt]
+         (let [map-overlay (.getOverlayById @the-map "popup")
+               coord       (.-coordinate evt)
+               [x y]       coord
+               res         (-> @the-map .getView .getResolution)]
+           (.setPosition map-overlay coord)
+           (call-back [x y (+ x res) (+ y res)])))))
 
-(defn add-map-mouse-move! [call-back]
+(defn add-mouse-move-xy! [call-back]
   (.on @the-map
        "pointermove"
        (fn [evt]

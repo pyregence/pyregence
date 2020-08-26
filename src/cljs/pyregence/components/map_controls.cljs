@@ -313,8 +313,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn measure-tool [parent-box close-fn!]
-  (r/with-let [lon-lat (r/atom [0 0])]
-    (ol/add-map-mouse-move! #(reset! lon-lat %))
+  (r/with-let [lon-lat    (r/atom [0 0])
+               move-event (ol/add-mouse-move-xy! #(reset! lon-lat %))]
     [:div#measure-tool
      [resizable-window
       parent-box
@@ -327,7 +327,9 @@
          [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
           "Lat:" (u/to-precision 4 (get @lon-lat 1))]
          [:label {:style {:width "50%" :text-align "left"}}
-          "Lon:" (u/to-precision 4 (get @lon-lat 0))]])]]))
+          "Lon:" (u/to-precision 4 (get @lon-lat 0))]])]]
+    (finally
+      (ol/remove-event! move-event))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Information Tool
@@ -372,42 +374,53 @@
       last-clicked-info]
      [information-div last-clicked-info *layer-idx units info-height]]))
 
-(defn information-tool [parent-box *layer-idx select-layer! units cur-hour legend-list last-clicked-info close-fn!]
-  [:div#info-tool
-   [resizable-window
-    parent-box
-    200
-    400
-    "Point Information"
-    close-fn!
-    (fn [box-height box-width]
-      (let [has-point? (ol/get-overlay-center)]
-        (cond
-          (not has-point?)
-          [loading-cover
-           box-height
-           box-width
-           "Click on the map to see a change over time graph."]
+(defn information-tool [get-point-info!
+                        parent-box
+                        *layer-idx
+                        select-layer!
+                        units
+                        cur-hour
+                        legend-list
+                        last-clicked-info
+                        close-fn!]
+  (r/with-let [click-event (ol/add-single-click-popup! get-point-info!)]
+    [:div#info-tool
+     [resizable-window
+      parent-box
+      200
+      400
+      "Point Information"
+      close-fn!
+      (fn [box-height box-width]
+        (let [has-point? (ol/get-overlay-center)]
+          (cond
+            (not has-point?)
+            [loading-cover
+             box-height
+             box-width
+             "Click on the map to see a change over time graph."]
 
-          (nil? last-clicked-info)
-          [loading-cover box-height box-width "Loading..."]
+            (nil? last-clicked-info)
+            [loading-cover box-height box-width "Loading..."]
 
-          (seq last-clicked-info)
-          [vega-information
-           box-height
-           box-width
-           *layer-idx
-           select-layer!
-           units
-           cur-hour
-           legend-list
-           last-clicked-info]
+            (seq last-clicked-info)
+            [vega-information
+             box-height
+             box-width
+             *layer-idx
+             select-layer!
+             units
+             cur-hour
+             legend-list
+             last-clicked-info]
 
-          :else
-          [loading-cover
-           box-height
-           box-width
-           "This point does not have any information."])))]])
+            :else
+            [loading-cover
+             box-height
+             box-width
+             "This point does not have any information."])))]]
+    (finally
+      (ol/remove-event! click-event))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Legend Box
