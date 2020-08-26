@@ -177,24 +177,24 @@
 (defn tool-tip [tool-tip-text sibling-ref arrow-position show?]
   (let [tool-ref (r/atom nil)
         position (r/atom [-1000 -1000 -1000 -1000])]
-   (r/create-class
-    {:component-did-mount
-     (fn [this]
-       (reset! tool-ref (rd/dom-node this))
-       (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position)))
+    (r/create-class
+     {:component-did-mount
+      (fn [this]
+        (reset! tool-ref (rd/dom-node this))
+        (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position)))
 
-     :component-did-update
-     (fn [_ [prev-tool-tip-text & _]]
-       (when-not (= tool-tip-text prev-tool-tip-text)
-         (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position))))
+      :component-did-update
+      (fn [_ [prev-tool-tip-text & _]]
+        (when-not (= tool-tip-text prev-tool-tip-text)
+          (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position))))
 
-     :reagent-render
-     (fn [tool-tip-text _ arrow-position show?]
-       (let [[tip-x tip-y arrow-x arrow-y] @position]
-         [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
-          [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
-          [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
-           [show-line-break tool-tip-text]]]))})))
+      :reagent-render
+      (fn [tool-tip-text _ arrow-position show?]
+        (let [[tip-x tip-y arrow-x arrow-y] @position]
+          [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
+           [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
+           [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
+            [show-line-break tool-tip-text]]]))})))
 
 (defn sibling-wrapper [sibling sibling-ref]
   (r/create-class
