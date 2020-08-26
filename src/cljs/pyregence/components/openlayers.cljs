@@ -1,31 +1,76 @@
 (ns pyregence.components.openlayers
-  (:require [pyregence.config :as c]
-            [reagent.core :as r]))
+  (:require [reagent.core :as r]
+            [pyregence.config :as c]
+            [pyregence.utils  :as u]
+            [pyregence.components.messaging :refer [toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OpenLayers aliases
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def Map             js/ol.Map)
-(def View            js/ol.View)
-(def Overlay         js/ol.Overlay)
-(def Attribution     js/ol.control.Attribution)
-(def ScaleLine       js/ol.control.ScaleLine)
-(def fromLonLat      js/ol.proj.fromLonLat)
-(def toLonLat        js/ol.proj.toLonLat)
-(def ImageLayer      js/ol.layer.Image)
-(def TileLayer       js/ol.layer.Tile)
-(def TileWMS         js/ol.source.TileWMS)
-(def Raster          js/ol.source.Raster)
-(def WMSCapabilities js/ol.format.WMSCapabilities)
-(def unByKey         js/ol.Observable.unByKey)
+(def Map          js/ol.Map)
+(def View         js/ol.View)
+(def Overlay      js/ol.Overlay)
+(def Attribution  js/ol.control.Attribution)
+(def ScaleLine    js/ol.control.ScaleLine)
+(def ImageLayer   js/ol.layer.Image)
+(def TileLayer    js/ol.layer.Tile)
+(def VectorLayer  js/ol.layer.Vector)
+(def GeoJSON      js/ol.format.GeoJSON)
+(def fromLonLat   js/ol.proj.fromLonLat)
+(def toLonLat     js/ol.proj.toLonLat)
+(def TileWMS      js/ol.source.TileWMS)
+(def Raster       js/ol.source.Raster)
+(def VectorSource js/ol.source.Vector)
+(def Style        js/ol.style.Style)
+(def Stroke       js/ol.style.Stroke)
+(def Circle       js/ol.style.Circle)
+(def Fill         js/ol.style.Fill)
+(def Text         js/ol.style.Text)
+(def unByKey      js/ol.Observable.unByKey)
 
-(defonce the-map         (r/atom nil))
-(defonce loading-errors? (atom false))
+(def the-map         (r/atom nil))
+(def loading-errors? (atom false))
+(def cur-highlighted (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Creating objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO this might be more efficient as a atom thats set once on zoom
+(defn zoom-size-ratio [resolution]
+  (max 0.1 (+ 1.3 (* (- resolution 50) (- 1 1.3) (/ 1500)))))
+
+;; TODO each vector layer will have its own style
+(defn incident-style-fn [obj resolution]
+  (let [containper (.get obj "containper")
+        acres      (.get obj "acres")
+        prettyname (.get obj "prettyname")
+        highlight  (.get obj "highlight")
+        z-ratio    (zoom-size-ratio resolution)
+        font-size  (* z-ratio 14)
+        radius     (* z-ratio
+                      (min 30.0
+                           (max 5.0
+                                (* 30.0 (/ acres 100000.0)))))]
+    (Style.
+     #js {:text  (when (or highlight (< resolution 700))
+                   (Text.
+                    #js {:text    (subs prettyname 0 30)
+                         :font    (str "bold " font-size "px Avenir")
+                         :fill    (Fill. #js {:color "black"})
+                         :stroke  (Stroke. #js {:color (if highlight "yellow" "white")
+                                                :width (if highlight 6.0 3.0)})
+                         :offsetY (+ 12 radius)}))
+          :image (Circle.
+                  #js {:radius radius
+                       :stroke (Stroke.
+                                #js {:color (if highlight "yellow " "black")
+                                     :width (if highlight 4.0 2.0)})
+                       :fill   (Fill.
+                                #js {:color (u/interp-color "#FF0000"
+                                                            "#000000"
+                                                            (/ containper 100.0))})})})))
 
 (defn init-map! []
   (reset! the-map
@@ -43,14 +88,10 @@
                                                                           :params      #js {"LAYERS" "0" "TRANSPARENT" "FALSE"}
                                                                           :serverType  "geoserver"
                                                                           :crossOrigin "anonymous"})]
-                                                    :operation (fn [pixel] (if (< 0 (aget pixel 0 3))
-                                                                             #js [0 0 0 (- 255 (aget pixel 0 0))]
-                                                                             #js [0 0 0 0]))})})
-                               (TileLayer.
-                                #js {:title   "active"
-                                     :visible false
-                                     :zIndex  50
-                                     :source  nil})]
+                                                    :operation (fn [pixel]
+                                                                 (if (< 0 (aget pixel 0 3))
+                                                                   #js [0 0 0 (- 255 (aget pixel 0 0))]
+                                                                   #js [0 0 0 0]))})})]
                 :controls #js [(ScaleLine. #js {:units "us"}) (Attribution.)]
                 :view     (View.
                            #js {:projection "EPSG:3857"
@@ -91,6 +132,9 @@
       .getArray
       (.find (fn [layer] (= title (.get layer "title"))))))
 
+(defn get-feature-at-pixel [pixel]
+  (aget (.getFeaturesAtPixel @the-map pixel) 0))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modifying objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -116,6 +160,20 @@
          (call-back (-> (.-coordinate evt)
                         (toLonLat "EPSG:3857")
                         (js->clj))))))
+
+(defn add-mouse-move-feature-highlight! []
+  (.on @the-map
+       "pointermove"
+       (fn [evt]
+         (when-not (.-dragging evt)
+           (let [feature       (->> evt
+                                    (.-originalEvent)
+                                    (.getEventPixel @the-map)
+                                    (get-feature-at-pixel))]
+             (when-not (= @cur-highlighted feature)
+               (when @cur-highlighted (.set @cur-highlighted "highlight" false))
+               (when feature (.set feature "highlight" true)))
+             (reset! cur-highlighted feature))))))
 
 (defn add-map-zoom-end! [call-back]
   (.on @the-map
@@ -153,19 +211,35 @@
                                        :crossOrigin "anonymous"
                                        :serverType  "geoserver"})})))))
 
+;; TODO only WMS layers have a time slider for now. This might eventually need to accommodate Vector sources
 (defn swap-active-layer! [geo-layer]
   (when-let [source (.getSource (get-layer-by-title "active"))]
     (.updateParams source #js {"LAYERS" geo-layer})))
 
-(defn reset-active-layer! [geo-layer]
-  (-> (get-layer-by-title "active")
-      (.setSource (if geo-layer
-                    (TileWMS.
-                     #js {:url         c/wms-url
-                          :params      #js {"LAYERS" geo-layer}
-                          :crossOrigin "anonymous"
-                          :serverType  "geoserver"})
-                    nil))))
+(defn reset-active-layer! [geo-layer style-fn]
+  (when-let [active-layer (get-layer-by-title "active")]
+    (-> @the-map (.removeLayer active-layer)))
+  (when geo-layer
+    (-> @the-map
+        (.addLayer (if style-fn
+                     (VectorLayer.
+                      #js {:title       "active"
+                           :source      (VectorSource.
+                                         #js {:format (GeoJSON.)
+                                              :url    (fn [extent]
+                                                        (c/get-wfs-feature geo-layer (js->clj extent)))})
+                           :renderOrder (fn [a b]
+                                          (- (.get b "acres") (.get a "acres")))
+                           :style       incident-style-fn})
+                     (TileLayer.
+                      #js {:title   "active"
+                           :zIndex  50
+                           :source  (TileWMS.
+                                     #js {:url         c/wms-url
+                                          :params      #js {"LAYERS" geo-layer}
+                                          :crossOrigin "anonymous"
+                                          :serverType  "geoserver"})}))))
+    (add-layer-load-fail! #(toast-message! "One or more of the map tiles has failed to load."))))
 
 (defn set-opacity-by-title! [title opacity]
   (-> (get-layer-by-title title)
