@@ -16,9 +16,10 @@
                                               update-org-user-role
                                               update-user-info
                                               verify-user-email]]
-            [pyregence.capabilities :refer [get-capabilities
+            [pyregence.capabilities :refer [get-fire-names
                                             get-layers
                                             get-layer-name
+                                            get-user-layers
                                             set-capabilities!
                                             remove-workspace!]]
             [pyregence.email :refer [send-email]]
@@ -27,9 +28,10 @@
 
 (def name->fn {"add-org-user"         add-org-user
                "add-new-user"         add-new-user
-               "get-capabilities"     get-capabilities
+               "get-fire-names"       get-fire-names
                "get-layers"           get-layers
                "get-layer-name"       get-layer-name
+               "get-user-layers"      get-user-layers
                "get-org-list"         get-org-list
                "get-org-users-list"   get-org-users-list
                "get-user-info"        get-user-info

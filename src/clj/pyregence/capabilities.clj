@@ -2,28 +2,14 @@
   (:require [clojure.edn        :as edn]
             [clojure.string     :as str]
             [clojure.set        :as set]
-            [clojure.spec.alpha :as s]
             [clj-http.client    :as client]
-            [pyregence.database     :refer [call-sql]]
-            [pyregence.layer-config :refer [forecast-options]]
-            [pyregence.logging      :refer [log-str]]
-            [pyregence.views        :refer [data-response]]))
-
-;;; Spec
-
-(s/def ::opt-label    string?)
-(s/def ::filter       string?)
-(s/def ::units        string?)
-(s/def ::layer-config (s/keys :req-un [::opt-label ::filter] :opt-un [::units ::clear-point?]))
-(s/def ::layer-path   (s/and (s/coll-of keyword? :kind vector? :min-count 3)
-                             (s/cat :forecast #{:fire-risk :active-fire :fire-weather}
-                                    :params   #(= % :params)
-                                    :etc      (s/+ keyword?))))
+            [pyregence.database :refer [call-sql]]
+            [pyregence.logging  :refer [log-str]]
+            [pyregence.views    :refer [data-response]]))
 
 ;;; State
 
-(defonce capabilities (atom []))
-(defonce layers       (atom []))
+(defonce layers (atom []))
 
 ;;; Helper Functions
 
@@ -46,33 +32,6 @@
            (transient {})
            coll)))
 
-;;; Capabilities
-
-(defn fire-name-capitalization [fire-name]
-  (let [parts (str/split fire-name #"-")]
-    (str/join " "
-              (into [(str/upper-case (first parts))]
-                    (map str/capitalize (rest parts))))))
-
-(defn get-fire-names []
-  (->> @layers
-       (filter (fn [{:keys [forecast]}]
-                 (= "fire-spread-forecast" forecast)))
-       (map :fire-name)
-       (distinct)
-       (mapcat (fn [fire-name]
-                 [(keyword fire-name)
-                  {:opt-label (fire-name-capitalization fire-name)
-                   :filter    fire-name}]))
-       (apply array-map)))
-
-(defn process-capabilities! []
-  (let [fire-names (get-fire-names)]
-    (reset! capabilities
-            (update-in forecast-options
-                       [:active-fire :params :fire-name :options]
-                       merge
-                       fire-names))))
 ;;; Layers
 
 (defn split-risk-layer-name [name-string]
@@ -157,7 +116,6 @@
 (defn set-capabilities! []
   (try
     (process-layers!)
-    (process-capabilities!)
     (log-str (count @layers) " layers added to capabilities.")
     (catch Exception e
       (log-str "Failed to load capabilities."))))
@@ -166,24 +124,33 @@
   (swap! layers #(filterv (fn [{:keys [workspace]}]
                             (not= workspace workspace-name))
                           %))
-  (process-capabilities!)
   (data-response (str workspace-name " removed.")))
 
-(defn get-capabilities [user-id]
-  (when-not (seq @capabilities) (set-capabilities!))
-  (data-response (reduce (fn [acc {:keys [layer_path layer_config]}]
-                           (let [layer-path   (edn/read-string layer_path)
-                                 layer-config (edn/read-string layer_config)]
-                             (if (and (s/valid? ::layer-path   layer-path)
-                                      (s/valid? ::layer-config layer-config))
-                               (assoc-in acc layer-path layer-config)
-                               acc)))
-                         @capabilities
-                         (call-sql "get_user_layers_list" user-id))
-                 {:type :transit}))
+(defn fire-name-capitalization [fire-name]
+  (let [parts (str/split fire-name #"-")]
+    (str/join " "
+              (into [(str/upper-case (first parts))]
+                    (map str/capitalize (rest parts))))))
+
+(defn get-fire-names []
+  (->> @layers
+       (filter (fn [{:keys [forecast]}]
+                 (= "fire-spread-forecast" forecast)))
+       (map :fire-name)
+       (distinct)
+       (mapcat (fn [fire-name]
+                 [(keyword fire-name)
+                  {:opt-label (fire-name-capitalization fire-name)
+                   :filter    fire-name}]))
+       (apply array-map)))
+
+(defn get-user-layers [user-id]
+  ; TODO get user-id from session on backend
+  (data-response (call-sql "get_user_layers_list" user-id)))
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
 (defn get-layers [selected-set-str]
+  (when-not (seq @layers) (set-capabilities!))
   (let [selected-set (edn/read-string selected-set-str)
         available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer))) @layers)
         model-times  (->> available
