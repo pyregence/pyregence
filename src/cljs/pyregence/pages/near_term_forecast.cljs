@@ -209,8 +209,9 @@
 (defn change-type! [get-model-times? clear? zoom?]
   (go
     (<! (get-layers! get-model-times?))
-    (ol/reset-active-layer! (get-current-layer-name))
-    (get-legend!            (get-current-layer-name))
+    (ol/reset-active-layer! (get-current-layer-name)
+                            (get-current-layer-key :style-fn))
+    (get-legend! (get-current-layer-name))
     (if clear?
       (clear-info!)
       (get-point-info! (ol/get-overlay-bbox)))
@@ -272,11 +273,10 @@
     (let [user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names")]
       (ol/init-map!)
+      (ol/add-mouse-move-feature-highlight!)
       (process-capabilities! (edn/read-string (:message (<! fire-names-chan)))
                              (edn/read-string (:message (<! user-layers-chan))))
       (<! (select-forecast! @*forecast))
-      (ol/add-layer-load-fail! #(toast-message! "One or more of the map tiles has failed to load."))
-      (ol/set-visible-by-title! "active" true)
       (reset! loading? false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

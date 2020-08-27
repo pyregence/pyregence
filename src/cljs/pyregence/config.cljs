@@ -1,4 +1,5 @@
-(ns pyregence.config)
+(ns pyregence.config
+  (:require [clojure.string :as str]))
 
 ;; Layer options
 
@@ -58,8 +59,10 @@
                                                                                  :filter-set #{"fire-detections" "modis-timestamped"}}}
                                             :default-option :calfire-incidents
                                             :options        {:calfire-incidents {:opt-label  "*CALFIRE Incidents"
+                                                                                 :style-fn   :default
                                                                                  :filter-set #{"fire-detections" "calfire-incidents"}}
                                                              :nifc-large-fires  {:opt-label  "*NIFC Large Fires"
+                                                                                 :style-fn   :default
                                                                                  :filter-set #{"fire-detections" "nifc-large-fires"}}}}
                                :output     {:opt-label  "Output"
                                             :hover-text "Burned Area - Area burned by fire. Colors represent how long before the time shown in the time slider that an area burned."
@@ -137,9 +140,10 @@
                                               :hover-text "Start time for forecast cycle. New data is created every 12 hours."
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
 
-;; WMS options
+;; WMS and WFS options
 
 (def wms-url "https://data.pyregence.org:8443/geoserver/wms")
+(def wfs-url "https://data.pyregence.org:8443/geoserver/wfs")
 
 (defn legend-url [layer]
   (str wms-url
@@ -168,6 +172,15 @@
        "&CRS=EPSG:3857"
        "&STYLES="
        "&BBOX=" bbox))
+
+(defn get-wfs-feature [layer extent]
+  (str wfs-url
+       "?SERVICE=WFS"
+       "&REQUEST=GetFeature"
+       "&TYPENAME=" layer
+       "&OUTPUTFORMAT=application/json"
+       "&SRSNAME=EPSG:3857"
+       "&BBOX=" (str/join "," extent) ",EPSG:3857"))
 
 ;; Scroll speeds for time slider
 
