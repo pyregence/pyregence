@@ -10,25 +10,6 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn to-hex-str [num]
-  (let [hex-num (.toString (.round js/Math num) 16)]
-    (if (= 2 (count hex-num))
-      hex-num
-      (str "0" hex-num))))
-
-(defn interp-color [from to ratio]
-  (when (and from to)
-    (let [fr (js/parseInt (subs from 1 3) 16)
-          fg (js/parseInt (subs from 3 5) 16)
-          fb (js/parseInt (subs from 5 7) 16)
-          tr (js/parseInt (subs to   1 3) 16)
-          tg (js/parseInt (subs to   3 5) 16)
-          tb (js/parseInt (subs to   5 7) 16)]
-      (str "#"
-           (to-hex-str (+ fr (* ratio (- tr fr))))
-           (to-hex-str (+ fg (* ratio (- tg fg))))
-           (to-hex-str (+ fb (* ratio (- tb fb))))))))
-
 (defn create-stops [legend-list last-clicked-info]
   (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 last-clicked-info)]
     (reductions
@@ -37,7 +18,7 @@
                       {:quantity cur-q
                        :offset   (min (/ cur-q max-band) 1.0)
                        :color    (if (< last-q max-band cur-q)
-                                   (interp-color (get last :color)
+                                   (u/interp-color (get last :color)
                                                  (get cur  "color")
                                                  (/ (- max-band last-q)
                                                     (- cur-q last-q)))
