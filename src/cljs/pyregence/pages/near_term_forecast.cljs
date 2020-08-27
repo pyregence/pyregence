@@ -211,7 +211,7 @@
     (<! (get-layers! get-model-times?))
     (ol/reset-active-layer! (get-current-layer-name)
                             (get-current-layer-key :style-fn))
-    (get-legend!            (get-current-layer-name))
+    (get-legend! (get-current-layer-name))
     (if clear?
       (clear-info!)
       (get-point-info! (ol/get-overlay-bbox)))

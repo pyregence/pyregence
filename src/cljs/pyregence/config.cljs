@@ -140,7 +140,7 @@
                                               :hover-text "Start time for forecast cycle. New data is created every 12 hours."
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
 
-;; WMS options
+;; WMS and WFS options
 
 (def wms-url "https://data.pyregence.org:8443/geoserver/wms")
 (def wfs-url "https://data.pyregence.org:8443/geoserver/wfs")
@@ -174,7 +174,7 @@
        "&BBOX=" bbox))
 
 (defn get-wfs-feature [layer extent]
-  (str "https://data.pyregence.org:8443/geoserver/wfs"
+  (str wfs-url
        "?SERVICE=WFS"
        "&REQUEST=GetFeature"
        "&TYPENAME=" layer

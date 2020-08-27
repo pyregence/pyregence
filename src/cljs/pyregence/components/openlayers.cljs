@@ -37,22 +37,19 @@
 ;; Creating objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO this might be more efficient as a atom thats set once on zoom
+;; TODO this might be more efficient as an atom that's set once on zoom
 (defn zoom-size-ratio [resolution]
-  (max 0.1 (+ 1.3 (* (- resolution 50) (- 1 1.3) (/ 1500)))))
+  (-> resolution (- 50) (* -0.3) (/ 1500) (+ 1.3) (max 0.1)))
 
 ;; TODO each vector layer will have its own style
-(defn incident-style-fn [obj resolution]
+(defn get-incident-style [obj resolution]
   (let [containper (.get obj "containper")
         acres      (.get obj "acres")
         prettyname (.get obj "prettyname")
         highlight  (.get obj "highlight")
         z-ratio    (zoom-size-ratio resolution)
         font-size  (* z-ratio 14)
-        radius     (* z-ratio
-                      (min 30.0
-                           (max 5.0
-                                (* 30.0 (/ acres 100000.0)))))]
+        radius     (-> acres (/ 100000.0) (* 30.0) (max 5.0) (min 30.0) (* z-ratio))]
     (Style.
      #js {:text  (when (or highlight (< resolution 700))
                    (Text.
@@ -166,14 +163,14 @@
        "pointermove"
        (fn [evt]
          (when-not (.-dragging evt)
-           (let [feature       (->> evt
-                                    (.-originalEvent)
-                                    (.getEventPixel @the-map)
-                                    (get-feature-at-pixel))]
+           (let [feature (->> evt
+                              (.-originalEvent)
+                              (.getEventPixel @the-map)
+                              (get-feature-at-pixel))]
              (when-not (= @cur-highlighted feature)
                (when @cur-highlighted (.set @cur-highlighted "highlight" false))
-               (when feature (.set feature "highlight" true)))
-             (reset! cur-highlighted feature))))))
+               (when feature (.set feature "highlight" true))
+               (reset! cur-highlighted feature)))))))
 
 (defn add-map-zoom-end! [call-back]
   (.on @the-map
@@ -231,15 +228,15 @@
                                                         (c/get-wfs-feature geo-layer (js->clj extent)))})
                            :renderOrder (fn [a b]
                                           (- (.get b "acres") (.get a "acres")))
-                           :style       incident-style-fn})
+                           :style       get-incident-style})
                      (TileLayer.
-                      #js {:title   "active"
-                           :zIndex  50
-                           :source  (TileWMS.
-                                     #js {:url         c/wms-url
-                                          :params      #js {"LAYERS" geo-layer}
-                                          :crossOrigin "anonymous"
-                                          :serverType  "geoserver"})}))))
+                      #js {:title  "active"
+                           :zIndex 50
+                           :source (TileWMS.
+                                    #js {:url         c/wms-url
+                                         :params      #js {"LAYERS" geo-layer}
+                                         :crossOrigin "anonymous"
+                                         :serverType  "geoserver"})}))))
     (add-layer-load-fail! #(toast-message! "One or more of the map tiles has failed to load."))))
 
 (defn set-opacity-by-title! [title opacity]
