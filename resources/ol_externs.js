@@ -90,6 +90,8 @@ var ol = {
       "upAndDown": function () {}
     },
     "events": {
+      "dragging": {},
+      "pixel": {},
       "condition": {
         "altKeyOnly": function () {},
         "altShiftKeysOnly": function () {},

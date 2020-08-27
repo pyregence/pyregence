@@ -164,8 +164,7 @@
        (fn [evt]
          (when-not (.-dragging evt)
            (let [feature (->> evt
-                              (.-originalEvent)
-                              (.getEventPixel @the-map)
+                              (.-pixel)
                               (get-feature-at-pixel))]
              (when-not (= @cur-highlighted feature)
                (when @cur-highlighted (.set @cur-highlighted "highlight" false))
