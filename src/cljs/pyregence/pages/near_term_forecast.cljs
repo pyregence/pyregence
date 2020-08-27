@@ -253,28 +253,27 @@
 ;;; Capabilities
 
 (defn process-capabilities! [fire-names user-layers]
-  (go
-    (reset! capabilities
-            (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
-                          (let [layer-path   (edn/read-string layer_path)
-                                layer-config (edn/read-string layer_config)]
-                            (if (and (s/valid? ::layer-path   layer-path)
-                                     (s/valid? ::layer-config layer-config))
-                              (assoc-in acc layer-path layer-config)
-                              acc)))
-                        c/forecast-options
-                        user-layers)
-                (update-in [:active-fire :params :fire-name :options]
-                           merge
-                           fire-names)))))
+  (reset! capabilities
+          (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
+                        (let [layer-path   (edn/read-string layer_path)
+                              layer-config (edn/read-string layer_config)]
+                          (if (and (s/valid? ::layer-path   layer-path)
+                                   (s/valid? ::layer-config layer-config))
+                            (assoc-in acc layer-path layer-config)
+                            acc)))
+                      c/forecast-options
+                      user-layers)
+              (update-in [:active-fire :params :fire-name :options]
+                         merge
+                         fire-names))))
 
 (defn init-map! [user-id]
   (go
     (let [user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
-          fire-name-chan   (u/call-clj-async! "get-fire-names")]
+          fire-names-chan  (u/call-clj-async! "get-fire-names")]
       (ol/init-map!)
-      (<! (process-capabilities! (edn/read-string (:message (<! fire-name-chan)))
-                                 (edn/read-string (:message (<! user-layers-chan)))))
+      (process-capabilities! (edn/read-string (:message (<! fire-names-chan)))
+                             (edn/read-string (:message (<! user-layers-chan))))
       (<! (select-forecast! @*forecast))
       (ol/add-layer-load-fail! #(toast-message! "One or more of the map tiles has failed to load."))
       (ol/set-visible-by-title! "active" true)
