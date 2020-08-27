@@ -224,6 +224,7 @@
         (.addLayer (if style-fn
                      (VectorLayer.
                       #js {:title       "active"
+                           :zIndex      50
                            :source      (VectorSource.
                                          #js {:format (GeoJSON.)
                                               :url    (fn [extent]
