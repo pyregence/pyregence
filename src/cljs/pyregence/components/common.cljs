@@ -175,7 +175,7 @@
     [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y])) ; There is a 56px y offset for the header
 
 (defn tool-tip [tool-tip-text sibling-ref arrow-position show?]
-  (let [tool-ref (r/atom nil)
+  (let [tool-ref (atom nil)
         position (r/atom [-1000 -1000 -1000 -1000])]
     (r/create-class
      {:component-did-mount
@@ -184,7 +184,7 @@
         (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position)))
 
       :component-did-update
-      (fn [_ [prev-tool-tip-text & _]]
+      (fn [_ [_ prev-tool-tip-text & _]]
         (when-not (= tool-tip-text prev-tool-tip-text)
           (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position))))
 
