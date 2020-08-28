@@ -23,7 +23,9 @@ $(document).ready(function () {
 });
 //Header shrink on scroll
 window.onscroll = function() {
-    if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
+    if (document.location.pathname.includes("forecast")
+            || document.body.scrollTop > 50
+            || document.documentElement.scrollTop > 50) {
         document.getElementById("nav-row").style.padding = "0";
         document.getElementById("header").style.background = "#ffffffed";
     } else {
