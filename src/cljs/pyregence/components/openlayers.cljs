@@ -158,7 +158,7 @@
                         (toLonLat "EPSG:3857")
                         (js->clj))))))
 
-(defn feature-hightlight [evt]
+(defn feature-highlight! [evt]
   (when-not (.-dragging evt)
     (let [feature (->> evt
                        (.-pixel)
@@ -171,12 +171,12 @@
 (defn add-mouse-move-feature-highlight! []
   (.on @the-map
        "pointermove"
-       feature-hightlight))
+       feature-highlight!))
 
 (defn add-single-click-feature-highlight! []
   (.on @the-map
        "singleclick"
-       feature-hightlight))
+       feature-highlight!))
 
 (defn add-map-zoom-end! [call-back]
   (.on @the-map
@@ -282,6 +282,5 @@
       (.getOverlayById "popup")
       (.setPosition nil)))
 
-(defn resize-map []
-  (when @the-map
-   (-> @the-map .updateSize)))
+(defn resize-map! []
+  (some-> @the-map .updateSize))

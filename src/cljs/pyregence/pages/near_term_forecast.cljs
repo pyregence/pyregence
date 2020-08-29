@@ -450,7 +450,7 @@
                                                       .getBoundingClientRect
                                                       (aget "height")))
                                                "px"))
-                          (js/setTimeout ol/resize-map 50))]
+                          (js/setTimeout ol/resize-map! 50))]
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
           (process-toast-messages!)
