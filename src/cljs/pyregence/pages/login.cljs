@@ -36,13 +36,19 @@
   (go
     (reset! pending? true)
     (toast-message! "Submitting request. This may take a moment...")
-    (if (:success (<! (u/call-clj-async! "send-email" @email :reset)))
+    (cond
+      (not (:success (<! (u/call-clj-async! "user-email-taken" @email))))
+      (toast-message! (str "There is no user with the email '" @email "'"))
+
+      (:success (<! (u/call-clj-async! "send-email" @email :reset)))
       (do (toast-message! "Please check your email for a password reset link.")
           (<! (timeout 4000))
           (u/jump-to-url! "/forecast"))
-      (do (toast-message! ["An error occurred."
-                           "Please try again shortly or contact support@pyregence.org for help."])
-          (reset! pending? false)))))
+
+      :else
+      (toast-message! ["An error occurred."
+                       "Please try again shortly or contact support@pyregence.org for help."]))
+    (reset! pending? false)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
