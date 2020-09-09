@@ -29,13 +29,12 @@
 (def uri->html
   {"/"                  "home.html"
    "/data"              "data.html"
-   "/documents"         "documents.html"
    "/extreme-weather"   "extreme-weather.html"
    "/fire-behavior"     "fire-behavior.html"
    "/forecast-tools"    "forecast-tools.html"
    "/not-found"         "not-found.html"
    "/scenario-analyses" "scenario-analyses.html"
-   "/team"              "team.html"})
+   "/about"             "about.html"})
 
 (defn recur-separate-tags [hiccup]
   (if (vector? hiccup)
