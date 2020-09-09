@@ -132,7 +132,7 @@
                                                            California Forest Observatory (https://forestobservatory.com) 10 m fuels measured by satellite."
                                               :options    {:landfire {:opt-label "LANDFIRE"
                                                                       :filter    "landfire"}
-                                                           :cfo      {:opt-label "California Fire Observatory"
+                                                           :cfo      {:opt-label "California Forest Observatory"
                                                                       :filter    "cfo"}}}
                                  :model      {:opt-label  "Model"
                                               :hover-text "Computer fire spread model used to generate active fire and risk forecasts.\n
