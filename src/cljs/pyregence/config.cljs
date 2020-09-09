@@ -128,9 +128,12 @@
                                                                         :clear-point? true}}}
                                  :fuel       {:opt-label  "Fuel"
                                               :hover-text "Source of surface and canopy fuel inputs.\n
-                                                           Federal LANDFIRE program (https://landfire.gov/) gridded inputs at 30 m resolution."
+                                                           Federal LANDFIRE program (https://landfire.gov/) gridded inputs at 30 m resolution.\n
+                                                           California Forest Observatory (https://forestobservatory.com) 10 m fuels measured by satellite."
                                               :options    {:landfire {:opt-label "LANDFIRE"
-                                                                      :filter    "landfire"}}}
+                                                                      :filter    "landfire"}
+                                                           :cfo      {:opt-label "California Fire Observatory"
+                                                                      :filter    "cfo"}}}
                                  :model      {:opt-label  "Model"
                                               :hover-text "Computer fire spread model used to generate active fire and risk forecasts.\n
                                                            ELMFIRE - Cloud-based operational fire spread model developed at Reax Engineering Inc. (https://doi.org/10.1016/j.firesaf.2013.08.014)."
