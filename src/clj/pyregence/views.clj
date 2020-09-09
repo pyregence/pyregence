@@ -29,7 +29,6 @@
 (def uri->html
   {"/"                  "home.html"
    "/data"              "data.html"
-   "/documents"         "documents.html"
    "/extreme-weather"   "extreme-weather.html"
    "/fire-behavior"     "fire-behavior.html"
    "/forecast-tools"    "forecast-tools.html"

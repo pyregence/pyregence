@@ -29,7 +29,6 @@
 ;; FIXME: Fill these in as you make static html pages.
 (def static-routes #{"/"
                      "/data"
-                     "/documents"
                      "/extreme-weather"
                      "/fire-behavior"
                      "/forecast-tools"
