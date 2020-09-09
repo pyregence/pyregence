@@ -34,7 +34,7 @@
    "/forecast-tools"    "forecast-tools.html"
    "/not-found"         "not-found.html"
    "/scenario-analyses" "scenario-analyses.html"
-   "/about"              "about.html"})
+   "/about"             "about.html"})
 
 (defn recur-separate-tags [hiccup]
   (if (vector? hiccup)
