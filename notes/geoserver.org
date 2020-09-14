@@ -13,13 +13,13 @@
 Open $GEOSERVER_HOME/webapps/geoserver/WEB-INF/web.xml for editing.
 Uncomment the following 2 blocks:
 
-#+begin_src sh
+#+begin_src xml
 <!-- Uncomment following filter to enable CORS -->
 <filter>
   <filter-name>cross-origin</filter-name>
 #+end_src
 
-#+begin_src sh
+#+begin_src xml
 <!-- Uncomment following filter to enable CORS -->
 <filter-mapping>
    <filter-name>cross-origin</filter-name>
@@ -28,7 +28,7 @@ Uncomment the following 2 blocks:
 In the first block listed above, restrict the cross origin domain by
 editing the allowedOrigins param.
 
-#+begin_src sh
+#+begin_src xml
 <init-param>
     <param-name>allowedOrigins</param-name>
     <param-value>*pyregence.org*</param-value>
@@ -45,12 +45,13 @@ sudo openssl pkcs12 -export -out ./.key/keystore.pkcs12 -in /etc/letsencrypt/liv
 sudo chown geoserver keystore.pkcs12
 #+end_src
 
-**** Enable  in GeoServer
+**** Enable in GeoServer
+
 The GeoServer v2.16 seems to have mismatched versions of the required https and
 ssl files. To correct this, download the Jetty distribution file that matches the
 version used by GeoServer.
 
-Copy the following files from the archive to the coresponding GeoServer directory
+Copy the following files from the archive to the corresponding GeoServer directory
 
 - $GEOSERVER_HOME/modules/ssl.mod
 - $GEOSERVER_HOME/etc/jetty-https.xml
@@ -61,11 +62,12 @@ Copy the following files from the archive to the coresponding GeoServer director
 Edit jetty-ssl-context.xml to use the correct values for keystore location and
 password.
 
-Edit jetty-ssl.xml, and jetty.xml to update https port.
+Edit jetty-ssl.xml and jetty.xml to update the https port.
 
 Add the following to $GEOSERVER_HOME/start.ini
-#+begin_src sh
+
+#+begin_example
 --module=ssl
 --module=ssl-reload
 --module=https
-#+end_src
+#+end_example
