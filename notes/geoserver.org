@@ -13,13 +13,13 @@
 Open $GEOSERVER_HOME/webapps/geoserver/WEB-INF/web.xml for editing.
 Uncomment the following 2 blocks:
 
-#+begin_src sh
+#+begin_src xml
 <!-- Uncomment following filter to enable CORS -->
 <filter>
   <filter-name>cross-origin</filter-name>
 #+end_src
 
-#+begin_src sh
+#+begin_src xml
 <!-- Uncomment following filter to enable CORS -->
 <filter-mapping>
    <filter-name>cross-origin</filter-name>
@@ -28,7 +28,7 @@ Uncomment the following 2 blocks:
 In the first block listed above, restrict the cross origin domain by
 editing the allowedOrigins param.
 
-#+begin_src sh
+#+begin_src xml
 <init-param>
     <param-name>allowedOrigins</param-name>
     <param-value>*pyregence.org*</param-value>
@@ -37,12 +37,30 @@ editing the allowedOrigins param.
 
 *** Enable SSL/HTTPS
 
+Enabling HTTPS using this certbot method requires a web server like apahce2 to be running
+for the verification process.
+
 **** Create Certificate
 
+Create shell script to create the keys after a rewnewal.  Add the following
+to ~/.key/create-keys.sh
+
 #+begin_src sh
-sudo certbot certonly --quiet --non-interactive --agree-tos -m support@sig-gis.com --webroot -w ./resources/public -d data.pyregence.org
-sudo openssl pkcs12 -export -out ./.key/keystore.pkcs12 -in /etc/letsencrypt/live/data.pyregence.org/fullchain.pem -inkey /etc/letsencrypt/live/data.pyregence.org/privkey.pem -passout pass:foobar
+openssl pkcs12 -export -out ~/.key/keystore.pkcs12 -in /etc/letsencrypt/live/data.pyregence.org/fullchain.pem -inkey /etc/letsencrypt/live/data.pyregence.org/privkey.pem -passout pass:foobar
+## TODO, the file extensions created by certbot are different, but already might be in the correct form for Apache.
+openssl pkcs12 -in ~/.key/keystore.pkcs12 -passin pass:foobar -nocerts -nodes -out domain.key
+openssl pkcs12 -in ~/.key/keystore.pkcs12 -passin pass:foobar -clcerts -nokeys -out domain.cer
+openssl pkcs12 -in ~/.key/keystore.pkcs12 -passin pass:foobar -nodes -nokeys -cacerts -out domain-ca.crt
+#+end_src
+
+Set the shell script as executable, initialize certbot, update permissions,
+and add a symlink for the key folder in the geoserver folder
+
+#+begin_src sh
+sudo chown +x cerate-keys.sh
+sudo certbot certonly --quiet --non-interactive --agree-tos -m support@sig-gis.com --webroot -w /var/www/html -d data.pyregence.org --deploy-hook ~/.key/create-keys.sh
 sudo chown geoserver keystore.pkcs12
+ln -s ~/.key/ ~/geoserver[version]/.key/
 #+end_src
 
 **** Enable in GeoServer
