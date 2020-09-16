@@ -56,7 +56,7 @@ Set the shell script as executable, initialize certbot, update permissions,
 and add a symlink for the key folder in the geoserver folder.
 
 #+begin_src sh
-chmod +x ~/.key/cerate-keys.sh
+chmod +x ~/.key/create-keys.sh
 sudo certbot certonly --quiet --non-interactive --agree-tos -m support@sig-gis.com --webroot -w /var/www/html -d data.pyregence.org --deploy-hook ~/.key/create-keys.sh
 sudo chown geoserver ~/.key/keystore.pkcs12
 ln -s ~/.key/ ~/geoserver[version]/.key/
