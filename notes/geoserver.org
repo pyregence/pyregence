@@ -37,13 +37,12 @@ editing the allowedOrigins param.
 
 *** Enable SSL/HTTPS
 
-Enabling HTTPS using this certbot method requires a web server like apahce2 to be running
+Enabling HTTPS using this certbot method requires a web server like Apache to be running
 for the verification process.
 
 **** Create Certificate
 
-Create shell script to create the keys after a rewnewal.  Add the following
-to ~/.key/create-keys.sh
+To create the keys after a renewal, add the following to ~/.key/create-keys.sh:
 
 #+begin_src sh
 openssl pkcs12 -export -out ~/.key/keystore.pkcs12 -in /etc/letsencrypt/live/data.pyregence.org/fullchain.pem -inkey /etc/letsencrypt/live/data.pyregence.org/privkey.pem -passout pass:foobar
@@ -54,12 +53,12 @@ openssl pkcs12 -in ~/.key/keystore.pkcs12 -passin pass:foobar -nodes -nokeys -ca
 #+end_src
 
 Set the shell script as executable, initialize certbot, update permissions,
-and add a symlink for the key folder in the geoserver folder
+and add a symlink for the key folder in the geoserver folder.
 
 #+begin_src sh
-sudo chown +x cerate-keys.sh
+chmod +x ~/.key/cerate-keys.sh
 sudo certbot certonly --quiet --non-interactive --agree-tos -m support@sig-gis.com --webroot -w /var/www/html -d data.pyregence.org --deploy-hook ~/.key/create-keys.sh
-sudo chown geoserver keystore.pkcs12
+sudo chown geoserver ~/.key/keystore.pkcs12
 ln -s ~/.key/ ~/geoserver[version]/.key/
 #+end_src
 
