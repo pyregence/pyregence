@@ -91,7 +91,7 @@
                                             :options    {:elmfire {:opt-label "ELMFIRE"
                                                                    :filter    "elmfire"}}}
                                :model-init {:opt-label  "Forecast Start Time"
-                                            :hover-text "This shows the date and time (in military time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
+                                            :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                             :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk {:opt-label       "Risk Forecast"
                :filter          "fire-risk-forecast"

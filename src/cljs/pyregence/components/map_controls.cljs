@@ -225,7 +225,13 @@
                    :type "range" :min "0" :max "100" :value @active-opacity
                    :on-change #(do (reset! active-opacity (u/input-int-value %))
                                    (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-         [panel-dropdown "Base Map" "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference." @*base-map c/base-map-options false select-base-map!]
+         [panel-dropdown 
+            "Base Map" 
+            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference." 
+            @*base-map 
+            c/base-map-options 
+            false 
+            select-base-map!]
          [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
           [:div {:style {:display "flex"}}
            [:input {:style {:margin ".25rem .5rem 0 0"}
