@@ -46,8 +46,8 @@
                  :params      {:fire-name  {:opt-label      "Fire Name"
                                             :auto-zoom?     true
                                             :sort?          true
-                                            :hover-text     "Fire name as listed in the CALFIRE incident report.\n
-                                                             Options prefixed with * are overviews provided by CALFIRE and NIFC."
+                                            :hover-text     "This section contains active fires across the state, as named in CALFIRE incident reports. Select a specific fire from the dropdown menu to view a simulation.\n
+                                                             View all active fires by selecting one of two options with an asterisk at the beginning. We offer data from CALFIRE, as well as the National Interagency Fire Center."
                                             :underlays      {:nifs-perimeters   {:opt-label  "NIFS Perimeters"
                                                                                  :z-index    10
                                                                                  :filter-set #{"fire-detections" "nifs-perimeters"}}
@@ -65,13 +65,13 @@
                                                                                  :style-fn   :default
                                                                                  :filter-set #{"fire-detections" "nifc-large-fires"}}}}
                                :output     {:opt-label  "Output"
-                                            :hover-text "Burned Area - Area burned by fire. Colors represent how long before the time shown in the time slider that an area burned."
-                                            :options    {:burned {:opt-label "Burned area"
+                                            :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
+                                            :options    {:burned {:opt-label "Forecasted fire location"
                                                                   :filter    "burned-area"
                                                                   :units     "Hours"}}}
                                :burn-pct   {:opt-label      "Burn Probability"
                                             :default-option :50
-                                            :hover-text     "Burn Probability - Each active fire forecast is an ensemble of 1,000 separate fire spread runs and burn probability refers to the percentage of those simulations in which a given pixel burned."
+                                            :hover-text     "To develop an active fire forecast, we run 1,000 simulations, inputting a variety of factors for consideration. 'Burn Probability' shows the percentage of time the simulations followed the same path. To see the path taken in 90% of our simulations, for example, select 90% from the dropdown menu."
                                             :options        {:90 {:opt-label "90%"
                                                                   :filter    "90"}
                                                              :70 {:opt-label "70%"
@@ -83,17 +83,15 @@
                                                              :10 {:opt-label "10%"
                                                                   :filter    "10"}}}
                                :fuel       {:opt-label  "Fuel"
-                                            :hover-text "Source of surface and canopy fuel inputs.\n
-                                                         Federal LANDFIRE program (https://landfire.gov/) gridded inputs at 30 m resolution."
+                                            :hover-text "The U.S. government has mapped fuels across the U.S. These are the fuel inputs that we use in our forecasts. More information about LANDFIRE can be found at https://landfire.gov/."
                                             :options    {:landfire {:opt-label "LANDFIRE"
                                                                     :filter    "landfire"}}}
                                :model      {:opt-label  "Model"
-                                            :hover-text "Computer fire spread model used to generate active fire and risk forecasts.\n
-                                                         ELMFIRE - Cloud-based operational fire spread model developed at Reax Engineering Inc. (https://doi.org/10.1016/j.firesaf.2013.08.014)."
+                                            :hover-text "ELMFIRE is a new predictive model developed by Chris Lautenberger of Reax Engineering. It is the artificial intelligence used to generate the active fire forecast in this tool."
                                             :options    {:elmfire {:opt-label "ELMFIRE"
                                                                    :filter    "elmfire"}}}
                                :model-init {:opt-label  "Forecast Start Time"
-                                            :hover-text "Start time for forecast cycle. New data is created when active fires are sensed by satellites."
+                                            :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                             :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk {:opt-label       "Risk Forecast"
                :filter          "fire-risk-forecast"
