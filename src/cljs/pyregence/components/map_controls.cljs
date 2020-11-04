@@ -438,8 +438,10 @@
    :transition "all 200ms ease-in"
    :padding    ".25rem"})
 
-(defn legend-box [legend-list reverse?]
-  (when (and @show-legend? (seq legend-list))
+(defn legend-box [legend-list reverse? mobile?]
+  (reset! show-legend? (not mobile?))
+  (fn [legend-list reverse? mobile?]
+    (when (and @show-legend? (seq legend-list))
     [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel?))}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (map-indexed (fn [i leg]
@@ -449,4 +451,4 @@
                       [:label (get leg "label")]])
                    (if reverse?
                      (reverse legend-list)
-                     legend-list))]]))
+                     legend-list))]])))
