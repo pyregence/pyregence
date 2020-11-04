@@ -82,16 +82,14 @@
     (reset! layers
             (as-> xml-response xml
               (str/replace xml "\n" "")
-              (re-find #"<Layer>.*(?=</Layer>)" xml)
-              (str/replace-first xml "<Layer>" "")
-              (re-seq #"<Layer.+?</Layer>" xml)
+              (re-find #"(?<=<Layer>).*(?=</Layer>)" xml)
+              (re-seq #"(?<=<Layer).+?(?=</Layer>)" xml)
               (partition-all 1000 xml)
               (pmap (fn [layer-group]
                       (->> layer-group
                            (keep
                             (fn [layer]
-                              (let [full-name (->  (re-find #"<Name>.+?(?=</Name>)" layer)
-                                                   (str/replace #"<Name>" ""))
+                              (let [full-name (->  (re-find #"(?<=<Name>).+?(?=</Name>)" layer))
                                     coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
                                                    (re-seq #"[\d|\.|-]+")
                                                    (rest)
