@@ -164,9 +164,9 @@
                            complete-set (if max-time
                                           (conj selected-set max-time)
                                           selected-set)]
-                       {:layers (filterv (fn [{:keys [filter-set]}]
-                                           (= complete-set filter-set))
-                                         available)
+                       {:layers      (filterv (fn [{:keys [filter-set]}]
+                                                (= complete-set filter-set))
+                                              available)
                         :model-times (seq model-times)}))
                    {:type :transit})))
 
