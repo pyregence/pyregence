@@ -89,7 +89,7 @@
                       (->> layer-group
                            (keep
                             (fn [layer]
-                              (let [full-name (->  (re-find #"(?<=<Name>).+?(?=</Name>)" layer))
+                              (let [full-name (re-find #"(?<=<Name>).+?(?=</Name>)" layer)
                                     coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
                                                    (re-seq #"[\d|\.|-]+")
                                                    (rest)
