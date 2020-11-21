@@ -16,12 +16,15 @@
         org.clojure/data.xml       {:mvn/version "0.0.8"}
         org.postgresql/postgresql  {:mvn/version "42.2.14"}
         reagent/reagent            {:mvn/version "0.10.0"}
-        ring/ring                  {:mvn/version "1.8.1"}
-        ring/ring-defaults         {:mvn/version "0.3.2"}
+        ring/ring                  {:mvn/version "1.8.2"}
+        ring/ring-headers          {:mvn/version "0.3.0"}
+        ring/ring-ssl              {:mvn/version "0.3.0"}
+        ring/ring-json             {:mvn/version "0.5.0"}
         seancorfield/next.jdbc     {:mvn/version "1.1.569"}}
 
  :aliases {:build-db     {:main-opts ["-m" "pyregence.build-db"]}
-           :ssl-key-gen  {:main-opts ["-m" "pyregence.https"]}
+           :certbot-init {:main-opts ["-m" "carbon-tool.https" "certbot-init"]}
+           :package-cert {:main-opts ["-m" "carbon-tool.https" "package-cert"]}
            :compile-cljs {:main-opts ["-m" "cljs.main" "-co" "compile-prod.cljs.edn" "-c"]}
            :figwheel-lib {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.11"}}}
            :figwheel     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.11"}
