@@ -167,10 +167,7 @@ sudo chown -R geoserver /var/lib/geoserver/data
 chmod -R +rw /var/lib/geoserver/data/
 #+end_src
 
-*** install extentions
+*** Install Extensions
 cd /opt/jetty/jetty-base/webapps
 wget http://sourceforge.net/projects/geoserver/files/GeoServer/2.18.0/extensions/geoserver-2.18.0-css-plugin.zip
 unzip geoserver-2.18.0-css-plugin.zip -d geoserver/WEB-INF/lib
-
-wget http://sourceforge.net/projects/geoserver/files/GeoServer/2.18.0/extensions/geoserver-2.18.0-ogr-wps-plugin.zip
-unzip geoserver-2.18.0-ogr-wps-plugin.zip -d geoserver/WEB-INF/lib
