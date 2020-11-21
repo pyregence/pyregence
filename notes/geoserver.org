@@ -6,85 +6,171 @@
 - [[https://certbot.eff.org/][certbot]]
 - [[https://www.openssl.org/source/][openssl]]
 
-** Configuration
+** Install Jetty
 
-*** Allowing Cross-Origin Resource Sharing (CORS)
+*** Jetty Service
+The Pyregence GeoServer loosely follows the instructions here:
+https://www.eclipse.org/jetty/documentation/9.2.22.v20170531/startup-unix-service.html
 
-Open $GEOSERVER_HOME/webapps/geoserver/WEB-INF/web.xml for editing.
-Uncomment the following 2 blocks:
+This process creates a stand alone Jetty service that will run
+the GeoServer. With su rights enter the following commands:
+
+#+begin_src sh
+sudo mkdir -p /opt/jetty/jetty-base/webapps
+sudo mkdir -p /opt/jetty/jetty-base/etc
+sudo chown -R geoserver /opt/jetty
+cd /opt/jetty
+wget https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/[version]/jetty-distribution-[version].zip
+unzip jetty-distribution-[version].zip
+mv jetty-distribution-[version] jetty-home
+cd /opt/jetty/jetty-home
+sudo cp bin/jetty.sh /etc/init.d/jetty
+echo -e "JETTY_HOME=/opt/jetty/jetty-home" | sudo tee -a /etc/default/jetty
+echo -e "JETTY_BASE=/opt/jetty/jetty-base" | sudo tee -a /etc/default/jetty
+cp start.ini ../jetty-base
+#+end_src
+
+*** Set Up Static File Directory
+
+Create a new file /opt/jetty/jetty-base/webapps/static.xml and add the following
 
 #+begin_src xml
-<!-- Uncomment following filter to enable CORS -->
+<Configure class="org.eclipse.jetty.server.handler.ContextHandler">
+  <Set name="contextPath">/</Set>
+  <Set name="handler">
+    <New class="org.eclipse.jetty.server.handler.ResourceHandler">
+      <Set name="resourceBase">/var/www/html</Set>
+      <Set name="directoriesListed">true</Set>
+    </New>
+  </Set>
+</Configure>
+#+end_src
+
+*** Forwarding Ports
+
+Forwarding ports from the defaults for http and https allows the web server
+to run without sudo privileges. To forward ports use iptables. Installing
+iptables-persistent after setting up the routing will automatically save
+the rules persistently.
+
+#+begin_src sh
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080
+sudo iptables -t nat -I PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443
+sudo iptables-save
+sudo apt -y install iptables-persistent
+#+end_src
+
+*** Start Jetty
+
+Start Jetty with this basic configuration in order to obtain SSL certificates.
+
+#+begin_src sh
+sudo service jetty start
+#+end_src
+
+** Initializing SSL Certificate
+
+Use openssl and certbot to obtain a certificate.  Adding a deploy hook will
+allow the certificate to be auto generated each time certbot updates.  Jetty
+must be running to obtain the certificate.
+
+Enter the following commands:
+
+#+begin_src sh
+cd /opt/jetty
+echo openssl pkcs12 -export -out /opt/jetty/jetty-base/etc/keystore.pkcs12 -in /etc/letsencrypt/live/data.pyregence.org/fullchain.pem -inkey /etc/letsencrypt/live/data.pyregence.org/privkey.pem -passout pass:foobar >> /opt/jetty/create-key.sh
+chmod +x /opt/jetty/create-key.sh
+sudo certbot certonly --quiet --non-interactive --agree-tos -m support@sig-gis.com --webroot -w /var/www/html -d data.pyregence.org --deploy-hook /opt/jetty/create-key.sh
+#+end_src
+
+** Configure jetty
+
+*** webdefault.xml
+
+Open /opt/jetty/jetty-home/etc/webdefault.xml and add the following to the
+bottom of the xml file:
+
+#+begin_src xml
 <filter>
   <filter-name>cross-origin</filter-name>
-#+end_src
+  <filter-class>org.eclipse.jetty.servlets.CrossOriginFilter</filter-class>
+  <init-param>
+      <param-name>chainPreflight</param-name>
+      <param-value>false</param-value>
+  </init-param>
+  <init-param>
+      <param-name>allowedOrigins</param-name>
+      <param-value>*pyregence.org*</param-value>
+  </init-param>
+  <init-param>
+      <param-name>allowedMethods</param-name>
+      <param-value>GET,POST,PUT,DELETE,HEAD,OPTIONS</param-value>
+  </init-param>
+  <init-param>
+      <param-name>allowedHeaders</param-name>
+      <param-value>*</param-value>
+  </init-param>
+</filter>
 
-#+begin_src xml
-<!-- Uncomment following filter to enable CORS -->
 <filter-mapping>
-   <filter-name>cross-origin</filter-name>
+    <filter-name>cross-origin</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+
+<context-param>
+  <param-name>GEOSERVER_DATA_DIR</param-name>
+  <param-value>/var/lib/geoserver/data</param-value>
+</context-param>
 #+end_src
 
-In the first block listed above, restrict the cross origin domain by
-editing the allowedOrigins param.
+*** start.ini
 
-#+begin_src xml
-<init-param>
-    <param-name>allowedOrigins</param-name>
-    <param-value>*pyregence.org*</param-value>
-</init-param>
+Open /opt/jetty/jetty-base/start.ini and add the following to the end of the
+file:
+
+#+begin_src
+--module=servlets,ssl,https,http2
+
+jetty.sslContext.keyStorePath=etc/keystore.pkcs12
+jetty.sslContext.keyStorePassword=foobar
+jetty.sslContext.keyStoreType=PKCS12
+jetty.sslContext.keyManagerPassword=foobar
+jetty.sslContext.trustStorePath=etc/keystore.pkcs12
 #+end_src
 
-*** Enable SSL/HTTPS
-
-Enabling HTTPS using this certbot method requires a web server like Apache to be running
-for the verification process.
-
-**** Create Certificate
-
-To create the keys after a renewal, add the following to ~/.key/create-keys.sh:
+*** Restart Jetty
+Restart Jetty for the new configuration to take affect.
 
 #+begin_src sh
-openssl pkcs12 -export -out ~/.key/keystore.pkcs12 -in /etc/letsencrypt/live/data.pyregence.org/fullchain.pem -inkey /etc/letsencrypt/live/data.pyregence.org/privkey.pem -passout pass:foobar
-## TODO, the file extensions created by certbot are different, but already might be in the correct form for Apache.
-openssl pkcs12 -in ~/.key/keystore.pkcs12 -passin pass:foobar -nocerts -nodes -out domain.key
-openssl pkcs12 -in ~/.key/keystore.pkcs12 -passin pass:foobar -clcerts -nokeys -out domain.cer
-openssl pkcs12 -in ~/.key/keystore.pkcs12 -passin pass:foobar -nodes -nokeys -cacerts -out domain-ca.crt
+sudo service jetty restart
 #+end_src
 
-Set the shell script as executable, initialize certbot, update permissions,
-and add a symlink for the key folder in the geoserver folder.
+** Install GeoServer
+
+*** Main installation
+
+We are using the stand alone version of Jetty and GeoServer.  Download the
+web archive (war) version of the GeoServer.  If using extensions, the war will
+need to be extracted to add files to the WEB-INF/lib folder.
+
+To do so enter the following commands:
 
 #+begin_src sh
-chmod +x ~/.key/create-keys.sh
-sudo certbot certonly --quiet --non-interactive --agree-tos -m support@sig-gis.com --webroot -w /var/www/html -d data.pyregence.org --deploy-hook ~/.key/create-keys.sh
-sudo chown geoserver ~/.key/keystore.pkcs12
-ln -s ~/.key/ ~/geoserver[version]/.key/
+cd /opt/jetty/jetty-base/webapps
+wget http://sourceforge.net/projects/geoserver/files/GeoServer/[version]/geoserver-[version]-war.zip
+unzip geoserver-[version]-war.zip
+unzip geoserver.war -d geoserver
+
+sudo mkdir -p /var/lib/geoserver/
+mv /opt/jetty/jetty-base/webapps/geoserver/data /var/lib/geoserver/
+sudo chown -R geoserver /var/lib/geoserver/data
+chmod -R +rw /var/lib/geoserver/data/
 #+end_src
 
-**** Enable in GeoServer
+*** install extentions
+cd /opt/jetty/jetty-base/webapps
+wget http://sourceforge.net/projects/geoserver/files/GeoServer/2.18.0/extensions/geoserver-2.18.0-css-plugin.zip
+unzip geoserver-2.18.0-css-plugin.zip -d geoserver/WEB-INF/lib
 
-The GeoServer v2.16 seems to have mismatched versions of the required https and
-ssl files. To correct this, download the Jetty distribution file that matches the
-version used by GeoServer.
-
-Copy the following files from the archive to the corresponding GeoServer directory
-
-- $GEOSERVER_HOME/modules/ssl.mod
-- $GEOSERVER_HOME/etc/jetty-https.xml
-- $GEOSERVER_HOME/etc/jetty-ssl.xml
-- $GEOSERVER_HOME/etc/jetty-ssl-context.xml
-- $GEOSERVER_HOME/etc/jetty-ssl-context-reload.xml
-
-Edit jetty-ssl-context.xml to use the correct values for keystore location and
-password.
-
-Edit jetty-ssl.xml and jetty.xml to update the https port.
-
-Add the following to $GEOSERVER_HOME/start.ini
-
-#+begin_example
---module=ssl
---module=ssl-reload
---module=https
-#+end_example
+wget http://sourceforge.net/projects/geoserver/files/GeoServer/2.18.0/extensions/geoserver-2.18.0-ogr-wps-plugin.zip
+unzip geoserver-2.18.0-ogr-wps-plugin.zip -d geoserver/WEB-INF/lib
