@@ -107,11 +107,10 @@
    :content          "close-quote"
    :height           "16px"
    :left             arrow-x
-   :opacity          (if show? 1.0 0.0)
    :position         "fixed"
    :top              arrow-y
    :transform        "rotate(45deg)"
-   :transition       "opacity 300ms ease-in"
+   :transition       (when-not show? "left 0s ease-out 300ms, top 0s ease-out 300ms")
    :width            "16px"
    :z-index          201})
 
@@ -123,9 +122,10 @@
    :left             tip-x
    :opacity          (if show? 1.0 0.0)
    :top              tip-y
-   :transition       "opacity 300ms ease-in"
+   :transition       (if show?
+                       "opacity 310ms ease-in"
+                       "opacity 300ms ease-out, left 0s ease-out 300ms, top 0s ease-out 300ms")
    :position         "fixed"
-   :pointer-events   (if show? "auto" "none")
    :padding          ".5rem"
    :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
    :z-index          200})
@@ -143,54 +143,60 @@
                 (str/split text #"\n"))]
     (interpose-react [:br] items)))
 
-(defn calc-tool-position [sibling-ref tool-ref arrow-position]
-  (let [sibling-box (.getBoundingClientRect sibling-ref)
-        tool-box    (.getBoundingClientRect tool-ref)
-        tool-width  (aget tool-box "width")
-        tool-height (aget tool-box "height")
-        max-x       (- (.-innerWidth js/window) tool-width 6)
-        max-y       (- (.-innerHeight js/window) tool-height 6)
-        [arrow-x tip-x] (condp #(%1 %2) arrow-position
-                          #{:top :bottom}
-                          (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
-                            [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
+(defn calc-tool-position [sibling-ref tool-ref arrow-position show?]
+  (if (and tool-ref show?)
+    (let [sibling-box     (.getBoundingClientRect sibling-ref)
+          tool-box        (.getBoundingClientRect tool-ref)
+          tool-width      (aget tool-box "width")
+          tool-height     (aget tool-box "height")
+          max-x           (- (.-innerWidth js/window) tool-width 6)
+          max-y           (- (.-innerHeight js/window) tool-height 6)
+          [arrow-x tip-x] (condp #(%1 %2) arrow-position
+                            #{:top :bottom}
+                            (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
+                              [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
 
-                          #{:left}
-                          (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
-                            [(+ sibling-x 4.7) (+ sibling-x 13)])
+                            #{:left}
+                            (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
+                              [(+ sibling-x 4.7) (+ sibling-x 13)])
 
-                          (let [sibling-x (aget sibling-box "x")]
-                            [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
-        [arrow-y tip-y] (condp #(%1 %2) arrow-position
-                          #{:left :right}
-                          (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
-                            [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
+                            (let [sibling-x (aget sibling-box "x")]
+                              [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
+          [arrow-y tip-y] (condp #(%1 %2) arrow-position
+                            #{:left :right}
+                            (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
+                              [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
 
-                          #{:top}
-                          (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
-                            [(+ sibling-y 3) (+ sibling-y 11)])
+                            #{:top}
+                            (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
+                              [(+ sibling-y 3) (+ sibling-y 11)])
 
-                          (let [sibling-y (aget sibling-box "y")]
-                            [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
-    [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y])) ; There is a 56px y offset for the header
+                            (let [sibling-y (aget sibling-box "y")]
+                              [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
+      [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y]) ; There is a 56px y offset for the header
+    [-1000 -1000 -1000 -1000]))
 
-(defn tool-tip [tool-tip-text sibling-ref arrow-position show?]
+(defn tool-tip []
   (let [tool-ref (atom nil)
         position (r/atom [-1000 -1000 -1000 -1000])]
     (r/create-class
      {:component-did-mount
       (fn [this]
-        (reset! tool-ref (rd/dom-node this))
-        (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position)))
+        (let [{:keys [sibling-ref arrow-position show?]} (r/props this)]
+          (reset! tool-ref (rd/dom-node this))
+          (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?))))
 
       :component-did-update
-      (fn [_ [_ prev-tool-tip-text & _]]
-        (when-not (= tool-tip-text prev-tool-tip-text)
-          (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position))))
+      (fn [this [_ prev-props]]
+        (let [{:keys [tool-tip-text sibling-ref arrow-position show?]} (r/props this)]
+          (when (or (not= tool-tip-text (:tool-tip-text prev-props))
+                    (not= show?         (:show? prev-props)))
+            (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?)))))
 
-      :reagent-render
-      (fn [tool-tip-text _ arrow-position show?]
-        (let [[tip-x tip-y arrow-x arrow-y] @position]
+      :render
+      (fn [this]
+        (let [{:keys [tool-tip-text arrow-position show?]} (r/props this)
+              [tip-x tip-y arrow-x arrow-y] @position]
           [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
            [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
            [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
@@ -212,4 +218,7 @@
            :on-mouse-leave #(reset! show? false)}
      [sibling-wrapper sibling sibling-ref]
      (when @sibling-ref
-       [tool-tip tool-tip-text @sibling-ref arrow-position @show?])]))
+       [tool-tip {:tool-tip-text  tool-tip-text
+                  :sibling-ref    @sibling-ref
+                  :arrow-position arrow-position
+                  :show?          @show?}])]))
