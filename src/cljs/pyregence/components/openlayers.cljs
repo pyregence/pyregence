@@ -187,6 +187,10 @@
              .getZoom
              call-back))))
 
+(defn set-visible-by-title! [title visible?]
+  (-> (get-layer-by-title title)
+      (.setVisible visible?)))
+
 (defn add-layer-load-fail! [call-back]
   (.on (.getSource (get-layer-by-title "active"))
        "tileloaderror"
@@ -217,7 +221,9 @@
 ;; TODO only WMS layers have a time slider for now. This might eventually need to accommodate Vector sources
 (defn swap-active-layer! [geo-layer]
   (when-let [source (.getSource (get-layer-by-title "active"))]
-    (.updateParams source #js {"LAYERS" geo-layer})))
+    (if geo-layer
+      (.updateParams source #js {"LAYERS" geo-layer})
+      (set-visible-by-title! "active" false))))
 
 (defn reset-active-layer! [geo-layer style-fn]
   (when-let [active-layer (get-layer-by-title "active")]
@@ -248,10 +254,6 @@
 (defn set-opacity-by-title! [title opacity]
   (-> (get-layer-by-title title)
       (.setOpacity opacity)))
-
-(defn set-visible-by-title! [title visible?]
-  (-> (get-layer-by-title title)
-      (.setVisible visible?)))
 
 (defn set-zoom! [zoom]
   (-> @the-map .getView (.setZoom zoom)))
