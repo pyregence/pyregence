@@ -57,13 +57,6 @@
 (defn get-forecast-opt [key-name]
   (get-in @capabilities [@*forecast key-name]))
 
-(defn reset-params! []
-  (reset! processed-params (get-forecast-opt :params))
-  (reset! *params (u/mapm (fn [[k v]]
-                            [k (or (:default-option v)
-                                   (ffirst (:options v)))])
-                          @processed-params)))
-
 (defn process-model-times! [model-times]
   (let [processed-times (u/mapm (fn [utc-time]
                                   [(keyword utc-time)
@@ -75,11 +68,11 @@
             (assoc-in (get-forecast-opt :params)
                       [:model-init :options]
                       processed-times))
-    (swap! *params assoc :model-init (ffirst processed-times))))
+    (swap! *params assoc-in [@*forecast :model-init] (ffirst processed-times))))
 
 (defn get-layers! [get-model-times?]
   (go
-    (let [params       (dissoc @*params (when get-model-times? :model-init))
+    (let [params       (dissoc (get @*params @*forecast) (when get-model-times? :model-init))
           selected-set (or (some (fn [[key {:keys [options]}]]
                                    (get-in options [(params key) :filter-set]))
                                  @processed-params)
@@ -119,7 +112,7 @@
 
 (defn get-current-layer-key [key-name]
   (some (fn [[key {:keys [options]}]]
-          (get-in options [(@*params key) key-name]))
+          (get-in options [(get-in @*params [@*forecast key]) key-name]))
         (get-forecast-opt :params)))
 
 (defn get-options-key [key-name]
@@ -218,15 +211,15 @@
     (when zoom?
       (ol/zoom-to-extent! (get-current-layer-extent)))))
 
-(defn select-param! [key val]
-  (swap! *params assoc key val)
+(defn select-param! [val & keys]
+  (swap! *params assoc-in (concat [@*forecast] keys) val)
   (change-type! (not (= key :model-init))
                 (get-current-layer-key :clear-point?)
                 (get-in @processed-params [key :auto-zoom?])))
 
 (defn select-forecast! [key]
   (go (reset! *forecast key)
-      (reset-params!)
+      (reset! processed-params (get-forecast-opt :params))
       (<! (change-type! true true (get-options-key :auto-zoom?)))))
 
 (defn set-show-info! [show?]
@@ -266,7 +259,19 @@
                       user-layers)
               (update-in [:active-fire :params :fire-name :options]
                          merge
-                         fire-names))))
+                         fire-names)))
+  (reset! *params (u/mapm
+                   (fn [[forecast _]]
+                     (let [params (get-in @capabilities [forecast :params])]
+                       [forecast (merge (u/mapm (fn [[k v]]
+                                                  [k (or (:default-option v)
+                                                         (ffirst (:options v)))])
+                                                params)
+                                        {:underlays (->> params
+                                                         (mapcat (fn [[_ v]] (:underlays v)))
+                                                         (u/mapm (fn [[k _]] [k {:show false
+                                                                                 :name nil}])))})]))
+                   c/forecast-options)))
 
 (defn init-map! [user-id]
   (go
@@ -350,7 +355,7 @@
       :render
       (fn []
         [:div {:style ($control-layer)}
-         [mc/collapsible-panel @*params select-param! @processed-params @mobile?]
+         [mc/collapsible-panel (get @*params @*forecast) select-param! @processed-params @mobile?]
          (when (and @show-info? (aget @my-box "height"))
            [mc/information-tool
             get-point-info!

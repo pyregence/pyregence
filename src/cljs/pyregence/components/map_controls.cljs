@@ -167,21 +167,29 @@
            [:option {:key key :value key} opt-label])
          options)]])
 
-(defn optional-layer [opt-label filter-set z-index]
-  (let [show-layer? (r/atom false)
-        layer-name  (r/atom "")]
-    (go
-      (reset! layer-name (edn/read-string (:message (<! (u/call-clj-async! "get-layer-name"
-                                                                           (pr-str filter-set)))))))
-    (fn [opt-label _ z-index]
+(defn get-layer-name [filter-set update-layer]
+  (go
+    (let [name (edn/read-string (:message (<! (u/call-clj-async! "get-layer-name"
+                                                                 (pr-str filter-set)))))]
+      (update-layer :name name)
+      name)))
+
+(defn optional-layer [opt-label filter-set z-index layer update-layer]
+  (fn [opt-label filter-set z-index layer update-layer]
+    (let [show? (:show layer)]
       [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
        [:div {:style {:display "flex"}}
         [:input {:style {:margin ".25rem .5rem 0 0"}
                  :type "checkbox"
-                 :on-click #(do (swap! show-layer? not)
-                                (if @show-layer?
-                                  (ol/create-wms-layer! @layer-name @layer-name z-index)
-                                  (ol/set-visible-by-title! @layer-name false)))}]
+                 :checked show?
+                 :on-change (fn []
+                              (go
+                                (let [layer-name (or (:name layer )
+                                                     (<! (get-layer-name filter-set update-layer)))]
+                                (update-layer :show (not show?))
+                                (if show?
+                                  (ol/set-visible-by-title! layer-name false)
+                                  (ol/create-wms-layer! layer-name layer-name z-index)))))}]
         [:label opt-label]]])))
 
 (defn collapsible-panel [*params select-param! param-options mobile?]
@@ -193,7 +201,7 @@
                            (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
     (reset! show-panel? (not mobile?))
     (fn [*params select-param! param-options mobile?]
-      ;; TODO this should not need to be called each render.
+      ;; TODO: This should not need to be called each render.
       ;;      Figwheel has components mount in a different order than normal.
       (select-base-map! @*base-map)
       [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
@@ -210,13 +218,20 @@
                    [panel-dropdown
                     opt-label
                     hover-text
-                    (*params key)
+                    (get *params key)
                     sorted-options
                     (= 1 (count sorted-options))
-                    #(select-param! key %)]
+                    #(select-param! % key)]
                    (when underlays
                      (map (fn [[key {:keys [opt-label filter-set z-index]}]]
-                            ^{:key key} [optional-layer opt-label filter-set z-index])
+                            (let [underlays (:underlays *params)]
+                             ^{:key key}
+                            [optional-layer
+                             opt-label
+                             filter-set
+                             z-index
+                             (get underlays key)
+                             (fn [k v] (select-param! v :underlays key k))]))
                           underlays))]))
               param-options)
          [:div {:style {:margin-top ".5rem"}}
@@ -225,12 +240,12 @@
                    :type "range" :min "0" :max "100" :value @active-opacity
                    :on-change #(do (reset! active-opacity (u/input-int-value %))
                                    (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-         [panel-dropdown 
-            "Base Map" 
-            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference." 
-            @*base-map 
-            c/base-map-options 
-            false 
+         [panel-dropdown
+            "Base Map"
+            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
+            @*base-map
+            c/base-map-options
+            false
             select-base-map!]
          [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
           [:div {:style {:display "flex"}}
