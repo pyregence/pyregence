@@ -218,9 +218,14 @@
                 (get-in @processed-params [key :auto-zoom?])))
 
 (defn select-forecast! [key]
-  (go (reset! *forecast key)
-      (reset! processed-params (get-forecast-opt :params))
-      (<! (change-type! true true (get-options-key :auto-zoom?)))))
+  (go
+    (doseq [[_ {:keys [name]}] (get-in @*params [@*forecast :underlays])]
+      (ol/set-visible-by-title! name false))
+    (reset! *forecast key)
+    (reset! processed-params (get-forecast-opt :params))
+    (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
+      (ol/set-visible-by-title! name show?))
+    (<! (change-type! true true (get-options-key :auto-zoom?)))))
 
 (defn set-show-info! [show?]
   (if (and show? (get-forecast-opt :block-info?))
@@ -269,8 +274,8 @@
                                                 params)
                                         {:underlays (->> params
                                                          (mapcat (fn [[_ v]] (:underlays v)))
-                                                         (u/mapm (fn [[k _]] [k {:show false
-                                                                                 :name nil}])))})]))
+                                                         (u/mapm (fn [[k _]] [k {:show? false
+                                                                                 :name  nil}])))})]))
                    c/forecast-options)))
 
 (defn init-map! [user-id]

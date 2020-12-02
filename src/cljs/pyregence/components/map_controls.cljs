@@ -175,8 +175,9 @@
       name)))
 
 (defn optional-layer [opt-label filter-set z-index layer update-layer]
+  (get-layer-name filter-set update-layer)
   (fn [opt-label filter-set z-index layer update-layer]
-    (let [show? (:show layer)]
+    (let [show? (:show? layer)]
       [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
        [:div {:style {:display "flex"}}
         [:input {:style {:margin ".25rem .5rem 0 0"}
@@ -185,8 +186,8 @@
                  :on-change (fn []
                               (go
                                 (let [layer-name (or (:name layer )
-                                                     (<! (get-layer-name filter-set update-layer)))]
-                                (update-layer :show (not show?))
+                                                     (<! (get-layer-name filter-set update-layer)))] ; Note, this redundancy is due to the way figwheel reloads.
+                                (update-layer :show? (not show?))
                                 (if show?
                                   (ol/set-visible-by-title! layer-name false)
                                   (ol/create-wms-layer! layer-name layer-name z-index)))))}]
