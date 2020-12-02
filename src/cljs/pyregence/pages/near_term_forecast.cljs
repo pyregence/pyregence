@@ -213,9 +213,10 @@
 
 (defn select-param! [val & keys]
   (swap! *params assoc-in (concat [@*forecast] keys) val)
-  (change-type! (not (= key :model-init))
-                (get-current-layer-key :clear-point?)
-                (get-in @processed-params [key :auto-zoom?])))
+  (let [main-key (first keys)]
+    (change-type! (not (= main-key :model-init))
+                  (get-current-layer-key :clear-point?)
+                  (get-in @processed-params [main-key :auto-zoom?]))))
 
 (defn select-forecast! [key]
   (go
