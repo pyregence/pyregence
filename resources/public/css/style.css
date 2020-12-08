@@ -548,6 +548,13 @@ article.documents-single .document-meta {
     color: #ffffff;
     border-color: #ffffff;
 }
+.doc-page {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    margin-top: calc(48px + 2.5rem);
+    width: 100%;
+}
 /*——Media Queries——*/
 @media (min-width: 768px) {
     .subtitle {
