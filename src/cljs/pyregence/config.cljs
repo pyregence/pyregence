@@ -83,8 +83,9 @@
                                                              :10 {:opt-label "10%"
                                                                   :filter    "10"}}}
                                :fuel       {:opt-label  "Fuel"
-                                            :hover-text "The U.S. government has mapped fuels across the U.S. These are the fuel inputs that we use in our forecasts. More information about LANDFIRE can be found at https://landfire.gov/."
-                                            :options    {:landfire {:opt-label "LANDFIRE"
+                                            :hover-text "Source of surface and canopy fuel inputs:\n
+                                                         LANDFIRE data (https://landfire.gov) at 30-m resolution customized by Pyrologix (http://pyrologix.com) for the United States Forest Service, Pacific Southwest Region (https://www.fs.usda.gov/r5)."
+                                            :options    {:landfire {:opt-label "Custom LANDFIRE"
                                                                     :filter    "landfire"}}}
                                :model      {:opt-label  "Model"
                                             :hover-text "ELMFIRE is a new predictive model developed by Chris Lautenberger of Reax Engineering. It is the artificial intelligence used to generate the active fire forecast in this tool."
@@ -125,8 +126,8 @@
                                                                         :filter       "tlines"
                                                                         :clear-point? true}}}
                                  :fuel       {:opt-label  "Fuel"
-                                              :hover-text "Source of surface and canopy fuel inputs.\n
-                                                           Federal LANDFIRE program (https://landfire.gov/) gridded inputs at 30 m resolution.\n
+                                              :hover-text "Source of surface and canopy fuel inputs:\n
+                                                           LANDFIRE data (https://landfire.gov) at 30-m resolution customized by Pyrologix (http://pyrologix.com) for the United States Forest Service, Pacific Southwest Region (https://www.fs.usda.gov/r5).\n
                                                            California Forest Observatory (https://forestobservatory.com) 10 m fuels measured by satellite."
                                               :options    {:landfire {:opt-label "LANDFIRE"
                                                                       :filter    "landfire"}
