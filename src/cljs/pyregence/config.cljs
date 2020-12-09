@@ -129,7 +129,7 @@
                                               :hover-text "Source of surface and canopy fuel inputs:\n
                                                            LANDFIRE data (https://landfire.gov) at 30-m resolution customized by Pyrologix (http://pyrologix.com) for the United States Forest Service, Pacific Southwest Region (https://www.fs.usda.gov/r5).\n
                                                            California Forest Observatory (https://forestobservatory.com) 10 m fuels measured by satellite."
-                                              :options    {:landfire {:opt-label "LANDFIRE"
+                                              :options    {:landfire {:opt-label "Custom LANDFIRE"
                                                                       :filter    "landfire"}
                                                            :cfo      {:opt-label "California Forest Observatory"
                                                                       :filter    "cfo"}}}
