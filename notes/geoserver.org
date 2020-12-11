@@ -1,4 +1,4 @@
-* Configuring A GeoServer for Pyregence
+* How to Configure a GeoServer for Pyregence
 
 ** Installation Requirements
 
@@ -8,12 +8,13 @@
 
 ** Install Jetty
 
-*** Jetty Service
+*** Create Jetty Directories and System Service
+
 The Pyregence GeoServer loosely follows the instructions here:
 https://www.eclipse.org/jetty/documentation/9.2.22.v20170531/startup-unix-service.html
 
-This process creates a stand alone Jetty service that will run
-the GeoServer. With su rights enter the following commands:
+This process creates a stand alone Jetty service that will run the
+GeoServer. With su rights enter the following commands:
 
 #+begin_src sh
 sudo mkdir -p /opt/jetty/jetty-base/webapps
@@ -30,9 +31,10 @@ echo -e "JETTY_BASE=/opt/jetty/jetty-base" | sudo tee -a /etc/default/jetty
 cp start.ini ../jetty-base
 #+end_src
 
-*** Set Up Static File Directory
+*** Configure Static File Directory
 
-Create a new file /opt/jetty/jetty-base/webapps/static.xml and add the following
+Create a new file /opt/jetty/jetty-base/webapps/static.xml and add the
+following:
 
 #+begin_src xml
 <Configure class="org.eclipse.jetty.server.handler.ContextHandler">
@@ -46,12 +48,12 @@ Create a new file /opt/jetty/jetty-base/webapps/static.xml and add the following
 </Configure>
 #+end_src
 
-*** Forwarding Ports
+*** Forward Ports
 
-Forwarding ports from the defaults for http and https allows the web server
-to run without sudo privileges. To forward ports use iptables. Installing
-iptables-persistent after setting up the routing will automatically save
-the rules persistently.
+Forwarding ports from the defaults for http and https allows the web
+server to run without sudo privileges. To forward ports use iptables.
+Installing iptables-persistent after setting up the routing will
+automatically save the rules persistently.
 
 #+begin_src sh
 sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080
@@ -60,19 +62,20 @@ sudo iptables-save
 sudo apt -y install iptables-persistent
 #+end_src
 
-*** Start Jetty
+*** Start Jetty Service
 
-Start Jetty with this basic configuration in order to obtain SSL certificates.
+Start Jetty with this basic configuration in order to obtain SSL
+certificates.
 
 #+begin_src sh
 sudo service jetty start
 #+end_src
 
-** Initializing SSL Certificate
+** Create SSL Certificate
 
-Use openssl and certbot to obtain a certificate.  Adding a deploy hook will
-allow the certificate to be auto generated each time certbot updates.  Jetty
-must be running to obtain the certificate.
+Use openssl and certbot to obtain a certificate. Adding a deploy hook
+will allow the certificate to be auto generated each time certbot
+updates. Jetty must be running to obtain the certificate.
 
 Enter the following commands:
 
@@ -83,12 +86,12 @@ chmod +x /opt/jetty/create-key.sh
 sudo certbot certonly --quiet --non-interactive --agree-tos -m support@sig-gis.com --webroot -w /var/www/html -d data.pyregence.org --deploy-hook /opt/jetty/create-key.sh
 #+end_src
 
-** Configure jetty
+** Configure Jetty
 
-*** webdefault.xml
+*** Edit webdefault.xml
 
-Open /opt/jetty/jetty-home/etc/webdefault.xml and add the following to the
-bottom of the xml file:
+Open /opt/jetty/jetty-home/etc/webdefault.xml and add the following to
+the bottom of the xml file:
 
 #+begin_src xml
 <filter>
@@ -123,12 +126,12 @@ bottom of the xml file:
 </context-param>
 #+end_src
 
-*** start.ini
+*** Edit start.ini
 
-Open /opt/jetty/jetty-base/start.ini and add the following to the end of the
-file:
+Open /opt/jetty/jetty-base/start.ini and add the following to the end
+of the file:
 
-#+begin_src
+#+begin_example
 --module=servlets,ssl,https,http2
 
 jetty.sslContext.keyStorePath=etc/keystore.pkcs12
@@ -136,9 +139,10 @@ jetty.sslContext.keyStorePassword=foobar
 jetty.sslContext.keyStoreType=PKCS12
 jetty.sslContext.keyManagerPassword=foobar
 jetty.sslContext.trustStorePath=etc/keystore.pkcs12
-#+end_src
+#+end_example
 
 *** Restart Jetty
+
 Restart Jetty for the new configuration to take affect.
 
 #+begin_src sh
@@ -147,11 +151,12 @@ sudo service jetty restart
 
 ** Install GeoServer
 
-*** Main installation
+*** Install Main WAR
 
-We are using the stand alone version of Jetty and GeoServer.  Download the
-web archive (war) version of the GeoServer.  If using extensions, the war will
-need to be extracted to add files to the WEB-INF/lib folder.
+We are using the stand alone version of Jetty and GeoServer. Download
+the web archive (war) version of the GeoServer. If using extensions,
+the war will need to be extracted to add files to the WEB-INF/lib
+folder.
 
 To do so enter the following commands:
 
@@ -168,6 +173,13 @@ chmod -R +rw /var/lib/geoserver/data/
 #+end_src
 
 *** Install Extensions
+
+Pyregence uses the GeoServer CSS plugin to simplify the specification
+of layer styles. Run these commands to add this extension to
+GeoServer:
+
+#+begin_src sh
 cd /opt/jetty/jetty-base/webapps
 wget http://sourceforge.net/projects/geoserver/files/GeoServer/2.18.0/extensions/geoserver-2.18.0-css-plugin.zip
 unzip geoserver-2.18.0-css-plugin.zip -d geoserver/WEB-INF/lib
+#+end_src
