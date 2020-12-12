@@ -18,8 +18,45 @@ behavior models:
 - [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
 - [[https://www.postgresql.org/download][Postgresql (version 12)]]
 - [[https://postgis.net/install][PostGIS (version 3)]]
-- [[https://certbot.eff.org/][certbot]]
-- [[https://www.openssl.org/source/][openssl]]
+
+** Postgresql Database Setup
+
+*PostgreSQL* needs to be installed on the machine that will be hosting
+the Pyregence website. Once the Postgresql database server is running
+on your machine, you should navigate to the toplevel directory and run
+the database build command as follows:
+
+#+begin_src sh
+$ clojure -M:build-db build-all
+#+end_src
+
+This will begin by creating a new database and role called *pyregence*
+and then add the pgcrypto and postgis extensions to it. Next, the
+script will populate the database with the schemas, tables, and
+functions that are necessary for storing and processing Pyregence's
+data. Finally, it will load some default data into these tables that
+is necessary for the website to function properly.
+
+*** Performance Settings
+
+If you want to improve the performance of your Postgresql server, one
+way is to visit the [[https://pgtune.leopard.in.ua/][pgtune]] website
+and input your system settings. This will generate a set of configuration
+options that you can add to the postgresql.conf file in your system-specific
+Postgresql data directory.
+
+If you would like to keep these settings separate for your own
+reference, you can add them to a file called "performance.conf" that
+you should place in your Postgresql data directory. You can then
+import these settings into postgresql.conf by adding this line to the
+end of that file:
+
+#+begin_example
+include = 'performance.conf'
+#+end_example
+
+Note that the Postgresql server will need to be restarted for these
+changes to take effect.
 
 ** Environment Variable Setup
 
@@ -78,39 +115,40 @@ C:\Program Files\PostgreSQL\X\bin
 
 Replace *X* with the PostgreSQL version installed on your computer.
 
-** Postgresql Database Setup
+** Development Web Server
 
-*PostgreSQL* needs to be installed on the machine that will be hosting
-the Pyregence website. Once the Postgresql database server is running
-on your machine, you should navigate to the toplevel directory and run
-the database build command as follows:
+*** Modifying hosts file
+
+Add the following line to your hosts file. This local url will be
+launched by Figwheel (see next section).
 
 #+begin_src sh
-$ clojure -A:build-db build-all
+127.0.0.1 local.pyregence.org
 #+end_src
 
-This will begin by creating a new database and role called *pyregence*
-and then add the pgcrypto and postgis extensions to it. Next, the
-script will populate the database with the schemas, tables, and
-functions that are necessary for storing and processing Pyregence's
-data. Finally, it will load some default data into these tables that
-is necessary for the website to function properly.
+*** Launching Figwheel
 
-*** Postgresql Parallel Settings
+To start the Figwheel server, navigate to the toplevel project
+directory and run:
 
-To enable parallel processing, find the postgresql.conf file located in
-your installation's data directory and update the following settings:
+#+begin_src sh
+$ clojure -M:figwheel
+#+end_src
 
-#+begin_example
-max_worker_processes = 12
-max_parallel_maintenance_workers = 8
-max_parallel_workers_per_gather = 4
-parallel_leader_participation = on
-max_parallel_workers = 40
-#+end_example
+This will start a webserver on http://local.pyregence.org:8080 (also
+accessible from http://localhost:8080), which serves up the website in
+dev mode. Any changes to CLJS files will be automatically pushed to
+the browser when the files are saved. Any changes to CLJ files will be
+pushed to the running server process. A CLJS browser REPL will also be
+launched at the terminal for you to interactively develop your
+client-side code.
 
-Once you have made these changes, remember to stop and restart your
-Postgresql database server.
+** Production Web Server
+
+*** Installation Requirements
+
+- [[https://certbot.eff.org/][certbot]]
+- [[https://www.openssl.org/source/][openssl]]
 
 ** Email Server
 
@@ -129,11 +167,18 @@ replacing the values with your own:
 
 ** Enabling https
 
+If you have not already created a SSL certificate, you must start the server in
+"dev" mode to complete the following steps.
+
+#+begin_src sh
+clojure -M:run-server port dev
+#+end_src
+
 To automatically create an SSL certificate signed by [[https://letsencrypt.org][Let's Encrypt]],
 simply run the following command from your shell:
 
 #+begin_src sh
-clojure -A:certbot-init mydomain.com [certbot-dir]
+clojure -M:certbot-init mydomain.com [certbot-dir]
 #+end_src
 
 Note: If your certbot installation stores its config files in a
@@ -153,7 +198,7 @@ this repackaging step manually, simply run this command from your
 shell:
 
 #+begin_src sh
-clojure -A:package-cert mydomain.com [certbot-dir]
+clojure -M:package-cert mydomain.com [certbot-dir]
 #+end_src
 
 Certbot runs as a background task every 12 hours and will renew any
@@ -162,32 +207,6 @@ certificate is renewed, certbot-deploy-hook.sh will be run
 automatically to repackage the updated certificate into the correct
 format.
 
-** Usage
-
-To compile and run the web application, navigate to the toplevel
-project directory and run:
-
-#+begin_src sh
-$ clojure -A:compile-cljs
-$ clojure -A:run-server [port] [dev|prod]
-#+end_src
-
-If you have already created an SSL certificate, you can enable HTTPS by
-running the server in "prod" mode as the root user:
-
-#+begin_src sh
-$ sudo clojure -A:run-server [port] prod
-#+end_src
-
-The website will then be available at http(s)://localhost:8080 or on
-whichever port you specified. In dev mode, server-side exceptions will
-be displayed in the browser and Clojure source files will be reloaded
-whenever you refresh the page. These features are disabled in prod
-mode. If the second argument to run-server is omitted, it will default
-to prod mode.
-
-** Development
-
 *** Compiling Clojurescript to Javascript
 
 To compile the Clojurescript files under src/cljs to Javascript under
@@ -195,38 +214,37 @@ target/public/cljs, navigate to the toplevel project directory and
 run:
 
 #+begin_src sh
-$ clojure -A:compile-cljs
+clojure -M:compile-cljs
 #+end_src
 
 The main Javascript entry point file will be written to
 target/public/cljs/app.js. The Clojurescript compiler options are read
 from the toplevel compile-prod.cljs.edn file.
 
-*** Modifying hosts file
+*** Launching the Web Server
 
-Add the following line to your hosts file. This local url will be
-launched by Figwheel (see next section).
-
-#+begin_src sh
-127.0.0.1 local.pyregence.org
-#+end_src
-
-*** Launching Figwheel
-
-To start the Figwheel server, navigate to the toplevel project
-directory and run:
+To compile and run the web application, navigate to the toplevel
+project directory and run:
 
 #+begin_src sh
-$ clojure -A:figwheel
+clojure -M:run-server [port] [dev|prod]
 #+end_src
 
-This will start a webserver on http://local.pyregence.org:8080 (also
-accessible from http://localhost:8080), which serves up the website in
-dev mode. Any changes to CLJS files will be automatically pushed to
-the browser when the files are saved. Any changes to CLJ files will be
-pushed to the running server process. A CLJS browser REPL will also be
-launched at the terminal for you to interactively develop your
-client-side code.
+By default, the website will then be available at https://localhost:8443
+or on whichever port you specified. In dev mode, server-side exceptions will
+be displayed in the browser and Clojure source files will be reloaded
+whenever you refresh the page. These features are disabled in prod
+mode. If the second argument to run-server is omitted, it will default
+to prod mode.
+
+If you don't already have an SSL certificate, you must run in "dev" mode:
+
+#+begin_src sh
+clojure -M:run-server port dev
+#+end_src
+
+This will start a webserver on http://localhost:8080 or on whichever port
+you specified
 
 ** License and Distribution
 
