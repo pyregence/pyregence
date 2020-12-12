@@ -398,7 +398,7 @@
    [radio "Dark"  $/light? false #(reset! $/light? %)]])
 
 (defn message-modal []
-  (r/with-let [show-me? (r/atom true)]
+  (r/with-let [show-me? (r/atom (not (str/includes? (-> js/window .-location .-origin) "local")))]
     (when @show-me?
       [:div#message-modal {:style ($/modal)}
        [:div {:style ($message-modal @mobile?)}
@@ -422,7 +422,7 @@
            quiet enjoyment, accuracy, integration, merchantability or fitness for any particular purpose,
            and all warranties arising from any course of dealing, course of performance, or usage of trade."]
          [:label {:style {:margin "1rem .25rem 0 0"}}
-          "Please see our "
+          "Please see our"
           [:a {:style {:margin-right ".25rem"}
                :href "/terms-of-use"
                :target "_blank"} "Terms of Use"]
