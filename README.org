@@ -27,7 +27,7 @@ on your machine, you should navigate to the toplevel directory and run
 the database build command as follows:
 
 #+begin_src sh
-$ clojure -M:build-db build-all
+clojure -M:build-db build-all
 #+end_src
 
 This will begin by creating a new database and role called *pyregence*
@@ -122,9 +122,9 @@ Replace *X* with the PostgreSQL version installed on your computer.
 Add the following line to your hosts file. This local url will be
 launched by Figwheel (see next section).
 
-#+begin_src sh
+#+begin_example
 127.0.0.1 local.pyregence.org
-#+end_src
+#+end_example
 
 *** Launching Figwheel
 
@@ -132,7 +132,7 @@ To start the Figwheel server, navigate to the toplevel project
 directory and run:
 
 #+begin_src sh
-$ clojure -M:figwheel
+clojure -M:figwheel
 #+end_src
 
 This will start a webserver on http://local.pyregence.org:8080 (also
@@ -244,7 +244,7 @@ clojure -M:run-server port dev
 #+end_src
 
 This will start a webserver on http://localhost:8080 or on whichever port
-you specified
+you specified.
 
 ** License and Distribution
 
