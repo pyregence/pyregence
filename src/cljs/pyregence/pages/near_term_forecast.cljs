@@ -417,7 +417,7 @@
                :style {:width "100%"}}
          [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
           "Disclaimer"]]
-        [:span {:style {:padding ".5rem" :overflow "auto"}}
+        [:div {:style {:padding ".5rem" :overflow "auto"}}
          [:label {:style {:margin-bottom ".5rem"}}
           "This site is currently a work in progress and is in a Beta testing phase.
            It provides access to an experimental fire spread forecast tool. Use at your own risk."]
@@ -431,7 +431,16 @@
            subcontractors, and licensors) all representations and warranties, whether express or implied, oral or written,
            with respect to this site, including without limitation, all implied warranties of title, non-infringement,
            quiet enjoyment, accuracy, integration, merchantability or fitness for any particular purpose,
-           and all warranties arising from any course of dealing, course of performance, or usage of trade."]]
+           and all warranties arising from any course of dealing, course of performance, or usage of trade."]
+         [:label {:style {:margin "1rem .25rem 0 0"}}
+          "Please see our"
+          [:a {:style {:margin-right ".25rem"}
+               :href "/terms-of-use"
+               :target "_blank"} "Terms of Use"]
+          "and"
+          [:a {:style {:margin-left ".25rem"}
+               :href "/privacy-policy"
+               :target "_blank"} "Privacy Policy"]]]
         [:div {:style ($/combine $/flex-row {:justify-content "flex-end"})}
          [:span
           [:label {:class "btn border-yellow text-brown"
