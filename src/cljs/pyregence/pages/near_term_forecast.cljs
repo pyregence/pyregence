@@ -212,7 +212,7 @@
       (ol/zoom-to-extent! (get-current-layer-extent)))))
 
 (defn select-param! [val & keys]
-  (swap! *params assoc-in (concat [@*forecast] keys) val)
+  (swap! *params assoc-in (cons @*forecast keys) val)
   (let [main-key (first keys)]
     (change-type! (not (= main-key :model-init))
                   (get-current-layer-key :clear-point?)

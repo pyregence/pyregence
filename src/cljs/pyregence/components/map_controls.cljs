@@ -185,12 +185,12 @@
                  :checked show?
                  :on-change (fn []
                               (go
-                                (let [layer-name (or (:name layer )
+                                (let [layer-name (or (:name layer)
                                                      (<! (get-layer-name filter-set update-layer)))] ; Note, this redundancy is due to the way figwheel reloads.
-                                (update-layer :show? (not show?))
-                                (if show?
-                                  (ol/set-visible-by-title! layer-name false)
-                                  (ol/create-wms-layer! layer-name layer-name z-index)))))}]
+                                  (update-layer :show? (not show?))
+                                  (if show?
+                                    (ol/set-visible-by-title! layer-name false)
+                                    (ol/create-wms-layer! layer-name layer-name z-index)))))}]
         [:label opt-label]]])))
 
 (defn collapsible-panel [*params select-param! param-options mobile?]
@@ -226,13 +226,13 @@
                    (when underlays
                      (map (fn [[key {:keys [opt-label filter-set z-index]}]]
                             (let [underlays (:underlays *params)]
-                             ^{:key key}
-                            [optional-layer
-                             opt-label
-                             filter-set
-                             z-index
-                             (get underlays key)
-                             (fn [k v] (select-param! v :underlays key k))]))
+                              ^{:key key}
+                              [optional-layer
+                               opt-label
+                               filter-set
+                               z-index
+                               (get underlays key)
+                               (fn [k v] (select-param! v :underlays key k))]))
                           underlays))]))
               param-options)
          [:div {:style {:margin-top ".5rem"}}
@@ -242,12 +242,12 @@
                    :on-change #(do (reset! active-opacity (u/input-int-value %))
                                    (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
          [panel-dropdown
-            "Base Map"
-            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
-            @*base-map
-            c/base-map-options
-            false
-            select-base-map!]
+          "Base Map"
+          "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
+          @*base-map
+          c/base-map-options
+          false
+          select-base-map!]
          [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
           [:div {:style {:display "flex"}}
            [:input {:style {:margin ".25rem .5rem 0 0"}
@@ -464,13 +464,13 @@
   (reset! show-legend? (not mobile?))
   (fn [legend-list reverse? mobile?]
     (when (and @show-legend? (seq legend-list))
-    [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel?))}
-     [:div {:style {:display "flex" :flex-direction "column"}}
-      (map-indexed (fn [i leg]
-                     ^{:key i}
-                     [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
-                      [:div {:style ($legend-color (get leg "color"))}]
-                      [:label (get leg "label")]])
-                   (if reverse?
-                     (reverse legend-list)
-                     legend-list))]])))
+      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel?))}
+       [:div {:style {:display "flex" :flex-direction "column"}}
+        (map-indexed (fn [i leg]
+                       ^{:key i}
+                       [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
+                        [:div {:style ($legend-color (get leg "color"))}]
+                        [:label (get leg "label")]])
+                     (if reverse?
+                       (reverse legend-list)
+                       legend-list))]])))

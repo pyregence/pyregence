@@ -250,8 +250,8 @@
       (.setOpacity opacity)))
 
 (defn set-visible-by-title! [title visible?]
-  (if-let [layer (get-layer-by-title title)]
-    (.setVisible layer visible?)))
+  (some-> (get-layer-by-title title)
+          (.setVisible visible?)))
 
 (defn set-zoom! [zoom]
   (-> @the-map .getView (.setZoom zoom)))
