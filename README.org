@@ -242,6 +242,13 @@ to prod mode.
 If you don't already have an SSL certificate, you cannot specify a https
 port.
 
+*** Maintaining Daily Logs
+
+By default the server will log to standard out.  If you would like to have
+the system log to YYYY-DD-MM.log use the -o option to specify a output path.
+You can specify a relative path that will be relative to the repo or an
+absolute path.
+
 ** License and Distribution
 
 FIXME: Fill in this section.
