@@ -247,7 +247,7 @@ port.
 By default the server will log to standard out.  If you would like to have
 the system log to YYYY-DD-MM.log use the -o option to specify a output path.
 You can specify a relative path that will be relative to the repo or an
-absolute path.
+absolute path. The logger will keep the 10 most recent logs.
 
 ** License and Distribution
 
