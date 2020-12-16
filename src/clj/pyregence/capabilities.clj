@@ -4,7 +4,7 @@
             [clojure.set        :as set]
             [clj-http.client    :as client]
             [pyregence.database :refer [call-sql]]
-            [pyregence.logging  :refer [log-str]]
+            [pyregence.logging  :refer [log log-str]]
             [pyregence.views    :refer [data-response]]))
 
 ;;; State
@@ -113,9 +113,10 @@
 
 (defn set-capabilities! []
   (try
-    (process-layers!)
-    (log-str (count @layers) " layers added to capabilities.")
-    (catch Exception e
+    (let [stdout? (= 0 (count @layers))]
+      (process-layers!)
+      (log (str (count @layers) " layers added to capabilities.") :force-stdout? stdout?))
+    (catch Exception _
       (log-str "Failed to load capabilities."))))
 
 (defn remove-workspace! [workspace-name]
