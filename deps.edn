@@ -22,21 +22,22 @@
         ring/ring-json             {:mvn/version "0.5.0"}
         seancorfield/next.jdbc     {:mvn/version "1.1.569"}}
 
- :aliases {:build-db     {:main-opts ["-m" "pyregence.build-db"]}
-           :certbot-init {:main-opts ["-m" "pyregence.https" "certbot-init"]}
-           :package-cert {:main-opts ["-m" "pyregence.https" "package-cert"]}
-           :compile-cljs {:main-opts ["-m" "cljs.main" "-co" "compile-prod.cljs.edn" "-c"]}
-           :figwheel-lib {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.11"}}}
-           :figwheel     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.11"}
-                                       com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}}
-                          :main-opts ["-m" "figwheel.main" "-b" "compile-dev" "-r"]}
-           :rebel        {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
-                          :main-opts  ["-m" "rebel-readline.main"]}
-           :production   {:jvm-opts ["-Xmx4096m" "-XX:+PrintFlagsFinal"]}
-           :run-server   {:main-opts ["-m" "pyregence.server"]}
-           :check-deps   {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
-                          :main-opts ["-m" "depot.outdated.main"]}
-           :make-jar     {:extra-deps {seancorfield/depstar {:mvn/version "0.3.1"}}
-                          :main-opts ["-m" "hf.depstar.jar"]}
-           :make-uberjar {:extra-deps {seancorfield/depstar {:mvn/version "0.3.1"}}
-                          :main-opts ["-m" "hf.depstar.uberjar"]}}}
+ :aliases {:build-db         {:main-opts ["-m" "pyregence.build-db"]}
+           :certbot-init     {:main-opts ["-m" "pyregence.https" "certbot-init"]}
+           :package-cert     {:main-opts ["-m" "pyregence.https" "package-cert"]}
+           :compile-cljs     {:main-opts ["-m" "cljs.main" "-co" "compile-prod.cljs.edn" "-c"]}
+           :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.11"}}}
+           :figwheel         {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.11"}
+                                           com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}}
+                              :main-opts ["-m" "figwheel.main" "-b" "compile-dev" "-r"]}
+           :rebel            {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
+                              :main-opts  ["-m" "rebel-readline.main"]}
+           :production       {:jvm-opts ["-Xmx4096m" "-XX:+PrintFlagsFinal"]}
+           :run-server       {:main-opts ["-m" "pyregence.server"]}
+           :check-reflection {:main-opts ["-e" "(do,(set!,*warn-on-reflection*,true),nil)"]}
+           :check-deps       {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
+                              :main-opts ["-m" "depot.outdated.main"]}
+           :make-jar         {:extra-deps {seancorfield/depstar {:mvn/version "0.3.1"}}
+                              :main-opts ["-m" "hf.depstar.jar"]}
+           :make-uberjar     {:extra-deps {seancorfield/depstar {:mvn/version "0.3.1"}}
+                              :main-opts ["-m" "hf.depstar.uberjar"]}}}
