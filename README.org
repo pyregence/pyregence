@@ -249,6 +249,44 @@ the system log to YYYY-DD-MM.log use the -o option to specify a output path.
 You can specify a relative path that will be relative to the repo or an
 absolute path. The logger will keep the 10 most recent logs.
 
+*** Running the Web Server as a System Service
+
+This section is only for production servers running a Unix based
+OS which uses systemd.
+
+Modify the following text to update "User=" and "ExecStart="
+to match the local installation of this git repo:
+
+#+begin_example
+[Unit]
+Description=A service to launch a server written in clojure
+After=network.target
+
+[Service]
+Type=simple
+User=user
+WorkingDirectory=[path-to-repo]/pyregence
+ExecStart=/usr/local/bin/clojure -M:run-server -P 8443 -o logs
+
+[Install]
+WantedBy=multi-user.target
+#+end_example
+
+Create a new file /etc/systemd/system/clj-webserver.service and copy the
+above text into it with:
+
+#+begin_src sh
+sudo nano /etc/systemd/system/clj-webserver.service
+#+end_src
+
+Enable and start the service with the following commands:
+
+#+begin_src sh
+sudo systemctl daemon-reload
+sudo systemctl enable clj-webserver
+sudo systemctl start clj-webserver
+#+end_src
+
 ** License and Distribution
 
 FIXME: Fill in this section.
