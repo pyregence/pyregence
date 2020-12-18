@@ -23,7 +23,7 @@
     (send-off synchronized-log-writer
               (if (pos? (count @output-path))
                 (fn [_] (spit (str @output-path log-filename) line :append true))
-                (fn [_] (print line)))))
+                (fn [_] (print line) (flush)))))
   nil)
 
 (defn log-str [& data]
