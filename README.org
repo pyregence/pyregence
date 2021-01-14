@@ -244,9 +244,10 @@ https port.
 *** Maintaining Daily Logs
 
 By default the server will log to standard out. If you would like to
-have the system log to YYYY-DD-MM.log, use the -o option to specify an
-output path. You can either specify a path relative to the toplevel
-directory of this repository or an absolute path on your filesystem.
+have the system log to YYYY-DD-MM.log, use the "-o path" option to
+specify an output path. You can either specify a path relative to
+the toplevel directory of this repository or an absolute path on
+your filesystem. The logger will keep the 10 most recent logs.
 
 ** License and Distribution
 

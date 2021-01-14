@@ -78,10 +78,11 @@
           (do
             (reset! server (run-jetty handler config))
             (reset! clean-up-service (start-clean-up-service!))
-            (set-capabilities!)
-            (set-output-path! (:output-dir options))))))))
+            (set-output-path! (:output-dir options))
+            (set-capabilities!)))))))
 
 (defn stop-server! []
+  (set-output-path! "")
   (when @clean-up-service
     (future-cancel @clean-up-service)
     (reset! clean-up-service nil))
