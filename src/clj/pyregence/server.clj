@@ -46,7 +46,7 @@
    ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
     :default "prod"
     :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
-   ["-o" "--output-dir DIR" "Output directory for log files.  When a directory is not provided output will be to stdout."
+   ["-o" "--output-dir DIR" "Output directory for log files. When a directory is not provided, output will be to stdout."
     :default ""]])
 
 (defn start-server! [& args]

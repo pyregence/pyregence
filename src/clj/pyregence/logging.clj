@@ -2,8 +2,7 @@
   (:import java.text.SimpleDateFormat
            java.util.Date)
   (:require [clojure.java.io :as io]
-            [clojure.pprint  :as pp]
-            [clojure.string  :as str]))
+            [clojure.pprint  :as pp]))
 
 (defonce synchronized-log-writer (agent nil))
 
@@ -22,7 +21,7 @@
                           (when newline? "\n"))]
     (send-off synchronized-log-writer
               (if (pos? (count @output-path))
-                (fn [_] (spit (str @output-path log-filename) line :append true))
+                (fn [_] (spit (io/file @output-path log-filename) line :append true))
                 (fn [_] (print line) (flush)))))
   nil)
 
@@ -30,10 +29,9 @@
   (log (apply str data)))
 
 (defn set-output-path! [path]
-  (let [path (str path (when-not (str/ends-with? path "/") "/"))]
-    (try
-      (io/make-parents (str path "dummy.log"))
-      (log-str "Logging to: " path)
-      (reset! output-path path)
-      (catch Exception _
-        (log-str "Error setting log path to " path ". Check that you supplied a valid path.")))))
+  (try
+    (io/make-parents (io/file path "dummy.log"))
+    (log-str "Logging to: " path)
+    (reset! output-path path)
+    (catch Exception _
+      (log-str "Error setting log path to " path ". Check that you supplied a valid path."))))

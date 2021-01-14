@@ -150,7 +150,7 @@ client-side code.
 - [[https://certbot.eff.org/][certbot]]
 - [[https://www.openssl.org/source/][openssl]]
 
-** Email Server
+*** Email Server
 
 To set up the email server for system emails, start by creating a file
 named `email-server.edn` in the root directory of the application. Add
@@ -165,7 +165,7 @@ replacing the values with your own:
  :ssl      true}
 #+end_src
 
-** Enabling https
+*** Enabling https
 
 If you have not already created a SSL certificate, you must start the server
 without a https port specified.
@@ -244,10 +244,10 @@ port.
 
 *** Maintaining Daily Logs
 
-By default the server will log to standard out.  If you would like to have
-the system log to YYYY-DD-MM.log use the -o option to specify a output path.
-You can specify a relative path that will be relative to the repo or an
-absolute path.
+By default the server will log to standard out. If you would like to have
+the system log to YYYY-DD-MM.log use the -o option to specify an output path.
+You can either specify a path relative to the toplevel directory of
+this repository or an absolute path on your filesystem.
 
 ** License and Distribution
 
