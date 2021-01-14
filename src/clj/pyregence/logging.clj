@@ -22,9 +22,8 @@
                           (if pprint? (pp/pprint max-data) max-data)
                           (when newline? "\n"))]
     (send-off synchronized-log-writer
-              (if (or force-stdout?
-                      (.exists (io/file @output-path)))
-                (fn [_] (print line))
+              (if (or force-stdout? (= "" @output-path))
+                (fn [_] (print line) (flush))
                 (fn [_] (spit (io/file @output-path log-filename) line :append true)))))
   nil)
 
@@ -51,11 +50,14 @@
       (reset! output-path path)
       (log (str "Logging to: " path) :force-stdout? true)
       (when (nil? @clean-up-service)
-        (start-clean-up-service!))
+        (reset! clean-up-service (start-clean-up-service!)))
       (catch Exception _
+        (reset! output-path "")
         (log (str "Error setting log path to " path ". Check that you supplied a valid path.") :force-stdout? true)))
 
     (not (nil? @clean-up-service))
     (do
+      (reset! output-path "")
+      (log "Logging to: stdout" :force-stdout? true)
       (future-cancel @clean-up-service)
       (reset! clean-up-service nil))))

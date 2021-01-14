@@ -113,8 +113,9 @@
 
 (defn set-capabilities! []
   (try
-    (process-layers!)
-    (log (str (count @layers) " layers added to capabilities.") :force-stdout? (= 0 (count @layers)))
+    (let [stdout? (= 0 (count @layers))]
+      (process-layers!)
+      (log (str (count @layers) " layers added to capabilities.") :force-stdout? stdout?))
     (catch Exception _
       (log-str "Failed to load capabilities."))))
 
