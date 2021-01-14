@@ -5,7 +5,7 @@
             [ring.adapter.jetty     :refer [run-jetty]]
             [pyregence.capabilities :refer [set-capabilities!]]
             [pyregence.handler      :refer [development-app production-app]]
-            [pyregence.logging      :refer [log-str]]))
+            [pyregence.logging      :refer [log-str set-output-path!]]))
 
 (defonce server           (atom nil))
 (defonce clean-up-service (atom nil))
@@ -45,7 +45,9 @@
     :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
    ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
     :default "prod"
-    :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]])
+    :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
+   ["-o" "--output-dir DIR" "Output directory for log files. When a directory is not provided, output will be to stdout."
+    :default ""]])
 
 (defn start-server! [& args]
   (let [{:keys [options summary errors]} (parse-opts args cli-options)]
@@ -73,9 +75,11 @@
           (println "ERROR:\n"
                    "  An SSL key is required if an HTTPS port is specified.\n"
                    "  Create an SSL key for HTTPS or run without the --https-port (-P) option.")
-          (do (reset! server (run-jetty handler config))
-              (reset! clean-up-service (start-clean-up-service!))
-              (set-capabilities!)))))))
+          (do
+            (reset! server (run-jetty handler config))
+            (reset! clean-up-service (start-clean-up-service!))
+            (set-capabilities!)
+            (set-output-path! (:output-dir options))))))))
 
 (defn stop-server! []
   (when @clean-up-service

@@ -1,20 +1,37 @@
 (ns pyregence.logging
   (:import java.text.SimpleDateFormat
            java.util.Date)
-  (:require [clojure.pprint :as pp]))
+  (:require [clojure.java.io :as io]
+            [clojure.pprint  :as pp]))
 
 (defonce synchronized-log-writer (agent nil))
 
-(defn max-length [str max-length]
-  (subs str 0 (min max-length (count str))))
+(defonce output-path (atom ""))
 
-(defn log [data & {:keys [newline pprint] :or {newline true pprint false}}]
-  (let [timestamp (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.))]
+(defn max-length [string length]
+  (subs string 0 (min length (count string))))
+
+(defn log [data & {:keys [newline? pprint?] :or {newline? true pprint? false}}]
+  (let [timestamp    (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.))
+        log-filename (str (.format (SimpleDateFormat. "YYYY-MM-dd") (Date.)) ".log")
+        max-data     (max-length data 500)
+        line         (str timestamp
+                          " "
+                          (if pprint? (pp/pprint max-data) max-data)
+                          (when newline? "\n"))]
     (send-off synchronized-log-writer
-              (cond pprint  (fn [_] (print (str timestamp " ")) (pp/pprint (max-length data 500)))
-                    newline (fn [_] (println timestamp (max-length data 500)))
-                    :else   (fn [_] (print timestamp (max-length data 500))))))
+              (if (pos? (count @output-path))
+                (fn [_] (spit (io/file @output-path log-filename) line :append true))
+                (fn [_] (print line) (flush)))))
   nil)
 
 (defn log-str [& data]
   (log (apply str data)))
+
+(defn set-output-path! [path]
+  (try
+    (io/make-parents (io/file path "dummy.log"))
+    (log-str "Logging to: " path)
+    (reset! output-path path)
+    (catch Exception _
+      (log-str "Error setting log path to " path ". Check that you supplied a valid path."))))
