@@ -143,6 +143,19 @@ pushed to the running server process. A CLJS browser REPL will also be
 launched at the terminal for you to interactively develop your
 client-side code.
 
+*** Checking for Reflection Warnings
+
+From the toplevel project directory run:
+
+#+begin_src sh
+clojure -M:check-reflection
+#+end_src
+
+This will emit warnings when reflection is needed to resolve Java
+method calls or field accesses. To resolve any that appear, add
+[[https://clojure.org/reference/java_interop#typehints][type hints]] to your code. Resolving all reflection warnings can improve
+system performance.
+
 ** Production Web Server
 
 *** Installation Requirements
