@@ -1,8 +1,9 @@
 (ns pyregence.https
-  (:require [clojure.java.io :as io]
+  (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
-            [clojure.string :as str]
-            [pyregence.logging :refer [log-str]]))
+            [clojure.string     :as str]
+            [clojure.tools.cli  :refer [parse-opts]]
+            [pyregence.logging  :refer [log-str]]))
 
 (def path-env (System/getenv "PATH"))
 
@@ -65,13 +66,31 @@
                      " -d " domain
                      " --deploy-hook " repo-path "/certbot-deploy-hook.sh"))))
 
-(defn -main [& [type domain certbot-dir]]
-  (if domain
-    (case type
-      "certbot-init" (initial-certificate domain (or certbot-dir "/etc/letsencrypt"))
-      "package-cert" (package-certificate domain (or certbot-dir "/etc/letsencrypt"))
-      (println "Valid options are:"
-               "\n  certbot-init domain [certbot-dir]    to initialize certbot"
-               "\n  package-cert domain [certbot-dir]    to repackage certificates after an update"))
-    (println "You must provide a domain to create an SSL key."))
+(def cli-options
+  [["-i" "--certbot-init" "Initialize certbot."]
+   ["-c" "--package-cert" "Package certbot certificate."]
+   ["-d" "--domain DOMAIN" "Domain for certbot registration."
+    :missing "You must provide a domain to create an SSL key."]
+   ["-p" "--path PATH" "Alternative path for certbot installation."
+    :default "/etc/letsencrypt"]])
+
+(defn -main [& args]
+  (let [{:keys [options summary errors]} (parse-opts args cli-options)
+        {:keys [domain path certbot-init package-cert]} options]
+    (cond
+      (seq errors)
+      (do
+        (run! println errors)
+        (println (str "Usage:\n" summary)))
+
+      certbot-init
+      (initial-certificate domain path)
+
+      package-cert
+      (package-certificate domain path)
+
+      :else
+      (do
+        (println "You must indicate which action to take with either --certbot-init or --package-cert")
+        (println (str "Usage:\n" summary)))))
   (shutdown-agents))
