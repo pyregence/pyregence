@@ -44,7 +44,7 @@
 
 (defn initial-certificate [domain certbot-dir]
   (let [repo-path (.getAbsolutePath (io/file ""))
-        sh-path   (.getPath (io/file certbot-dir "renewal-hooks/deploy" (str domain ".sh")))]
+        sh-path   (.getPath (io/file certbot-dir "renewal-hooks" "deploy" (str domain ".sh")))]
     (sh-wrapper "./"
                 {}
                 (str "sudo certbot certonly"
@@ -59,7 +59,7 @@
     (spit sh-path
           (str "#!/bin/sh"
                "\ncd " repo-path
-               "\nclojure -A:package-cert " domain " " certbot-dir))
+               "\nclojure -M:https --package-cert -d " domain " -p " certbot-dir))
     (sh-wrapper "./"
                 {}
                 (str "chmod +x " sh-path))
