@@ -4,7 +4,7 @@
             [clojure.tools.cli      :refer [parse-opts]]
             [ring.adapter.jetty     :refer [run-jetty]]
             [pyregence.capabilities :refer [set-capabilities!]]
-            [pyregence.handler      :refer [development-app production-app]]
+            [pyregence.handler      :refer [create-handler-stack]]
             [pyregence.logging      :refer [log-str set-output-path!]]))
 
 (defonce server           (atom nil))
@@ -56,12 +56,10 @@
         (run! println errors)
         (println (str "Usage:\n" summary)))
       (let [mode       (:mode options)
-            handler    (if (= mode "prod")
-                         #'production-app
-                         #'development-app)
             has-key?   (.exists (io/file "./.key/keystore.pkcs12"))
             https-port (:https-port options)
             ssl?       (and has-key? https-port)
+            handler    (create-handler-stack ssl? (= mode "dev"))
             config     (merge
                         {:port  (:http-port options)
                          :join? false}
