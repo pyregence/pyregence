@@ -22,11 +22,6 @@
         (recur (->> chars (drop-while #(not= \` %)))
                (->> chars (take-while #(not= \` %)) (apply str) (str/trim) (#(str/split % #" ")) (remove str/blank?) (into acc)))))))
 
-(defn format-simple
-  "Use any char after % for format."
-  [f-str & args]
-  (apply format (str/replace f-str #"(%[^ ])" "%s") args))
-
 (defn sh-wrapper [dir env & commands]
   (io/make-parents (str dir "/dummy"))
   (sh/with-sh-dir dir
@@ -48,14 +43,10 @@
                    " -passout pass:foobar")))
 
 (defn initial-certificate [domain certbot-dir]
-  (let [repo-path (.getAbsolutePath (io/file ""))]
-    (spit "certbot-deploy-hook.sh"
-          (str "#!/bin/sh"
-               "\ncd " repo-path
-               "\nclojure -A:package-cert " domain " " certbot-dir))
+  (let [repo-path (.getAbsolutePath (io/file ""))
+        sh-path   (.getPath (io/file certbot-dir "renewal-hooks" "deploy" (str domain ".sh")))]
     (sh-wrapper "./"
                 {}
-                "chmod +x certbot-deploy-hook.sh"
                 (str "sudo certbot certonly"
                      " --quiet"
                      " --non-interactive"
@@ -63,8 +54,17 @@
                      " -m support@sig-gis.com"
                      " --webroot"
                      " -w ./resources/public"
-                     " -d " domain
-                     " --deploy-hook " repo-path "/certbot-deploy-hook.sh"))))
+                     " -d " domain))
+    ;; Certbot does not create its /etc folder until a certificate is created.
+    (spit sh-path
+          (str "#!/bin/sh"
+               "\ncd " repo-path
+               "\nclojure -M:https --package-cert -d " domain " -p " certbot-dir))
+    (sh-wrapper "./"
+                {}
+                (str "chmod +x " sh-path))
+    ;; The initial certificates are created without the deploy hook. Package then the first time.
+    (package-certificate domain certbot-dir)))
 
 (def cli-options
   [["-i" "--certbot-init" "Initialize certbot."]
@@ -93,4 +93,4 @@
       (do
         (println "You must indicate which action to take with either --certbot-init or --package-cert.")
         (println (str "Usage:\n" summary)))))
-  (shutdown-agents))
+  (shutdown-agents)) ;; FIXME, do we need shutdown-agents here?
