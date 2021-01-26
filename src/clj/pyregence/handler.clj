@@ -129,8 +129,18 @@
           (log-str "Error: " cause)
           (data-response cause {:status (or status 500)}))))))
 
-(defn wrap-common [handler]
-  (-> handler
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Handler Stacks
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn optional-middleware [handler mw use?]
+  (if use?
+    (mw handler)
+    handler))
+
+(defn create-handler-stack [ssl? reload?]
+  (-> routing-handler
+      (optional-middleware wrap-ssl-redirect ssl?)
       wrap-request-logging
       wrap-keyword-params
       wrap-edn-params
@@ -149,16 +159,9 @@
       (wrap-content-type-options :nosniff)
       wrap-response-logging
       wrap-gzip
-      wrap-exceptions))
+      wrap-exceptions
+      (optional-middleware wrap-reload reload?)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Handler Stacks
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def production-app (-> routing-handler
-                        wrap-ssl-redirect
-                        wrap-common))
-
-(defonce development-app (-> routing-handler
-                             wrap-common
-                             wrap-reload))
+;; This is for Figwheel
+(def development-app
+  (create-handler-stack false true))
