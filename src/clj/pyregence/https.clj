@@ -91,6 +91,6 @@
 
       :else
       (do
-        (println "You must indicate which action to take with either --certbot-init or --package-cert")
+        (println "You must indicate which action to take with either --certbot-init or --package-cert.")
         (println (str "Usage:\n" summary)))))
   (shutdown-agents))
