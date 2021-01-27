@@ -264,4 +264,8 @@ your filesystem. The logger will keep the 10 most recent logs.
 
 ** License and Distribution
 
-FIXME: Fill in this section.
+Copyright © 2020-2021 Spatial Informatics Group, LLC.
+
+Pyregence is distributed by Spatial Informatics Group, LLC. under the
+terms of the Eclipse Public License version 2.0 (EPLv2). See
+LICENSE.txt in this directory for more information.

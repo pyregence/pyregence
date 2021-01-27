@@ -1,0 +1,28 @@
+|---------------------------------+---------------------------------------------+-------------------|
+| Library                         | License                                     | GPLv3-compatible? |
+|---------------------------------+---------------------------------------------+-------------------|
+| bk/ring-gzip                    | MIT-style license (see LICENSE for details) | Yes               |
+| clj-tagsoup/clj-tagsoup         | MIT license                                 | Yes               |
+| clj-http/clj-http               | MIT license                                 | Yes               |
+| cljsjs/vega-embed               | BSD-3-Clause License                        | Yes               |
+| com.cognitect/transit-clj       | The Apache Software License, Version 2.0    | Yes               |
+| com.cognitect/transit-cljs      | The Apache Software License, Version 2.0    | Yes               |
+| com.draines/postal              | MIT license                                 | Yes               |
+| herb/herb                       | Eclipse Public License 1.0                  | No                |
+| hiccup/hiccup                   | Eclipse Public License 1.0                  | No                |
+| org.clojure/clojure             | Eclipse Public License 1.0                  | No                |
+| org.clojure/clojurescript       | Eclipse Public License 1.0                  | No                |
+| org.clojure/core.async          | Eclipse Public License 1.0                  | No                |
+| org.clojure/data.json           | Eclipse Public License 1.0                  | No                |
+| org.clojure/data.xml            | Eclipse Public License 1.0                  | No                |
+| org.postgresql/postgresql       | BSD-2-Clause License                        | Yes               |
+| reagent/reagent                 | MIT license                                 | Yes               |
+| ring/ring                       | MIT license                                 | Yes               |
+| ring/ring-defaults              | MIT license                                 | Yes               |
+| seancorfield/next.jdbc          | Eclipse Public License 1.0                  | No                |
+| com.bhauman/figwheel-main       | Eclipse Public License 1.0                  | No                |
+| com.bhauman/rebel-readline-cljs | Eclipse Public License 1.0                  | No                |
+| olical/depot                    | Unlicense                                   | Yes               |
+| seancorfield/depstar            | Eclipse Public License 1.0                  | No                |
+| openlayers                      | BSD-2-clause License                        | Yes               |
+|---------------------------------+---------------------------------------------+-------------------|
