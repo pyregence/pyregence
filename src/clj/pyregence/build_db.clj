@@ -10,15 +10,21 @@
 (defn parse-as-sh-cmd
   "Split string into an array for use with clojure.java.shell/sh."
   [s]
-  (loop [chars (seq s)
-         acc   []]
-    (if (empty? chars)
+  (loop [char-seq (seq s)
+         acc      []]
+    (if (empty? char-seq)
       acc
-      (if (= \` (first chars))
-        (recur (->> chars (rest) (drop-while #(not= \` %)) (rest))
-               (->> chars (rest) (take-while #(not= \` %)) (apply str) (str/trim) (conj acc)))
-        (recur (->> chars (drop-while #(not= \` %)))
-               (->> chars (take-while #(not= \` %)) (apply str) (str/trim) (#(str/split % #" ")) (remove str/blank?) (into acc)))))))
+      (if (= \` (first char-seq))
+        (recur (->> char-seq (rest) (drop-while #(not= \` %)) (rest))
+               (->> char-seq (rest) (take-while #(not= \` %)) (apply str) (str/trim) (conj acc)))
+        (recur (->> char-seq (drop-while #(not= \` %)))
+               (->> char-seq
+                    (take-while #(not= \` %))
+                    (apply str)
+                    (str/trim)
+                    (#(str/split % #" "))
+                    (remove str/blank?)
+                    (into acc)))))))
 
 (defn sh-wrapper [dir env verbose & commands]
   (sh/with-sh-dir dir
@@ -133,5 +139,4 @@
           (println "Valid options are:"
                    "\n  build-all            to build the database and all components"
                    "\n  only-functions       to only build functions"
-                   "\n  verbose              to show standard output from Postgres\n")))
-  (shutdown-agents))
+                   "\n  verbose              to show standard output from Postgres\n"))))
