@@ -74,56 +74,63 @@
      :model-init  model-init
      :hour        0}))
 
-(defn process-layers! []
+(defn process-layers! [workspace-name]
   (let [xml-response (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
                                              "?SERVICE=WMS"
                                              "&VERSION=1.3.0"
-                                             "&REQUEST=GetCapabilities")))]
-    (reset! layers
-            (as-> xml-response xml
-              (str/replace xml "\n" "")
-              (re-find #"(?<=<Layer>).*(?=</Layer>)" xml)
-              (re-seq #"(?<=<Layer).+?(?=</Layer>)" xml)
-              (partition-all 1000 xml)
-              (pmap (fn [layer-group]
-                      (->> layer-group
-                           (keep
-                            (fn [layer]
-                              (let [full-name (re-find #"(?<=<Name>).+?(?=</Name>)" layer)
-                                    coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
-                                                   (re-seq #"[\d|\.|-]+")
-                                                   (rest)
-                                                   (vec))
-                                    merge-fn  #(merge % {:layer full-name :extent coords})]
-                                (cond
-                                  (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
-                                  (merge-fn (split-risk-layer-name full-name))
+                                             "&REQUEST=GetCapabilities"
+                                             (when workspace-name (str "&namespace=" workspace-name)))))]
+    (as-> xml-response xml
+      (str/replace xml "\n" "")
+      (re-find #"(?<=<Layer>).*(?=</Layer>)" xml)
+      (re-seq #"(?<=<Layer).+?(?=</Layer>)" xml)
+      (partition-all 1000 xml)
+      (pmap (fn [layer-group]
+              (->> layer-group
+                   (keep
+                    (fn [layer]
+                      (let [full-name (re-find #"(?<=<Name>).+?(?=</Name>)" layer)
+                            coords    (->> (re-find #"<BoundingBox CRS=\"CRS:84.+?\"/>" layer)
+                                           (re-seq #"[\d|\.|-]+")
+                                           (rest)
+                                           (vec))
+                            merge-fn  #(merge % {:layer full-name :extent coords})]
+                        (cond
+                          (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
+                          (merge-fn (split-risk-layer-name full-name))
 
-                                  (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
-                                  (merge-fn (split-active-layer-name full-name))
+                          (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                          (merge-fn (split-active-layer-name full-name))
 
-                                  (str/starts-with? full-name "fire-detections")
-                                  (merge-fn (split-fire-detections full-name))))))
-                           (vec)))
-                    xml)
-              (apply concat xml)
-              (vec xml)))))
+                          (str/starts-with? full-name "fire-detections")
+                          (merge-fn (split-fire-detections full-name))))))
+                   (vec)))
+            xml)
+      (apply concat xml)
+      (vec xml))))
 
 ;;; Routes
-
-(defn set-capabilities! []
-  (try
-    (let [stdout? (= 0 (count @layers))]
-      (process-layers!)
-      (log (str (count @layers) " layers added to capabilities.") :force-stdout? stdout?))
-    (catch Exception _
-      (log-str "Failed to load capabilities."))))
 
 (defn remove-workspace! [workspace-name]
   (swap! layers #(filterv (fn [{:keys [workspace]}]
                             (not= workspace workspace-name))
                           %))
   (data-response (str workspace-name " removed.")))
+
+(defn set-capabilities! [& [workspace-name]]
+  (try
+    (let [stdout?    (= 0 (count @layers))
+          new-layers (process-layers! workspace-name)
+          message    (str (count new-layers) " layers added to capabilities.")]
+      (if workspace-name
+        (do
+          (remove-workspace! workspace-name)
+          (swap! layers #(into % new-layers)))
+        (reset! layers new-layers))
+      (when stdout? (log message :force-stdout? true))
+      (data-response message))
+    (catch Exception _
+      (log-str "Failed to load capabilities."))))
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]
