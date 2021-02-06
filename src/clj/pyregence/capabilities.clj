@@ -79,7 +79,7 @@
                                              "?SERVICE=WMS"
                                              "&VERSION=1.3.0"
                                              "&REQUEST=GetCapabilities"
-                                             (when workspace-name (str "&namespace=" workspace-name)))))]
+                                             (when workspace-name (str "&NAMESPACE=" workspace-name)))))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
       (re-find #"(?<=<Layer>).*(?=</Layer>)" xml)
@@ -127,7 +127,7 @@
           (remove-workspace! workspace-name)
           (swap! layers #(into % new-layers)))
         (reset! layers new-layers))
-      (when stdout? (log message :force-stdout? true))
+      (log message :force-stdout? stdout?)
       (data-response message))
     (catch Exception _
       (log-str "Failed to load capabilities."))))
