@@ -35,7 +35,13 @@
                                                                        :units     "inches"}
                                                               :meq    {:opt-label "Fine dead fuel moisture (%)"
                                                                        :filter    "meq"
-                                                                       :units     "%"})}
+                                                                       :units     "%"}
+                                                              :vpd    {:opt-label "Vapor pressure deficit (hPa)"
+                                                                       :filter    "vpd"
+                                                                       :units     "hPa"}
+                                                              :hdw    {:opt-label "Hot-Dry-Windy Index (hPa*m/s)"
+                                                                       :filter    "hdw"
+                                                                       :units     "hPa*m/s"})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
