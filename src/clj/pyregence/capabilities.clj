@@ -1,11 +1,11 @@
 (ns pyregence.capabilities
-  (:require [clojure.edn        :as edn]
-            [clojure.string     :as str]
-            [clojure.set        :as set]
-            [clj-http.client    :as client]
-            [pyregence.database :refer [call-sql]]
-            [pyregence.logging  :refer [log log-str]]
-            [pyregence.views    :refer [data-response]]))
+  (:require [clojure.edn         :as edn]
+            [clojure.string      :as str]
+            [clojure.set         :as set]
+            [clj-http.client     :as client]
+            [triangulum.database :refer [call-sql]]
+            [triangulum.logging  :refer [log log-str]]
+            [triangulum.utils    :refer [data-response]]))
 
 ;;; State
 

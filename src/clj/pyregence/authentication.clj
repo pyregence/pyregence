@@ -1,6 +1,6 @@
 (ns pyregence.authentication
-  (:require [pyregence.views    :refer [data-response]]
-            [pyregence.database :refer [call-sql sql-primitive]]))
+  (:require [triangulum.database :refer [call-sql sql-primitive]]
+            [triangulum.utils    :refer [data-response]]))
 
 ;;; TODO make a single authentication multimethod
 

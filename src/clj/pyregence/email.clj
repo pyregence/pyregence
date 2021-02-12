@@ -1,9 +1,9 @@
 (ns pyregence.email
   (:import java.util.UUID)
   (:require [clojure.edn :as edn]
-            [pyregence.database :refer [call-sql]]
-            [pyregence.views :refer [data-response]]
-            [postal.core :refer [send-message]]))
+            [postal.core         :refer [send-message]]
+            [triangulum.database :refer [call-sql]]
+            [triangulum.utils    :refer [data-response]]))
 
 (defn get-mail-config []
   (edn/read-string (slurp "email-server.edn")))

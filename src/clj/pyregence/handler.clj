@@ -17,10 +17,10 @@
             [ring.middleware.ssl                :refer [wrap-ssl-redirect]]
             [ring.middleware.x-headers          :refer [wrap-frame-options wrap-content-type-options wrap-xss-protection]]
             [ring.util.codec                    :refer [url-decode]]
-            [pyregence.database   :refer [sql-handler]]
-            [pyregence.logging    :refer [log-str]]
-            [pyregence.remote-api :refer [clj-handler]]
-            [pyregence.views      :refer [data-response render-dynamic render-static]]))
+            [triangulum.logging                 :refer [log-str ]]
+            [triangulum.utils                   :refer [data-response]]
+            [pyregence.remote-api :refer [clj-handler sql-handler]]
+            [pyregence.views      :refer [ render-dynamic render-static]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing Handler

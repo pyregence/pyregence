@@ -3,9 +3,9 @@
             [clojure.string         :as str]
             [clojure.tools.cli      :refer [parse-opts]]
             [ring.adapter.jetty     :refer [run-jetty]]
+            [triangulum.logging     :refer [log-str set-log-path!]]
             [pyregence.capabilities :refer [set-capabilities!]]
-            [pyregence.handler      :refer [create-handler-stack]]
-            [pyregence.logging      :refer [log-str set-log-path!]]))
+            [pyregence.handler      :refer [create-handler-stack]]))
 
 (defonce server           (atom nil))
 (defonce clean-up-service (atom nil))
