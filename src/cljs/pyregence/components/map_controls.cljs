@@ -193,15 +193,14 @@
                                     (ol/create-wms-layer! layer-name layer-name z-index)))))}]
         [:label opt-label]]])))
 
-(defn collapsible-panel [*params select-param! param-options mobile?]
-  (let [active-opacity   (r/atom 100.0)
-        show-hillshade?  (r/atom false)
+(defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
+  (let [show-hillshade?  (r/atom false)
         *base-map        (r/atom :mapbox-topo)
         select-base-map! (fn [id]
                            (reset! *base-map id)
                            (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
     (reset! show-panel? (not mobile?))
-    (fn [*params select-param! param-options mobile?]
+    (fn [*params select-param! active-opacity param-options mobile?]
       ;; TODO: This should not need to be called each render.
       ;;      Figwheel has components mount in a different order than normal.
       (select-base-map! @*base-map)

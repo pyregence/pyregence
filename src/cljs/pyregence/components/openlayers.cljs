@@ -225,7 +225,7 @@
       (.updateParams source #js {"LAYERS" geo-layer})
       (set-visible-by-title! "active" false))))
 
-(defn reset-active-layer! [geo-layer style-fn]
+(defn reset-active-layer! [geo-layer style-fn opacity]
   (when-let [active-layer (get-layer-by-title "active")]
     (-> @the-map (.removeLayer active-layer)))
   (when geo-layer
@@ -234,21 +234,23 @@
                      (VectorLayer.
                       #js {:title       "active"
                            :zIndex      50
+                           :opacity     opacity
+                           :style       get-incident-style
+                           :renderOrder (fn [a b]
+                                          (- (.get b "acres") (.get a "acres")))
                            :source      (VectorSource.
                                          #js {:format (GeoJSON.)
                                               :url    (fn [extent]
-                                                        (c/get-wfs-feature geo-layer (js->clj extent)))})
-                           :renderOrder (fn [a b]
-                                          (- (.get b "acres") (.get a "acres")))
-                           :style       get-incident-style})
+                                                        (c/get-wfs-feature geo-layer (js->clj extent)))})})
                      (TileLayer.
-                      #js {:title  "active"
-                           :zIndex 50
-                           :source (TileWMS.
-                                    #js {:url         c/wms-url
-                                         :params      #js {"LAYERS" geo-layer}
-                                         :crossOrigin "anonymous"
-                                         :serverType  "geoserver"})}))))
+                      #js {:title   "active"
+                           :zIndex  50
+                           :opacity opacity
+                           :source  (TileWMS.
+                                     #js {:url         c/wms-url
+                                          :params      #js {"LAYERS" geo-layer}
+                                          :crossOrigin "anonymous"
+                                          :serverType  "geoserver"})}))))
     (add-layer-load-fail! #(toast-message! "One or more of the map tiles has failed to load."))))
 
 (defn set-opacity-by-title! [title opacity]

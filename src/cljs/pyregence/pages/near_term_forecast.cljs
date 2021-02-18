@@ -42,6 +42,7 @@
 (defonce show-utc?         (r/atom true))
 (defonce show-info?        (r/atom false))
 (defonce show-measure?     (r/atom false))
+(defonce active-opacity    (r/atom 100.0))
 (defonce capabilities      (r/atom []))
 (defonce *forecast         (r/atom :fire-risk))
 (defonce processed-params  (r/atom []))
@@ -203,7 +204,8 @@
   (go
     (<! (get-layers! get-model-times?))
     (ol/reset-active-layer! (get-current-layer-name)
-                            (get-current-layer-key :style-fn))
+                            (get-current-layer-key :style-fn)
+                            (/ @active-opacity 100))
     (get-legend! (get-current-layer-name))
     (if clear?
       (clear-info!)
@@ -361,7 +363,12 @@
       :render
       (fn []
         [:div {:style ($control-layer)}
-         [mc/collapsible-panel (get @*params @*forecast) select-param! @processed-params @mobile?]
+         [mc/collapsible-panel
+          (get @*params @*forecast)
+          select-param!
+          active-opacity
+          @processed-params
+          @mobile?]
          (when (and @show-info? (aget @my-box "height"))
            [mc/information-tool
             get-point-info!
