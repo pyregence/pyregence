@@ -8,7 +8,7 @@
             [pyregence.utils  :as u]
             [pyregence.config :as c]
             [pyregence.components.common           :refer [radio tool-tip-wrapper]]
-            [pyregence.components.openlayers       :as ol]
+            [pyregence.components.mapbox           :as mb]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.svg-icons        :as svg]
             [pyregence.components.vega             :refer [vega-box]]))
@@ -189,8 +189,8 @@
                                                      (<! (get-layer-name filter-set update-layer)))] ; Note, this redundancy is due to the way figwheel reloads.
                                   (update-layer :show? (not show?))
                                   (if show?
-                                    (ol/set-visible-by-title! layer-name false)
-                                    (ol/create-wms-layer! layer-name layer-name z-index)))))}]
+                                    (mb/set-visible! layer-name false)
+                                    (mb/create-wms-layer! layer-name layer-name z-index)))))}]
         [:label opt-label]]])))
 
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
@@ -198,7 +198,7 @@
         *base-map        (r/atom :mapbox-topo)
         select-base-map! (fn [id]
                            (reset! *base-map id)
-                           (ol/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
+                           (mb/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
     (reset! show-panel? (not mobile?))
     (fn [*params select-param! active-opacity param-options mobile?]
       ;; TODO: This should not need to be called each render.
@@ -239,7 +239,7 @@
           [:input {:style {:width "100%"}
                    :type "range" :min "0" :max "100" :value @active-opacity
                    :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                   (ol/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
+                                   (mb/set-opacity! "active" (/ @active-opacity 100.0)))}]]
          [panel-dropdown
           "Base Map"
           "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
@@ -252,7 +252,7 @@
            [:input {:style {:margin ".25rem .5rem 0 0"}
                     :type "checkbox"
                     :on-click #(do (swap! show-hillshade? not)
-                                   (ol/set-visible-by-title! "hillshade" @show-hillshade?))}]
+                                   (mb/set-visible! "hillshade" @show-hillshade?))}]
            [:label "Hill shade overlay"]]]]]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -300,12 +300,12 @@
                               (reset! *zoom (max @minZoom
                                                  (min @maxZoom
                                                       zoom)))
-                              (ol/set-zoom! @*zoom))]
-    (let [[cur min max] (ol/get-zoom-info)]
+                              (mb/set-zoom! @*zoom))]
+    (let [[cur min max] (mb/get-zoom-info)]
       (reset! *zoom cur)
       (reset! minZoom min)
       (reset! maxZoom max))
-    (ol/add-map-zoom-end! #(reset! *zoom %))
+    (mb/add-map-zoom-end! #(reset! *zoom %))
     [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if mobile? "90px" "36px")})}
      (map-indexed (fn [i [icon hover-text on-click]]
                     ^{:key i} [tool-tip-wrapper
@@ -314,14 +314,14 @@
                                [tool-button icon on-click]])
                   [[:my-location
                     "Center on my location"
-                    #(some-> js/navigator .-geolocation (.getCurrentPosition ol/set-center-my-location!))]
+                    #(some-> js/navigator .-geolocation (.getCurrentPosition mb/set-center-my-location!))]
                    ;; TODO move this action to the information panel
                    ;;  [:center-on-point
                    ;;   "Center on selected point"
-                   ;;   #(ol/center-on-overlay!)]
+                   ;;   #(mb/center-on-overlay!)]
                    [:extent
                     "Zoom to fit layer"
-                    #(ol/zoom-to-extent! (get-current-layer-extent))]
+                    #(mb/zoom-to-extent! (get-current-layer-extent))]
                    [:zoom-in
                     "Zoom in"
                     #(select-zoom! (inc @*zoom))]
@@ -335,7 +335,7 @@
 
 (defn measure-tool [parent-box close-fn!]
   (r/with-let [lon-lat    (r/atom [0 0])
-               move-event (ol/add-mouse-move-xy! #(reset! lon-lat %))]
+               move-event (mb/add-mouse-move-xy! #(reset! lon-lat %))]
     [:div#measure-tool
      [resizable-window
       parent-box
@@ -350,7 +350,7 @@
          [:label {:style {:width "50%" :text-align "left"}}
           "Lon:" (u/to-precision 4 (get @lon-lat 0))]])]]
     (finally
-      (ol/remove-event! move-event))))
+      (mb/remove-event! move-event))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Information Tool
@@ -404,7 +404,7 @@
                         legend-list
                         last-clicked-info
                         close-fn!]
-  (r/with-let [click-event (ol/add-single-click-popup! get-point-info!)]
+  (r/with-let [click-event (mb/add-single-click-popup! get-point-info!)]
     [:div#info-tool
      [resizable-window
       parent-box
@@ -413,7 +413,7 @@
       "Point Information"
       close-fn!
       (fn [box-height box-width]
-        (let [has-point? (ol/get-overlay-center)]
+        (let [has-point? (mb/get-overlay-center)]
           (cond
             (not has-point?)
             [loading-cover
@@ -441,7 +441,7 @@
              box-width
              "This point does not have any information."])))]]
     (finally
-      (ol/remove-event! click-event))))
+      (mb/remove-event! click-event))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Legend Box

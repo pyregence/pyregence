@@ -12,7 +12,7 @@
             [pyregence.utils  :as u]
             [pyregence.config :as c]
             [pyregence.components.map-controls :as mc]
-            [pyregence.components.openlayers   :as ol]
+            [pyregence.components.mapbox       :as mb]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
             [pyregence.components.messaging :refer [toast-message
                                                     toast-message!
@@ -187,7 +187,7 @@
 
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
-  (ol/swap-active-layer! (get-current-layer-name)))
+  (mb/swap-active-layer! (get-current-layer-name)))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -195,7 +195,7 @@
                                       @param-layers))))
 
 (defn clear-info! []
-  (ol/clear-point!)
+  (mb/clear-point!)
   (reset! last-clicked-info [])
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))
@@ -203,15 +203,15 @@
 (defn change-type! [get-model-times? clear? zoom?]
   (go
     (<! (get-layers! get-model-times?))
-    (ol/reset-active-layer! (get-current-layer-name)
+    (mb/reset-active-layer! (get-current-layer-name)
                             (get-current-layer-key :style-fn)
                             (/ @active-opacity 100))
     (get-legend! (get-current-layer-name))
     (if clear?
       (clear-info!)
-      (get-point-info! (ol/get-overlay-bbox)))
+      (get-point-info! (mb/get-overlay-bbox)))
     (when zoom?
-      (ol/zoom-to-extent! (get-current-layer-extent)))))
+      (mb/zoom-to-extent! (get-current-layer-extent)))))
 
 (defn select-param! [val & keys]
   (swap! *params assoc-in (cons @*forecast keys) val)
@@ -223,11 +223,11 @@
 (defn select-forecast! [key]
   (go
     (doseq [[_ {:keys [name]}] (get-in @*params [@*forecast :underlays])]
-      (ol/set-visible-by-title! name false))
+      (mb/set-visible! name false))
     (reset! *forecast key)
     (reset! processed-params (get-forecast-opt :params))
     (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
-      (ol/set-visible-by-title! name show?))
+      (mb/set-visible! name show?))
     (<! (change-type! true true (get-options-key :auto-zoom?)))))
 
 (defn set-show-info! [show?]
@@ -285,9 +285,9 @@
   (go
     (let [user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names")]
-      (ol/init-map!)
-      (ol/add-mouse-move-feature-highlight!)
-      (ol/add-single-click-feature-highlight!)
+      (mb/init-map!)
+      (mb/add-mouse-move-feature-highlight!)
+      (mb/add-single-click-feature-highlight!)
       (process-capabilities! (edn/read-string (:message (<! fire-names-chan)))
                              (edn/read-string (:message (<! user-layers-chan))))
       (<! (select-forecast! @*forecast))
@@ -477,7 +477,7 @@
                                                       .getBoundingClientRect
                                                       (aget "height")))
                                                "px"))
-                          (js/setTimeout ol/resize-map! 50))]
+                          (js/setTimeout mb/resize-map! 50))]
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
           (process-toast-messages!)
@@ -518,6 +518,6 @@
                [:label {:style {:cursor "pointer"}
                         :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
-          (when @ol/the-map [control-layer])
+          (when @mb/the-map [control-layer])
           [map-layer]
           [pop-up]]])})))
