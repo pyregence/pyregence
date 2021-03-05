@@ -342,7 +342,7 @@
       (set-message-box-content! {:body msg})
       (if (= msg "Finished running")
         (close-message-box!)
-        (js/setTimeout #(poll-status job-id) 1000)))))
+        #_(js/setTimeout #(poll-status job-id) 1000)))))
 
 (defn initiate-match-drop [[lon lat]]
   (go
