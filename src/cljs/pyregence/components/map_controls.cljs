@@ -8,6 +8,8 @@
             [pyregence.utils  :as u]
             [pyregence.config :as c]
             [pyregence.components.common           :refer [radio tool-tip-wrapper]]
+            [pyregence.components.messaging        :refer [close-message-box!
+                                                           set-message-box-content!]]
             [pyregence.components.openlayers       :as ol]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.svg-icons        :as svg]
@@ -54,7 +56,7 @@
        :info            [svg/info]
        :layers          [svg/layers]
        :legend          [svg/legend]
-       :measure         [svg/measure]
+       :flame           [svg/flame]
        :my-location     [svg/my-location]
        :next-button     [svg/next-button]
        :pause-button    [svg/pause-button]
@@ -278,8 +280,8 @@
             #(do (set-show-info! (not @show-info?))
                  (reset! show-measure? false))])
          (when-not mobile?
-           [:measure
-            (str (hs-str @show-measure?) " measure tool")
+           [:flame
+            (str (hs-str @show-measure?) " Match Drop Tool")
             #(do (swap! show-measure? not)
                  (set-show-info! false))])
          [:legend
@@ -330,25 +332,51 @@
                     #(select-zoom! (dec @*zoom))]])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Measure Tool
+;; Match Drop Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn measure-tool [parent-box close-fn!]
+(defn poll-status [job-id]
+  (go
+    (let [status-chan (u/call-clj-async! "get-md-status" job-id)
+          msg         (edn/read-string (:message (<! status-chan)))]
+      (set-message-box-content! {:body msg})
+      (if (= msg "Finished running")
+        (close-message-box!)
+        (js/setTimeout #(poll-status job-id) 1000)))))
+
+(defn initiate-match-drop [[lon lat]]
+  (go
+    (let [match-chan (u/call-clj-async! "initiate-md"
+                                        {:ignition-time "2021-02-05 16:00 PST"
+                                         :lon           lon
+                                         :lat           lat})]
+      (set-message-box-content! {:title  "Processing Match Drop"
+                                 :body   "Getting weather data"
+                                 :button :close}) ; TODO the close button is for dev, disable on final product
+      (poll-status (edn/read-string (:message (<! match-chan)))))))
+
+(defn match-drop-tool [parent-box close-fn!]
   (r/with-let [lon-lat    (r/atom [0 0])
                move-event (ol/add-mouse-move-xy! #(reset! lon-lat %))]
-    [:div#measure-tool
+    [:div#match-drop-tool
      [resizable-window
       parent-box
-      75
+      130
       250
-      "Measure Tool"
+      "Match Drop Tool"
       close-fn!
       (fn [_ _]
         [:div
-         [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
-          "Lat:" (u/to-precision 4 (get @lon-lat 1))]
-         [:label {:style {:width "50%" :text-align "left"}}
-          "Lon:" (u/to-precision 4 (get @lon-lat 0))]])]]
+         [:div
+          [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
+           "Lat:" (u/to-precision 4 (get @lon-lat 1))]
+          [:label {:style {:width "50%" :text-align "left"}}
+           "Lon:" (u/to-precision 4 (get @lon-lat 0))]]
+         [:div {:class "d-flex justify-content-end"}
+          [:button {:class    "mx-3 mb-1 btn btn-sm"
+                    :style    {:color "white"}
+                    :on-click #(initiate-match-drop @lon-lat)}
+           "Submit"]]])]]
     (finally
       (ol/remove-event! move-event))))
 

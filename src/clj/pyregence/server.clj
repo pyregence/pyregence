@@ -5,7 +5,9 @@
             [ring.adapter.jetty     :refer [run-jetty]]
             [pyregence.capabilities :refer [set-capabilities!]]
             [pyregence.handler      :refer [create-handler-stack]]
-            [pyregence.logging      :refer [log-str set-log-path!]]))
+            [pyregence.logging      :refer [log-str set-log-path!]]
+            [pyregence.match-drop   :refer [process-message]]
+            [pyregence.sockets      :refer [start-socket-server! stop-socket-server!]]))
 
 (defonce server           (atom nil))
 (defonce clean-up-service (atom nil))
@@ -77,10 +79,12 @@
             (reset! server (run-jetty handler config))
             (reset! clean-up-service (start-clean-up-service!))
             (set-log-path! (:output-dir options))
+            (start-socket-server! 31337 process-message)
             (set-capabilities!)))))))
 
 (defn stop-server! []
   (set-log-path! "")
+  (stop-socket-server!)
   (when @clean-up-service
     (future-cancel @clean-up-service)
     (reset! clean-up-service nil))

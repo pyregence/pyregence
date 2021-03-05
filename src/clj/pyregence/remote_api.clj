@@ -22,19 +22,22 @@
                                             get-user-layers
                                             set-capabilities!
                                             remove-workspace!]]
-            [pyregence.email :refer [send-email]]
-            [pyregence.logging :refer [log-str]]
-            [pyregence.views :refer [data-response]]))
+            [pyregence.match-drop :refer [initiate-md! get-md-status]]
+            [pyregence.email      :refer [send-email]]
+            [pyregence.logging    :refer [log-str]]
+            [pyregence.views      :refer [data-response]]))
 
 (def name->fn {"add-org-user"         add-org-user
                "add-new-user"         add-new-user
                "get-fire-names"       get-fire-names
                "get-layers"           get-layers
                "get-layer-name"       get-layer-name
-               "get-user-layers"      get-user-layers
+               "get-md-status"        get-md-status
                "get-org-list"         get-org-list
                "get-org-users-list"   get-org-users-list
                "get-user-info"        get-user-info
+               "get-user-layers"      get-user-layers
+               "initiate-md"          initiate-md!
                "log-in"               log-in
                "log-out"              log-out
                "remove-org-user"      remove-org-user
