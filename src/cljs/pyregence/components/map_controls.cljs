@@ -7,12 +7,12 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
+            [pyregence.components.openlayers :as ol]
+            [pyregence.components.svg-icons  :as svg]
             [pyregence.components.common           :refer [radio tool-tip-wrapper]]
             [pyregence.components.messaging        :refer [close-message-box!
                                                            set-message-box-content!]]
-            [pyregence.components.openlayers       :as ol]
             [pyregence.components.resizable-window :refer [resizable-window]]
-            [pyregence.components.svg-icons        :as svg]
             [pyregence.components.vega             :refer [vega-box]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
