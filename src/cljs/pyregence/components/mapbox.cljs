@@ -21,28 +21,43 @@
 ;; Creating objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare loaded?)
+
 ;; TODO this might be more efficient as an atom that's set once on zoom
 (defn zoom-size-ratio [resolution])
 
 ;; TODO each vector layer will have its own style
 (defn get-incident-style [obj resolution])
 
-(defn- on-load [f]
-  (.on @the-map "load" f))
+;; TODO: Figure out if the "load" method can only take one function?
+(def ^:private on-load-events (atom []))
+(defn run-on-load-events []
+  (println "Running on-load events")
+  (doseq [f @on-load-events] (f)))
+
+(defn on-load [f]
+  (println "Adding event: " f)
+  (when (empty? @on-load-events)
+    (println "Empty events")
+    (.on @the-map "load" #(run-on-load-events)))
+  (swap! on-load-events conj f))
 
 (defn- add-terrain! []
-  (on-load (fn []
-             (println "Adding Terrain")
-             (doto @the-map
-               (.addSource "mapbox-dem" (clj->js {:type "raster-dem"
-                                                  :tileSize 512
-                                                  :maxzoom 14}))
-               (.setTerrain #js {:source "mapbox-dem" :exaggeration 1.5})
-               (.addLayer (clj->js {:id "sky"
-                                    :type "sky"
-                                    :paint {:sky-type "atmosphere"
-                                            :sky-atmosphere-sun [0.0 0.0]
-                                            :sky-atmosphere-sun-intensity 15}}))))))
+  (if-not (loaded?)
+    (on-load #(add-terrain!))
+    (do
+      (println "Adding terrain")
+      (doto @the-map
+        (.addSource "mapbox-dem" (clj->js {:type "raster-dem"
+                                           :url "mapbox://mapbox.mapbox-terrain-dem-v1"
+                                           :tileSize 512
+                                           :maxzoom 14}))
+        (.setTerrain #js {:source "mapbox-dem" :exaggeration 1.5})
+        (.addLayer (clj->js {:id "sky"
+                             :type "sky"
+                             :paint {:sky-type "atmosphere"
+                                     :sky-atmosphere-sun [0.0 0.0]
+                                     :sky-atmosphere-sun-intensity 15}}))))))
 
 (defn- set-access-token! []
   (set! (.-accessToken mapbox) c/mapbox-access-token))
@@ -57,12 +72,18 @@
              #js {:container container-id
                   :style (-> c/base-map-options first :source)
                   :trackReize true}))
-   ;;(add-terrain!)
-   ))
+   (js/console.log @the-map)
+   (add-terrain!)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Getting object information
+;; Map information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn loaded?
+  "Returns whether the map has loaded"
+  []
+  (.loaded @the-map))
 
 (defn get-zoom-info
   "Get zoom information
@@ -73,10 +94,30 @@
      (.getMinZoom m)
      (.getMaxZoom m)]))
 
-(defn get-layer
-  "Retrieve a layer from the map"
+(defn get-source
+  "Retrieve source from the map"
   [id]
-  (.getLayer @the-map id))
+  (-> @the-map (.getSource id) u/js->kclj))
+
+(defn get-layer
+  "Retrieve layer from the map"
+  [id]
+  (-> @the-map (.getLayer id) u/js->kclj))
+
+(defn get-layers
+  "Retrieves all layers from the map"
+  []
+  (->> @the-map .getStyle .-layers u/js->kclj))
+
+(defn get-last-layer
+  "Retrieves last added layer to the map"
+  []
+  (-> (get-layers) last :id))
+
+(defn get-layer-names
+  "Retrieves all the names of layers on the map"
+  []
+  (map :id (get-layers)))
 
 ;; Refer to https://docs.mapbox.com/mapbox-gl-js/api/map/#map#queryrenderedfeatures
 ;; TODO: Need to find which layers that we want to query
@@ -85,6 +126,11 @@
   [location layers]
   {:pre [(seq? location) (seq? layers)]}
   (.queryRenderedFeatures @the-map (clj->js location) (clj->js layers)))
+
+(defn unproject
+  "Returns a geographical LngLat coordinate from an graphical XY point"
+  [point]
+  (.unproject @the-map point))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popup / Overlay methods
@@ -100,7 +146,7 @@
 (defn clear-point! [])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Modifying objects
+;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Refer to https://docs.mapbox.com/mapbox-gl-js/api/map/#map#off
@@ -112,14 +158,18 @@
     (swap! events dissoc event-key)))
 
 (defn add-event! [event-type event-fn]
-  (swap! events update assoc event-type event-fn)
+  ;;(swap! events update event-type event-fn)
   (.on @the-map event-type event-fn))
 
-;; TODO: Implement
-(defn add-single-click-popup! [call-back])
+(defn add-single-click-popup! [call-back]
+  (add-event! "click" call-back))
 
 ;; TODO: Implement
-(defn add-mouse-move-xy! [call-back])
+(defn add-mouse-move-xy!
+  "Adds callback to `mousemove` listener"
+  [callback]
+  (let [f (fn [e] (-> e .-point unproject js->clj callback))]
+    (add-event! "mousemove" f)))
 
 ;; TODO: Implement
 (defn feature-highlight! [evt])
@@ -132,57 +182,163 @@
 
 ;; TODO: Implement
 (defn add-map-zoom-end! [call-back])
+  ;;(add-event! "zoomend" call-back))
 
-;; TODO: Implement
-(defn set-visible!
-  "Sets a layer's visibility"
-  [id visible?]
-  {:pre (boolean? visible?)}
-  (some-> (get-layer id)
-          (.setLayoutProperty "visible" visible?)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Source/Layer Methods
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; TODO: Implement
 (defn add-layer-load-fail! [call-back])
+
+(defn add-source! [source-name source-params]
+  (.addSource @the-map source-name source-params))
+
+(defn remove-source! [source-name]
+  (.removeSource @the-map source-name))
+
+(defn add-layer! [layer-params]
+  (.addLayer @the-map layer-params))
+
+(defn remove-layer! [layer-name]
+  (.removeLayer @the-map layer-name))
+
+(defn- wms-source [layer-name]
+  (let [url (c/wms-layer-url layer-name)]
+    {:type "raster" :tileSize 256 :tiles [url]}))
+
+(defonce ^:private default-wms-style
+  {:raster-opacity 0.8
+   :raster-resampling "nearest"})
+
+(defn- wms-layer [layer-name]
+  {:id layer-name
+   :type "raster"
+   :source layer-name
+   :paint  default-wms-style})
+
+(defn add-wms-layer!
+  "Adds Pyregence WMS Layer to the map"
+  [layer-name z-index]
+  (if-not (loaded?)
+    (on-load #(add-wms-layer! layer-name z-index))
+    (do
+      (println "Adding WMS Layer: " layer-name)
+      (when (nil? (get-source layer-name))
+        (add-source! layer-name (clj->js (wms-source layer-name))))
+      (when (nil? (get-layer layer-name))
+        (add-layer! (clj->js (wms-layer layer-name)))))))
+
+(defn- wfs-source [layer-name]
+  (let [url (c/wfs-layer-url layer-name)]
+    (println "WFS Source: " url)
+    {:type "geojson" :data url}))
+
+(defn- zoom-interp
+  "Interpolates a value (vmin to vmax) based on zoom value (from zmin to zmax)"
+  [vmin vmax zmin zmax]
+  ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
+
+(defonce ^:private default-circle-style
+  {:circle-color "#FF0000"
+   :circle-stroke-color "#000000"
+   :circle-stroke-width 3
+   :circle-radius (zoom-interp 8 14 5 20)})
+
+(defn- incident-layer [layer-name & style]
+  {:id layer-name
+   :type "circle"
+   :source layer-name
+   :layout {}
+   :paint (merge default-circle-style style)})
+
+(defonce ^:private default-text-style
+  {:type "symbol"
+   :layout {:text-anchor "top"
+            :text-field ["to-string" ["get" "prettyname"]]
+            :text-font ["Open Sans Regular" "Arial Unicode MS Regular"]
+            :text-size 14
+            :text-offset [0 0.5]}
+   :paint {:text-color "#000000"
+           :text-halo-color "#ffffff"
+           :text-halo-width 1}})
+
+(defn- incident-labels-layer [layer-name source-name & style]
+  (merge
+    {:id layer-name
+     :type "symbol"
+     :source source-name}
+    default-text-style
+    style))
+
+(defn add-wfs-layer!
+  "Adds Pyregence WFS Layer to the map"
+  [layer-name z-index]
+  (if-not (loaded?)
+    (on-load (fn [] (add-wfs-layer! layer-name z-index)))
+    (do
+      (when (nil? (get-source layer-name))
+        (add-source! layer-name (clj->js (wfs-source layer-name))))
+      (let [labels-layer (str "labels-" layer-name)]
+        (when (nil? (get-layer layer-name))
+          (add-layer! (clj->js (incident-layer layer-name))))
+        (when (nil? (get-layer labels-layer))
+          (add-layer! (clj->js (incident-labels-layer labels-layer layer-name))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Modifying map properties
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-layout-property!
+  "Sets a layer's layout property"
+  [layer property value & opts]
+  (.setLayoutProperty @the-map layer property value opts))
+
+(defn set-visible!
+  "Sets a layer's visibility"
+  [layer-name visible?]
+  (when (get-layer layer-name)
+    (set-layout-property! layer-name "visibility" (if visible? "visible" "none"))))
+
+(defn set-opacity!
+  "Sets the layer's opacity"
+  [layer-name opacity]
+  (when-let [layer (get-layer layer-name)]
+    (.setPaintProperty @the-map layer-name (str (:type layer) "-opacity") opacity)))
 
 (defn set-base-map-source!
   "Sets the Basemap source"
   [source]
   (.setStyle @the-map source))
 
-;; TODO: Implement
-(defn create-wms-layer! [ol-layer geo-layer z-index])
-
-;; TODO: Implement
-(defn create-wfs-layer! [ol-layer geo-layer z-index])
-
 ;; TODO only WMS layers have a time slider for now. This might eventually need to accommodate Vector sources
-;; TODO: Implement
+;; Only issue is that ALL other custom layers need to be turned off
 (defn swap-active-layer!
   "Swaps the layer that is visible to a new layer"
-  [geo-layer])
+  [layer-name]
+  (let [last-layer (get-last-layer)
+        existing-layer (get-layer layer-name)]
+    (if (nil? existing-layer)
+      (add-wms-layer! layer-name 0)
+      (set-visible! layer-name true))
+    (set-visible! last-layer false)))
 
 ;; TODO: Implement
 ;; Vector source is determined whether there is a style-fun parameter
 (defn reset-active-layer!
   "Resets the active layer of the map"
-  [geo-layer & {:keys [style opacity]}]
+  [layer-name & {:keys [style _opacity]}]
   ;; Remove the "active" layer
-  ;; Determine layer type
-  ;; Add the appropariate layer source with style/opacity
-  (println "Reset Active layer"))
-
-(defn set-opacity!
-  "Sets the layer's opacity"
-  [title opacity]
-  (when-let [layer (.getLayer @the-map title)]
-    (.setLayerAttribute @the-map title (str (.type layer) "-opacity") opacity)))
+  (if (some? style)
+    (add-wfs-layer! layer-name 0)
+    (add-wms-layer! layer-name 0)))
 
 (defn reset-north!
   "Resets the top of the map to geographic north"
   []
   (.setBearing @the-map 0))
 
-(defn set-pitch!
+(defn set-bearing!
   "Sets the bearing of the the map to bearing"
   [bearing]
   (.setBearing @the-map bearing))

@@ -156,6 +156,30 @@
 (def wms-url "https://data.pyregence.org:8443/geoserver/wms")
 (def wfs-url "https://data.pyregence.org:8443/geoserver/wfs")
 
+(defn wms-layer-url [layer]
+  (str wms-url
+       "?SERVICE=WMS"
+       "&VERSION=1.3.0"
+       "&REQUEST=GetMap"
+       "&FORMAT=image%2Fpng"
+       "&TRANSPARENT=true"
+       "&WIDTH=256"
+       "&HEIGHT=256"
+       "&CRS=EPSG%3A3857"
+       "&STYLES="
+       "&FORMAT_OPTIONS=dpi%3A113"
+       "&BBOX={bbox-epsg-3857}"
+       "&LAYERS=" layer))
+
+(defn wfs-layer-url [layer]
+  (str wfs-url
+       "?SERVICE=WFS"
+       "&VERSION=1.3.0"
+       "&REQUEST=GetFeature"
+       "&OUTPUTFORMAT=application/json"
+       "&SRSNAME=EPSG:4326"
+       "&TYPENAME=" layer))
+
 (defn legend-url [layer]
   (str wms-url
        "?SERVICE=WMS"

@@ -195,7 +195,7 @@
                                       @param-layers))))
 
 (defn clear-info! []
-  (mb/clear-point!)
+  ;;TODO (mb/clear-point!)
   (reset! last-clicked-info [])
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))
@@ -204,8 +204,8 @@
   (go
     (<! (get-layers! get-model-times?))
     (mb/reset-active-layer! (get-current-layer-name)
-                            (get-current-layer-key :style-fn)
-                            (/ @active-opacity 100))
+                            :style (get-current-layer-key :style-fn)
+                            :opacity (/ @active-opacity 100))
     (get-legend! (get-current-layer-name))
     (if clear?
       (clear-info!)
@@ -223,6 +223,7 @@
 (defn select-forecast! [key]
   (go
     (doseq [[_ {:keys [name]}] (get-in @*params [@*forecast :underlays])]
+      (mb/add-wms-layer! name 0)
       (mb/set-visible! name false))
     (reset! *forecast key)
     (reset! processed-params (get-forecast-opt :params))
@@ -286,8 +287,10 @@
     (let [user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names")]
       (mb/init-map!)
-      (mb/add-mouse-move-feature-highlight!)
-      (mb/add-single-click-feature-highlight!)
+      ;; TODO: Figure out if we still need these since Mapbox handles
+      ;; style interactions differently
+      ;;(mb/add-mouse-move-feature-highlight!)
+      ;;(mb/add-single-click-feature-highlight!)
       (process-capabilities! (edn/read-string (:message (<! fire-names-chan)))
                              (edn/read-string (:message (<! user-layers-chan))))
       (<! (select-forecast! @*forecast))

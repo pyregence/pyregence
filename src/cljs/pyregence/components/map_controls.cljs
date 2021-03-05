@@ -190,7 +190,7 @@
                                   (update-layer :show? (not show?))
                                   (if show?
                                     (mb/set-visible! layer-name false)
-                                    (mb/create-wms-layer! layer-name layer-name z-index)))))}]
+                                    (mb/add-wms-layer! layer-name z-index)))))}]
         [:label opt-label]]])))
 
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
@@ -246,14 +246,7 @@
           @*base-map
           c/base-map-options
           false
-          select-base-map!]
-         [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
-          [:div {:style {:display "flex"}}
-           [:input {:style {:margin ".25rem .5rem 0 0"}
-                    :type "checkbox"
-                    :on-click #(do (swap! show-hillshade? not)
-                                   (mb/set-visible! "hillshade" @show-hillshade?))}]
-           [:label "Hill shade overlay"]]]]]])))
+          select-base-map!]]]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars
@@ -305,7 +298,7 @@
       (reset! *zoom cur)
       (reset! minZoom min)
       (reset! maxZoom max))
-    (mb/add-map-zoom-end! #(reset! *zoom %))
+    ;;TODO: (mb/add-map-zoom-end! #(reset! *zoom %))
     [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if mobile? "90px" "36px")})}
      (map-indexed (fn [i [icon hover-text on-click]]
                     ^{:key i} [tool-tip-wrapper

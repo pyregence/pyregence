@@ -295,3 +295,6 @@
   [n dbl]
   (let [factor (.pow js/Math 10 n)]
     (/ (Math/round (* dbl factor)) factor)))
+
+(defn js->kclj [xs]
+  (js->clj xs :keywordize-keys true))
