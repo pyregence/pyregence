@@ -350,9 +350,9 @@
                                         {:ignition-time "2021-02-05 16:00 PST"
                                          :lon           lon
                                          :lat           lat})]
-      (set-message-box-content! {:title  "Processing Match Drop"
-                                 :body   "Getting weather data"
-                                 :button :close}) ; TODO the close button is for dev, disable on final product
+      (set-message-box-content! {:title "Processing Match Drop"
+                                 :body  "Getting weather data"
+                                 :mode  :close}) ; TODO the close button is for dev, disable on final product
       (poll-status (edn/read-string (:message (<! match-chan)))))))
 
 (defn match-drop-tool [parent-box close-fn!]

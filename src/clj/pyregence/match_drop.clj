@@ -5,8 +5,8 @@
 (def job-queue (atom {}))
 
 (defn initiate-md! [params]
-  (let [job-id   (int (rand 100000000))
-        request  (merge params
+  (let [job-id  (int (rand 100000000))
+        request (merge params
                         {:job-id              job-id
                          :west-buffer         24000
                          :north-buffer        24000
