@@ -20,7 +20,7 @@
 
 #_(send-to-server! "wx.pyregence.org"
                    31337
-                   "clj-socket-test-ms,2021-03-01 12:00 PDT,-117.5,33.8,24000,24000,24000,24000,no,yes,localhost")
+                   "{\"fireName\": \"md-1000\", \"ignitionTime\": \"2021-01-03 16:00 PST\", \"lon\": -117.5, \"lat\": 33.8, \"westBuffer\": 24000, \"southBuffer\": 24000, \"eastBuffer\": 24000, \"northBuffer\": 24000, \"addToActiveFires\": \"yes\", \"scpInputDeck\": \"yes\", \"responseHost\": \"localhost\", \"responsePort\": 31337 }")
 
 ;;=================================
 ;; Server Socket
