@@ -54,7 +54,7 @@
        :info            [svg/info]
        :layers          [svg/layers]
        :legend          [svg/legend]
-       :measure         [svg/measure]
+       :flame           [svg/flame]
        :my-location     [svg/my-location]
        :next-button     [svg/next-button]
        :pause-button    [svg/pause-button]
@@ -267,7 +267,7 @@
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
-(defn tool-bar [show-info? show-measure? set-show-info! mobile?]
+(defn tool-bar [show-info? show-match-drop? set-show-info! mobile?]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (->> [[:layers
           (str (hs-str @show-panel?) " layer selection")
@@ -276,11 +276,11 @@
            [:info
             (str (hs-str @show-info?) " point information")
             #(do (set-show-info! (not @show-info?))
-                 (reset! show-measure? false))])
+                 (reset! show-match-drop? false))])
          (when-not mobile?
-           [:measure
-            (str (hs-str @show-measure?) " measure tool")
-            #(do (swap! show-measure? not)
+           [:flame
+            (str (hs-str @show-match-drop?) " match drop tool")
+            #(do (swap! show-match-drop? not)
                  (set-show-info! false))])
          [:legend
           (str (hs-str @show-legend?) " legend")
@@ -330,25 +330,32 @@
                     #(select-zoom! (dec @*zoom))]])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Measure Tool
+;; Match Drop Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn measure-tool [parent-box close-fn!]
+(defn match-drop-tool [parent-box close-fn!]
   (r/with-let [lon-lat    (r/atom [0 0])
                move-event (ol/add-mouse-move-xy! #(reset! lon-lat %))]
-    [:div#measure-tool
+    [:div#match-drop-tool
      [resizable-window
       parent-box
-      75
+      130
       250
-      "Measure Tool"
+      "Match Drop Tool"
       close-fn!
       (fn [_ _]
         [:div
-         [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
-          "Lat:" (u/to-precision 4 (get @lon-lat 1))]
-         [:label {:style {:width "50%" :text-align "left"}}
-          "Lon:" (u/to-precision 4 (get @lon-lat 0))]])]]
+         [:div
+          [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
+           "Lat:" (u/to-precision 4 (get @lon-lat 1))]
+          [:label {:style {:width "50%" :text-align "left"}}
+           "Lon:" (u/to-precision 4 (get @lon-lat 0))]]
+         [:div {:class "d-flex justify-content-end"}
+          [:button {:class    "mx-3 mb-1 btn btn-sm"
+                    :style    {:color "white"}
+                    ;:on-click #(initiate-match-drop @lon-lat)
+                    }
+           "Submit"]]])]]
     (finally
       (ol/remove-event! move-event))))
 
