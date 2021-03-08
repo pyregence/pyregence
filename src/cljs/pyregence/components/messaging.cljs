@@ -33,10 +33,16 @@
         (<! (timeout 500))
         (recur (<! toast-message-chan)))))
 
-(defn set-message-box-content! [content]
+(defn set-message-box-content!
+  "Sets message content map with merge. Content includes title, body, and mode.
+   The message box will show when title is not an empty string.
+   Mode can be either :close or nil."
+  [content]
   (swap! message-box-content merge content))
 
-(defn close-message-box! []
+(defn close-message-box!
+  "Sets message content map to empty values."
+  []
   (reset! message-box-content {:title "" :body "" :mode :none}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
