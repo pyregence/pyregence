@@ -21,7 +21,11 @@
 ;; Creating objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare get-source)
 (declare loaded?)
+(declare add-source!)
+(declare add-layer!)
+(declare set-base-map-source!)
 
 ;; TODO this might be more efficient as an atom that's set once on zoom
 (defn zoom-size-ratio [resolution])
@@ -33,7 +37,8 @@
 (def ^:private on-load-events (atom []))
 (defn run-on-load-events []
   (println "Running on-load events")
-  (doseq [f @on-load-events] (f)))
+  (doseq [f @on-load-events] (f))
+  (reset! on-load-events []))
 
 (defn on-load [f]
   (println "Adding event: " f)
@@ -42,22 +47,35 @@
     (.on @the-map "load" #(run-on-load-events)))
   (swap! on-load-events conj f))
 
+(defn- add-sky! []
+  (println "Adding sky")
+  (if-not (loaded?)
+    (on-load #(add-sky!))
+    (add-layer! (clj->js {:id "sky"
+                          :type "sky"
+                          :paint {:sky-type "gradient"
+                                  :sky-gradient ["interpolate" ["linear"]
+                                                 ["sky-radial-progress"]
+                                                 0.8 "rgba(135 206 235 1.0)"
+                                                 1 "rgba(0000.1)"]
+                                  :sky-gradient-center [0 0]
+                                  :sky-gradient-radius 90
+                                  :sky-opacity ["interpolate" ["exponential" 0.1]
+                                                ["zoom"] 5 0 22 1 ]}}))))
+
 (defn- add-terrain! []
   (if-not (loaded?)
     (on-load #(add-terrain!))
-    (do
-      (println "Adding terrain")
-      (doto @the-map
-        (.addSource "mapbox-dem" (clj->js {:type "raster-dem"
-                                           :url "mapbox://mapbox.mapbox-terrain-dem-v1"
-                                           :tileSize 512
-                                           :maxzoom 14}))
-        (.setTerrain #js {:source "mapbox-dem" :exaggeration 1.5})
-        (.addLayer (clj->js {:id "sky"
-                             :type "sky"
-                             :paint {:sky-type "atmosphere"
-                                     :sky-atmosphere-sun [0.0 0.0]
-                                     :sky-atmosphere-sun-intensity 15}}))))))
+    (let [dem-layer "mapbox-dem"]
+      (when (nil? (get-source dem-layer))
+        (add-source! dem-layer (clj->js {:type "raster-dem"
+                                            :url "mapbox://mapbox.mapbox-terrain-dem-v1"
+                                            :tileSize 512
+                                            :maxzoom 14})))
+      (.setTerrain @the-map #js {:source dem-layer :exaggeration 2}))))
+
+(defn- add-default-basemap! []
+  (set-base-map-source! (get-in c/base-map-options [:mapbox-topo :source])))
 
 (defn- set-access-token! []
   (set! (.-accessToken mapbox) c/mapbox-access-token))
@@ -73,7 +91,9 @@
                   :style (-> c/base-map-options first :source)
                   :trackReize true}))
    (js/console.log @the-map)
-   (add-terrain!)))
+   (add-default-basemap!)
+   (add-terrain!)
+   (add-sky!)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -309,7 +329,8 @@
 (defn set-base-map-source!
   "Sets the Basemap source"
   [source]
-  (.setStyle @the-map source))
+  (.setStyle @the-map source)
+  (add-terrain!))
 
 ;; TODO only WMS layers have a time slider for now. This might eventually need to accommodate Vector sources
 ;; Only issue is that ALL other custom layers need to be turned off

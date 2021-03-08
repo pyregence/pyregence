@@ -201,9 +201,6 @@
                            (mb/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
     (reset! show-panel? (not mobile?))
     (fn [*params select-param! active-opacity param-options mobile?]
-      ;; TODO: This should not need to be called each render.
-      ;;      Figwheel has components mount in a different order than normal.
-      (select-base-map! @*base-map)
       [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
        [:div {:style {:overflow "auto"}}
         [:div#layer-selection {:style {:padding "1rem"}}
