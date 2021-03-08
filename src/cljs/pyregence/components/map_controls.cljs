@@ -346,9 +346,9 @@
       (fn [_ _]
         [:div
          [:div
-         [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
-          "Lat:" (u/to-precision 4 (get @lon-lat 1))]
-         [:label {:style {:width "50%" :text-align "left"}}
+          [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
+           "Lat:" (u/to-precision 4 (get @lon-lat 1))]
+          [:label {:style {:width "50%" :text-align "left"}}
            "Lon:" (u/to-precision 4 (get @lon-lat 0))]]
          [:div {:class "d-flex justify-content-end"}
           [:button {:class    "mx-3 mb-1 btn btn-sm"
