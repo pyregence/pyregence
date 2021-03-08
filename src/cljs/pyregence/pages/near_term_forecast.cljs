@@ -14,7 +14,8 @@
             [pyregence.components.map-controls :as mc]
             [pyregence.components.openlayers   :as ol]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
-            [pyregence.components.messaging :refer [toast-message
+            [pyregence.components.messaging :refer [message-box-modal
+                                                    toast-message
                                                     toast-message!
                                                     process-toast-messages!]]
             [pyregence.components.svg-icons :refer [pin]]))
@@ -488,6 +489,7 @@
       (fn [_]
         [:div {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
          [toast-message]
+         [message-box-modal]
          (when @loading? [loading-modal])
          [message-modal]
          [:div {:class "bg-yellow"

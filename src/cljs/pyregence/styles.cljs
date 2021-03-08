@@ -104,6 +104,26 @@
     {:pseudo {:hover {:background-color (color-picker :border-color 0.2)
                       :border-radius    "4px"}}}))
 
+(defn p-button [& modifiers]
+  (let [base-style     {:border-width  "0"
+                        :border-radius "3px"
+                        :color         "white"
+                        :cursor        "pointer"
+                        :font-size     ".9rem"
+                        :font-weight   "normal"
+                        :min-width     "10rem"
+                        :text-align    "center"
+                        :padding       ".5rem .75rem"}
+        disabled-style {:cursor        "not-allowed"
+                        :opacity       "0.5"}]
+    (with-meta
+      (if (contains? (set modifiers) :disabled)
+        (merge base-style disabled-style)
+        base-style)
+      {:key    (str/join "-" (sort modifiers))
+       :group  true
+       :pseudo {:disabled disabled-style}})))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
