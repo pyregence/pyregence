@@ -42,7 +42,7 @@
 (defonce last-clicked-info (r/atom []))
 (defonce show-utc?         (r/atom true))
 (defonce show-info?        (r/atom false))
-(defonce show-measure?     (r/atom false))
+(defonce show-match-drop?     (r/atom false))
 (defonce active-opacity    (r/atom 100.0))
 (defonce capabilities      (r/atom []))
 (defonce *forecast         (r/atom :fire-risk))
@@ -381,10 +381,10 @@
             @legend-list
             @last-clicked-info
             #(set-show-info! false)])
-         (when (and @show-measure? (aget @my-box "height"))
-           [mc/match-drop-tool @my-box #(reset! show-measure? false)])
+         (when (and @show-match-drop? (aget @my-box "height"))
+           [mc/match-drop-tool @my-box #(reset! show-match-drop? false)])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
-         [mc/tool-bar show-info? show-measure? set-show-info! @mobile?]
+         [mc/tool-bar show-info? show-match-drop? set-show-info! @mobile?]
          [mc/zoom-bar get-current-layer-extent @mobile?]
          [mc/time-slider
           param-layers
@@ -403,7 +403,7 @@
   (r/with-let [mouse-down? (r/atom false)
                cursor-fn   #(cond
                               @mouse-down?                    "grabbing"
-                              (or @show-info? @show-measure?) "crosshair" ; TODO get custom cursor image from Ryan
+                              (or @show-info? @show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
                               :else                           "grab")]
     [:div#map {:class (<class $p-ol-control)
                :style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}

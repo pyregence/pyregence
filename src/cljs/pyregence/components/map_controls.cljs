@@ -267,7 +267,7 @@
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
-(defn tool-bar [show-info? show-measure? set-show-info! mobile?]
+(defn tool-bar [show-info? show-match-drop? set-show-info! mobile?]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (->> [[:layers
           (str (hs-str @show-panel?) " layer selection")
@@ -276,11 +276,11 @@
            [:info
             (str (hs-str @show-info?) " point information")
             #(do (set-show-info! (not @show-info?))
-                 (reset! show-measure? false))])
+                 (reset! show-match-drop? false))])
          (when-not mobile?
            [:flame
-            (str (hs-str @show-measure?) " match drop tool")
-            #(do (swap! show-measure? not)
+            (str (hs-str @show-match-drop?) " match drop tool")
+            #(do (swap! show-match-drop? not)
                  (set-show-info! false))])
          [:legend
           (str (hs-str @show-legend?) " legend")
