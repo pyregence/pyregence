@@ -382,7 +382,7 @@
             @last-clicked-info
             #(set-show-info! false)])
          (when (and @show-measure? (aget @my-box "height"))
-           [mc/measure-tool @my-box #(reset! show-measure? false)])
+           [mc/match-drop-tool @my-box #(reset! show-measure? false)])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
          [mc/tool-bar show-info? show-measure? set-show-info! @mobile?]
          [mc/zoom-bar get-current-layer-extent @mobile?]

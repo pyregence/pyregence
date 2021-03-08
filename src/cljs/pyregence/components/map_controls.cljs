@@ -54,7 +54,7 @@
        :info            [svg/info]
        :layers          [svg/layers]
        :legend          [svg/legend]
-       :measure         [svg/measure]
+       :flame           [svg/flame]
        :my-location     [svg/my-location]
        :next-button     [svg/next-button]
        :pause-button    [svg/pause-button]
@@ -278,8 +278,8 @@
             #(do (set-show-info! (not @show-info?))
                  (reset! show-measure? false))])
          (when-not mobile?
-           [:measure
-            (str (hs-str @show-measure?) " measure tool")
+           [:flame
+            (str (hs-str @show-measure?) " match drop tool")
             #(do (swap! show-measure? not)
                  (set-show-info! false))])
          [:legend
@@ -330,25 +330,32 @@
                     #(select-zoom! (dec @*zoom))]])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Measure Tool
+;; Match Drop Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn measure-tool [parent-box close-fn!]
+(defn match-drop-tool [parent-box close-fn!]
   (r/with-let [lon-lat    (r/atom [0 0])
                move-event (ol/add-mouse-move-xy! #(reset! lon-lat %))]
-    [:div#measure-tool
+    [:div#match-drop-tool
      [resizable-window
       parent-box
-      75
+      130
       250
-      "Measure Tool"
+      "Match Drop Tool"
       close-fn!
       (fn [_ _]
         [:div
+         [:div
          [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
           "Lat:" (u/to-precision 4 (get @lon-lat 1))]
          [:label {:style {:width "50%" :text-align "left"}}
-          "Lon:" (u/to-precision 4 (get @lon-lat 0))]])]]
+           "Lon:" (u/to-precision 4 (get @lon-lat 0))]]
+         [:div {:class "d-flex justify-content-end"}
+          [:button {:class    "mx-3 mb-1 btn btn-sm"
+                    :style    {:color "white"}
+                    ;:on-click #(initiate-match-drop @lon-lat)
+                    }
+           "Submit"]]])]]
     (finally
       (ol/remove-event! move-event))))
 
