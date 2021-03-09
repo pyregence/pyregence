@@ -295,7 +295,7 @@
       (reset! *zoom cur)
       (reset! minZoom min)
       (reset! maxZoom max))
-    ;;TODO: (mb/add-map-zoom-end! #(reset! *zoom %))
+    (mb/add-map-zoom-end! #(do (println %) (reset! *zoom %)))
     [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if mobile? "90px" "36px")})}
      (map-indexed (fn [i [icon hover-text on-click]]
                     ^{:key i} [tool-tip-wrapper
@@ -340,7 +340,7 @@
          [:label {:style {:width "50%" :text-align "left"}}
           "Lon:" (u/to-precision 4 (get @lon-lat 0))]])]]
     (finally
-      (mb/remove-event! move-event))))
+      (mb/remove-mouse-move-xy!))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Information Tool
@@ -394,7 +394,7 @@
                         legend-list
                         last-clicked-info
                         close-fn!]
-  (r/with-let [click-event (mb/add-single-click-popup! get-point-info!)]
+  (r/with-let [click-event (mb/add-single-click! get-point-info!)]
     [:div#info-tool
      [resizable-window
       parent-box
@@ -431,7 +431,7 @@
              box-width
              "This point does not have any information."])))]]
     (finally
-      (mb/remove-event! click-event))))
+      (mb/remove-single-click!))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Legend Box

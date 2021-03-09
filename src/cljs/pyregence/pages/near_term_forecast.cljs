@@ -178,6 +178,7 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
+  (println point-info)
   (reset! last-clicked-info nil)
   (let [layer-group (get-current-layer-group)]
     (when-not (u/missing-data? layer-group point-info)
@@ -195,7 +196,7 @@
                                       @param-layers))))
 
 (defn clear-info! []
-  ;;TODO (mb/clear-point!)
+  (mb/clear-popup!)
   (reset! last-clicked-info [])
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))

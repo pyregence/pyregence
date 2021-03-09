@@ -8,14 +8,17 @@
 ;; Mapbox Aaliases
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def mapbox         js/mapboxgl)
-(def Map            js/mapboxgl.Map)
-(def LngLat         js/mapboxgl.LngLat)
-(def LngLatBounds   js/mapboxgl.LngLatBounds)
+(def mapbox             js/mapboxgl)
+(def Map                js/mapboxgl.Map)
+(def LngLat             js/mapboxgl.LngLat)
+(def LngLatBounds       js/mapboxgl.LngLatBounds)
+(def MercatorCoordinate js/mapboxgl.MercatorCoordinate)
+(def Popup              js/mapboxgl.Popup)
 
 (def the-map         (r/atom nil))
 (def loading-errors? (atom false))
 (def cur-highlighted (atom nil))
+(def the-popup       (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Creating objects
@@ -156,14 +159,50 @@
 ;; Popup / Overlay methods
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Web Mercator Resolution taken from:
+;; https://docs.microsoft.com/en-us/bingmaps/articles/bing-maps-tile-system?redirectedfrom=MSDN
+;;
+(defn get-resolution
+  "Calculates ground resolution using zoom and latitude.
+  Follows the following equation:
+  resolution = cos(latitude * pi/180) * earth-circumference / map-width
+  where: map-width = 256 * 2^zoom"
+  [zoom latitude]
+  (let [earth-diameter 6378137
+        pi js/Math.PI
+        t1 (js/Math.cos (* latitude (/ pi 180)))
+        earth-circumference (* 2 pi earth-diameter)
+        map-width (* 256 (js/Math.pow 2 zoom))]
+    (/ (* t1 earth-circumference) map-width)))
+
+(defn get-scale
+  "Calculates the map scale using zoom and latitude.
+  Assumes a DPI of 96 pixels per inch"
+  [zoom latitude & new-dpi]
+  (let [dpi (or new-dpi 96)
+        meters-per-inch 0.254
+        res (get-resolution zoom latitude)]
+    (/ (* res dpi) meters-per-inch)))
+
+(defn init-popup!
+  "Creates a popup at latlng"
+  [latlng]
+  (let [popup (Popup. #js {:anchor "top" :closeButton true})]
+    (.setLatLng popup latlng)
+    (reset! the-popup popup)))
+
 ;; TODO: Implement
-(defn get-overlay-center [])
+(defn get-overlay-center []
+  (when-let [popup @the-popup]
+    (.getLngLat popup)))
 
 ;; TODO: Implement
 (defn get-overlay-bbox [])
 
-;; TODO: Implement
-(defn clear-point! [])
+(defn clear-popup! []
+  (when-let [popup @the-popup]
+    (.remove popup)
+    (reset! the-popup nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
@@ -178,18 +217,43 @@
     (swap! events dissoc event-key)))
 
 (defn add-event! [event-type event-fn]
-  ;;(swap! events update event-type event-fn)
+  (swap! events assoc event-type event-fn)
   (.on @the-map event-type event-fn))
 
-(defn add-single-click-popup! [call-back]
-  (add-event! "click" call-back))
+(defn add-single-click!
+  "Adds callback for `click` listener"
+  [call-back]
+  (let [f (fn [e] (let [lnglat (-> e .-lngLat)
+                        [_ lat] (-> lnglat .toArray js->clj)
+                        zoom (.getZoom @the-map)
+                        res (get-resolution zoom lat)
+                        popup (Popup. #js {:anchor "top" :closeButton true})]
+                    (js/console.log lnglat)
+                    (js/console.log res zoom lat)
+                    (js/console.log (.fromLngLat js/mapboxgl.MercatorCoordinate lnglat))))]
+                    ;;(println res zoom lat)
+                    ;;(reset! the-popup popup)
+                    ;;(.setLngLat popup lnglat)
+                    ;;(call-back [x y (+ x res) (+ y res)])))]
+    (add-event! "click" f)))
+
+(defn remove-single-click!
+  "Removes `click` listener"
+  []
+  (remove-event! "click"))
 
 ;; TODO: Implement
 (defn add-mouse-move-xy!
   "Adds callback to `mousemove` listener"
   [callback]
-  (let [f (fn [e] (-> e .-point unproject js->clj callback))]
+  {:pre [(fn? callback)]}
+  (let [f (fn [e] (-> e .-point unproject .toArray js->clj callback))]
     (add-event! "mousemove" f)))
+
+(defn remove-mouse-move-xy!
+  "Removes `mousemove` listener"
+  []
+  (remove-event! "mousemove"))
 
 ;; TODO: Implement
 (defn feature-highlight! [evt])
@@ -201,8 +265,12 @@
 (defn add-single-click-feature-highlight! [])
 
 ;; TODO: Implement
-(defn add-map-zoom-end! [call-back])
-  ;;(add-event! "zoomend" call-back))
+(defn add-map-zoom-end!
+  "Registers callback on zoomend event"
+  [callback]
+  {:pre [(fn? callback)]}
+  (let [f (fn [e] (-> e .-target .getZoom js/Math.round callback))]
+    (add-event! "zoomend" f)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Source/Layer Methods
@@ -235,7 +303,7 @@
   {:id layer-name
    :type "raster"
    :source layer-name
-   :paint  default-wms-style})
+   :paint default-wms-style})
 
 (defn add-wms-layer!
   "Adds Pyregence WMS Layer to the map"
@@ -374,7 +442,8 @@
   "Sets the map zoom (0-20)"
   [^int zoom]
   {:pre (> 0 zoom 20)}
-  (.setZoom @the-map zoom))
+  (let [z (js/Math.round zoom)]
+    (.easeTo @the-map (clj->js {:zoom z :animate true}))))
 
 (defn zoom-to-extent!
   "Fits the map to the bounds in the form [minX minY maxX maxY]"
