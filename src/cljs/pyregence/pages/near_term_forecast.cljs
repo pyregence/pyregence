@@ -178,7 +178,6 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
-  (println point-info)
   (reset! last-clicked-info nil)
   (let [layer-group (get-current-layer-group)]
     (when-not (u/missing-data? layer-group point-info)

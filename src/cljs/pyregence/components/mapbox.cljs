@@ -13,11 +13,13 @@
 (def LngLat             js/mapboxgl.LngLat)
 (def LngLatBounds       js/mapboxgl.LngLatBounds)
 (def MercatorCoordinate js/mapboxgl.MercatorCoordinate)
+(def Marker             js/mapboxgl.Marker)
 (def Popup              js/mapboxgl.Popup)
 
 (def the-map         (r/atom nil))
 (def loading-errors? (atom false))
 (def cur-highlighted (atom nil))
+(def the-marker      (r/atom nil))
 (def the-popup       (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -29,6 +31,7 @@
 (declare add-source!)
 (declare add-layer!)
 (declare set-base-map-source!)
+(declare center-on-overlay!)
 
 ;; TODO this might be more efficient as an atom that's set once on zoom
 (defn zoom-size-ratio [resolution])
@@ -156,8 +159,22 @@
   (.unproject @the-map point))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Popup / Overlay methods
+;; Popup / Marker methods
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; https://web.archive.org/web/20190209181458/https://www.masinamichele.it/2018/05/04/gis-the-math-to-convert-from-epsg3857-to-wgs-84/
+;; Reproject 4326 to 3857
+;; b = 20037508.34;
+;; lon = lon_wgs * b / 180
+;; lat = (b/pi) * ln( tan( (pi / 360) * (lat_wgs + 90) ) )
+(defn reproject [lon-wgs lat-wgs]
+  (let [b 20037508.34
+        pi js/Math.PI
+        ln js/Math.log
+        tan js/Math.tan
+        lon (/ (* b lon-wgs) 180)
+        lat (* (/ b pi) (ln (tan (* (/ pi 360) (+ lat-wgs 90)))))]
+    [lon lat]))
 
 ;; Web Mercator Resolution taken from:
 ;; https://docs.microsoft.com/en-us/bingmaps/articles/bing-maps-tile-system?redirectedfrom=MSDN
@@ -184,25 +201,43 @@
         res (get-resolution zoom latitude)]
     (/ (* res dpi) meters-per-inch)))
 
-(defn init-popup!
-  "Creates a popup at latlng"
-  [latlng]
-  (let [popup (Popup. #js {:anchor "top" :closeButton true})]
-    (.setLatLng popup latlng)
-    (reset! the-popup popup)))
-
 ;; TODO: Implement
 (defn get-overlay-center []
-  (when-let [popup @the-popup]
-    (.getLngLat popup)))
+  (when-let [marker @the-marker]
+    (.getLngLat marker)))
 
 ;; TODO: Implement
 (defn get-overlay-bbox [])
+
+(defn clear-marker! []
+  (when-let [marker @the-marker]
+    (.remove marker)
+    (reset! the-marker nil)))
+
+(defn init-marker!
+  "Creates a marker at latlng"
+  [latlng]
+  (clear-marker!)
+  (let [marker (Marker. #js {:color "#FF0000"})]
+    (doto marker
+      (.setLngLat latlng)
+      (.addTo @the-map))
+    (reset! the-marker marker)))
 
 (defn clear-popup! []
   (when-let [popup @the-popup]
     (.remove popup)
     (reset! the-popup nil)))
+
+(defn init-popup!
+  "Creates a popup at latlng"
+  [latlng]
+  (clear-popup!)
+  (let [popup (Popup. #js {:anchor "top" :closeButton true})]
+    (doto popup
+      (.setLngLat latlng)
+      (.addTo @the-map))
+    (reset! the-popup popup)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
@@ -224,17 +259,14 @@
   "Adds callback for `click` listener"
   [call-back]
   (let [f (fn [e] (let [lnglat (-> e .-lngLat)
-                        [_ lat] (-> lnglat .toArray js->clj)
+                        [lng lat] (-> lnglat .toArray js->clj)
+                        [x y] (reproject lng lat)
                         zoom (.getZoom @the-map)
-                        res (get-resolution zoom lat)
-                        popup (Popup. #js {:anchor "top" :closeButton true})]
-                    (js/console.log lnglat)
-                    (js/console.log res zoom lat)
-                    (js/console.log (.fromLngLat js/mapboxgl.MercatorCoordinate lnglat))))]
-                    ;;(println res zoom lat)
-                    ;;(reset! the-popup popup)
-                    ;;(.setLngLat popup lnglat)
-                    ;;(call-back [x y (+ x res) (+ y res)])))]
+                        res (get-resolution zoom lat)]
+                    (init-marker! lnglat)
+                    (init-popup! lnglat)
+                    (center-on-overlay!) ;; TODO: Figure out centering isn't working
+                    (call-back [x y (+ x res) (+ y res)])))]
     (add-event! "click" f)))
 
 (defn remove-single-click!
@@ -454,10 +486,9 @@
 (defn set-center!
   "Sets the geographic center to center"
   [center min-zoom]
-  (when center
-    (.setCenter @the-map center))
-    (when (< (get (get-zoom-info) 0) min-zoom)
-      (set-zoom! min-zoom)))
+  (let [curr-zoom (get (get-zoom-info) 0)
+        zoom (if (< curr-zoom min-zoom) min-zoom curr-zoom)]
+    (.easeTo @the-map {:center center :zoom zoom})))
 
 (defn center-on-overlay! []
   (set-center! (get-overlay-center) 12.0))
