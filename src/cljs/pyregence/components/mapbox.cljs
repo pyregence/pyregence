@@ -17,21 +17,29 @@
 (def Popup              js/mapboxgl.Popup)
 
 (def the-map         (r/atom nil))
+(def the-map-loaded? (r/atom false))
 (def loading-errors? (atom false))
+(def cur-layer       (atom nil))
 (def cur-highlighted (atom nil))
 (def the-marker      (r/atom nil))
 (def the-popup       (r/atom nil))
+
+;; Constants
+(defonce active-fires        "active-fires")
+(defonce active-fires-labels "active-fires-labels")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Creating objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare get-layer)
 (declare get-source)
 (declare loaded?)
 (declare add-source!)
 (declare add-layer!)
 (declare set-base-map-source!)
 (declare center-on-overlay!)
+(declare set-center!)
 
 ;; TODO this might be more efficient as an atom that's set once on zoom
 (defn zoom-size-ratio [resolution])
@@ -42,13 +50,14 @@
 ;; TODO: Figure out if the "load" method can only take one function?
 (def ^:private on-load-events (atom []))
 (defn run-on-load-events []
+  (reset! the-map-loaded? true)
   (println "Running on-load events")
   (doseq [f @on-load-events] (f))
   (reset! on-load-events []))
 
 (defn on-load [f]
   (println "Adding event: " f)
-  (when (empty? @on-load-events)
+  (when (and (empty? @on-load-events) (not @the-map-loaded?))
     (println "Empty events")
     (.on @the-map "load" #(run-on-load-events)))
   (swap! on-load-events conj f))
@@ -57,17 +66,12 @@
   (println "Adding sky")
   (if-not (loaded?)
     (on-load #(add-sky!))
-    (add-layer! (clj->js {:id "sky"
-                          :type "sky"
-                          :paint {:sky-type "gradient"
-                                  :sky-gradient ["interpolate" ["linear"]
-                                                 ["sky-radial-progress"]
-                                                 0.8 "rgba(135 206 235 1.0)"
-                                                 1 "rgba(0000.1)"]
-                                  :sky-gradient-center [0 0]
-                                  :sky-gradient-radius 90
-                                  :sky-opacity ["interpolate" ["exponential" 0.1]
-                                                ["zoom"] 5 0 22 1 ]}}))))
+    (when (nil? (get-layer "sky"))
+      (add-layer! (clj->js {:id "sky"
+                            :type "sky"
+                            :paint {:sky-type "atmosphere"
+                                    :sky-atmosphere-sun [0.0 0.0]
+                                    :sky-atmosphere-sun-intensity 15}})))))
 
 (defn- add-terrain! []
   (if-not (loaded?)
@@ -93,9 +97,10 @@
    (set-access-token!)
    (reset! the-map
            (Map.
-             #js {:container container-id
+             (clj->js {:container container-id
                   :style (-> c/base-map-options first :source)
-                  :trackReize true}))
+                  :transition {:duration 500 :delay 0}
+                  :trackResize true})))
    (js/console.log @the-map)
    (add-default-basemap!)
    (add-terrain!)
@@ -109,7 +114,7 @@
 (defn loaded?
   "Returns whether the map has loaded"
   []
-  (.loaded @the-map))
+  @the-map-loaded?)
 
 (defn get-zoom-info
   "Get zoom information
@@ -162,18 +167,14 @@
 ;; Popup / Marker methods
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; https://web.archive.org/web/20190209181458/https://www.masinamichele.it/2018/05/04/gis-the-math-to-convert-from-epsg3857-to-wgs-84/
-;; Reproject 4326 to 3857
-;; b = 20037508.34;
-;; lon = lon_wgs * b / 180
-;; lat = (b/pi) * ln( tan( (pi / 360) * (lat_wgs + 90) ) )
-(defn reproject [lon-wgs lat-wgs]
-  (let [b 20037508.34
-        pi js/Math.PI
-        ln js/Math.log
+(defn EPSG:4326->3857
+  "Reprojects lon/lat EPSG:4326 (WGS-84) to ESPG:3857 (Web Mercator)"
+  [lon-wgs lat-wgs]
+  (let [PI js/Math.PI
+        log js/Math.log
         tan js/Math.tan
-        lon (/ (* b lon-wgs) 180)
-        lat (* (/ b pi) (ln (tan (* (/ pi 360) (+ lat-wgs 90)))))]
+        lon (* lon-wgs 111319.490778)
+        lat (-> lat-wgs (+ 90.0) (/ 360.0) (* PI) (tan) (log) (* 6378136.98))]
     [lon lat]))
 
 ;; Web Mercator Resolution taken from:
@@ -260,7 +261,7 @@
   [call-back]
   (let [f (fn [e] (let [lnglat (-> e .-lngLat)
                         [lng lat] (-> lnglat .toArray js->clj)
-                        [x y] (reproject lng lat)
+                        [x y] (EPSG:4326->3857 lng lat)
                         zoom (.getZoom @the-map)
                         res (get-resolution zoom lat)]
                     (init-marker! lnglat)
@@ -287,14 +288,35 @@
   []
   (remove-event! "mousemove"))
 
-;; TODO: Implement
-(defn feature-highlight! [evt])
+(defn- reset-feature-highlighted! []
+  (when (some? @cur-highlighted)
+    (.setFeatureState @the-map #js {:source active-fires :id @cur-highlighted} #js {:hover false})
+    (reset! cur-highlighted nil)))
 
 ;; TODO: Implement
-(defn add-mouse-move-feature-highlight! [])
+(defn feature-highlight! [e]
+  (let [num-features (-> e .-features .-length)]
+    (when (< 0 num-features)
+      (reset-feature-highlighted!)
+      (let [id (-> e .-features (aget 0) .-id)]
+        (reset! cur-highlighted id)
+        (.setFeatureState @the-map #js {:source active-fires :id @cur-highlighted} #js {:hover true :display true})))))
 
 ;; TODO: Implement
-(defn add-single-click-feature-highlight! [])
+(defn add-mouse-move-feature-highlight! []
+  (.on @the-map "mousemove" active-fires feature-highlight!)
+  (.on @the-map "mouseleave" active-fires reset-feature-highlighted!))
+
+(defn add-feature-zoom-max! []
+  (.on @the-map "zoomend" active-fires (fn [e] (js/console.log e))))
+
+(defn- feature-click! [e]
+  (let [coords (-> e .-features (aget 0) .-geometry .-coordinates)]
+    (set-center! coords 9.0)))
+
+;; TODO: Implement
+(defn add-single-click-feature-highlight! []
+  (.on @the-map "click" active-fires feature-click!))
 
 ;; TODO: Implement
 (defn add-map-zoom-end!
@@ -315,13 +337,15 @@
   (.addSource @the-map source-name source-params))
 
 (defn remove-source! [source-name]
-  (.removeSource @the-map source-name))
+  (when (some? (get-source source-name))
+    (.removeSource @the-map source-name)))
 
 (defn add-layer! [layer-params]
   (.addLayer @the-map layer-params))
 
 (defn remove-layer! [layer-name]
-  (.removeLayer @the-map layer-name))
+  (when (some? (get-layer layer-name))
+    (.removeLayer @the-map layer-name)))
 
 (defn- wms-source [layer-name]
   (let [url (c/wms-layer-url layer-name)]
@@ -329,7 +353,8 @@
 
 (defonce ^:private default-wms-style
   {:raster-opacity 0.8
-   :raster-resampling "nearest"})
+   :raster-resampling "nearest"
+   :raster-opacity-transition {:duration 300 :delay 0}})
 
 (defn- wms-layer [layer-name]
   {:id layer-name
@@ -352,18 +377,22 @@
 (defn- wfs-source [layer-name]
   (let [url (c/wfs-layer-url layer-name)]
     (println "WFS Source: " url)
-    {:type "geojson" :data url}))
+    {:type "geojson" :data url :generateId true}))
 
 (defn- zoom-interp
   "Interpolates a value (vmin to vmax) based on zoom value (from zmin to zmax)"
   [vmin vmax zmin zmax]
   ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
 
+(defn- hover
+  [hover-val default]
+  ["case" ["boolean" ["feature-state" "hover"] false] hover-val default])
+
 (defonce ^:private default-circle-style
   {:circle-color "#FF0000"
-   :circle-stroke-color "#000000"
-   :circle-stroke-width 3
-   :circle-radius (zoom-interp 8 14 5 20)})
+   :circle-stroke-color (hover "#ffff00" "#000000")
+   :circle-stroke-width (hover 4 2)
+   :circle-radius (zoom-interp 5 10 5 20)})
 
 (defn- incident-layer [layer-name & style]
   {:id layer-name
@@ -376,12 +405,14 @@
   {:type "symbol"
    :layout {:text-anchor "top"
             :text-field ["to-string" ["get" "prettyname"]]
-            :text-font ["Open Sans Regular" "Arial Unicode MS Regular"]
-            :text-size 14
+            :text-font ["Open Sans SemiBold" "Arial Unicode MS Regular"]
+            :text-size 16
             :text-offset [0 0.5]}
    :paint {:text-color "#000000"
-           :text-halo-color "#ffffff"
-           :text-halo-width 1}})
+           :text-halo-color (hover "#ffff00" "#ffffff")
+           :text-halo-width (hover 3 1)
+           :text-opacity ["step" ["zoom"] 0 6 1 20 1]}})
+           ;;:text-opacity ["case" ["boolean" ["feature-state" "display"] true] 1.0 0]}})
 
 (defn- incident-labels-layer [layer-name source-name & style]
   (merge
@@ -397,13 +428,13 @@
   (if-not (loaded?)
     (on-load (fn [] (add-wfs-layer! layer-name z-index)))
     (do
-      (when (nil? (get-source layer-name))
-        (add-source! layer-name (clj->js (wfs-source layer-name))))
-      (let [labels-layer (str "labels-" layer-name)]
-        (when (nil? (get-layer layer-name))
-          (add-layer! (clj->js (incident-layer layer-name))))
+      (when (nil? (get-source active-fires))
+        (add-source! active-fires (clj->js (wfs-source layer-name))))
+      (let [labels-layer (str active-fires-labels)]
+        (when (nil? (get-layer active-fires))
+          (add-layer! (clj->js (incident-layer active-fires))))
         (when (nil? (get-layer labels-layer))
-          (add-layer! (clj->js (incident-labels-layer labels-layer layer-name))))))))
+          (add-layer! (clj->js (incident-labels-layer labels-layer active-fires))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modifying map properties
@@ -414,45 +445,48 @@
   [layer property value & opts]
   (.setLayoutProperty @the-map layer property value opts))
 
-(defn set-visible!
-  "Sets a layer's visibility"
-  [layer-name visible?]
-  (when (get-layer layer-name)
-    (set-layout-property! layer-name "visibility" (if visible? "visible" "none"))))
-
 (defn set-opacity!
   "Sets the layer's opacity"
   [layer-name opacity]
   (when-let [layer (get-layer layer-name)]
     (.setPaintProperty @the-map layer-name (str (:type layer) "-opacity") opacity)))
 
+(defn set-visible!
+  "Sets a layer's visibility"
+  [layer-name visible?]
+  (when (some? (get-layer layer-name))
+    (set-layout-property! layer-name "visibility" (if visible? "visible" "none"))))
+
 (defn set-base-map-source!
   "Sets the Basemap source"
   [source]
   (.setStyle @the-map source)
-  (add-terrain!))
+  (add-terrain!)
+  (add-sky!))
 
 ;; TODO only WMS layers have a time slider for now. This might eventually need to accommodate Vector sources
 ;; Only issue is that ALL other custom layers need to be turned off
 (defn swap-active-layer!
   "Swaps the layer that is visible to a new layer"
   [layer-name]
-  (let [last-layer (get-last-layer)
-        existing-layer (get-layer layer-name)]
+  (let [existing-layer (get-layer layer-name)]
+    (when-not (nil? @cur-layer)
+      (set-visible! @cur-layer false))
     (if (nil? existing-layer)
       (add-wms-layer! layer-name 0)
       (set-visible! layer-name true))
-    (set-visible! last-layer false)))
+    (reset! cur-layer layer-name)))
 
-;; TODO: Implement
 ;; Vector source is determined whether there is a style-fun parameter
 (defn reset-active-layer!
   "Resets the active layer of the map"
   [layer-name & {:keys [style _opacity]}]
-  ;; Remove the "active" layer
+  (when-not (nil? @cur-layer)
+    (set-visible! @cur-layer false))
   (if (some? style)
     (add-wfs-layer! layer-name 0)
-    (add-wms-layer! layer-name 0)))
+    (add-wms-layer! layer-name 0))
+  (reset! cur-layer layer-name))
 
 (defn reset-north!
   "Resets the top of the map to geographic north"
@@ -488,7 +522,7 @@
   [center min-zoom]
   (let [curr-zoom (get (get-zoom-info) 0)
         zoom (if (< curr-zoom min-zoom) min-zoom curr-zoom)]
-    (.easeTo @the-map {:center center :zoom zoom})))
+    (.easeTo @the-map (clj->js {:center center :zoom zoom}))))
 
 (defn center-on-overlay! []
   (set-center! (get-overlay-center) 12.0))

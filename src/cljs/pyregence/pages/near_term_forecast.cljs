@@ -289,8 +289,8 @@
       (mb/init-map!)
       ;; TODO: Figure out if we still need these since Mapbox handles
       ;; style interactions differently
-      ;;(mb/add-mouse-move-feature-highlight!)
-      ;;(mb/add-single-click-feature-highlight!)
+      (mb/add-mouse-move-feature-highlight!)
+      (mb/add-single-click-feature-highlight!)
       (process-capabilities! (edn/read-string (:message (<! fire-names-chan)))
                              (edn/read-string (:message (<! user-layers-chan))))
       (<! (select-forecast! @*forecast))

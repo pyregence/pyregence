@@ -298,3 +298,6 @@
 
 (defn js->kclj [xs]
   (js->clj xs :keywordize-keys true))
+
+(defn after [f ms]
+  (js/setTimeout f ms))
