@@ -32,8 +32,8 @@
 ;; Creating objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare get-layer)
-(declare get-source)
+(declare source-exists?)
+(declare layer-exists?)
 (declare loaded?)
 (declare add-source!)
 (declare add-layer!)
@@ -66,7 +66,7 @@
   (println "Adding sky")
   (if-not (loaded?)
     (on-load #(add-sky!))
-    (when (nil? (get-layer "sky"))
+    (when-not (layer-exists? "sky")
       (add-layer! (clj->js {:id "sky"
                             :type "sky"
                             :paint {:sky-type "atmosphere"
@@ -77,7 +77,7 @@
   (if-not (loaded?)
     (on-load #(add-terrain!))
     (let [dem-layer "mapbox-dem"]
-      (when (nil? (get-source dem-layer))
+      (when-not (source-exists? dem-layer)
         (add-source! dem-layer (clj->js {:type "raster-dem"
                                             :url "mapbox://mapbox.mapbox-terrain-dem-v1"
                                             :tileSize 512
@@ -125,15 +125,25 @@
      (.getMinZoom m)
      (.getMaxZoom m)]))
 
+(defn source-exists?
+  "Whether the layer exists in the map"
+  [id]
+  (-> @the-map (.getSource id) some?))
+
+(defn layer-exists?
+  "Whether the layer exists in the map"
+  [id]
+  (-> @the-map (.getLayer id) some?))
+
 (defn get-source
   "Retrieve source from the map"
   [id]
-  (-> @the-map (.getSource id) u/js->kclj))
+  (-> @the-map (.getSource id)))
 
 (defn get-layer
   "Retrieve layer from the map"
   [id]
-  (-> @the-map (.getLayer id) u/js->kclj))
+  (-> @the-map (.getLayer id)))
 
 (defn get-layers
   "Retrieves all layers from the map"
@@ -337,14 +347,14 @@
   (.addSource @the-map source-name source-params))
 
 (defn remove-source! [source-name]
-  (when (some? (get-source source-name))
+  (when (source-exists? source-name)
     (.removeSource @the-map source-name)))
 
 (defn add-layer! [layer-params]
   (.addLayer @the-map layer-params))
 
 (defn remove-layer! [layer-name]
-  (when (some? (get-layer layer-name))
+  (when (layer-exists? layer-name)
     (.removeLayer @the-map layer-name)))
 
 (defn- wms-source [layer-name]
@@ -369,9 +379,9 @@
     (on-load #(add-wms-layer! layer-name z-index))
     (do
       (println "Adding WMS Layer: " layer-name)
-      (when (nil? (get-source layer-name))
+      (when-not (source-exists? layer-name)
         (add-source! layer-name (clj->js (wms-source layer-name))))
-      (when (nil? (get-layer layer-name))
+      (when-not (layer-exists? layer-name)
         (add-layer! (clj->js (wms-layer layer-name)))))))
 
 (defn- wfs-source [layer-name]
@@ -428,12 +438,12 @@
   (if-not (loaded?)
     (on-load (fn [] (add-wfs-layer! layer-name z-index)))
     (do
-      (when (nil? (get-source active-fires))
+      (when-not (source-exists? active-fires)
         (add-source! active-fires (clj->js (wfs-source layer-name))))
       (let [labels-layer (str active-fires-labels)]
-        (when (nil? (get-layer active-fires))
+        (when-not (layer-exists? active-fires)
           (add-layer! (clj->js (incident-layer active-fires))))
-        (when (nil? (get-layer labels-layer))
+        (when-not (layer-exists? labels-layer)
           (add-layer! (clj->js (incident-labels-layer labels-layer active-fires))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -449,12 +459,12 @@
   "Sets the layer's opacity"
   [layer-name opacity]
   (when-let [layer (get-layer layer-name)]
-    (.setPaintProperty @the-map layer-name (str (:type layer) "-opacity") opacity)))
+    (.setPaintProperty @the-map layer-name (str (.-type layer) "-opacity") opacity)))
 
 (defn set-visible!
   "Sets a layer's visibility"
   [layer-name visible?]
-  (when (some? (get-layer layer-name))
+  (when (layer-exists? layer-name)
     (set-layout-property! layer-name "visibility" (if visible? "visible" "none"))))
 
 (defn set-base-map-source!
@@ -464,24 +474,31 @@
   (add-terrain!)
   (add-sky!))
 
+(defn- fade-in! [layer-name]
+  (set-visible! layer-name true)
+  (u/after #(set-opacity! layer-name 1) 100))
+
+(defn- fade-out! [layer-name]
+  (set-opacity! layer-name 0)
+  (u/after #(set-visible! layer-name false) 1000))
+
 ;; TODO only WMS layers have a time slider for now. This might eventually need to accommodate Vector sources
 ;; Only issue is that ALL other custom layers need to be turned off
 (defn swap-active-layer!
   "Swaps the layer that is visible to a new layer"
   [layer-name]
-  (let [existing-layer (get-layer layer-name)]
-    (when-not (nil? @cur-layer)
-      (set-visible! @cur-layer false))
-    (if (nil? existing-layer)
-      (add-wms-layer! layer-name 0)
-      (set-visible! layer-name true))
-    (reset! cur-layer layer-name)))
+  (when (some? @cur-layer)
+    (fade-out! @cur-layer))
+  (if (layer-exists? layer-name)
+    (fade-in! layer-name)
+    (add-wms-layer! layer-name 0))
+  (reset! cur-layer layer-name))
 
 ;; Vector source is determined whether there is a style-fun parameter
 (defn reset-active-layer!
   "Resets the active layer of the map"
   [layer-name & {:keys [style _opacity]}]
-  (when-not (nil? @cur-layer)
+  (when (some? @cur-layer)
     (set-visible! @cur-layer false))
   (if (some? style)
     (add-wfs-layer! layer-name 0)
