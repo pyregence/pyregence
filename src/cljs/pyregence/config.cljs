@@ -254,6 +254,6 @@
                                         :attributionsCollapsible false})}
    :mapbox-sat-street {:opt-label "Mapbox Satellite Street"
                        :source    (XYZ.
-                                   #js {:url (get-map-box-static-url "cka8hoo5v0gpy1iphg08hz7oj")
+                                   #js {:url (get-map-box-static-url "ckm2hgkx04xuw17pahpins029")
                                         :attributions mapbox-attribution-text
                                         :attributionsCollapsible false})}})
