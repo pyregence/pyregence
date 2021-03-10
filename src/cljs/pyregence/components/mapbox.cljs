@@ -455,11 +455,16 @@
   [layer property value & opts]
   (.setLayoutProperty @the-map layer property value opts))
 
+(defn set-paint-property!
+  "Set's a property in the layer's paint properties"
+  [layer property value & opts]
+  (.setPaintProperty @the-map layer property value opts))
+
 (defn set-opacity!
   "Sets the layer's opacity"
   [layer-name opacity]
   (when-let [layer (get-layer layer-name)]
-    (.setPaintProperty @the-map layer-name (str (.-type layer) "-opacity") opacity)))
+    (set-paint-property! layer-name (str (.-type layer) "-opacity") opacity)))
 
 (defn set-visible!
   "Sets a layer's visibility"
@@ -475,10 +480,12 @@
   (add-sky!))
 
 (defn- fade-in! [layer-name]
+  (set-paint-property! layer-name "raster-opacity-transition" (clj->js {:duration 200}))
   (set-visible! layer-name true)
   (u/after #(set-opacity! layer-name 1) 100))
 
 (defn- fade-out! [layer-name]
+  (set-paint-property! layer-name "raster-opacity-transition" (clj->js {:duration 500}))
   (set-opacity! layer-name 0)
   (u/after #(set-visible! layer-name false) 1000))
 
