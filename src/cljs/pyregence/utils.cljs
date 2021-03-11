@@ -295,3 +295,12 @@
   [n dbl]
   (let [factor (.pow js/Math 10 n)]
     (/ (Math/round (* dbl factor)) factor)))
+
+(defn filterm [pred coll]
+  (persistent!
+   (reduce (fn [acc cur]
+             (if (pred cur)
+               (conj! acc cur)
+               acc))
+           (transient {})
+           coll)))
