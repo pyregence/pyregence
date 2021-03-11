@@ -365,6 +365,7 @@
            [mc/match-drop-tool @my-box #(reset! show-match-drop? false)])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
          [mc/tool-bar show-info? show-match-drop? set-show-info! @mobile?]
+         [mc/scale-bar 100 @mobile?]
          [mc/zoom-bar get-current-layer-extent @mobile?]
          [mc/time-slider
           param-layers
