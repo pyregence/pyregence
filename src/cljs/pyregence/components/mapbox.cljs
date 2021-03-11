@@ -135,6 +135,19 @@
 ;; TODO: Implement
 (defn add-layer-load-fail! [f])
 
+;; TODO: Implement
+(defn add-map-move!
+  "Passes current distance to `f` on move event"
+  [f max-width]
+  (let [call-back (fn []
+                    (let [y (-> @the-map .-_container .-clientHeight (/ 2))
+                          left (.unproject @the-map #js [0 y])
+                          right (.unproject @the-map #js [max-width y])
+                          distance (.distanceTo left right)]
+                      (f distance)))]
+    (add-event! "move" call-back)
+  call-back))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modify Layer Properties
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -187,9 +200,9 @@
    (set! (.-accessToken mapbox) c/mapbox-access-token)
    (reset! the-map
            (Map.
-            (clj->js {:container container-id
-                      :minZoom 3
-                      :maxZoom 20
-                      :style (-> c/base-map-options c/base-map-default :source)
-                      :trackResize true
-                      :transition {:duration 500 :delay 0}})))))
+             (clj->js {:container container-id
+                       :minZoom 3
+                       :maxZoom 20
+                       :style (-> c/base-map-options c/base-map-default :source)
+                       :trackResize true
+                       :transition {:duration 500 :delay 0}})))))
