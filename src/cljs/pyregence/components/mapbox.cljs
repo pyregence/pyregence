@@ -42,6 +42,15 @@
 ;; TODO: Implement
 (defn get-feature-at-pixel [pixel])
 
+(defn get-distance-meters
+  "Returns distance in meters between center of the map and 100px to the right.
+  Used to define the scale-bar map control"
+  []
+  (let [y        (-> @the-map .-_container .-clientHeight (/ 2.0))
+        left     (.unproject @the-map #js [0.0 y])
+        right    (.unproject @the-map #js [100.0 y])]
+    (.distanceTo left right)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modify Map
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -135,18 +144,11 @@
 ;; TODO: Implement
 (defn add-layer-load-fail! [f])
 
-;; TODO: Implement
 (defn add-map-move!
-  "Passes current distance to `f` on move event"
-  [f max-width]
-  (let [call-back (fn []
-                    (let [y (-> @the-map .-_container .-clientHeight (/ 2))
-                          left (.unproject @the-map #js [0 y])
-                          right (.unproject @the-map #js [max-width y])
-                          distance (.distanceTo left right)]
-                      (f distance)))]
-    (add-event! "move" call-back)
-  call-back))
+  "Calls `f` on 'move' event"
+  [f]
+  (add-event! "move" f)
+  f)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modify Layer Properties
