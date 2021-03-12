@@ -174,7 +174,7 @@
       (update-layer :name name)
       name)))
 
-(defn optional-layer [opt-label filter-set z-index layer update-layer]
+(defn optional-layer [opt-label filter-set z-index layer update-layer id]
   (get-layer-name filter-set update-layer)
   (fn [opt-label filter-set z-index layer update-layer]
     (let [show? (:show? layer)]
@@ -182,6 +182,7 @@
        [:div {:style {:display "flex"}}
         [:input {:style {:margin ".25rem .5rem 0 0"}
                  :type "checkbox"
+                 :id id
                  :checked show?
                  :on-change (fn []
                               (go
@@ -191,7 +192,7 @@
                                   (if show?
                                     (mb/set-visible-by-title! layer-name false)
                                     (mb/create-wms-layer! layer-name layer-name z-index)))))}]
-        [:label opt-label]]])))
+        [:label {:for id} opt-label]]])))
 
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [show-hillshade?  (r/atom false)
@@ -228,7 +229,8 @@
                                filter-set
                                z-index
                                (get underlays key)
-                               (fn [k v] (select-param! v :underlays key k))]))
+                               (fn [k v] (select-param! v :underlays key k))
+                               key]))
                           underlays))]))
               param-options)
          [:div {:style {:margin-top ".5rem"}}
