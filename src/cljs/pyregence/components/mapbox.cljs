@@ -46,24 +46,39 @@
 ;; Modify Map
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Implement
-(defn set-zoom! [zoom]
+(defn set-zoom!
+  "Sets the zoom level of the map to `zoom`"
+  [zoom]
   (.easeTo @the-map (clj->js {:zoom zoom :animate true})))
 
-;; TODO: Implement
-(defn zoom-to-extent! [[minx miny maxx maxy]])
+(defn zoom-to-extent!
+  "Pans/zooms the map to the provided extents."
+  [[minx miny maxx maxy]]
+  (let [bounds (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))]
+    (.fitBounds @the-map bounds #js {:linear true})))
 
-;; TODO: Implement
-(defn set-center! [center min-zoom])
+(defn set-center!
+  "Centers the map on `center` with a minimum zoom value of `min-zoom`"
+  [center min-zoom]
+  (let [curr-zoom (get (get-zoom-info) 0)
+        zoom (if (> curr-zoom min-zoom) min-zoom curr-zoom)]
+    (.easeTo @the-map #js {:zoom zoom :center center :animate true})))
 
 ;; TODO: Implement
 (defn center-on-overlay! [])
 
-;; TODO: Implement
-(defn set-center-my-location! [evt])
+(defn set-center-my-location!
+  "Sets the center of the map to geolocation"
+  [event]
+  (let [coords (.-coords event)
+        lon    (.-longitude coords)
+        lat    (.-latitude  coords)]
+    (set-center! [lon lat] 12.0)))
 
-;; TODO: Implement
-(defn resize-map! [])
+(defn resize-map!
+  "Resizes the map"
+  []
+  (.resize @the-map))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popups
@@ -177,4 +192,4 @@
                       :maxZoom 20
                       :style (-> c/base-map-options c/base-map-default :source)
                       :trackResize true
-                      :transition {:duration 500 :delay 0} })))))
+                      :transition {:duration 500 :delay 0}})))))
