@@ -55,6 +55,32 @@
         right (.unproject @the-map #js [100.0 y])]
     (.distanceTo left right)))
 
+(defn get-style []
+  (-> @the-map .getStyle js->clj))
+
+(defn get-sources
+  "Returns the sources map from the map"
+  []
+  (-> (get-style) (get "sources")))
+
+(defn layers-by-id
+  "Returns a map of the layers keyed by their ID, and with a 'position' attribute"
+  []
+  (let [layers (-> (get-style) (get "layers"))]
+    (reduce (fn [acc layer] (assoc acc (get layer "id") (assoc layer "position" (count acc)))) {} layers)))
+
+(defn fire-layers-by-id
+  "Returns a map of the layers that begin with 'fire' from the map"
+  []
+  (let [layers (layers-by-id)]
+    (select-keys layers (filter #(str/starts-with? % "fire") (keys layers)))))
+
+(defn- order-layers
+  "Sorts a map of layers by 'position' and returns a layers collection"
+  [layers]
+  {:pre (map? layers)}
+  (->> layers vals (sort-by #(get % "position")) vec (map #(dissoc % "position"))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modify Map
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -97,6 +123,23 @@
   (when (some? @the-map)
     (.resize @the-map)))
 
+(defn- update-style! [& {:keys [sources layers] :or {sources {}}}]
+  (let [new-style (-> (get-style)
+                      (update "sources" merge sources)
+                      (assoc "layers" (order-layers (or layers (layers-by-id))))
+                      clj->js)]
+    (-> @the-map (.setStyle new-style))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Popups
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO: Implement
+(defn get-overlay-center [])
+
+;; TODO: Implement
+(defn get-overlay-bbox [])
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -126,7 +169,7 @@
     (reset! the-marker nil)))
 
 (defn init-point!
-   "Creates a marker at lnglat."
+  "Creates a marker at lnglat."
   [lng lat]
   (clear-point!)
   (let [marker (Marker. #js {:color "#FF0000"})]
@@ -208,11 +251,101 @@
 ;; Modify Layer Properties
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Implement
-(defn set-opacity-by-title! [title opacity])
+(defn- set-symbol-opacity! [title opacity]
+  (let [labels (str title "-labels")
+        layers (layers-by-id)
+        new-layers (-> layers
+                       (assoc-in [title "paint" "circle-opacity"] opacity)
+                       (assoc-in [title "paint" "circle-stroke-opacity"] opacity)
+                       (assoc-in [labels "paint" "text-opacity"] opacity))]
+    (update-style! :layers new-layers)))
 
-;; TODO: Implement
-(defn set-visible-by-title! [title visible?])
+(defn- set-raster-opacity! [title opacity]
+  (let [layers (layers-by-id)
+        new-layers (-> layers
+                       (assoc-in [title "paint" "raster-opacity"] opacity))]
+    (update-style! :layers new-layers)))
+
+(defn set-opacity-by-title!
+  "Sets the opacity of the layer"
+  [title opacity]
+  {:pre [(string? title) (number? opacity) (<= 0.0 opacity 1.0)]}
+  (let [layers     (layers-by-id)
+        layer-type (get-in layers [title "type"])]
+    (if (= "raster" layer-type)
+      (set-raster-opacity! title opacity)
+      (set-symbol-opacity! title opacity))))
+
+(defn set-visible-by-title!
+  "Sets a layer's visibility"
+  [title visible?]
+  {:pre [(string? title) (boolean? visible?)]}
+  (let [layers     (layers-by-id)
+        new-layers (assoc-in layers [title "layout" "visibility"] (if visible? "visible" "none"))
+        new-style  (-> (get-style)
+                       (assoc "layers" (order-layers new-layers))
+                       clj->js)]
+    (-> @the-map (.setStyle new-style))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WMS Layers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- wms-source [layer-name]
+  {:type     "raster"
+   :tileSize 256
+   :tiles    [(c/wms-layer-url layer-name)]})
+
+(defn- wms-layer [layer-name source-name position]
+  {"id"       layer-name
+   "type"     "raster"
+   "source"   source-name
+   "layout"   {"visibility" "visible"}
+   "paint"    {"raster-opacity" 1}
+   "position" position})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WFS Layers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- wfs-source [layer-name]
+  {:type "geojson"
+   :data (c/wfs-layer-url layer-name)})
+
+(defn- zoom-interp
+  "Interpolates a value (vmin to vmax) based on zoom value (from zmin to zmax)"
+  [vmin vmax zmin zmax]
+  ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
+
+(defonce ^:private default-circle-style
+  {:circle-color        "#FF0000"
+   :circle-stroke-color "#000000"
+   :circle-stroke-width 3
+   :circle-radius       (zoom-interp 8 14 5 20)})
+
+(defn- incident-layer [layer-name source-name position & style]
+  {"id"       layer-name
+   "type"     "circle"
+   "source"   source-name
+   "layout"   {:visibility "visible"}
+   "position" position
+   "paint"    (merge default-circle-style style)})
+
+(defonce ^:private default-text-style
+  {"type"   "symbol"
+   "layout" {:text-anchor "top"
+             :text-field ["to-string" ["get" "prettyname"]]
+             :text-font ["Open Sans Regular" "Arial Unicode MS Regular"]
+             :text-size 14
+             :text-offset [0 0.5]
+             :visibility "visible"}
+   "paint"  {:text-color "#000000"
+             :text-halo-color "#ffffff"
+             :text-halo-width 1}})
+
+(defn- incident-labels-layer [layer-name source-name position & style]
+  (let [info {"id" layer-name "source" source-name "position" position}]
+    (merge info default-text-style style)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Manage Layers
@@ -236,14 +369,66 @@
                          (clj->js))]
       (-> @the-map (.setStyle new-style)))))
 
-;; TODO: Implement
-(defn create-wms-layer! [ol-layer geo-layer z-index])
+(defn remove-layer!
+  "Removes layer matching `layer-name` from the map"
+  [layer-name]
+  {:pre (string? layer-name)}
+  (let [layers     (layers-by-id)
+        new-layers (dissoc layers layer-name)]
+    (update-style! :layers new-layers)))
 
-;; TODO: Implement
-(defn swap-active-layer! [geo-layer])
+(defn create-wms-layer!
+  "Instantiates a new WMS source and layer.
+  `layer` can be any string that begins with 'fire'.
+  `source` must be a valid WMS layer in the geoserver
+  `z-index` allows layers to be rendered on-top (positive z-index) or below
+  (negative z-index) Mapbox basemap layers."
+  [layer source z-index]
+  (let [new-sources {source (wms-source source)}
+        layers      (layers-by-id)
+        new-layers  (assoc layers layer (wms-layer layer source (count layers)))]
+    (update-style! :sources new-sources :layers new-layers)))
 
-;; TODO: Implement
-(defn reset-active-layer! [geo-layer style-fn opacity])
+(defn create-wfs-layer!
+  "Instantiates a new WFS source and layer.
+  `layer` can be any string that begins with 'fire'.
+  `source` must be a valid WMS layer in the geoserver
+  `z-index` allows layers to be rendered on-top (positive z-index) or below
+  (negative z-index) Mapbox basemap layers."
+  [layer source z-index]
+  {:pre [(string? layer) (string? source) (number? z-index)]}
+  (let [new-sources  {source (wfs-source source)}
+        labels-layer (str layer "-labels")
+        layers       (layers-by-id)
+        new-layers  (-> layers
+                        (assoc layer (incident-layer layer source (+ (count layers) z-index)))
+                        (assoc labels-layer (incident-labels-layer labels-layer source (- (count layers) z-index))))]
+    (update-style! :sources new-sources :layers new-layers)))
+
+;; Constants for active layers
+(def ^:private fires-active "fire-active")
+(def ^:private fires-active-labels "fire-active-labels")
+
+(defn swap-active-layer!
+  "Swaps the active layer. Used to scan through time-series WMS layers"
+  [geo-layer]
+  {:pre [(string? geo-layer)]}
+  (let [opacity (-> (layers-by-id) (get-in [fires-active "paint" "raster-opacity"]))]
+    (create-wms-layer! fires-active geo-layer 0)
+    (set-opacity-by-title! fires-active opacity)))
+
+(defn reset-active-layer!
+  "Resets the active layer source (e.g. from WMS to WFS)
+  To reset to WFS layer, `style-fn` must not be nil"
+  [geo-layer style-fn opacity]
+  {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
+  ;; Remove layers
+  (remove-layer! fires-active)
+  (remove-layer! fires-active-labels)
+  (if (some? style-fn)
+    (create-wfs-layer! fires-active geo-layer 0)
+    (create-wms-layer! fires-active geo-layer 0))
+  (set-opacity-by-title! fires-active opacity))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Creation
@@ -256,9 +441,9 @@
    (set! (.-accessToken mapbox) c/mapbox-access-token)
    (reset! the-map
            (Map.
-             (clj->js {:container container-id
-                       :minZoom 3
-                       :maxZoom 20
-                       :style (-> c/base-map-options c/base-map-default :source)
-                       :trackResize true
-                       :transition {:duration 500 :delay 0}})))))
+            (clj->js {:container container-id
+                      :minZoom 3
+                      :maxZoom 20
+                      :style (-> c/base-map-options c/base-map-default :source)
+                      :trackResize true
+                      :transition {:duration 500 :delay 0}})))))
