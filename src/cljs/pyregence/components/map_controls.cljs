@@ -526,8 +526,8 @@
         ratio (/ dist max-dist)]
     {:distance dist :ratio ratio :units units}))
 
-(defn- update-scale [distance]
-  (let [feet  (* 3.2808 distance)
+(defn- update-scale [meters]
+  (let [feet  (* 3.2808 meters)
         miles (/ feet 5280.0)]
     (if (> feet 5280.0)
       (scale miles "mi")
@@ -536,12 +536,11 @@
 (defn scale-bar
   "Scale bar control which resizes based on map zoom/location"
   [mobile?]
-  (r/with-let [max-width          100.0
-               scale              (r/atom {:distance 0 :ratio 1 :units "ft"})
-               move-event         (mb/add-map-move! #(let [m (mb/get-distance-meters)]
-                                                       (reset! scale (update-scale m))))]
-
+  (r/with-let [max-width  100.0
+               scale      (r/atom {:distance 0 :ratio 1 :units "ft"})
+               move-event (mb/add-map-move! #(reset! scale (update-scale (mb/get-distance-meters))))]
     [:div {:style ($/combine $/tool ($scale-line mobile?) {:width (* (:ratio @scale) max-width)})}
-     [:div {:style ($/combine $scale-line-inner)} (str (:distance @scale) " " (:units @scale))]]
+     [:div {:style ($/combine $scale-line-inner)}
+      (str (:distance @scale) " " (:units @scale))]]
     (finally
       (mb/remove-event! move-event))))

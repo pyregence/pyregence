@@ -147,8 +147,7 @@
 (defn add-map-move!
   "Calls `f` on 'move' event"
   [f]
-  (add-event! "move" f)
-  f)
+  (add-event! "move" f))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modify Layer Properties
