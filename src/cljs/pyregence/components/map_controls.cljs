@@ -479,3 +479,68 @@
                      (if reverse?
                        (reverse legend-list)
                        legend-list))]])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Scale Control
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn $scale-line [mobile?]
+  {:background-color ($/color-picker :bg-color)
+   :border           (str "1px solid " ($/color-picker :border-color))
+   :bottom           (if mobile? "90px" "36px")
+   :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
+   :height           "28px"
+   :left             "auto"
+   :padding          "2px"
+   :right            "64px"
+   :user-select      "none"})
+
+(def $scale-line-inner
+  {:border       "1px solid"
+   :border-color ($/color-picker :border-color)
+   :border-top   "none"
+   :color        ($/color-picker :border-color)
+   :font-size    ".75rem"
+   :margin       "1px"
+   :text-align   "center"
+   :transition   "all .25s"})
+
+(defn- decimal-number [d]
+  (let [m1         (-> d Math/log (* -1.0) (/ Math/LN10))
+        multiplier (->> m1 Math/ceil (Math/pow 10.0))]
+    (-> multiplier (* d) Math/round (/ multiplier))))
+
+(defn- round-num [n]
+  (let [pow10 (->> n Math/floor str count (Math/pow 10.0))
+        d     (/ n pow10)]
+    (* pow10 (cond
+               (>= d 10.0) 10
+               (>= d 5.0) 5
+               (>= d 3.0) 3
+               (>= d 2.0) 2
+               (>= d 1.0) 1
+               :else (decimal-number d)))))
+
+(defn- scale [max-dist units]
+  (let [dist  (round-num max-dist)
+        ratio (/ dist max-dist)]
+    {:distance dist :ratio ratio :units units}))
+
+(defn- update-scale [meters]
+  (let [feet  (* 3.2808 meters)
+        miles (/ feet 5280.0)]
+    (if (> feet 5280.0)
+      (scale miles "mi")
+      (scale feet "ft"))))
+
+(defn scale-bar
+  "Scale bar control which resizes based on map zoom/location"
+  [mobile?]
+  (r/with-let [max-width  100.0
+               scale      (r/atom {:distance 0 :ratio 1 :units "ft"})
+               move-event (mb/add-map-move! #(reset! scale (update-scale (mb/get-distance-meters))))]
+    [:div {:style ($/combine $/tool ($scale-line mobile?) {:width (* (:ratio @scale) max-width)})}
+     [:div {:style ($/combine $scale-line-inner)}
+      (str (:distance @scale) " " (:units @scale))]]
+    (finally
+      (mb/remove-event! move-event))))

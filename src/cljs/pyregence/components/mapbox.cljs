@@ -42,6 +42,15 @@
 ;; TODO: Implement
 (defn get-feature-at-pixel [pixel])
 
+(defn get-distance-meters
+  "Returns distance in meters between center of the map and 100px to the right.
+  Used to define the scale-bar map control"
+  []
+  (let [y        (-> @the-map .-_container .-clientHeight (/ 2.0))
+        left     (.unproject @the-map #js [0.0 y])
+        right    (.unproject @the-map #js [100.0 y])]
+    (.distanceTo left right)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modify Map
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -135,6 +144,11 @@
 ;; TODO: Implement
 (defn add-layer-load-fail! [f])
 
+(defn add-map-move!
+  "Calls `f` on 'move' event"
+  [f]
+  (add-event! "move" f))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modify Layer Properties
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -187,9 +201,9 @@
    (set! (.-accessToken mapbox) c/mapbox-access-token)
    (reset! the-map
            (Map.
-            (clj->js {:container container-id
-                      :minZoom 3
-                      :maxZoom 20
-                      :style (-> c/base-map-options c/base-map-default :source)
-                      :trackResize true
-                      :transition {:duration 500 :delay 0}})))))
+             (clj->js {:container container-id
+                       :minZoom 3
+                       :maxZoom 20
+                       :style (-> c/base-map-options c/base-map-default :source)
+                       :trackResize true
+                       :transition {:duration 500 :delay 0}})))))
