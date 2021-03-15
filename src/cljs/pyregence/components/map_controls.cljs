@@ -489,19 +489,18 @@
    :border           (str "1px solid " ($/color-picker :border-color))
    :bottom           (if mobile? "90px" "36px")
    :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
-   :height           "28px"
    :left             "auto"
-   :padding          "2px"
    :right            "64px"
    :user-select      "none"})
 
-(def $scale-line-inner
-  {:border       "1px solid"
+(defn $scale-line-inner []
+  {:border       "2px solid"
    :border-color ($/color-picker :border-color)
    :border-top   "none"
    :color        ($/color-picker :border-color)
    :font-size    ".75rem"
-   :margin       "1px"
+   :font-weight  "bold"
+   :margin       ".5rem"
    :text-align   "center"
    :transition   "all .25s"})
 
@@ -540,7 +539,7 @@
                scale-params (r/atom {:distance 0 :ratio 1 :units "ft"})
                move-event   (mb/add-map-move! #(reset! scale-params (update-scale (mb/get-distance-meters))))]
     [:div {:style ($/combine $/tool ($scale-line mobile?) {:width (* (:ratio @scale-params) max-width)})}
-     [:div {:style ($/combine $scale-line-inner)}
+     [:div {:style ($scale-line-inner)}
       (str (:distance @scale-params) " " (:units @scale-params))]]
     (finally
       (mb/remove-event! move-event))))
