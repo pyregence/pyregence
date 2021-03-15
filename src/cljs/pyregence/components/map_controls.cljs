@@ -536,11 +536,11 @@
 (defn scale-bar
   "Scale bar control which resizes based on map zoom/location"
   [mobile?]
-  (r/with-let [max-width  100.0
-               scale      (r/atom {:distance 0 :ratio 1 :units "ft"})
-               move-event (mb/add-map-move! #(reset! scale (update-scale (mb/get-distance-meters))))]
-    [:div {:style ($/combine $/tool ($scale-line mobile?) {:width (* (:ratio @scale) max-width)})}
+  (r/with-let [max-width    100.0
+               scale-params (r/atom {:distance 0 :ratio 1 :units "ft"})
+               move-event   (mb/add-map-move! #(reset! scale-params (update-scale (mb/get-distance-meters))))]
+    [:div {:style ($/combine $/tool ($scale-line mobile?) {:width (* (:ratio @scale-params) max-width)})}
      [:div {:style ($/combine $scale-line-inner)}
-      (str (:distance @scale) " " (:units @scale))]]
+      (str (:distance @scale-params) " " (:units @scale-params))]]
     (finally
       (mb/remove-event! move-event))))

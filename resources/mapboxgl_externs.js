@@ -139,6 +139,7 @@ mapboxgl.Map.prototype = {
   "_afterEase": function () {},
   "_cameraForBoxAndBearing": function () {},
   "_cancelRenderFrame": function () {},
+  "_container": function () {},
   "_containerDimensions": function () {},
   "_contextLost": function () {},
   "_contextRestored": function () {},
