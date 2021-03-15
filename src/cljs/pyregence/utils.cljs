@@ -217,6 +217,15 @@
            (transient {})
            coll)))
 
+(defn filterm [f coll]
+  (persistent!
+   (reduce (fn [acc cur]
+             (if (f cur)
+               (conj! acc cur)
+               acc))
+           (transient {})
+           coll)))
+
 ;;; Colors
 
 (defn to-hex-str [num]
@@ -255,10 +264,10 @@
 (defn missing-data? [& args]
   (some no-data? args))
 
-(defn is-numeric? [str]
-  (if (string? str)
-    (re-matches #"^-?([\d]+[\d\,]*\.*[\d]+)$|^-?([\d]+)$" str)
-    (number? str)))
+(defn is-numeric? [v]
+  (if (string? v)
+    (re-matches #"^-?([\d]+[\d\,]*\.*[\d]+)$|^-?([\d]+)$" v)
+    (number? v)))
 
 (defn num-str-compare
   "Compare two strings as numbers if they are numeric"
@@ -271,13 +280,13 @@
       (compare sort-y sort-x))))
 
 (defn find-key-by-id
-  ([list id]
-   (find-key-by-id list id :opt-label))
-  ([list id key]
-   (some #(when (= (:opt-id %) id) (get % key)) list)))
+  ([coll id]
+   (find-key-by-id coll id :opt-label))
+  ([coll id k]
+   (some #(when (= (:opt-id %) id) (get % k)) coll)))
 
-(defn find-by-id [list id]
-  (some #(when (= (:opt-id %) id) %) list))
+(defn find-by-id [coll id]
+  (some #(when (= (:opt-id %) id) %) coll))
 
 (defn try-js-aget [obj & values]
   (try
@@ -295,12 +304,3 @@
   [n dbl]
   (let [factor (.pow js/Math 10 n)]
     (/ (Math/round (* dbl factor)) factor)))
-
-(defn filterm [pred coll]
-  (persistent!
-   (reduce (fn [acc cur]
-             (if (pred cur)
-               (conj! acc cur)
-               acc))
-           (transient {})
-           coll)))
