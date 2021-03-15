@@ -46,9 +46,9 @@
   "Returns distance in meters between center of the map and 100px to the right.
   Used to define the scale-bar map control"
   []
-  (let [y        (-> @the-map .-_container .-clientHeight (/ 2.0))
-        left     (.unproject @the-map #js [0.0 y])
-        right    (.unproject @the-map #js [100.0 y])]
+  (let [y     (-> @the-map .getContainer .-clientHeight (/ 2.0))
+        left  (.unproject @the-map #js [0.0 y])
+        right (.unproject @the-map #js [100.0 y])]
     (.distanceTo left right)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
