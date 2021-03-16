@@ -55,13 +55,13 @@
                                             :hover-text     "This section contains active fires across the state, as named in CALFIRE incident reports. Select a specific fire from the dropdown menu to view a simulation.\n
                                                              View all active fires by selecting one of two options with an asterisk at the beginning. We offer data from CALFIRE, as well as the National Interagency Fire Center."
                                             :underlays      {:nifs-perimeters   {:opt-label  "NIFS Perimeters"
-                                                                                 :z-index    10
+                                                                                 :z-index    3
                                                                                  :filter-set #{"fire-detections" "nifs-perimeters"}}
                                                              :viirs-hotspots    {:opt-label  "VIIRS Hotspots"
-                                                                                 :z-index    9
+                                                                                 :z-index    2
                                                                                  :filter-set #{"fire-detections" "viirs-timestamped"}}
                                                              :modis-hotspots    {:opt-label  "MODIS Hotspots"
-                                                                                 :z-index    8
+                                                                                 :z-index    1
                                                                                  :filter-set #{"fire-detections" "modis-timestamped"}}}
                                             :default-option :calfire-incidents
                                             :options        {:calfire-incidents {:opt-label  "*CALFIRE Incidents"

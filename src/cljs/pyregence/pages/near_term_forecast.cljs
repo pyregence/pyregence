@@ -188,7 +188,7 @@
 
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name)))
+  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100)))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -224,11 +224,13 @@
 (defn select-forecast! [key]
   (go
     (doseq [[_ {:keys [name]}] (get-in @*params [@*forecast :underlays])]
-      (mb/set-visible-by-title! name false))
+      (when (some? name)
+        (mb/set-visible-by-title! name false)))
     (reset! *forecast key)
     (reset! processed-params (get-forecast-opt :params))
     (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
-      (mb/set-visible-by-title! name show?))
+      (when (some? name)
+        (mb/set-visible-by-title! name show?)))
     (<! (change-type! true true (get-options-key :auto-zoom?)))))
 
 (defn set-show-info! [show?]

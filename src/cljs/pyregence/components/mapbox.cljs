@@ -40,8 +40,34 @@
      (.getMinZoom m)
      (.getMaxZoom m)]))
 
-;; TODO: Implement
-(defn get-layer-by-title [title])
+(defn get-style []
+  (-> @the-map .getStyle js->clj))
+
+(defn get-sources
+  "Returns the sources map from the map"
+  []
+  (-> (get-style) (get "sources")))
+
+(defn get-layers []
+  (-> (get-style) (get "layers")))
+
+(defn get-layer-by-title
+  "Returns layer with title"
+  [title]
+  (let [layers (get-layers)]
+    (filter (fn [l] (str/starts-with? (get l "id") title)) layers)))
+
+(defn index-of
+  "Returns first index of item in collection that matches predicate."
+  [pred xs]
+  (->> xs
+       (keep-indexed (fn [idx x] (when (pred x) idx)))
+       (first)))
+
+(defn get-layer-idx-by-id
+  "Returns index of layer with matching id"
+  [id layers]
+  (index-of #(= id (get % "id")) layers))
 
 ;; TODO: Implement
 (defn get-feature-at-pixel [pixel])
@@ -54,32 +80,6 @@
         left  (.unproject @the-map #js [0.0 y])
         right (.unproject @the-map #js [100.0 y])]
     (.distanceTo left right)))
-
-(defn get-style []
-  (-> @the-map .getStyle js->clj))
-
-(defn get-sources
-  "Returns the sources map from the map"
-  []
-  (-> (get-style) (get "sources")))
-
-(defn layers-by-id
-  "Returns a map of the layers keyed by their ID, and with a 'position' attribute"
-  []
-  (let [layers (-> (get-style) (get "layers"))]
-    (reduce (fn [acc layer] (assoc acc (get layer "id") (assoc layer "position" (count acc)))) {} layers)))
-
-(defn fire-layers-by-id
-  "Returns a map of the layers that begin with 'fire' from the map"
-  []
-  (let [layers (layers-by-id)]
-    (select-keys layers (filter #(str/starts-with? % "fire") (keys layers)))))
-
-(defn- order-layers
-  "Sorts a map of layers by 'position' and returns a layers collection"
-  [layers]
-  {:pre (map? layers)}
-  (->> layers vals (sort-by #(get % "position")) vec (map #(dissoc % "position"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modify Map
@@ -125,8 +125,8 @@
 
 (defn- update-style! [& {:keys [sources layers] :or {sources {}}}]
   (let [new-style (-> (get-style)
-                      (update "sources" merge sources)
-                      (assoc "layers" (order-layers (or layers (layers-by-id))))
+                      (assoc "sources" sources)
+                      (assoc "layers" layers)
                       clj->js)]
     (-> @the-map (.setStyle new-style))))
 
@@ -251,41 +251,49 @@
 ;; Modify Layer Properties
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- set-symbol-opacity! [title opacity]
-  (let [labels (str title "-labels")
-        layers (layers-by-id)
-        new-layers (-> layers
-                       (assoc-in [title "paint" "circle-opacity"] opacity)
-                       (assoc-in [title "paint" "circle-stroke-opacity"] opacity)
-                       (assoc-in [labels "paint" "text-opacity"] opacity))]
-    (update-style! :layers new-layers)))
+(defn- symbol-opacity [opacity]
+  {"text-opacity" opacity})
 
-(defn- set-raster-opacity! [title opacity]
-  (let [layers (layers-by-id)
-        new-layers (-> layers
-                       (assoc-in [title "paint" "raster-opacity"] opacity))]
-    (update-style! :layers new-layers)))
+(defn- circle-opacity [opacity]
+  {"circle-opacity" opacity
+   "circle-stroke-opacity" opacity})
+
+(defn- raster-opacity [opacity]
+  {"raster-opacity" opacity})
+
+(defn set-opacity
+  "Returns layer with opacity set to `opacity`"
+  [layer opacity]
+  {:pre [(map? layer) (and (number? opacity) (<= 0.0 opacity 1.0))]}
+  (let [layer-type (get layer "type")
+        new-paint (condp = layer-type
+                    "raster" (raster-opacity opacity)
+                    "circle" (circle-opacity opacity)
+                    "symbol" (symbol-opacity opacity))]
+    (update layer "paint" merge new-paint)))
 
 (defn set-opacity-by-title!
   "Sets the opacity of the layer"
-  [title opacity]
-  {:pre [(string? title) (number? opacity) (<= 0.0 opacity 1.0)]}
-  (let [layers     (layers-by-id)
-        layer-type (get-in layers [title "type"])]
-    (if (= "raster" layer-type)
-      (set-raster-opacity! title opacity)
-      (set-symbol-opacity! title opacity))))
+  [id opacity]
+  {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
+  (let [layers      (get-layers)
+        pred        #(-> % (get "id") (str/starts-with? "pyregence-"))
+        new-layers  (map (u/only pred #(set-opacity % opacity)) layers)]
+    (update-style! :sources (get-sources) :layers new-layers)))
+
+(defn set-visible
+  "Returns layer with visibility set to `visible?`"
+  [layer visible?]
+  (assoc-in layer ["layout" "visibility"] (if visible? "visible" "none")))
 
 (defn set-visible-by-title!
   "Sets a layer's visibility"
-  [title visible?]
-  {:pre [(string? title) (boolean? visible?)]}
-  (let [layers     (layers-by-id)
-        new-layers (assoc-in layers [title "layout" "visibility"] (if visible? "visible" "none"))
-        new-style  (-> (get-style)
-                       (assoc "layers" (order-layers new-layers))
-                       clj->js)]
-    (-> @the-map (.setStyle new-style))))
+  [id visible?]
+  {:pre [(string? id) (boolean? visible?)]}
+  (let [layers (get-layers)]
+    (when-let [idx (get-layer-idx-by-id id layers)]
+      (let [new-layers (assoc-in layers [idx "layout" "visibility"] (if visible? "visible" "none"))]
+        (update-style! :sources (get-sources) :layers new-layers)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WMS Layers
@@ -296,13 +304,12 @@
    :tileSize 256
    :tiles    [(c/wms-layer-url layer-name)]})
 
-(defn- wms-layer [layer-name source-name position]
-  {"id"       layer-name
-   "type"     "raster"
-   "source"   source-name
-   "layout"   {"visibility" "visible"}
-   "paint"    {"raster-opacity" 1}
-   "position" position})
+(defn- wms-layer [layer-name source-name opacity]
+  {:id       layer-name
+   :type     "raster"
+   :source   source-name
+   :layout   {:visibility "visible"}
+   :paint    {:raster-opacity opacity}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WFS Layers
@@ -317,39 +324,37 @@
   [vmin vmax zmin zmax]
   ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
 
-(defonce ^:private default-circle-style
-  {:circle-color        "#FF0000"
-   :circle-stroke-color "#000000"
-   :circle-stroke-width 3
-   :circle-radius       (zoom-interp 8 14 5 20)})
+(defn- incident-layer [layer-name source-name opacity]
+  {:id       layer-name
+   :type     "circle"
+   :source   source-name
+   :layout   {:visibility "visible"}
+   :paint    {:circle-color        "#FF0000"
+              :circle-opacity      opacity
+              :circle-radius       (zoom-interp 8 14 5 20)
+              :circle-stroke-color "#000000"
+              :circle-stroke-width 3}})
 
-(defn- incident-layer [layer-name source-name position & style]
-  {"id"       layer-name
-   "type"     "circle"
-   "source"   source-name
-   "layout"   {:visibility "visible"}
-   "position" position
-   "paint"    (merge default-circle-style style)})
-
-(defonce ^:private default-text-style
-  {"type"   "symbol"
-   "layout" {:text-anchor "top"
-             :text-field ["to-string" ["get" "prettyname"]]
-             :text-font ["Open Sans Regular" "Arial Unicode MS Regular"]
-             :text-size 14
-             :text-offset [0 0.5]
-             :visibility "visible"}
-   "paint"  {:text-color "#000000"
-             :text-halo-color "#ffffff"
-             :text-halo-width 1}})
-
-(defn- incident-labels-layer [layer-name source-name position & style]
-  (let [info {"id" layer-name "source" source-name "position" position}]
-    (merge info default-text-style style)))
+(defn- incident-labels-layer [layer-name source-name opacity]
+  {:id     layer-name
+   :type   "symbol"
+   :source source-name
+   :layout {:text-anchor "top"
+            :text-field  ["to-string" ["get" "prettyname"]]
+            :text-font   ["Open Sans Regular" "Arial Unicode MS Regular"]
+            :text-offset [0 0.5]
+            :text-size   14
+            :visibility "visible"}
+   :paint  {:text-color      "#000000"
+            :text-halo-color "#ffffff"
+            :text-halo-width 1
+            :text-opacity    opacity}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Manage Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private pyregence- "pyregence-")
 
 (defn set-base-map-source!
   "Sets the Basemap source."
@@ -360,7 +365,7 @@
           sources    (->> (get cur-style "sources")
                           (u/filterm (fn [[k _]] (str/starts-with? (name k) "fire"))))
           layers     (->> (get cur-style "layers")
-                          (filter (fn [l] (str/starts-with? (get l "id") "fire"))))
+                          (filter (fn [l] (str/starts-with? (get l "id") pyregence-))))
           new-style  (-> (<! style-chan)
                          (js->clj)
                          (assoc "sprite" c/default-sprite)
@@ -371,64 +376,80 @@
 
 (defn remove-layer!
   "Removes layer matching `layer-name` from the map"
-  [layer-name]
-  {:pre (string? layer-name)}
-  (let [layers     (layers-by-id)
-        new-layers (dissoc layers layer-name)]
-    (update-style! :layers new-layers)))
+  [id]
+  {:pre (string? id)}
+  (let [layers     (get-layers)
+        new-layers (remove #(= id (get % "id")) layers)
+        new-style  (-> (get-style) (assoc "layers" new-layers) clj->js)]
+    (-> @the-map (.setStyle new-style))))
 
-(defn create-wms-layer!
-  "Instantiates a new WMS source and layer.
-  `layer` can be any string that begins with 'fire'.
+(defn build-wms
+  "Returns new WMS source and layer in the form `[source [layer]]`.
   `source` must be a valid WMS layer in the geoserver
   `z-index` allows layers to be rendered on-top (positive z-index) or below
   (negative z-index) Mapbox basemap layers."
-  [layer source z-index]
-  (let [new-sources {source (wms-source source)}
-        layers      (layers-by-id)
-        new-layers  (assoc layers layer (wms-layer layer source (count layers)))]
-    (update-style! :sources new-sources :layers new-layers)))
+  [id source z-index opacity]
+  (let [new-source {source (wms-source source)}
+        new-layer  (wms-layer id source opacity)]
+    [new-source [new-layer]]))
 
-(defn create-wfs-layer!
-  "Instantiates a new WFS source and layer.
-  `layer` can be any string that begins with 'fire'.
-  `source` must be a valid WMS layer in the geoserver
+(defn build-wfs
+  "Returns a new WFS source and layers in the form `[source layers]`.
+  `source` must be a valid WFS layer in the geoserver
   `z-index` allows layers to be rendered on-top (positive z-index) or below
   (negative z-index) Mapbox basemap layers."
-  [layer source z-index]
-  {:pre [(string? layer) (string? source) (number? z-index)]}
-  (let [new-sources  {source (wfs-source source)}
-        labels-layer (str layer "-labels")
-        layers       (layers-by-id)
-        new-layers  (-> layers
-                        (assoc layer (incident-layer layer source (+ (count layers) z-index)))
-                        (assoc labels-layer (incident-labels-layer labels-layer source (- (count layers) z-index))))]
-    (update-style! :sources new-sources :layers new-layers)))
+  [id source z-index opacity]
+  (let [new-source {source (wfs-source source)}
+        labels-id  (str id "-labels")
+        new-layers [(incident-layer id source opacity)
+                    (incident-labels-layer labels-id source opacity)]]
+    [new-source new-layers]))
 
-;; Constants for active layers
-(def ^:private fires-active "fire-active")
-(def ^:private fires-active-labels "fire-active-labels")
+(defn- upsert-layer [v new-layer]
+  (let [id (:id new-layer)]
+    (if-let [idx (get-layer-idx-by-id id v)]
+      (assoc v idx new-layer)
+      (conj v new-layer))))
+
+(defn- merge-layers [v new-layers]
+  (reduce (fn [acc l] (upsert-layer acc l)) (vec v) new-layers))
+
+(defn- hide-pyregence-layers [layers]
+  (let [pred #(-> % (get "id") (str/starts-with? pyregence-))
+        f    #(set-visible % false)]
+    (map (u/only pred f) layers)))
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers"
-  [geo-layer]
-  {:pre [(string? geo-layer)]}
-  (let [opacity (-> (layers-by-id) (get-in [fires-active "paint" "raster-opacity"]))]
-    (create-wms-layer! fires-active geo-layer 0)
-    (set-opacity-by-title! fires-active opacity)))
+  [geo-layer opacity]
+  {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
+  (let [[new-source new-layers] (build-wms (str pyregence- geo-layer) geo-layer 0 opacity)
+        layers                  (hide-pyregence-layers (get-layers))]
+    (update-style! :sources (merge (get-sources) new-source)
+                   :layers  (merge-layers layers new-layers))))
 
+;; TODO: Figure out why this is being called after enabling Underlays
 (defn reset-active-layer!
-  "Resets the active layer source (e.g. from WMS to WFS)
-  To reset to WFS layer, `style-fn` must not be nil"
+  "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
+   `style-fn` must not be nil"
   [geo-layer style-fn opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
-  ;; Remove layers
-  (remove-layer! fires-active)
-  (remove-layer! fires-active-labels)
-  (if (some? style-fn)
-    (create-wfs-layer! fires-active geo-layer 0)
-    (create-wms-layer! fires-active geo-layer 0))
-  (set-opacity-by-title! fires-active opacity))
+  (let [id                       (str pyregence- geo-layer)
+        sources                  (get-sources)
+        layers                   (hide-pyregence-layers (get-layers))
+        [new-sources new-layers] (if (some? style-fn)
+                                   (build-wfs id geo-layer 0 opacity)
+                                   (build-wms id geo-layer 0 opacity))]
+    (update-style! :sources (merge sources new-sources)
+                   :layers  (merge-layers layers new-layers))))
+
+(defn create-wms-layer!
+  "Adds WMS layer to the map."
+  [id source z-index]
+  (let [[new-source new-layers] (build-wms id source z-index 1.0)
+        layers                  (get-layers)]
+    (update-style! :sources (merge (get-sources) new-source)
+                   :layers  (merge-layers layers new-layers))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Creation
