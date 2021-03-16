@@ -108,8 +108,8 @@
     (-> @the-marker .getLngLat .toArray js->clj)))
 
 (defn get-overlay-bbox
-  "Converts marker lng/lat coords to EPSG:3857, finds the current resolution and
-   returns a bounding box."
+  "Converts marker lng/lat coordinates to EPSG:3857, finds the current
+   resolution and returns a bounding box."
   []
   (when (some? @the-marker)
     (let [[lng lat] (get-overlay-center)
