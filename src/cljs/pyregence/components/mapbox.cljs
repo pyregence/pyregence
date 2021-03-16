@@ -2,8 +2,9 @@
   (:require [reagent.core :as r]
             [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
-            [pyregence.config :as c]
-            [pyregence.utils  :as u]
+            [pyregence.config     :as c]
+            [pyregence.utils      :as u]
+            [pyregence.geo-utils  :as g]
             [pyregence.components.messaging :refer [toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -22,6 +23,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def the-map         (r/atom nil))
+(def the-marker      (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Information
@@ -74,7 +76,9 @@
     (.easeTo @the-map #js {:zoom zoom :center center :animate true})))
 
 ;; TODO: Implement
-(defn center-on-overlay! [])
+(defn center-on-overlay! []
+  (when-let [marker @the-marker]
+    (set-center! (.getLngLat marker) 12.0)))
 
 (defn set-center-my-location!
   "Sets the center of the map to geolocation"
@@ -87,44 +91,95 @@
 (defn resize-map!
   "Resizes the map"
   []
-  (.resize @the-map))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Popups
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; TODO: Implement
-(defn get-overlay-center [])
-
-;; TODO: Implement
-(defn get-overlay-bbox [])
+  (when @the-map
+    (.resize @the-map)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Implement
-(defn init-point! [coord])
+(defn get-overlay-center
+  "Returns marker lonlat coordinates in the form `[lon lat]`"
+  []
+  (when (some? @the-marker)
+    (-> @the-marker .getLngLat .toArray js->clj)))
+
+(defn get-overlay-bbox
+  "Converts marker lnglat coords to EPSG:3857, finds the current resolution and
+  returns a bounding box."
+  []
+  (when (some? @the-marker)
+    (let [[lng lat] (get-overlay-center)
+          [x y] (g/EPSG:4326->3857 [lng lat])
+          zoom (get (get-zoom-info) 0)
+          res (g/resolution zoom lat)]
+      [x y (+ x res) (+ y res)])))
 
 ;; TODO: Implement
-(defn clear-point! [])
+(defn clear-point! []
+  (when-let [marker @the-marker]
+    (.remove marker)
+    (reset! the-marker nil)))
+
+;; TODO: Implement
+(defn init-point!
+   "Creates a marker at lnglat"
+  [lng lat]
+  (clear-point!)
+  (let [marker (Marker. #js {:color "#FF0000"})]
+    (doto marker
+      (.setLngLat #js [lng lat])
+      (.addTo @the-map))
+    (reset! the-marker marker)))
+
+(defn add-point-on-click!
+  "Callback for `click` listener"
+  [[lon lat]]
+  (init-point! lon lat)
+  (center-on-overlay!))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:private events (atom {}))
 (defn add-event!
-  ([evt-key evt-fn] (.on @the-map evt-key evt-fn))
-  ([evt-key layer-name evt-fn] (.on @the-map evt-key layer-name evt-fn)))
+  "Adds a listener for `event` with callback `f`"
+  ([event f]
+   (let [k (hash f)]
+     (swap! events assoc k [event nil])
+     (.on @the-map event f)
+     f))
+  ([event layer f]
+   (let [k (hash f)]
+     (swap! events assoc k [event layer])
+     (.on @the-map event layer f)
+     f)))
 
-;; TODO: Implement
-(defn remove-event! [evt-key])
+(defn remove-event!
+  "Removes the listener for function `f`"
+  [f]
+  (when (some? @the-map)
+    (let [[event layer] (get @events (hash f))]
+      (if (some? layer)
+        (.off @the-map event layer f)
+        (.off @the-map event f)))))
 
-;; TODO: Implement
-(defn add-single-click-popup! [f])
+(defn- event->lnglat [e]
+  (-> e .-lngLat .toArray js->clj))
 
-;; TODO: Implement
-(defn add-mouse-move-xy! [f])
+(defn add-single-click-popup!
+  "Creates a marker where and passes xy bounding box to `f` on click event"
+  [f]
+  (let [call-back (fn [e]
+                    (-> e event->lnglat add-point-on-click!)
+                    (f (get-overlay-bbox)))]
+  (add-event! "click" call-back)))
+
+(defn add-mouse-move-xy!
+  "Passes `[lon lat]` to `f` on mousemove event"
+  [f]
+  (add-event! "mousemove" (fn [e] (-> e event->lnglat f))))
 
 ;; TODO: Implement
 (defn feature-highlight! [evt])
