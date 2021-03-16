@@ -485,7 +485,7 @@
 ;; Scale Control
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $scale-line [mobile?]
+(defn- $scale-line [mobile?]
   {:background-color ($/color-picker :bg-color)
    :border           (str "1px solid " ($/color-picker :border-color))
    :bottom           (if mobile? "90px" "36px")
@@ -494,7 +494,7 @@
    :right            "64px"
    :user-select      "none"})
 
-(defn $scale-line-inner []
+(defn- $scale-line-inner []
   {:border       "2px solid"
    :border-color ($/color-picker :border-color)
    :border-top   "none"
@@ -506,7 +506,7 @@
    :transition   "all .25s"})
 
 (defn scale-bar
-  "Scale bar control which resizes based on map zoom/location"
+  "Scale bar control which resizes based on map zoom/location."
   [mobile?]
   (r/with-let [max-width    100.0
                scale-params (r/atom {:distance 0 :ratio 1 :units "ft"})
