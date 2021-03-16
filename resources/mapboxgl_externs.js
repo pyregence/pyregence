@@ -70,6 +70,7 @@ mapboxgl.AttributionControl.prototype = {
 };
 mapboxgl.Evented.prototype = {
   "fire": function () {},
+  "lngLat": {},
   "listens": function () {},
   "off": function () {},
   "on": function () {},
