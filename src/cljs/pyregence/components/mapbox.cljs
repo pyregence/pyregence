@@ -48,7 +48,7 @@
 
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.
-  Used to define the scale-bar map control."
+   Used to define the scale-bar map control."
   []
   (let [y     (-> @the-map .getContainer .-clientHeight (/ 2.0))
         left  (.unproject @the-map #js [0.0 y])
@@ -80,7 +80,7 @@
 (defn center-on-overlay!
   "Centers the map on the marker."
   []
-  (when @the-marker
+  (when (some? @the-marker)
     (set-center! (.getLngLat @the-marker) 12.0)))
 
 (defn set-center-my-location!
@@ -92,9 +92,9 @@
     (set-center! [lng lat] 12.0)))
 
 (defn resize-map!
-  "Resizes the map"
+  "Resizes the map."
   []
-  (when @the-map
+  (when (some? @the-map)
     (.resize @the-map)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -108,8 +108,8 @@
     (-> @the-marker .getLngLat .toArray js->clj)))
 
 (defn get-overlay-bbox
-  "Converts marker lnglat coords to EPSG:3857, finds the current resolution and
-  returns a bounding box."
+  "Converts marker lng/lat coords to EPSG:3857, finds the current resolution and
+   returns a bounding box."
   []
   (when (some? @the-marker)
     (let [[lng lat] (get-overlay-center)
@@ -121,7 +121,7 @@
 (defn clear-point!
   "Removes marker from the map."
   []
-  (when @the-marker
+  (when (some? @the-marker)
     (.remove @the-marker)
     (reset! the-marker nil)))
 
@@ -137,17 +137,19 @@
 
 (defn add-point-on-click!
   "Callback for `click` listener."
-  [[lon lat]]
-  (init-point! lon lat)
+  [[lng lat]]
+  (init-point! lng lat)
   (center-on-overlay!))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; TODO: Add support for multiple global/layer events
 (defn add-event!
   "Adds a listener for `event` with callback `f`. Returns the function `f`, which
-  must be stored and passed to `remove-event!` when removing the listener."
+   must be stored and passed to `remove-event!` when removing the listener.
+   Warning: Only one listener per global/layer event can be added."
   [event f & {:keys [layer]}]
   (swap! events assoc (hash f) [event layer])
   (if layer
@@ -158,7 +160,7 @@
 (defn remove-event!
   "Removes the listener for function `f`."
   [f]
-  (when-let [[event layer] (get @events (hash f))]
+  (let [[event layer] (get @events (hash f))]
     (if (some? layer)
       (.off @the-map event layer f)
       (.off @the-map event f))
@@ -175,7 +177,7 @@
                         (f (get-overlay-bbox)))))
 
 (defn add-mouse-move-xy!
-  "Passes `[lon lat]` to `f` on mousemove event."
+  "Passes `[lng lat]` to `f` on mousemove event."
   [f]
   (add-event! "mousemove" (fn [e] (-> e event->lnglat f))))
 
