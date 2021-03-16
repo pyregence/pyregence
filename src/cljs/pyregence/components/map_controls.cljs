@@ -4,9 +4,10 @@
             [herb.core :refer [<class]]
             [clojure.edn :as edn]
             [clojure.core.async :refer [go <!]]
-            [pyregence.styles :as $]
-            [pyregence.utils  :as u]
-            [pyregence.config :as c]
+            [pyregence.styles    :as $]
+            [pyregence.utils     :as u]
+            [pyregence.config    :as c]
+            [pyregence.geo-utils :as g]
             [pyregence.components.common           :refer [radio tool-tip-wrapper]]
             [pyregence.components.mapbox           :as mb]
             [pyregence.components.resizable-window :refer [resizable-window]]
@@ -504,40 +505,12 @@
    :text-align   "center"
    :transition   "all .25s"})
 
-(defn- decimal-number [d]
-  (let [m1         (-> d Math/log (* -1.0) (/ Math/LN10))
-        multiplier (->> m1 Math/ceil (Math/pow 10.0))]
-    (-> multiplier (* d) Math/round (/ multiplier))))
-
-(defn- round-num [n]
-  (let [pow10 (->> n Math/floor str count (Math/pow 10.0))
-        d     (/ n pow10)]
-    (* pow10 (cond
-               (>= d 10.0) 10
-               (>= d 5.0) 5
-               (>= d 3.0) 3
-               (>= d 2.0) 2
-               (>= d 1.0) 1
-               :else (decimal-number d)))))
-
-(defn- scale [max-dist units]
-  (let [dist  (round-num max-dist)
-        ratio (/ dist max-dist)]
-    {:distance dist :ratio ratio :units units}))
-
-(defn- update-scale [meters]
-  (let [feet  (* 3.2808 meters)
-        miles (/ feet 5280.0)]
-    (if (> feet 5280.0)
-      (scale miles "mi")
-      (scale feet "ft"))))
-
 (defn scale-bar
   "Scale bar control which resizes based on map zoom/location"
   [mobile?]
   (r/with-let [max-width    100.0
                scale-params (r/atom {:distance 0 :ratio 1 :units "ft"})
-               move-event   (mb/add-map-move! #(reset! scale-params (update-scale (mb/get-distance-meters))))]
+               move-event   (mb/add-map-move! #(reset! scale-params (g/imperial-scale (mb/get-distance-meters))))]
     [:div {:style ($/combine $/tool ($scale-line mobile?) {:width (* (:ratio @scale-params) max-width)})}
      [:div {:style ($scale-line-inner)}
       (str (:distance @scale-params) " " (:units @scale-params))]]
