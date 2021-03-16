@@ -13,8 +13,8 @@
 (defn EPSG:4326->3857
   "Convert wgs84(4326) lon/lat coordinates to web mercator(3857) x/y coordinates."
   [[lon lat]]
-  {:pre [(number? lon) (<= -180.0 lon 180.0) (number? lat) (<= -90.0 lat 90.0)]
-   :post [(-> % first number?) (-> % second number?)]}
+  {:pre  [(number? lon) (<= -180.0 lon 180.0) (number? lat) (<= -90.0 lat 90.0)]
+   :post [(every? number? %)]}
   (let [x (* lon 111319.490778)
         y (-> lat (+ 90.0) (/ 360.0) (* Math/PI) (Math/tan) (Math/log) (* earth-radius))]
     [x y]))
@@ -22,9 +22,11 @@
 (defn EPSG:3857->4326
   "Convert web mercator(3857) x/y coordinates to wgs84(4326) lon/lat coordinates."
   [[x y]]
-  {:pre [(number? x) (number? y)]
-   :post [(fn [[lon _]] (and (number? lon) (<= -180.0 lon 180.0)))
-          (fn [[_ lat]] (and (number? lat) (<= -90.0 lat 90.0)))]}
+  {:pre  [(number? x) (number? y)]
+   :post [(fn [[lon lat]] (and (number? lon)
+                               (<= -180.0 lon 180.0)
+                               (number? lat)
+                               (<= -90.0 lat 90.0)))]}
   (let [lon (/ x 111319.490778)
         lat (-> y (/ earth-radius) (Math/exp) (Math/atan) (/ Math/PI) (* 360.0) (- 90.0))]
     [lon lat]))
@@ -36,15 +38,18 @@
 ;; Reference: https://docs.microsoft.com/en-us/bingmaps/articles/bing-maps-tile-system
 (defn resolution
   "Calculates ground resolution in meters using zoom and latitude using the
-  following equation: `resolution = cos(latitude * pi/180) * earth-circumference / map-width`
-  where: `map-width = 256 * 2^zoom`."
+   following equation: `resolution = cos(latitude * pi/180) * earth-circumference / map-width`
+   where: `map-width = 256 * 2^zoom`."
   [zoom latitude]
-  {:pre [(number? zoom) (<= 0 zoom 28) (number? latitude) (<= -90.0 latitude 90.0)]
+  {:pre  [(number? zoom) (<= 0 zoom 28) (number? latitude) (<= -90.0 latitude 90.0)]
    :post [(number? %) (pos? %)]}
-  (let [t1                  (-> latitude (* (/ Math/PI 180)) Math/cos)
-        earth-circumference (* 2 Math/PI earth-radius)
-        map-width           (->> zoom (Math/pow 2) (* 256))]
-    (/ (* t1 earth-circumference) map-width)))
+  (let [map-width (->> zoom (Math/pow 2) (* 256))]
+    (-> latitude
+        (* Math/PI)
+        (/ 180)
+        Math/cos
+        (* 2 Math/PI earth-radius)
+        (/ map-width))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scale
@@ -73,7 +78,7 @@
 
 (defn imperial-scale
   "Produces a scale in imperial units. Returns a map of:
-  `{:distance (mi/ft) :ratio (0-1) :units ['mi', 'ft']}`."
+   `{:distance (mi/ft) :ratio (0-1) :units ['mi', 'ft']}`."
   [meters]
   {:pre [(number? meters) (pos? meters)]}
   (let [feet  (* 3.2808 meters)
