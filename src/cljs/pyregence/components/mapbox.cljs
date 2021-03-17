@@ -363,7 +363,6 @@
     (update-style! :sources (merge (get-sources) new-source)
                    :layers  (merge-layers layers new-layers))))
 
-;; TODO: Figure out why this is being called after enabling Underlays
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil"
@@ -381,7 +380,7 @@
 (defn create-wms-layer!
   "Adds WMS layer to the map."
   [id source z-index]
-  (let [[new-source new-layers] (build-wms id source z-index 1.0)
+  (let [[new-source new-layers] (build-wms (str pyregence- id) source z-index 1.0)
         layers                  (get-layers)]
     (update-style! :sources (merge (get-sources) new-source)
                    :layers  (merge-layers layers new-layers))))
