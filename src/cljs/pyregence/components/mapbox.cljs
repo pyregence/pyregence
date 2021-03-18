@@ -29,6 +29,12 @@
 (def ^:private events     (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private fire "fire")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -267,7 +273,7 @@
   [id opacity]
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [layers      (get-layers)
-        pred        #(-> % (get "id") (str/starts-with? "pyregence-"))
+        pred        #(-> % (get "id") (str/starts-with? fire))
         new-layers  (map (u/only pred #(set-opacity % opacity)) layers)]
     (update-style! :sources (get-sources) :layers new-layers)))
 
@@ -344,8 +350,6 @@
 ;; Manage Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private pyregence- "pyregence-")
-
 (defn set-base-map-source!
   "Sets the Basemap source."
   [source]
@@ -353,9 +357,9 @@
     (let [style-chan (u/fetch-and-process source {} (fn [res] (.json res)))
           cur-style  (js->clj (.getStyle @the-map))
           sources    (->> (get cur-style "sources")
-                          (u/filterm (fn [[k _]] (str/starts-with? (name k) "fire"))))
+                          (u/filterm (fn [[k _]] (str/starts-with? (name k) fire))))
           layers     (->> (get cur-style "layers")
-                          (filter (fn [l] (str/starts-with? (get l "id") pyregence-))))
+                          (filter (fn [l] (str/starts-with? (get l "id") fire))))
           new-style  (-> (<! style-chan)
                          (js->clj)
                          (assoc "sprite" c/default-sprite)
@@ -404,8 +408,8 @@
 (defn- merge-layers [v new-layers]
   (reduce (fn [acc l] (upsert-layer acc l)) (vec v) new-layers))
 
-(defn- hide-pyregence-layers [layers]
-  (let [pred #(-> % (get "id") (str/starts-with? pyregence-))
+(defn- hide-fire-layers [layers]
+  (let [pred #(-> % (get "id") (str/starts-with? fire))
         f    #(set-visible % false)]
     (map (u/only pred f) layers)))
 
@@ -413,19 +417,19 @@
   "Swaps the active layer. Used to scan through time-series WMS layers"
   [geo-layer opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
-  (let [[new-source new-layers] (build-wms (str pyregence- geo-layer) geo-layer 0 opacity)
-        layers                  (hide-pyregence-layers (get-layers))]
+  (let [[new-source new-layers] (build-wms geo-layer geo-layer 0 opacity)
+        layers                  (hide-fire-layers (get-layers))]
     (update-style! :sources (merge (get-sources) new-source)
                    :layers  (merge-layers layers new-layers))))
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
-   `style-fn` must not be nil"
+  `style-fn` must not be nil"
   [geo-layer style-fn opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
-  (let [id                       (str pyregence- geo-layer)
+  (let [id                       geo-layer
         sources                  (get-sources)
-        layers                   (hide-pyregence-layers (get-layers))
+        layers                   (hide-fire-layers (get-layers))
         [new-sources new-layers] (if (some? style-fn)
                                    (build-wfs id geo-layer 0 opacity)
                                    (build-wms id geo-layer 0 opacity))]
@@ -435,7 +439,7 @@
 (defn create-wms-layer!
   "Adds WMS layer to the map."
   [id source z-index]
-  (let [[new-source new-layers] (build-wms (str pyregence- id) source z-index 1.0)
+  (let [[new-source new-layers] (build-wms id source z-index 1.0)
         layers                  (get-layers)]
     (update-style! :sources (merge (get-sources) new-source)
                    :layers  (merge-layers layers new-layers))))
