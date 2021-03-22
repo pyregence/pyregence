@@ -239,7 +239,7 @@
           [:input {:style {:width "100%"}
                    :type "range" :min "0" :max "100" :value @active-opacity
                    :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                   (mb/set-opacity-by-title! "fire-active" (/ @active-opacity 100.0)))}]]
+                                   (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
          [panel-dropdown
           "Base Map"
           "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
