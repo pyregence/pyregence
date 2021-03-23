@@ -323,6 +323,16 @@
    :layout {:visibility "visible"}
    :paint  {:raster-opacity opacity}})
 
+(defn- build-wms
+  "Returns new WMS source and layer in the form `[source [layer]]`.
+  `source` must be a valid WMS layer in the geoserver
+  `z-index` allows layers to be rendered on-top (positive z-index) or below
+  (negative z-index) Mapbox base map layers."
+  [id source opacity]
+  (let [new-source {source (wms-source source)}
+        new-layer  (wms-layer id source opacity)]
+    [new-source [new-layer]]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WFS Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -362,6 +372,18 @@
             :text-halo-width 1
             :text-opacity    opacity}})
 
+(defn- build-wfs
+  "Returns a new WFS source and layers in the form `[source layers]`.
+  `source` must be a valid WFS layer in the geoserver
+  `z-index` allows layers to be rendered on-top (positive z-index) or below
+  (negative z-index) Mapbox base map layers."
+  [id source opacity]
+  (let [new-source {source (wfs-source source)}
+        labels-id  (str id "-labels")
+        new-layers [(incident-layer id source opacity)
+                    (incident-labels-layer labels-id source opacity)]]
+    [new-source new-layers]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Manage Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -383,28 +405,6 @@
                          (update "layers" concat layers)
                          (clj->js))]
       (-> @the-map (.setStyle new-style)))))
-
-(defn- build-wms
-  "Returns new WMS source and layer in the form `[source [layer]]`.
-  `source` must be a valid WMS layer in the geoserver
-  `z-index` allows layers to be rendered on-top (positive z-index) or below
-  (negative z-index) Mapbox base map layers."
-  [id source opacity]
-  (let [new-source {source (wms-source source)}
-        new-layer  (wms-layer id source opacity)]
-    [new-source [new-layer]]))
-
-(defn- build-wfs
-  "Returns a new WFS source and layers in the form `[source layers]`.
-  `source` must be a valid WFS layer in the geoserver
-  `z-index` allows layers to be rendered on-top (positive z-index) or below
-  (negative z-index) Mapbox base map layers."
-  [id source opacity]
-  (let [new-source {source (wfs-source source)}
-        labels-id  (str id "-labels")
-        new-layers [(incident-layer id source opacity)
-                    (incident-labels-layer labels-id source opacity)]]
-    [new-source new-layers]))
 
 (defn- hide-fire-layers [layers]
   (let [pred #(-> % (get "id") is-selectable?)
