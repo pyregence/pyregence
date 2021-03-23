@@ -133,10 +133,10 @@
 
 (defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
   (let [new-style (cond-> style
-                    sources (assoc "sources" sources)
-                    layers (assoc "layers" layers)
+                    sources     (assoc "sources" sources)
+                    layers      (assoc "layers" layers)
                     new-sources (update "sources" merge new-sources)
-                    new-layers (update "layers" merge-layers new-layers)
+                    new-layers  (update "layers" merge-layers new-layers)
                     :always clj->js)]
     (-> @the-map (.setStyle new-style))))
 
