@@ -133,10 +133,10 @@
 
 (defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
   (let [new-style (cond-> style
-                    sources (assoc "sources" sources)
-                    layers (assoc "layers" layers)
+                    sources     (assoc "sources" sources)
+                    layers      (assoc "layers" layers)
                     new-sources (update "sources" merge new-sources)
-                    new-layers (update "layers" merge-layers new-layers)
+                    new-layers  (update "layers" merge-layers new-layers)
                     :always clj->js)]
     (-> @the-map (.setStyle new-style))))
 
@@ -169,7 +169,7 @@
     (reset! the-marker nil)))
 
 (defn init-point!
-   "Creates a marker at lnglat."
+  "Creates a marker at lnglat."
   [lng lat]
   (clear-point!)
   (let [marker (Marker. #js {:color "#FF0000"})]
@@ -438,10 +438,9 @@
   ([container-id]
    (set! (.-accessToken mapbox) c/mapbox-access-token)
    (reset! the-map
-           (Map.
-             (clj->js {:container container-id
-                       :minZoom 3
-                       :maxZoom 20
-                       :style (-> c/base-map-options c/base-map-default :source)
-                       :trackResize true
-                       :transition {:duration 500 :delay 0}})))))
+           (Map. (clj->js {:container container-id
+                           :minZoom 3
+                           :maxZoom 20
+                           :style (-> c/base-map-options c/base-map-default :source)
+                           :trackResize true
+                           :transition {:duration 500 :delay 0}})))))
