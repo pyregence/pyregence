@@ -52,7 +52,7 @@
 (defn- get-style
   "Returns mapbox style object"
   []
-  (-> @the-map .getStyle js->clj))
+  (-> @the-map .getStyle (js->clj)))
 
 (defn index-of
   "Returns first index of item in collection that matches predicate."
@@ -140,7 +140,7 @@
                     layers      (assoc "layers" layers)
                     new-sources (update "sources" merge new-sources)
                     new-layers  (update "layers" merge-layers new-layers)
-                    :always clj->js)]
+                    :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -151,7 +151,7 @@
   "Returns marker lng/lat coordinates in the form `[lng lat]`."
   []
   (when (some? @the-marker)
-    (-> @the-marker .getLngLat .toArray js->clj)))
+    (-> @the-marker .getLngLat .toArray (js->clj))))
 
 (defn get-overlay-bbox
   "Converts marker lng/lat coordinates to EPSG:3857, finds the current
@@ -213,19 +213,19 @@
     (swap! events dissoc (hash f))))
 
 (defn- event->lnglat [e]
-  (-> e (aget "lngLat") .toArray js->clj))
+  (-> e (aget "lngLat") .toArray (js->clj)))
 
 (defn add-single-click-popup!
   "Creates a marker where clicked and passes xy bounding box to `f` a click event."
   [f]
   (add-event! "click" (fn [e]
-                        (-> e event->lnglat add-point-on-click!)
+                        (-> e (event->lnglat) (add-point-on-click!))
                         (f (get-overlay-bbox)))))
 
 (defn add-mouse-move-xy!
   "Passes `[lng lat]` to `f` on mousemove event."
   [f]
-  (add-event! "mousemove" (fn [e] (-> e event->lnglat f))))
+  (add-event! "mousemove" (fn [e] (-> e (event->lnglat) (f)))))
 
 (defn- clear-highlight!
   "Clears the highlight of WFS features."
@@ -237,7 +237,7 @@
 (defn- feature-highlight!
   "Highlights a particular WFS features."
   [e]
-  (when-let [feature (-> e (aget "features") first)]
+  (when-let [feature (-> e (aget "features") (first))]
       (clear-highlight!)
       (reset! hovered-id (aget feature "id"))
       (.setFeatureState @the-map #js {:source @active-source :id @hovered-id} #js {:hover true})))
@@ -297,7 +297,7 @@
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
         layers     (get style "layers")
-        pred       #(-> % (get "id") is-selectable?)
+        pred       #(-> % (get "id") (is-selectable?))
         new-layers (map (u/only pred #(set-opacity % opacity)) layers)]
     (update-style! style :layers new-layers)))
 
@@ -420,7 +420,7 @@
       (-> @the-map (.setStyle new-style)))))
 
 (defn- hide-fire-layers [layers]
-  (let [pred #(-> % (get "id") is-selectable?)
+  (let [pred #(-> % (get "id") (is-selectable?))
         f    #(set-visible % false)]
     (map (u/only pred f) layers)))
 
