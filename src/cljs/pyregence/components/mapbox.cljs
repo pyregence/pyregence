@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
+            [goog.style           :as style]
             [pyregence.config     :as c]
             [pyregence.utils      :as u]
             [pyregence.geo-utils  :as g]))
@@ -12,10 +13,8 @@
 
 (def ^:private mapbox       js/mapboxgl)
 (def ^:private Map          js/mapboxgl.Map)
-(def ^:private LngLat       js/mapboxgl.LngLat)
 (def ^:private LngLatBounds js/mapboxgl.LngLatBounds)
 (def ^:private Marker       js/mapboxgl.Marker)
-(def ^:private Popup        js/mapboxgl.Popup)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -69,9 +68,6 @@
 (defn- is-selectable? [s]
   (str/starts-with? s prefix))
 
-;; TODO: Implement
-(defn get-feature-at-pixel [pixel])
-
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.
    Used to define the scale-bar map control."
@@ -122,6 +118,11 @@
   []
   (when (some? @the-map)
     (.resize @the-map)))
+
+(defn inherit-cursor!
+  "Sets the cursor style of mapbox to inherit from the map container"
+  []
+  (-> @the-map .getCanvasContainer (style/setStyle "cursor" "inherit")))
 
 (defn- upsert-layer
   "Inserts `new-layer` into `v` if the 'id' does not already exist, or updates
@@ -201,7 +202,6 @@
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Add support for multiple global/layer events
 (defn add-event!
   "Adds a listener for `event` with callback `f`. Returns the function `f`, which
    must be stored and passed to `remove-event!` when removing the listener.
