@@ -292,6 +292,7 @@
       (mb/init-map!)
       (mb/add-mouse-move-feature-highlight!)
       (mb/add-single-click-feature-highlight!)
+      (mb/inherit-cursor!)
       (process-capabilities! (edn/read-string (:message (<! fire-names-chan)))
                              (edn/read-string (:message (<! user-layers-chan))))
       (<! (select-forecast! @*forecast))
