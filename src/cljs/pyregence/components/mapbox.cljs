@@ -25,10 +25,10 @@
   "Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/"
   (r/atom nil))
 
-(def ^:private the-marker   (r/atom nil))
-(def ^:private events       (atom {}))
-(def ^:private hovered-id   (atom nil))
-(def ^:private active-layer (atom nil))
+(def ^:private the-marker    (r/atom nil))
+(def ^:private events        (atom {}))
+(def ^:private hovered-id    (atom nil))
+(def ^:private active-source (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -237,22 +237,20 @@
   [f]
   (add-event! "mousemove" (fn [e] (-> e event->lnglat f))))
 
-(defn clear-highlight!
+(defn- clear-highlight!
   "Clears the highlight of WFS features."
   []
   (when (some? @hovered-id)
-    (.setFeatureState @the-map #js {:source @active-layer :id @hovered-id} #js {:hover false})
+    (.setFeatureState @the-map #js {:source @active-source :id @hovered-id} #js {:hover false})
     (reset! hovered-id nil)))
 
-(defn feature-highlight!
+(defn- feature-highlight!
   "Highlights a particular WFS features."
   [e]
-  (let [features (-> e (aget "features"))
-        ids      (map #(aget % "id") features)]
-    (when-not (empty? ids)
+  (when-let [feature (-> e (aget "features") first)]
       (clear-highlight!)
-      (reset! hovered-id (first ids))
-      (.setFeatureState @the-map #js {:source @active-layer :id @hovered-id} #js {:hover true}))))
+      (reset! hovered-id (aget feature "id"))
+      (.setFeatureState @the-map #js {:source @active-source :id @hovered-id} #js {:hover true})))
 
 (defn add-mouse-move-feature-highlight!
   "Highlights WFS features when mouse moves over."
@@ -263,8 +261,7 @@
 (defn add-single-click-feature-highlight!
   "Enables clicking on a WFS feature."
   []
-  (let [call-back (fn [e] (-> e (aget "lngLat") (set-center! 7.0)))]
-    (add-event! "click" call-back :layer fire-active)))
+  (add-event! "click" (fn [e] (-> e (aget "lngLat") (set-center! 7.0))) :layer fire-active))
 
 (defn add-map-zoom-end!
   "Passes current zoom level to `f` on zoom-end event."
@@ -369,6 +366,9 @@
   [vmin vmax zmin zmax]
   ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
 
+(defn- on-hover [on off]
+  ["case" ["boolean" ["feature-state" "hover"] false] on off])
+
 (defn- incident-layer [layer-name source-name opacity]
   {:id     layer-name
    :type   "circle"
@@ -377,8 +377,8 @@
    :paint  {:circle-color        "#FF0000"
             :circle-opacity      opacity
             :circle-radius       (zoom-interp 8 14 5 20)
-            :circle-stroke-color ["case" ["boolean" ["feature-state" "hover"] false] "#FFFF00" "#000000"]
-            :circle-stroke-width 2}})
+            :circle-stroke-color (on-hover "#FFFF00" "#000000")
+            :circle-stroke-width (on-hover 4 2)}})
 
 (defn- incident-labels-layer [layer-name source-name opacity]
   {:id     layer-name
@@ -454,7 +454,7 @@
                                    (build-wfs fire-active geo-layer opacity)
                                    (build-wms geo-layer geo-layer opacity))]
     (update-style! style :layers layers :new-sources new-sources :new-layers new-layers)
-    (reset! active-layer geo-layer)))
+    (reset! active-source geo-layer)))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
