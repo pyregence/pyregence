@@ -360,15 +360,15 @@
   ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
 
 (defn- incident-layer [layer-name source-name opacity]
-  {:id       layer-name
-   :type     "circle"
-   :source   source-name
-   :layout   {:visibility "visible"}
-   :paint    {:circle-color        "#FF0000"
-              :circle-opacity      opacity
-              :circle-radius       (zoom-interp 8 14 5 20)
-              :circle-stroke-color ["case" ["boolean" ["feature-state" "hover"] false] "#FFFF00" "#000000"]
-              :circle-stroke-width 2}})
+  {:id     layer-name
+   :type   "circle"
+   :source source-name
+   :layout {:visibility "visible"}
+   :paint  {:circle-color        "#FF0000"
+            :circle-opacity      opacity
+            :circle-radius       (zoom-interp 8 14 5 20)
+            :circle-stroke-color ["case" ["boolean" ["feature-state" "hover"] false] "#FFFF00" "#000000"]
+            :circle-stroke-width 2}})
 
 (defn- incident-labels-layer [layer-name source-name opacity]
   {:id     layer-name
