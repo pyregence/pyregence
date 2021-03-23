@@ -246,14 +246,7 @@
           @*base-map
           c/base-map-options
           false
-          select-base-map!]
-         [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
-          [:div {:style {:display "flex"}}
-           [:input {:style {:margin ".25rem .5rem 0 0"}
-                    :type "checkbox"
-                    :on-click #(do (swap! show-hillshade? not)
-                                   (mb/set-visible-by-title! "hillshade" @show-hillshade?))}]
-           [:label "Hill shade overlay"]]]]]])))
+          select-base-map!]]]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars

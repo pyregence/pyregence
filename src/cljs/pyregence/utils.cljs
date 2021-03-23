@@ -198,11 +198,11 @@
 (defn js-date-from-string [date-str]
   (let [minutes (subs date-str 11 13)]
     (js/Date. (str (subs date-str 0 4) "-"
-                 (subs date-str 4 6) "-"
-                 (subs date-str 6 8) "T"
-                 (subs date-str 9 11) ":"
-                 (if (= 2 (count minutes)) minutes "00")
-                 ":00.000Z"))))
+                   (subs date-str 4 6) "-"
+                   (subs date-str 6 8) "T"
+                   (subs date-str 9 11) ":"
+                   (if (= 2 (count minutes)) minutes "00")
+                   ":00.000Z"))))
 
 (defn time-zone-iso-date [date-str show-utc?]
   (let [js-date (js-date-from-string date-str)]
@@ -304,3 +304,11 @@
   [n dbl]
   (let [factor (.pow js/Math 10 n)]
     (/ (Math/round (* dbl factor)) factor)))
+
+(defn only
+  "Returns a function calls `f` only when `x` passes `pred`. Can be used in
+   mapping over a collection like so:
+   `(map (only even? #(* % 2)) xs)`"
+  [pred f]
+  (fn [x]
+    (if (pred x) (f x) x)))

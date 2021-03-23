@@ -29,6 +29,12 @@
 (def ^:private events     (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private prefix "fire")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -40,8 +46,25 @@
      (.getMinZoom m)
      (.getMaxZoom m)]))
 
-;; TODO: Implement
-(defn get-layer-by-title [title])
+(defn- get-style
+  "Returns mapbox style object"
+  []
+  (-> @the-map .getStyle js->clj))
+
+(defn index-of
+  "Returns first index of item in collection that matches predicate."
+  [pred xs]
+  (->> xs
+       (keep-indexed (fn [idx x] (when (pred x) idx)))
+       (first)))
+
+(defn get-layer-idx-by-id
+  "Returns index of layer with matching id"
+  [id layers]
+  (index-of #(= id (get % "id")) layers))
+
+(defn- is-selectable? [s]
+  (str/starts-with? s prefix))
 
 ;; TODO: Implement
 (defn get-feature-at-pixel [pixel])
@@ -97,6 +120,26 @@
   (when (some? @the-map)
     (.resize @the-map)))
 
+(defn- upsert-layer
+  "Inserts `new-layer` into `v` if the 'id' does not already exist, or updates
+   the matching row if it does exist."
+  [v {:keys [id] :as new-layer}]
+  (if-let [idx (get-layer-idx-by-id id v)]
+    (assoc v idx new-layer)
+    (conj v new-layer)))
+
+(defn- merge-layers [v new-layers]
+  (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
+
+(defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
+  (let [new-style (cond-> style
+                    sources     (assoc "sources" sources)
+                    layers      (assoc "layers" layers)
+                    new-sources (update "sources" merge new-sources)
+                    new-layers  (update "layers" merge-layers new-layers)
+                    :always clj->js)]
+    (-> @the-map (.setStyle new-style))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -126,7 +169,7 @@
     (reset! the-marker nil)))
 
 (defn init-point!
-   "Creates a marker at lnglat."
+  "Creates a marker at lnglat."
   [lng lat]
   (clear-point!)
   (let [marker (Marker. #js {:color "#FF0000"})]
@@ -208,26 +251,143 @@
 ;; Modify Layer Properties
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Implement
-(defn set-opacity-by-title! [title opacity])
+(defn- symbol-opacity [opacity]
+  {"text-opacity" opacity})
 
-;; TODO: Implement
-(defn set-visible-by-title! [title visible?])
+(defn- circle-opacity [opacity]
+  {"circle-opacity"        opacity
+   "circle-stroke-opacity" opacity})
+
+(defn- raster-opacity [opacity]
+  {"raster-opacity" opacity})
+
+(defn- set-opacity
+  "Returns layer with opacity set to `opacity`"
+  [layer opacity]
+  {:pre [(map? layer) (number? opacity) (<= 0.0 opacity 1.0)]}
+  (let [layer-type (get layer "type")
+        new-paint  (condp = layer-type
+                     "raster" (raster-opacity opacity)
+                     "circle" (circle-opacity opacity)
+                     "symbol" (symbol-opacity opacity))]
+    (update layer "paint" merge new-paint)))
+
+(defn set-opacity-by-title!
+  "Sets the opacity of the layer"
+  [id opacity]
+  {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
+  (let [style      (get-style)
+        layers     (get style "layers")
+        pred       #(-> % (get "id") is-selectable?)
+        new-layers (map (u/only pred #(set-opacity % opacity)) layers)]
+    (update-style! style :layers new-layers)))
+
+(defn- set-visible
+  "Returns layer with visibility set to `visible?`"
+  [layer visible?]
+  (assoc-in layer ["layout" "visibility"] (if visible? "visible" "none")))
+
+(defn set-visible-by-title!
+  "Sets a layer's visibility"
+  [id visible?]
+  {:pre [(string? id) (boolean? visible?)]}
+  (let [style  (get-style)
+        layers (get style "layers")]
+    (when-let [idx (get-layer-idx-by-id id layers)]
+      (let [new-layers (assoc-in layers [idx "layout" "visibility"] (if visible? "visible" "none"))]
+        (update-style! style :layers new-layers)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WMS Layers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- wms-source [layer-name]
+  {:type     "raster"
+   :tileSize 256
+   :tiles    [(c/wms-layer-url layer-name)]})
+
+(defn- wms-layer [layer-name source-name opacity]
+  {:id     layer-name
+   :type   "raster"
+   :source source-name
+   :layout {:visibility "visible"}
+   :paint  {:raster-opacity opacity}})
+
+(defn- build-wms
+  "Returns new WMS source and layer in the form `[source [layer]]`.
+  `source` must be a valid WMS layer in the geoserver
+  `z-index` allows layers to be rendered on-top (positive z-index) or below
+  (negative z-index) Mapbox base map layers."
+  [id source opacity]
+  (let [new-source {source (wms-source source)}
+        new-layer  (wms-layer id source opacity)]
+    [new-source [new-layer]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WFS Layers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- wfs-source [layer-name]
+  {:type "geojson"
+   :data (c/wfs-layer-url layer-name)})
+
+(defn- zoom-interp
+  "Interpolates a value (vmin to vmax) based on zoom value (from zmin to zmax)"
+  [vmin vmax zmin zmax]
+  ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
+
+(defn- incident-layer [layer-name source-name opacity]
+  {:id     layer-name
+   :type   "circle"
+   :source source-name
+   :layout {:visibility "visible"}
+   :paint  {:circle-color        "#FF0000"
+            :circle-opacity      opacity
+            :circle-radius       (zoom-interp 8 14 5 20)
+            :circle-stroke-color "#000000"
+            :circle-stroke-width 3}})
+
+(defn- incident-labels-layer [layer-name source-name opacity]
+  {:id     layer-name
+   :type   "symbol"
+   :source source-name
+   :layout {:text-anchor "top"
+            :text-field  ["to-string" ["get" "prettyname"]]
+            :text-font   ["Open Sans Regular" "Arial Unicode MS Regular"]
+            :text-offset [0 0.5]
+            :text-size   14
+            :visibility  "visible"}
+   :paint  {:text-color      "#000000"
+            :text-halo-color "#ffffff"
+            :text-halo-width 1
+            :text-opacity    opacity}})
+
+(defn- build-wfs
+  "Returns a new WFS source and layers in the form `[source layers]`.
+  `source` must be a valid WFS layer in the geoserver
+  `z-index` allows layers to be rendered on-top (positive z-index) or below
+  (negative z-index) Mapbox base map layers."
+  [id source opacity]
+  (let [new-source {source (wfs-source source)}
+        labels-id  (str id "-labels")
+        new-layers [(incident-layer id source opacity)
+                    (incident-labels-layer labels-id source opacity)]]
+    [new-source new-layers]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Manage Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn set-base-map-source!
-  "Sets the Basemap source."
+  "Sets the base map source."
   [source]
   (go
     (let [style-chan (u/fetch-and-process source {} (fn [res] (.json res)))
           cur-style  (js->clj (.getStyle @the-map))
           sources    (->> (get cur-style "sources")
-                          (u/filterm (fn [[k _]] (str/starts-with? (name k) "fire"))))
+                          (u/filterm (fn [[k _]] (is-selectable? (name k)))))
           layers     (->> (get cur-style "layers")
-                          (filter (fn [l] (str/starts-with? (get l "id") "fire"))))
+                          (filter (fn [l] (is-selectable? (get l "id")))))
           new-style  (-> (<! style-chan)
                          (js->clj)
                          (assoc "sprite" c/default-sprite)
@@ -236,14 +396,37 @@
                          (clj->js))]
       (-> @the-map (.setStyle new-style)))))
 
-;; TODO: Implement
-(defn create-wms-layer! [ol-layer geo-layer z-index])
+(defn- hide-fire-layers [layers]
+  (let [pred #(-> % (get "id") is-selectable?)
+        f    #(set-visible % false)]
+    (map (u/only pred f) layers)))
 
-;; TODO: Implement
-(defn swap-active-layer! [geo-layer])
+(defn swap-active-layer!
+  "Swaps the active layer. Used to scan through time-series WMS layers"
+  [geo-layer opacity]
+  {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
+  (let [style  (get-style)
+        layers (hide-fire-layers (get style "layers"))
+        [new-sources new-layers] (build-wms geo-layer geo-layer opacity)]
+    (update-style! style :layers layers :new-sources new-sources :new-layers new-layers)))
 
-;; TODO: Implement
-(defn reset-active-layer! [geo-layer style-fn opacity])
+(defn reset-active-layer!
+  "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
+  `style-fn` must not be nil"
+  [geo-layer style-fn opacity]
+  {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
+  (let [style  (get-style)
+        layers (hide-fire-layers (get style "layers"))
+        [new-sources new-layers] (if (some? style-fn)
+                                   (build-wfs geo-layer geo-layer opacity)
+                                   (build-wms geo-layer geo-layer opacity))]
+    (update-style! style :layers layers :new-sources new-sources :new-layers new-layers)))
+
+(defn create-wms-layer!
+  "Adds WMS layer to the map."
+  [id source z-index]
+  (let [[new-source new-layers] (build-wms id source 1.0)]
+    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Creation
@@ -255,10 +438,9 @@
   ([container-id]
    (set! (.-accessToken mapbox) c/mapbox-access-token)
    (reset! the-map
-           (Map.
-             (clj->js {:container container-id
-                       :minZoom 3
-                       :maxZoom 20
-                       :style (-> c/base-map-options c/base-map-default :source)
-                       :trackResize true
-                       :transition {:duration 500 :delay 0}})))))
+           (Map. (clj->js {:container container-id
+                           :minZoom 3
+                           :maxZoom 20
+                           :style (-> c/base-map-options c/base-map-default :source)
+                           :trackResize true
+                           :transition {:duration 500 :delay 0}})))))

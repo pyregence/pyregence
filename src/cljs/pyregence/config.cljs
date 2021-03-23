@@ -55,13 +55,13 @@
                                             :hover-text     "This section contains active fires across the state, as named in CALFIRE incident reports. Select a specific fire from the dropdown menu to view a simulation.\n
                                                              View all active fires by selecting one of two options with an asterisk at the beginning. We offer data from CALFIRE, as well as the National Interagency Fire Center."
                                             :underlays      {:nifs-perimeters   {:opt-label  "NIFS Perimeters"
-                                                                                 :z-index    10
+                                                                                 :z-index    3
                                                                                  :filter-set #{"fire-detections" "nifs-perimeters"}}
                                                              :viirs-hotspots    {:opt-label  "VIIRS Hotspots"
-                                                                                 :z-index    9
+                                                                                 :z-index    2
                                                                                  :filter-set #{"fire-detections" "viirs-timestamped"}}
                                                              :modis-hotspots    {:opt-label  "MODIS Hotspots"
-                                                                                 :z-index    8
+                                                                                 :z-index    1
                                                                                  :filter-set #{"fire-detections" "modis-timestamped"}}}
                                             :default-option :calfire-incidents
                                             :options        {:calfire-incidents {:opt-label  "*CALFIRE Incidents"
@@ -148,7 +148,9 @@
                                               :hover-text "Start time for forecast cycle. New data is created every 12 hours."
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
 
-;; WMS and WFS options
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WFS/WMS Configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def wms-url "https://data.pyregence.org:8443/geoserver/wms")
 (def wfs-url "https://data.pyregence.org:8443/geoserver/wfs")
@@ -190,7 +192,33 @@
        "&SRSNAME=EPSG:3857"
        "&BBOX=" (str/join "," extent) ",EPSG:3857"))
 
+(defn wms-layer-url [layer]
+  (str wms-url
+       "?SERVICE=WMS"
+       "&VERSION=1.3.0"
+       "&REQUEST=GetMap"
+       "&FORMAT=image/png"
+       "&TRANSPARENT=true"
+       "&WIDTH=256"
+       "&HEIGHT=256"
+       "&CRS=EPSG%3A3857"
+       "&STYLES="
+       "&FORMAT_OPTIONS=dpi%3A113"
+       "&BBOX={bbox-epsg-3857}"
+       "&LAYERS=" layer))
+
+(defn wfs-layer-url [layer]
+  (str wfs-url
+       "?SERVICE=WFS"
+       "&VERSION=1.3.0"
+       "&REQUEST=GetFeature"
+       "&OUTPUTFORMAT=application/json"
+       "&SRSNAME=EPSG:4326"
+       "&TYPENAME=" layer))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scroll speeds for time slider
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def speeds [{:opt-label ".5x" :delay 2000}
              {:opt-label "1x"  :delay 1000}
