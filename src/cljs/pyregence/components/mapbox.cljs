@@ -25,14 +25,17 @@
   "Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/"
   (r/atom nil))
 
-(def ^:private the-marker (r/atom nil))
-(def ^:private events     (atom {}))
+(def ^:private the-marker    (r/atom nil))
+(def ^:private events        (atom {}))
+(def ^:private hovered-id    (atom nil))
+(def ^:private active-source (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private prefix "fire")
+(def ^:private fire-active "fire-active")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Information
@@ -49,7 +52,7 @@
 (defn- get-style
   "Returns mapbox style object"
   []
-  (-> @the-map .getStyle js->clj))
+  (-> @the-map .getStyle (js->clj)))
 
 (defn index-of
   "Returns first index of item in collection that matches predicate."
@@ -97,7 +100,7 @@
   "Centers the map on `center` with a minimum zoom value of `min-zoom`."
   [center min-zoom]
   (let [curr-zoom (get (get-zoom-info) 0)
-        zoom      (if (> curr-zoom min-zoom) min-zoom curr-zoom)]
+        zoom      (if (< curr-zoom min-zoom) min-zoom curr-zoom)]
     (.easeTo @the-map #js {:zoom zoom :center center :animate true})))
 
 (defn center-on-overlay!
@@ -137,7 +140,7 @@
                     layers      (assoc "layers" layers)
                     new-sources (update "sources" merge new-sources)
                     new-layers  (update "layers" merge-layers new-layers)
-                    :always clj->js)]
+                    :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -148,7 +151,7 @@
   "Returns marker lng/lat coordinates in the form `[lng lat]`."
   []
   (when (some? @the-marker)
-    (-> @the-marker .getLngLat .toArray js->clj)))
+    (-> @the-marker .getLngLat .toArray (js->clj))))
 
 (defn get-overlay-bbox
   "Converts marker lng/lat coordinates to EPSG:3857, finds the current
@@ -210,30 +213,46 @@
     (swap! events dissoc (hash f))))
 
 (defn- event->lnglat [e]
-  (-> e .-lngLat .toArray js->clj))
+  (-> e (aget "lngLat") .toArray (js->clj)))
 
 (defn add-single-click-popup!
   "Creates a marker where clicked and passes xy bounding box to `f` a click event."
   [f]
   (add-event! "click" (fn [e]
-                        (-> e event->lnglat add-point-on-click!)
+                        (-> e (event->lnglat) (add-point-on-click!))
                         (f (get-overlay-bbox)))))
 
 (defn add-mouse-move-xy!
   "Passes `[lng lat]` to `f` on mousemove event."
   [f]
-  (add-event! "mousemove" (fn [e] (-> e event->lnglat f))))
+  (add-event! "mousemove" (fn [e] (-> e (event->lnglat) (f)))))
 
-;; TODO: Implement
-(defn feature-highlight! [evt])
+(defn- clear-highlight!
+  "Clears the highlight of WFS features."
+  []
+  (when (some? @hovered-id)
+    (.setFeatureState @the-map #js {:source @active-source :id @hovered-id} #js {:hover false})
+    (reset! hovered-id nil)))
 
-;; TODO: Implement
-(defn add-mouse-move-feature-highlight! [])
+(defn- feature-highlight!
+  "Highlights a particular WFS features."
+  [e]
+  (when-let [feature (-> e (aget "features") (first))]
+      (clear-highlight!)
+      (reset! hovered-id (aget feature "id"))
+      (.setFeatureState @the-map #js {:source @active-source :id @hovered-id} #js {:hover true})))
 
-;; TODO: Implement
-(defn add-single-click-feature-highlight! [])
+(defn add-mouse-move-feature-highlight!
+  "Highlights WFS features when mouse moves over."
+  []
+  (add-event! "mousemove" feature-highlight! :layer fire-active)
+  (add-event! "mouseleave" clear-highlight! :layer fire-active))
 
-;; TODO: Implement
+(defn add-single-click-feature-highlight!
+  "Enables clicking on a WFS feature."
+  []
+  (add-event! "click" (fn [e] (-> e (aget "lngLat") (set-center! 7.0))) :layer fire-active))
+
 (defn add-map-zoom-end!
   "Passes current zoom level to `f` on zoom-end event."
   [f]
@@ -252,7 +271,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- symbol-opacity [opacity]
-  {"text-opacity" opacity})
+  {"text-opacity" ["step" ["zoom"] 0 6 opacity 22 opacity]})
 
 (defn- circle-opacity [opacity]
   {"circle-opacity"        opacity
@@ -278,7 +297,7 @@
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
         layers     (get style "layers")
-        pred       #(-> % (get "id") is-selectable?)
+        pred       #(-> % (get "id") (is-selectable?))
         new-layers (map (u/only pred #(set-opacity % opacity)) layers)]
     (update-style! style :layers new-layers)))
 
@@ -328,13 +347,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- wfs-source [layer-name]
-  {:type "geojson"
-   :data (c/wfs-layer-url layer-name)})
+  {:type       "geojson"
+   :data       (c/wfs-layer-url layer-name)
+   :generateId true})
 
 (defn- zoom-interp
   "Interpolates a value (vmin to vmax) based on zoom value (from zmin to zmax)"
   [vmin vmax zmin zmax]
   ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
+
+(defn- on-hover [on off]
+  ["case" ["boolean" ["feature-state" "hover"] false] on off])
 
 (defn- incident-layer [layer-name source-name opacity]
   {:id     layer-name
@@ -344,8 +367,8 @@
    :paint  {:circle-color        "#FF0000"
             :circle-opacity      opacity
             :circle-radius       (zoom-interp 8 14 5 20)
-            :circle-stroke-color "#000000"
-            :circle-stroke-width 3}})
+            :circle-stroke-color (on-hover "#FFFF00" "#000000")
+            :circle-stroke-width (on-hover 4 2)}})
 
 (defn- incident-labels-layer [layer-name source-name opacity]
   {:id     layer-name
@@ -353,14 +376,14 @@
    :source source-name
    :layout {:text-anchor "top"
             :text-field  ["to-string" ["get" "prettyname"]]
-            :text-font   ["Open Sans Regular" "Arial Unicode MS Regular"]
-            :text-offset [0 0.5]
-            :text-size   14
+            :text-font   ["Open Sans Semibold" "Arial Unicode MS Regular"]
+            :text-offset [0 0.6]
+            :text-size   16
             :visibility  "visible"}
    :paint  {:text-color      "#000000"
-            :text-halo-color "#ffffff"
-            :text-halo-width 1
-            :text-opacity    opacity}})
+            :text-halo-color ["case" ["boolean" ["feature-state" "hover"] false] "#FFFF00" "#FFFFFF"]
+            :text-halo-width 1.5
+            :text-opacity    ["step" ["zoom"] 0 6 opacity 22 opacity]}})
 
 (defn- build-wfs
   "Returns a new WFS source and layers in the form `[source layers]`.
@@ -397,7 +420,7 @@
       (-> @the-map (.setStyle new-style)))))
 
 (defn- hide-fire-layers [layers]
-  (let [pred #(-> % (get "id") is-selectable?)
+  (let [pred #(-> % (get "id") (is-selectable?))
         f    #(set-visible % false)]
     (map (u/only pred f) layers)))
 
@@ -418,9 +441,10 @@
   (let [style  (get-style)
         layers (hide-fire-layers (get style "layers"))
         [new-sources new-layers] (if (some? style-fn)
-                                   (build-wfs geo-layer geo-layer opacity)
+                                   (build-wfs fire-active geo-layer opacity)
                                    (build-wms geo-layer geo-layer opacity))]
-    (update-style! style :layers layers :new-sources new-sources :new-layers new-layers)))
+    (update-style! style :layers layers :new-sources new-sources :new-layers new-layers)
+    (reset! active-source geo-layer)))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
