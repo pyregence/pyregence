@@ -457,11 +457,6 @@
                          :bearing 0.0
                          :animate true}))
 
-(defn- add-terrain [style]
-  (if (contains? (get style "sources") mapbox-dem)
-    (assoc style "terrain" terrain-layer)
-    style))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Manage Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -480,9 +475,9 @@
           new-style  (-> (<! style-chan)
                          (js->clj)
                          (assoc "sprite" c/default-sprite)
+                         (merge (select-keys cur-style ["terrain"]))
                          (update "sources" merge sources)
                          (update "layers" concat layers)
-                         (add-terrain)
                          (clj->js))]
       (-> @the-map (.setStyle new-style)))))
 
