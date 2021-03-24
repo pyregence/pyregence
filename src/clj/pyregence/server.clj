@@ -51,18 +51,17 @@
     :default ""]])
 
 (defn start-server! [& args]
-  (let [{:keys [options summary errors]} (parse-opts args cli-options)]
+  (let [{:keys [options summary errors]} (parse-opts args cli-options)
+        {:keys [http-port https-port mode output-dir]} options]
     (if (seq errors)
       (do
         (run! println errors)
         (println (str "Usage:\n" summary)))
-      (let [mode       (:mode options)
-            has-key?   (.exists (io/file "./.key/keystore.pkcs12"))
-            https-port (:https-port options)
+      (let [has-key?   (.exists (io/file "./.key/keystore.pkcs12"))
             ssl?       (and has-key? https-port)
             handler    (create-handler-stack ssl? (= mode "dev"))
             config     (merge
-                        {:port  (:http-port options)
+                        {:port  http-port
                          :join? false}
                         (when ssl?
                           {:ssl?          true
@@ -77,7 +76,7 @@
           (do
             (reset! server (run-jetty handler config))
             (reset! clean-up-service (start-clean-up-service!))
-            (set-log-path! (:output-dir options))
+            (set-log-path! output-dir)
             (start-socket-server! 31337 (fn [msg] (println msg)))
             (set-capabilities!)))))))
 
