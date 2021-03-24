@@ -84,8 +84,8 @@
                                              (get-in options [(params key) :filter])))
                                       (remove nil?))))
           {:keys [layers model-times]} (t/read (t/reader :json)
-                                               (:message (<! (u/call-clj-async! "get-layers"
-                                                                                (pr-str selected-set)))))]
+                                               (:body (<! (u/call-clj-async! "get-layers"
+                                                                             (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! param-layers layers)
       (swap! *layer-idx #(max 0 (min % (- (count @param-layers) 1))))
@@ -292,8 +292,8 @@
       (mb/init-map!)
       (mb/add-mouse-move-feature-highlight!)
       (mb/add-single-click-feature-highlight!)
-      (process-capabilities! (edn/read-string (:message (<! fire-names-chan)))
-                             (edn/read-string (:message (<! user-layers-chan))))
+      (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
+                             (edn/read-string (:body (<! user-layers-chan))))
       (<! (select-forecast! @*forecast))
       (reset! loading? false))))
 
