@@ -245,3 +245,5 @@
                        :source    (style-url "ckm2hgkx04xuw17pahpins029")}})
 
 (def base-map-default :mapbox-topo)
+
+(defonce mapbox-dem-url "mapbox://mapbox.mapbox-terrain-dem-v1")
