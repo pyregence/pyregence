@@ -233,7 +233,7 @@
 
 (def default-sprite "mapbox://sprites/mspencer-sig/cka8jaky90i9m1iphwh79wr04/3nae2cnmmvrdazx877w1wcuez")
 
-(defn style-url [id]
+(defn- style-url [id]
   (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" mapbox-access-token))
 
 (def base-map-options
@@ -246,4 +246,4 @@
 
 (def base-map-default :mapbox-topo)
 
-(defonce mapbox-dem-url "mapbox://mapbox.mapbox-terrain-dem-v1")
+(def mapbox-dem-url "mapbox://mapbox.mapbox-terrain-dem-v1")

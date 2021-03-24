@@ -453,6 +453,11 @@
                          :bearing 0.0
                          :animate true}))
 
+(defn- add-terrain [style]
+  (if (contains? (get style "sources") mapbox-dem)
+    (assoc style "terrain" terrain-layer)
+    style))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Manage Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -462,7 +467,7 @@
   [source]
   (go
     (let [style-chan (u/fetch-and-process source {} (fn [res] (.json res)))
-          cur-style  (js->clj (.getStyle @the-map))
+          cur-style  (get-style)
           keep?      (fn [s] (or (is-selectable? s) (is-terrain? s)))
           sources    (->> (get cur-style "sources")
                           (u/filterm (fn [[k _]] (keep? (name k)))))
@@ -473,10 +478,9 @@
                          (assoc "sprite" c/default-sprite)
                          (update "sources" merge sources)
                          (update "layers" concat layers)
+                         (add-terrain)
                          (clj->js))]
-      (doto @the-map
-        (.setStyle new-style)
-        (.setTerrain (when (contains? sources mapbox-dem) (clj->js terrain-layer)))))))
+      (-> @the-map (.setStyle new-style)))))
 
 (defn- hide-fire-layers [layers]
   (let [pred #(-> % (get "id") (is-selectable?))
