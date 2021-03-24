@@ -737,3 +737,47 @@ article.documents-single .document-meta {
         width: 220px;
     }
 }
+
+/* Firefox specific styling */
+input[type=range] {
+    background: transparent;
+    cursor: pointer;
+    display: block;
+}
+
+input[type=range][disabled] {
+    opacity: .3;
+    cursor: default;
+}
+
+input[type=range]::-moz-range-progress {
+    background-color: #016aff;
+    border-radius: 5px;
+    border: solid 1px #016aff;
+    height: 0.3em;
+}
+
+input[type=range]::-moz-range-track {
+    background: #ededed;
+    border-radius: 5px;
+    border: solid 1px #acacac;
+    box-sizing: border-box;
+    height: 0.3em;
+}
+
+input[type=range]::-moz-range-thumb {
+    background: #016aff;
+    border-radius: 50%;
+    border: none;
+    height: 16px;
+    width: 16px;
+}
+
+input[type=range]::-moz-range-progress:hover,
+input[type=range]::-moz-range-thumb:hover {
+    background-color: #0152c1;
+}
+
+input[type=range]::-moz-range-track:hover {
+    background: #e1e1e1;
+}

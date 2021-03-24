@@ -2,7 +2,8 @@
   (:require-macros [herb.core :refer [defglobal]]
                    pyregence.herb-patch)
   (:require herb.runtime
-            [reagent.core :as r]
+            [reagent.core   :as r]
+            [goog.color     :as color]
             [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -44,6 +45,17 @@
 
 (defn to-merge? [modifiers key return]
   (when (contains? (set modifiers) key) return))
+
+(defn str->int [s]
+  (js/parseInt s))
+
+(def rgba-matcher #"^(rgb|rgba)?\((0|[1-9]\d{0,2}),\s?(0|[1-9]\d{0,2}),\s?(0|[1-9]\d{0,2})(,\s?([0-1]?\.?[1-9]?\d{0,2}?))?\)$")
+(defn rgb->hex
+  ([rgb-str]
+   (let [[_ _ r g b _] (re-find rgba-matcher rgb-str)]
+     (rgb->hex (str->int r) (str->int g) (str->int b))))
+  ([r g b]
+   (color/rgbToHex r g b)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global Styles
