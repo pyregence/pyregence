@@ -21,9 +21,8 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def the-map
-  "Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/"
-  (r/atom nil))
+;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
+(defonce the-map (r/atom nil))
 
 (def ^:private the-marker    (r/atom nil))
 (def ^:private events        (atom {}))
@@ -35,9 +34,9 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private prefix "fire")
+(def ^:private prefix      "fire")
 (def ^:private fire-active "fire-active")
-(def ^:private mapbox-dem "mapbox-dem")
+(def ^:private mapbox-dem  "mapbox-dem")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Information
@@ -52,7 +51,7 @@
      (.getMaxZoom m)]))
 
 (defn- get-style
-  "Returns mapbox style object"
+  "Returns mapbox style object."
   []
   (-> @the-map .getStyle (js->clj)))
 
@@ -64,7 +63,7 @@
        (first)))
 
 (defn get-layer-idx-by-id
-  "Returns index of layer with matching id"
+  "Returns index of layer with matching id."
   [id layers]
   (index-of #(= id (get % "id")) layers))
 
@@ -283,7 +282,7 @@
   {"raster-opacity" opacity})
 
 (defn- set-opacity
-  "Returns layer with opacity set to `opacity`"
+  "Returns layer with opacity set to `opacity`."
   [layer opacity]
   {:pre [(map? layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [layer-type (get layer "type")
@@ -294,7 +293,7 @@
     (update layer "paint" merge new-paint)))
 
 (defn set-opacity-by-title!
-  "Sets the opacity of the layer"
+  "Sets the opacity of the layer."
   [id opacity]
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
@@ -304,7 +303,7 @@
     (update-style! style :layers new-layers)))
 
 (defn- set-visible
-  "Returns layer with visibility set to `visible?`"
+  "Returns layer with visibility set to `visible?`."
   [layer visible?]
   (assoc-in layer ["layout" "visibility"] (if visible? "visible" "none")))
 
@@ -354,7 +353,7 @@
    :generateId true})
 
 (defn- zoom-interp
-  "Interpolates a value (vmin to vmax) based on zoom value (from zmin to zmax)"
+  "Interpolates a value (vmin to vmax) based on zoom value (from zmin to zmax)."
   [vmin vmax zmin zmax]
   ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
 
@@ -404,11 +403,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private terrain-source
-  {mapbox-dem
-    {:type     "raster-dem"
-      :url      "mapbox://mapbox.mapbox-terrain-dem-v1"
-      :tileSize 512
-      :maxzoom  14}})
+  {mapbox-dem {:type     "raster-dem"
+               :url      c/mapbox-dem-url
+               :tileSize 512
+               :maxzoom  14}})
 
 (def ^:private terrain-layer
   {:source mapbox-dem :exaggeration 1.5})
@@ -420,39 +418,40 @@
            :sky-atmosphere-sun           [0.0, 0.0]
            :sky-atmosphere-sun-intensity 15}})
 
-(defn- is-terrain? [s] (= s mapbox-dem))
+(defn- is-terrain? [s]
+  (= s mapbox-dem))
 
 (defn toggle-rotation!
-  "Toggles whether the map can be rotated via right-click or touch"
+  "Toggles whether the map can be rotated via right-click or touch."
   [enabled?]
   (let [toggle-drag-rotate-fn  (if enabled? #(.enable %) #(.disable %))
         toggle-touch-rotate-fn (if enabled? #(.enableRotation %) #(.disableRotation %))]
     (doto @the-map
-      (-> (aget "dragRotate") toggle-drag-rotate-fn)
-      (-> (aget "touchZoomRotate" toggle-touch-rotate-fn)))))
+      (-> (aget "dragRotate") (toggle-drag-rotate-fn))
+      (-> (aget "touchZoomRotate") (toggle-touch-rotate-fn)))))
 
 (defn toggle-pitch!
-  "Toggles whether changing pitch via touch is enabled"
+  "Toggles whether changing pitch via touch is enabled."
   [enabled?]
   (let [toggle-fn (if enabled? #(.enable %) #(.disable %))]
     (-> @the-map (aget "touchPitch") (toggle-fn))))
 
-(defn- add-terrain!
-  "Adds terrain DEM source, sky atmosphere layers"
-  []
+(defn- toggle-terrain!
+  "Toggles terrain DEM source, sky atmosphere layers."
+  [enabled?]
   (update-style! (get-style) :new-sources terrain-source :new-layers [sky-source])
-  (.setTerrain @the-map (clj->js terrain-layer)))
+  (-> @the-map (.setTerrain (when enabled? (clj->js terrain-layer)))))
 
-(defn toggle-terrain!
-  "Toggles terrain of the map"
-  []
-  (swap! terrain? not)
-  (when @terrain? (add-terrain!))
-  (let [pitch   (if @terrain? 45.0 0.0)
-        bearing (if @terrain? -25.0 0.0)]
-    (toggle-rotation! @terrain?)
-    (toggle-pitch! @terrain?)
-    (.easeTo @the-map #js {:pitch pitch :bearing bearing :animate true})))
+(defn toggle-dimensions!
+  "Toggles whether the map is in 2D or 3D mode. When `three-dimensions?` is true,
+   terrain is added to the base map and rotatation/pitch is enabled."
+  [enabled?]
+  (toggle-terrain! enabled?)
+  (toggle-rotation! enabled?)
+  (toggle-pitch! enabled?)
+  (.easeTo @the-map #js {:pitch (if enabled? 45.0 0.0)
+                         :bearing 0.0
+                         :animate true}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Manage Layers
@@ -464,8 +463,9 @@
   (go
     (let [style-chan (u/fetch-and-process source {} (fn [res] (.json res)))
           cur-style  (js->clj (.getStyle @the-map))
+          keep?      (fn [s] (or (is-selectable? s) (is-terrain? s)))
           sources    (->> (get cur-style "sources")
-                          (u/filterm (fn [[k _]] (-> (name k) (or is-selectable? is-terrain?)))))
+                          (u/filterm (fn [[k _]] (keep? (name k)))))
           layers     (->> (get cur-style "layers")
                           (filter (fn [l] (is-selectable? (get l "id")))))
           new-style  (-> (<! style-chan)
@@ -474,8 +474,9 @@
                          (update "sources" merge sources)
                          (update "layers" concat layers)
                          (clj->js))]
-      (-> @the-map (.setStyle new-style))
-      (when @terrain? (.setTerrain @the-map (clj->js terrain-layer))))))
+      (doto @the-map
+        (.setStyle new-style)
+        (.setTerrain (when (contains? sources mapbox-dem) (clj->js terrain-layer)))))))
 
 (defn- hide-fire-layers [layers]
   (let [pred #(-> % (get "id") (is-selectable?))
@@ -483,7 +484,7 @@
     (map (u/only pred f) layers)))
 
 (defn swap-active-layer!
-  "Swaps the active layer. Used to scan through time-series WMS layers"
+  "Swaps the active layer. Used to scan through time-series WMS layers."
   [geo-layer opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
@@ -493,7 +494,7 @@
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
-  `style-fn` must not be nil"
+  `style-fn` must not be nil."
   [geo-layer style-fn opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
@@ -521,10 +522,10 @@
    (set! (.-accessToken mapbox) c/mapbox-access-token)
    (reset! the-map
            (Map. (clj->js {:container   container-id
+                           :dragRotate  false
                            :maxZoom     20
                            :minZoom     3
                            :style       (-> c/base-map-options c/base-map-default :source)
+                           :touchPitch  false
                            :trackResize true
-                           :transition  {:duration 500 :delay 0}})))
-   (toggle-pitch! false)
-   (toggle-rotation! false)))
+                           :transition  {:duration 500 :delay 0}})))))

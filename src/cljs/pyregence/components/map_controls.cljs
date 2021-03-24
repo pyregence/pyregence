@@ -287,7 +287,8 @@
                                   [tool-button icon on-click]])))])
 
 (defn zoom-bar [get-current-layer-extent mobile?]
-  (r/with-let [minZoom      (r/atom 0)
+  (r/with-let [terrain?     (r/atom false)
+               minZoom      (r/atom 0)
                maxZoom      (r/atom 28)
                *zoom        (r/atom 10)
                select-zoom! (fn [zoom]
@@ -306,7 +307,11 @@
                                hover-text
                                :right
                                [tool-button icon on-click]])
-                  [[:terrain "Toggle 3D terrain" #(mb/toggle-terrain!)]
+                  [[:terrain
+                    "Toggle 3D terrain"
+                    #(do
+                       (swap! terrain? not)
+                       (mb/toggle-dimensions! @terrain?))]
                    [:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition mb/set-center-my-location!))]
