@@ -29,6 +29,7 @@
 (def ^:private events        (atom {}))
 (def ^:private hovered-id    (atom nil))
 (def ^:private active-source (atom nil))
+(def ^:private terrain?      (atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -36,6 +37,7 @@
 
 (def ^:private prefix "fire")
 (def ^:private fire-active "fire-active")
+(def ^:private mapbox-dem "mapbox-dem")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Information
@@ -398,6 +400,61 @@
     [new-source new-layers]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Terrain and 3D Viewing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private terrain-source
+  {mapbox-dem
+    {:type     "raster-dem"
+      :url      "mapbox://mapbox.mapbox-terrain-dem-v1"
+      :tileSize 512
+      :maxzoom  14}})
+
+(def ^:private terrain-layer
+  {:source mapbox-dem :exaggeration 1.5})
+
+(def ^:private sky-source
+  {:id    "sky"
+   :type  "sky"
+   :paint {:sky-type                     "atmosphere"
+           :sky-atmosphere-sun           [0.0, 0.0]
+           :sky-atmosphere-sun-intensity 15}})
+
+(defn- is-terrain? [s] (= s mapbox-dem))
+
+(defn toggle-rotation!
+  "Toggles whether the map can be rotated via right-click or touch"
+  [enabled?]
+  (let [toggle-drag-rotate-fn  (if enabled? #(.enable %) #(.disable %))
+        toggle-touch-rotate-fn (if enabled? #(.enableRotation %) #(.disableRotation %))]
+    (doto @the-map
+      (-> (aget "dragRotate") toggle-drag-rotate-fn)
+      (-> (aget "touchZoomRotate" toggle-touch-rotate-fn)))))
+
+(defn toggle-pitch!
+  "Toggles whether changing pitch via touch is enabled"
+  [enabled?]
+  (let [toggle-fn (if enabled? #(.enable %) #(.disable %))]
+    (-> @the-map (aget "touchPitch") (toggle-fn))))
+
+(defn- add-terrain!
+  "Adds terrain DEM source, sky atmosphere layers"
+  []
+  (update-style! (get-style) :new-sources terrain-source :new-layers [sky-source])
+  (.setTerrain @the-map (clj->js terrain-layer)))
+
+(defn toggle-terrain!
+  "Toggles terrain of the map"
+  []
+  (swap! terrain? not)
+  (when @terrain? (add-terrain!))
+  (let [pitch   (if @terrain? 45.0 0.0)
+        bearing (if @terrain? -25.0 0.0)]
+    (toggle-rotation! @terrain?)
+    (toggle-pitch! @terrain?)
+    (.easeTo @the-map #js {:pitch pitch :bearing bearing :animate true})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Manage Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -408,7 +465,7 @@
     (let [style-chan (u/fetch-and-process source {} (fn [res] (.json res)))
           cur-style  (js->clj (.getStyle @the-map))
           sources    (->> (get cur-style "sources")
-                          (u/filterm (fn [[k _]] (is-selectable? (name k)))))
+                          (u/filterm (fn [[k _]] (-> (name k) (or is-selectable? is-terrain?)))))
           layers     (->> (get cur-style "layers")
                           (filter (fn [l] (is-selectable? (get l "id")))))
           new-style  (-> (<! style-chan)
@@ -417,7 +474,8 @@
                          (update "sources" merge sources)
                          (update "layers" concat layers)
                          (clj->js))]
-      (-> @the-map (.setStyle new-style)))))
+      (-> @the-map (.setStyle new-style))
+      (when @terrain? (.setTerrain @the-map (clj->js terrain-layer))))))
 
 (defn- hide-fire-layers [layers]
   (let [pred #(-> % (get "id") (is-selectable?))
@@ -462,9 +520,11 @@
   ([container-id]
    (set! (.-accessToken mapbox) c/mapbox-access-token)
    (reset! the-map
-           (Map. (clj->js {:container container-id
-                           :minZoom 3
-                           :maxZoom 20
-                           :style (-> c/base-map-options c/base-map-default :source)
+           (Map. (clj->js {:container   container-id
+                           :maxZoom     20
+                           :minZoom     3
+                           :style       (-> c/base-map-options c/base-map-default :source)
                            :trackResize true
-                           :transition {:duration 500 :delay 0}})))))
+                           :transition  {:duration 500 :delay 0}})))
+   (toggle-pitch! false)
+   (toggle-rotation! false)))

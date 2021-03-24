@@ -255,6 +255,7 @@ mapboxgl.Map.prototype = {
   "setPitch": function () {},
   "setRenderWorldCopies": function () {},
   "setStyle": function () {},
+  "setTerrain": function () {},
   "setZoom": function () {},
   "snapToNorth": function () {},
   "stop": function () {},

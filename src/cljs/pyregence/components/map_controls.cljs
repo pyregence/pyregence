@@ -52,15 +52,16 @@
        :center-on-point [svg/center-on-point]
        :close           [svg/close]
        :extent          [svg/extent]
+       :flame           [svg/flame]
        :info            [svg/info]
        :layers          [svg/layers]
        :legend          [svg/legend]
-       :flame           [svg/flame]
        :my-location     [svg/my-location]
        :next-button     [svg/next-button]
        :pause-button    [svg/pause-button]
        :play-button     [svg/play-button]
        :previous-button [svg/previous-button]
+       :terrain         [svg/terrain]
        :zoom-in         [svg/zoom-in]
        :zoom-out        [svg/zoom-out]
        [:<>])]))
@@ -305,7 +306,8 @@
                                hover-text
                                :right
                                [tool-button icon on-click]])
-                  [[:my-location
+                  [[:terrain "Toggle 3D terrain" #(mb/toggle-terrain!)]
+                   [:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition mb/set-center-my-location!))]
                    ;; TODO move this action to the information panel
