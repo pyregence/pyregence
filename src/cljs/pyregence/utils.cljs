@@ -129,10 +129,10 @@
       (if response
         {:success (.-ok response)
          :status  (.-status response)
-         :message (or (edn/read-string (<p! (.text response))) "")}
+         :body    (or (edn/read-string (<p! (.text response))) "")}
         {:success false
          :status  nil
-         :message ""}))))
+         :body    ""}))))
 
 (defmethod call-remote! :post-text [_ url data]
   (go
@@ -149,10 +149,10 @@
       (if response
         {:success (.-ok response)
          :status  (.-status response)
-         :message (or (<p! (.text response)) "")}
+         :body    (or (<p! (.text response)) "")}
         {:success false
          :status  nil
-         :message ""}))))
+         :body    ""}))))
 
 (defmethod call-remote! :default [method _ _]
   (throw (ex-info (str "No such method (" method ") defined for pyregence.utils/call-remote!") {})))
