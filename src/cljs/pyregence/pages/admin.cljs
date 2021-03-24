@@ -30,11 +30,11 @@
 (defn get-org-users-list [org-id]
   (go
     (reset! org-users
-            (edn/read-string (:message (<! (u/call-clj-async! "get-org-users-list" org-id)))))))
+            (edn/read-string (:body (<! (u/call-clj-async! "get-org-users-list" org-id)))))))
 
 (defn get-org-list []
   (go
-    (reset! orgs (edn/read-string (:message (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
+    (reset! orgs (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
     (reset! *org (:opt-id (first @orgs)))
     (get-org-users-list @*org)))
 
@@ -55,7 +55,7 @@
       (if (:success res)
         (do (get-org-users-list @*org)
             (toast-message! (str "User " email " added.")))
-        (toast-message! (:message res))))))
+        (toast-message! (:body res))))))
 
 (defn update-org-user-role! [org-user-id role-id]
   (go

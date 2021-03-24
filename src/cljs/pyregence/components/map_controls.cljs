@@ -170,8 +170,8 @@
 
 (defn get-layer-name [filter-set update-layer]
   (go
-    (let [name (edn/read-string (:message (<! (u/call-clj-async! "get-layer-name"
-                                                                 (pr-str filter-set)))))]
+    (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
+                                                              (pr-str filter-set)))))]
       (update-layer :name name)
       name)))
 
