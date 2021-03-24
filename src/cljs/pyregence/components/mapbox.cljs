@@ -119,11 +119,6 @@
   (when (some? @the-map)
     (.resize @the-map)))
 
-(defn inherit-cursor!
-  "Sets the cursor style of mapbox to inherit from the map container"
-  []
-  (-> @the-map .getCanvasContainer (style/setStyle "cursor" "inherit")))
-
 (defn- upsert-layer
   "Inserts `new-layer` into `v` if the 'id' does not already exist, or updates
    the matching row if it does exist."

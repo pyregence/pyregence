@@ -292,7 +292,6 @@
       (mb/init-map!)
       (mb/add-mouse-move-feature-highlight!)
       (mb/add-single-click-feature-highlight!)
-      (mb/inherit-cursor!)
       (process-capabilities! (edn/read-string (:message (<! fire-names-chan)))
                              (edn/read-string (:message (<! user-layers-chan))))
       (<! (select-forecast! @*forecast))
@@ -329,6 +328,11 @@
    :overflow         "hidden"
    :max-height       (if mobile? "calc(100% - .5rem)" "50%")
    :width            (if mobile? "unset" "25rem")})
+
+(defn $p-mb-cursor []
+  (with-meta
+    {}
+    {:combinators {[:descendant :.mapboxgl-canvas-container] {:cursor "inherit"}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
@@ -390,7 +394,8 @@
                               @mouse-down?                    "grabbing"
                               (or @show-info? @show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
                               :else                           "grab")]
-    [:div#map {:style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
+    [:div#map {:class (<class $p-mb-cursor)
+               :style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
                :on-mouse-down #(reset! mouse-down? true)
                :on-mouse-up #(reset! mouse-down? false)}]))
 
