@@ -12,10 +12,8 @@
 
 (def ^:private mapbox       js/mapboxgl)
 (def ^:private Map          js/mapboxgl.Map)
-(def ^:private LngLat       js/mapboxgl.LngLat)
 (def ^:private LngLatBounds js/mapboxgl.LngLatBounds)
 (def ^:private Marker       js/mapboxgl.Marker)
-(def ^:private Popup        js/mapboxgl.Popup)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -68,9 +66,6 @@
 
 (defn- is-selectable? [s]
   (str/starts-with? s prefix))
-
-;; TODO: Implement
-(defn get-feature-at-pixel [pixel])
 
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.
@@ -191,7 +186,6 @@
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Add support for multiple global/layer events
 (defn add-event!
   "Adds a listener for `event` with callback `f`. Returns the function `f`, which
    must be stored and passed to `remove-event!` when removing the listener.
