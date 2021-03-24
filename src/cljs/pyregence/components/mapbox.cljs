@@ -2,7 +2,6 @@
   (:require [reagent.core :as r]
             [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
-            [goog.style           :as style]
             [pyregence.config     :as c]
             [pyregence.utils      :as u]
             [pyregence.geo-utils  :as g]))
