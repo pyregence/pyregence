@@ -107,3 +107,7 @@
 (defn terrain []
   [:svg {:viewBox "0 0 128 128"}
    [:path {:stroke "none" :fill "currentColor" :d "M 5.5,99 L 43.4,26.2 56.2,51 77.8,14.9 127.8,98.7 Z"}]])
+
+(defn dropdown-arrow [stroke-color]
+  [:svg {:xmlns "http://www.w3.org/2000/svg" :viewBox "0 0 16 16"}
+   [:path {:fill "none" :stroke stroke-color :stroke-linecap "round" :stroke-linejoin "round" :stroke-width "2" :d "M2 5l6 6 6-6"}]])
