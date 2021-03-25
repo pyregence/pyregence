@@ -103,6 +103,12 @@ p a:hover, p a:active {
     border-radius: 20px/50%;
     text-transform: uppercase;
 }
+.btn[disabled], .btn[disabled]:hover .btn[disabled]:active, .btn[disabled]:focus {
+  opacity: 0.3;
+  cursor: default;
+  background: transparent;
+  color: inherit;
+}
 .red.btn {
     border-color: #f9af3b;
     background: #f96841;
@@ -136,7 +142,7 @@ p a:hover, p a:active {
 .border-yellow.btn {
     border-color: #f9af3b;
 }
-.btn.text-white:hover, .btn.text-white:active {
+.btn:not([disabled]).text-white:hover, .btn:not([disabled]).text-white:active {
     background: #ffffff;
     color: #919191 !important;
 }

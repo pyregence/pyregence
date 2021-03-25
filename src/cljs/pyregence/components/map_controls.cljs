@@ -333,30 +333,107 @@
 ;; Match Drop Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn match-drop-tool [parent-box close-fn!]
-  (r/with-let [lon-lat    (r/atom [0 0])
-               move-event (mb/add-mouse-move-xy! #(reset! lon-lat %))]
+;; Styles
+(defn- $match-drop []
+  {:display        "flex"
+   :flex-direction "column"
+   :height         "inherit"})
+
+(defn- $match-drop-body []
+  {:flex-grow 1
+   :margin    "0.5rem 1rem"
+   :font-size "0.9rem"})
+
+(defn- $match-drop-section []
+   {:margin "0.5rem 0"})
+
+(defn- $match-drop-instructions []
+  ^{:extend $match-drop-section}
+  {:font-size "0.8rem"})
+
+(defn- $match-drop-location []
+  ^{:extend $match-drop-section
+    :combinators {[:> :div.md-lonlat] {:display "flex" :flex-direction "row"}
+                  [:> :div.md-lonlat :div.md-lon] {:width "45%"}}}
+  {:font-weight "bold"})
+
+(defn- $match-drop-datetime []
+  ^{:extend $match-drop-section
+    :combinators {[:> :.input-datetime] {:width "100%"}}}
+  {:font-weight "bold"})
+
+(defn- $match-drop-footer []
+  {:display        "flex"
+   :flex-shrink    0
+   :flex-direction "row"
+   :margin         "0 0 2.5em"})
+
+(defn- $match-drop-cursor-position []
+  {:display        "flex"
+   :flex-direction "column"
+   :font-size      "0.8rem"
+   :font-weight    "bold"
+   :margin         "0 1rem"})
+
+;; Components
+
+(defn- match-drop-instructions []
+  [:div {:class (<class $match-drop-instructions)} c/match-drop-instructions])
+
+(defn- lon-lat-position [$class label lon-lat]
+  [:div {:class (<class $class)}
+    [:div label]
+    [:div.md-lonlat
+     [:div.md-lon {:style {:margin-left "0.25rem"}}
+      "Lon: " (u/to-precision 4 (get lon-lat 0))]
+     [:div.md-lat {:style {:margin-left "0.25rem"}}
+      "Lat: " (u/to-precision 4 (get lon-lat 1))]]])
+
+(defn match-drop-datetime [label value on-change]
+  [:div {:class (<class $match-drop-datetime)}
+   [:div label]
+   [:input.input-datetime {:id "datetime" :type "datetime-local" :value value :on-change on-change}]])
+
+(defn- match-drop-footer [lon-lat disabled? on-click]
+  [:div {:class (<class $match-drop-footer)}
+   [lon-lat-position $match-drop-cursor-position "Cursor Position" lon-lat]
+   [:div {:class "d-flex align-self-end ml-auto justify-content-end"}
+    [:button {:class    "mx-3 mb-1 btn btn-sm text-white"
+              :disabled disabled?
+              :on-click on-click}
+     "Submit"]]])
+
+;; Root component
+(defn match-drop-tool
+  "Match Drop Tool view. Enables a user to start a simulated fire at a particular
+   location and date/time."
+  [parent-box close-fn!]
+  (r/with-let [lon-lat          (r/atom [0 0])
+               datetime         (r/atom "")
+               moving-lon-lat   (r/atom [0 0])
+               click-event      (mb/add-single-click-popup! #(reset! lon-lat %))
+               move-event       (mb/add-mouse-move-xy! #(reset! moving-lon-lat %))
+               update-datetime  #(reset! datetime (u/input-value %))
+               start-simulation #(println {:datetime @datetime :lonlat @lon-lat})]
     [:div#match-drop-tool
      [resizable-window
       parent-box
-      130
-      250
+      300
+      300
       "Match Drop Tool"
       close-fn!
       (fn [_ _]
-        [:div
-         [:div
-          [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
-           "Lat:" (u/to-precision 4 (get @lon-lat 1))]
-          [:label {:style {:width "50%" :text-align "left"}}
-           "Lon:" (u/to-precision 4 (get @lon-lat 0))]]
-         [:div {:class "d-flex justify-content-end"}
-          [:button {:class    "mx-3 mb-1 btn btn-sm"
-                    :style    {:color "white"}
-                    ;:on-click #(initiate-match-drop @lon-lat)
-                    }
-           "Submit"]]])]]
+        [:div {:class (<class $match-drop)}
+         [:div {:class (<class $match-drop-body)}
+          [match-drop-instructions]
+          [lon-lat-position $match-drop-location "Location" @lon-lat]
+          [match-drop-datetime "Date/Time" @datetime update-datetime]]
+         [match-drop-footer
+          @moving-lon-lat
+          (or (= [0 0] @lon-lat) (= "" @datetime))
+          start-simulation]])]]
     (finally
+      (mb/remove-event! click-event)
       (mb/remove-event! move-event))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -411,7 +488,7 @@
                         legend-list
                         last-clicked-info
                         close-fn!]
-  (r/with-let [click-event (mb/add-single-click-popup! get-point-info!)]
+  (r/with-let [click-event (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
     [:div#info-tool
      [resizable-window
       parent-box
