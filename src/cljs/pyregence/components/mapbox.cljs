@@ -431,14 +431,14 @@
   (let [toggle-drag-rotate-fn  (if enabled? #(.enable %) #(.disable %))
         toggle-touch-rotate-fn (if enabled? #(.enableRotation %) #(.disableRotation %))]
     (doto @the-map
-      (-> (aget "dragRotate") (toggle-drag-rotate-fn))
-      (-> (aget "touchZoomRotate") (toggle-touch-rotate-fn)))))
+      (-> .-dragRotate (toggle-drag-rotate-fn))
+      (-> .-touchZoomRotate (toggle-touch-rotate-fn)))))
 
 (defn toggle-pitch!
   "Toggles whether changing pitch via touch is enabled."
   [enabled?]
   (let [toggle-fn (if enabled? #(.enable %) #(.disable %))]
-    (-> @the-map (aget "touchPitch") (toggle-fn))))
+    (-> @the-map .-touchPitch (toggle-fn))))
 
 (defn- toggle-terrain!
   "Toggles terrain DEM source, sky atmosphere layers."
