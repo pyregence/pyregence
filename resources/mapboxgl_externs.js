@@ -177,6 +177,10 @@ mapboxgl.Map.prototype = {
   "areTilesLoaded": function () {},
   "cameraForBounds": function () {},
   "constructor": function () {},
+  "dragRotate": {
+    "enable": function () {},
+    "disable": function () {},
+  },
   "easeTo": function () {},
   "fire": function () {},
   "fitBounds": function () {},
@@ -260,6 +264,14 @@ mapboxgl.Map.prototype = {
   "snapToNorth": function () {},
   "stop": function () {},
   "triggerRepaint": function () {},
+  "touchPitch": {
+    "enable": function () {},
+    "disable": function () {},
+  },
+  "touchZoomRotate": {
+    "enableRotation": function () {},
+    "disableRotation": function () {},
+  },
   "unproject": function () {},
   "updateImage": function () {},
   "zoomIn": function () {},
