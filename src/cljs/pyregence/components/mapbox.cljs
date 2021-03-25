@@ -224,8 +224,9 @@
   "Creates a marker where clicked and passes xy bounding box to `f` a click event."
   [f]
   (add-event! "click" (fn [e]
-                        (-> e (event->lnglat) (add-point-on-click!))
-                        (f (get-overlay-bbox)))))
+                        (let [lnglat (event->lnglat e)]
+                          (add-point-on-click! lnglat)
+                          (f lnglat)))))
 
 (defn add-mouse-move-xy!
   "Passes `[lng lat]` to `f` on mousemove event."

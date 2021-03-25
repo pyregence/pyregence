@@ -1,7 +1,9 @@
 (ns pyregence.config
   (:require [clojure.string :as str]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Layer options
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def forecast-options
   {:fire-weather {:opt-label       "Fire Weather"
@@ -224,6 +226,15 @@
              {:opt-label "1x"  :delay 1000}
              {:opt-label "2x"  :delay 500}
              {:opt-label "5x"  :delay 200}])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Match Drop Configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def match-drop-instructions
+  "Simulates a fire using real-time weather data.\n
+   Click on a location to \"drop\" a match,
+   then set the date and time to begin the simulation.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mapbox Configuration
