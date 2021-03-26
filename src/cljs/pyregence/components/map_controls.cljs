@@ -35,7 +35,7 @@
      :background-image    (str "url(\"data:image/svg+xml;utf8," arrow "\")")
      :background-position "right .75rem center"
      :background-repeat   "no-repeat"
-     :background-size     "16px 12px"
+     :background-size     "1rem 0.75rem"
      :border              "1px solid"
      :border-color        ($/color-picker :border-color)
      :border-radius       "2px"
