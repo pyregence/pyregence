@@ -42,7 +42,7 @@
 (defonce last-clicked-info (r/atom []))
 (defonce show-utc?         (r/atom true))
 (defonce show-info?        (r/atom false))
-(defonce show-match-drop?     (r/atom false))
+(defonce show-match-drop?  (r/atom false))
 (defonce active-opacity    (r/atom 100.0))
 (defonce capabilities      (r/atom []))
 (defonce *forecast         (r/atom :fire-risk))
@@ -391,9 +391,9 @@
 (defn map-layer []
   (r/with-let [mouse-down? (r/atom false)
                cursor-fn   #(cond
-                              @mouse-down?                    "grabbing"
+                              @mouse-down?                       "grabbing"
                               (or @show-info? @show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
-                              :else                           "grab")]
+                              :else                              "grab")]
     [:div#map {:class (<class $p-mb-cursor)
                :style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
                :on-mouse-down #(reset! mouse-down? true)
