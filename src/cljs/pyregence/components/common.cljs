@@ -77,6 +77,13 @@
              :value @state
              :on-change call-back}]]))
 
+(defn input-datetime
+  "Creates a labeled datetime input."
+  [label id value on-change]
+  [:div
+   [:label {:for id :style {:font-wieight "bold" :font-size "0.9rem"}} label]
+   [:input {:id id :style {:width "100%"} :type "datetime-local" :value value :on-change on-change}]])
+
 (defn simple-form
   ([title button-text fields on-click]
    (simple-form title button-text fields on-click nil))

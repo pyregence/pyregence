@@ -10,7 +10,7 @@
             [pyregence.utils     :as u]
             [pyregence.config    :as c]
             [pyregence.geo-utils :as g]
-            [pyregence.components.common           :refer [radio tool-tip-wrapper]]
+            [pyregence.components.common           :refer [radio tool-tip-wrapper input-datetime]]
             [pyregence.components.mapbox           :as mb]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.svg-icons        :as svg]
@@ -347,39 +347,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Styles
-(defn- $match-drop []
-  {:display        "flex"
-   :flex-direction "column"
-   :height         "inherit"})
-
-(defn- $match-drop-body []
-  {:flex-grow 1
-   :margin    "0.5rem 1rem"
-   :font-size "0.9rem"})
-
-(defn- $match-drop-section []
-   {:margin "0.5rem 0"})
-
-(defn- $match-drop-instructions []
-  ^{:extend $match-drop-section}
-  {:font-size "0.8rem"})
-
 (defn- $match-drop-location []
-  ^{:extend $match-drop-section
-    :combinators {[:> :div.md-lonlat] {:display "flex" :flex-direction "row"}
-                  [:> :div.md-lonlat :div.md-lon] {:width "45%"}}}
-  {:font-weight "bold"})
-
-(defn- $match-drop-datetime []
-  ^{:extend $match-drop-section
-    :combinators {[:> :.input-datetime] {:width "100%"}}}
-  {:font-weight "bold"})
-
-(defn- $match-drop-footer []
-  {:display        "flex"
-   :flex-shrink    0
-   :flex-direction "row"
-   :margin         "0 0 2.5em"})
+  ^{:combinators {[:> :div#md-lonlat] {:display "flex" :flex-direction "row"}
+                  [:> :div#md-lonlat :div#md-lon] {:width "45%"}}}
+  {:font-weight "bold"
+   :margin "0.5rem 0"})
 
 (defn- $match-drop-cursor-position []
   {:display        "flex"
@@ -389,32 +361,14 @@
    :margin         "0 1rem"})
 
 ;; Components
-
-(defn- match-drop-instructions []
-  [:div {:class (<class $match-drop-instructions)} c/match-drop-instructions])
-
 (defn- lon-lat-position [$class label lon-lat]
   [:div {:class (<class $class)}
-    [:div label]
-    [:div.md-lonlat
-     [:div.md-lon {:style {:margin-left "0.25rem"}}
-      "Lon: " (u/to-precision 4 (get lon-lat 0))]
-     [:div.md-lat {:style {:margin-left "0.25rem"}}
-      "Lat: " (u/to-precision 4 (get lon-lat 1))]]])
-
-(defn match-drop-datetime [label value on-change]
-  [:div {:class (<class $match-drop-datetime)}
    [:div label]
-   [:input.input-datetime {:id "datetime" :type "datetime-local" :value value :on-change on-change}]])
-
-(defn- match-drop-footer [lon-lat disabled? on-click]
-  [:div {:class (<class $match-drop-footer)}
-   [lon-lat-position $match-drop-cursor-position "Cursor Position" lon-lat]
-   [:div {:class "d-flex align-self-end ml-auto justify-content-end"}
-    [:button {:class    "mx-3 mb-1 btn btn-sm text-white"
-              :disabled disabled?
-              :on-click on-click}
-     "Submit"]]])
+   [:div#md-lonlat
+    [:div#md-lon {:style {:margin-left "0.25rem"}}
+     "Lon: " (u/to-precision 4 (get lon-lat 0))]
+    [:div#md-lat {:style {:margin-left "0.25rem"}}
+     "Lat: " (u/to-precision 4 (get lon-lat 1))]]])
 
 ;; Root component
 (defn match-drop-tool
@@ -436,15 +390,18 @@
       "Match Drop Tool"
       close-fn!
       (fn [_ _]
-        [:div {:class (<class $match-drop)}
-         [:div {:class (<class $match-drop-body)}
-          [match-drop-instructions]
+        [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
+         [:div {:style {:flex-grow 1 :margin "0.5rem 1rem" :font-size "0.9rem"}}
+          [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}} c/match-drop-instructions]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
-          [match-drop-datetime "Date/Time" @datetime update-datetime]]
-         [match-drop-footer
-          @moving-lon-lat
-          (or (= [0 0] @lon-lat) (= "" @datetime))
-          start-simulation]])]]
+          [input-datetime "Date/Time" "md-datetime" @datetime update-datetime]]
+         [:div {:style {:display "flex" :flex-shrink 0 :margin "0 0 2.5em"}}
+          [lon-lat-position $match-drop-cursor-position "Cursor Position" @moving-lon-lat]
+          [:div {:class "d-flex align-self-end ml-auto justify-content-end"}
+           [:button {:class    "mx-3 mb-1 btn btn-sm text-white"
+                     :style    ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime)))
+                     :on-click start-simulation}
+            "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event)
       (mb/remove-event! move-event))))
