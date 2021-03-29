@@ -351,7 +351,7 @@
   ^{:combinators {[:> :div#md-lonlat] {:display "flex" :flex-direction "row"}
                   [:> :div#md-lonlat :div#md-lon] {:width "45%"}}}
   {:font-weight "bold"
-   :margin "0.5rem 0"})
+   :margin      "0.5rem 0"})
 
 (defn- $match-drop-cursor-position []
   {:display        "flex"
@@ -380,7 +380,6 @@
                moving-lon-lat   (r/atom [0 0])
                click-event      (mb/add-single-click-popup! #(reset! lon-lat %))
                move-event       (mb/add-mouse-move-xy! #(reset! moving-lon-lat %))
-               update-datetime  #(reset! datetime (u/input-value %))
                start-simulation #(println {:datetime @datetime :lonlat @lon-lat})]
     [:div#match-drop-tool
      [resizable-window
@@ -392,12 +391,13 @@
       (fn [_ _]
         [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
          [:div {:style {:flex-grow 1 :margin "0.5rem 1rem" :font-size "0.9rem"}}
-          [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}} c/match-drop-instructions]
+          [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
+           c/match-drop-instructions]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
-          [input-datetime "Date/Time" "md-datetime" @datetime update-datetime]]
+          [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]]
          [:div {:style {:display "flex" :flex-shrink 0 :margin "0 0 2.5em"}}
           [lon-lat-position $match-drop-cursor-position "Cursor Position" @moving-lon-lat]
-          [:div {:class "d-flex align-self-end ml-auto justify-content-end"}
+          [:div {:style {:display "flex" :justify-content "flex-end" :align-self "flex-end" :margin-left "auto"}}
            [:button {:class    "mx-3 mb-1 btn btn-sm text-white"
                      :style    ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime)))
                      :on-click start-simulation}
