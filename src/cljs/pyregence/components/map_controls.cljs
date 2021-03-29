@@ -1,8 +1,10 @@
 (ns pyregence.components.map-controls
-  (:require [reagent.core :as r]
-            [reagent.dom  :as rd]
+  (:require [reagent.core       :as r]
+            [reagent.dom        :as rd]
+            [reagent.dom.server :as rs]
             [herb.core :refer [<class]]
             [clojure.edn :as edn]
+            [clojure.string :as string]
             [clojure.core.async :refer [go <!]]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
@@ -22,14 +24,25 @@
 (defonce show-legend? (r/atom true))
 
 (defn $dropdown []
-  {:background-color ($/color-picker :bg-color)
-   :border           "1px solid"
-   :border-color     ($/color-picker :border-color)
-   :border-radius    "2px"
-   :color            ($/color-picker :font-color)
-   :font-family      "inherit"
-   :height           "1.9rem"
-   :padding          ".2rem .3rem"})
+  (let [arrow (-> ($/color-picker :font-color)
+                  (svg/dropdown-arrow)
+                  (rs/render-to-string)
+                  (string/replace "\"" "'"))]
+    {:-moz-appearance     "none"
+     :-webkit-appearance  "none"
+     :appearance          "none"
+     :background-color    ($/color-picker :bg-color)
+     :background-image    (str "url(\"data:image/svg+xml;utf8," arrow "\")")
+     :background-position "right .75rem center"
+     :background-repeat   "no-repeat"
+     :background-size     "1rem 0.75rem"
+     :border              "1px solid"
+     :border-color        ($/color-picker :border-color)
+     :border-radius       "2px"
+     :color               ($/color-picker :font-color)
+     :font-family         "inherit"
+     :height              "1.9rem"
+     :padding             ".2rem .3rem"}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tool Buttons
@@ -116,7 +129,7 @@
        "Next layer"
        :bottom
        [tool-button :next-button #(cycle-layer! 1)]]]
-     [:select {:style ($/combine $dropdown)
+     [:select {:style ($/combine $dropdown {:width "5rem" :padding "0 0.5rem"})
                :value (or @*speed 1)
                :on-change #(reset! *speed (u/input-int-value %))}
       (map-indexed (fn [id {:keys [opt-label]}]

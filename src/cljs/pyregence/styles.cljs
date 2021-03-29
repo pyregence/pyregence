@@ -2,7 +2,7 @@
   (:require-macros [herb.core :refer [defglobal]]
                    pyregence.herb-patch)
   (:require herb.runtime
-            [reagent.core :as r]
+            [reagent.core   :as r]
             [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
