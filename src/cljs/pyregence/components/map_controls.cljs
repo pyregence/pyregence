@@ -10,7 +10,7 @@
             [pyregence.utils     :as u]
             [pyregence.config    :as c]
             [pyregence.geo-utils :as g]
-            [pyregence.components.common           :refer [radio tool-tip-wrapper]]
+            [pyregence.components.common           :refer [radio tool-tip-wrapper input-datetime]]
             [pyregence.components.mapbox           :as mb]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.svg-icons        :as svg]
@@ -346,30 +346,64 @@
 ;; Match Drop Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn match-drop-tool [parent-box close-fn!]
-  (r/with-let [lon-lat    (r/atom [0 0])
-               move-event (mb/add-mouse-move-xy! #(reset! lon-lat %))]
+;; Styles
+(defn- $match-drop-location []
+  ^{:combinators {[:> :div#md-lonlat] {:display "flex" :flex-direction "row"}
+                  [:> :div#md-lonlat :div#md-lon] {:width "45%"}}}
+  {:font-weight "bold"
+   :margin      "0.5rem 0"})
+
+(defn- $match-drop-cursor-position []
+  {:display        "flex"
+   :flex-direction "column"
+   :font-size      "0.8rem"
+   :font-weight    "bold"
+   :margin         "0 1rem"})
+
+;; Components
+(defn- lon-lat-position [$class label lon-lat]
+  [:div {:class (<class $class)}
+   [:div label]
+   [:div#md-lonlat
+    [:div#md-lon {:style {:margin-left "0.25rem"}}
+     "Lon: " (u/to-precision 4 (get lon-lat 0))]
+    [:div#md-lat {:style {:margin-left "0.25rem"}}
+     "Lat: " (u/to-precision 4 (get lon-lat 1))]]])
+
+;; Root component
+(defn match-drop-tool
+  "Match Drop Tool view. Enables a user to start a simulated fire at a particular
+   location and date/time."
+  [parent-box close-fn!]
+  (r/with-let [lon-lat          (r/atom [0 0])
+               datetime         (r/atom "")
+               moving-lon-lat   (r/atom [0 0])
+               click-event      (mb/add-single-click-popup! #(reset! lon-lat %))
+               move-event       (mb/add-mouse-move-xy! #(reset! moving-lon-lat %))
+               start-simulation #(println {:datetime @datetime :lonlat @lon-lat})]
     [:div#match-drop-tool
      [resizable-window
       parent-box
-      130
-      250
+      300
+      300
       "Match Drop Tool"
       close-fn!
       (fn [_ _]
-        [:div
-         [:div
-          [:label {:style {:width "50%" :text-align "left" :padding "1rem"}}
-           "Lat:" (u/to-precision 4 (get @lon-lat 1))]
-          [:label {:style {:width "50%" :text-align "left"}}
-           "Lon:" (u/to-precision 4 (get @lon-lat 0))]]
-         [:div {:class "d-flex justify-content-end"}
-          [:button {:class    "mx-3 mb-1 btn btn-sm"
-                    :style    {:color "white"}
-                    ;:on-click #(initiate-match-drop @lon-lat)
-                    }
-           "Submit"]]])]]
+        [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
+         [:div {:style {:flex-grow 1 :margin "0.5rem 1rem" :font-size "0.9rem"}}
+          [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
+           c/match-drop-instructions]
+          [lon-lat-position $match-drop-location "Location" @lon-lat]
+          [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]]
+         [:div {:style {:display "flex" :flex-shrink 0 :margin "0 0 2.5em"}}
+          [lon-lat-position $match-drop-cursor-position "Cursor Position" @moving-lon-lat]
+          [:div {:style {:display "flex" :justify-content "flex-end" :align-self "flex-end" :margin-left "auto"}}
+           [:button {:class    "mx-3 mb-1 btn btn-sm text-white"
+                     :style    ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime)))
+                     :on-click start-simulation}
+            "Submit"]]]])]]
     (finally
+      (mb/remove-event! click-event)
       (mb/remove-event! move-event))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -424,7 +458,7 @@
                         legend-list
                         last-clicked-info
                         close-fn!]
-  (r/with-let [click-event (mb/add-single-click-popup! get-point-info!)]
+  (r/with-let [click-event (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
     [:div#info-tool
      [resizable-window
       parent-box
