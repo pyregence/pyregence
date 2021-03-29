@@ -232,7 +232,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def match-drop-instructions
-  "Simulates a fire using real-time weather data.\n
+  "Simulates a fire using real-time weather data.
    Click on a location to \"drop\" a match,
    then set the date and time to begin the simulation.")
 
