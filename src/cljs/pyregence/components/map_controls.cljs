@@ -210,8 +210,7 @@
         [:label {:for id} opt-label]]])))
 
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
-  (let [show-hillshade?  (r/atom false)
-        *base-map        (r/atom :mapbox-topo)
+  (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
                            (reset! *base-map id)
                            (mb/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
