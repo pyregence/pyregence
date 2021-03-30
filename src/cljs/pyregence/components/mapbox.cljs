@@ -26,7 +26,6 @@
 (def ^:private events        (atom {}))
 (def ^:private hovered-id    (atom nil))
 (def ^:private active-source (atom nil))
-(def ^:private terrain?      (atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -494,7 +493,10 @@
   (let [style  (get-style)
         layers (hide-fire-layers (get style "layers"))
         [new-sources new-layers] (build-wms geo-layer geo-layer opacity)]
-    (update-style! style :layers layers :new-sources new-sources :new-layers new-layers)))
+    (update-style! style
+                   :layers      layers
+                   :new-sources new-sources
+                   :new-layers  new-layers)))
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
@@ -506,14 +508,19 @@
         [new-sources new-layers] (if (some? style-fn)
                                    (build-wfs fire-active geo-layer opacity)
                                    (build-wms geo-layer geo-layer opacity))]
-    (update-style! style :layers layers :new-sources new-sources :new-layers new-layers)
+    (update-style! style
+                   :layers      layers
+                   :new-sources new-sources
+                   :new-layers  new-layers)
     (reset! active-source geo-layer)))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
   [id source z-index]
   (let [[new-source new-layers] (build-wms id source 1.0)]
-    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+    (update-style! (get-style)
+                   :new-sources new-source
+                   :new-layers  new-layers)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Creation
