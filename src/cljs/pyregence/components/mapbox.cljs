@@ -25,7 +25,6 @@
 (def ^:private the-marker    (r/atom nil))
 (def ^:private events        (atom {}))
 (def ^:private hovered-id    (atom nil))
-(def ^:private active-source (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -138,6 +137,12 @@
                     :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
+(defn- add-icon! [icon-id url]
+  (when-not (.hasImage @the-map icon-id)
+    (.loadImage @the-map
+                url
+                (fn [_ img] (.addImage @the-map icon-id img #js {:sdf true})))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -191,7 +196,7 @@
    must be stored and passed to `remove-event!` when removing the listener.
    Warning: Only one listener per global/layer event can be added."
   [event f & {:keys [layer]}]
-  (swap! events assoc (hash f) [event layer])
+  (swap! events assoc (hash f) {:event event :layer layer :func f})
   (if layer
     (.on @the-map event layer f)
     (.on @the-map event f))
@@ -200,11 +205,20 @@
 (defn remove-event!
   "Removes the listener for function `f`."
   [f]
-  (let [[event layer] (get @events (hash f))]
+  (let [{:keys [event layer func]} (get @events (hash f))]
     (if (some? layer)
-      (.off @the-map event layer f)
-      (.off @the-map event f))
+      (.off @the-map event layer func)
+      (.off @the-map event func))
     (swap! events dissoc (hash f))))
+
+(defn remove-events!
+  "Removes all listeners matching `event-name`. Can also supply `layer-name` to
+  only remove events for specific layers."
+  [event-name & [layer-name]]
+  (doseq [[_ {:keys [event layer func]}] @events
+          :when (and (= event event-name)
+                     (or (nil? layer-name) (= layer layer-name)))]
+    (remove-event! func)))
 
 (defn- event->lnglat [e]
   (-> e (aget "lngLat") .toArray (js->clj)))
@@ -224,29 +238,52 @@
 
 (defn- clear-highlight!
   "Clears the highlight of WFS features."
-  []
-  (when (some? @hovered-id)
-    (.setFeatureState @the-map #js {:source @active-source :id @hovered-id} #js {:hover false})
-    (reset! hovered-id nil)))
+  ([source]
+   (fn []
+     (when (some? @hovered-id)
+       (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover false})
+       (reset! hovered-id nil)))))
 
 (defn- feature-highlight!
   "Highlights a particular WFS features."
-  [e]
-  (when-let [feature (-> e (aget "features") (first))]
-    (clear-highlight!)
-    (reset! hovered-id (aget feature "id"))
-    (.setFeatureState @the-map #js {:source @active-source :id @hovered-id} #js {:hover true})))
+  ([source]
+   (fn [e]
+     (when-let [feature (-> e (aget "features") (first))]
+       (clear-highlight! source)
+       (reset! hovered-id (aget feature "id"))
+       (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover true})))))
 
-(defn add-mouse-move-feature-highlight!
+(defn add-feature-highlight!
   "Highlights WFS features when mouse moves over."
-  []
-  (add-event! "mousemove" feature-highlight! :layer fire-active)
-  (add-event! "mouseleave" clear-highlight! :layer fire-active))
+  [layer source]
+  (remove-events! "mousemove" layer)
+  (add-event! "mousemove" (feature-highlight! source) :layer layer))
+
+(defn add-clear-highlight!
+  "Clears the highlight when mouse leaves a feature."
+  [layer source]
+  (remove-events! "mouseleave" layer)
+  (add-event! "mouseleave" (clear-highlight! source) :layer layer))
 
 (defn add-single-click-feature-highlight!
   "Enables clicking on a WFS feature."
-  []
-  (add-event! "click" (fn [e] (-> e (aget "lngLat") (set-center! 7.0))) :layer fire-active))
+  [layer]
+  (remove-events! "click" layer)
+  (add-event! "click" (fn [e] (-> e (aget "lngLat") (set-center! 7.0))) :layer layer))
+
+(defn- feature-select!
+  ([source f]
+   (fn [e]
+     (when-let [feature (-> e (aget "features") (first))]
+       (clear-highlight! source)
+       (reset! hovered-id (aget feature "id"))
+       (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover true})
+       (f feature)))))
+
+(defn add-select-feature!
+  "Enables selecting a WFS feature."
+  [layer source f]
+  (add-event! "click" (feature-select! source f) :layer layer))
 
 (defn add-map-zoom-end!
   "Passes current zoom level to `f` on zoom-end event."
@@ -501,8 +538,7 @@
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
-                   :new-layers  new-layers)
-    (reset! active-source geo-layer)))
+                   :new-layers  new-layers)))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
@@ -511,6 +547,29 @@
     (update-style! (get-style)
                    :new-sources new-source
                    :new-layers  new-layers)))
+
+(defn create-camera-layer!
+  "Adds wildfire camera layer to the map."
+  [id data]
+  (add-icon! "video-icon" "./images/icons/video.png")
+  (let [new-source {id {:type "geojson" :data data :generateId true}}
+        new-layers [{:id     id
+                     :source id
+                     :type   "symbol"
+                     :layout {:icon-image "video-icon"
+                              :icon-size  0.5}
+                     :paint  {:icon-color      (on-hover "#e6550d" "#000000")
+                              :icon-opacity    (on-hover 1.0 0.75)
+                              :icon-halo-color "#FFFF00"}}]]
+    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+
+(defn remove-layer!
+  "Removes layer that matches `id`"
+  [id]
+  (let [curr-style      (get-style)
+        layers          (get curr-style "layers")
+        filtered-layers (remove #(= id (get % "id")) layers)]
+    (update-style! curr-style :layers filtered-layers)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Creation

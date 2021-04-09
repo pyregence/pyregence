@@ -43,6 +43,7 @@
 (defonce show-utc?         (r/atom true))
 (defonce show-info?        (r/atom false))
 (defonce show-match-drop?  (r/atom false))
+(defonce show-camera?      (r/atom false))
 (defonce active-opacity    (r/atom 100.0))
 (defonce capabilities      (r/atom []))
 (defonce *forecast         (r/atom :fire-risk))
@@ -50,6 +51,7 @@
 (defonce *params           (r/atom {}))
 (defonce param-layers      (r/atom []))
 (defonce *layer-idx        (r/atom 0))
+(defonce the-cameras       (r/atom nil))
 (defonce loading?          (r/atom true))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -204,10 +206,14 @@
 (defn change-type! [get-model-times? clear? zoom?]
   (go
     (<! (get-layers! get-model-times?))
-    (mb/reset-active-layer! (get-current-layer-name)
-                            (get-current-layer-key :style-fn)
-                            (/ @active-opacity 100))
-    (get-legend! (get-current-layer-name))
+    (let [source (get-current-layer-name)
+          style  (get-current-layer-key :style-fn)]
+      (mb/reset-active-layer! source style (/ @active-opacity 100))
+      (when (some? style)
+        (mb/add-feature-highlight! "fire-active" source)
+        (mb/add-clear-highlight! "fire-active" source)
+        (mb/add-single-click-feature-highlight! "fire-active"))
+      (get-legend! source))
     (if clear?
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))
@@ -288,13 +294,13 @@
 (defn init-map! [user-id]
   (go
     (let [user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
-          fire-names-chan  (u/call-clj-async! "get-fire-names")]
+          fire-names-chan  (u/call-clj-async! "get-fire-names")
+          fire-cameras     (u/call-clj-async! "get-cameras")]
       (mb/init-map!)
-      (mb/add-mouse-move-feature-highlight!)
-      (mb/add-single-click-feature-highlight!)
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan))))
       (<! (select-forecast! @*forecast))
+      (reset! the-cameras (edn/read-string (:body (<! fire-cameras))))
       (reset! loading? false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -358,21 +364,25 @@
           active-opacity
           @processed-params
           @mobile?]
-         (when (and @show-info? (aget @my-box "height"))
-           [mc/information-tool
-            get-point-info!
-            @my-box
-            *layer-idx
-            select-layer-by-hour!
-            (get-current-layer-key :units)
-            (get-current-layer-hour)
-            @legend-list
-            @last-clicked-info
-            #(set-show-info! false)])
-         (when (and @show-match-drop? (aget @my-box "height"))
-           [mc/match-drop-tool @my-box #(reset! show-match-drop? false)])
+         (when (aget @my-box "height")
+           [:<>
+            (when @show-info?
+              [mc/information-tool
+               get-point-info!
+               @my-box
+               *layer-idx
+               select-layer-by-hour!
+               (get-current-layer-key :units)
+               (get-current-layer-hour)
+               @legend-list
+               @last-clicked-info
+               #(set-show-info! false)])
+            (when @show-match-drop?
+              [mc/match-drop-tool @my-box #(reset! show-match-drop? false)])
+            (when @show-camera?
+              [mc/camera-tool @the-cameras @my-box #(reset! show-camera? false)])])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
-         [mc/tool-bar show-info? show-match-drop? set-show-info! @mobile?]
+         [mc/tool-bar show-info? show-match-drop? show-camera? set-show-info! @mobile?]
          [mc/scale-bar @mobile?]
          [mc/zoom-bar get-current-layer-extent @mobile?]
          [mc/time-slider

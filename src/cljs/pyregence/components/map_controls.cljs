@@ -62,6 +62,7 @@
             :style ($/combine $tool-button ($/fixed-size "32px"))
             :on-click callback}
      (case type
+       :camera          [svg/camera]
        :center-on-point [svg/center-on-point]
        :close           [svg/close]
        :extent          [svg/extent]
@@ -273,7 +274,7 @@
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
-(defn tool-bar [show-info? show-match-drop? set-show-info! mobile?]
+(defn tool-bar [show-info? show-match-drop? show-camera? set-show-info! mobile?]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (->> [[:layers
           (str (hs-str @show-panel?) " layer selection")
@@ -282,12 +283,20 @@
            [:info
             (str (hs-str @show-info?) " point information")
             #(do (set-show-info! (not @show-info?))
-                 (reset! show-match-drop? false))])
+                 (reset! show-match-drop? false)
+                 (reset! show-camera? false))])
          (when-not mobile?
            [:flame
             (str (hs-str @show-match-drop?) " match drop tool")
             #(do (swap! show-match-drop? not)
-                 (set-show-info! false))])
+                 (set-show-info! false)
+                 (reset! show-camera? false))])
+         (when-not mobile?
+          [:camera
+            (str (hs-str @show-camera?) " cameras")
+            #(do (swap! show-camera? not)
+                 (set-show-info! false)
+                 (reset! show-match-drop? false))])
          [:legend
           (str (hs-str @show-legend?) " legend")
           #(swap! show-legend? not)]]
@@ -404,6 +413,76 @@
     (finally
       (mb/remove-event! click-event)
       (mb/remove-event! move-event))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Wildfire Camera Tool
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- $awf-logo-style []
+  {:height    "auto"
+   :left      "2rem"
+   :min-width "100px"
+   :position  "absolute"
+   :top       "2rem"
+   :width     "10%"})
+
+(defn- get-current-image [camera]
+  (u/call-remote! :post-blob
+                  "clj/get-current-image"
+                  {:clj-args (list camera)}))
+
+(defn- get-current-image-src [camera]
+  (go
+    (->> (get-current-image camera)
+         (<!)
+         (:body)
+         (js/URL.createObjectURL))))
+
+(defn camera-tool [cameras parent-box close-fn!]
+  (r/with-let [*camera     (r/atom nil)
+               *image      (r/atom nil)
+               hover-event (mb/add-feature-highlight! "fire-cameras" "fire-cameras")
+               clear-event (mb/add-clear-highlight! "fire-cameras" "fire-cameras")
+               on-click    (fn [features]
+                             (let [camera (-> features (aget "properties") (aget "name"))]
+                               (reset! *image nil)
+                               (reset! *camera camera)
+                               (when (some? @*camera)
+                                 (go (reset! *image (<! (get-current-image-src camera)))))))
+               click-event (mb/add-select-feature! "fire-cameras" "fire-cameras" on-click)]
+    (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
+    [:div#wildfire-camera-tool
+     [resizable-window
+      parent-box
+      290
+      460
+      "Wildfire Camera Tool"
+      close-fn!
+      (fn [_ _]
+        (cond
+          (nil? @*camera)
+          [:div {:style {:padding "1.2em"}}
+           "Click on a camera to view the most recent image. Powered by "
+           [:a {:href "http://www.alertwildfire.org/"
+                :ref "noreferrer noopener"
+                :target "_blank"}
+            "Alert Wildfire"] "."]
+
+          (some? @*image)
+          [:div
+           [:div {:style {:position "absolute" :top "2rem" :width "100%" :display "flex" :justify-content "center"}}
+            [:label (str "Camera: " @*camera)]]
+           [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
+           [:img {:style {:width "100%" :height "auto"} :src @*image}]]
+
+          :else
+          [:div {:style {:padding "1.2em"}}
+           (str "Loading camera " @*camera "...")]))]]
+    (finally
+      (mb/remove-event! hover-event)
+      (mb/remove-event! clear-event)
+      (mb/remove-event! click-event)
+      (mb/remove-layer! "fire-cameras"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Information Tool

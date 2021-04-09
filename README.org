@@ -115,6 +115,18 @@ C:\Program Files\PostgreSQL\X\bin
 
 Replace *X* with the PostgreSQL version installed on your computer.
 
+*** Step 3: Add Cameras Configuration
+
+1. Copy the default camera config file in the project directory:
+#+begin_src sh
+cp camera-config.default.edn camera-config.edn
+#+end_src
+
+2. Ask one of the developers for the API key to
+[[http://alertwildfire.org][AlertWildfire]] API.
+
+3. Open camera-config.edn and replace "REPLACE_ME" with the API key.
+
 ** Development Web Server
 
 *** Modifying hosts file

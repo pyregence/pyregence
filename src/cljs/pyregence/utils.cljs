@@ -154,6 +154,26 @@
          :status  nil
          :body    ""}))))
 
+(defmethod call-remote! :post-blob [_ url data]
+  (go
+    (let [fetch-params {:method "post"
+                        :headers (merge {"Accept" "application/transit+json"}
+                                        (when-not (= (type data) js/FormData)
+                                          {"Content-Type" "application/edn"}))
+                        :body (cond
+                                (= js/FormData (type data)) data
+                                data                        (pr-str data)
+                                :else                       nil)}
+          response      (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+                                   fetch-params))]
+      (if response
+        {:success (.-ok response)
+         :status  (.-status response)
+         :body    (or (<p! (.blob response)) "")}
+        {:success false
+         :status  nil
+         :body    ""}))))
+
 (defmethod call-remote! :default [method _ _]
   (throw (ex-info (str "No such method (" method ") defined for pyregence.utils/call-remote!") {})))
 
