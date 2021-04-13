@@ -174,6 +174,12 @@
       num-str
       (str "0" num-str))))
 
+(defn get-time-zone [js-date]
+  (-> js-date
+      (.toLocaleTimeString "en-us" #js {:timeZoneName "short"})
+      (str/split " ")
+      (peek)))
+
 (defn get-date-from-js [js-date show-utc?]
   (if show-utc?
     (subs (.toISOString js-date) 0 10)
@@ -190,19 +196,21 @@
          ":"
          (pad-zero (.getMinutes js-date))
          " "
-         (-> js-date
-             (.toLocaleTimeString "en-us" #js {:timeZoneName "short"})
-             (str/split " ")
-             (peek)))))
+         (get-time-zone js-date))))
+
+(defn- model-format->js-format [date-str]
+  (let [minutes (subs date-str 11 13)]
+    (str (subs date-str 0 4) "-"
+         (subs date-str 4 6) "-"
+         (subs date-str 6 8) "T"
+         (subs date-str 9 11) ":"
+         (if (= 2 (count minutes)) minutes "00")
+         ":00.000Z")))
 
 (defn js-date-from-string [date-str]
-  (let [minutes (subs date-str 11 13)]
-    (js/Date. (str (subs date-str 0 4) "-"
-                   (subs date-str 4 6) "-"
-                   (subs date-str 6 8) "T"
-                   (subs date-str 9 11) ":"
-                   (if (= 2 (count minutes)) minutes "00")
-                   ":00.000Z"))))
+  (js/Date. (if (re-matches #"\d{8}_\d{2,6}" date-str)
+              (model-format->js-format date-str)
+              date-str)))
 
 (defn time-zone-iso-date [date-str show-utc?]
   (let [js-date (js-date-from-string date-str)]
