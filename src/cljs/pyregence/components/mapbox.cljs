@@ -2,9 +2,9 @@
   (:require [reagent.core :as r]
             [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
-            [pyregence.config     :as c]
-            [pyregence.utils      :as u]
-            [pyregence.geo-utils  :as g]))
+            [pyregence.config    :as c]
+            [pyregence.utils     :as u]
+            [pyregence.geo-utils :as g]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mapbox Aaliases
@@ -453,7 +453,7 @@
   (toggle-terrain! enabled?)
   (toggle-rotation! enabled?)
   (toggle-pitch! enabled?)
-  (.easeTo @the-map #js {:pitch (if enabled? 45.0 0.0)
+  (.easeTo @the-map #js {:pitch   (if enabled? 45.0 0.0)
                          :bearing 0.0
                          :animate true}))
 
