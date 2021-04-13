@@ -73,7 +73,7 @@
                                :output     {:opt-label  "Output"
                                             :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
                                             :options    {:burned {:opt-label "Forecasted fire location"
-                                                                  :filter    "burned-area"
+                                                                  :filter    "hours-since-burned"
                                                                   :units     "Hours"}}}
                                :burn-pct   {:opt-label      "Burn Probability"
                                             :default-option :50
