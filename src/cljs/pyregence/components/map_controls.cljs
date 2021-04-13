@@ -10,10 +10,10 @@
             [pyregence.utils     :as u]
             [pyregence.config    :as c]
             [pyregence.geo-utils :as g]
+            [pyregence.components.mapbox    :as mb]
+            [pyregence.components.svg-icons :as svg]
             [pyregence.components.common           :refer [radio tool-tip-wrapper input-datetime]]
-            [pyregence.components.mapbox           :as mb]
             [pyregence.components.resizable-window :refer [resizable-window]]
-            [pyregence.components.svg-icons        :as svg]
             [pyregence.components.vega             :refer [vega-box]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
