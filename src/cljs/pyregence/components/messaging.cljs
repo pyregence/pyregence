@@ -10,10 +10,10 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def blank-message-box {:title  ""
-                        :body   ""
-                        :mode   :none
-                        :action nil})
+(def :^private blank-message-box {:title  ""
+                                  :body   ""
+                                  :mode   :none
+                                  :action nil})
 
 (def message-box-content (r/atom blank-message-box))
 (def toast-message-text  (r/atom nil))
@@ -36,9 +36,10 @@
         (recur (<! toast-message-chan)))))
 
 (defn set-message-box-content!
-  "Sets message content map with merge. Content includes title, body, and mode.
+  "Sets message content map with merge. Content includes title, body, mode, and action.
    The message box will show when title is not an empty string.
-   Mode can be either :close or nil."
+   Mode can be either :close or nil.
+   Action is optional and will be executed with the mode button is clicked."
   [content]
   (swap! message-box-content merge content))
 
