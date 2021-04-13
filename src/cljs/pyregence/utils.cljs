@@ -174,13 +174,17 @@
       num-str
       (str "0" num-str))))
 
-(defn get-time-zone [js-date]
+(defn get-time-zone
+  "Returns the string code for the local timezone."
+  [js-date]
   (-> js-date
       (.toLocaleTimeString "en-us" #js {:timeZoneName "short"})
       (str/split " ")
       (peek)))
 
-(defn get-date-from-js [js-date show-utc?]
+(defn get-date-from-js
+  "Formats the date portion of JS Date as the date portion of an ISO string."
+  [js-date show-utc?]
   (if show-utc?
     (subs (.toISOString js-date) 0 10)
     (str (.getFullYear js-date)
@@ -189,7 +193,9 @@
          "-"
          (pad-zero (.getDate js-date)))))
 
-(defn get-time-from-js [js-date show-utc?]
+(defn get-time-from-js
+  "Formats the time portion of JS Date as the time portion of an ISO string."
+  [js-date show-utc?]
   (if show-utc?
     (str (subs (.toISOString js-date) 11 16) " UTC")
     (str (pad-zero (.getHours js-date))
@@ -198,7 +204,9 @@
          " "
          (get-time-zone js-date))))
 
-(defn- model-format->js-format [date-str]
+(defn- model-format->js-format
+  "Formats date string given from GeoServer to one that can be used by JS Date."
+  [date-str]
   (let [minutes (subs date-str 11 13)]
     (str (subs date-str 0 4) "-"
          (subs date-str 4 6) "-"
@@ -207,12 +215,16 @@
          (if (= 2 (count minutes)) minutes "00")
          ":00.000Z")))
 
-(defn js-date-from-string [date-str]
+(defn js-date-from-string
+  "Converts a date string to a JS Date object."
+  [date-str]
   (js/Date. (if (re-matches #"\d{8}_\d{2,6}" date-str)
               (model-format->js-format date-str)
               date-str)))
 
-(defn time-zone-iso-date [date-str show-utc?]
+(defn time-zone-iso-date
+  "Returns a ISO date-time string for a given date string in local or UTC timezone."
+  [date-str show-utc?]
   (let [js-date (js-date-from-string date-str)]
     (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?))))
 
