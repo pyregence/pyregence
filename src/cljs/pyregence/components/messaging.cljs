@@ -39,7 +39,7 @@
   "Sets message content map with merge. Content includes title, body, mode, and action.
    The message box will show when title is not an empty string.
    Mode can be either :close or nil.
-   Action is optional and will be executed with the mode button is clicked."
+   Action is optional and will be executed when the mode button is clicked."
   [content]
   (swap! message-box-content merge content))
 
