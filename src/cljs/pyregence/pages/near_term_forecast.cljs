@@ -301,6 +301,14 @@
                                                                                  :name  nil}])))})]))
                    c/forecast-options)))
 
+(defn refresh-capabilities! []
+  (go
+    (-> (u/call-clj-async! "get-fire-names")
+        (<!)
+        (:body)
+        (edn/read-string)
+        (process-capabilities! []))))
+
 (defn init-map! [user-id]
   (go
     (let [user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
@@ -388,7 +396,7 @@
                @last-clicked-info
                #(set-show-info! false)])
             (when @show-match-drop?
-              [mc/match-drop-tool @my-box #(reset! show-match-drop? false)])
+              [mc/match-drop-tool @my-box #(reset! show-match-drop? false) refresh-capabilities!])
             (when @show-camera?
               [mc/camera-tool @the-cameras @my-box #(reset! show-camera? false)])])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
