@@ -446,9 +446,9 @@
                                (reset! *image nil)
                                (reset! *camera camera)
                                (when (some? @*camera)
-                                 (go (reset! *image (<! (get-current-image-src camera)))))))
-               click-event (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
+                                 (go (reset! *image (<! (get-current-image-src camera)))))))]
     (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
+    (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)
     [:div#wildfire-camera-tool
      [resizable-window
       parent-box
