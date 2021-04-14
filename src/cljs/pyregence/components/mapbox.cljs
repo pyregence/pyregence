@@ -95,7 +95,7 @@
   [center min-zoom]
   (let [curr-zoom (get (get-zoom-info) 0)
         zoom      (if (< curr-zoom min-zoom) min-zoom curr-zoom)]
-    (.easeTo @the-map #js {:zoom zoom :center center :animate true})))
+    (.easeTo @the-map (clj->js {:zoom zoom :center center :animate true}))))
 
 (defn center-on-overlay!
   "Centers the map on the marker."
@@ -238,52 +238,39 @@
 
 (defn- clear-highlight!
   "Clears the highlight of WFS features."
-  ([source]
-   (fn []
-     (when (some? @hovered-id)
-       (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover false})
-       (reset! hovered-id nil)))))
+  [source]
+  (when (some? @hovered-id)
+    (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover false})
+    (reset! hovered-id nil)))
 
 (defn- feature-highlight!
   "Highlights a particular WFS features."
-  ([source]
-   (fn [e]
-     (when-let [feature (-> e (aget "features") (first))]
-       (clear-highlight! source)
-       (reset! hovered-id (aget feature "id"))
-       (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover true})))))
+  [source feature-id]
+  (clear-highlight! source)
+  (reset! hovered-id feature-id)
+  (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover true}))
 
 (defn add-feature-highlight!
-  "Highlights WFS features when mouse moves over."
-  [layer source]
+  "Adds events to highlight WFS features. Optionally can provide a function `f`,
+   which will be called on click as `(f <feature-js-object> [lng lat])`"
+  [layer source & [f]]
   (remove-events! "mousemove" layer)
-  (add-event! "mousemove" (feature-highlight! source) :layer layer))
-
-(defn add-clear-highlight!
-  "Clears the highlight when mouse leaves a feature."
-  [layer source]
   (remove-events! "mouseleave" layer)
-  (add-event! "mouseleave" (clear-highlight! source) :layer layer))
-
-(defn add-single-click-feature-highlight!
-  "Enables clicking on a WFS feature."
-  [layer]
   (remove-events! "click" layer)
-  (add-event! "click" (fn [e] (-> e (aget "lngLat") (set-center! 7.0))) :layer layer))
-
-(defn- feature-select!
-  ([source f]
-   (fn [e]
-     (when-let [feature (-> e (aget "features") (first))]
-       (clear-highlight! source)
-       (reset! hovered-id (aget feature "id"))
-       (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover true})
-       (f feature)))))
-
-(defn add-select-feature!
-  "Enables selecting a WFS feature."
-  [layer source f]
-  (add-event! "click" (feature-select! source f) :layer layer))
+  (add-event! "mouseenter"
+              (fn [e]
+                (when-let [feature-id (-> e (aget "features") (first) (aget "id"))]
+                  (feature-highlight! source feature-id)))
+              :layer layer)
+  (add-event! "mouseleave"
+              #(clear-highlight! source)
+              :layer layer)
+  (add-event! "click"
+              (fn [e]
+                (when-let [feature (-> e (aget "features") (first))]
+                  (feature-highlight! source (aget feature "id"))
+                  (when f (f feature (event->lnglat e)))))
+              :layer layer))
 
 (defn add-map-zoom-end!
   "Passes current zoom level to `f` on zoom-end event."
