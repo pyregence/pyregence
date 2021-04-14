@@ -10,7 +10,7 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def :^private blank-message-box {:title  ""
+(def ^:private blank-message-box {:title  ""
                                   :body   ""
                                   :mode   :none
                                   :action nil})
