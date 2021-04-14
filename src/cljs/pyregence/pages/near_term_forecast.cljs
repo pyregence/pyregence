@@ -210,9 +210,9 @@
           style  (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source style (/ @active-opacity 100))
       (when (some? style)
-        (mb/add-feature-highlight! "fire-active" source)
-        (mb/add-clear-highlight! "fire-active" source)
-        (mb/add-single-click-feature-highlight! "fire-active"))
+        (mb/add-feature-highlight! "fire-active"
+                                   source
+                                   (fn [_ lnglat] (mb/set-center! lnglat 7.0))))
       (get-legend! source))
     (if clear?
       (clear-info!)

@@ -441,15 +441,13 @@
 (defn camera-tool [cameras parent-box close-fn!]
   (r/with-let [*camera     (r/atom nil)
                *image      (r/atom nil)
-               hover-event (mb/add-feature-highlight! "fire-cameras" "fire-cameras")
-               clear-event (mb/add-clear-highlight! "fire-cameras" "fire-cameras")
                on-click    (fn [features]
                              (let [camera (-> features (aget "properties") (aget "name"))]
                                (reset! *image nil)
                                (reset! *camera camera)
                                (when (some? @*camera)
                                  (go (reset! *image (<! (get-current-image-src camera)))))))
-               click-event (mb/add-select-feature! "fire-cameras" "fire-cameras" on-click)]
+               click-event (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
     (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
     [:div#wildfire-camera-tool
      [resizable-window
@@ -479,9 +477,6 @@
           [:div {:style {:padding "1.2em"}}
            (str "Loading camera " @*camera "...")]))]]
     (finally
-      (mb/remove-event! hover-event)
-      (mb/remove-event! clear-event)
-      (mb/remove-event! click-event)
       (mb/remove-layer! "fire-cameras"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
