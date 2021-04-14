@@ -376,6 +376,7 @@
           2 (set-message-box-content! {:body message})
 
           (do
+            (println message)
             (set-message-box-content! {:body (str "Error running match-drop-" job-id ".\n\n" message)})
             (reset! poll? false))))
       (js/setTimeout #(poll-status job-id refresh-capabilities!) 5000))))
