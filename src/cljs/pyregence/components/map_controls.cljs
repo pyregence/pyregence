@@ -13,6 +13,7 @@
             [pyregence.components.mapbox    :as mb]
             [pyregence.components.svg-icons :as svg]
             [pyregence.components.common           :refer [radio tool-tip-wrapper input-datetime]]
+            [pyregence.components.messaging        :refer [set-message-box-content!]]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.vega             :refer [vega-box]]))
 
@@ -354,6 +355,46 @@
 ;; Match Drop Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def poll? (atom false))
+
+(defn- poll-status
+  "Continually polls for updated information about the match drop run.
+   Stops polling on finish or error signal."
+  [job-id refresh-capabilities!]
+  (go
+    (when @poll?
+      (let [{:keys [message md-status]} (-> (u/call-clj-async! "get-md-status" job-id)
+                                            (<!)
+                                            (:body)
+                                            (edn/read-string))]
+        (case md-status
+          0 (do
+              (refresh-capabilities!)
+              (set-message-box-content! {:body (str "Finished running match-drop-" job-id ".")})
+              (reset! poll? false))
+
+          2 (set-message-box-content! {:body message})
+
+          (do
+            (set-message-box-content! {:body (str "Error running match-drop-" job-id ".\n\n" message)})
+            (reset! poll? false))))
+      (js/setTimeout #(poll-status job-id refresh-capabilities!) 5000))))
+
+(defn- initiate-match-drop
+  "Initiates the match drop run and initiates polling for updates."
+  [[lon lat] date-time refresh-capabilities!]
+  (go
+    (let [match-chan (u/call-clj-async! "initiate-md"
+                                        {:ignition-time (u/time-zone-iso-date date-time true)
+                                         :lon           lon
+                                         :lat           lat})]
+      (reset! poll? true)
+      (set-message-box-content! {:title  "Processing Match Drop"
+                                 :body   "Initiating match drop run."
+                                 :mode   :close
+                                 :action #(reset! poll? false)}) ; TODO the close button is for dev, disable on final product
+      (poll-status (edn/read-string (:body (<! match-chan))) refresh-capabilities!))))
+
 ;; Styles
 (defn- $match-drop-location []
   ^{:combinators {[:> :div#md-lonlat] {:display "flex" :flex-direction "row"}
@@ -382,13 +423,12 @@
 (defn match-drop-tool
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular
    location and date/time."
-  [parent-box close-fn!]
-  (r/with-let [lon-lat          (r/atom [0 0])
-               datetime         (r/atom "")
-               moving-lon-lat   (r/atom [0 0])
-               click-event      (mb/add-single-click-popup! #(reset! lon-lat %))
-               move-event       (mb/add-mouse-move-xy! #(reset! moving-lon-lat %))
-               start-simulation #(println {:datetime @datetime :lonlat @lon-lat})]
+  [parent-box close-fn! refresh-capabilities!]
+  (r/with-let [lon-lat        (r/atom [0 0])
+               datetime       (r/atom "")
+               moving-lon-lat (r/atom [0 0])
+               click-event    (mb/add-single-click-popup! #(reset! lon-lat %))
+               move-event     (mb/add-mouse-move-xy! #(reset! moving-lon-lat %))]
     [:div#match-drop-tool
      [resizable-window
       parent-box
@@ -408,7 +448,7 @@
           [:div {:style {:display "flex" :justify-content "flex-end" :align-self "flex-end" :margin-left "auto"}}
            [:button {:class    "mx-3 mb-1 btn btn-sm text-white"
                      :style    ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime)))
-                     :on-click start-simulation}
+                     :on-click #(initiate-match-drop @lon-lat @datetime refresh-capabilities!)}
             "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event)
