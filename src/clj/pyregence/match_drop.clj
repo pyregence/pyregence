@@ -32,15 +32,13 @@
          (str/join ""))))
 
 (defn- val->long
-  ([v]
-   (val->long v (long -1)))
-  ([v default]
-   (cond
-     (instance? Long v) v
-     (number? v)       (long v)
-     :else               (try
-                           (Long/parseLong v)
-                           (catch Exception _ (long default))))))
+  [v & [default]]
+  (cond
+    (instance? Long v) v
+    (number? v)        (long v)
+    :else              (try
+                         (Long/parseLong v)
+                         (catch Exception _ (long (or default -1))))))
 
 (defn- convert-date-string [date-str]
   (let [in-format  (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm z")
@@ -165,8 +163,8 @@
                (= 2 (get-in @job-queue [job-id :md-status])))
       (case status
         0 (process-complete! job-id response)
-        1 (process-error! job-id response)
-        2 (process-message! job-id response)
+        1 (process-error!    job-id response)
+        2 (process-message!  job-id response)
         nil))))
 
 (defn process-message
