@@ -56,10 +56,10 @@
    "wx.pyregence.org"       "Weather"
    "data.pyregence.org"     "GeoServer"})
 
-(defn- set-job-keys [job-id m]
+(defn- set-job-keys! [job-id m]
   (swap! job-queue #(update % job-id merge m)))
 
-(defn- send-to-server-wrapper
+(defn- send-to-server-wrapper!
   [host port job-id & extra-payload]
   (when-not (send-to-server! host
                              port
@@ -68,9 +68,9 @@
                                   (get-in [job-id :request])
                                   (merge extra-payload))
                               :key-fn kebab->camel))
-    (set-job-keys job-id
-                  {:md-status 1
-                   :message   (str "Connection to " host " failed.")})))
+    (set-job-keys! job-id
+                   {:md-status 1
+                    :message   (str "Connection to " host " failed.")})))
 
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
@@ -107,7 +107,7 @@
                     :gridfire-done? false
                     :request        request}))
     (log-str "Initiating match drop job #" job-id)
-    (send-to-server-wrapper "wx.pyregence.org" 31337 job-id)
+    (send-to-server-wrapper! "wx.pyregence.org" 31337 job-id)
     job-id))
 
 ;;; Job queue progression
@@ -121,39 +121,40 @@
 
 (defn- process-complete! [job-id {:keys [response-host message model]}]
   (when message
-    (set-job-keys job-id {:message message}))
+    (set-job-keys! job-id {:message message}))
   (case response-host
     "wx.pyregence.org"
     (do
-      (send-to-server-wrapper "elmfire.pyregence.org" 31338 job-id)
-      (send-to-server-wrapper "gridfire.pyregence.org" 31337 job-id))
+      (send-to-server-wrapper! "elmfire.pyregence.org" 31338 job-id)
+      (send-to-server-wrapper! "gridfire.pyregence.org" 31337 job-id))
 
     ;; TODO launching two geosync calls for the same directory might break if we switch to image mosaics
     "elmfire.pyregence.org"
-    (send-to-server-wrapper "data.pyregence.org" 31337 job-id :model "elmfire")
+    (send-to-server-wrapper! "data.pyregence.org" 31337 job-id :model "elmfire")
 
     "gridfire.pyregence.org"
-    (send-to-server-wrapper "data.pyregence.org" 31337 job-id :model "gridfire")
+    (send-to-server-wrapper! "data.pyregence.org" 31337 job-id :model "gridfire")
 
     "data.pyregence.org"
     (let [{:keys [elmfire-done? gridfire-done?]} (get @job-queue job-id)
           elmfire?  (or elmfire-done?  (= "elmfire" model))
           gridfire? (or gridfire-done? (= "gridfire" model))]
       (if (and elmfire? gridfire?)
-        (do (set-job-keys job-id {:md-status      0
-                                  :gridfire-done? true
-                                  :elmfire-done?  true})
+        (do (set-job-keys! job-id {:md-status      0
+                                   :gridfire-done? true
+                                   :elmfire-done?  true})
             (set-capabilities! (get-in @job-queue [job-id :request :geoserver-workspace])))
-        (set-job-keys job-id {:gridfire-done? gridfire?
-                              :elmfire-done?  elmfire?})))))
+        (set-job-keys! job-id {:gridfire-done? gridfire?
+                               :elmfire-done?  elmfire?})))))
 
 (defn- process-error! [job-id {:keys [message]}]
-  (set-job-keys job-id
-                {:md-status 1
-                 :message   message}))
+  (log-str "Match drop job #" job-id " errror: " message)
+  (set-job-keys! job-id
+                 {:md-status 1
+                  :message   message}))
 
 (defn- process-message! [job-id {:keys [message response-host]}]
-  (set-job-keys job-id {:message (str (get host-names response-host) ": " message)}))
+  (set-job-keys! job-id {:message (str (get host-names response-host) ": " message)}))
 
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
