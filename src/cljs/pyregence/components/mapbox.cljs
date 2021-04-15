@@ -1,5 +1,6 @@
 (ns pyregence.components.mapbox
-  (:require [reagent.core :as r]
+  (:require [reagent.core       :as r]
+            [reagent.dom.server :as rs]
             [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
             [pyregence.config    :as c]
@@ -14,6 +15,7 @@
 (def ^:private Map          js/mapboxgl.Map)
 (def ^:private LngLatBounds js/mapboxgl.LngLatBounds)
 (def ^:private Marker       js/mapboxgl.Marker)
+(def ^:private Popup       js/mapboxgl.Popup)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -23,6 +25,7 @@
 (defonce the-map (r/atom nil))
 
 (def ^:private the-marker    (r/atom nil))
+(def ^:private the-popup     (r/atom nil))
 (def ^:private events        (atom {}))
 (def ^:private hovered-id    (atom nil))
 
@@ -196,6 +199,28 @@
   [[lng lat]]
   (init-point! lng lat)
   (center-on-overlay!))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Popup
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn clear-popup!
+  "Removes popup from the map."
+  []
+  (when (some? @the-popup)
+    (.remove @the-popup)
+    (reset! the-popup nil)))
+
+(defn init-popup!
+  "Creates a popup at lnglat."
+  [[lng lat] {:keys [classname body width] :or {width "200px" classname ""}}]
+  (clear-popup!)
+  (let [popup (Popup. #js {:className classname :maxWidth width})]
+    (doto popup
+      (.setLngLat #js [lng lat])
+      (.setHTML (rs/render-to-string body))
+      (.addTo @the-map))
+    (reset! the-popup popup)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
