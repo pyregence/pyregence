@@ -75,18 +75,18 @@
                                             :options    {:burned {:opt-label "Forecasted fire location"
                                                                   :filter    "hours-since-burned"
                                                                   :units     "Hours"}}}
-                               :burn-pct   {:opt-label      "Burn Probability"
+                               :burn-pct   {:opt-label      "Predicted Fire Size"
                                             :default-option :50
-                                            :hover-text     "To develop an active fire forecast, we run 1,000 simulations, inputting a variety of factors for consideration. 'Burn Probability' shows the percentage of time the simulations followed the same path. To see the path taken in 90% of our simulations, for example, select 90% from the dropdown menu."
-                                            :options        {:90 {:opt-label "90%"
+                                            :hover-text     "To develop an active fire forecast, we run 1,000 simulations of each fire, inputting a variety of factors for consideration. This leads to a range of predicted fire sizes, five of which can be selected from the dropdown menu."
+                                            :options        {:90 {:opt-label "Largest"
                                                                   :filter    "90"}
-                                                             :70 {:opt-label "70%"
+                                                             :70 {:opt-label "Larger"
                                                                   :filter    "70"}
-                                                             :50 {:opt-label "50%"
+                                                             :50 {:opt-label "Average"
                                                                   :filter    "50"}
-                                                             :30 {:opt-label "30%"
+                                                             :30 {:opt-label "Small"
                                                                   :filter    "30"}
-                                                             :10 {:opt-label "10%"
+                                                             :10 {:opt-label "Smallest"
                                                                   :filter    "10"}}}
                                :fuel       {:opt-label  "Fuel"
                                             :hover-text "Source of surface and canopy fuel inputs:\n
