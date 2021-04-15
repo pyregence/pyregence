@@ -11,6 +11,7 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
+            [pyregence.components.fire-popup   :as fp]
             [pyregence.components.map-controls :as mc]
             [pyregence.components.mapbox       :as mb]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
@@ -203,16 +204,24 @@
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))
 
-(defn change-type! [get-model-times? clear? zoom?]
+(defn- init-fire-popup! [feature _]
+  (let [properties (-> feature (aget "properties") (js->clj))
+        lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
+        props      (-> properties (select-keys ["prettyname" "containper" "acres"]) (vals))
+        body       (apply fp/fire-popup props)]
+    (go (mb/init-popup! lnglat {:body body :width "200px"}))
+    (mb/set-center! lnglat 7.0)))
+
+(defn change-type!
+  "Changes the type of data that is being shown on the map."
+  [get-model-times? clear? zoom?]
   (go
     (<! (get-layers! get-model-times?))
     (let [source (get-current-layer-name)
           style  (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source style (/ @active-opacity 100))
       (when (some? style)
-        (mb/add-feature-highlight! "fire-active"
-                                   source
-                                   (fn [_ lnglat] (mb/set-center! lnglat 7.0))))
+        (mb/add-feature-highlight! "fire-active" source init-fire-popup!))
       (get-legend! source))
     (if clear?
       (clear-info!)
