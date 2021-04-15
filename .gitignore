@@ -11,3 +11,8 @@
 email-server.edn
 logs
 target
+
+# Configuration files
+config.edn
+email-server.edn
+camera-config.edn

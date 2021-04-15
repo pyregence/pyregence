@@ -16,6 +16,8 @@
                                               update-org-user-role
                                               update-user-info
                                               verify-user-email]]
+            [pyregence.cameras      :refer [get-cameras
+                                            get-current-image]]
             [pyregence.capabilities :refer [get-fire-names
                                             get-layers
                                             get-layer-name
@@ -28,6 +30,8 @@
 
 (def name->fn {"add-org-user"         add-org-user
                "add-new-user"         add-new-user
+               "get-cameras"          get-cameras
+               "get-current-image"    get-current-image
                "get-fire-names"       get-fire-names
                "get-layers"           get-layers
                "get-layer-name"       get-layer-name
