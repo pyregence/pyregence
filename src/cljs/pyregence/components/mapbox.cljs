@@ -15,7 +15,7 @@
 (def ^:private Map          js/mapboxgl.Map)
 (def ^:private LngLatBounds js/mapboxgl.LngLatBounds)
 (def ^:private Marker       js/mapboxgl.Marker)
-(def ^:private Popup       js/mapboxgl.Popup)
+(def ^:private Popup        js/mapboxgl.Popup)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -24,10 +24,10 @@
 ;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
 (defonce the-map (r/atom nil))
 
-(def ^:private the-marker    (r/atom nil))
-(def ^:private the-popup     (r/atom nil))
-(def ^:private events        (atom {}))
-(def ^:private hovered-id    (atom nil))
+(def ^:private the-marker (r/atom nil))
+(def ^:private the-popup  (r/atom nil))
+(def ^:private events     (atom {}))
+(def ^:private hovered-id (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -212,8 +212,9 @@
     (reset! the-popup nil)))
 
 (defn init-popup!
-  "Creates a popup at lnglat."
-  [[lng lat] {:keys [classname body width] :or {width "200px" classname ""}}]
+  "Creates a popup at `[lng lat]`, with `body` as the contents. `body` can
+   be either HTML string a hiccup style vector."
+  [[lng lat] body {:keys [classname width] :or {width "200px" classname ""}}]
   (clear-popup!)
   (let [popup (Popup. #js {:className classname :maxWidth width})]
     (doto popup
