@@ -210,7 +210,7 @@
         props      (-> properties (select-keys ["prettyname" "containper" "acres"]) (vals))
         body       (apply fp/fire-popup props)]
     (go (mb/init-popup! lnglat body {:width "200px"}))
-    (mb/set-center! lnglat 7.0)))
+    (mb/set-center! lnglat 0)))
 
 (defn change-type!
   "Changes the type of data that is being shown on the map."
