@@ -6,10 +6,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $fire-popup-header []
- {:width "180px"
-  :overflow "hidden"
+ {:width         "180px"
+  :overflow      "hidden"
   :text-overflow "ellipsis"
-  :white-space "nowrap"})
+  :white-space   "nowrap"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
