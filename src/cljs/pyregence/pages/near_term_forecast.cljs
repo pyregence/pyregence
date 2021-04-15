@@ -209,7 +209,7 @@
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
         props      (-> properties (select-keys ["prettyname" "containper" "acres"]) (vals))
         body       (apply fp/fire-popup props)]
-    (go (mb/init-popup! lnglat body {:width "200px"}))
+    (mb/init-popup! lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 
 (defn change-type!
