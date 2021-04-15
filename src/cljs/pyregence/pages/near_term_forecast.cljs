@@ -209,7 +209,7 @@
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
         props      (-> properties (select-keys ["prettyname" "containper" "acres"]) (vals))
         body       (apply fp/fire-popup props)]
-    (go (mb/init-popup! lnglat {:body body :width "200px"}))
+    (go (mb/init-popup! lnglat body {:width "200px"}))
     (mb/set-center! lnglat 7.0)))
 
 (defn change-type!
@@ -220,6 +220,7 @@
     (let [source (get-current-layer-name)
           style  (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source style (/ @active-opacity 100))
+      (mb/clear-popup!)
       (when (some? style)
         (mb/add-feature-highlight! "fire-active" source init-fire-popup!))
       (get-legend! source))
