@@ -34,6 +34,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private prefix      "fire")
+(def ^:private fuels       "fuels")
 (def ^:private fire-active "fire-active")
 (def ^:private mapbox-dem  "mapbox-dem")
 
@@ -67,7 +68,8 @@
   (index-of #(= id (get % "id")) layers))
 
 (defn- is-selectable? [s]
-  (str/starts-with? s prefix))
+  (or (str/starts-with? s prefix)
+      (str/starts-with? s fuels)))
 
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.
