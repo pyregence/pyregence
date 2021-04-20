@@ -149,51 +149,50 @@
                                  :model-init {:opt-label  "Forecast Start Time"
                                               :hover-text "Start time for forecast cycle. New data is created every 12 hours."
                                               :options    {:loading {:opt-label "Loading..."}}}}}
-   :landfire     {:opt-label       "Fuels"
-                  :filter          "fuels-and-topography"
-                  :block-info?     true
-                  :reverse-legend? false
-                  :hover-text      "Fuels and Topography data."
-                  :params          {:model {:opt-label  "Source"
-                                            :hover-text "LANDFIRE data (https://landfire.gov) at 30-m resolution."
-                                            :options    (array-map
-                                                          :landfire {:opt-label "LandFire 2.0"
-                                                                     :filter    "landfire-2.0.0"
-                                                                     :units     ""})}
-                                    :layer {:opt-label  "Layer"
-                                            :hover-text "Select a fuels or topography layer."
-                                            :options    (array-map
-                                                          :asp    {:opt-label "Aspect"
-                                                                   :filter    "asp"
-                                                                   :units     ""}
-                                                          :slp    {:opt-label "Slope (%)"
-                                                                   :filter    "slp"
-                                                                   :units     "%"}
-                                                          :dem    {:opt-label "Elevation (ft)"
-                                                                   :filter    "dem"
-                                                                   :units     ""}
-                                                          :cc     {:opt-label "Canopy Cover (%)"
-                                                                   :filter    "cc"
-                                                                   :units     "%"}
-                                                          :ch     {:opt-label "Canopy Height (m)"
-                                                                   :filter    "ch"
-                                                                   :units     "m"}
-                                                          :cbh    {:opt-label "Canopy Base Height (m)"
-                                                                   :filter    "cbh"
-                                                                   :units     "m"}
-                                                          :cbd    {:opt-label "Crown Bulk Density (kg/m^3)"
-                                                                   :filter    "cbd"
-                                                                   :units     "kg/m^3"}
-                                                          :fbfm13 {:opt-label "Fire Behavior Fuel Model 13"
-                                                                   :filter    "fbfm13"
-                                                                   :units     ""}
-                                                          :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
-                                                                   :filter    "fbfm40"
-                                                                   :units     ""})}
+   :fuels     {:opt-label       "Fuels"
+               :filter          "fuels-and-topography"
+               :block-info?     true
+               :reverse-legend? false
+               :hover-text      "Fuels and Topography data."
+               :params          {:model {:opt-label  "Source"
+                                         :hover-text "LANDFIRE data (https://landfire.gov) at 30-m resolution."
+                                         :options    {:landfire {:opt-label "LandFire 2.0"
+                                                                 :filter    "landfire-2.0.0"
+                                                                 :units     ""}}}
+                                 :layer {:opt-label  "Layer"
+                                         :hover-text "Select a fuels or topography layer."
+                                         :options    (array-map
+                                                       :asp    {:opt-label "Aspect"
+                                                                :filter    "asp"
+                                                                :units     ""}
+                                                       :slp    {:opt-label "Slope (%)"
+                                                                :filter    "slp"
+                                                                :units     "%"}
+                                                       :dem    {:opt-label "Elevation (ft)"
+                                                                :filter    "dem"
+                                                                :units     ""}
+                                                       :cc     {:opt-label "Canopy Cover (%)"
+                                                                :filter    "cc"
+                                                                :units     "%"}
+                                                       :ch     {:opt-label "Canopy Height (m)"
+                                                                :filter    "ch"
+                                                                :units     "m"}
+                                                       :cbh    {:opt-label "Canopy Base Height (m)"
+                                                                :filter    "cbh"
+                                                                :units     "m"}
+                                                       :cbd    {:opt-label "Crown Bulk Density (kg/m^3)"
+                                                                :filter    "cbd"
+                                                                :units     "kg/m^3"}
+                                                       :fbfm13 {:opt-label "Fire Behavior Fuel Model 13"
+                                                                :filter    "fbfm13"
+                                                                :units     ""}
+                                                       :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
+                                                                :filter    "fbfm40"
+                                                                :units     ""})}
 
-                                    :model-init {:opt-label  "Model Creation Time"
-                                                 :hover-text "Time the data was created."
-                                                 :options    {:loading {:opt-label "Loading..."}}}}}})
+                                 :model-init {:opt-label  "Model Creation Time"
+                                              :hover-text "Time the data was created."
+                                              :options    {:loading {:opt-label "Loading..."}}}}}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WFS/WMS Configuration
