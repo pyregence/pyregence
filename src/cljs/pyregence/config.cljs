@@ -180,11 +180,11 @@
                                                                    :units     "m"}
                                                           :cbh    {:opt-label "Canopy Base Height (m)"
                                                                    :filter    "cbh"
-                                                                   :units     "ft"}
-                                                          :cbd    {:opt-label "Crown Bulk Density (kg/m3)"
+                                                                   :units     "m"}
+                                                          :cbd    {:opt-label "Crown Bulk Density (kg/m^3)"
                                                                    :filter    "cbd"
-                                                                   :units     "kg/m3"}
-                                                          :fbfm13 {:opt-label "Fuel Behavior Fuel Model 13"
+                                                                   :units     "kg/m^3"}
+                                                          :fbfm13 {:opt-label "Fire Behavior Fuel Model 13"
                                                                    :filter    "fbfm13"
                                                                    :units     ""}
                                                           :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
