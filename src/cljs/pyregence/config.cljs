@@ -172,10 +172,13 @@
                                                           :dem    {:opt-label "Elevation (ft)"
                                                                    :filter    "dem"
                                                                    :units     ""}
-                                                          :cc     {:opt-label "Canopy Cover (ft)"
+                                                          :cc     {:opt-label "Canopy Cover (%)"
                                                                    :filter    "cc"
-                                                                   :units     "ft"}
-                                                          :cbh    {:opt-label "Canopy Base Height (ft)"
+                                                                   :units     "%"}
+                                                          :ch     {:opt-label "Canopy Height (m)"
+                                                                   :filter    "ch"
+                                                                   :units     "m"}
+                                                          :cbh    {:opt-label "Canopy Base Height (m)"
                                                                    :filter    "cbh"
                                                                    :units     "ft"}
                                                           :cbd    {:opt-label "Crown Bulk Density (kg/m3)"
