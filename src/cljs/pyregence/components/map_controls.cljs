@@ -5,7 +5,7 @@
             [herb.core :refer [<class]]
             [clojure.edn :as edn]
             [clojure.string :as string]
-            [clojure.core.async :refer [go <!]]
+            [clojure.core.async :refer [go <! timeout]]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
             [pyregence.config    :as c]
@@ -362,7 +362,7 @@
    Stops polling on finish or error signal."
   [job-id refresh-capabilities!]
   (go
-    (when @poll?
+    (while @poll?
       (let [{:keys [message md-status]} (-> (u/call-clj-async! "get-md-status" job-id)
                                             (<!)
                                             (:body)
@@ -379,14 +379,14 @@
             (println message)
             (set-message-box-content! {:body (str "Error running match-drop-" job-id ".\n\n" message)})
             (reset! poll? false))))
-      (js/setTimeout #(poll-status job-id refresh-capabilities!) 5000))))
+      (<! (timeout 5000)))))
 
 (defn- initiate-match-drop
   "Initiates the match drop run and initiates polling for updates."
-  [[lon lat] date-time refresh-capabilities!]
+  [[lon lat] datetime refresh-capabilities!]
   (go
     (let [match-chan (u/call-clj-async! "initiate-md"
-                                        {:ignition-time (u/time-zone-iso-date date-time true)
+                                        {:ignition-time (u/time-zone-iso-date datetime true)
                                          :lon           lon
                                          :lat           lat})]
       (reset! poll? true)
