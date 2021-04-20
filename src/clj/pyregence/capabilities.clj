@@ -74,6 +74,16 @@
      :model-init  model-init
      :hour        0}))
 
+(defn- split-fuels [name-string]
+  (let [[workspace layer] (str/split name-string #":")
+        [forecast model]  (str/split workspace #"_")]
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    forecast
+     :filter-set  #{forecast model layer "20210407_000000"}
+     :model-init  "20210407_000000"
+     :hour        0}))
+
 (defn process-layers! [workspace-name]
   (let [xml-response (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
                                              "?SERVICE=WMS"
@@ -103,7 +113,10 @@
                           (merge-fn (split-active-layer-name full-name))
 
                           (str/starts-with? full-name "fire-detections")
-                          (merge-fn (split-fire-detections full-name))))))
+                          (merge-fn (split-fire-detections full-name))
+
+                          (str/starts-with? full-name "fuels-and-topography")
+                          (merge-fn (split-fuels full-name))))))
                    (vec)))
             xml)
       (apply concat xml)
