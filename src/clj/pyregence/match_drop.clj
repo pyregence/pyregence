@@ -89,10 +89,11 @@
         ignition-time (:ignition-time params)
         model-time    (convert-date-string ignition-time)
         request       (merge params
-                             ;; TODO consider
+                             ;; TODO consider different payloads per request instead of one large one.
                              {:response-host       "pyregence-dev.sig-gis.com"
                               :response-port       31337
                               :fire-name           (str "match-drop-" job-id)
+                              :ignition-time       ignition-time
                               ;; Data Provisioning
                               :add-to-active-fires "yes"
                               :scp-input-deck      "both"
@@ -100,7 +101,6 @@
                               :west-buffer         24
                               :east-buffer         24
                               :north-buffer        24
-                              :ignition-time       ignition-time
                               ;; GeoSync
                               :data-dir            (str "/var/www/html/fire_spread_forecast/match-drop-" job-id "/" model-time)
                               :geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
