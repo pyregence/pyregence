@@ -75,8 +75,8 @@
      :hour        0}))
 
 (defn- split-fuels [name-string]
-  (let [[workspace layer]   (str/split name-string #":")
-        [forecast model]     (str/split workspace #"_")]
+  (let [[workspace layer] (str/split name-string #":")
+        [forecast model]  (str/split workspace #"_")]
     {:workspace   workspace
      :layer-group ""
      :forecast    forecast
