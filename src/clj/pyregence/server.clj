@@ -6,6 +6,7 @@
             [pyregence.capabilities :refer [set-capabilities!]]
             [pyregence.handler      :refer [create-handler-stack]]
             [pyregence.logging      :refer [log-str set-log-path!]]
+            [pyregence.match-drop   :refer [process-message]]
             [pyregence.sockets      :refer [start-socket-server! stop-socket-server!]]))
 
 (defonce server           (atom nil))
@@ -77,7 +78,7 @@
             (reset! server (run-jetty handler config))
             (reset! clean-up-service (start-clean-up-service!))
             (set-log-path! output-dir)
-            (start-socket-server! 31337 (fn [msg] (println msg)))
+            (start-socket-server! 31337 process-message)
             (set-capabilities!)))))))
 
 (defn stop-server! []
