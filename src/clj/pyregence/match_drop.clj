@@ -48,6 +48,11 @@
          (.parse in-format)
          (.format out-format))))
 
+(defmacro nil-on-error
+  [& body]
+  (let [_ (gensym)]
+    `(try ~@body (catch Exception ~_ nil))))
+
 ;;; Static data
 
 (def ^:private host-names
@@ -57,10 +62,10 @@
    "data.pyregence.org"     "GeoServer"})
 
 (defn- set-job-keys! [job-id m]
-  (swap! job-queue #(update % job-id merge m)))
+  (swap! job-queue update job-id merge m))
 
 (defn- send-to-server-wrapper!
-  [host port job-id & extra-payload]
+  [host port job-id & [extra-payload]]
   (when-not (send-to-server! host
                              port
                              (json/write-str
@@ -80,32 +85,34 @@
                              (keys)
                              (apply max)
                              (inc))
-                        (int (Math/floor (/ (System/currentTimeMillis) 100000)))) ; This is temporary until we get job-id from PG
+                        (quot (System/currentTimeMillis) 100000)) ; This is temporary until we get job-id from PG
         ignition-time (:ignition-time params)
         model-time    (convert-date-string ignition-time)
         request       (merge params
-                             {:add-to-active-fires "yes"
-                              :data-dir            (str "/var/www/html/fire_spread_forecast/match-drop-" job-id "/" model-time)
-                              :east-buffer         24
-                              :geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
-                              :action              "add"
-                              :ignition-time       ignition-time
-                              :job-id              job-id
-                              :fire-name           (str "match-drop-" job-id)
-                              :north-buffer        24
-                              :response-host       "pyregence-dev.sig-gis.com"
+                             ;; TODO consider
+                             {:response-host       "pyregence-dev.sig-gis.com"
                               :response-port       31337
+                              :fire-name           (str "match-drop-" job-id)
+                              ;; Data Provisioning
+                              :add-to-active-fires "yes"
                               :scp-input-deck      "both"
                               :south-buffer        24
-                              :west-buffer         24})]
+                              :west-buffer         24
+                              :east-buffer         24
+                              :north-buffer        24
+                              :ignition-time       ignition-time
+                              ;; GeoSync
+                              :data-dir            (str "/var/www/html/fire_spread_forecast/match-drop-" job-id "/" model-time)
+                              :geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
+                              :action              "add"})]
     (swap! job-queue
-           #(assoc %
-                   job-id
-                   {:md-status      2
-                    :message        (str "Job " job-id " Initiated.")
-                    :elmfire-done?  false
-                    :gridfire-done? false
-                    :request        request}))
+           assoc
+           job-id
+           {:md-status      2
+            :message        (str "Job " job-id " Initiated.")
+            :elmfire-done?  false
+            :gridfire-done? false
+            :request        request})
     (log-str "Initiating match drop job #" job-id)
     (send-to-server-wrapper! "wx.pyregence.org" 31337 job-id)
     job-id))
@@ -130,10 +137,10 @@
 
     ;; TODO launching two geosync calls for the same directory might break if we switch to image mosaics
     "elmfire.pyregence.org"
-    (send-to-server-wrapper! "data.pyregence.org" 31337 job-id :model "elmfire")
+    (send-to-server-wrapper! "data.pyregence.org" 31337 job-id {:model "elmfire"})
 
     "gridfire.pyregence.org"
-    (send-to-server-wrapper! "data.pyregence.org" 31337 job-id :model "gridfire")
+    (send-to-server-wrapper! "data.pyregence.org" 31337 job-id {:model "gridfire"})
 
     "data.pyregence.org"
     (let [{:keys [elmfire-done? gridfire-done?]} (get @job-queue job-id)
@@ -148,7 +155,7 @@
                                :elmfire-done?  elmfire?})))))
 
 (defn- process-error! [job-id {:keys [message]}]
-  (log-str "Match drop job #" job-id " errror: " message)
+  (log-str "Match drop job #" job-id " error: " message)
   (set-job-keys! job-id
                  {:md-status 1
                   :message   message}))
@@ -158,7 +165,9 @@
 
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
-  (let [{:keys [fire-name status] :as response} (json/read-str msg :key-fn (comp keyword camel->kebab))
+  (let [{:keys [fire-name status]
+         :or {fire-name ""}
+         :as response} (nil-on-error (json/read-str msg :key-fn (comp keyword camel->kebab)))
         job-id (-> fire-name (str/split #"-") (last) (val->long))]
     (when (and (pos? job-id)
                (= 2 (get-in @job-queue [job-id :md-status])))
@@ -169,6 +178,6 @@
         nil))))
 
 (defn process-message
-  "Accepts a message from the socket server and send it to be processed."
+  "Accepts a message from the socket server and sends it to be processed."
   [msg]
   (do-processing msg))
