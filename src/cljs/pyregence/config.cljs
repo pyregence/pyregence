@@ -149,18 +149,18 @@
                                  :model-init {:opt-label  "Forecast Start Time"
                                               :hover-text "Start time for forecast cycle. New data is created every 12 hours."
                                               :options    {:loading {:opt-label "Loading..."}}}}}
-   :fuels     {:opt-label       "Fuels"
+   :behavior  {:opt-label       "Fire Behavior"
                :filter          "fuels-and-topography"
                :block-info?     true
                :reverse-legend? false
-               :hover-text      "Fuels and Topography data."
+               :hover-text      "Layers related to fuel and potential fire behavior."
                :params          {:model {:opt-label  "Source"
                                          :hover-text "LANDFIRE data (https://landfire.gov) at 30-m resolution."
                                          :options    {:landfire {:opt-label "LandFire 2.0"
                                                                  :filter    "landfire-2.0.0"
                                                                  :units     ""}}}
                                  :layer {:opt-label  "Layer"
-                                         :hover-text "Select a fuels or topography layer."
+                                         :hover-text "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
                                          :options    (array-map
                                                        :asp    {:opt-label "Aspect"
                                                                 :filter    "asp"
@@ -189,7 +189,6 @@
                                                        :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
                                                                 :filter    "fbfm40"
                                                                 :units     ""})}
-
                                  :model-init {:opt-label  "Model Creation Time"
                                               :hover-text "Time the data was created."
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
