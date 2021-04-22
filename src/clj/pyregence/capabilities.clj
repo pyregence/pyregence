@@ -84,6 +84,18 @@
      :model-init  "20210407_000000"
      :hour        0}))
 
+(defn- split-wg4-scenarios [name-string]
+  (let [[workspace layer] (str/split name-string #":")
+        [_ parameters]    (str/split layer #"_geoTiff_")
+        [_ model prob measure year] (re-matches #"([^_]+)_([^_]+)_AA_all_([^_]+)_mean_(\d+)" parameters)]
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    model
+     :filter-set  #{workspace model prob measure "20210407_000000"}
+     :model-init  "20210407_000000"
+     :sim-time    (str year "0101_000000")
+     :hour        (- (Integer/parseInt year) 1954)}))
+
 (defn process-layers! [workspace-name]
   (let [xml-response (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
                                              "?SERVICE=WMS"
@@ -116,7 +128,10 @@
                           (merge-fn (split-fire-detections full-name))
 
                           (str/starts-with? full-name "fuels-and-topography")
-                          (merge-fn (split-fuels full-name))))))
+                          (merge-fn (split-fuels full-name))
+
+                          (str/starts-with? full-name "wg4_FireSim")
+                          (merge-fn (split-wg4-scenarios full-name))))))
                    (vec)))
             xml)
       (apply concat xml)

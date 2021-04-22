@@ -2,6 +2,7 @@
   (:require [goog.dom :as dom]
             [reagent.dom :refer [render]]
             [clojure.string :as str]
+            [pyregence.config                   :as c]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.login              :as login]
             [pyregence.pages.near-term-forecast :as ntf]
@@ -11,9 +12,10 @@
 
 (def uri->root-component
   {"/admin"              admin/root-component
-   "/forecast"           ntf/root-component
+   "/forecast"           (ntf/root-component c/near-term-forecast-options c/near-term-forecast-default)
    "/login"              login/root-component
-   "/near-term-forecast" ntf/root-component
+   "/long-term-forecast" (ntf/root-component c/long-term-forecast-options c/long-term-forecast-default)
+   "/near-term-forecast" (ntf/root-component c/near-term-forecast-options c/near-term-forecast-default)
    "/register"           register/root-component
    "/reset-password"     reset-password/root-component
    "/verify-email"       verify-email/root-component})
