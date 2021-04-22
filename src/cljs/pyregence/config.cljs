@@ -5,7 +5,8 @@
 ;; Layer options
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def forecast-options
+(def near-term-forecast-default :fire-risk)
+(def near-term-forecast-options
   {:fire-weather {:opt-label       "Fire Weather"
                   :filter          "fire-weather-forecast"
                   :reverse-legend? true
@@ -191,6 +192,63 @@
                                                                 :units     ""})}
                                  :model-init {:opt-label  "Model Creation Time"
                                               :hover-text "Time the data was created."
+                                              :options    {:loading {:opt-label "Loading..."}}}}}})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WG4 Scenario Planning
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def long-term-forecast-default :fire-scenarios)
+(def long-term-forecast-options
+  {:fire-scenarios {:opt-label  "Fire Scenarios"
+                    :filter     "wg4_FireSim"
+                    :hover-text "Wildfire scenario projections for area burned with varied emissions and popultion scenarios."
+                    :block-info? true
+                    :params     {
+                                 :model   {:opt-label  "Global Climate Model"
+                                           :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
+                                                        Projected future climate from these four models can be described as producing:
+                                                        HadGEM2-ES - A warmer/dry simulation
+                                                        CNRM-CM5 - A cooler/wetter simulation
+                                                        CanESM2 - An average simulation
+                                                        MIROC5 - A model that is most unlike the first three to offer the best coverage of different possibilities."
+                                           :auto-zoom? true
+                                           :options    {:can-esm2 {:opt-label "CanESM2"
+                                                                   :filter    "CanESM2"
+                                                                   :units     ""}
+                                                        :hadgem2-es {:opt-label "HadGEM2-ES"
+                                                                     :filter    "HadGEM2-ES"
+                                                                     :units     ""}
+                                                        :cnrm-cm5 {:opt-label "CNRM-CM5"
+                                                                   :filter    "CNRM-CM5"
+                                                                   :units     ""}
+                                                        :miroc5   {:opt-label "MIROC5"
+                                                                   :filter    "MIROC5"
+                                                                   :units     ""}}}
+                                 :prob    {:opt-label  "RCP Scenario"
+                                           :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
+                                                        Options include:
+                                                        4.5 - emissions start declining starting in 2045 to reach half the levels of CO2 of 2050 by 2100.
+                                                        8.5 - emissions keep rising throughout the 2100."
+                                           :options    {:p45 {:opt-label "4.5"
+                                                              :filter    "45"
+                                                              :units     ""}
+                                                        :p85 {:opt-label "8.5"
+                                                              :filter    "85"
+                                                              :units     ""}}}
+                                 :measure {:opt-label  "Population Growth Scenario"
+                                           :hover-text "Vary population growth."
+                                           :options    {:bau {:opt-label "Central"
+                                                              :filter    "bau"
+                                                              :units     ""}
+                                                        :h   {:opt-label "High"
+                                                              :filter    "H"
+                                                              :units     ""}
+                                                        :p   {:opt-label "Low"
+                                                              :filter    "L"
+                                                              :units     ""}}}
+                                 :model-init {:opt-label  "Scenario Year"
+                                              :hover-text "Year"
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
