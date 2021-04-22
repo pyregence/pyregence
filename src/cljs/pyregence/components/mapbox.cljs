@@ -608,10 +608,10 @@
    (reset! the-map
            (Map.
             (clj->js {:container   container-id
-                           :dragRotate  false
-                           :maxZoom     20
-                           :minZoom     3
-                           :style       (-> c/base-map-options c/base-map-default :source)
-                           :touchPitch  false
-                           :trackResize true
-                           :transition  {:duration 500 :delay 0}}))))
+                      :dragRotate  false
+                      :maxZoom     20
+                      :minZoom     3
+                      :style       (-> c/base-map-options c/base-map-default :source)
+                      :touchPitch  false
+                      :trackResize true
+                      :transition  {:duration 500 :delay 0}})))))
