@@ -35,6 +35,7 @@
 
 (def ^:private prefix      "fire")
 (def ^:private fuels       "fuels")
+(def ^:private wg4         "wg4")
 (def ^:private fire-active "fire-active")
 (def ^:private mapbox-dem  "mapbox-dem")
 
@@ -70,7 +71,7 @@
 (defn- is-selectable? [s]
   (or (str/starts-with? s prefix)
       (str/starts-with? s fuels)
-      (str/starts-with? s "wg4")))
+      (str/starts-with? s wg4)))
 
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.

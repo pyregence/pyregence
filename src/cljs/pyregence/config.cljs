@@ -202,7 +202,7 @@
 (def long-term-forecast-options
   {:fire-scenarios {:opt-label  "Fire Scenarios"
                     :filter     "wg4_FireSim"
-                    :hover-text "Wildfire scenario projections for area burned with varied emissions and popultion scenarios."
+                    :hover-text "Wildfire scenario projections for area burned with varied emissions and population scenarios."
                     :block-info? true
                     :params     {
                                  :model   {:opt-label  "Global Climate Model"
