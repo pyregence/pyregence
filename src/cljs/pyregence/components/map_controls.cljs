@@ -56,10 +56,10 @@
    :width   "100%"
    :fill    ($/color-picker :font-color)})
 
-(defn tool-button [type callback]
+(defn tool-button [type callback & [active?]]
   (if (= type :none)
     [:span {:style ($/fixed-size "32px")}]
-    [:span {:class (<class $/p-button-hover)
+    [:span {:class (<class $/p-button-active active?)
             :style ($/combine $tool-button ($/fixed-size "32px"))
             :on-click callback}
      (case type
@@ -279,34 +279,39 @@
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (->> [[:layers
           (str (hs-str @show-panel?) " layer selection")
-          #(swap! show-panel? not)]
+          #(swap! show-panel? not)
+          false]
          (when-not mobile?
            [:info
             (str (hs-str @show-info?) " point information")
             #(do (set-show-info! (not @show-info?))
                  (reset! show-match-drop? false)
-                 (reset! show-camera? false))])
+                 (reset! show-camera? false))
+            @show-info?])
          (when-not mobile?
            [:flame
             (str (hs-str @show-match-drop?) " match drop tool")
             #(do (swap! show-match-drop? not)
                  (set-show-info! false)
-                 (reset! show-camera? false))])
+                 (reset! show-camera? false))
+            @show-match-drop?])
          (when-not mobile?
-          [:camera
+           [:camera
             (str (hs-str @show-camera?) " cameras")
             #(do (swap! show-camera? not)
                  (set-show-info! false)
-                 (reset! show-match-drop? false))])
+                 (reset! show-match-drop? false))
+            @show-camera?])
          [:legend
           (str (hs-str @show-legend?) " legend")
-          #(swap! show-legend? not)]]
+          #(swap! show-legend? not)
+          false]]
         (remove nil?)
-        (map-indexed (fn [i [icon hover-text on-click]]
+        (map-indexed (fn [i [icon hover-text on-click active?]]
                        ^{:key i} [tool-tip-wrapper
                                   hover-text
                                   :right
-                                  [tool-button icon on-click]])))])
+                                  [tool-button icon on-click active?]])))])
 
 (defn zoom-bar [get-current-layer-extent mobile?]
   (r/with-let [terrain?     (r/atom false)
