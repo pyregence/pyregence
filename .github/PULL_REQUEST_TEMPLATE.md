@@ -2,17 +2,17 @@
 <!-- Description of what has been added/changed -->
 
 ## Related Issues
-Closes PYR-<issue number>
-
-<!-- You may remove the sections below -->
+Closes PYR-###
 
 ## Submission Checklist
-- [ ] Code passes linter
+- [ ] Commits include the JIRA issue (e.g. PYR-###)
+- [ ] Code passes linter rules
 - [ ] Feature(s) work when compiled (`clojure -M:compile-cljs`)
 
 ## Testing
-1. Step 1
-1. Step 2
+<!-- Create a BDD style test script -->
+1. Given..., When ..., Then ....
 
-## Screenshots (Optional)
+## Screenshots
+<!-- Add a screen shot when UI changes are included -->
 
