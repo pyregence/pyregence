@@ -64,11 +64,11 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- site->feature [{:keys [name site]}]
+(defn- site->feature [{:keys [name site position]}]
   {:type       "Feature"
    :geometry   {:type        "Point"
                 :coordinates [(:longitude site) (:latitude site)]}
-   :properties (merge {:name name} site)})
+   :properties {:name name :pan (:pan position)}})
 
 (defn- ->feature-collection [features]
   {:type     "FeatureCollection"
