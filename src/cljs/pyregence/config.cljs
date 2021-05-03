@@ -204,8 +204,7 @@
                     :filter     "wg4_FireSim"
                     :hover-text "Wildfire scenario projections for area burned with varied emissions and population scenarios."
                     :block-info? true
-                    :params     {
-                                 :model   {:opt-label  "Global Climate Model"
+                    :params     {:model   {:opt-label  "Global Climate Model"
                                            :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
                                                         Projected future climate from these four models can be described as producing:
                                                         HadGEM2-ES - A warmer/dry simulation
@@ -213,18 +212,18 @@
                                                         CanESM2 - An average simulation
                                                         MIROC5 - A model that is most unlike the first three to offer the best coverage of different possibilities."
                                            :auto-zoom? true
-                                           :options    {:can-esm2 {:opt-label "CanESM2"
-                                                                   :filter    "CanESM2"
-                                                                   :units     ""}
+                                           :options    {:can-esm2   {:opt-label "CanESM2"
+                                                                     :filter    "CanESM2"
+                                                                     :units     ""}
                                                         :hadgem2-es {:opt-label "HadGEM2-ES"
                                                                      :filter    "HadGEM2-ES"
                                                                      :units     ""}
-                                                        :cnrm-cm5 {:opt-label "CNRM-CM5"
-                                                                   :filter    "CNRM-CM5"
-                                                                   :units     ""}
-                                                        :miroc5   {:opt-label "MIROC5"
-                                                                   :filter    "MIROC5"
-                                                                   :units     ""}}}
+                                                        :cnrm-cm5   {:opt-label "CNRM-CM5"
+                                                                     :filter    "CNRM-CM5"
+                                                                     :units     ""}
+                                                        :miroc5     {:opt-label "MIROC5"
+                                                                     :filter    "MIROC5"
+                                                                     :units     ""}}}
                                  :prob    {:opt-label  "RCP Scenario"
                                            :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
                                                         Options include:
@@ -238,15 +237,15 @@
                                                               :units     ""}}}
                                  :measure {:opt-label  "Population Growth Scenario"
                                            :hover-text "Vary population growth."
-                                           :options    {:bau {:opt-label "Central"
-                                                              :filter    "bau"
-                                                              :units     ""}
-                                                        :h   {:opt-label "High"
-                                                              :filter    "H"
-                                                              :units     ""}
-                                                        :p   {:opt-label "Low"
-                                                              :filter    "L"
-                                                              :units     ""}}}
+                                           :options    {:bau  {:opt-label "Central"
+                                                               :filter    "bau"
+                                                               :units     ""}
+                                                        :high {:opt-label "High"
+                                                               :filter    "H"
+                                                               :units     ""}
+                                                        :low  {:opt-label "Low"
+                                                               :filter    "L"
+                                                               :units     ""}}}
                                  :model-init {:opt-label  "Scenario Year"
                                               :hover-text "Year"
                                               :options    {:loading {:opt-label "Loading..."}}}}}})

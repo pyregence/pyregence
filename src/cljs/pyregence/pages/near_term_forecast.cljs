@@ -22,6 +22,14 @@
             [pyregence.components.svg-icons :refer [pin]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def ^:private configs {:near-term {:options c/near-term-forecast-options
+                                    :default c/near-term-forecast-default}
+                        :long-term {:options c/long-term-forecast-options
+                                    :default c/long-term-forecast-default}})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -486,64 +494,67 @@
   (reset! options forecast-config)
   (reset! *forecast default-forecast))
 
-(defn root-component [forecast-config default-config]
-  (fn [{:keys [user-id]}]
-    (let [height (r/atom "100%")]
-      (r/create-class
-        {:component-did-mount
-         (fn [_]
-           (reset-forecasts! forecast-config default-config)
-           (let [update-fn (fn [& _]
-                             (-> js/window (.scrollTo 0 0))
-                             (reset! mobile? (> 700.0 (.-innerWidth js/window)))
-                             (reset! height  (str (- (.-innerHeight js/window)
-                                                     (-> js/document
-                                                         (.getElementById "header")
-                                                         .getBoundingClientRect
-                                                         (aget "height")))
-                                                  "px"))
-                             (js/setTimeout mb/resize-map! 50))]
-             (-> js/window (.addEventListener "touchend" update-fn))
-             (-> js/window (.addEventListener "resize"   update-fn))
-             (process-toast-messages!)
-             (init-map! user-id)
-             (update-fn)))
+(defn root-component
+  [{:keys [forecast-type user-id]}]
+  {:pre [(contains? #{:long-term :near-term} forecast-type)]}
+  (let [height (r/atom "100%")
+        forecast-config (get-in configs [forecast-type :options])
+        default-config  (get-in configs [forecast-type :default])]
+    (r/create-class
+      {:component-did-mount
+       (fn [_]
+         (reset-forecasts! forecast-config default-config)
+         (let [update-fn (fn [& _]
+                           (-> js/window (.scrollTo 0 0))
+                           (reset! mobile? (> 700.0 (.-innerWidth js/window)))
+                           (reset! height  (str (- (.-innerHeight js/window)
+                                                   (-> js/document
+                                                       (.getElementById "header")
+                                                       .getBoundingClientRect
+                                                       (aget "height")))
+                                                "px"))
+                           (js/setTimeout mb/resize-map! 50))]
+           (-> js/window (.addEventListener "touchend" update-fn))
+           (-> js/window (.addEventListener "resize"   update-fn))
+           (process-toast-messages!)
+           (init-map! user-id)
+           (update-fn)))
 
-         :reagent-render
-         (fn [_]
-           [:div {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
-            [toast-message]
-            [message-box-modal]
-            (when @loading? [loading-modal])
-            [message-modal]
-            [:div {:class "bg-yellow"
-                   :style ($app-header)}
-             (when-not @mobile? [theme-select])
-             [:span {:style {:display "flex" :padding ".25rem 0"}}
-              (doall (map (fn [[key {:keys [opt-label hover-text]}]]
-                            ^{:key key}
-                            [tool-tip-wrapper
-                             hover-text
-                             :top
-                             [:label {:style ($forecast-label (= @*forecast key))
-                                      :on-click #(select-forecast! key)}
-                              opt-label]])
-                          @capabilities))]
-             (when-not @mobile?
-               (if user-id
-                 [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-                  [:label {:style {:margin-right "1rem" :cursor "pointer"}
-                           :on-click (fn []
-                                       (go (<! (u/call-clj-async! "log-out"))
-                                           (-> js/window .-location .reload)))}
-                   "Log Out"]]
-                 [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-                  ;; TODO, this is commented out until we are ready for users to create an account
-                  ;;  [:label {:style {:margin-right "1rem" :cursor "pointer"}
-                  ;;           :on-click #(u/jump-to-url! "/register")} "Register"]
-                  [:label {:style {:cursor "pointer"}
-                           :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
-            [:div {:style {:height "100%" :position "relative" :width "100%"}}
-             (when @mb/the-map [control-layer])
-             [map-layer]
-             [pop-up]]])}))))
+       :reagent-render
+       (fn [_]
+         [:div {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
+          [toast-message]
+          [message-box-modal]
+          (when @loading? [loading-modal])
+          [message-modal]
+          [:div {:class "bg-yellow"
+                 :style ($app-header)}
+           (when-not @mobile? [theme-select])
+           [:span {:style {:display "flex" :padding ".25rem 0"}}
+            (doall (map (fn [[key {:keys [opt-label hover-text]}]]
+                          ^{:key key}
+                          [tool-tip-wrapper
+                           hover-text
+                           :top
+                           [:label {:style ($forecast-label (= @*forecast key))
+                                    :on-click #(select-forecast! key)}
+                            opt-label]])
+                        @capabilities))]
+           (when-not @mobile?
+             (if user-id
+               [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
+                [:label {:style {:margin-right "1rem" :cursor "pointer"}
+                         :on-click (fn []
+                                     (go (<! (u/call-clj-async! "log-out"))
+                                         (-> js/window .-location .reload)))}
+                 "Log Out"]]
+               [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
+                ;; TODO, this is commented out until we are ready for users to create an account
+                ;;  [:label {:style {:margin-right "1rem" :cursor "pointer"}
+                ;;           :on-click #(u/jump-to-url! "/register")} "Register"]
+                [:label {:style {:cursor "pointer"}
+                         :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
+          [:div {:style {:height "100%" :position "relative" :width "100%"}}
+           (when @mb/the-map [control-layer])
+           [map-layer]
+           [pop-up]]])})))
