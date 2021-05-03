@@ -97,9 +97,12 @@
                                             :options    {:landfire {:opt-label "Custom LANDFIRE"
                                                                     :filter    "landfire"}}}
                                :model      {:opt-label  "Model"
-                                            :hover-text "ELMFIRE is a new predictive model developed by Chris Lautenberger of Reax Engineering. It is the artificial intelligence used to generate the active fire forecast in this tool."
-                                            :options    {:elmfire {:opt-label "ELMFIRE"
-                                                                   :filter    "elmfire"}}}
+                                            :hover-text "ELMFIRE is a new predictive model developed by Chris Lautenberger of Reax Engineering. It uses artificial intelligence to generate a active fire forecast.\n
+                                                         GridFire is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."
+                                            :options    {:elmfire  {:opt-label "ELMFIRE"
+                                                                    :filter    "elmfire"}
+                                                         :gridfire {:opt-label "GridFire"
+                                                                    :filter    "gridfire"}}}
                                :model-init {:opt-label  "Forecast Start Time"
                                             :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                             :options    {:loading {:opt-label "Loading..."}}}}}
@@ -163,33 +166,33 @@
                                  :layer {:opt-label  "Layer"
                                          :hover-text "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
                                          :options    (array-map
-                                                       :asp    {:opt-label "Aspect"
-                                                                :filter    "asp"
-                                                                :units     ""}
-                                                       :slp    {:opt-label "Slope (%)"
-                                                                :filter    "slp"
-                                                                :units     "%"}
-                                                       :dem    {:opt-label "Elevation (ft)"
-                                                                :filter    "dem"
-                                                                :units     ""}
-                                                       :cc     {:opt-label "Canopy Cover (%)"
-                                                                :filter    "cc"
-                                                                :units     "%"}
-                                                       :ch     {:opt-label "Canopy Height (m)"
-                                                                :filter    "ch"
-                                                                :units     "m"}
-                                                       :cbh    {:opt-label "Canopy Base Height (m)"
-                                                                :filter    "cbh"
-                                                                :units     "m"}
-                                                       :cbd    {:opt-label "Crown Bulk Density (kg/m^3)"
-                                                                :filter    "cbd"
-                                                                :units     "kg/m^3"}
-                                                       :fbfm13 {:opt-label "Fire Behavior Fuel Model 13"
-                                                                :filter    "fbfm13"
-                                                                :units     ""}
-                                                       :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
-                                                                :filter    "fbfm40"
-                                                                :units     ""})}
+                                                      :asp    {:opt-label "Aspect"
+                                                               :filter    "asp"
+                                                               :units     ""}
+                                                      :slp    {:opt-label "Slope (%)"
+                                                               :filter    "slp"
+                                                               :units     "%"}
+                                                      :dem    {:opt-label "Elevation (ft)"
+                                                               :filter    "dem"
+                                                               :units     ""}
+                                                      :cc     {:opt-label "Canopy Cover (%)"
+                                                               :filter    "cc"
+                                                               :units     "%"}
+                                                      :ch     {:opt-label "Canopy Height (m)"
+                                                               :filter    "ch"
+                                                               :units     "m"}
+                                                      :cbh    {:opt-label "Canopy Base Height (m)"
+                                                               :filter    "cbh"
+                                                               :units     "m"}
+                                                      :cbd    {:opt-label "Crown Bulk Density (kg/m^3)"
+                                                               :filter    "cbd"
+                                                               :units     "kg/m^3"}
+                                                      :fbfm13 {:opt-label "Fire Behavior Fuel Model 13"
+                                                               :filter    "fbfm13"
+                                                               :units     ""}
+                                                      :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
+                                                               :filter    "fbfm40"
+                                                               :units     ""})}
                                  :model-init {:opt-label  "Model Creation Time"
                                               :hover-text "Time the data was created."
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
