@@ -105,8 +105,7 @@
     (with-meta
       {:background-color (if active? highlight-color "transparent")
        :border-radius    "4px"}
-      {:pseudo {:hover {:background-color highlight-color
-                        :border-radius    "4px"}}})))
+      {:pseudo {:hover {:background-color highlight-color}}})))
 
 (defn p-button [& modifiers]
   (let [base-style     {:border-width  "0"
