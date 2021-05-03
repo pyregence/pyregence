@@ -250,6 +250,17 @@
                                               :hover-text "Year"
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
 
+(def ^:private forecasts {:near-term {:options-config near-term-forecast-options
+                                      :default        near-term-forecast-default}
+                          :long-term {:options-config long-term-forecast-options
+                                      :default        long-term-forecast-default}})
+
+(defn get-forecast
+  "Retrieve forecast options and default tab"
+  [forecast-type]
+  {:pre [(contains? #{:long-term :near-term} forecast-type)]}
+  (forecast-type forecasts))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WFS/WMS Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

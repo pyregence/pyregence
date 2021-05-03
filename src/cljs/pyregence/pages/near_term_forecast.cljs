@@ -22,14 +22,6 @@
             [pyregence.components.svg-icons :refer [pin]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Configs
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def ^:private configs {:near-term {:options c/near-term-forecast-options
-                                    :default c/near-term-forecast-default}
-                        :long-term {:options c/long-term-forecast-options
-                                    :default c/long-term-forecast-default}})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -490,20 +482,17 @@
    [:div {:style ($message-modal false)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
-(defn- reset-forecasts! [forecast-config default-forecast]
-  (reset! options forecast-config)
-  (reset! *forecast default-forecast))
+(defn- reset-forecasts! [forecast-type]
+  (let [{:keys [options-config default]} (c/get-forecast forecast-type)]
+    (reset! options options-config)
+    (reset! *forecast default)))
 
-(defn root-component
-  [{:keys [forecast-type user-id]}]
-  {:pre [(contains? #{:long-term :near-term} forecast-type)]}
-  (let [height (r/atom "100%")
-        forecast-config (get-in configs [forecast-type :options])
-        default-config  (get-in configs [forecast-type :default])]
+(defn root-component [{:keys [forecast-type user-id]}]
+  (let [height (r/atom "100%")]
     (r/create-class
       {:component-did-mount
        (fn [_]
-         (reset-forecasts! forecast-config default-config)
+         (reset-forecasts! forecast-type)
          (let [update-fn (fn [& _]
                            (-> js/window (.scrollTo 0 0))
                            (reset! mobile? (> 700.0 (.-innerWidth js/window)))
