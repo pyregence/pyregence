@@ -421,16 +421,17 @@
   {:id     layer-name
    :type   "symbol"
    :source source-name
-   :layout {:text-anchor "top"
-            :text-field  ["to-string" ["get" "prettyname"]]
-            :text-font   ["Open Sans Semibold" "Arial Unicode MS Regular"]
-            :text-offset [0 0.6]
-            :text-size   16
-            :visibility  "visible"}
+   :layout {:text-anchor        "top"
+            :text-allow-overlap true
+            :text-field         ["to-string" ["get" "prettyname"]]
+            :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
+            :text-offset        [0 0.6]
+            :text-size          16
+            :visibility         "visible"}
    :paint  {:text-color      "#000000"
             :text-halo-color ["case" ["boolean" ["feature-state" "hover"] false] "#FFFF00" "#FFFFFF"]
             :text-halo-width 1.5
-            :text-opacity    ["step" ["zoom"] 0 6 opacity 22 opacity]}})
+            :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}})
 
 (defn- build-wfs
   "Returns a new WFS source and layers in the form `[source layers]`.
