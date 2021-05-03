@@ -59,7 +59,7 @@
 (defn tool-button [type callback & [active?]]
   (if (= type :none)
     [:span {:style ($/fixed-size "32px")}]
-    [:span {:class (<class $/p-button-active active?)
+    [:span {:class (<class $/p-button-hover active?)
             :style ($/combine $tool-button ($/fixed-size "32px"))
             :on-click callback}
      (case type

@@ -98,21 +98,15 @@
        :group  true
        :pseudo {:disabled disabled-style}})))
 
-(defn p-button-hover []
-  (with-meta
-    {}
-    {:pseudo {:hover {:background-color (color-picker :border-color 0.2)
-                      :border-radius    "4px"}}}))
-
-(defn p-button-active
+(defn p-button-hover
   "Background of button is highlighted when `active?` is true or on hover."
-  [active?]
-  (let [highlight-color (color-picker :border-color 0.2)
-        active-color    (if active? highlight-color "transparent")]
+  [& [active?]]
+  (let [highlight-color (color-picker :border-color 0.2)]
     (with-meta
-      {:background-color active-color
+      {:background-color (if active? highlight-color "transparent")
        :border-radius    "4px"}
-      {:extend p-button-hover})))
+      {:pseudo {:hover {:background-color highlight-color
+                        :border-radius    "4px"}}})))
 
 (defn p-button [& modifiers]
   (let [base-style     {:border-width  "0"
