@@ -11,9 +11,10 @@
 
 (def uri->root-component
   {"/admin"              admin/root-component
-   "/forecast"           ntf/root-component
+   "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/login"              login/root-component
-   "/near-term-forecast" ntf/root-component
+   "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
+   "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/register"           register/root-component
    "/reset-password"     reset-password/root-component
    "/verify-email"       verify-email/root-component})

@@ -41,6 +41,7 @@
 (def dynamic-routes #{"/admin"
                       "/login"
                       "/forecast"
+                      "/long-term-forecast"
                       "/near-term-forecast"
                       "/register"
                       "/reset-password"

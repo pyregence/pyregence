@@ -35,6 +35,7 @@
 
 (def ^:private prefix      "fire")
 (def ^:private fuels       "fuels")
+(def ^:private wg4         "wg4")
 (def ^:private fire-active "fire-active")
 (def ^:private mapbox-dem  "mapbox-dem")
 
@@ -69,7 +70,8 @@
 
 (defn- is-selectable? [s]
   (or (str/starts-with? s prefix)
-      (str/starts-with? s fuels)))
+      (str/starts-with? s fuels)
+      (str/starts-with? s wg4)))
 
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.
@@ -241,7 +243,7 @@
 
 (defn remove-events!
   "Removes all listeners matching `event-name`. Can also supply `layer-name` to
-  only remove events for specific layers."
+   only remove events for specific layers."
   [event-name & [layer-name]]
   (doseq [[_ {:keys [event layer func]}] @events
           :when (and (= event event-name)
@@ -381,9 +383,9 @@
 
 (defn- build-wms
   "Returns new WMS source and layer in the form `[source [layer]]`.
-  `source` must be a valid WMS layer in the geoserver
-  `z-index` allows layers to be rendered on-top (positive z-index) or below
-  (negative z-index) Mapbox base map layers."
+   `source` must be a valid WMS layer in the geoserver
+   `z-index` allows layers to be rendered on-top (positive z-index) or below
+   (negative z-index) Mapbox base map layers."
   [id source opacity]
   (let [new-source {source (wms-source source)}
         new-layer  (wms-layer id source opacity)]
@@ -435,9 +437,9 @@
 
 (defn- build-wfs
   "Returns a new WFS source and layers in the form `[source layers]`.
-  `source` must be a valid WFS layer in the geoserver
-  `z-index` allows layers to be rendered on-top (positive z-index) or below
-  (negative z-index) Mapbox base map layers."
+   `source` must be a valid WFS layer in the geoserver
+   `z-index` allows layers to be rendered on-top (positive z-index) or below
+   (negative z-index) Mapbox base map layers."
   [id source opacity]
   (let [new-source {source (wfs-source source)}
         labels-id  (str id "-labels")
@@ -543,7 +545,7 @@
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
-  `style-fn` must not be nil."
+   `style-fn` must not be nil."
   [geo-layer style-fn opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)

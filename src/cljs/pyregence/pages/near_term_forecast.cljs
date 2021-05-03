@@ -38,6 +38,7 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce options           (r/atom {}))
 (defonce mobile?           (r/atom false))
 (defonce legend-list       (r/atom []))
 (defonce last-clicked-info (r/atom []))
@@ -47,7 +48,7 @@
 (defonce show-camera?      (r/atom false))
 (defonce active-opacity    (r/atom 100.0))
 (defonce capabilities      (r/atom []))
-(defonce *forecast         (r/atom :fire-risk))
+(defonce *forecast         (r/atom nil))
 (defonce processed-params  (r/atom []))
 (defonce *params           (r/atom {}))
 (defonce param-layers      (r/atom []))
@@ -283,7 +284,7 @@
                                    (s/valid? ::layer-config layer-config))
                             (assoc-in acc layer-path layer-config)
                             acc)))
-                      c/forecast-options
+                      @options
                       user-layers)
               (update-in [:active-fire :params :fire-name :options]
                          merge
@@ -299,7 +300,7 @@
                                                          (mapcat (fn [[_ v]] (:underlays v)))
                                                          (u/mapm (fn [[k _]] [k {:show? false
                                                                                  :name  nil}])))})]))
-                   c/forecast-options)))
+                   @options)))
 
 (defn refresh-capabilities! []
   (go
@@ -481,11 +482,17 @@
    [:div {:style ($message-modal false)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
-(defn root-component [{:keys [user-id]}]
+(defn- reset-forecasts! [forecast-type]
+  (let [{:keys [options-config default]} (c/get-forecast forecast-type)]
+    (reset! options options-config)
+    (reset! *forecast default)))
+
+(defn root-component [{:keys [forecast-type user-id]}]
   (let [height (r/atom "100%")]
     (r/create-class
      {:component-did-mount
       (fn [_]
+        (reset-forecasts! forecast-type)
         (let [update-fn (fn [& _]
                           (-> js/window (.scrollTo 0 0))
                           (reset! mobile? (> 700.0 (.-innerWidth js/window)))
@@ -531,9 +538,9 @@
                                         (-> js/window .-location .reload)))}
                 "Log Out"]]
               [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-               ;; TODO, this is commented out until we are ready for users to create an account
-               ;;  [:label {:style {:margin-right "1rem" :cursor "pointer"}
-               ;;           :on-click #(u/jump-to-url! "/register")} "Register"]
+                ;; TODO, this is commented out until we are ready for users to create an account
+                ;;  [:label {:style {:margin-right "1rem" :cursor "pointer"}
+                ;;           :on-click #(u/jump-to-url! "/register")} "Register"]
                [:label {:style {:cursor "pointer"}
                         :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
