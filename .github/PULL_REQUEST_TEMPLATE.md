@@ -5,8 +5,8 @@
 Closes PYR-###
 
 ## Submission Checklist
-- [ ] Commits include the JIRA issue (e.g. PYR-###)
-- [ ] Code passes linter rules
+- [ ] Commits include the JIRA issue and the `#review` hashtag (e.g. `PYR-### #review <comment>`)
+- [ ] Code passes linter rules (`clj-kondo --lint src`)
 - [ ] Feature(s) work when compiled (`clojure -M:compile-cljs`)
 
 ## Testing
