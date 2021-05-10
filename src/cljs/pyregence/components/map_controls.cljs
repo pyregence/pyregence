@@ -76,6 +76,7 @@
        :pause-button    [svg/pause-button]
        :play-button     [svg/play-button]
        :previous-button [svg/previous-button]
+       :share           [svg/share]
        :terrain         [svg/terrain]
        :zoom-in         [svg/zoom-in]
        :zoom-out        [svg/zoom-out]
@@ -264,6 +265,15 @@
           select-base-map!]]]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Share Tool
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- share-url [url]
+  (set-message-box-content! {:title  "Share Current Map"
+                             :body   (str "URL: \n\n" url)
+                             :mode   :close}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -313,7 +323,7 @@
                                   :right
                                   [tool-button icon on-click active?]])))])
 
-(defn zoom-bar [get-current-layer-extent mobile?]
+(defn zoom-bar [get-current-layer-extent mobile? create-share-link]
   (r/with-let [terrain?     (r/atom false)
                minZoom      (r/atom 0)
                maxZoom      (r/atom 28)
@@ -334,7 +344,10 @@
                                hover-text
                                :right
                                [tool-button icon on-click]])
-                  [[:terrain
+                  [[:share
+                    "Share current map"
+                    #(share-url (create-share-link))]
+                   [:terrain
                     "Toggle 3D terrain"
                     #(do
                        (swap! terrain? not)

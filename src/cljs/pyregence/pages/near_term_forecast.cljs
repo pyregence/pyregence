@@ -55,6 +55,7 @@
 (defonce *layer-idx        (r/atom 0))
 (defonce the-cameras       (r/atom nil))
 (defonce loading?          (r/atom true))
+(defonce url-params        (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Processing Functions
@@ -124,6 +125,17 @@
 (defn get-options-key [key-name]
   (some #(get % key-name)
         (vals (get-forecast-opt :params))))
+
+(defn get-forecast-link
+  "Generates a link with forecast and parameters encoded in a URL"
+  []
+  (let [selected-params (get @*params @*forecast)
+        page-params (merge {:option @*forecast} selected-params)]
+    (as-> page-params %
+      (map (fn [[k v]] (when (keyword? v)
+                         (str (name k) "=" (name v)))) %)
+      (str/join "&" %)
+      (str js/location.origin js/location.pathname "?" % js/location.hash))))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
@@ -293,7 +305,8 @@
                    (fn [[forecast _]]
                      (let [params (get-in @capabilities [forecast :params])]
                        [forecast (merge (u/mapm (fn [[k v]]
-                                                  [k (or (:default-option v)
+                                                  [k (or (get @url-params k)
+                                                         (:default-option v)
                                                          (ffirst (:options v)))])
                                                 params)
                                         {:underlays (->> params
@@ -403,7 +416,7 @@
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
          [mc/tool-bar show-info? show-match-drop? show-camera? set-show-info! @mobile?]
          [mc/scale-bar @mobile?]
-         [mc/zoom-bar get-current-layer-extent @mobile?]
+         [mc/zoom-bar get-current-layer-extent @mobile? get-forecast-link]
          [mc/time-slider
           param-layers
           *layer-idx
@@ -482,17 +495,28 @@
    [:div {:style ($message-modal false)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
-(defn- reset-forecasts! [forecast-type]
-  (let [{:keys [options-config default]} (c/get-forecast forecast-type)]
-    (reset! options options-config)
-    (reset! *forecast default)))
+(defn- params->forecast
+  "Parses query parameters to into the selected forecast and parameters"
+  [config {:keys [option] :as params}]
+  (let [option-key    (keyword option)
+        opt-conf-keys (-> config (get-in [option-key :params]) (keys))
+        selected      (select-keys params opt-conf-keys)]
+    {:forecast option-key
+     :forecast-params (apply merge (map (fn [[k v]] (hash-map k (keyword v))) selected))}))
 
-(defn root-component [{:keys [forecast-type user-id]}]
+(defn- reset-forecasts! [forecast-type params]
+  (let [{:keys [options-config default]}   (c/get-forecast forecast-type)
+        {:keys [forecast forecast-params]} (params->forecast options-config params)]
+    (reset! options options-config)
+    (reset! *forecast (or forecast default))
+    (reset! url-params forecast-params)))
+
+(defn root-component [{:keys [forecast-type user-id] :as params}]
   (let [height (r/atom "100%")]
     (r/create-class
      {:component-did-mount
       (fn [_]
-        (reset-forecasts! forecast-type)
+        (reset-forecasts! forecast-type params)
         (let [update-fn (fn [& _]
                           (-> js/window (.scrollTo 0 0))
                           (reset! mobile? (> 700.0 (.-innerWidth js/window)))

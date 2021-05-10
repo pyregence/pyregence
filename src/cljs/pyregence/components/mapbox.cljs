@@ -603,6 +603,7 @@
            (Map.
             (clj->js {:container   container-id
                       :dragRotate  false
+                      :hash        true
                       :maxZoom     20
                       :minZoom     3
                       :style       (-> c/base-map-options c/base-map-default :source)
