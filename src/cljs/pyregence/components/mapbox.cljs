@@ -99,10 +99,16 @@
 
 (defn set-center!
   "Centers the map on `center` with a minimum zoom value of `min-zoom`."
-  [center min-zoom]
-  (let [curr-zoom (get (get-zoom-info) 0)
-        zoom      (if (< curr-zoom min-zoom) min-zoom curr-zoom)]
-    (.easeTo @the-map (clj->js {:zoom zoom :center center :animate true}))))
+  ([center min-zoom]
+   (let [curr-zoom (get (get-zoom-info) 0)
+         zoom      (if (< curr-zoom min-zoom) min-zoom curr-zoom)]
+     (set-center! center zoom 0 0)))
+  ([center zoom bearing pitch]
+   (.flyTo @the-map (clj->js {:bearing bearing
+                              :pitch   pitch
+                              :zoom    zoom
+                              :center  center
+                              :animate true}))))
 
 (defn center-on-overlay!
   "Centers the map on the marker."

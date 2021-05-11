@@ -487,8 +487,15 @@
 (defn camera-tool [cameras parent-box close-fn!]
   (r/with-let [*camera     (r/atom nil)
                *image      (r/atom nil)
+               *feature    (r/atom nil)
+               zoom-camera (fn [] (let [latitude (aget @*feature "latitude")
+                                             longitude (aget @*feature "longitude")
+                                             pan (aget @*feature "pan")]
+                                         (mb/toggle-dimensions! true)
+                                         (js/setTimeout #(mb/set-center! [longitude latitude] 18 pan 45.0) 1000)))
                on-click    (fn [features]
                              (let [camera (-> features (aget "properties") (aget "name"))]
+                               (reset! *feature (aget features "properties"))
                                (reset! *image nil)
                                (reset! *camera camera)
                                (when (some? @*camera)
@@ -517,6 +524,8 @@
            [:div {:style {:position "absolute" :top "2rem" :width "100%" :display "flex" :justify-content "center"}}
             [:label (str "Camera: " @*camera)]]
            [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
+           [:button {:type "button" :class "btn btn-sm btn-secondary" :on-click zoom-camera :style {:position "absolute" :bottom "2rem" :right "2rem"}}
+            "Zoom to Camera"]
            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 
           :else
