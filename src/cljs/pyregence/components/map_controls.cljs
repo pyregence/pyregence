@@ -113,7 +113,7 @@
         [radio "Local" show-utc? false select-time-zone! true]])
      [:div {:style ($/flex-col)}
       [:input {:style {:width "12rem"}
-               :type "range" :min "0" :max (dec (count @layers)) :value (or @*layer-idx 0)
+               :type "range" :min "0" :max (max @*layer-idx (dec (count @layers))) :value (or @*layer-idx 0)
                :on-change #(select-layer! (u/input-int-value %))}]
       [:label layer-full-time]]
      [:span {:style {:display "flex" :margin "0 1rem"}}
@@ -265,15 +265,6 @@
           select-base-map!]]]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Share Tool
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- share-url [url]
-  (set-message-box-content! {:title  "Share Current Map"
-                             :body   (str "URL: \n\n" url)
-                             :mode   :close}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -346,7 +337,9 @@
                                [tool-button icon on-click]])
                   [[:share
                     "Share current map"
-                    #(share-url (create-share-link))]
+                    #(set-message-box-content! {:title "Share Current Map"
+                                                :body  (str "URL: \n\n" (create-share-link))
+                                                :mode  :close})]
                    [:terrain
                     "Toggle 3D terrain"
                     #(do

@@ -55,7 +55,7 @@
 (defonce *layer-idx        (r/atom 0))
 (defonce the-cameras       (r/atom nil))
 (defonce loading?          (r/atom true))
-(defonce url-params        (atom {}))
+(def     url-params        (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Processing Functions
@@ -130,12 +130,16 @@
   "Generates a link with forecast and parameters encoded in a URL"
   []
   (let [selected-params (get @*params @*forecast)
-        page-params (merge {:option @*forecast} selected-params)]
-    (as-> page-params %
-      (map (fn [[k v]] (when (keyword? v)
-                         (str (name k) "=" (name v)))) %)
-      (str/join "&" %)
-      (str js/location.origin js/location.pathname "?" % js/location.hash))))
+        page-params     (merge {:option @*forecast :layer-idx @*layer-idx} selected-params)]
+    (as-> page-params $
+      (map (fn [[k v]] (cond
+                         (keyword? v)
+                         (str (name k) "=" (name v))
+
+                         (or (string? v) (number? v))
+                         (str (name k) "=" v))) $)
+      (str/join "&" $)
+      (str js/location.origin js/location.pathname "?" $ js/location.hash))))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
@@ -495,28 +499,32 @@
    [:div {:style ($message-modal false)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
-(defn- params->forecast
-  "Parses query parameters to into the selected forecast and parameters"
-  [config {:keys [option] :as params}]
-  (let [option-key    (keyword option)
-        opt-conf-keys (-> config (get-in [option-key :params]) (keys))
-        selected      (select-keys params opt-conf-keys)]
-    {:forecast option-key
-     :forecast-params (apply merge (map (fn [[k v]] (hash-map k (keyword v))) selected))}))
+(defn- params->option
+  "Parses query parameters to into the selected option and parameters"
+  [options-config {:keys [option layer-idx] :as params}]
+  (let [option-key (keyword option)
+        selected   (as-> options-config $
+                     (get-in $ [option-key :params])
+                     (keys $)
+                     (select-keys params $))]
+    {:option        option-key
+     :layer-idx     (or (js/parseInt layer-idx) 0)
+     :option-params (u/mapm (fn [[k v]] [k (keyword v)]) selected)}))
 
-(defn- reset-forecasts! [forecast-type params]
-  (let [{:keys [options-config default]}   (c/get-forecast forecast-type)
-        {:keys [forecast forecast-params]} (params->forecast options-config params)]
+(defn- reset-forecasts! [{:keys [forecast-type] :as params}]
+  (let [{:keys [options-config default]}         (c/get-forecast forecast-type)
+        {:keys [option layer-idx option-params]} (params->option options-config params)]
     (reset! options options-config)
-    (reset! *forecast (or forecast default))
-    (reset! url-params forecast-params)))
+    (reset! *forecast (or option default))
+    (reset! *layer-idx layer-idx)
+    (reset! url-params option-params)))
 
-(defn root-component [{:keys [forecast-type user-id] :as params}]
+(defn root-component [{:keys [user-id] :as params}]
   (let [height (r/atom "100%")]
     (r/create-class
      {:component-did-mount
       (fn [_]
-        (reset-forecasts! forecast-type params)
+        (reset-forecasts! params)
         (let [update-fn (fn [& _]
                           (-> js/window (.scrollTo 0 0))
                           (reset! mobile? (> 700.0 (.-innerWidth js/window)))
