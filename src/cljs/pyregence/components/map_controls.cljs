@@ -339,7 +339,7 @@
                     #(do
                        (swap! terrain? not)
                        (mb/toggle-dimensions! @terrain?)
-                       (mb/set-pitch! (if @terrain? 45 0)))]
+                       (mb/set-pitch-bearing! (if @terrain? 45 0) 0))]
                    [:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition mb/set-center-my-location!))]
@@ -489,10 +489,9 @@
   (r/with-let [*camera     (r/atom nil)
                *image      (r/atom nil)
                zoom-camera (fn []
-                             (let [{:keys [longitude latitude tilt pan]} @*camera
-                                   center [longitude latitude]]
+                             (let [{:keys [longitude latitude tilt pan]} @*camera]
                                (mb/toggle-dimensions! true)
-                               (mb/fly-to-3d! center 15 pan (min (+ 90 tilt) 85)) 400))
+                               (mb/fly-to-3d! [longitude latitude] 15 pan (min (+ 90 tilt) 85)) 400))
                on-click    (fn [features]
                              (reset! *camera (js->clj (aget features "properties") :keywordize-keys true))
                              (reset! *image nil)
@@ -522,7 +521,10 @@
            [:div {:style {:position "absolute" :top "2rem" :width "100%" :display "flex" :justify-content "center"}}
             [:label (str "Camera: " (:name @*camera))]]
            [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
-           [:button {:type "button" :class "btn btn-sm btn-secondary" :on-click zoom-camera :style {:position "absolute" :bottom "2rem" :right "2rem"}}
+           [:button {:type     "button"
+                     :class    "btn btn-sm btn-secondary"
+                     :on-click zoom-camera
+                     :style    {:position "absolute" :bottom "2rem" :right "2rem"}}
             "Zoom to Camera"]
            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 

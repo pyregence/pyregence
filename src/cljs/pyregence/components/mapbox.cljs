@@ -103,15 +103,15 @@
   (let [zoom (max (first (get-zoom-info)) min-zoom)]
     (.easeTo @the-map (clj->js {:zoom zoom :center center :animate true}))))
 
-(defn set-pitch!
-  "Adjusts the map pitch to `pitch` (0-90)."
-  [pitch]
-  (.easeTo @the-map (clj->js {:pitch pitch :animate true})))
+(defn set-pitch-bearing!
+  "Adjusts the map pitch/bearing to `pitch` (0 to 90) and `bearing` (-180 to 180)."
+  [pitch bearing]
+  {:pre [(> 0 pitch 90) (> -180 bearing 180)]}
+  (.easeTo @the-map (clj->js {:pitch pitch :bearing bearing :animate true})))
 
 (defn fly-to-3d!
   "Flies the map view to `center` at `zoom` with `bearing` and `pitch`."
   [center zoom bearing pitch]
-  (println center zoom bearing pitch)
   (.flyTo @the-map (clj->js {:bearing bearing
                              :pitch   pitch
                              :zoom    zoom
