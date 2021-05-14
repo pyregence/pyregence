@@ -68,7 +68,7 @@
   {:type       "Feature"
    :geometry   {:type        "Point"
                 :coordinates [(:longitude site) (:latitude site)]}
-   :properties {:name name :pan (:pan position)}})
+   :properties (merge {:name name :pan (:pan position) :tilt (:tilt position)} site)})
 
 (defn- ->feature-collection [features]
   {:type     "FeatureCollection"

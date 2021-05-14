@@ -99,16 +99,24 @@
 
 (defn set-center!
   "Centers the map on `center` with a minimum zoom value of `min-zoom`."
-  ([center min-zoom]
-   (let [curr-zoom (get (get-zoom-info) 0)
-         zoom      (if (< curr-zoom min-zoom) min-zoom curr-zoom)]
-     (set-center! center zoom 0 0)))
-  ([center zoom bearing pitch]
-   (.flyTo @the-map (clj->js {:bearing bearing
-                              :pitch   pitch
-                              :zoom    zoom
-                              :center  center
-                              :animate true}))))
+  [center min-zoom]
+  (let [zoom (max (first (get-zoom-info)) min-zoom)]
+    (.easeTo @the-map (clj->js {:zoom zoom :center center :animate true}))))
+
+(defn set-pitch!
+  "Adjusts the map pitch to `pitch` (0-90)."
+  [pitch]
+  (.easeTo @the-map (clj->js {:pitch pitch :animate true})))
+
+(defn fly-to-3d!
+  "Flies the map view to `center` at `zoom` with `bearing` and `pitch`."
+  [center zoom bearing pitch]
+  (println center zoom bearing pitch)
+  (.flyTo @the-map (clj->js {:bearing bearing
+                             :pitch   pitch
+                             :zoom    zoom
+                             :center  center
+                             :animate true})))
 
 (defn center-on-overlay!
   "Centers the map on the marker."
@@ -503,10 +511,7 @@
   [enabled?]
   (toggle-terrain! enabled?)
   (toggle-rotation! enabled?)
-  (toggle-pitch! enabled?)
-  (.easeTo @the-map #js {:pitch   (if enabled? 45.0 0.0)
-                         :bearing 0.0
-                         :animate true}))
+  (toggle-pitch! enabled?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Manage Layers
