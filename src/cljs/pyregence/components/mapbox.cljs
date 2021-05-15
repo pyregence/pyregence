@@ -2,7 +2,6 @@
   (:require [reagent.core       :as r]
             [reagent.dom.server :as rs]
             [clojure.string :as str]
-            [clojure.set        :refer [union difference]]
             [clojure.core.async :refer [go <!]]
             [pyregence.config    :as c]
             [pyregence.utils     :as u]
@@ -68,7 +67,7 @@
   (index-of #(= id (get % "id")) layers))
 
 (defn- is-selectable? [s]
-  (contains? @custom-layers s))
+  (@custom-layers s))
 
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.
@@ -133,7 +132,7 @@
   (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
 
 (defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
-  (swap! custom-layers union (set (map :id new-layers)))
+  (swap! custom-layers into (map :id new-layers))
   (let [new-style (cond-> style
                     sources     (assoc "sources" sources)
                     layers      (assoc "layers" layers)
@@ -586,7 +585,7 @@
   (let [curr-style      (get-style)
         layers          (get curr-style "layers")
         filtered-layers (remove #(= id (get % "id")) layers)]
-    (swap! custom-layers difference (set [id]))
+    (swap! custom-layers disj id)
     (update-style! curr-style :layers filtered-layers)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
