@@ -22,7 +22,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
-(defonce the-map (r/atom nil))
+(defonce the-map       (r/atom nil))
+(defonce custom-layers (atom #{}))
 
 (def ^:private the-marker (r/atom nil))
 (def ^:private the-popup  (r/atom nil))
@@ -33,9 +34,6 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private prefix      "fire")
-(def ^:private fuels       "fuels")
-(def ^:private wg4         "wg4")
 (def ^:private fire-active "fire-active")
 (def ^:private mapbox-dem  "mapbox-dem")
 
@@ -69,9 +67,7 @@
   (index-of #(= id (get % "id")) layers))
 
 (defn- is-selectable? [s]
-  (or (str/starts-with? s prefix)
-      (str/starts-with? s fuels)
-      (str/starts-with? s wg4)))
+  (@custom-layers s))
 
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.
@@ -136,6 +132,7 @@
   (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
 
 (defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
+  (swap! custom-layers into (map :id new-layers))
   (let [new-style (cond-> style
                     sources     (assoc "sources" sources)
                     layers      (assoc "layers" layers)
@@ -588,6 +585,7 @@
   (let [curr-style      (get-style)
         layers          (get curr-style "layers")
         filtered-layers (remove #(= id (get % "id")) layers)]
+    (swap! custom-layers disj id)
     (update-style! curr-style :layers filtered-layers)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
