@@ -113,7 +113,10 @@
         [radio "Local" show-utc? false select-time-zone! true]])
      [:div {:style ($/flex-col)}
       [:input {:style {:width "12rem"}
-               :type "range" :min "0" :max (max @*layer-idx (dec (count @layers))) :value (or @*layer-idx 0)
+               :type "range"
+               :min "0"
+               :max (dec (count @layers))
+               :value (min (dec (count @layers)) (or @*layer-idx 0))
                :on-change #(select-layer! (u/input-int-value %))}]
       [:label layer-full-time]]
      [:span {:style {:display "flex" :margin "0 1rem"}}

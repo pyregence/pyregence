@@ -326,15 +326,28 @@
         (edn/read-string)
         (process-capabilities! []))))
 
-(defn init-map! [user-id selected-options]
+(defn- params->selected-options
+  "Parses url query parameters to into the selected options"
+  [options-config forecast params]
+  (as-> options-config oc
+    (get-in oc [forecast :params])
+    (keys oc)
+    (select-keys params oc)
+    (u/mapm (fn [[k v]] [k (keyword v)]) oc)))
+
+(defn initialize! [{:keys [user-id forecast-type forecast layer-idx] :as params}]
   (go
-    (let [user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
+    (let [{:keys [options-config default]} (c/get-forecast forecast-type)
+          user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names")
           fire-cameras     (u/call-clj-async! "get-cameras")]
+      (reset! options options-config)
+      (reset! *forecast (or (keyword forecast) default))
+      (reset! *layer-idx (if layer-idx (js/parseInt layer-idx) 0))
       (mb/init-map!)
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
-                             selected-options)
+                             (params->selected-options @options @*forecast params))
       (<! (select-forecast! @*forecast))
       (reset! the-cameras (edn/read-string (:body (<! fire-cameras))))
       (reset! loading? false))))
@@ -499,23 +512,7 @@
    [:div {:style ($message-modal false)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
-(defn- params->selected-options
-  "Parses url query parameters to into the selected options"
-  [options-config forecast params]
-  (as-> options-config oc
-    (get-in oc [forecast :params])
-    (keys oc)
-    (select-keys params oc)
-    (u/mapm (fn [[k v]] [k (keyword v)]) oc)))
-
-(defn- reset-forecasts! [forecast-type forecast layer-idx]
-  (let [{:keys [options-config default]} (c/get-forecast forecast-type)]
-    (reset! options options-config)
-    (reset! *forecast (or (keyword forecast) default))
-    (reset! *layer-idx (or (js/parseInt layer-idx) 0))))
-
-(defn root-component [{:keys [user-id forecast-type forecast layer-idx] :as params}]
-  (reset-forecasts! forecast-type forecast layer-idx)
+(defn root-component [{:keys [user-id] :as params}]
   (let [height (r/atom "100%")]
     (r/create-class
      {:component-did-mount
@@ -533,7 +530,7 @@
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
           (process-toast-messages!)
-          (init-map! user-id (params->selected-options @options @*forecast params))
+          (initialize! params)
           (update-fn)))
 
       :reagent-render
