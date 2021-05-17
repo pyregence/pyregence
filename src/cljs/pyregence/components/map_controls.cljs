@@ -339,7 +339,7 @@
                     #(do
                        (swap! terrain? not)
                        (mb/toggle-dimensions! @terrain?)
-                       (mb/set-pitch-bearing! (if @terrain? 45 0) 0))]
+                       (mb/ease-to! {:pitch (if @terrain? 45 0) :bearing 0}))]
                    [:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition mb/set-center-my-location!))]
