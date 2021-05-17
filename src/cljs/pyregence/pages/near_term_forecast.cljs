@@ -326,7 +326,7 @@
         (edn/read-string)
         (process-capabilities! []))))
 
-(defn init-map! [user-id & [selected-options]]
+(defn init-map! [user-id selected-options]
   (go
     (let [user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names")
@@ -502,12 +502,13 @@
 (defn- params->selected-options
   "Parses url query parameters to into the selected options"
   [options-config forecast params]
-  (let [selected (->> (get-in options-config [forecast :params])
-                      (keys)
-                      (select-keys params))]
-    (u/mapm (fn [[k v]] [k (keyword v)]) selected)))
+  (as-> options-config oc
+    (get-in oc [forecast :params])
+    (keys oc)
+    (select-keys params oc)
+    (u/mapm (fn [[k v]] [k (keyword v)]) oc)))
 
-(defn- reset-forecasts! [forecast-type & [forecast layer-idx]]
+(defn- reset-forecasts! [forecast-type forecast layer-idx]
   (let [{:keys [options-config default]} (c/get-forecast forecast-type)]
     (reset! options options-config)
     (reset! *forecast (or (keyword forecast) default))
