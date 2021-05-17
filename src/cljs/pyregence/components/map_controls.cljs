@@ -76,6 +76,7 @@
        :pause-button    [svg/pause-button]
        :play-button     [svg/play-button]
        :previous-button [svg/previous-button]
+       :share           [svg/share]
        :terrain         [svg/terrain]
        :zoom-in         [svg/zoom-in]
        :zoom-out        [svg/zoom-out]
@@ -112,7 +113,10 @@
         [radio "Local" show-utc? false select-time-zone! true]])
      [:div {:style ($/flex-col)}
       [:input {:style {:width "12rem"}
-               :type "range" :min "0" :max (dec (count @layers)) :value (or @*layer-idx 0)
+               :type "range"
+               :min "0"
+               :max (dec (count @layers))
+               :value (min (dec (count @layers)) (or @*layer-idx 0))
                :on-change #(select-layer! (u/input-int-value %))}]
       [:label layer-full-time]]
      [:span {:style {:display "flex" :margin "0 1rem"}}
@@ -313,7 +317,7 @@
                                   :right
                                   [tool-button icon on-click active?]])))])
 
-(defn zoom-bar [get-current-layer-extent mobile?]
+(defn zoom-bar [get-current-layer-extent mobile? create-share-link]
   (r/with-let [terrain?     (r/atom false)
                minZoom      (r/atom 0)
                maxZoom      (r/atom 28)
@@ -334,7 +338,12 @@
                                hover-text
                                :right
                                [tool-button icon on-click]])
-                  [[:terrain
+                  [[:share
+                    "Share current map"
+                    #(set-message-box-content! {:title "Share Current Map"
+                                                :body  (str "URL: \n\n" (create-share-link))
+                                                :mode  :close})]
+                   [:terrain
                     "Toggle 3D terrain"
                     #(do
                        (swap! terrain? not)

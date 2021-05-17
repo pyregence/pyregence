@@ -125,10 +125,25 @@
   (some #(get % key-name)
         (vals (get-forecast-opt :params))))
 
+(defn create-share-link
+  "Generates a link with forecast and parameters encoded in a URL"
+  []
+  (let [selected-params (get @*params @*forecast)
+        page-params     (merge {:forecast @*forecast :layer-idx @*layer-idx} selected-params)]
+    (as-> page-params $
+      (map (fn [[k v]] (cond
+                         (keyword? v)
+                         (str (name k) "=" (name v))
+
+                         (or (string? v) (number? v))
+                         (str (name k) "=" v))) $)
+      (str/join "&" $)
+      (str js/location.origin js/location.pathname "?" $ js/location.hash))))
+
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
-  channel containing the result of calling process-fn on the response
-  or nil if an error occurred."
+   channel containing the result of calling process-fn on the response
+   or nil if an error occurred."
   [process-fn url]
   (u/fetch-and-process url
                        {:method "get"
@@ -275,7 +290,7 @@
 
 ;;; Capabilities
 
-(defn process-capabilities! [fire-names user-layers]
+(defn process-capabilities! [fire-names user-layers & [selected-options]]
   (reset! capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
@@ -293,7 +308,8 @@
                    (fn [[forecast _]]
                      (let [params (get-in @capabilities [forecast :params])]
                        [forecast (merge (u/mapm (fn [[k v]]
-                                                  [k (or (:default-option v)
+                                                  [k (or (get selected-options k)
+                                                         (:default-option v)
                                                          (ffirst (:options v)))])
                                                 params)
                                         {:underlays (->> params
@@ -310,14 +326,28 @@
         (edn/read-string)
         (process-capabilities! []))))
 
-(defn init-map! [user-id]
+(defn- params->selected-options
+  "Parses url query parameters to into the selected options"
+  [options-config forecast params]
+  (as-> options-config oc
+    (get-in oc [forecast :params])
+    (keys oc)
+    (select-keys params oc)
+    (u/mapm (fn [[k v]] [k (keyword v)]) oc)))
+
+(defn initialize! [{:keys [user-id forecast-type forecast layer-idx] :as params}]
   (go
-    (let [user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
+    (let [{:keys [options-config default]} (c/get-forecast forecast-type)
+          user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names")
           fire-cameras     (u/call-clj-async! "get-cameras")]
+      (reset! options options-config)
+      (reset! *forecast (or (keyword forecast) default))
+      (reset! *layer-idx (if layer-idx (js/parseInt layer-idx) 0))
       (mb/init-map!)
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
-                             (edn/read-string (:body (<! user-layers-chan))))
+                             (edn/read-string (:body (<! user-layers-chan)))
+                             (params->selected-options @options @*forecast params))
       (<! (select-forecast! @*forecast))
       (reset! the-cameras (edn/read-string (:body (<! fire-cameras))))
       (reset! loading? false))))
@@ -403,7 +433,7 @@
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
          [mc/tool-bar show-info? show-match-drop? show-camera? set-show-info! @mobile?]
          [mc/scale-bar @mobile?]
-         [mc/zoom-bar get-current-layer-extent @mobile?]
+         [mc/zoom-bar get-current-layer-extent @mobile? create-share-link]
          [mc/time-slider
           param-layers
           *layer-idx
@@ -482,17 +512,11 @@
    [:div {:style ($message-modal false)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
-(defn- reset-forecasts! [forecast-type]
-  (let [{:keys [options-config default]} (c/get-forecast forecast-type)]
-    (reset! options options-config)
-    (reset! *forecast default)))
-
-(defn root-component [{:keys [forecast-type user-id]}]
+(defn root-component [{:keys [user-id] :as params}]
   (let [height (r/atom "100%")]
     (r/create-class
      {:component-did-mount
       (fn [_]
-        (reset-forecasts! forecast-type)
         (let [update-fn (fn [& _]
                           (-> js/window (.scrollTo 0 0))
                           (reset! mobile? (> 700.0 (.-innerWidth js/window)))
@@ -506,7 +530,7 @@
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
           (process-toast-messages!)
-          (init-map! user-id)
+          (initialize! params)
           (update-fn)))
 
       :reagent-render
