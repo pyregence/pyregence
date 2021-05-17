@@ -338,7 +338,8 @@
                     "Toggle 3D terrain"
                     #(do
                        (swap! terrain? not)
-                       (mb/toggle-dimensions! @terrain?))]
+                       (mb/toggle-dimensions! @terrain?)
+                       (mb/ease-to! {:pitch (if @terrain? 45 0) :bearing 0}))]
                    [:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition mb/set-center-my-location!))]
@@ -487,12 +488,18 @@
 (defn camera-tool [cameras parent-box close-fn!]
   (r/with-let [*camera     (r/atom nil)
                *image      (r/atom nil)
+               zoom-camera (fn []
+                             (let [{:keys [longitude latitude tilt pan]} @*camera]
+                               (mb/toggle-dimensions! true)
+                               (mb/fly-to! {:center [longitude latitude]
+                                            :zoom 15
+                                            :bearing pan
+                                            :pitch (min (+ 90 tilt) 85)}) 400))
                on-click    (fn [features]
-                             (let [camera (-> features (aget "properties") (aget "name"))]
-                               (reset! *image nil)
-                               (reset! *camera camera)
-                               (when (some? @*camera)
-                                 (go (reset! *image (<! (get-current-image-src camera)))))))]
+                             (reset! *camera (js->clj (aget features "properties") :keywordize-keys true))
+                             (reset! *image nil)
+                             (when (some? (:name @*camera))
+                               (go (reset! *image (<! (get-current-image-src (:name @*camera)))))))]
     (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
     (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)
     [:div#wildfire-camera-tool
@@ -515,13 +522,18 @@
           (some? @*image)
           [:div
            [:div {:style {:position "absolute" :top "2rem" :width "100%" :display "flex" :justify-content "center"}}
-            [:label (str "Camera: " @*camera)]]
+            [:label (str "Camera: " (:name @*camera))]]
            [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
+           [:button {:type     "button"
+                     :class    "btn btn-sm btn-secondary"
+                     :on-click zoom-camera
+                     :style    {:position "absolute" :bottom "2rem" :right "2rem"}}
+            "Zoom to Camera"]
            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 
           :else
           [:div {:style {:padding "1.2em"}}
-           (str "Loading camera " @*camera "...")]))]]
+           (str "Loading camera " (:name @*camera) "...")]))]]
     (finally
       (mb/remove-layer! "fire-cameras"))))
 
