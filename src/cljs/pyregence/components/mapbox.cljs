@@ -109,14 +109,21 @@
   {:pre [(> 0 pitch 90) (> -180 bearing 180)]}
   (.easeTo @the-map (clj->js {:pitch pitch :bearing bearing :animate true})))
 
-(defn fly-to-3d!
+(defn ease-to!
+  "Changes the position of the map to `center` given `zoom`, `pitch`, and `bearing`.
+  Can also supply `min-zoom`  "
+  [{:keys [zoom min-zoom] :as new-location}]
+  (let [new-zoom (or zoom
+                     (max (first (get-zoom-info)) (or min-zoom 0)))]
+    (.easeTo @the-map (clj->js (-> new-location
+                                   (assoc :zoom new-zoom)
+                                   (assoc :animate (or (:animate new-location) true))
+                                   (dissoc :min-zoom))))))
+
+(defn fly-to!
   "Flies the map view to `center` at `zoom` with `bearing` and `pitch`."
-  [center zoom bearing pitch]
-  (.flyTo @the-map (clj->js {:bearing bearing
-                             :pitch   pitch
-                             :zoom    zoom
-                             :center  center
-                             :animate true})))
+  [new-location]
+  (.flyTo @the-map (clj->js (merge {:bearing 0 :pitch 0 :zoom 0 :center [0 0]} new-location))))
 
 (defn center-on-overlay!
   "Centers the map on the marker."

@@ -491,7 +491,10 @@
                zoom-camera (fn []
                              (let [{:keys [longitude latitude tilt pan]} @*camera]
                                (mb/toggle-dimensions! true)
-                               (mb/fly-to-3d! [longitude latitude] 15 pan (min (+ 90 tilt) 85)) 400))
+                               (mb/fly-to! {:center [longitude latitude]
+                                            :zoom 15
+                                            :bearing pan
+                                            :pitch (min (+ 90 tilt) 85)}) 400))
                on-click    (fn [features]
                              (reset! *camera (js->clj (aget features "properties") :keywordize-keys true))
                              (reset! *image nil)
