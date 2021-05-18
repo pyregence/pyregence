@@ -268,6 +268,27 @@
           select-base-map!]]]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Share Tool
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn share-inner-modal [create-share-link]
+  (r/with-let [copied (r/atom false)]
+    [:div {:style ($/combine $/flex-row {:width "100%"})}
+     [:input {:autoFocus true
+              :onChange  identity
+              :onClick   #(do (u/copy-input-clipboard! (.-target %))
+                              (reset! copied true))
+              :id        "share-url"
+              :style     {:width "100%"}
+              :type      "text"
+              :value     (create-share-link)}]
+     [:input {:onClick #(do (u/copy-input-clipboard! (js/document.getElementById "share-url"))
+                            (reset! copied true))
+              :style   {:font-size "0.9rem" :margin-left "1rem" :padding "0.1rem"}
+              :type    "button"
+              :value   (if @copied "Copied!" "Copy URL")}]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -341,7 +362,7 @@
                   [[:share
                     "Share current map"
                     #(set-message-box-content! {:title "Share Current Map"
-                                                :body  (str "URL: \n\n" (create-share-link))
+                                                :body  [share-inner-modal create-share-link]
                                                 :mode  :close})]
                    [:terrain
                     "Toggle 3D terrain"

@@ -352,3 +352,9 @@
   [pred f]
   (fn [x]
     (if (pred x) (f x) x)))
+
+(defn copy-input-clipboard! [element]
+  (doto element
+    (.focus)
+    (.select))
+  (js/document.execCommand "copy"))
