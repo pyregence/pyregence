@@ -139,7 +139,10 @@
          [:div {:style ($/action-header)}
           [:label {:style ($/padding "1px" :l)} title]]
          [:div {:style ($/combine $/flex-col {:padding "1rem"})}
-          [:label {:style {:font-size ".95rem"}} (show-line-break body)]
+          (if (vector? body)
+            body
+            [:label {:style {:font-size ".95rem"}}
+             (show-line-break body)])
           (condp = mode
             :close [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
                     [button "Close" :yellow #(do
