@@ -272,21 +272,29 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn share-inner-modal [create-share-link]
-  (r/with-let [copied (r/atom false)]
+  (r/with-let [copied     (r/atom false)
+               share-link (create-share-link)
+               on-click   #(do
+                             (u/copy-input-clipboard! (js/document.getElementById "share-link"))
+                             (reset! copied true))]
     [:div {:style ($/combine $/flex-row {:width "100%"})}
-     [:input {:autoFocus true
-              :onChange  identity
-              :onClick   #(do (u/copy-input-clipboard! (.-target %))
-                              (reset! copied true))
-              :id        "share-url"
-              :style     {:width "100%"}
-              :type      "text"
-              :value     (create-share-link)}]
-     [:input {:onClick #(do (u/copy-input-clipboard! (js/document.getElementById "share-url"))
-                            (reset! copied true))
-              :style   {:font-size "0.9rem" :margin-left "1rem" :padding "0.1rem"}
-              :type    "button"
-              :value   (if @copied "Copied!" "Copy URL")}]]))
+     [:input {:auto-focus true
+              :on-click   on-click
+              :id         "share-link"
+              :style      {:width "100%"}
+              :read-only  true
+              :type       "text"
+              :value      share-link}]
+     [:input {:on-click on-click
+              :style    ($/combine ($/bg-color :yellow)
+                                   {:border-radius "3px"
+                                    :border        "none"
+                                    :color         "white"
+                                    :font-size     "0.9rem"
+                                    :margin-left   "1rem"
+                                    :padding       "0.3rem"})
+              :type     "button"
+              :value    (if @copied "Copied!" "Copy URL")}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars
