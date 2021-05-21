@@ -65,10 +65,12 @@
    "wx.pyregence.org"       "Weather"
    "data.pyregence.org"     "GeoServer"})
 
+(defn append-log [job {:keys [message] :as m}]
+  (cond-> (merge job m)
+    message (assoc :log (str (:log job) (format "\n%s - %s" (timestamp) message)))))
+
 (defn- set-job-keys! [job-id m]
-  (swap! job-queue update job-id merge m)
-  (when-let [message (:message m)]
-    (swap! job-queue update-in [job-id :log] str (format "\n%s - %s" (timestamp) message))))
+  (swap! job-queue update job-id append-log m))
 
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]
