@@ -1,5 +1,6 @@
 (ns pyregence.match-drop
-  (:import java.util.TimeZone)
+  (:import  [java.util TimeZone Date]
+            [java.text SimpleDateFormat])
   (:require [clojure.data.json :as json]
             [clojure.string    :as str]
             [pyregence.capabilities :refer [set-capabilities!]]
@@ -41,12 +42,15 @@
                          (catch Exception _ (long (or default -1))))))
 
 (defn- convert-date-string [date-str]
-  (let [in-format  (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm z")
-        out-format (doto (java.text.SimpleDateFormat. "yyyyMMdd_HHmmss")
+  (let [in-format  (SimpleDateFormat. "yyyy-MM-dd HH:mm z")
+        out-format (doto (SimpleDateFormat. "yyyyMMdd_HHmmss")
                      (.setTimeZone (TimeZone/getTimeZone "UTC")))]
     (->> date-str
          (.parse in-format)
          (.format out-format))))
+
+(defn timestamp []
+  (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.)))
 
 (defmacro nil-on-error
   [& body]
@@ -61,8 +65,12 @@
    "wx.pyregence.org"       "Weather"
    "data.pyregence.org"     "GeoServer"})
 
+(defn append-log [job {:keys [message] :as m}]
+  (cond-> (merge job m)
+    message (assoc :log (str (:log job) (format "\n%s - %s" (timestamp) message)))))
+
 (defn- set-job-keys! [job-id m]
-  (swap! job-queue update job-id merge m))
+  (swap! job-queue update job-id append-log m))
 
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]
@@ -76,7 +84,6 @@
     (set-job-keys! job-id
                    {:md-status 1
                     :message   (str "Connection to " host " failed.")})))
-
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
   [{:keys [user-id ignition-time] :as params}]
@@ -110,6 +117,7 @@
            {:user-id        user-id
             :md-status      2
             :message        (str "Job " job-id " Initiated.")
+            :log            (format "%s - Job %d Initiated" (timestamp) job-id)
             :elmfire-done?  false
             :gridfire-done? false
             :request        request})
@@ -124,7 +132,7 @@
   [job-id]
   (data-response (-> @job-queue
                      (get job-id)
-                     (select-keys [:message :md-status]))))
+                     (select-keys [:message :md-status :log]))))
 
 (defn- process-complete! [job-id {:keys [response-host message model]}]
   (when message
