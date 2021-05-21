@@ -408,9 +408,9 @@
   (go
     (while @poll?
       (let [{:keys [message md-status log]} (-> (u/call-clj-async! "get-md-status" job-id)
-                                            (<!)
-                                            (:body)
-                                            (edn/read-string))]
+                                                (<!)
+                                                (:body)
+                                                (edn/read-string))]
         (case md-status
           0 (do
               (refresh-capabilities!)
