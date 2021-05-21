@@ -70,8 +70,12 @@
       [simple-form
        "Register"
        "Register"
-       [["Email"             email       "text"]
-        ["Full Name"         full-name   "text"]
-        ["Password"          password    "password"]
-        ["Re-enter Password" re-password "password"]]
-       register!]]]))
+       [["Email"            email       "email"    "email"]
+        ["Full Name"        full-name   "text"     "name"]
+        ["Password"         password    "password" "new-password"]
+        ["Confirm Password" re-password "password" "confirm-password"]]
+       register!]]
+     [:div {:style ($/combine ($/align "flex" "center"))}
+      "Already have an account?  "
+      [:a {:href "/login" :style {:margin-left "0.2rem"}} "Log in here"]
+      "."]]))

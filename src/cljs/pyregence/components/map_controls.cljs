@@ -279,7 +279,8 @@
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
-(defn tool-bar [show-info? show-match-drop? show-camera? set-show-info! mobile?]
+(defn tool-bar [{:keys [show-info? show-match-drop? show-camera? set-show-info! mobile? user-id]}]
+  (print "--- User ID: " user-id)
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (->> [[:layers
           (str (hs-str @show-panel?) " layer selection")
@@ -292,7 +293,7 @@
                  (reset! show-match-drop? false)
                  (reset! show-camera? false))
             @show-info?])
-         (when-not mobile?
+         (when (and (number? user-id) (not mobile?))
            [:flame
             (str (hs-str @show-match-drop?) " match drop tool")
             #(do (swap! show-match-drop? not)
@@ -398,12 +399,13 @@
 
 (defn- initiate-match-drop
   "Initiates the match drop run and initiates polling for updates."
-  [[lon lat] datetime refresh-capabilities!]
+  [[lon lat] datetime refresh-capabilities! user-id]
   (go
     (let [match-chan (u/call-clj-async! "initiate-md"
                                         {:ignition-time (u/time-zone-iso-date datetime true)
                                          :lon           lon
-                                         :lat           lat})]
+                                         :lat           lat
+                                         :user-id       user-id})]
       (reset! poll? true)
       (set-message-box-content! {:title  "Processing Match Drop"
                                  :body   "Initiating match drop run."
@@ -439,7 +441,7 @@
 (defn match-drop-tool
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular
    location and date/time."
-  [parent-box close-fn! refresh-capabilities!]
+  [parent-box close-fn! refresh-capabilities! user-id]
   (r/with-let [lon-lat        (r/atom [0 0])
                datetime       (r/atom "")
                moving-lon-lat (r/atom [0 0])
@@ -464,7 +466,7 @@
           [:div {:style {:display "flex" :justify-content "flex-end" :align-self "flex-end" :margin-left "auto"}}
            [:button {:class    "mx-3 mb-1 btn btn-sm text-white"
                      :style    ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime)))
-                     :on-click #(initiate-match-drop @lon-lat @datetime refresh-capabilities!)}
+                     :on-click #(initiate-match-drop @lon-lat @datetime refresh-capabilities! user-id)}
             "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event)

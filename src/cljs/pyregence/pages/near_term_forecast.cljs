@@ -393,7 +393,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn control-layer []
+(defn control-layer [user-id]
   (let [my-box (r/atom #js {})]
     (r/create-class
      {:component-did-mount
@@ -426,12 +426,17 @@
                @legend-list
                @last-clicked-info
                #(set-show-info! false)])
-            (when @show-match-drop?
-              [mc/match-drop-tool @my-box #(reset! show-match-drop? false) refresh-capabilities!])
+            (when (and (number? user-id) @show-match-drop?)
+              [mc/match-drop-tool @my-box #(reset! show-match-drop? false) refresh-capabilities! user-id])
             (when @show-camera?
               [mc/camera-tool @the-cameras @my-box #(reset! show-camera? false)])])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
-         [mc/tool-bar show-info? show-match-drop? show-camera? set-show-info! @mobile?]
+         [mc/tool-bar {:show-info? show-info?
+                       :show-match-drop? show-match-drop?
+                       :show-camera? show-camera?
+                       :set-show-info! set-show-info!
+                       :mobile @mobile?
+                       :user-id user-id}]
          [mc/scale-bar @mobile?]
          [mc/zoom-bar get-current-layer-extent @mobile? create-share-link]
          [mc/time-slider
@@ -562,12 +567,11 @@
                                         (-> js/window .-location .reload)))}
                 "Log Out"]]
               [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-                ;; TODO, this is commented out until we are ready for users to create an account
-                ;;  [:label {:style {:margin-right "1rem" :cursor "pointer"}
-                ;;           :on-click #(u/jump-to-url! "/register")} "Register"]
+               [:label {:style {:margin-right "1rem" :cursor "pointer"}
+                        :on-click #(u/jump-to-url! "/register")} "Register"]
                [:label {:style {:cursor "pointer"}
                         :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
-          (when @mb/the-map [control-layer])
+          (when @mb/the-map [control-layer user-id])
           [map-layer]
           [pop-up]]])})))
