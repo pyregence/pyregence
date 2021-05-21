@@ -64,18 +64,21 @@
 (defn- set-job-keys! [job-id m]
   (swap! job-queue update job-id merge m))
 
+(defn- update-message! [job-id message]
+  (set-job-keys! job-id {:message message})
+  (swap! job-queue update-in [job-id :logs] conj message))
+
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]
   (when-not (send-to-server! host
                              port
                              (json/write-str
-                              (-> @job-queue
-                                  (get-in [job-id :request])
-                                  (merge extra-payload))
-                              :key-fn kebab->camel))
-    (set-job-keys! job-id
-                   {:md-status 1
-                    :message   (str "Connection to " host " failed.")})))
+                               (-> @job-queue
+                                   (get-in [job-id :request])
+                                   (merge extra-payload))
+                               :key-fn kebab->camel))
+    (set-job-keys! job-id {:md-status 1})
+    (update-message! job-id (str "Connection to " host " failed."))))
 
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
@@ -110,6 +113,7 @@
            {:user-id        user-id
             :md-status      2
             :message        (str "Job " job-id " Initiated.")
+            :logs           [(str "Job " job-id " Initiated.")]
             :elmfire-done?  false
             :gridfire-done? false
             :request        request})
@@ -124,11 +128,11 @@
   [job-id]
   (data-response (-> @job-queue
                      (get job-id)
-                     (select-keys [:message :md-status]))))
+                     (select-keys [:message :md-status :logs]))))
 
 (defn- process-complete! [job-id {:keys [response-host message model]}]
   (when message
-    (set-job-keys! job-id {:message message}))
+    (update-message! job-id {:message message}))
   (case response-host
     "wx.pyregence.org"
     (do
@@ -156,10 +160,11 @@
 
 (defn- process-error! [job-id {:keys [message]}]
   (log-str "Match drop job #" job-id " error: " message)
-  (set-job-keys! job-id {:md-status 1 :message message}))
+  (set-job-keys! job-id {:md-status 1})
+  (update-message! job-id message))
 
 (defn- process-message! [job-id {:keys [message response-host]}]
-  (set-job-keys! job-id {:message (str (get host-names response-host) ": " message)}))
+  (update-message! job-id (str (get host-names response-host) ": " message)))
 
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
