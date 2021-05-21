@@ -407,7 +407,7 @@
   [job-id refresh-capabilities!]
   (go
     (while @poll?
-      (let [{:keys [message md-status]} (-> (u/call-clj-async! "get-md-status" job-id)
+      (let [{:keys [message md-status log]} (-> (u/call-clj-async! "get-md-status" job-id)
                                             (<!)
                                             (:body)
                                             (edn/read-string))]
@@ -421,6 +421,7 @@
 
           (do
             (println message)
+            (js/console.error log)
             (set-message-box-content! {:body (str "Error running match-drop-" job-id ".\n\n" message)})
             (reset! poll? false))))
       (<! (timeout 5000)))))
