@@ -4,7 +4,8 @@
             [reagent.core :as r]
             [reagent.dom :as rd]
             [clojure.string :as str]
-            [pyregence.styles :as $]))
+            [pyregence.styles :as $]
+            [pyregence.utils  :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -62,20 +63,26 @@
 
 ;; FIXME take in a map instead of having so many overloads
 (defn labeled-input
-  ([label-text state]
-   [labeled-input label-text state "text" false #(reset! state (input-value %))])
-  ([label-text state type]
-   [labeled-input label-text state type false #(reset! state (input-value %))])
-  ([label-text state type disabled?]
-   [labeled-input label-text state type disabled? #(reset! state (input-value %))])
-  ([label-text state type disabled? call-back]
-   [:div {:style ($labeled-input)}
-    [:label label-text]
-    [:input {:class (style->class $/p-bordered-input)
-             :disabled disabled?
-             :type type
-             :value @state
-             :on-change call-back}]]))
+  ([{:keys [label state type autocomplete disabled? call-back autofocus?]
+     :or {type "text" disabled? false call-back #(reset! state (input-value %))}}]
+   [:section {:style ($labeled-input)}
+    [:label {:for (u/->kebab label)} label]
+    [:input {:class        (style->class $/p-bordered-input)
+             :autocomplete autocomplete
+             :auto-focus   autofocus?
+             :disabled     disabled?
+             :id           (u/->kebab label)
+             :type         type
+             :value        @state
+             :on-change    call-back}]])
+  ([label state]
+   [labeled-input {:label label :state state}])
+  ([label state type]
+   [labeled-input {:label label :state state :type type}])
+  ([label state type disabled?]
+   [labeled-input {:label label :state state :type type :disabled? disabled?}])
+  ([label state type disabled? call-back]
+   [labeled-input {:label label :state state :type type :disabled? disabled? :call-back call-back}]))
 
 (defn input-datetime
   "Creates a labeled datetime input."
@@ -88,21 +95,26 @@
   ([title button-text fields on-click]
    (simple-form title button-text fields on-click nil))
   ([title button-text fields on-click footer]
-   [:div {:style {:height "fit-content" :width "25rem"}}
+   [:form {:style {:height "fit-content" :width "25rem"}
+           :action "#"
+           :on-submit #(do (.preventDefault %) (.stopPropagation %) (on-click %))}
     [:div {:style ($/action-box)}
      [:div {:style ($/action-header)}
       [:label {:style ($/padding "1px" :l)} title]]
      [:div {:style ($/combine {:overflow "auto"})}
       [:div
        [:div {:style ($/combine $/flex-col [$/margin "1.5rem"])}
-        (doall (map-indexed (fn [i [label state type]]
-                              ^{:key i} [labeled-input label state type])
+        (doall (map-indexed (fn [i [label state type autocomplete]]
+                              ^{:key i} [labeled-input {:label        label
+                                                        :autocomplete autocomplete
+                                                        :state        state
+                                                        :type         type
+                                                        :autofocus?   (= 0 i)}])
                             fields))
         [:input {:class "btn border-yellow text-brown"
                  :style ($/combine ($/align :block :right) {:margin-top ".5rem"})
-                 :type "button"
-                 :value button-text
-                 :on-click on-click}]
+                 :type "submit"
+                 :value button-text}]
         (when footer (footer))]]]]]))
 
 (defn $arrow [arrow-x arrow-y arrow-position show?]

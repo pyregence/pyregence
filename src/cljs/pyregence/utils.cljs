@@ -26,6 +26,18 @@
   [event]
   (-> event .-target .-files (aget 0)))
 
+;; Text
+
+(defn ->kebab
+  "Converts string to kebab-string"
+  [string]
+  (as-> string s
+    (str/split s #"[\s-\.]")
+    (map str/lower-case s)
+    (str/join "-" s)))
+
+;; Session
+
 (def session-key "pyregence")
 
 (defn- save-session-storage! [data]
