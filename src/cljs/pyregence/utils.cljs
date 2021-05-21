@@ -353,8 +353,12 @@
   (fn [x]
     (if (pred x) (f x) x)))
 
-(defn copy-input-clipboard! [element]
-  (doto element
+(defn copy-input-clipboard!
+  "Copies the contents of `element-id` into the user's clipboard. `element-id` must
+   be the ID of an HTML element in the document."
+  [element-id]
+  {:pre [(string? element-id)]}
+  (doto (js/document.getElementById element-id)
     (.focus)
     (.select))
   (js/document.execCommand "copy"))

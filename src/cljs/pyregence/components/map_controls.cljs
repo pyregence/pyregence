@@ -275,7 +275,7 @@
   (r/with-let [copied     (r/atom false)
                share-link (create-share-link)
                on-click   #(do
-                             (u/copy-input-clipboard! (js/document.getElementById "share-link"))
+                             (u/copy-input-clipboard! "share-link")
                              (reset! copied true))]
     [:div {:style ($/combine $/flex-row {:width "100%"})}
      [:input {:auto-focus true
