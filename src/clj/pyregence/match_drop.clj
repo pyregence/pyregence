@@ -75,13 +75,13 @@
   (when-not (send-to-server! host
                              port
                              (json/write-str
-                               (-> @job-queue
-                                   (get-in [job-id :request])
-                                   (merge extra-payload))
-                               :key-fn kebab->camel))
-    (set-job-keys! job-id {:md-status 1
-                           :message   (str "Connection to " host " failed.")})))
-
+                              (-> @job-queue
+                                  (get-in [job-id :request])
+                                  (merge extra-payload))
+                              :key-fn kebab->camel))
+    (set-job-keys! job-id
+                   {:md-status 1
+                    :message   (str "Connection to " host " failed.")})))
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
   [{:keys [user-id ignition-time] :as params}]
