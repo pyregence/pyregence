@@ -1,5 +1,6 @@
 (ns pyregence.match-drop
-  (:import java.util.TimeZone)
+  (:import  [java.util TimeZone Date]
+            [java.text SimpleDateFormat])
   (:require [clojure.data.json :as json]
             [clojure.string    :as str]
             [pyregence.capabilities :refer [set-capabilities!]]
@@ -41,12 +42,15 @@
                          (catch Exception _ (long (or default -1))))))
 
 (defn- convert-date-string [date-str]
-  (let [in-format  (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm z")
-        out-format (doto (java.text.SimpleDateFormat. "yyyyMMdd_HHmmss")
+  (let [in-format  (SimpleDateFormat. "yyyy-MM-dd HH:mm z")
+        out-format (doto (SimpleDateFormat. "yyyyMMdd_HHmmss")
                      (.setTimeZone (TimeZone/getTimeZone "UTC")))]
     (->> date-str
          (.parse in-format)
          (.format out-format))))
+
+(defn timestamp []
+  (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.)))
 
 (defmacro nil-on-error
   [& body]
@@ -62,11 +66,9 @@
    "data.pyregence.org"     "GeoServer"})
 
 (defn- set-job-keys! [job-id m]
-  (swap! job-queue update job-id merge m))
-
-(defn- update-message! [job-id message]
-  (set-job-keys! job-id {:message message})
-  (swap! job-queue update-in [job-id :logs] conj message))
+  (swap! job-queue update job-id merge m)
+  (when-let [message (:message m)]
+    (swap! job-queue update-in [job-id :log] str (format "\n%s - %s" (timestamp) message))))
 
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]
@@ -77,8 +79,8 @@
                                    (get-in [job-id :request])
                                    (merge extra-payload))
                                :key-fn kebab->camel))
-    (set-job-keys! job-id {:md-status 1})
-    (update-message! job-id (str "Connection to " host " failed."))))
+    (set-job-keys! job-id {:md-status 1
+                           :message   (str "Connection to " host " failed.")})))
 
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
@@ -113,7 +115,7 @@
            {:user-id        user-id
             :md-status      2
             :message        (str "Job " job-id " Initiated.")
-            :logs           [(str "Job " job-id " Initiated.")]
+            :log            (format "%s - Job %d Initiated" (timestamp) job-id)
             :elmfire-done?  false
             :gridfire-done? false
             :request        request})
@@ -128,11 +130,11 @@
   [job-id]
   (data-response (-> @job-queue
                      (get job-id)
-                     (select-keys [:message :md-status :logs]))))
+                     (select-keys [:message :md-status :log]))))
 
 (defn- process-complete! [job-id {:keys [response-host message model]}]
   (when message
-    (update-message! job-id {:message message}))
+    (set-job-keys! job-id {:message message}))
   (case response-host
     "wx.pyregence.org"
     (do
@@ -160,11 +162,10 @@
 
 (defn- process-error! [job-id {:keys [message]}]
   (log-str "Match drop job #" job-id " error: " message)
-  (set-job-keys! job-id {:md-status 1})
-  (update-message! job-id message))
+  (set-job-keys! job-id {:md-status 1 :message message}))
 
 (defn- process-message! [job-id {:keys [message response-host]}]
-  (update-message! job-id (str (get host-names response-host) ": " message)))
+  (set-job-keys! job-id {:message (str (get host-names response-host) ": " message)}))
 
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
