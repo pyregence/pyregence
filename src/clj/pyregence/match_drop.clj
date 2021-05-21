@@ -79,14 +79,13 @@
 
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
-  [params]
+  [{:keys [user-id ignition-time] :as params}]
   (let [job-id        (if (seq @job-queue) ; TODO get from SQL
                         (->> @job-queue
                              (keys)
                              (apply max)
                              (inc))
                         (quot (System/currentTimeMillis) 100000)) ; This is temporary until we get job-id from PG
-        ignition-time (:ignition-time params)
         model-time    (convert-date-string ignition-time)
         request       (merge params
                              ;; TODO consider different payloads per request instead of one large one.
@@ -108,7 +107,8 @@
     (swap! job-queue
            assoc
            job-id
-           {:md-status      2
+           {:user-id        user-id
+            :md-status      2
             :message        (str "Job " job-id " Initiated.")
             :elmfire-done?  false
             :gridfire-done? false
@@ -156,9 +156,7 @@
 
 (defn- process-error! [job-id {:keys [message]}]
   (log-str "Match drop job #" job-id " error: " message)
-  (set-job-keys! job-id
-                 {:md-status 1
-                  :message   message}))
+  (set-job-keys! job-id {:md-status 1 :message message}))
 
 (defn- process-message! [job-id {:keys [message response-host]}]
   (set-job-keys! job-id {:message (str (get host-names response-host) ": " message)}))
