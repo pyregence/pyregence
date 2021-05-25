@@ -53,14 +53,15 @@
         [forecast fire-name init-ts1 init-ts2] (str/split workspace   #"_")
         [layer-group sim-timestamp]            (str/split layer       #"_(?=\d{8}_)")
         init-timestamp                         (str init-ts1 "_" init-ts2)]
-    {:workspace   workspace
-     :layer-group ""
-     :forecast    forecast
-     :fire-name   fire-name
-     :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
-     :model-init  init-timestamp
-     :sim-time    sim-timestamp
-     :hour        0}))
+    (when-not (str/includes? name-string "match-drop") ; TODO: Remove when MD is enabled
+      {:workspace   workspace
+       :layer-group ""
+       :forecast    forecast
+       :fire-name   fire-name
+       :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
+       :model-init  init-timestamp
+       :sim-time    sim-timestamp
+       :hour        0})))
 
 (defn split-fire-detections [name-string]
   (let [[workspace layer]   (str/split name-string #":")
