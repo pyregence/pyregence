@@ -80,7 +80,7 @@
     {:workspace   workspace
      :layer-group ""
      :forecast    forecast
-     :filter-set  #{forecast model layer "20210407_000000"}
+     :filter-set  #{"fuels" model layer "20210407_000000"}
      :model-init  "20210407_000000"
      :hour        0}))
 
@@ -127,7 +127,7 @@
                           (str/starts-with? full-name "fire-detections")
                           (merge-fn (split-fire-detections full-name))
 
-                          (str/starts-with? full-name "fuels-and-topography")
+                          (str/starts-with? full-name "fuels")
                           (merge-fn (split-fuels full-name))
 
                           (str/starts-with? full-name "wg4_FireSim")

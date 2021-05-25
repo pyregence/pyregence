@@ -5,6 +5,7 @@
             [herb.core :refer [<class]]
             [clojure.edn :as edn]
             [clojure.string :as string]
+            [clojure.set    :as sets]
             [clojure.core.async :refer [go <! timeout]]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
@@ -169,7 +170,7 @@
    :margin-bottom ".5rem"
    :width         "100%"})
 
-(defn panel-dropdown [title tool-tip-text val options disabled? call-back]
+(defn panel-dropdown [title tool-tip-text val options selected disabled? call-back]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
    [:div {:style {:display "flex" :justify-content "space-between"}}
     [:label title]
@@ -184,8 +185,12 @@
              :value (or val :none)
              :disabled disabled?
              :on-change #(call-back (u/input-keyword %))}
-    (map (fn [[key {:keys [opt-label]}]]
-           [:option {:key key :value key} opt-label])
+    (map (fn [[key {:keys [opt-label disabled]}]]
+           [:option {:key key
+                     :value key
+                     :disabled (and (some? disabled)
+                                    (sets/subset? disabled selected))}
+            opt-label])
          options)]])
 
 (defn get-layer-name [filter-set update-layer]
@@ -222,50 +227,52 @@
                            (mb/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
     (reset! show-panel? (not mobile?))
     (fn [*params select-param! active-opacity param-options mobile?]
-      [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
-       [:div {:style {:overflow "auto"}}
-        [:div#layer-selection {:style {:padding "1rem"}}
-         [:div {:style {:display "flex" :justify-content "space-between"}}
-          [:label {:style ($layer-selection)} "Layer Selection"]
-          [:span {:style {:margin-right "-.5rem"}}
-           [tool-button :close #(reset! show-panel? false)]]]
-         (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
-                (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                  ^{:key hover-text}
-                  [:<>
-                   [panel-dropdown
-                    opt-label
-                    hover-text
-                    (get *params key)
-                    sorted-options
-                    (= 1 (count sorted-options))
-                    #(select-param! % key)]
-                   (when underlays
-                     (map (fn [[key {:keys [opt-label filter-set z-index]}]]
-                            (let [underlays (:underlays *params)]
-                              ^{:key key}
-                              [optional-layer
-                               opt-label
-                               filter-set
-                               z-index
-                               (get underlays key)
-                               (fn [k v] (select-param! v :underlays key k))
-                               key]))
-                          underlays))]))
-              param-options)
-         [:div {:style {:margin-top ".5rem"}}
-          [:label (str "Opacity: " @active-opacity)]
-          [:input {:style {:width "100%"}
-                   :type "range" :min "0" :max "100" :value @active-opacity
-                   :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                   (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-         [panel-dropdown
-          "Base Map"
-          "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
-          @*base-map
-          c/base-map-options
-          false
-          select-base-map!]]]])))
+      (let [selected (->> *params (vals) (filter keyword?) (set))]
+        [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
+         [:div {:style {:overflow "auto"}}
+          [:div#layer-selection {:style {:padding "1rem"}}
+           [:div {:style {:display "flex" :justify-content "space-between"}}
+            [:label {:style ($layer-selection)} "Layer Selection"]
+            [:span {:style {:margin-right "-.5rem"}}
+             [tool-button :close #(reset! show-panel? false)]]]
+           (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
+                  (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                    ^{:key hover-text}
+                    [:<>
+                     [panel-dropdown
+                      opt-label
+                      hover-text
+                      (get *params key)
+                      sorted-options
+                      selected
+                      (= 1 (count sorted-options))
+                      #(select-param! % key)]
+                     (when underlays
+                       (map (fn [[key {:keys [opt-label filter-set z-index]}]]
+                              (let [underlays (:underlays *params)]
+                                ^{:key key}
+                                [optional-layer
+                                 opt-label
+                                 filter-set
+                                 z-index
+                                 (get underlays key)
+                                 (fn [k v] (select-param! v :underlays key k))
+                                 key]))
+                            underlays))]))
+                param-options)
+           [:div {:style {:margin-top ".5rem"}}
+            [:label (str "Opacity: " @active-opacity)]
+            [:input {:style {:width "100%"}
+                     :type "range" :min "0" :max "100" :value @active-opacity
+                     :on-change #(do (reset! active-opacity (u/input-int-value %))
+                                     (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
+           [panel-dropdown
+            "Base Map"
+            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
+            @*base-map
+            c/base-map-options
+            false
+            select-base-map!]]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Share Tool
