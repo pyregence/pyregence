@@ -161,7 +161,8 @@
                :params          {:model {:opt-label  "Source"
                                          :hover-text "LANDFIRE data (https://landfire.gov) at 30m resolution.
 
-                                                      California Forest Observatory (https://fireobservatory.org) at 10m resolution (Summer 2020)."
+                                                     California Forest Observatory - Summer 2020 at 10m resolution
+                                                     Courtesy of the California Forest Observatory (forestobservatory.com), © Salo Sciences, Inc. 2020."
                                          :options    {:landfire {:opt-label "LandFire 2.0"
                                                                  :filter    "landfire-2.0.0"
                                                                  :units     ""}
