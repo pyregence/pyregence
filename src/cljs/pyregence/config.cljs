@@ -154,27 +154,36 @@
                                               :hover-text "Start time for forecast cycle. New data is created every 12 hours."
                                               :options    {:loading {:opt-label "Loading..."}}}}}
    :behavior  {:opt-label       "Fire Behavior"
-               :filter          "fuels-and-topography"
+               :filter          "fuels"
                :block-info?     true
                :reverse-legend? false
                :hover-text      "Layers related to fuel and potential fire behavior."
                :params          {:model {:opt-label  "Source"
-                                         :hover-text "LANDFIRE data (https://landfire.gov) at 30-m resolution."
+                                         :hover-text "LANDFIRE data (https://landfire.gov) at 30m resolution.
+
+                                                     California Forest Observatory - Summer 2020 at 10m resolution
+                                                     Courtesy of the California Forest Observatory (forestobservatory.com), © Salo Sciences, Inc. 2020."
                                          :options    {:landfire {:opt-label "LandFire 2.0"
                                                                  :filter    "landfire-2.0.0"
+                                                                 :units     ""}
+                                                      :cfo      {:opt-label "California Fire Observatory"
+                                                                 :filter    "cfo-2020"
                                                                  :units     ""}}}
                                  :layer {:opt-label  "Layer"
                                          :hover-text "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
                                          :options    (array-map
                                                       :asp    {:opt-label "Aspect"
                                                                :filter    "asp"
-                                                               :units     ""}
+                                                               :units     ""
+                                                               :disabled  #{:cfo}}
                                                       :slp    {:opt-label "Slope (%)"
                                                                :filter    "slp"
-                                                               :units     "%"}
+                                                               :units     "%"
+                                                               :disabled  #{:cfo}}
                                                       :dem    {:opt-label "Elevation (ft)"
                                                                :filter    "dem"
-                                                               :units     ""}
+                                                               :units     ""
+                                                               :disabled  #{:cfo}}
                                                       :cc     {:opt-label "Canopy Cover (%)"
                                                                :filter    "cc"
                                                                :units     "%"}
@@ -189,10 +198,12 @@
                                                                :units     "kg/m^3"}
                                                       :fbfm13 {:opt-label "Fire Behavior Fuel Model 13"
                                                                :filter    "fbfm13"
-                                                               :units     ""}
+                                                               :units     ""
+                                                               :disabled  #{:cfo}}
                                                       :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
                                                                :filter    "fbfm40"
-                                                               :units     ""})}
+                                                               :units     ""
+                                                               :disabled  #{:cfo}})}
                                  :model-init {:opt-label  "Model Creation Time"
                                               :hover-text "Time the data was created."
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
