@@ -70,12 +70,15 @@
         [simple-form
          "Request New Password"
          "Submit"
-         [["Email" email "text"]]
+         [["Email" email "email" "email"]]
          request-password!]
         [simple-form
          "Log in"
          "Log in"
-         [["Email"    email    "text"]
-          ["Password" password "password"]]
+         [["Email"    email    "email"    "email"]
+          ["Password" password "password" "current-password"]]
          log-in!
-         reset-link])]]))
+         reset-link])]
+     [:div {:style ($/align "flex" "center")}
+      "Don't have an account?  "
+      [:a {:href "/register" :style {:margin-left "0.2rem"}} "Register here."]]]))
