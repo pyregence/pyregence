@@ -1,6 +1,7 @@
 (ns pyregence.utils
   (:require [cljs.reader :as edn]
             [clojure.string :as str]
+            [clojure.set    :as sets]
             [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]))
 
@@ -319,6 +320,12 @@
   (if (string? v)
     (re-matches #"^-?([\d]+[\d\,]*\.*[\d]+)$|^-?([\d]+)$" v)
     (number? v)))
+
+(defn intersects? [s1 s2]
+  {:pre [(every? set? [s1 s2])]}
+  (-> (sets/intersection s1 s2)
+      (count)
+      (> 0)))
 
 (defn num-str-compare
   "Compare two strings as numbers if they are numeric"
