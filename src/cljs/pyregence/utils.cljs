@@ -28,13 +28,12 @@
 
 ;; Text
 
-(defn ->kebab
+(defn sentence->kebab
   "Converts string to kebab-string"
   [string]
-  (as-> string s
-    (str/split s #"[\s-\.]")
-    (map str/lower-case s)
-    (str/join "-" s)))
+  (-> string
+      (str/lower-case)
+      (str/replace #"[\s-\.\,]+" "-")))
 
 ;; Session
 

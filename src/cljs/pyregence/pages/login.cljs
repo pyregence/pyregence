@@ -81,5 +81,4 @@
          reset-link])]
      [:div {:style ($/align "flex" "center")}
       "Don't have an account?  "
-      [:a {:href "/register" :style {:margin-left "0.2rem"}} "Register here"]
-      "."]]))
+      [:a {:href "/register" :style {:margin-left "0.2rem"}} "Register here."]]]))

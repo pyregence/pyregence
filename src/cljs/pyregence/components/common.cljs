@@ -61,28 +61,27 @@
             :on-change #(swap! state not)}]
    [:label label-text]])
 
-;; FIXME take in a map instead of having so many overloads
 (defn labeled-input
-  ([{:keys [label state type autocomplete disabled? call-back autofocus?]
-     :or {type "text" disabled? false call-back #(reset! state (input-value %))}}]
-   [:section {:style ($labeled-input)}
-    [:label {:for (u/->kebab label)} label]
-    [:input {:class        (style->class $/p-bordered-input)
-             :autocomplete autocomplete
-             :auto-focus   autofocus?
-             :disabled     disabled?
-             :id           (u/->kebab label)
-             :type         type
-             :value        @state
-             :on-change    call-back}]])
-  ([label state]
-   [labeled-input {:label label :state state}])
-  ([label state type]
-   [labeled-input {:label label :state state :type type}])
-  ([label state type disabled?]
-   [labeled-input {:label label :state state :type type :disabled? disabled?}])
-  ([label state type disabled? call-back]
-   [labeled-input {:label label :state state :type type :disabled? disabled? :call-back call-back}]))
+  "Input and label pair component. Takes as `opts`
+   - type
+   - call-back
+   - disabled?
+   - autofocus?
+   - required?"
+  [label state & [opts]]
+  (let [{:keys [type autocomplete disabled? call-back autofocus? required?]
+         :or {type "text" disabled? false call-back #(reset! state (input-value %))} required? false} opts]
+    [:section {:style ($labeled-input)}
+     [:label {:for (u/sentence->kebab label)} label]
+     [:input {:class        (style->class $/p-bordered-input)
+              :autocomplete autocomplete
+              :auto-focus   autofocus?
+              :disabled     disabled?
+              :required     required?
+              :id           (u/sentence->kebab label)
+              :type         type
+              :value        @state
+              :on-change    call-back}]]))
 
 (defn input-datetime
   "Creates a labeled datetime input."
@@ -105,11 +104,10 @@
       [:div
        [:div {:style ($/combine $/flex-col [$/margin "1.5rem"])}
         (doall (map-indexed (fn [i [label state type autocomplete]]
-                              ^{:key i} [labeled-input {:label        label
-                                                        :autocomplete autocomplete
-                                                        :state        state
-                                                        :type         type
-                                                        :autofocus?   (= 0 i)}])
+                              ^{:key i} [labeled-input label state {:autocomplete autocomplete
+                                                                    :type         type
+                                                                    :autofocus?   (= 0 i)
+                                                                    :required?    true}])
                             fields))
         [:input {:class "btn border-yellow text-brown"
                  :style ($/combine ($/align :block :right) {:margin-top ".5rem"})
