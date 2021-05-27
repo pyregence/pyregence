@@ -325,7 +325,7 @@
   {:pre [(every? set? [s1 s2])]}
   (-> (sets/intersection s1 s2)
       (count)
-      (> 0)))
+      (pos?)))
 
 (defn num-str-compare
   "Compare two strings as numbers if they are numeric"
