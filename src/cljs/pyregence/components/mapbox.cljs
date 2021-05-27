@@ -66,6 +66,11 @@
   [id layers]
   (index-of #(= id (get % "id")) layers))
 
+(defn layer-exists?
+  "Returns true if the layer with matching id exists."
+  [id]
+  (some #(= id (get % "id")) (get (get-style) "layers")))
+
 (defn- is-selectable? [s]
   (@custom-layers s))
 
@@ -589,6 +594,18 @@
                               :icon-rotation-alignment "map"}
                      :paint  {:icon-color      (on-hover "#e6550d" "#000000")
                               :icon-opacity    (on-hover 1.0 0.9)}}]]
+    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+
+(defn create-red-flag-layer!
+  "Adds red flag warning layer to the map."
+  [id data]
+  (let [new-source {id {:type "geojson" :data data :generateId true}}
+        new-layers [{:id     id
+                     :source id
+                     :type   "fill"
+                     :paint  {:fill-color         "#fdbb84"
+                              :fill-outline-color "#e34a33"
+                              :fill-opacity       0.8}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn remove-layer!

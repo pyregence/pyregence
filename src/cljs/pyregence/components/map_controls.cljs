@@ -68,6 +68,7 @@
        :center-on-point [svg/center-on-point]
        :close           [svg/close]
        :extent          [svg/extent]
+       :flag            [svg/flag]
        :flame           [svg/flame]
        :info            [svg/info]
        :layers          [svg/layers]
@@ -304,6 +305,27 @@
               :value    (if @copied "Copied!" "Copy URL")}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Red Flag Warning
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private red-flag "red-flag")
+
+(defn- add-red-flag-layer! []
+  (go
+    (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
+                   (:body)
+                   (js/JSON.parse))]
+      (mb/create-red-flag-layer! red-flag data))))
+
+(defn toggle-red-flag-layer!
+  "Toggle the red-flag warning layer"
+  [show-red-flag?]
+  (swap! show-red-flag? not)
+  (if (mb/layer-exists? red-flag)
+    (mb/set-visible-by-title! red-flag @show-red-flag?)
+    (add-red-flag-layer!)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -315,7 +337,7 @@
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
-(defn tool-bar [{:keys [show-info? show-match-drop? show-camera? set-show-info! mobile? user-id]}]
+(defn tool-bar [{:keys [show-info? show-match-drop? show-camera? show-red-flag? set-show-info! mobile? user-id]}]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (->> [[:layers
           (str (hs-str @show-panel?) " layer selection")
@@ -342,6 +364,9 @@
                  (set-show-info! false)
                  (reset! show-match-drop? false))
             @show-camera?])
+         [:flag
+          (str (hs-str @show-red-flag?) " red flag warnings")
+          #(toggle-red-flag-layer! show-red-flag?)]
          [:legend
           (str (hs-str @show-legend?) " legend")
           #(swap! show-legend? not)
