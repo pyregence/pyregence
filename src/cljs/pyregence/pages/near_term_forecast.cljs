@@ -318,13 +318,13 @@
                                                                                  :name  nil}])))})]))
                    @options)))
 
-(defn refresh-capabilities! []
+(defn refresh-fire-names! []
   (go
-    (-> (u/call-clj-async! "get-fire-names")
-        (<!)
-        (:body)
-        (edn/read-string)
-        (process-capabilities! []))))
+    (as-> (u/call-clj-async! "get-fire-names") fire-names
+      (<! fire-names)
+      (:body fire-names)
+      (edn/read-string fire-names)
+      (swap! capabilities update-in [:active-fire :params :fire-name :options] merge fire-names))))
 
 (defn- params->selected-options
   "Parses url query parameters to into the selected options"
@@ -427,7 +427,7 @@
                @last-clicked-info
                #(set-show-info! false)])
             (when @show-match-drop?
-              [mc/match-drop-tool @my-box #(reset! show-match-drop? false) refresh-capabilities! user-id])
+              [mc/match-drop-tool @my-box #(reset! show-match-drop? false) refresh-fire-names! user-id])
             (when @show-camera?
               [mc/camera-tool @the-cameras @my-box #(reset! show-camera? false)])])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]

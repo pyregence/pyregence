@@ -411,7 +411,7 @@
 (defn- poll-status
   "Continually polls for updated information about the match drop run.
    Stops polling on finish or error signal."
-  [job-id refresh-capabilities!]
+  [job-id refresh-fire-names!]
   (go
     (while @poll?
       (let [{:keys [message md-status log]} (-> (u/call-clj-async! "get-md-status" job-id)
@@ -420,7 +420,7 @@
                                                 (edn/read-string))]
         (case md-status
           0 (do
-              (refresh-capabilities!)
+              (refresh-fire-names!)
               (set-message-box-content! {:body (str "Finished running match-drop-" job-id ".")})
               (reset! poll? false))
 
@@ -435,7 +435,7 @@
 
 (defn- initiate-match-drop
   "Initiates the match drop run and initiates polling for updates."
-  [[lon lat] datetime refresh-capabilities! user-id]
+  [[lon lat] datetime refresh-fire-names! user-id]
   (go
     (let [match-chan (u/call-clj-async! "initiate-md"
                                         {:ignition-time (u/time-zone-iso-date datetime true)
@@ -447,7 +447,7 @@
                                  :body   "Initiating match drop run."
                                  :mode   :close
                                  :action #(reset! poll? false)}) ; TODO the close button is for dev, disable on final product
-      (poll-status (edn/read-string (:body (<! match-chan))) refresh-capabilities!))))
+      (poll-status (edn/read-string (:body (<! match-chan))) refresh-fire-names!))))
 
 ;; Styles
 (defn- $match-drop-location []
@@ -477,7 +477,7 @@
 (defn match-drop-tool
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular
    location and date/time."
-  [parent-box close-fn! refresh-capabilities! user-id]
+  [parent-box close-fn! refresh-fire-names! user-id]
   (r/with-let [lon-lat        (r/atom [0 0])
                datetime       (r/atom "")
                moving-lon-lat (r/atom [0 0])
@@ -502,7 +502,7 @@
           [:div {:style {:display "flex" :justify-content "flex-end" :align-self "flex-end" :margin-left "auto"}}
            [:button {:class    "mx-3 mb-1 btn btn-sm text-white"
                      :style    ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime)))
-                     :on-click #(initiate-match-drop @lon-lat @datetime refresh-capabilities! user-id)}
+                     :on-click #(initiate-match-drop @lon-lat @datetime refresh-fire-names! user-id)}
             "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event)
