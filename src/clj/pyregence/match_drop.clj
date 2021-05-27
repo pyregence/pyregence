@@ -3,11 +3,13 @@
             [java.text SimpleDateFormat])
   (:require [clojure.data.json :as json]
             [clojure.string    :as str]
+            [clojure.set       :refer [rename-keys]]
+            [triangulum.type-conversion :refer [clj->jsonb jsonb->clj]]
             [pyregence.capabilities :refer [set-capabilities!]]
             [pyregence.logging      :refer [log-str]]
             [pyregence.sockets      :refer [send-to-server!]]
             [pyregence.views        :refer [data-response]]
-            [pyregence.database :refer [call-sql sql-primitive]]))
+            [pyregence.database     :refer [call-sql sql-primitive]]))
 
 ;;; Helper Functions
 ;; TODO these will be part of triangulum.utils
@@ -48,7 +50,7 @@
          (.parse in-format)
          (.format out-format))))
 
-(defn timestamp []
+(defn- timestamp []
   (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.)))
 
 (defmacro nil-on-error
@@ -66,58 +68,42 @@
 
 ;; SQL fns
 
-(defn sql-result->job [{:keys [elmfire_done gridfire_done job_id request md_status user_id] :as result}]
+(defn- sql-result->job [result]
   (-> result
-      (dissoc :elmfire_done :gridfire_done :job_id :user_id :status)
-      (merge {:elmfire-done? elmfire_done
-              :gridfire-done? gridfire_done
-              :job-id job_id
-              :md-status md_status
-              :request (json/read-str request :key-fn keyword)
-              :user-id user_id})))
+      (rename-keys {:elmfire_done  :elmfire-done?
+                    :gridfire_done :gridfire-done?
+                    :job_id        :job-id
+                    :user_id       :user-id
+                    :job_log       :log
+                    :md_status     :md-status})
+      (update :request jsonb->clj)))
 
-(defn get-match-job [job-id]
-  (let [jobs (call-sql "get_match_job" job-id)]
-    (first (map sql-result->job jobs))))
+(defn- get-match-job [job-id]
+  (-> (call-sql "get_match_job" job-id)
+      (first)
+      (sql-result->job)))
 
-(defn get-user-match-jobs [user-id]
-  (let [jobs (call-sql "get_user_match_jobs" user-id)]
-    (map sql-result->job jobs)))
+(defn- initialize-match-job! [user-id]
+  (sql-primitive (call-sql "initialize_match_job" user-id)))
 
-(defn add-match-job! [user-id]
-  (call-sql "add_match_job" user-id))
-
-(defn update-match-job! [{:keys [job-id user-id md-status message log elmfire-done? gridfire-done?]}]
-  (call-sql "update_match_job" job-id user-id md-status message log elmfire-done? gridfire-done?))
-
-(defn upsert-match-job! [{:keys [job-id user-id md-status message log elmfire-done? gridfire-done? request]}]
-  (call-sql "upsert_match_job" job-id user-id md-status message log elmfire-done? gridfire-done? (when-not (nil? request) (json/write-str request))))
-
-(defn append-log [job {:keys [message] :as m}]
-  (cond-> (merge job m)
-    message (assoc :log (str (:log job) (format "\n%s - %s" (timestamp) message)))))
-
-(defn- set-job-keys! [job-id m]
-  (-> (get-match-job job-id)
-      (append-log m)
-      (upsert-match-job!)))
+(defn- update-match-job! [job-id {:keys [md-status message elmfire-done? gridfire-done? request]}]
+  (call-sql "update_match_job" job-id md-status message elmfire-done? gridfire-done? (when (some? request) (clj->jsonb request))))
 
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]
   (when-not (send-to-server! host
                              port
                              (json/write-str
-                              (-> (get-match-job job-id)
-                                  (:request)
-                                  (merge extra-payload))
-                              :key-fn kebab->camel))
-    (set-job-keys! job-id
-                   {:md-status 1
-                    :message   (str "Connection to " host " failed.")})))
+                               (-> (get-match-job job-id)
+                                   (:request)
+                                   (merge extra-payload))
+                               :key-fn kebab->camel))
+    (update-match-job! job-id {:md-status 1 :message (str "Connection to " host " failed.")})))
+
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
   [{:keys [user-id ignition-time] :as params}]
-  (let [job-id        (-> (add-match-job! user-id) first vals first)
+  (let [job-id        (initialize-match-job! user-id)
         model-time    (convert-date-string ignition-time)
         request       (merge params
                              ;; TODO consider different payloads per request instead of one large one.
@@ -136,15 +122,13 @@
                               :data-dir            (str "/var/www/html/fire_spread_forecast/match-drop-" job-id "/" model-time)
                               :geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
                               :action              "add"})
-    job               {:job-id         job-id
-                       :user-id        user-id
+    job               {:user-id        user-id
                        :md-status      2
                        :message        (str "Job " job-id " Initiated.")
-                       :log            (format "%s - Job %d Initiated" (timestamp) job-id)
                        :elmfire-done?  false
                        :gridfire-done? false
                        :request        request}]
-    (upsert-match-job! job)
+    (update-match-job! job-id job)
     (log-str "Initiating match drop job #" job-id)
     (send-to-server-wrapper! "wx.pyregence.org" 31337 job-id)
     job-id))
@@ -159,7 +143,7 @@
 
 (defn- process-complete! [job-id {:keys [response-host message model]}]
   (when message
-    (set-job-keys! job-id {:message message}))
+    (update-match-job! job-id {:message message}))
   (case response-host
     "wx.pyregence.org"
     (do
@@ -174,23 +158,23 @@
     (send-to-server-wrapper! "data.pyregence.org" 31337 job-id {:model "gridfire"})
 
     "data.pyregence.org"
-    (let [{:keys [elmfire-done? gridfire-done?] :as job} (get-match-job job-id)
+    (let [{:keys [elmfire-done? gridfire-done? request]} (get-match-job job-id)
           elmfire?  (or elmfire-done?  (= "elmfire" model))
           gridfire? (or gridfire-done? (= "gridfire" model))]
       (if (and elmfire? gridfire?)
-        (do (set-job-keys! job-id {:md-status      0
-                                   :gridfire-done? true
-                                   :elmfire-done?  true})
-            (set-capabilities! (get-in job [:request :geoserver-workspace])))
-        (set-job-keys! job-id {:gridfire-done? gridfire?
-                               :elmfire-done?  elmfire?})))))
+        (do (update-match-job! job-id {:md-status      0
+                                       :gridfire-done? true
+                                       :elmfire-done?  true})
+            (set-capabilities! (:geoserver-workspace request)))
+        (update-match-job! job-id {:gridfire-done? gridfire?
+                                   :elmfire-done?  elmfire?})))))
 
 (defn- process-error! [job-id {:keys [message]}]
   (log-str "Match drop job #" job-id " error: " message)
-  (set-job-keys! job-id {:md-status 1 :message message}))
+  (update-match-job! job-id {:md-status 1 :message message}))
 
 (defn- process-message! [job-id {:keys [message response-host]}]
-  (set-job-keys! job-id {:message (str (get host-names response-host) ": " message)}))
+  (update-match-job! job-id {:message (str (get host-names response-host) ": " message)}))
 
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
