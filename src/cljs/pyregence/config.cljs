@@ -365,7 +365,7 @@
 ;; Mapbox Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce mapbox-access-token "pk.eyJ1IjoicnNoZXBlcmQiLCJhIjoiY2tsYjNxMG02MDhscjJvbWRudjU2MGQ1cCJ9.VAXBvWkqQkqHaazVPZS2BQ")
+(defonce mapbox-access-token "pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw")
 
 (def default-sprite "mapbox://sprites/mspencer-sig/cka8jaky90i9m1iphwh79wr04/3nae2cnmmvrdazx877w1wcuez")
 
