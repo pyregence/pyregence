@@ -162,13 +162,18 @@
                                          :hover-text "LANDFIRE data (https://landfire.gov) at 30m resolution.
 
                                                      California Forest Observatory - Summer 2020 at 10m resolution
-                                                     Courtesy of the California Forest Observatory (forestobservatory.com), © Salo Sciences, Inc. 2020."
-                                         :options    {:landfire {:opt-label "LandFire 2.0"
-                                                                 :filter    "landfire-2.0.0"
-                                                                 :units     ""}
-                                                      :cfo      {:opt-label "California Fire Observatory"
-                                                                 :filter    "cfo-2020"
-                                                                 :units     ""}}}
+                                                     Courtesy of the California Forest Observatory (forestobservatory.com), © Salo Sciences, Inc. 2020.
+
+                                                     California Fuelscapes prepared and provided by Pyrologix, LLC (https://pyrologix.com/), 2021."
+                                         :options    {:landfire      {:opt-label "LandFire 2.0"
+                                                                      :filter    "landfire-2.0.0"
+                                                                      :units     ""}
+                                                      :cfo           {:opt-label "California Fire Observatory"
+                                                                      :filter    "cfo-2020"
+                                                                      :units     ""}
+                                                      :ca-fuelscapes {:opt-label "California Fuelscapes"
+                                                                      :filter    "ca-fuelscapes"
+                                                                      :units     ""}}}
                                  :layer {:opt-label  "Layer"
                                          :hover-text "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
                                          :options    (array-map
@@ -199,7 +204,7 @@
                                                       :fbfm13 {:opt-label "Fire Behavior Fuel Model 13"
                                                                :filter    "fbfm13"
                                                                :units     ""
-                                                               :disabled  #{:cfo}}
+                                                               :disabled  #{:cfo :ca-fuelscapes}}
                                                       :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
                                                                :filter    "fbfm40"
                                                                :units     ""

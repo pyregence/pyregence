@@ -5,7 +5,6 @@
             [herb.core :refer [<class]]
             [clojure.edn :as edn]
             [clojure.string :as string]
-            [clojure.set    :as sets]
             [clojure.core.async :refer [go <! timeout]]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
@@ -189,7 +188,7 @@
            [:option {:key key
                      :value key
                      :disabled (and (some? disabled)
-                                    (sets/subset? disabled selected))}
+                                    (u/intersects? disabled selected))}
             opt-label])
          options)]])
 

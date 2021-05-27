@@ -145,6 +145,9 @@
                           %))
   (data-response (str workspace-name " removed.")))
 
+(defn get-all-layers []
+  (data-response (map :filter-set @layers)))
+
 (defn set-capabilities! [& [workspace-name]]
   (try
     (let [stdout?    (= 0 (count @layers))
