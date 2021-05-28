@@ -46,6 +46,7 @@
 (defonce show-info?        (r/atom false))
 (defonce show-match-drop?  (r/atom false))
 (defonce show-camera?      (r/atom false))
+(defonce show-red-flag?    (r/atom false))
 (defonce active-opacity    (r/atom 100.0))
 (defonce capabilities      (r/atom []))
 (defonce *forecast         (r/atom nil))
@@ -434,6 +435,7 @@
          [mc/tool-bar {:show-info?       show-info?
                        :show-match-drop? show-match-drop?
                        :show-camera?     show-camera?
+                       :show-red-flag?   show-red-flag?
                        :set-show-info!   set-show-info!
                        :mobile           @mobile?
                        :user-id          user-id}]

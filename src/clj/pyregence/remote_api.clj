@@ -26,6 +26,7 @@
                                               set-capabilities!
                                               remove-workspace!]]
             [pyregence.match-drop     :refer [initiate-md! get-md-status]]
+            [pyregence.red-flag       :refer [get-red-flag-layer]]
             [pyregence.email          :refer [send-email]]
             [pyregence.logging        :refer [log-str]]
             [pyregence.views          :refer [data-response]]))
@@ -43,6 +44,7 @@
                "get-org-users-list"   get-org-users-list
                "get-user-info"        get-user-info
                "get-user-layers"      get-user-layers
+               "get-red-flag-layer"   get-red-flag-layer
                "initiate-md"          initiate-md!
                "log-in"               log-in
                "log-out"              log-out
