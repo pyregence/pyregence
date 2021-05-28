@@ -1,14 +1,15 @@
 (ns pyregence.match-drop
-  (:import  [java.util TimeZone Date]
+  (:import  [java.util TimeZone]
             [java.text SimpleDateFormat])
   (:require [clojure.data.json :as json]
             [clojure.string    :as str]
+            [clojure.set       :refer [rename-keys]]
+            [triangulum.type-conversion :refer [val->long json->clj clj->json]]
             [pyregence.capabilities :refer [set-capabilities!]]
             [pyregence.logging      :refer [log-str]]
             [pyregence.sockets      :refer [send-to-server!]]
-            [pyregence.views        :refer [data-response]]))
-
-(defonce ^:private job-queue (atom {}))
+            [pyregence.views        :refer [data-response]]
+            [pyregence.database     :refer [call-sql sql-primitive]]))
 
 ;;; Helper Functions
 ;; TODO these will be part of triangulum.utils
@@ -32,15 +33,6 @@
          (cons (first words))
          (str/join ""))))
 
-(defn- val->long
-  [v & [default]]
-  (cond
-    (instance? Long v) v
-    (number? v)        (long v)
-    :else              (try
-                         (Long/parseLong v)
-                         (catch Exception _ (long (or default -1))))))
-
 (defn- convert-date-string [date-str]
   (let [in-format  (SimpleDateFormat. "yyyy-MM-dd HH:mm z")
         out-format (doto (SimpleDateFormat. "yyyyMMdd_HHmmss")
@@ -48,9 +40,6 @@
     (->> date-str
          (.parse in-format)
          (.format out-format))))
-
-(defn timestamp []
-  (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.)))
 
 (defmacro nil-on-error
   [& body]
@@ -65,34 +54,45 @@
    "wx.pyregence.org"       "Weather"
    "data.pyregence.org"     "GeoServer"})
 
-(defn append-log [job {:keys [message] :as m}]
-  (cond-> (merge job m)
-    message (assoc :log (str (:log job) (format "\n%s - %s" (timestamp) message)))))
+;; SQL fns
 
-(defn- set-job-keys! [job-id m]
-  (swap! job-queue update job-id append-log m))
+(defn- sql-result->job [result]
+  (-> result
+      (rename-keys {:elmfire_done  :elmfire-done?
+                    :gridfire_done :gridfire-done?
+                    :job_id        :job-id
+                    :user_id       :user-id
+                    :job_log       :log
+                    :md_status     :md-status})
+      (update :request json->clj)))
+
+(defn- get-match-job [job-id]
+  (-> (call-sql "get_match_job" job-id)
+      (first)
+      (sql-result->job)))
+
+(defn- initialize-match-job! [user-id]
+  (sql-primitive (call-sql "initialize_match_job" user-id)))
+
+(defn- update-match-job! [job-id {:keys [md-status message elmfire-done? gridfire-done? request]}]
+  (call-sql "update_match_job" job-id md-status message elmfire-done? gridfire-done? (when (some? request) (clj->json request))))
 
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]
   (when-not (send-to-server! host
                              port
                              (json/write-str
-                              (-> @job-queue
-                                  (get-in [job-id :request])
-                                  (merge extra-payload))
-                              :key-fn kebab->camel))
-    (set-job-keys! job-id
-                   {:md-status 1
-                    :message   (str "Connection to " host " failed.")})))
+                               (-> (get-match-job job-id)
+                                   (:request)
+                                   (merge extra-payload))
+                               :key-fn kebab->camel))
+    (update-match-job! job-id {:md-status 1
+                               :message   (str "Connection to " host " failed.")})))
+
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
   [{:keys [user-id ignition-time] :as params}]
-  (let [job-id        (if (seq @job-queue) ; TODO get from SQL
-                        (->> @job-queue
-                             (keys)
-                             (apply max)
-                             (inc))
-                        (quot (System/currentTimeMillis) 100000)) ; This is temporary until we get job-id from PG
+  (let [job-id        (initialize-match-job! user-id)
         model-time    (convert-date-string ignition-time)
         request       (merge params
                              ;; TODO consider different payloads per request instead of one large one.
@@ -110,17 +110,14 @@
                               ;; GeoSync
                               :data-dir            (str "/var/www/html/fire_spread_forecast/match-drop-" job-id "/" model-time)
                               :geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
-                              :action              "add"})]
-    (swap! job-queue
-           assoc
-           job-id
-           {:user-id        user-id
-            :md-status      2
-            :message        (str "Job " job-id " Initiated.")
-            :log            (format "%s - Job %d Initiated" (timestamp) job-id)
-            :elmfire-done?  false
-            :gridfire-done? false
-            :request        request})
+                              :action              "add"})
+    job               {:user-id        user-id
+                       :md-status      2
+                       :message        (str "Job " job-id " Initiated.")
+                       :elmfire-done?  false
+                       :gridfire-done? false
+                       :request        request}]
+    (update-match-job! job-id job)
     (log-str "Initiating match drop job #" job-id)
     (send-to-server-wrapper! "wx.pyregence.org" 31337 job-id)
     job-id))
@@ -130,13 +127,12 @@
 (defn get-md-status
   "Returns the current status of the given match drop run."
   [job-id]
-  (data-response (-> @job-queue
-                     (get job-id)
+  (data-response (-> (get-match-job job-id)
                      (select-keys [:message :md-status :log]))))
 
 (defn- process-complete! [job-id {:keys [response-host message model]}]
   (when message
-    (set-job-keys! job-id {:message message}))
+    (update-match-job! job-id {:message message}))
   (case response-host
     "wx.pyregence.org"
     (do
@@ -151,23 +147,23 @@
     (send-to-server-wrapper! "data.pyregence.org" 31337 job-id {:model "gridfire"})
 
     "data.pyregence.org"
-    (let [{:keys [elmfire-done? gridfire-done?]} (get @job-queue job-id)
+    (let [{:keys [elmfire-done? gridfire-done? request]} (get-match-job job-id)
           elmfire?  (or elmfire-done?  (= "elmfire" model))
           gridfire? (or gridfire-done? (= "gridfire" model))]
       (if (and elmfire? gridfire?)
-        (do (set-job-keys! job-id {:md-status      0
-                                   :gridfire-done? true
-                                   :elmfire-done?  true})
-            (set-capabilities! (get-in @job-queue [job-id :request :geoserver-workspace])))
-        (set-job-keys! job-id {:gridfire-done? gridfire?
-                               :elmfire-done?  elmfire?})))))
+        (do (update-match-job! job-id {:md-status      0
+                                       :gridfire-done? true
+                                       :elmfire-done?  true})
+            (set-capabilities! (:geoserver-workspace request)))
+        (update-match-job! job-id {:gridfire-done? gridfire?
+                                   :elmfire-done?  elmfire?})))))
 
 (defn- process-error! [job-id {:keys [message]}]
   (log-str "Match drop job #" job-id " error: " message)
-  (set-job-keys! job-id {:md-status 1 :message message}))
+  (update-match-job! job-id {:md-status 1 :message message}))
 
 (defn- process-message! [job-id {:keys [message response-host]}]
-  (set-job-keys! job-id {:message (str (get host-names response-host) ": " message)}))
+  (update-match-job! job-id {:message (str (get host-names response-host) ": " message)}))
 
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
@@ -176,7 +172,7 @@
          :as response} (nil-on-error (json/read-str msg :key-fn (comp keyword camel->kebab)))
         job-id (-> fire-name (str/split #"-") (last) (val->long))]
     (when (and (pos? job-id)
-               (= 2 (get-in @job-queue [job-id :md-status])))
+               (= 2 (:md-status (get-match-job job-id))))
       (case status
         0 (process-complete! job-id response)
         1 (process-error!    job-id response)
