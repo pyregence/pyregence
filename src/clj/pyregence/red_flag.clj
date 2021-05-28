@@ -47,7 +47,7 @@
 
 (defn- filter-hazards [{:keys [features]}]
   (->> features
-    (filterv (fn [{:keys [properties]}] (keep-hazards (:phenom properties))))
+    (filter (fn [{:keys [properties]}] (keep-hazards (:phenom properties))))
     (mapv (fn [f] {:geometry   (:geometry f)
                    :properties (select-keys (:properties f)
                                             [:cap_id :onset :phenom :event :msg_type :url :color])}))))
