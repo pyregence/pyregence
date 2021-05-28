@@ -308,22 +308,20 @@
 ;; Red Flag Warning
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private red-flag "red-flag")
-
 (defn- add-red-flag-layer! []
   (go
     (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
                    (:body)
                    (js/JSON.parse))]
-      (mb/create-red-flag-layer! red-flag data))))
+      (mb/create-red-flag-layer! "red-flag" data))))
 
 (defn toggle-red-flag-layer!
   "Toggle the red-flag warning layer"
   [show-red-flag?]
   (swap! show-red-flag? not)
-  (if (mb/layer-exists? red-flag)
-    (mb/set-visible-by-title! red-flag @show-red-flag?)
-    (add-red-flag-layer!)))
+  (when (and @show-red-flag? (mb/layer-exists? "red-flag"))
+    (add-red-flag-layer!))
+  (mb/set-visible-by-title! "red-flag" @show-red-flag?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars

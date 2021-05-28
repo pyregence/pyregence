@@ -1,6 +1,6 @@
 (ns pyregence.red-flag
-  (:require [clojure.data.json :as json]
-            [clojure.edn       :as edn]
+  (:require [clojure.string    :refer [lower-case]]
+            [clojure.data.json :as json]
             [clj-http.client   :as client]
             [pyregence.views   :refer [data-response]]))
 
@@ -15,7 +15,7 @@
 
 (def ^:private hazards-url   "https://www.wrh.noaa.gov/map/json/WR_All_Hazards.json")
 (def ^:private cache-max-age (* 60 1000)) ; Once an hour
-(def ^:private fire-weather  #{"FW" "Fire Weather"})
+(def ^:private keep-hazards  #{"FW" "Fire Weather"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Cache
@@ -39,14 +39,18 @@
 (defn- all-hazards []
   (let [{:keys [status body]} (client/get hazards-url)]
     (when (= 200 status)
-      (json/read-str body :key-fn keyword))))
-
-(defn- red-flag-warnings [{:keys [features]}]
-  (vec (filter (fn [{:keys [properties]}] (fire-weather (:PHENOM properties))) features)))
+      (json/read-str body :key-fn (comp keyword lower-case)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- filter-hazards [{:keys [features]}]
+  (->> features
+    (filterv (fn [{:keys [properties]}] (keep-hazards (:phenom properties))))
+    (mapv (fn [f] {:geometry   (:geometry f)
+                   :properties (select-keys (:properties f)
+                                            [:cap_id :onset :phenom :event :msg_type :url :color])}))))
 
 (defn- ->feature-collection [features]
   {:type     "FeatureCollection"
@@ -62,7 +66,7 @@
   (data-response (if (valid-cache?)
                    @cache
                    (let [warnings (-> (all-hazards)
-                                      (red-flag-warnings)
+                                      (filter-hazards)
                                       (->feature-collection))]
                      (reset-cache! warnings)
                      warnings))

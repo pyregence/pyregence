@@ -603,9 +603,8 @@
         new-layers [{:id     id
                      :source id
                      :type   "fill"
-                     :paint  {:fill-color         "#fdbb84"
-                              :fill-outline-color "#e34a33"
-                              :fill-opacity       0.8}}]]
+                     :paint  {:fill-color   ["concat" "#" ["get" "color"]]
+                              :fill-opacity 0.8}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn remove-layer!
