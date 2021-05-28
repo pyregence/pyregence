@@ -1,10 +1,10 @@
 (ns pyregence.match-drop
-  (:import  [java.util TimeZone Date]
+  (:import  [java.util TimeZone]
             [java.text SimpleDateFormat])
   (:require [clojure.data.json :as json]
             [clojure.string    :as str]
             [clojure.set       :refer [rename-keys]]
-            [triangulum.type-conversion :refer [clj->jsonb jsonb->clj]]
+            [triangulum.type-conversion :refer [val->long json->clj clj->json]]
             [pyregence.capabilities :refer [set-capabilities!]]
             [pyregence.logging      :refer [log-str]]
             [pyregence.sockets      :refer [send-to-server!]]
@@ -33,15 +33,6 @@
          (cons (first words))
          (str/join ""))))
 
-(defn- val->long
-  [v & [default]]
-  (cond
-    (instance? Long v) v
-    (number? v)        (long v)
-    :else              (try
-                         (Long/parseLong v)
-                         (catch Exception _ (long (or default -1))))))
-
 (defn- convert-date-string [date-str]
   (let [in-format  (SimpleDateFormat. "yyyy-MM-dd HH:mm z")
         out-format (doto (SimpleDateFormat. "yyyyMMdd_HHmmss")
@@ -49,9 +40,6 @@
     (->> date-str
          (.parse in-format)
          (.format out-format))))
-
-(defn- timestamp []
-  (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.)))
 
 (defmacro nil-on-error
   [& body]
@@ -76,7 +64,7 @@
                     :user_id       :user-id
                     :job_log       :log
                     :md_status     :md-status})
-      (update :request jsonb->clj)))
+      (update :request json->clj)))
 
 (defn- get-match-job [job-id]
   (-> (call-sql "get_match_job" job-id)
@@ -87,7 +75,7 @@
   (sql-primitive (call-sql "initialize_match_job" user-id)))
 
 (defn- update-match-job! [job-id {:keys [md-status message elmfire-done? gridfire-done? request]}]
-  (call-sql "update_match_job" job-id md-status message elmfire-done? gridfire-done? (when (some? request) (clj->jsonb request))))
+  (call-sql "update_match_job" job-id md-status message elmfire-done? gridfire-done? (when (some? request) (clj->json request))))
 
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]
@@ -98,7 +86,8 @@
                                    (:request)
                                    (merge extra-payload))
                                :key-fn kebab->camel))
-    (update-match-job! job-id {:md-status 1 :message (str "Connection to " host " failed.")})))
+    (update-match-job! job-id {:md-status 1
+                               :message   (str "Connection to " host " failed.")})))
 
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
