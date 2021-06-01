@@ -39,6 +39,7 @@
 
 ;; FIXME: Fill these in as you make app pages.
 (def dynamic-routes #{"/admin"
+                      "/dashboard"
                       "/login"
                       "/forecast"
                       "/long-term-forecast"

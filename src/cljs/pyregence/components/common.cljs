@@ -73,15 +73,15 @@
          :or {type "text" disabled? false call-back #(reset! state (input-value %))} required? false} opts]
     [:section {:style ($labeled-input)}
      [:label {:for (u/sentence->kebab label)} label]
-     [:input {:class        (style->class $/p-bordered-input)
-              :autocomplete autocomplete
-              :auto-focus   autofocus?
-              :disabled     disabled?
-              :required     required?
-              :id           (u/sentence->kebab label)
-              :type         type
-              :value        @state
-              :on-change    call-back}]]))
+     [:input {:class         (style->class $/p-bordered-input)
+              :auto-complete autocomplete
+              :auto-focus    autofocus?
+              :disabled      disabled?
+              :required      required?
+              :id            (u/sentence->kebab label)
+              :type          type
+              :value         @state
+              :on-change     call-back}]]))
 
 (defn input-datetime
   "Creates a labeled datetime input."
