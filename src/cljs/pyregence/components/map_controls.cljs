@@ -318,7 +318,7 @@
   "Toggle the red-flag warning layer"
   [show-red-flag?]
   (swap! show-red-flag? not)
-  (when (and @show-red-flag? (mb/layer-exists? "red-flag"))
+  (when (and @show-red-flag? (not (mb/layer-exists? "red-flag")))
     (add-red-flag-layer!))
   (mb/set-visible-by-title! "red-flag" @show-red-flag?))
 
