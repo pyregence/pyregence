@@ -73,9 +73,6 @@
       (first)
       (sql-result->job)))
 
-(defn- get-user-match-jobs [user-id]
-  (mapv sql-result->job (call-sql "get_user_match_jobs" user-id)))
-
 (defn- initialize-match-job! [user-id]
   (sql-primitive (call-sql "initialize_match_job" user-id)))
 
@@ -132,7 +129,9 @@
 (defn get-match-drops
   "Returns the user's match drops"
   [user-id]
-  (data-response (get-user-match-jobs user-id)))
+  (->> (call-sql "get_user_match_jobs" user-id)
+       (mapv sql-result->job)
+       (data-response)))
 
 ;;; Job queue progression
 

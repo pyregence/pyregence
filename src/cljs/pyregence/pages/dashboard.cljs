@@ -29,17 +29,24 @@
      :body  [:div {:style {:max-height "300px"
                            :overflow-y "scroll"
                            :overflow-x "hidden"}}
-             (for [line (string/split log #"\\n")]
-               [:div line])]
+             (doall (map-indexed (fn [i line] ^{:key i} [:div line])
+                                 (string/split log #"\\n")))]
      :mode  :close}))
+
+(defn- fmt-datetime [js-date]
+  (-> js-date
+      (u/js-date->iso-string true)
+      (subs 0 16)
+      (str ":" (u/pad-zero (.getSeconds js-date)))))
 
 ;; Styles
 
 (defn $table []
-  ^{:combinators {[:descendant :td] {:padding "0.2rem"}
-                  [:descendant :th] {:padding "0.2rem"}}}
-  {:border-collapse "separate"
-   :border-spacing  "0.4rem"})
+  ^{:combinators {[:descendant :td] {:border  "1px solid lightgray"
+                                     :padding "0.4rem"}
+                  [:descendant :th] {:border  "1px solid lightgray"
+                                     :padding "0.4rem"}}}
+  {:font-size "0.9rem"})
 
 ;; Components
 
@@ -53,20 +60,30 @@
    [:td job-id]
    [:td md-status]
    [:td message]
-   [:td (->> (select-keys request [:lon :lat]) (vals) (map #(-> % (str) (subs 0 6))) (string/join ", "))]
-   [:td (str (:ignition-time request))]
-   [:td (u/js-date->iso-string created-at true)]
-   [:td (u/js-date->iso-string updated-at true)]
+   [:td (->> (select-keys request [:lon :lat])
+             (vals)
+             (map #(-> % (str) (subs 0 6)))
+             (string/join ", "))]
+   [:td (subs (:ignition-time request) 0 16)]
+   [:td (fmt-datetime created-at)]
+   [:td (fmt-datetime updated-at)]
    [:td (u/ms->hhmmss (- updated-at created-at))]
    [:td [:a {:href "#" :on-click #(show-log-modal! job-id log)} "View Logs"]]])
 
 (defn match-drop-table []
   [:table {:class (<class $table) :style {:width "100%"}}
-   [thead ["ID" "Status" "Message" "Lon/Lat" "Ignition Time" "Time Started" "Last Updated" "Elapsed Time" "Logs"]]
+   [thead ["ID"
+           "Status"
+           "Message"
+           "Lon/Lat"
+           "Ignition Time (UTC)"
+           "Time Started (UTC)"
+           "Last Updated (UTC)"
+           "Elapsed Time"
+           "Logs"]]
    [:tbody
-    (for [{:keys [job-id] :as md} @match-drops]
-      ^{:key job-id}
-      [match-drop-item md])]])
+    (doall (map (fn [{:keys [job-id] :as md}] ^{:key job-id} [match-drop-item md])
+                @match-drops))]])
 
 (defn- redirect-to-login! []
   (u/set-session-storage! {:redirect-from "/dashboard"})
@@ -82,12 +99,9 @@
                                      :position "relative"})}
      [message-box-modal]
      [:div {:style ($/combine $/flex-col {:padding "2rem 8rem"})}
-      [:h3 "Dashboard"]
-      [:div {:style {:padding "1rem"}}
-       "Match Drops"]
+      [:h3 "Match Drop Dashboard"]
       [:div {:style {:width     "100%"
-                     :padding   "1rem"
-                     :font-size "0.8rem"}}
+                     :padding   "1rem"}}
        [match-drop-table]]
       [:div
        [:button {:class    "btn border-yellow text-brown"

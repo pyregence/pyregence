@@ -254,14 +254,15 @@
               (model-format->js-format date-str)
               date-str)))
 
+(defn js-date->iso-string
+  "Returns a ISO date-time string for a given JS date object in local or UTC timezone."
+  [js-date show-utc?]
+  (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?)))
+
 (defn time-zone-iso-date
   "Returns a ISO date-time string for a given date string in local or UTC timezone."
   [date-str show-utc?]
-  (let [js-date (js-date-from-string date-str)]
-    (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?))))
-
-(defn js-date->iso-string [js-date show-utc?]
-  (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?)))
+  (js-date->iso-string (js-date-from-string date-str) show-utc?))
 
 (defn ms->hhmmss [ms]
   (let [sec (/ ms 1000)
