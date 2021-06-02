@@ -334,7 +334,7 @@
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
-(defn tool-bar [{:keys [show-info? show-match-drop? show-camera? show-red-flag? set-show-info! mobile? user-id]}]
+(defn tool-bar [show-info? show-match-drop? show-camera? show-red-flag? set-show-info! mobile? user-id]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (->> [[:layers
           (str (hs-str @show-panel?) " layer selection")
@@ -361,9 +361,10 @@
                  (set-show-info! false)
                  (reset! show-match-drop? false))
             @show-camera?])
-         [:flag
-          (str (hs-str @show-red-flag?) " red flag warnings")
-          #(toggle-red-flag-layer! show-red-flag?)]
+         (when-not mobile?
+           [:flag
+            (str (hs-str @show-red-flag?) " red flag warnings")
+            #(toggle-red-flag-layer! show-red-flag?)])
          [:legend
           (str (hs-str @show-legend?) " legend")
           #(swap! show-legend? not)

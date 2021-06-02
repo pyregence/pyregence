@@ -432,13 +432,14 @@
             (when @show-camera?
               [mc/camera-tool @the-cameras @my-box #(reset! show-camera? false)])])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
-         [mc/tool-bar {:show-info?       show-info?
-                       :show-match-drop? show-match-drop?
-                       :show-camera?     show-camera?
-                       :show-red-flag?   show-red-flag?
-                       :set-show-info!   set-show-info!
-                       :mobile           @mobile?
-                       :user-id          user-id}]
+         [mc/tool-bar
+          show-info?
+          show-match-drop?
+          show-camera?
+          show-red-flag?
+          set-show-info!
+          @mobile?
+          user-id]
          [mc/scale-bar @mobile?]
          [mc/zoom-bar get-current-layer-extent @mobile? create-share-link]
          [mc/time-slider
