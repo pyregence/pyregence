@@ -6,6 +6,8 @@ CREATE OR REPLACE FUNCTION get_match_job(_job_id integer)
  RETURNS TABLE (
     job_id           integer,
     user_id          integer,
+    created_at       timestamp,
+    updated_at       timestamp,
     md_status        integer,
     message          text,
     job_log          text,
@@ -16,6 +18,8 @@ CREATE OR REPLACE FUNCTION get_match_job(_job_id integer)
 
     SELECT job_uid,
         user_rid,
+        created_at,
+        updated_at,
         md_status,
         message,
         job_log,
@@ -32,6 +36,8 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
  RETURNS TABLE (
     job_id           integer,
     user_id          integer,
+    created_at       timestamp,
+    updated_at       timestamp,
     md_status        integer,
     message          text,
     job_log          text,
@@ -42,6 +48,8 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
 
     SELECT job_uid,
         user_rid,
+        created_at,
+        updated_at,
         md_status,
         message,
         job_log,

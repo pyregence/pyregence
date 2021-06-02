@@ -254,11 +254,26 @@
               (model-format->js-format date-str)
               date-str)))
 
+(defn js-date->iso-string
+  "Returns a ISO date-time string for a given JS date object in local or UTC timezone."
+  [js-date show-utc?]
+  (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?)))
+
 (defn time-zone-iso-date
   "Returns a ISO date-time string for a given date string in local or UTC timezone."
   [date-str show-utc?]
-  (let [js-date (js-date-from-string date-str)]
-    (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?))))
+  (js-date->iso-string (js-date-from-string date-str) show-utc?))
+
+(defn ms->hhmmss [ms]
+  (let [sec (/ ms 1000)
+        hours (js/Math.round (/ sec 3600))
+        minutes (js/Math.round (/ (mod sec 3600) 60))
+        seconds (js/Math.round (mod (mod sec 3600) 60))]
+    (str (pad-zero hours)
+         ":"
+         (pad-zero minutes)
+         ":"
+         (pad-zero seconds))))
 
 ;;; ->map HOF
 

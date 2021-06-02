@@ -25,7 +25,7 @@
                                               get-user-layers
                                               set-capabilities!
                                               remove-workspace!]]
-            [pyregence.match-drop     :refer [initiate-md! get-md-status]]
+            [pyregence.match-drop     :refer [initiate-md! get-md-status get-match-drops]]
             [pyregence.red-flag       :refer [get-red-flag-layer]]
             [pyregence.email          :refer [send-email]]
             [pyregence.logging        :refer [log-str]]
@@ -39,6 +39,7 @@
                "get-fire-names"       get-fire-names
                "get-layers"           get-layers
                "get-layer-name"       get-layer-name
+               "get-match-drops"      get-match-drops
                "get-md-status"        get-md-status
                "get-org-list"         get-org-list
                "get-org-users-list"   get-org-users-list

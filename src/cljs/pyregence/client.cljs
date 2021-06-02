@@ -3,6 +3,7 @@
             [reagent.dom :refer [render]]
             [clojure.string :as str]
             [pyregence.pages.admin              :as admin]
+            [pyregence.pages.dashboard          :as dashboard]
             [pyregence.pages.login              :as login]
             [pyregence.pages.near-term-forecast :as ntf]
             [pyregence.pages.register           :as register]
@@ -11,6 +12,7 @@
 
 (def uri->root-component
   {"/admin"              admin/root-component
+   "/dashboard"          dashboard/root-component
    "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/login"              login/root-component
    "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))

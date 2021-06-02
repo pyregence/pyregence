@@ -58,12 +58,14 @@
 
 (defn- sql-result->job [result]
   (-> result
-      (rename-keys {:elmfire_done  :elmfire-done?
+      (rename-keys {:created_at    :created-at
+                    :elmfire_done  :elmfire-done?
                     :gridfire_done :gridfire-done?
                     :job_id        :job-id
                     :user_id       :user-id
                     :job_log       :log
-                    :md_status     :md-status})
+                    :md_status     :md-status
+                    :updated_at    :updated-at})
       (update :request json->clj)))
 
 (defn- get-match-job [job-id]
@@ -88,6 +90,8 @@
                                :key-fn kebab->camel))
     (update-match-job! job-id {:md-status 1
                                :message   (str "Connection to " host " failed.")})))
+
+;; Public API
 
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
@@ -121,6 +125,13 @@
     (log-str "Initiating match drop job #" job-id)
     (send-to-server-wrapper! "wx.pyregence.org" 31337 job-id)
     job-id))
+
+(defn get-match-drops
+  "Returns the user's match drops"
+  [user-id]
+  (->> (call-sql "get_user_match_jobs" user-id)
+       (mapv sql-result->job)
+       (data-response)))
 
 ;;; Job queue progression
 
