@@ -625,6 +625,9 @@
   ([] (init-map! "map"))
   ([container-id]
    (set! (.-accessToken mapbox) c/mapbox-access-token)
+   (when-not (.supported mapbox)
+     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
+                    "Please use the latest version of Chrome, Safari, or Firefox.")))
    (reset! the-map
            (Map.
             (clj->js {:container   container-id
