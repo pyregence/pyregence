@@ -73,6 +73,9 @@
       (first)
       (sql-result->job)))
 
+(defn- get-all-running-match-drops []
+  (sql-primitive (call-sql "get_all_running_match_jobs")))
+
 (defn- get-running-user-match-jobs [user-id]
   (sql-primitive (call-sql "get_running_user_match_jobs" user-id)))
 
@@ -131,9 +134,16 @@
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
   [{:keys [user-id] :as params}]
-  (if (pos? (get-running-user-match-jobs user-id))
-    (data-response {:error "Match drop is already running. Please wait until it has completed."})
-    (create-match-job! params)))
+  (data-response
+    (cond
+      (pos? (get-running-user-match-jobs user-id))
+      {:error "Match drop is already running. Please wait until it has completed."}
+
+      (< 5 (get-all-running-match-drops))
+      {:error "The queue is currently full. Please try again later."}
+
+      :else
+      (create-match-job! params))))
 
 (defn get-match-drops
   "Returns the user's match drops"
