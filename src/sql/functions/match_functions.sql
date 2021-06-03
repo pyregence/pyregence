@@ -61,8 +61,8 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
 
 $$ LANGUAGE SQL;
 
--- Retrieve all running match drop jobs associated with user_rid
-CREATE OR REPLACE FUNCTION get_running_user_match_jobs(_user_id integer)
+-- Retrieve count of running match drop jobs associated with user_rid
+CREATE OR REPLACE FUNCTION count_running_user_match_jobs(_user_id integer)
  RETURNS integer AS $$
 
     SELECT COUNT(*)
@@ -72,8 +72,8 @@ CREATE OR REPLACE FUNCTION get_running_user_match_jobs(_user_id integer)
 
 $$ LANGUAGE SQL;
 
--- Retrieve all running match drop jobs
-CREATE OR REPLACE FUNCTION get_all_running_match_jobs()
+-- Retrieve count of all running match drop jobs
+CREATE OR REPLACE FUNCTION count_all_running_match_jobs()
  RETURNS integer AS $$
 
     SELECT COUNT(*)

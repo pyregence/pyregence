@@ -73,11 +73,11 @@
       (first)
       (sql-result->job)))
 
-(defn- get-all-running-match-drops []
-  (sql-primitive (call-sql "get_all_running_match_jobs")))
+(defn- count-all-running-match-drops []
+  (sql-primitive (call-sql "count_all_running_match_jobs")))
 
-(defn- get-running-user-match-jobs [user-id]
-  (sql-primitive (call-sql "get_running_user_match_jobs" user-id)))
+(defn- count-running-user-match-jobs [user-id]
+  (sql-primitive (call-sql "count_running_user_match_jobs" user-id)))
 
 (defn- initialize-match-job! [user-id]
   (sql-primitive (call-sql "initialize_match_job" user-id)))
@@ -129,17 +129,17 @@
     (send-to-server-wrapper! "wx.pyregence.org" 31337 job-id)
     (data-response {:job-id job-id})))
 
-;; Public API
+;;; Public API
 
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
   [{:keys [user-id] :as params}]
   (data-response
     (cond
-      (pos? (get-running-user-match-jobs user-id))
+      (pos? (count-running-user-match-jobs user-id))
       {:error "Match drop is already running. Please wait until it has completed."}
 
-      (< 5 (get-all-running-match-drops))
+      (< 5 (count-all-running-match-drops))
       {:error "The queue is currently full. Please try again later."}
 
       :else

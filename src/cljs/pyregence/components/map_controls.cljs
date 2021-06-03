@@ -469,10 +469,10 @@
                                  :mode   :close
                                  :action #(reset! poll? false)}) ; TODO the close button is for dev, disable on final product
       (let [{:keys [error job-id]} (edn/read-string (:body (<! match-chan)))]
-        (if (nil? error)
+        (if error
+          (set-message-box-content! {:body (str "Error: " error)})
           (do (reset! poll? true)
-              (poll-status job-id refresh-fire-names!))
-          (set-message-box-content! {:body (str "Error: " error)}))))))
+              (poll-status job-id refresh-fire-names!)))))))
 
 ;; Styles
 (defn- $match-drop-location []
