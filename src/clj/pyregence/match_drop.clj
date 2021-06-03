@@ -73,6 +73,12 @@
       (first)
       (sql-result->job)))
 
+(defn- count-all-running-match-drops []
+  (sql-primitive (call-sql "count_all_running_match_jobs")))
+
+(defn- count-running-user-match-jobs [user-id]
+  (sql-primitive (call-sql "count_running_user_match_jobs" user-id)))
+
 (defn- initialize-match-job! [user-id]
   (sql-primitive (call-sql "initialize_match_job" user-id)))
 
@@ -91,10 +97,7 @@
     (update-match-job! job-id {:md-status 1
                                :message   (str "Connection to " host " failed.")})))
 
-;; Public API
-
-(defn initiate-md!
-  "Creates a new match drop run and starts the analysis."
+(defn- create-match-job!
   [{:keys [user-id ignition-time] :as params}]
   (let [job-id        (initialize-match-job! user-id)
         model-time    (convert-date-string ignition-time)
@@ -115,7 +118,7 @@
                               :data-dir            (str "/var/www/html/fire_spread_forecast/match-drop-" job-id "/" model-time)
                               :geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
                               :action              "add"})
-    job               {:user-id        user-id
+        job           {:user-id        user-id
                        :md-status      2
                        :message        (str "Job " job-id " Initiated.")
                        :elmfire-done?  false
@@ -124,7 +127,23 @@
     (update-match-job! job-id job)
     (log-str "Initiating match drop job #" job-id)
     (send-to-server-wrapper! "wx.pyregence.org" 31337 job-id)
-    job-id))
+    (data-response {:job-id job-id})))
+
+;;; Public API
+
+(defn initiate-md!
+  "Creates a new match drop run and starts the analysis."
+  [{:keys [user-id] :as params}]
+  (data-response
+    (cond
+      (pos? (count-running-user-match-jobs user-id))
+      {:error "Match drop is already running. Please wait until it has completed."}
+
+      (< 5 (count-all-running-match-drops))
+      {:error "The queue is currently full. Please try again later."}
+
+      :else
+      (create-match-job! params))))
 
 (defn get-match-drops
   "Returns the user's match drops"

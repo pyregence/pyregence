@@ -465,12 +465,15 @@
                                          :lon           lon
                                          :lat           lat
                                          :user-id       user-id})]
-      (reset! poll? true)
       (set-message-box-content! {:title  "Processing Match Drop"
                                  :body   "Initiating match drop run."
                                  :mode   :close
                                  :action #(reset! poll? false)}) ; TODO the close button is for dev, disable on final product
-      (poll-status (edn/read-string (:body (<! match-chan))) refresh-fire-names!))))
+      (let [{:keys [error job-id]} (edn/read-string (:body (<! match-chan)))]
+        (if error
+          (set-message-box-content! {:body (str "Error: " error)})
+          (do (reset! poll? true)
+              (poll-status job-id refresh-fire-names!)))))))
 
 ;; Styles
 (defn- $match-drop-location []
