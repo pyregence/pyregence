@@ -170,7 +170,7 @@
    :margin-bottom ".5rem"
    :width         "100%"})
 
-(defn panel-dropdown [title tool-tip-text val options selected disabled? call-back]
+(defn panel-dropdown [title tool-tip-text val options disabled? call-back & [selected-param-set]]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
    [:div {:style {:display "flex" :justify-content "space-between"}}
     [:label title]
@@ -189,7 +189,7 @@
            [:option {:key key
                      :value key
                      :disabled (and (some? disabled)
-                                    (u/intersects? disabled selected))}
+                                    (u/intersects? disabled selected-param-set))}
             opt-label])
          options)]])
 
@@ -227,7 +227,7 @@
                            (mb/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
     (reset! show-panel? (not mobile?))
     (fn [*params select-param! active-opacity param-options mobile?]
-      (let [selected (->> *params (vals) (filter keyword?) (set))]
+      (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
          [:div {:style {:overflow "auto"}}
           [:div#layer-selection {:style {:padding "1rem"}}
@@ -244,9 +244,9 @@
                       hover-text
                       (get *params key)
                       sorted-options
-                      selected
                       (= 1 (count sorted-options))
-                      #(select-param! % key)]
+                      #(select-param! % key)
+                      selected-param-set]
                      (when underlays
                        (map (fn [[key {:keys [opt-label filter-set z-index]}]]
                               (let [underlays (:underlays *params)]
