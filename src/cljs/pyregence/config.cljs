@@ -168,7 +168,7 @@
                                          :options    {:landfire      {:opt-label "LandFire 2.0"
                                                                       :filter    "landfire-2.0.0"
                                                                       :units     ""}
-                                                      :cfo           {:opt-label "California Fire Observatory"
+                                                      :cfo           {:opt-label "California Forest Observatory"
                                                                       :filter    "cfo-2020"
                                                                       :units     ""}
                                                       :ca-fuelscapes {:opt-label "California Fuelscapes"
