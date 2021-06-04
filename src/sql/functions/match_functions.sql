@@ -65,7 +65,7 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION count_running_user_match_jobs(_user_id integer)
  RETURNS integer AS $$
 
-    SELECT COUNT(*)
+    SELECT count(*)::integer
     FROM match_jobs
     WHERE user_rid = _user_id
         AND md_status = 2
@@ -76,7 +76,7 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION count_all_running_match_jobs()
  RETURNS integer AS $$
 
-    SELECT COUNT(*)
+    SELECT count(*)::integer
     FROM match_jobs
     WHERE md_status = 2
 
