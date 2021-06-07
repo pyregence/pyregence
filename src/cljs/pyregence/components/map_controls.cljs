@@ -334,6 +334,9 @@
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
+(defn ed-str [enabled?]
+  (if enabled? "Disable" "Enable"))
+
 (defn tool-bar [show-info? show-match-drop? show-camera? show-red-flag? set-show-info! mobile? user-id]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (->> [[:layers
@@ -376,9 +379,8 @@
                                   :right
                                   [tool-button icon on-click active?]])))])
 
-(defn zoom-bar [get-current-layer-extent mobile? create-share-link]
-  (r/with-let [terrain?     (r/atom false)
-               minZoom      (r/atom 0)
+(defn zoom-bar [get-current-layer-extent mobile? create-share-link terrain?]
+  (r/with-let [minZoom      (r/atom 0)
                maxZoom      (r/atom 28)
                *zoom        (r/atom 10)
                select-zoom! (fn [zoom]
@@ -403,7 +405,7 @@
                                                 :body  [share-inner-modal create-share-link]
                                                 :mode  :close})]
                    [:terrain
-                    "Toggle 3D terrain"
+                    (str (ed-str @terrain?) " 3D terrain")
                     #(do
                        (swap! terrain? not)
                        (mb/toggle-dimensions! @terrain?)
@@ -558,11 +560,12 @@
          (:body)
          (js/URL.createObjectURL))))
 
-(defn camera-tool [cameras parent-box close-fn!]
+(defn camera-tool [cameras parent-box terrain? close-fn!]
   (r/with-let [*camera     (r/atom nil)
                *image      (r/atom nil)
                zoom-camera (fn []
                              (let [{:keys [longitude latitude tilt pan]} @*camera]
+                               (reset! terrain? true)
                                (mb/toggle-dimensions! true)
                                (mb/fly-to! {:center [longitude latitude]
                                             :zoom 15
