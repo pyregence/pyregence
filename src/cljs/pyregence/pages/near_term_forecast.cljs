@@ -137,15 +137,15 @@
                                {:forecast  @*forecast
                                 :layer-idx @*layer-idx
                                 :zoom      zoom})]
-    (as-> page-params $
-      (map (fn [[k v]] (cond
-                         (keyword? v)
-                         (str (name k) "=" (name v))
+    (->> page-params
+         (map (fn [[k v]] (cond
+                            (keyword? v)
+                            (str (name k) "=" (name v))
 
-                         (or (string? v) (number? v))
-                         (str (name k) "=" v))) $)
-      (str/join "&" $)
-      (str js/location.origin js/location.pathname "?" $))))
+                            (or (string? v) (number? v))
+                            (str (name k) "=" v))))
+         (str/join "&")
+         (str js/location.origin js/location.pathname "?"))))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
