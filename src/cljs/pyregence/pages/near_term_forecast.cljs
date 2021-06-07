@@ -56,6 +56,7 @@
 (defonce *layer-idx        (r/atom 0))
 (defonce the-cameras       (r/atom nil))
 (defonce loading?          (r/atom true))
+(defonce terrain?          (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Processing Functions
@@ -436,7 +437,7 @@
             (when @show-match-drop?
               [mc/match-drop-tool @my-box #(reset! show-match-drop? false) refresh-fire-names! user-id])
             (when @show-camera?
-              [mc/camera-tool @the-cameras @my-box #(reset! show-camera? false)])])
+              [mc/camera-tool @the-cameras @my-box terrain? #(reset! show-camera? false)])])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
          [mc/tool-bar
           show-info?
@@ -447,7 +448,7 @@
           @mobile?
           user-id]
          [mc/scale-bar @mobile?]
-         [mc/zoom-bar get-current-layer-extent @mobile? create-share-link]
+         [mc/zoom-bar get-current-layer-extent @mobile? create-share-link terrain?]
          [mc/time-slider
           param-layers
           *layer-idx
