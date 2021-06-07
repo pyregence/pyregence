@@ -598,10 +598,17 @@
             [:label (str "Camera: " (:name @*camera))]]
            [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
            [:button {:type     "button"
+                     :title    "Zoom to Camera"
                      :class    "btn btn-sm btn-secondary"
                      :on-click zoom-camera
-                     :style    {:position "absolute" :bottom "2rem" :right "2rem"}}
-            "Zoom to Camera"]
+                     :style    {:position "absolute"
+                                :bottom   "2rem"
+                                :right    "2rem"
+                                :padding "2px"}}
+            [:div {:style {:width  "32px"
+                           :height "32px"
+                           :fill   "white"}}
+             [svg/magnify-zoom-in]]]
            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 
           :else
