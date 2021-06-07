@@ -129,8 +129,14 @@
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
   []
-  (let [selected-params (get @*params @*forecast)
-        page-params     (merge {:forecast @*forecast :layer-idx @*layer-idx} selected-params)]
+  (let [center          (mb/get-center)
+        zoom            (get (mb/get-zoom-info) 0)
+        selected-params (get @*params @*forecast)
+        page-params     (merge selected-params
+                               center
+                               {:forecast  @*forecast
+                                :layer-idx @*layer-idx
+                                :zoom      zoom})]
     (as-> page-params $
       (map (fn [[k v]] (cond
                          (keyword? v)
@@ -139,7 +145,7 @@
                          (or (string? v) (number? v))
                          (str (name k) "=" v))) $)
       (str/join "&" $)
-      (str js/location.origin js/location.pathname "?" $ js/location.hash))))
+      (str js/location.origin js/location.pathname "?" $))))
 
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
@@ -336,7 +342,7 @@
     (select-keys params oc)
     (u/mapm (fn [[k v]] [k (keyword v)]) oc)))
 
-(defn initialize! [{:keys [user-id forecast-type forecast layer-idx] :as params}]
+(defn initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
     (let [{:keys [options-config default]} (c/get-forecast forecast-type)
           user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
@@ -345,7 +351,7 @@
       (reset! options options-config)
       (reset! *forecast (or (keyword forecast) default))
       (reset! *layer-idx (if layer-idx (js/parseInt layer-idx) 0))
-      (mb/init-map!)
+      (mb/init-map! "map" (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
                              (params->selected-options @options @*forecast params))
