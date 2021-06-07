@@ -10,12 +10,12 @@
 ;;; Session Helpers
 
 (defn- seen-help! [dialog]
-  (-> (u/get-session-storage)
+  (-> (u/get-local-storage)
       (update-in [:help] merge {dialog true})
-      (u/set-session-storage!)))
+      (u/set-local-storage!)))
 
 (defn- seen-help? [dialog]
-  (get-in (u/get-session-storage) [:help dialog]))
+  (get-in (u/get-local-storage) [:help dialog]))
 
 ;;; Public Functions
 

@@ -66,6 +66,24 @@
      (.open js/window url window-name)
      (jump-to-url! url))))
 
+;;; Local Storage
+
+(defn- save-local-storage! [data]
+  (.setItem (.-localStorage js/window) session-key (pr-str data)))
+
+(defn get-local-storage []
+  (edn/read-string (.getItem (.-localStorage js/window) session-key)))
+
+(defn set-local-storage! [data]
+  (save-local-storage! (merge (get-session-storage) data)))
+
+(defn remove-local-storage! [& keys]
+  (let [data (get-local-storage)]
+    (save-local-storage! (apply dissoc data keys))))
+
+(defn clear-local-storage! []
+  (save-local-storage! {}))
+
 ;;; Fetch results
 
 (defn chan? [c]
