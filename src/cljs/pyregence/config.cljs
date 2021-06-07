@@ -207,8 +207,7 @@
                                                                :disabled  #{:cfo :ca-fuelscapes}}
                                                       :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
                                                                :filter    "fbfm40"
-                                                               :units     ""
-                                                               :disabled  #{:cfo}})}
+                                                               :units     ""})}
                                  :model-init {:opt-label  "Model Creation Time"
                                               :hover-text "Time the data was created."
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
