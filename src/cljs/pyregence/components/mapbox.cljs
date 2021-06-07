@@ -83,6 +83,13 @@
         right (.unproject @the-map #js [100.0 y])]
     (.distanceTo left right)))
 
+(defn get-center
+  "Retrives center as `{:lat ## :lon ##}`"
+  []
+  (let [center (.getCenter @the-map)]
+    {:lat (aget center "lat")
+     :lng (aget center "lng")}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modify Map
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -621,21 +628,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn init-map!
-  "Initializes the Mapbox map inside of container (defaults to div with id 'map')."
-  ([] (init-map! "map"))
-  ([container-id]
-   (set! (.-accessToken mapbox) c/mapbox-access-token)
-   (when-not (.supported mapbox)
-     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
-                    "Please use the latest version of Chrome, Safari, or Firefox.")))
-   (reset! the-map
-           (Map.
-            (clj->js {:container   container-id
-                      :dragRotate  false
-                      :hash        true
-                      :maxZoom     20
-                      :minZoom     3
-                      :style       (-> c/base-map-options c/base-map-default :source)
-                      :touchPitch  false
-                      :trackResize true
-                      :transition  {:duration 500 :delay 0}})))))
+  "Initializes the Mapbox map inside of `container` (e.g. \"map\")."
+  [container-id & [opts]]
+  (set! (.-accessToken mapbox) c/mapbox-access-token)
+  (when-not (.supported mapbox)
+    (js/alert (str "Your browser does not support Pyregence Forecast.\n"
+                   "Please use the latest version of Chrome, Safari, or Firefox.")))
+  (reset! the-map
+          (Map.
+            (clj->js (merge {:container   container-id
+                             :dragRotate  false
+                             :maxZoom     20
+                             :minZoom     3
+                             :style       (-> c/base-map-options c/base-map-default :source)
+                             :touchPitch  false
+                             :trackResize true
+                             :transition  {:duration 500 :delay 0}}
+                            opts)))))
