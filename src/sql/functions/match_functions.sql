@@ -105,12 +105,12 @@ CREATE OR REPLACE FUNCTION update_match_job(
  ) RETURNS void AS $$
 
     UPDATE match_jobs
-    SET md_status = COALESCE(_md_status, md_status),
-        message = COALESCE(_message, message),
-        job_log = COALESCE(job_log || to_char(now(), 'YYYY-MM-DD HH:MI.SS') || ': ' || _message || '\n', job_log),
-        elmfire_done = COALESCE(_elmfire_done, elmfire_done),
-        gridfire_done = COALESCE(_gridfire_done, gridfire_done),
-        request = COALESCE(_request::jsonb, request),
+    SET md_status = coalesce(_md_status, md_status),
+        message = coalesce(_message, message),
+        job_log = coalesce(job_log || to_char(now(), 'YYYY-MM-DD HH:MI.SS') || ': ' || _message || '\n', job_log),
+        elmfire_done = coalesce(_elmfire_done, elmfire_done),
+        gridfire_done = coalesce(_gridfire_done, gridfire_done),
+        request = coalesce(_request::jsonb, request),
         updated_at = now()
     WHERE job_uid = _job_id
 
