@@ -409,8 +409,10 @@
         (let [this-node      (rd/dom-node this)
               update-my-box! (fn [& _] (reset! my-box (.getBoundingClientRect this-node)))]
           (update-my-box!)
-          (-> (js/ResizeObserver. update-my-box!)
-              (.observe this-node))))
+          (if (nil? (.-ResizeObserver js/window)) ;; Handle older mobile browsers
+            (.addEventListener js/document "resize" update-my-box!)
+            (-> (js/ResizeObserver. update-my-box!)
+                (.observe this-node)))))
 
       :render
       (fn []
