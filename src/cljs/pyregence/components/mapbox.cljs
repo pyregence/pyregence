@@ -466,10 +466,10 @@
    `z-index` allows layers to be rendered on-top (positive z-index) or below
    (negative z-index) Mapbox base map layers."
   [id source opacity]
-  (let [new-source {source (wfs-source source)}
+  (let [new-source {id (wfs-source source)}
         labels-id  (str id "-labels")
-        new-layers [(incident-layer id source opacity)
-                    (incident-labels-layer labels-id source opacity)]]
+        new-layers [(incident-layer id id opacity)
+                    (incident-labels-layer labels-id id opacity)]]
     [new-source new-layers]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
