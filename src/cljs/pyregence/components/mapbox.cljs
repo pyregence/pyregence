@@ -361,7 +361,8 @@
         new-paint  (condp = layer-type
                      "raster" (raster-opacity opacity)
                      "circle" (circle-opacity opacity)
-                     "symbol" (symbol-opacity opacity))]
+                     "symbol" (symbol-opacity opacity)
+                     {})]
     (update layer "paint" merge new-paint)))
 
 (defn set-opacity-by-title!
