@@ -9,7 +9,7 @@
 
 ;;; Session Helpers
 
-(defn- seen-help! [dialog]
+(defn- set-help-seen! [dialog]
   (-> (u/get-local-storage)
       (update-in [:help] merge {dialog true})
       (u/set-local-storage!)))
@@ -23,6 +23,6 @@
   [dialog & [always-show]]
   {:pre [((-> help-dialogs keys set) dialog)]}
   (when-not (or always-show (seen-help? dialog))
-    (seen-help! dialog)
+    (set-help-seen! dialog)
     (set-message-box-content! (merge (dialog help-dialogs)
                                      {:mode :close}))))
