@@ -639,7 +639,8 @@
                    "Please use the latest version of Chrome, Safari, or Firefox.")))
   (reset! the-map
           (Map.
-           (clj->js (merge {:container   container-id
+           (clj->js (merge {:bounds      c/cal-extent
+                            :container   container-id
                             :dragRotate  false
                             :maxZoom     20
                             :minZoom     3

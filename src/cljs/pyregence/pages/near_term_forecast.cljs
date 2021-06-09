@@ -113,7 +113,7 @@
     ""))
 
 (defn get-current-layer-extent []
-  (:extent (current-layer) [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
+  (:extent (current-layer) c/cal-extent))
 
 (defn get-current-layer-group []
   (:layer-group (current-layer) ""))
