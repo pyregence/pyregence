@@ -217,8 +217,7 @@
 (defn add-point-on-click!
   "Callback for `click` listener."
   [[lng lat]]
-  (init-point! lng lat)
-  (center-on-overlay!))
+  (init-point! lng lat))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popup
