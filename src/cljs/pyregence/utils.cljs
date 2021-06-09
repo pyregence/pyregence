@@ -56,16 +56,6 @@
 (defn clear-session-storage! []
   (save-session-storage! {}))
 
-(defn jump-to-url!
-  ([url]
-   (let [origin (.-origin (.-location js/window))
-         cur-url (str/replace (.-href (.-location js/window)) origin "")]
-     (when-not (= cur-url url) (set! (.-location js/window) url))))
-  ([url window-name]
-   (if window-name
-     (.open js/window url window-name)
-     (jump-to-url! url))))
-
 ;;; Local Storage
 
 (defn- save-local-storage! [data]
@@ -83,6 +73,18 @@
 
 (defn clear-local-storage! []
   (save-local-storage! {}))
+
+;;; Browser Management
+
+(defn jump-to-url!
+  ([url]
+   (let [origin (.-origin (.-location js/window))
+         cur-url (str/replace (.-href (.-location js/window)) origin "")]
+     (when-not (= cur-url url) (set! (.-location js/window) url))))
+  ([url window-name]
+   (if window-name
+     (.open js/window url window-name)
+     (jump-to-url! url))))
 
 ;;; Fetch results
 
