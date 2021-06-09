@@ -119,9 +119,11 @@
   (:layer-group (current-layer) ""))
 
 (defn get-current-layer-key [key-name]
-  (some (fn [[key {:keys [options]}]]
-          (get-in options [(get-in @*params [@*forecast key]) key-name]))
-        (get-forecast-opt :params)))
+  (->> (get-forecast-opt :params)
+       (map (fn [[key {:keys [options]}]]
+              (get-in options [(get-in @*params [@*forecast key]) key-name])))
+       (remove nil?)
+       (first)))
 
 (defn get-options-key [key-name]
   (some #(get % key-name)
@@ -129,8 +131,10 @@
 
 ;; TODO, can we make this the default everywhere?
 (defn get-any-level-key [key-name]
-  (or (get-current-layer-key key-name)
-      (get-options-key key-name)))
+  (let [layer-key (get-current-layer-key key-name)]
+    (if (nil? layer-key)
+      (get-options-key key-name)
+      layer-key)))
 
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
@@ -265,7 +269,7 @@
     (let [main-key (first keys)]
       (change-type! (not (= main-key :model-init))
                     (get-current-layer-key :clear-point?)
-                    (get-options-key       :auto-zoom?)
+                    (get-any-level-key     :auto-zoom?)
                     (get-any-level-key     :max-zoom)))))
 
 (defn select-forecast! [key]
@@ -280,7 +284,7 @@
         (mb/set-visible-by-title! name show?)))
     (<! (change-type! true
                       true
-                      (get-options-key   :auto-zoom?)
+                      (get-any-level-key :auto-zoom?)
                       (get-any-level-key :max-zoom)))))
 
 (defn set-show-info! [show?]
