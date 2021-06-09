@@ -12,6 +12,7 @@
             [pyregence.geo-utils :as g]
             [pyregence.components.mapbox    :as mb]
             [pyregence.components.svg-icons :as svg]
+            [pyregence.components.help      :as h]
             [pyregence.components.common           :refer [radio tool-tip-wrapper input-datetime]]
             [pyregence.components.messaging        :refer [set-message-box-content!]]
             [pyregence.components.resizable-window :refer [resizable-window]]
@@ -408,6 +409,7 @@
                     (str (ed-str @terrain?) " 3D terrain")
                     #(do
                        (swap! terrain? not)
+                       (when @terrain? (h/show-help! :terrain))
                        (mb/toggle-dimensions! @terrain?)
                        (mb/ease-to! {:pitch (if @terrain? 45 0) :bearing 0}))]
                    [:my-location

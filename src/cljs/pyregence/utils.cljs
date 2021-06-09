@@ -56,6 +56,26 @@
 (defn clear-session-storage! []
   (save-session-storage! {}))
 
+;;; Local Storage
+
+(defn- save-local-storage! [data]
+  (.setItem (.-localStorage js/window) session-key (pr-str data)))
+
+(defn get-local-storage []
+  (edn/read-string (.getItem (.-localStorage js/window) session-key)))
+
+(defn set-local-storage! [data]
+  (save-local-storage! (merge (get-session-storage) data)))
+
+(defn remove-local-storage! [& keys]
+  (let [data (get-local-storage)]
+    (save-local-storage! (apply dissoc data keys))))
+
+(defn clear-local-storage! []
+  (save-local-storage! {}))
+
+;;; Browser Management
+
 (defn jump-to-url!
   ([url]
    (let [origin (.-origin (.-location js/window))
