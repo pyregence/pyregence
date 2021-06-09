@@ -113,7 +113,7 @@
     ""))
 
 (defn get-current-layer-extent []
-  (:extent (current-layer) c/cal-extent))
+  (:extent (current-layer) c/california-extent))
 
 (defn get-current-layer-group []
   (:layer-group (current-layer) ""))
