@@ -127,6 +127,11 @@
   (some #(get % key-name)
         (vals (get-forecast-opt :params))))
 
+;; TODO, can we make this the default everywhere?
+(defn get-any-level-key [key-name]
+  (or (get-current-layer-key key-name)
+      (get-options-key key-name)))
+
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
   []
@@ -238,21 +243,21 @@
 
 (defn change-type!
   "Changes the type of data that is being shown on the map."
-  [get-model-times? clear? zoom?]
+  [get-model-times? clear? zoom? max-zoom]
   (go
     (<! (get-layers! get-model-times?))
-    (let [source (get-current-layer-name)
-          style  (get-current-layer-key :style-fn)]
-      (mb/reset-active-layer! source style (/ @active-opacity 100))
+    (let [source   (get-current-layer-name)
+          style-fn (get-current-layer-key :style-fn)]
+      (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
       (mb/clear-popup!)
-      (when (some? style)
+      (when (some? style-fn)
         (mb/add-feature-highlight! "fire-active" source init-fire-popup!))
       (get-legend! source))
     (if clear?
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))
     (when zoom?
-      (mb/zoom-to-extent! (get-current-layer-extent)))))
+      (mb/zoom-to-extent! (get-current-layer-extent) max-zoom))))
 
 (defn select-param! [val & keys]
   (swap! *params assoc-in (cons @*forecast keys) val)
@@ -260,7 +265,8 @@
     (let [main-key (first keys)]
       (change-type! (not (= main-key :model-init))
                     (get-current-layer-key :clear-point?)
-                    (get-in @processed-params [main-key :auto-zoom?])))))
+                    (get-options-key       :auto-zoom?)
+                    (get-any-level-key     :max-zoom)))))
 
 (defn select-forecast! [key]
   (go
@@ -272,7 +278,10 @@
     (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
       (when (some? name)
         (mb/set-visible-by-title! name show?)))
-    (<! (change-type! true true (get-options-key :auto-zoom?)))))
+    (<! (change-type! true
+                      true
+                      (get-options-key   :auto-zoom?)
+                      (get-any-level-key :max-zoom)))))
 
 (defn set-show-info! [show?]
   (if (and show? (get-forecast-opt :block-info?))

@@ -69,10 +69,12 @@
                                             :default-option :calfire-incidents
                                             :options        {:calfire-incidents {:opt-label  "*CALFIRE Incidents"
                                                                                  :style-fn   :default
-                                                                                 :filter-set #{"fire-detections" "calfire-incidents"}}
+                                                                                 :filter-set #{"fire-detections" "calfire-incidents"}
+                                                                                 :max-zoom   7}
                                                              :nifc-large-fires  {:opt-label  "*NIFC Large Fires"
                                                                                  :style-fn   :default
-                                                                                 :filter-set #{"fire-detections" "nifc-large-fires"}}}}
+                                                                                 :filter-set #{"fire-detections" "nifc-large-fires"}
+                                                                                 :max-zoom   7}}}
                                :output     {:opt-label  "Output"
                                             :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
                                             :options    {:burned {:opt-label "Forecasted fire location"

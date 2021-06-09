@@ -1,7 +1,6 @@
 (ns pyregence.components.mapbox
   (:require [reagent.core       :as r]
             [reagent.dom.server :as rs]
-            [clojure.string :as str]
             [clojure.core.async :refer [go <!]]
             [pyregence.config    :as c]
             [pyregence.utils     :as u]
@@ -101,9 +100,12 @@
 
 (defn zoom-to-extent!
   "Pans/zooms the map to the provided extents."
-  [[minx miny maxx maxy]]
-  (let [bounds (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))]
-    (.fitBounds @the-map bounds #js {:linear true})))
+  [[minx miny maxx maxy] & [max-zoom]]
+  (.fitBounds @the-map
+              (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
+              (-> {:linear true}
+                  (merge (when max-zoom {:maxZoom max-zoom}))
+                  (clj->js))))
 
 (defn set-center!
   "Centers the map on `center` with a minimum zoom value of `min-zoom`."
@@ -637,12 +639,12 @@
                    "Please use the latest version of Chrome, Safari, or Firefox.")))
   (reset! the-map
           (Map.
-            (clj->js (merge {:container   container-id
-                             :dragRotate  false
-                             :maxZoom     20
-                             :minZoom     3
-                             :style       (-> c/base-map-options c/base-map-default :source)
-                             :touchPitch  false
-                             :trackResize true
-                             :transition  {:duration 500 :delay 0}}
-                            opts)))))
+           (clj->js (merge {:container   container-id
+                            :dragRotate  false
+                            :maxZoom     20
+                            :minZoom     3
+                            :style       (-> c/base-map-options c/base-map-default :source)
+                            :touchPitch  false
+                            :trackResize true
+                            :transition  {:duration 500 :delay 0}}
+                           opts)))))
