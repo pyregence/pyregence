@@ -412,8 +412,8 @@
    `z-index` allows layers to be rendered on-top (positive z-index) or below
    (negative z-index) Mapbox base map layers."
   [id source opacity]
-  (let [new-source {source (wms-source source)}
-        new-layer  (wms-layer id source opacity)]
+  (let [new-source {id (wms-source source)}
+        new-layer  (wms-layer id id opacity)]
     [new-source [new-layer]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
