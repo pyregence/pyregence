@@ -7,7 +7,7 @@
             [pyregence.geo-utils :as g]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mapbox Aaliases
+;; Mapbox Aliases
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private mapbox       js/mapboxgl)
@@ -83,7 +83,7 @@
     (.distanceTo left right)))
 
 (defn get-center
-  "Retrives center as `{:lat ## :lon ##}`"
+  "Retrieves center as `{:lat ## :lon ##}`"
   []
   (let [center (.getCenter @the-map)]
     {:lat (aget center "lat")
@@ -136,7 +136,7 @@
     (set-center! (.getLngLat @the-marker) 12.0)))
 
 (defn set-center-my-location!
-  "Sets the center of the map using a geolocation event."
+  "Sets the center of the map using a geo-location event."
   [event]
   (let [coords (.-coords event)
         lng    (.-longitude coords)
@@ -205,7 +205,7 @@
     (reset! the-marker nil)))
 
 (defn init-point!
-  "Creates a marker at lnglat."
+  "Creates a marker at `[lng lat]`"
   [lng lat]
   (clear-point!)
   (let [marker (Marker. #js {:color "#FF0000"})]
@@ -519,7 +519,7 @@
 
 (defn toggle-dimensions!
   "Toggles whether the map is in 2D or 3D mode. When `three-dimensions?` is true,
-   terrain is added to the base map and rotatation/pitch is enabled."
+   terrain is added to the base map and rotation/pitch is enabled."
   [enabled?]
   (toggle-terrain! enabled?)
   (toggle-rotation! enabled?)
@@ -619,11 +619,11 @@
 (defn remove-layer!
   "Removes layer that matches `id`"
   [id]
-  (let [curr-style      (get-style)
-        layers          (get curr-style "layers")
+  (let [cur-style       (get-style)
+        layers          (get cur-style "layers")
         filtered-layers (remove #(= id (get % "id")) layers)]
     (swap! custom-layers disj id)
-    (update-style! curr-style :layers filtered-layers)))
+    (update-style! cur-style :layers filtered-layers)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Creation
