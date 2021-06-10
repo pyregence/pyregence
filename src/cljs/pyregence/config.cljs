@@ -61,26 +61,21 @@
                  :params      {:fire-name  {:opt-label      "Fire Name"
                                             :auto-zoom?     true
                                             :sort?          true
-                                            :hover-text     "This section contains active fires across the state, as named in CALFIRE incident reports. Select a specific fire from the dropdown menu to view a simulation.\n
-                                                             View all active fires by selecting one of two options with an asterisk at the beginning. We offer data from CALFIRE, as well as the National Interagency Fire Center."
-                                            :underlays      {:nifs-perimeters   {:opt-label  "NIFS Perimeters"
-                                                                                 :z-index    3
-                                                                                 :filter-set #{"fire-detections" "nifs-perimeters"}}
-                                                             :viirs-hotspots    {:opt-label  "VIIRS Hotspots"
-                                                                                 :z-index    2
-                                                                                 :filter-set #{"fire-detections" "viirs-timestamped"}}
-                                                             :modis-hotspots    {:opt-label  "MODIS Hotspots"
-                                                                                 :z-index    1
-                                                                                 :filter-set #{"fire-detections" "modis-timestamped"}}}
-                                            :default-option :calfire-incidents
-                                            :options        {:calfire-incidents {:opt-label  "*CALFIRE Incidents"
-                                                                                 :style-fn   :default
-                                                                                 :filter-set #{"fire-detections" "calfire-incidents"}
-                                                                                 :max-zoom   7}
-                                                             :nifc-large-fires  {:opt-label  "*NIFC Large Fires"
-                                                                                 :style-fn   :default
-                                                                                 :filter-set #{"fire-detections" "nifc-large-fires"}
-                                                                                 :max-zoom   7}}}
+                                            :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
+                                            :underlays      {:nifs-perimeters {:opt-label  "NIFS Perimeters"
+                                                                               :z-index    3
+                                                                               :filter-set #{"fire-detections" "nifs-perimeters"}}
+                                                             :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
+                                                                               :z-index    2
+                                                                               :filter-set #{"fire-detections" "viirs-timestamped"}}
+                                                             :modis-hotspots  {:opt-label  "MODIS Hotspots"
+                                                                               :z-index    1
+                                                                               :filter-set #{"fire-detections" "modis-timestamped"}}}
+                                            :default-option :active-fires
+                                            :options        {:active-fires    {:opt-label  "*All Active Fires"
+                                                                               :style-fn   :default
+                                                                               :filter-set #{"fire-detections" "active-fires"}
+                                                                               :auto-zoom? false}}}
                                :output     {:opt-label  "Output"
                                             :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
                                             :options    {:burned {:opt-label "Forecasted fire location"
