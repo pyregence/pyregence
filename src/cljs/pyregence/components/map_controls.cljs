@@ -235,16 +235,16 @@
     (fn [underlays *params]
       [:<>
        (doall
-         (map (fn [[key {:keys [opt-label filter-set z-index]}]]
-                (let [underlays (:underlays *params)]
-                  ^{:key key}
-                  [optional-layer
-                   opt-label
-                   filter-set
-                   (get underlays key)
-                   (fn [k v] (select-param! v :underlays key k))
-                   key]))
-              underlays))])}))
+        (map (fn [[key {:keys [opt-label filter-set z-index]}]]
+               (let [underlays (:underlays *params)]
+                 ^{:key key}
+                 [optional-layer
+                  opt-label
+                  filter-set
+                  (get underlays key)
+                  (fn [k v] (select-param! v :underlays key k))
+                  key]))
+             underlays))])}))
 
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [*base-map        (r/atom c/base-map-default)
