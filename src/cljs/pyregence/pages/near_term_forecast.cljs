@@ -251,7 +251,7 @@
       (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
       (mb/clear-popup!)
       (when (some? style-fn)
-        (mb/add-feature-highlight! "fire-active" source init-fire-popup!))
+        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!))
       (get-legend! source))
     (if clear?
       (clear-info!)
