@@ -245,6 +245,11 @@
     (mb/init-popup! lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 
+(defn- reset-underlays! []
+  (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
+    (when (some? name)
+      (mb/set-visible-by-title! name show?))))
+
 (defn change-type!
   "Changes the type of data that is being shown on the map."
   [get-model-times? clear? zoom? max-zoom]
@@ -254,6 +259,7 @@
           style-fn (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
       (mb/clear-popup!)
+      (reset-underlays!)
       (when (some? style-fn)
         (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!))
       (get-legend! source))
@@ -279,9 +285,7 @@
         (mb/set-visible-by-title! name false)))
     (reset! *forecast key)
     (reset! processed-params (get-forecast-opt :params))
-    (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
-      (when (some? name)
-        (mb/set-visible-by-title! name show?)))
+    (reset-underlays!)
     (<! (change-type! true
                       true
                       (get-any-level-key :auto-zoom?)

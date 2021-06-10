@@ -400,21 +400,20 @@
    :tileSize 256
    :tiles    [(c/wms-layer-url layer-name)]})
 
-(defn- wms-layer [layer-name source-name opacity]
+(defn- wms-layer [layer-name source-name opacity visible?]
   {:id     layer-name
    :type   "raster"
    :source source-name
-   :layout {:visibility "visible"}
+   :layout {:visibility (if visible? "visible" "none")}
    :paint  {:raster-opacity opacity}})
 
 (defn- build-wms
   "Returns new WMS source and layer in the form `[source [layer]]`.
-   `source` must be a valid WMS layer in the geoserver
-   `z-index` allows layers to be rendered on-top (positive z-index) or below
-   (negative z-index) Mapbox base map layers."
-  [id source opacity]
+   `source` must be a valid WMS layer in the geoserver,
+   `opacity` must be a float between 0.0 and 1.0."
+  [id source opacity visibile?]
   (let [new-source {id (wms-source source)}
-        new-layer  (wms-layer id id opacity)]
+        new-layer  (wms-layer id id opacity visibile?)]
     [new-source [new-layer]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -560,7 +559,7 @@
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
         layers (hide-fire-layers (get style "layers"))
-        [new-sources new-layers] (build-wms geo-layer geo-layer opacity)]
+        [new-sources new-layers] (build-wms geo-layer geo-layer opacity true)]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
@@ -575,7 +574,7 @@
         layers (hide-fire-layers (get style "layers"))
         [new-sources new-layers] (if (some? style-fn)
                                    (build-wfs fire-active geo-layer opacity)
-                                   (build-wms geo-layer geo-layer opacity))]
+                                   (build-wms geo-layer geo-layer opacity true))]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
@@ -583,11 +582,20 @@
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
-  [id source z-index]
-  (let [[new-source new-layers] (build-wms id source 1.0)]
-    (update-style! (get-style)
-                   :new-sources new-source
-                   :new-layers  new-layers)))
+  [id source visible?]
+  (if (is-selectable? id)
+    (set-visible-by-title! id visible?)
+    (let [[new-source new-layers] (build-wms id source 1.0 visible?)
+          style                   (get-style)
+          layers                  (get style "layers")
+          custom-layer?           (fn [idx layer] (when (is-selectable? (get layer "id")) idx))
+          zero-idx                (apply min (keep-indexed custom-layer? layers))
+          [before after]          (split-at zero-idx layers)
+          final-layers            (vec (concat before new-layers after))]
+      (swap! custom-layers into (list id))
+      (update-style! (get-style)
+                     :new-sources new-source
+                     :layers final-layers))))
 
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."

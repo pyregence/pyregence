@@ -5,7 +5,7 @@
             [herb.core :refer [<class]]
             [clojure.edn :as edn]
             [clojure.string :as string]
-            [clojure.core.async :refer [go <! timeout]]
+            [clojure.core.async :refer [<! go timeout]]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
             [pyregence.config    :as c]
@@ -194,32 +194,56 @@
             opt-label])
          options)]])
 
-(defn get-layer-name [filter-set update-layer]
+(defn get-layer-name [filter-set update-layer!]
   (go
     (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
                                                               (pr-str filter-set)))))]
-      (update-layer :name name)
+      (update-layer! :name name)
       name)))
 
-(defn optional-layer [opt-label filter-set z-index layer update-layer id]
-  (get-layer-name filter-set update-layer)
-  (fn [opt-label filter-set z-index layer update-layer]
-    (let [show? (:show? layer)]
-      [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
-       [:div {:style {:display "flex"}}
-        [:input {:style {:margin ".25rem .5rem 0 0"}
-                 :type "checkbox"
-                 :id id
-                 :checked show?
-                 :on-change (fn []
-                              (go
-                                (let [layer-name (or (:name layer)
-                                                     (<! (get-layer-name filter-set update-layer)))] ; Note, this redundancy is due to the way figwheel reloads.
-                                  (update-layer :show? (not show?))
-                                  (if show?
-                                    (mb/set-visible-by-title! layer-name false)
-                                    (mb/create-wms-layer! layer-name layer-name z-index)))))}]
-        [:label {:for id} opt-label]]])))
+(defn optional-layer [opt-label filter-set layer update-layer! id]
+  (let [show? (:show? layer)]
+    [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
+     [:div {:style {:display "flex"}}
+      [:input {:style {:margin ".25rem .5rem 0 0"}
+               :type "checkbox"
+               :id id
+               :checked show?
+               :on-change (fn []
+                            (go
+                              (let [layer-name (or (:name layer)
+                                                   (<! (get-layer-name filter-set update-layer!)))] ; Note, this redundancy is due to the way figwheel reloads.
+                                (update-layer! :show? (not show?))
+                                (mb/set-visible-by-title! layer-name (not show?)))))}]
+      [:label {:for id} opt-label]]]))
+
+(defn optional-layers [underlays *params select-param!]
+  (r/create-class
+   {:component-did-mount
+    (fn []
+      (let [f (fn [{:keys [filter-set]}] (get-layer-name filter-set identity))
+            sorted-underlays (reverse (sort-by :z-index (vals underlays)))]
+        (doseq [underlay sorted-underlays]
+          (go
+            (let [layer-name (<! (f underlay))]
+              (mb/create-wms-layer! layer-name layer-name false))))))
+
+    :display-name "optional-layers"
+
+    :reagent-render
+    (fn [underlays *params]
+      [:<>
+       (doall
+         (map (fn [[key {:keys [opt-label filter-set z-index]}]]
+                (let [underlays (:underlays *params)]
+                  ^{:key key}
+                  [optional-layer
+                   opt-label
+                   filter-set
+                   (get underlays key)
+                   (fn [k v] (select-param! v :underlays key k))
+                   key]))
+              underlays))])}))
 
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [*base-map        (r/atom c/base-map-default)
@@ -249,17 +273,7 @@
                       #(select-param! % key)
                       selected-param-set]
                      (when underlays
-                       (map (fn [[key {:keys [opt-label filter-set z-index]}]]
-                              (let [underlays (:underlays *params)]
-                                ^{:key key}
-                                [optional-layer
-                                 opt-label
-                                 filter-set
-                                 z-index
-                                 (get underlays key)
-                                 (fn [k v] (select-param! v :underlays key k))
-                                 key]))
-                            underlays))]))
+                       [optional-layers underlays *params select-param!])]))
                 param-options)
            [:div {:style {:margin-top ".5rem"}}
             [:label (str "Opacity: " @active-opacity)]
