@@ -588,11 +588,13 @@
     (let [[new-source new-layers] (build-wms id source 1.0 visible?)
           style                   (get-style)
           layers                  (get style "layers")
-          custom-layer?           (fn [idx layer] (when (is-selectable? (get layer "id")) idx))
-          zero-idx                (apply min (keep-indexed custom-layer? layers))
+          zero-idx                (->> layers
+                                       (keep-indexed (fn [idx layer]
+                                                       (when (is-selectable? (get layer "id")) idx)))
+                                       (first))
           [before after]          (split-at zero-idx layers)
           final-layers            (vec (concat before new-layers after))]
-      (swap! custom-layers into (list id))
+      (swap! custom-layers conj id)
       (update-style! (get-style)
                      :new-sources new-source
                      :layers final-layers))))

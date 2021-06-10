@@ -5,7 +5,7 @@
             [herb.core :refer [<class]]
             [clojure.edn :as edn]
             [clojure.string :as string]
-            [clojure.core.async :refer [<! go timeout]]
+            [clojure.core.async :refer [<! go go-loop timeout]]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
             [pyregence.config    :as c]
@@ -221,12 +221,13 @@
   (r/create-class
    {:component-did-mount
     (fn []
-      (let [f (fn [{:keys [filter-set]}] (get-layer-name filter-set identity))
-            sorted-underlays (reverse (sort-by :z-index (vals underlays)))]
-        (doseq [underlay sorted-underlays]
-          (go
-            (let [layer-name (<! (f underlay))]
-              (mb/create-wms-layer! layer-name layer-name false))))))
+      (let [f (fn [{:keys [filter-set]}] (get-layer-name filter-set identity))]
+        (go-loop [sorted-underlays (reverse (sort-by :z-index (vals underlays)))]
+                 (let [tail       (rest sorted-underlays)
+                       layer-name (<! (f (first sorted-underlays)))]
+                   (mb/create-wms-layer! layer-name layer-name false)
+                   (when-not (empty? tail)
+                     (recur tail))))))
 
     :display-name "optional-layers"
 

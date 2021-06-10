@@ -222,9 +222,15 @@
                 (c/point-info-url layer-group
                                   (str/join "," point-info))))))
 
+(defn- reset-underlays! []
+  (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
+    (when (some? name)
+      (mb/set-visible-by-title! name show?))))
+
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100)))
+  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100))
+  (reset-underlays!))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -244,11 +250,6 @@
         body       (apply fp/fire-popup props)]
     (mb/init-popup! lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
-
-(defn- reset-underlays! []
-  (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
-    (when (some? name)
-      (mb/set-visible-by-title! name show?))))
 
 (defn change-type!
   "Changes the type of data that is being shown on the map."
