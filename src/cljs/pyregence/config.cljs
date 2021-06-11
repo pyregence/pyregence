@@ -37,37 +37,37 @@
                                     :layer {:opt-label  "Layer"
                                             :hover-text "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
                                             :options    (array-map
-                                                          :asp    {:opt-label "Aspect"
-                                                                   :filter    "asp"
-                                                                   :units     ""
-                                                                   :disabled  #{:cfo}}
-                                                          :slp    {:opt-label "Slope (%)"
-                                                                   :filter    "slp"
-                                                                   :units     "%"
-                                                                   :disabled  #{:cfo}}
-                                                          :dem    {:opt-label "Elevation (ft)"
-                                                                   :filter    "dem"
-                                                                   :units     ""
-                                                                   :disabled  #{:cfo}}
-                                                          :cc     {:opt-label "Canopy Cover (%)"
-                                                                   :filter    "cc"
-                                                                   :units     "%"}
-                                                          :ch     {:opt-label "Canopy Height (m)"
-                                                                   :filter    "ch"
-                                                                   :units     "m"}
-                                                          :cbh    {:opt-label "Canopy Base Height (m)"
-                                                                   :filter    "cbh"
-                                                                   :units     "m"}
-                                                          :cbd    {:opt-label "Crown Bulk Density (kg/m^3)"
-                                                                   :filter    "cbd"
-                                                                   :units     "kg/m^3"}
-                                                          :fbfm13 {:opt-label "Fire Behavior Fuel Model 13"
-                                                                   :filter    "fbfm13"
-                                                                   :units     ""
-                                                                   :disabled  #{:cfo :ca-fuelscapes}}
-                                                          :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
-                                                                   :filter    "fbfm40"
-                                                                   :units     ""})}
+                                                         :asp    {:opt-label "Aspect"
+                                                                  :filter    "asp"
+                                                                  :units     ""
+                                                                  :disabled  #{:cfo}}
+                                                         :slp    {:opt-label "Slope (%)"
+                                                                  :filter    "slp"
+                                                                  :units     "%"
+                                                                  :disabled  #{:cfo}}
+                                                         :dem    {:opt-label "Elevation (ft)"
+                                                                  :filter    "dem"
+                                                                  :units     ""
+                                                                  :disabled  #{:cfo}}
+                                                         :cc     {:opt-label "Canopy Cover (%)"
+                                                                  :filter    "cc"
+                                                                  :units     "%"}
+                                                         :ch     {:opt-label "Canopy Height (m)"
+                                                                  :filter    "ch"
+                                                                  :units     "m"}
+                                                         :cbh    {:opt-label "Canopy Base Height (m)"
+                                                                  :filter    "cbh"
+                                                                  :units     "m"}
+                                                         :cbd    {:opt-label "Crown Bulk Density (kg/m^3)"
+                                                                  :filter    "cbd"
+                                                                  :units     "kg/m^3"}
+                                                         :fbfm13 {:opt-label "Fire Behavior Fuel Model 13"
+                                                                  :filter    "fbfm13"
+                                                                  :units     ""
+                                                                  :disabled  #{:cfo :ca-fuelscapes}}
+                                                         :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
+                                                                  :filter    "fbfm40"
+                                                                  :units     ""})}
                                     :model-init {:opt-label  "Model Creation Time"
                                                  :hover-text "Time the data was created."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
@@ -186,18 +186,18 @@
                                              :options    {:burned {:opt-label "Forecasted fire location"
                                                                    :filter    "hours-since-burned"
                                                                    :units     "Hours"}}}
-                                :burn-pct   {:opt-label      "Burn Probability"
+                                :burn-pct   {:opt-label      "Predicted Fire Size"
                                              :default-option :50
-                                             :hover-text     "To develop an active fire forecast, we run 1,000 simulations, inputting a variety of factors for consideration. 'Burn Probability' shows the percentage of time the simulations followed the same path. To see the path taken in 90% of our simulations, for example, select 90% from the dropdown menu."
-                                             :options        {:90 {:opt-label "90%"
+                                             :hover-text     "To develop an active fire forecast, we run 1,000 simulations of each fire, inputting a variety of factors for consideration. This leads to a range of predicted fire sizes, five of which can be selected from the dropdown menu."
+                                             :options        {:90 {:opt-label "Largest"
                                                                    :filter    "90"}
-                                                              :70 {:opt-label "70%"
+                                                              :70 {:opt-label "Larger"
                                                                    :filter    "70"}
-                                                              :50 {:opt-label "50%"
+                                                              :50 {:opt-label "Average"
                                                                    :filter    "50"}
-                                                              :30 {:opt-label "30%"
+                                                              :30 {:opt-label "Smaller"
                                                                    :filter    "30"}
-                                                              :10 {:opt-label "10%"
+                                                              :10 {:opt-label "Smallest"
                                                                    :filter    "10"}}}
                                 :fuel       {:opt-label  "Fuel"
                                              :hover-text "Source of surface and canopy fuel inputs:\n
