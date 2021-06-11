@@ -597,8 +597,9 @@
                                         (-> js/window .-location .reload)))}
                 "Log Out"]]
               [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-               [:label {:style {:margin-right "1rem" :cursor "pointer"}
-                        :on-click #(u/jump-to-url! "/register")} "Register"]
+               ;; Remove for the time being
+               ;; [:label {:style {:margin-right "1rem" :cursor "pointer"}
+               ;;          :on-click #(u/jump-to-url! "/register")} "Register"]
                [:label {:style {:cursor "pointer"}
                         :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
