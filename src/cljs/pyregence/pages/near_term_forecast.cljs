@@ -222,9 +222,15 @@
                 (c/point-info-url layer-group
                                   (str/join "," point-info))))))
 
+(defn- reset-underlays! []
+  (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
+    (when (some? name)
+      (mb/set-visible-by-title! name show?))))
+
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100)))
+  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100))
+  (reset-underlays!))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -254,6 +260,7 @@
           style-fn (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
       (mb/clear-popup!)
+      (reset-underlays!)
       (when (some? style-fn)
         (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!))
       (get-legend! source))
@@ -279,9 +286,7 @@
         (mb/set-visible-by-title! name false)))
     (reset! *forecast key)
     (reset! processed-params (get-forecast-opt :params))
-    (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
-      (when (some? name)
-        (mb/set-visible-by-title! name show?)))
+    (reset-underlays!)
     (<! (change-type! true
                       true
                       (get-any-level-key :auto-zoom?)
