@@ -648,8 +648,7 @@
                    "Please use the latest version of Chrome, Safari, or Firefox.")))
   (reset! the-map
           (Map.
-           (clj->js (merge {:bounds      c/california-extent
-                            :container   container-id
+           (clj->js (merge {:container   container-id
                             :dragRotate  false
                             :maxZoom     20
                             :minZoom     3
@@ -657,4 +656,6 @@
                             :touchPitch  false
                             :trackResize true
                             :transition  {:duration 500 :delay 0}}
+                           (when-not (:zoom opts)
+                             {:bounds c/california-extent})
                            opts)))))
