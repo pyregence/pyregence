@@ -11,10 +11,12 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
+            [pyregence.components.fire-popup   :as fp]
             [pyregence.components.map-controls :as mc]
-            [pyregence.components.openlayers   :as ol]
+            [pyregence.components.mapbox       :as mb]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
-            [pyregence.components.messaging :refer [toast-message
+            [pyregence.components.messaging :refer [message-box-modal
+                                                    toast-message
                                                     toast-message!
                                                     process-toast-messages!]]
             [pyregence.components.svg-icons :refer [pin]]))
@@ -36,20 +38,25 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce options           (r/atom {}))
 (defonce mobile?           (r/atom false))
 (defonce legend-list       (r/atom []))
 (defonce last-clicked-info (r/atom []))
 (defonce show-utc?         (r/atom true))
 (defonce show-info?        (r/atom false))
-(defonce show-measure?     (r/atom false))
+(defonce show-match-drop?  (r/atom false))
+(defonce show-camera?      (r/atom false))
+(defonce show-red-flag?    (r/atom false))
 (defonce active-opacity    (r/atom 100.0))
 (defonce capabilities      (r/atom []))
-(defonce *forecast         (r/atom :fire-risk))
+(defonce *forecast         (r/atom nil))
 (defonce processed-params  (r/atom []))
 (defonce *params           (r/atom {}))
 (defonce param-layers      (r/atom []))
 (defonce *layer-idx        (r/atom 0))
+(defonce the-cameras       (r/atom nil))
 (defonce loading?          (r/atom true))
+(defonce terrain?          (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Processing Functions
@@ -83,8 +90,8 @@
                                              (get-in options [(params key) :filter])))
                                       (remove nil?))))
           {:keys [layers model-times]} (t/read (t/reader :json)
-                                               (:message (<! (u/call-clj-async! "get-layers"
-                                                                                (pr-str selected-set)))))]
+                                               (:body (<! (u/call-clj-async! "get-layers"
+                                                                             (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! param-layers layers)
       (swap! *layer-idx #(max 0 (min % (- (count @param-layers) 1))))
@@ -106,24 +113,54 @@
     ""))
 
 (defn get-current-layer-extent []
-  (:extent (current-layer) [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483]))
+  (:extent (current-layer) c/california-extent))
 
 (defn get-current-layer-group []
   (:layer-group (current-layer) ""))
 
 (defn get-current-layer-key [key-name]
-  (some (fn [[key {:keys [options]}]]
-          (get-in options [(get-in @*params [@*forecast key]) key-name]))
-        (get-forecast-opt :params)))
+  (->> (get-forecast-opt :params)
+       (map (fn [[key {:keys [options]}]]
+              (get-in options [(get-in @*params [@*forecast key]) key-name])))
+       (remove nil?)
+       (first)))
 
 (defn get-options-key [key-name]
   (some #(get % key-name)
         (vals (get-forecast-opt :params))))
 
+;; TODO, can we make this the default everywhere?
+(defn get-any-level-key [key-name]
+  (let [layer-key (get-current-layer-key key-name)]
+    (if (nil? layer-key)
+      (get-options-key key-name)
+      layer-key)))
+
+(defn create-share-link
+  "Generates a link with forecast and parameters encoded in a URL"
+  []
+  (let [center          (mb/get-center)
+        zoom            (get (mb/get-zoom-info) 0)
+        selected-params (get @*params @*forecast)
+        page-params     (merge selected-params
+                               center
+                               {:forecast  @*forecast
+                                :layer-idx @*layer-idx
+                                :zoom      zoom})]
+    (->> page-params
+         (map (fn [[k v]] (cond
+                            (keyword? v)
+                            (str (name k) "=" (name v))
+
+                            (or (string? v) (number? v))
+                            (str (name k) "=" v))))
+         (str/join "&")
+         (str js/location.origin js/location.pathname "?"))))
+
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
-  channel containing the result of calling process-fn on the response
-  or nil if an error occurred."
+   channel containing the result of calling process-fn on the response
+   or nil if an error occurred."
   [process-fn url]
   (u/fetch-and-process url
                        {:method "get"
@@ -185,9 +222,15 @@
                 (c/point-info-url layer-group
                                   (str/join "," point-info))))))
 
+(defn- reset-underlays! []
+  (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
+    (when (some? name)
+      (mb/set-visible-by-title! name show?))))
+
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
-  (ol/swap-active-layer! (get-current-layer-name)))
+  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100))
+  (reset-underlays!))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -195,40 +238,59 @@
                                       @param-layers))))
 
 (defn clear-info! []
-  (ol/clear-point!)
+  (mb/clear-point!)
   (reset! last-clicked-info [])
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))
 
-(defn change-type! [get-model-times? clear? zoom?]
+(defn- init-fire-popup! [feature _]
+  (let [properties (-> feature (aget "properties") (js->clj))
+        lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
+        props      (-> properties (select-keys ["prettyname" "containper" "acres"]) (vals))
+        body       (apply fp/fire-popup props)]
+    (mb/init-popup! lnglat body {:width "200px"})
+    (mb/set-center! lnglat 0)))
+
+(defn change-type!
+  "Changes the type of data that is being shown on the map."
+  [get-model-times? clear? zoom? max-zoom]
   (go
     (<! (get-layers! get-model-times?))
-    (ol/reset-active-layer! (get-current-layer-name)
-                            (get-current-layer-key :style-fn)
-                            (/ @active-opacity 100))
-    (get-legend! (get-current-layer-name))
+    (let [source   (get-current-layer-name)
+          style-fn (get-current-layer-key :style-fn)]
+      (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
+      (mb/clear-popup!)
+      (reset-underlays!)
+      (when (some? style-fn)
+        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!))
+      (get-legend! source))
     (if clear?
       (clear-info!)
-      (get-point-info! (ol/get-overlay-bbox)))
+      (get-point-info! (mb/get-overlay-bbox)))
     (when zoom?
-      (ol/zoom-to-extent! (get-current-layer-extent)))))
+      (mb/zoom-to-extent! (get-current-layer-extent) max-zoom))))
 
 (defn select-param! [val & keys]
   (swap! *params assoc-in (cons @*forecast keys) val)
-  (let [main-key (first keys)]
-    (change-type! (not (= main-key :model-init))
-                  (get-current-layer-key :clear-point?)
-                  (get-in @processed-params [main-key :auto-zoom?]))))
+  (when-not ((set keys) :underlays)
+    (let [main-key (first keys)]
+      (change-type! (not (= main-key :model-init))
+                    (get-current-layer-key :clear-point?)
+                    (get-any-level-key     :auto-zoom?)
+                    (get-any-level-key     :max-zoom)))))
 
 (defn select-forecast! [key]
   (go
     (doseq [[_ {:keys [name]}] (get-in @*params [@*forecast :underlays])]
-      (ol/set-visible-by-title! name false))
+      (when (some? name)
+        (mb/set-visible-by-title! name false)))
     (reset! *forecast key)
     (reset! processed-params (get-forecast-opt :params))
-    (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
-      (ol/set-visible-by-title! name show?))
-    (<! (change-type! true true (get-options-key :auto-zoom?)))))
+    (reset-underlays!)
+    (<! (change-type! true
+                      true
+                      (get-any-level-key :auto-zoom?)
+                      (get-any-level-key :max-zoom)))))
 
 (defn set-show-info! [show?]
   (if (and show? (get-forecast-opt :block-info?))
@@ -254,7 +316,7 @@
 
 ;;; Capabilities
 
-(defn process-capabilities! [fire-names user-layers]
+(defn process-capabilities! [fire-names user-layers & [selected-options]]
   (reset! capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
@@ -263,7 +325,7 @@
                                    (s/valid? ::layer-config layer-config))
                             (assoc-in acc layer-path layer-config)
                             acc)))
-                      c/forecast-options
+                      @options
                       user-layers)
               (update-in [:active-fire :params :fire-name :options]
                          merge
@@ -272,25 +334,48 @@
                    (fn [[forecast _]]
                      (let [params (get-in @capabilities [forecast :params])]
                        [forecast (merge (u/mapm (fn [[k v]]
-                                                  [k (or (:default-option v)
+                                                  [k (or (get selected-options k)
+                                                         (:default-option v)
                                                          (ffirst (:options v)))])
                                                 params)
                                         {:underlays (->> params
                                                          (mapcat (fn [[_ v]] (:underlays v)))
                                                          (u/mapm (fn [[k _]] [k {:show? false
                                                                                  :name  nil}])))})]))
-                   c/forecast-options)))
+                   @options)))
 
-(defn init-map! [user-id]
+(defn refresh-fire-names! []
   (go
-    (let [user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
-          fire-names-chan  (u/call-clj-async! "get-fire-names")]
-      (ol/init-map!)
-      (ol/add-mouse-move-feature-highlight!)
-      (ol/add-single-click-feature-highlight!)
-      (process-capabilities! (edn/read-string (:message (<! fire-names-chan)))
-                             (edn/read-string (:message (<! user-layers-chan))))
+    (as-> (u/call-clj-async! "get-fire-names") fire-names
+      (<! fire-names)
+      (:body fire-names)
+      (edn/read-string fire-names)
+      (swap! capabilities update-in [:active-fire :params :fire-name :options] merge fire-names))))
+
+(defn- params->selected-options
+  "Parses url query parameters to into the selected options"
+  [options-config forecast params]
+  (as-> options-config oc
+    (get-in oc [forecast :params])
+    (keys oc)
+    (select-keys params oc)
+    (u/mapm (fn [[k v]] [k (keyword v)]) oc)))
+
+(defn initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
+  (go
+    (let [{:keys [options-config default]} (c/get-forecast forecast-type)
+          user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
+          fire-names-chan  (u/call-clj-async! "get-fire-names")
+          fire-cameras     (u/call-clj-async! "get-cameras")]
+      (reset! options options-config)
+      (reset! *forecast (or (keyword forecast) default))
+      (reset! *layer-idx (if layer-idx (js/parseInt layer-idx) 0))
+      (mb/init-map! "map" (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
+      (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
+                             (edn/read-string (:body (<! user-layers-chan)))
+                             (params->selected-options @options @*forecast params))
       (<! (select-forecast! @*forecast))
+      (reset! the-cameras (edn/read-string (:body (<! fire-cameras))))
       (reset! loading? false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -325,31 +410,16 @@
    :max-height       (if mobile? "calc(100% - .5rem)" "50%")
    :width            (if mobile? "unset" "25rem")})
 
-(def ol-scale-line
-  {:background-color ($/color-picker :bg-color)
-   :border           (str "1px solid " ($/color-picker :border-color))
-   :bottom           (if @mobile? "90px" "36px")
-   :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
-   :left             "auto"
-   :height           "28px"
-   :right            "64px"})
-
-(def ol-scale-line-inner
-  {:border-color ($/color-picker :border-color)
-   :color        ($/color-picker :border-color)
-   :font-size    ".75rem"})
-
-(defn $p-ol-control []
+(defn $p-mb-cursor []
   (with-meta
     {}
-    {:combinators {[:descendant :.ol-scale-line]       ol-scale-line
-                   [:descendant :.ol-scale-line-inner] ol-scale-line-inner}}))
+    {:combinators {[:descendant :.mapboxgl-canvas-container] {:cursor "inherit"}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn control-layer []
+(defn control-layer [user-id]
   (let [my-box (r/atom #js {})]
     (r/create-class
      {:component-did-mount
@@ -357,8 +427,10 @@
         (let [this-node      (rd/dom-node this)
               update-my-box! (fn [& _] (reset! my-box (.getBoundingClientRect this-node)))]
           (update-my-box!)
-          (-> (js/ResizeObserver. update-my-box!)
-              (.observe this-node))))
+          (if (nil? (.-ResizeObserver js/window)) ;; Handle older mobile browsers
+            (.addEventListener js/document "resize" update-my-box!)
+            (-> (js/ResizeObserver. update-my-box!)
+                (.observe this-node)))))
 
       :render
       (fn []
@@ -369,22 +441,34 @@
           active-opacity
           @processed-params
           @mobile?]
-         (when (and @show-info? (aget @my-box "height"))
-           [mc/information-tool
-            get-point-info!
-            @my-box
-            *layer-idx
-            select-layer-by-hour!
-            (get-current-layer-key :units)
-            (get-current-layer-hour)
-            @legend-list
-            @last-clicked-info
-            #(set-show-info! false)])
-         (when (and @show-measure? (aget @my-box "height"))
-           [mc/measure-tool @my-box #(reset! show-measure? false)])
+         (when (aget @my-box "height")
+           [:<>
+            (when @show-info?
+              [mc/information-tool
+               get-point-info!
+               @my-box
+               *layer-idx
+               select-layer-by-hour!
+               (get-current-layer-key :units)
+               (get-current-layer-hour)
+               @legend-list
+               @last-clicked-info
+               #(set-show-info! false)])
+            (when @show-match-drop?
+              [mc/match-drop-tool @my-box #(reset! show-match-drop? false) refresh-fire-names! user-id])
+            (when @show-camera?
+              [mc/camera-tool @the-cameras @my-box terrain? #(reset! show-camera? false)])])
          [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
-         [mc/tool-bar show-info? show-measure? set-show-info! @mobile?]
-         [mc/zoom-bar get-current-layer-extent @mobile?]
+         [mc/tool-bar
+          show-info?
+          show-match-drop?
+          show-camera?
+          show-red-flag?
+          set-show-info!
+          @mobile?
+          user-id]
+         [mc/scale-bar @mobile?]
+         [mc/zoom-bar get-current-layer-extent @mobile? create-share-link terrain?]
          [mc/time-slider
           param-layers
           *layer-idx
@@ -401,10 +485,10 @@
 (defn map-layer []
   (r/with-let [mouse-down? (r/atom false)
                cursor-fn   #(cond
-                              @mouse-down?                    "grabbing"
-                              (or @show-info? @show-measure?) "crosshair" ; TODO get custom cursor image from Ryan
-                              :else                           "grab")]
-    [:div#map {:class (<class $p-ol-control)
+                              @mouse-down?                       "grabbing"
+                              (or @show-info? @show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
+                              :else                              "grab")]
+    [:div#map {:class (<class $p-mb-cursor)
                :style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
                :on-mouse-down #(reset! mouse-down? true)
                :on-mouse-up #(reset! mouse-down? false)}]))
@@ -463,7 +547,7 @@
    [:div {:style ($message-modal false)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
-(defn root-component [{:keys [user-id]}]
+(defn root-component [{:keys [user-id] :as params}]
   (let [height (r/atom "100%")]
     (r/create-class
      {:component-did-mount
@@ -477,17 +561,18 @@
                                                       .getBoundingClientRect
                                                       (aget "height")))
                                                "px"))
-                          (js/setTimeout ol/resize-map! 50))]
+                          (js/setTimeout mb/resize-map! 50))]
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
           (process-toast-messages!)
-          (init-map! user-id)
+          (initialize! params)
           (update-fn)))
 
       :reagent-render
       (fn [_]
         [:div {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
          [toast-message]
+         [message-box-modal]
          (when @loading? [loading-modal])
          [message-modal]
          [:div {:class "bg-yellow"
@@ -512,12 +597,11 @@
                                         (-> js/window .-location .reload)))}
                 "Log Out"]]
               [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-               ;; TODO, this is commented out until we are ready for users to create an account
-               ;;  [:label {:style {:margin-right "1rem" :cursor "pointer"}
-               ;;           :on-click #(u/jump-to-url! "/register")} "Register"]
+               [:label {:style {:margin-right "1rem" :cursor "pointer"}
+                        :on-click #(u/jump-to-url! "/register")} "Register"]
                [:label {:style {:cursor "pointer"}
                         :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
-          (when @ol/the-map [control-layer])
+          (when @mb/the-map [control-layer user-id])
           [map-layer]
           [pop-up]]])})))

@@ -15,8 +15,8 @@
                 [:title "Wildfire Forecasts - Pyregence"]
                 [:meta {:name "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
-                (include-css "/css/ol.css")
-                (include-js "/js/ol.js" "/cljs/app.js")]
+                (include-css "/css/mapbox-gl-v2.2.0.css")
+                (include-js "/js/mapbox-gl-v2.2.0.js" "/cljs/app.js")]
                [:body
                 [:div#near-term-forecast
                  (slurp "resources/html/~header.html")

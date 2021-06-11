@@ -2,7 +2,7 @@
   (:require-macros [herb.core :refer [defglobal]]
                    pyregence.herb-patch)
   (:require herb.runtime
-            [reagent.core :as r]
+            [reagent.core   :as r]
             [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -98,11 +98,34 @@
        :group  true
        :pseudo {:disabled disabled-style}})))
 
-(defn p-button-hover []
-  (with-meta
-    {}
-    {:pseudo {:hover {:background-color (color-picker :border-color 0.2)
-                      :border-radius    "4px"}}}))
+(defn p-button-hover
+  "Background of button is highlighted when `active?` is true or on hover."
+  [& [active?]]
+  (let [highlight-color (color-picker :border-color 0.2)]
+    (with-meta
+      {:background-color (if active? highlight-color "transparent")
+       :border-radius    "4px"}
+      {:pseudo {:hover {:background-color highlight-color}}})))
+
+(defn p-button [& modifiers]
+  (let [base-style     {:border-width  "0"
+                        :border-radius "3px"
+                        :color         "white"
+                        :cursor        "pointer"
+                        :font-size     ".9rem"
+                        :font-weight   "normal"
+                        :min-width     "10rem"
+                        :text-align    "center"
+                        :padding       ".5rem .75rem"}
+        disabled-style {:cursor        "not-allowed"
+                        :opacity       "0.5"}]
+    (with-meta
+      (if (contains? (set modifiers) :disabled)
+        (merge base-style disabled-style)
+        base-style)
+      {:key    (str/join "-" (sort modifiers))
+       :group  true
+       :pseudo {:disabled disabled-style}})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style Functions

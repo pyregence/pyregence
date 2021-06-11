@@ -1,6 +1,7 @@
 (ns pyregence.utils
   (:require [cljs.reader :as edn]
             [clojure.string :as str]
+            [clojure.set    :as sets]
             [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]))
 
@@ -26,6 +27,17 @@
   [event]
   (-> event .-target .-files (aget 0)))
 
+;; Text
+
+(defn sentence->kebab
+  "Converts string to kebab-string"
+  [string]
+  (-> string
+      (str/lower-case)
+      (str/replace #"[\s-\.\,]+" "-")))
+
+;; Session
+
 (def session-key "pyregence")
 
 (defn- save-session-storage! [data]
@@ -43,6 +55,26 @@
 
 (defn clear-session-storage! []
   (save-session-storage! {}))
+
+;;; Local Storage
+
+(defn- save-local-storage! [data]
+  (.setItem (.-localStorage js/window) session-key (pr-str data)))
+
+(defn get-local-storage []
+  (edn/read-string (.getItem (.-localStorage js/window) session-key)))
+
+(defn set-local-storage! [data]
+  (save-local-storage! (merge (get-session-storage) data)))
+
+(defn remove-local-storage! [& keys]
+  (let [data (get-local-storage)]
+    (save-local-storage! (apply dissoc data keys))))
+
+(defn clear-local-storage! []
+  (save-local-storage! {}))
+
+;;; Browser Management
 
 (defn jump-to-url!
   ([url]
@@ -129,10 +161,10 @@
       (if response
         {:success (.-ok response)
          :status  (.-status response)
-         :message (or (edn/read-string (<p! (.text response))) "")}
+         :body    (or (edn/read-string (<p! (.text response))) "")}
         {:success false
          :status  nil
-         :message ""}))))
+         :body    ""}))))
 
 (defmethod call-remote! :post-text [_ url data]
   (go
@@ -149,10 +181,30 @@
       (if response
         {:success (.-ok response)
          :status  (.-status response)
-         :message (or (<p! (.text response)) "")}
+         :body    (or (<p! (.text response)) "")}
         {:success false
          :status  nil
-         :message ""}))))
+         :body    ""}))))
+
+(defmethod call-remote! :post-blob [_ url data]
+  (go
+    (let [fetch-params {:method "post"
+                        :headers (merge {"Accept" "application/transit+json"}
+                                        (when-not (= (type data) js/FormData)
+                                          {"Content-Type" "application/edn"}))
+                        :body (cond
+                                (= js/FormData (type data)) data
+                                data                        (pr-str data)
+                                :else                       nil)}
+          response      (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+                                   fetch-params))]
+      (if response
+        {:success (.-ok response)
+         :status  (.-status response)
+         :body    (or (<p! (.blob response)) "")}
+        {:success false
+         :status  nil
+         :body    ""}))))
 
 (defmethod call-remote! :default [method _ _]
   (throw (ex-info (str "No such method (" method ") defined for pyregence.utils/call-remote!") {})))
@@ -174,7 +226,17 @@
       num-str
       (str "0" num-str))))
 
-(defn get-date-from-js [js-date show-utc?]
+(defn get-time-zone
+  "Returns the string code for the local timezone."
+  [js-date]
+  (-> js-date
+      (.toLocaleTimeString "en-us" #js {:timeZoneName "short"})
+      (str/split " ")
+      (peek)))
+
+(defn get-date-from-js
+  "Formats the date portion of JS Date as the date portion of an ISO string."
+  [js-date show-utc?]
   (if show-utc?
     (subs (.toISOString js-date) 0 10)
     (str (.getFullYear js-date)
@@ -183,30 +245,55 @@
          "-"
          (pad-zero (.getDate js-date)))))
 
-(defn get-time-from-js [js-date show-utc?]
+(defn get-time-from-js
+  "Formats the time portion of JS Date as the time portion of an ISO string."
+  [js-date show-utc?]
   (if show-utc?
     (str (subs (.toISOString js-date) 11 16) " UTC")
     (str (pad-zero (.getHours js-date))
          ":"
          (pad-zero (.getMinutes js-date))
          " "
-         (-> js-date
-             (.toLocaleTimeString "en-us" #js {:timeZoneName "short"})
-             (str/split " ")
-             (peek)))))
+         (get-time-zone js-date))))
 
-(defn js-date-from-string [date-str]
+(defn- model-format->js-format
+  "Formats date string given from GeoServer to one that can be used by JS Date."
+  [date-str]
   (let [minutes (subs date-str 11 13)]
-    (js/Date. (str (subs date-str 0 4) "-"
-                 (subs date-str 4 6) "-"
-                 (subs date-str 6 8) "T"
-                 (subs date-str 9 11) ":"
-                 (if (= 2 (count minutes)) minutes "00")
-                 ":00.000Z"))))
+    (str (subs date-str 0 4) "-"
+         (subs date-str 4 6) "-"
+         (subs date-str 6 8) "T"
+         (subs date-str 9 11) ":"
+         (if (= 2 (count minutes)) minutes "00")
+         ":00.000Z")))
 
-(defn time-zone-iso-date [date-str show-utc?]
-  (let [js-date (js-date-from-string date-str)]
-    (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?))))
+(defn js-date-from-string
+  "Converts a date string to a JS Date object."
+  [date-str]
+  (js/Date. (if (re-matches #"\d{8}_\d{2,6}" date-str)
+              (model-format->js-format date-str)
+              date-str)))
+
+(defn js-date->iso-string
+  "Returns a ISO date-time string for a given JS date object in local or UTC timezone."
+  [js-date show-utc?]
+  (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?)))
+
+(defn time-zone-iso-date
+  "Returns a ISO date-time string for a given date string in local or UTC timezone."
+  [date-str show-utc?]
+  (js-date->iso-string (js-date-from-string date-str) show-utc?))
+
+(defn ms->hhmmss [ms]
+  (let [sec (/ ms 1000)
+        hours (js/Math.round (/ sec 3600))
+        minutes (js/Math.round (/ (mod sec 3600) 60))
+        seconds (js/Math.round (mod (mod sec 3600) 60))]
+    (str (pad-zero hours)
+         ":"
+         (pad-zero minutes)
+         ":"
+         (pad-zero seconds))))
 
 ;;; ->map HOF
 
@@ -214,6 +301,15 @@
   (persistent!
    (reduce (fn [acc cur]
              (conj! acc (f cur)))
+           (transient {})
+           coll)))
+
+(defn filterm [f coll]
+  (persistent!
+   (reduce (fn [acc cur]
+             (if (f cur)
+               (conj! acc cur)
+               acc))
            (transient {})
            coll)))
 
@@ -255,10 +351,16 @@
 (defn missing-data? [& args]
   (some no-data? args))
 
-(defn is-numeric? [str]
-  (if (string? str)
-    (re-matches #"^-?([\d]+[\d\,]*\.*[\d]+)$|^-?([\d]+)$" str)
-    (number? str)))
+(defn is-numeric? [v]
+  (if (string? v)
+    (re-matches #"^-?([\d]+[\d\,]*\.*[\d]+)$|^-?([\d]+)$" v)
+    (number? v)))
+
+(defn intersects? [s1 s2]
+  {:pre [(every? set? [s1 s2])]}
+  (-> (sets/intersection s1 s2)
+      (count)
+      (pos?)))
 
 (defn num-str-compare
   "Compare two strings as numbers if they are numeric"
@@ -271,13 +373,13 @@
       (compare sort-y sort-x))))
 
 (defn find-key-by-id
-  ([list id]
-   (find-key-by-id list id :opt-label))
-  ([list id key]
-   (some #(when (= (:opt-id %) id) (get % key)) list)))
+  ([coll id]
+   (find-key-by-id coll id :opt-label))
+  ([coll id k]
+   (some #(when (= (:opt-id %) id) (get % k)) coll)))
 
-(defn find-by-id [list id]
-  (some #(when (= (:opt-id %) id) %) list))
+(defn find-by-id [coll id]
+  (some #(when (= (:opt-id %) id) %) coll))
 
 (defn try-js-aget [obj & values]
   (try
@@ -295,3 +397,21 @@
   [n dbl]
   (let [factor (.pow js/Math 10 n)]
     (/ (Math/round (* dbl factor)) factor)))
+
+(defn only
+  "Returns a function calls `f` only when `x` passes `pred`. Can be used in
+   mapping over a collection like so:
+   `(map (only even? #(* % 2)) xs)`"
+  [pred f]
+  (fn [x]
+    (if (pred x) (f x) x)))
+
+(defn copy-input-clipboard!
+  "Copies the contents of `element-id` into the user's clipboard. `element-id` must
+   be the ID of an HTML element in the document."
+  [element-id]
+  {:pre [(string? element-id)]}
+  (doto (js/document.getElementById element-id)
+    (.focus)
+    (.select))
+  (js/document.execCommand "copy"))

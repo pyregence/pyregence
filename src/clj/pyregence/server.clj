@@ -5,7 +5,9 @@
             [ring.adapter.jetty     :refer [run-jetty]]
             [pyregence.capabilities :refer [set-capabilities!]]
             [pyregence.handler      :refer [create-handler-stack]]
-            [pyregence.logging      :refer [log-str set-log-path!]]))
+            [pyregence.logging      :refer [log-str set-log-path!]]
+            [pyregence.match-drop   :refer [process-message]]
+            [pyregence.sockets      :refer [start-socket-server! stop-socket-server!]]))
 
 (defonce server           (atom nil))
 (defonce clean-up-service (atom nil))
@@ -50,18 +52,17 @@
     :default ""]])
 
 (defn start-server! [& args]
-  (let [{:keys [options summary errors]} (parse-opts args cli-options)]
+  (let [{:keys [options summary errors]} (parse-opts args cli-options)
+        {:keys [http-port https-port mode output-dir]} options]
     (if (seq errors)
       (do
         (run! println errors)
         (println (str "Usage:\n" summary)))
-      (let [mode       (:mode options)
-            has-key?   (.exists (io/file "./.key/keystore.pkcs12"))
-            https-port (:https-port options)
+      (let [has-key?   (.exists (io/file "./.key/keystore.pkcs12"))
             ssl?       (and has-key? https-port)
             handler    (create-handler-stack ssl? (= mode "dev"))
             config     (merge
-                        {:port  (:http-port options)
+                        {:port  http-port
                          :join? false}
                         (when ssl?
                           {:ssl?          true
@@ -76,11 +77,13 @@
           (do
             (reset! server (run-jetty handler config))
             (reset! clean-up-service (start-clean-up-service!))
-            (set-log-path! (:output-dir options))
+            (set-log-path! output-dir)
+            (start-socket-server! 31337 process-message)
             (set-capabilities!)))))))
 
 (defn stop-server! []
   (set-log-path! "")
+  (stop-socket-server!)
   (when @clean-up-service
     (future-cancel @clean-up-service)
     (reset! clean-up-service nil))

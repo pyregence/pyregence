@@ -139,4 +139,5 @@
           (println "Valid options are:"
                    "\n  build-all            to build the database and all components"
                    "\n  only-functions       to only build functions"
-                   "\n  verbose              to show standard output from Postgres\n"))))
+                   "\n  verbose              to show standard output from Postgres\n")))
+  (shutdown-agents))

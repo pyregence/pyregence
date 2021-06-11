@@ -53,15 +53,14 @@
         [forecast fire-name init-ts1 init-ts2] (str/split workspace   #"_")
         [layer-group sim-timestamp]            (str/split layer       #"_(?=\d{8}_)")
         init-timestamp                         (str init-ts1 "_" init-ts2)]
-    (when-not (str/includes? name-string "match-drop") ; TODO: Remove when MD is enabled
-      {:workspace   workspace
-       :layer-group ""
-       :forecast    forecast
-       :fire-name   fire-name
-       :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
-       :model-init  init-timestamp
-       :sim-time    sim-timestamp
-       :hour        0})))
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    forecast
+     :fire-name   fire-name
+     :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
+     :model-init  init-timestamp
+     :sim-time    sim-timestamp
+     :hour        0}))
 
 (defn split-fire-detections [name-string]
   (let [[workspace layer]   (str/split name-string #":")
@@ -74,6 +73,28 @@
      :filter-set  #{forecast filter model-init}
      :model-init  model-init
      :hour        0}))
+
+(defn- split-fuels [name-string]
+  (let [[workspace layer] (str/split name-string #":")
+        [forecast model]  (str/split workspace #"_")]
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    forecast
+     :filter-set  #{"fuels" model layer "20210407_000000"}
+     :model-init  "20210407_000000"
+     :hour        0}))
+
+(defn- split-wg4-scenarios [name-string]
+  (let [[workspace layer] (str/split name-string #":")
+        [_ parameters]    (str/split layer #"_geoTiff_")
+        [_ model prob measure year] (re-matches #"([^_]+)_([^_]+)_AA_all_([^_]+)_mean_(\d+)" parameters)]
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    model
+     :filter-set  #{workspace model prob measure "20210407_000000"}
+     :model-init  "20210407_000000"
+     :sim-time    (str year "0101_000000")
+     :hour        (- (Integer/parseInt year) 1954)}))
 
 (defn process-layers! [workspace-name]
   (let [xml-response (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
@@ -104,7 +125,13 @@
                           (merge-fn (split-active-layer-name full-name))
 
                           (str/starts-with? full-name "fire-detections")
-                          (merge-fn (split-fire-detections full-name))))))
+                          (merge-fn (split-fire-detections full-name))
+
+                          (str/starts-with? full-name "fuels")
+                          (merge-fn (split-fuels full-name))
+
+                          (str/starts-with? full-name "wg4_FireSim")
+                          (merge-fn (split-wg4-scenarios full-name))))))
                    (vec)))
             xml)
       (apply concat xml)
@@ -117,6 +144,9 @@
                             (not= workspace workspace-name))
                           %))
   (data-response (str workspace-name " removed.")))
+
+(defn get-all-layers []
+  (data-response (map :filter-set @layers)))
 
 (defn set-capabilities! [& [workspace-name]]
   (try

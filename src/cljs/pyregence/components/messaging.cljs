@@ -1,4 +1,5 @@
 (ns pyregence.components.messaging
+  (:require-macros [pyregence.herb-patch :refer [style->class]])
   (:require [herb.core :refer [<class]]
             [reagent.core :as r]
             [clojure.core.async :refer [chan go >! <! timeout]]
@@ -9,9 +10,15 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce toast-message-text (r/atom nil))
+(def ^:private blank-message-box {:title  ""
+                                  :body   ""
+                                  :mode   :none
+                                  :action nil})
 
-(defonce toast-message-chan (chan))
+(def message-box-content (r/atom blank-message-box))
+(def toast-message-text  (r/atom nil))
+
+(def toast-message-chan (chan))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -27,6 +34,19 @@
         (reset! toast-message-text nil)
         (<! (timeout 500))
         (recur (<! toast-message-chan)))))
+
+(defn set-message-box-content!
+  "Sets message content map with merge. Content includes title, body, mode, and action.
+   The message box will show when title is not an empty string.
+   Mode can be either :close or nil.
+   Action is optional and will be executed when the mode button is clicked."
+  [content]
+  (swap! message-box-content merge content))
+
+(defn close-message-box!
+  "Sets message content map to empty values."
+  []
+  (reset! message-box-content blank-message-box))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -66,6 +86,12 @@
      :padding       ".5rem .75rem .5rem .5rem"}
     {:pseudo {:hover {:background-color ($/color-picker :black 0.15)}}}))
 
+(defn $message-box []
+  {:min-width "35%"
+   :max-width "55%"
+   :margin    "15% auto"
+   :width     "fit-content"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -96,3 +122,30 @@
          [:span {:class (<class $p-alert-close)
                  :on-click #(reset! toast-message-text nil)}
           "\u274C"]]))))
+
+(defn button [label color & callback]
+  [:input {:class (style->class $/p-button)
+           :style ($/combine [$/bg-color color] [$/margin "1rem" :h])
+           :type "button"
+           :value label
+           :on-click (when (seq callback) (first callback))}])
+
+(defn message-box-modal []
+  (let [{:keys [title body mode action]} @message-box-content]
+    (when-not (= "" title)
+      [:div {:style ($/modal)}
+       [:div {:style ($/combine $message-box [$/align :text :left])}
+        [:div {:style ($/action-box)}
+         [:div {:style ($/action-header)}
+          [:label {:style ($/padding "1px" :l)} title]]
+         [:div {:style ($/combine $/flex-col {:padding "1rem"})}
+          (if (vector? body)
+            body
+            [:label {:style {:font-size ".95rem"}}
+             (show-line-break body)])
+          (condp = mode
+            :close [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
+                    [button "Close" :yellow #(do
+                                               (when action (action))
+                                               (close-message-box!))]]
+            [:<>])]]]])))

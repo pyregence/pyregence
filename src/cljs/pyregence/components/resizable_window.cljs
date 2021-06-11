@@ -95,7 +95,7 @@
           p-top    (aget parent-rec "top")]
       (when (> @box-height (/ p-height 1.5)) (reset! box-height (/ p-height 1.5)))
       (when (> @box-width  (/ p-width  1.5)) (reset! box-width  (/ p-width 1.5)))
-      [:div#resizable {:style ($/combine $/tool ($resizable-window @box-height @box-width))}
+      [:div#resizable {:style ($/combine $/tool ($resizable-window (max init-height @box-height) (max init-width @box-width)))}
        [title-div title title-height close-fn!]
        (render-content (- @box-height @title-height) @box-width)
        [drag-sw-icon p-height p-width p-top box-height box-width]])))

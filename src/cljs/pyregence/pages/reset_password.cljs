@@ -65,7 +65,7 @@
       [simple-form
        "Reset Password"
        "Reset Password"
-       [["Email"                 email       "text"]
-        ["New Password"          password    "password"]
-        ["Re-enter New Password" re-password "password"]]
+       [["Email"                 email       "email"    "email"]
+        ["New Password"          password    "password" "new-password"]
+        ["Re-enter New Password" re-password "password" "confirm-password"]]
        reset-password!]]]))
