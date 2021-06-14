@@ -71,15 +71,11 @@
                   :reverse-legend? true
                   :hover-text      "8-day forecast of key parameters affecting wildfire behavior obtained from operational National Weather Service forecast models."
                   :params          {:band       {:opt-label  "Weather Parameter"
-                                                 :hover-text "8-day forecast updated 4x daily at approximately 4 AM, 10 AM, 4 PM, and 10 PM (PDT). Forecast data are pulled from three operational weather models:
-                                                              - 0-48 hours:  Average of 3 km HRRR and 3 km NAM
-                                                              - 49-60 hours:  3 km NAM
-                                                              - 61-192 hours:  0.125° GFS
+                                                 :hover-text "8-day forecast updated 4x daily pulled from three operational weather models. Available quantities include common weather parameters plus fire weather indices:
 
-                                                              Available quantities include common weather parameters and several fire indices:
-                                                              - Fosberg Fire Weather Index (FFWI):  A fuel-independent measure of potential fire spread rate based on sustained wind speed, relative humidity, and temperature
-                                                              - Vapor pressure deficit (VPD):  Difference between the quantity of moisture in air and how much moisture it can hold when fully saturated. VPD more accurately characterizes atmospheric dryness than relative humidity.
-                                                              - Hot Dry Windy Index:  Similar to FFWI, but based on VPD instead of relative humidity and temperature."
+                                                              - Fosberg Fire Weather Index (FFWI): A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature
+                                                              - Vapor pressure deficit (VPD): Difference between amount of moisture in air and how much it can hold when saturated
+                                                              - Hot Dry Windy Index: Similar to FFWI, but based on VPD"
                                                  :options    (array-map
                                                               :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                        :filter    "ffwi"
