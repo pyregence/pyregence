@@ -187,7 +187,7 @@
                                                                    :filter    "90"}
                                                               :70 {:opt-label "Larger (70th percentile)"
                                                                    :filter    "70"}
-                                                              :50 {:opt-label "Average (50th percentile)"
+                                                              :50 {:opt-label "Median (50th percentile)"
                                                                    :filter    "50"}
                                                               :30 {:opt-label "Smaller (30th percentile)"
                                                                    :filter    "30"}
