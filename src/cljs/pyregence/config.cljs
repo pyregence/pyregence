@@ -19,11 +19,9 @@
                   :reverse-legend? false
                   :hover-text      "Layers related to fuel and potential fire behavior."
                   :params          {:model {:opt-label  "Source"
-                                            :hover-text "Stock LANDFIRE 2.0.0 data (https://landfire.gov) at 30 m resolution.
-
-                                                        California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020.
-
-                                                        2021 California fuelscape prepared by Pyrologix, LLC (https://pyrologix.com), 2021."
+                                            :hover-text "Stock LANDFIRE 2.0.0 data (https://landfire.gov) at 30 m resolution.\n
+                                                         California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020.\n
+                                                         2021 California fuelscape prepared by Pyrologix, LLC (https://pyrologix.com), 2021."
                                             :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
                                                                          :filter    "landfire-2.0.0"
                                                                          :units     ""}
@@ -43,7 +41,7 @@
                                                                   :filter    "asp"
                                                                   :units     ""
                                                                   :disabled  #{:cfo}}
-                                                         :slp    {:opt-label "Slope (%)"
+                                                         :slp    {:opt-label "Slope (degrees)"
                                                                   :filter    "slp"
                                                                   :units     "degrees"
                                                                   :disabled  #{:cfo}}
@@ -71,8 +69,7 @@
                   :reverse-legend? true
                   :hover-text      "8-day forecast of key parameters affecting wildfire behavior obtained from operational National Weather Service forecast models."
                   :params          {:band       {:opt-label  "Weather Parameter"
-                                                 :hover-text "8-day forecast updated 4x daily pulled from three operational weather models. Available quantities include common weather parameters plus fire weather indices:
-
+                                                 :hover-text "8-day forecast updated 4x daily pulled from three operational weather models. Available quantities include common weather parameters plus fire weather indices:\n
                                                               - Fosberg Fire Weather Index (FFWI): A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature
                                                               - Vapor pressure deficit (VPD): Difference between amount of moisture in air and how much it can hold when saturated
                                                               - Hot Dry Windy Index: Similar to FFWI, but based on VPD"
@@ -139,9 +136,9 @@
                                                                            :filter       "tlines"
                                                                            :clear-point? true}}}
                                     :fuel       {:opt-label  "Fuel"
-                                                 :hover-text "Source of surface and canopy fuel inputs:
-                                                              - California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020.
-                                                              - California Forest Observatory (https://forestobservatory.com) 10 m fuels measured by satellite."
+                                                 :hover-text "Source of surface and canopy fuel inputs:\n
+                                                              - 2021 California fuelscape prepared by Pyrologix, LLC (https://pyrologix.com), 2021.\n
+                                                              - California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020."
                                                  :options    {:landfire {:opt-label "2021 CA fuelscape"
                                                                          :filter    "landfire"}
                                                               :cfo      {:opt-label "2020 CA Forest Obs."
@@ -186,20 +183,20 @@
                                 :burn-pct   {:opt-label      "Predicted Fire Size"
                                              :default-option :50
                                              :hover-text     "Each fire forecast is an ensemble of 1,000 separate simulations to account for uncertainty in model inputs. This leads to a range of predicted fire sizes, five of which can be selected from the dropdown menu."
-                                             :options        {:90 {:opt-label "Largest - 90th percentile"
+                                             :options        {:90 {:opt-label "Largest (90th percentile)"
                                                                    :filter    "90"}
-                                                              :70 {:opt-label "Larger - 70th percentile"
+                                                              :70 {:opt-label "Larger (70th percentile)"
                                                                    :filter    "70"}
-                                                              :50 {:opt-label "Average - 50th percentile"
+                                                              :50 {:opt-label "Average (50th percentile)"
                                                                    :filter    "50"}
-                                                              :30 {:opt-label "Smaller - 30th percentile"
+                                                              :30 {:opt-label "Smaller (30th percentile)"
                                                                    :filter    "30"}
-                                                              :10 {:opt-label "Smallest - 10th percentile"
+                                                              :10 {:opt-label "Smallest (10th percentile)"
                                                                    :filter    "10"}}}
                                 :fuel       {:opt-label  "Fuel"
                                              :hover-text "Source of surface and canopy fuel inputs:\n
-                                                          - California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020.\n
-                                                          - California Forest Observatory (https://forestobservatory.com) 10 m fuels measured by satellite."
+                                                          - 2021 California fuelscape prepared by Pyrologix, LLC (https://pyrologix.com), 2021.\n
+                                                          - California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020."
                                              :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.0.0"
                                                                      :filter    "landfire"}}}
                                 :model      {:opt-label  "Model"
