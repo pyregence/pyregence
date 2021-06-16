@@ -334,7 +334,7 @@
                    (fn [[forecast _]]
                      (let [params (get-in @capabilities [forecast :params])]
                        [forecast (merge (u/mapm (fn [[k v]]
-                                                  [k (or (get selected-options k)
+                                                  [k (or (get-in selected-options [forecast k])
                                                          (:default-option v)
                                                          (ffirst (:options v)))])
                                                 params)
@@ -355,11 +355,11 @@
 (defn- params->selected-options
   "Parses url query parameters to into the selected options"
   [options-config forecast params]
-  (as-> options-config oc
-    (get-in oc [forecast :params])
-    (keys oc)
-    (select-keys params oc)
-    (u/mapm (fn [[k v]] [k (keyword v)]) oc)))
+  {forecast (as-> options-config oc
+              (get-in oc [forecast :params])
+              (keys oc)
+              (select-keys params oc)
+              (u/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
 (defn initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
