@@ -76,7 +76,8 @@
             (assoc-in (get-forecast-opt :params)
                       [:model-init :options]
                       processed-times))
-    (swap! *params assoc-in [@*forecast :model-init] (ffirst processed-times))))
+    (when-not (contains? processed-times (get-in @*params [@*forecast :model-init]))
+      (swap! *params assoc-in [@*forecast :model-init] (ffirst processed-times)))))
 
 (defn get-layers! [get-model-times?]
   (go
