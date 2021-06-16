@@ -177,8 +177,9 @@
        (distinct)
        (mapcat (fn [fire-name]
                  [(keyword fire-name)
-                  {:opt-label (fire-name-capitalization fire-name)
-                   :filter    fire-name}]))
+                  {:opt-label  (fire-name-capitalization fire-name)
+                   :filter     fire-name
+                   :auto-zoom? true}]))
        (apply array-map)))
 
 (defn get-user-layers [user-id]

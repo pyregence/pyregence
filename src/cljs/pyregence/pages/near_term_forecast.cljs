@@ -125,6 +125,11 @@
        (remove nil?)
        (first)))
 
+(defn get-current-option-key
+  "Retreive the value for a particular parameter's option."
+  [param-key option-key key-name]
+  (get-in (get-forecast-opt :params) [param-key :options option-key key-name]))
+
 (defn get-options-key [key-name]
   (some #(get % key-name)
         (vals (get-forecast-opt :params))))
@@ -276,7 +281,7 @@
     (let [main-key (first keys)]
       (change-type! (not (= main-key :model-init))
                     (get-current-layer-key :clear-point?)
-                    (get-any-level-key     :auto-zoom?)
+                    (get-current-option-key main-key val :auto-zoom?)
                     (get-any-level-key     :max-zoom)))))
 
 (defn select-forecast! [key]
