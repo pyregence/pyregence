@@ -158,7 +158,6 @@
                   :block-info? true
                   :hover-text  "3-day forecasts of active fires with burning areas established from satellite-based heat detection."
                   :params      {:fire-name  {:opt-label      "Fire Name"
-                                             :auto-zoom?     true
                                              :sort?          true
                                              :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
                                              :underlays      {:nifs-perimeters {:opt-label  "NIFS Perimeters"
