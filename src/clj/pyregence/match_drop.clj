@@ -127,7 +127,7 @@
     (update-match-job! job-id job)
     (log-str "Initiating match drop job #" job-id)
     (send-to-server-wrapper! "wx.pyregence.org" 31337 job-id)
-    (data-response {:job-id job-id})))
+    {:job-id job-id}))
 
 ;;; Public API
 
