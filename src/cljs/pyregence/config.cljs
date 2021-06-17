@@ -39,16 +39,13 @@
                                                                   :units     ""}
                                                          :asp    {:opt-label "Aspect"
                                                                   :filter    "asp"
-                                                                  :units     ""
-                                                                  :disabled  #{:cfo}}
+                                                                  :units     ""}
                                                          :slp    {:opt-label "Slope (degrees)"
                                                                   :filter    "slp"
-                                                                  :units     "degrees"
-                                                                  :disabled  #{:cfo}}
+                                                                  :units     "degrees"}
                                                          :dem    {:opt-label "Elevation (ft)"
                                                                   :filter    "dem"
-                                                                  :units     ""
-                                                                  :disabled  #{:cfo}}
+                                                                  :units     ""}
                                                          :cc     {:opt-label "Canopy Cover (%)"
                                                                   :filter    "cc"
                                                                   :units     "%"}
