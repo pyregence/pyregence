@@ -76,8 +76,7 @@
             (assoc-in (get-forecast-opt :params)
                       [:model-init :options]
                       processed-times))
-    (when-not (contains? processed-times (get-in @*params [@*forecast :model-init]))
-      (swap! *params assoc-in [@*forecast :model-init] (ffirst processed-times)))))
+    (swap! *params assoc-in [@*forecast :model-init] (ffirst processed-times))))
 
 (defn get-layers! [get-model-times?]
   (go
@@ -280,7 +279,7 @@
   (swap! *params assoc-in (cons @*forecast keys) val)
   (when-not ((set keys) :underlays)
     (let [main-key (first keys)]
-      (change-type! (not (= main-key :model-init))
+      (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
                     (get-current-layer-key :clear-point?)
                     (get-current-option-key main-key val :auto-zoom?)
                     (get-any-level-key     :max-zoom)))))
