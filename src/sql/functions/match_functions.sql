@@ -69,6 +69,7 @@ CREATE OR REPLACE FUNCTION count_running_user_match_jobs(_user_id integer)
     FROM match_jobs
     WHERE user_rid = _user_id
         AND md_status = 2
+        AND updated_at > now() - interval '1 hour'
 
 $$ LANGUAGE SQL;
 
@@ -79,6 +80,7 @@ CREATE OR REPLACE FUNCTION count_all_running_match_jobs()
     SELECT count(*)::integer
     FROM match_jobs
     WHERE md_status = 2
+        AND updated_at > now() - interval '1 hour'
 
 $$ LANGUAGE SQL;
 
