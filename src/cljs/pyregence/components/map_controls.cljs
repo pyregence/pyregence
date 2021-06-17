@@ -425,7 +425,7 @@
                     (str (ed-str @terrain?) " 3D terrain")
                     #(do
                        (swap! terrain? not)
-                       (when @terrain? (h/show-help! :terrain))
+                       (when @terrain? (h/show-help! :terrain mobile?))
                        (mb/toggle-dimensions! @terrain?)
                        (mb/ease-to! {:pitch (if @terrain? 45 0) :bearing 0}))]
                    [:my-location
