@@ -66,12 +66,13 @@
   (get-in @capabilities [@*forecast key-name]))
 
 (defn process-model-times! [model-times]
-  (let [processed-times (u/mapm (fn [utc-time]
-                                  [(keyword utc-time)
-                                   {:opt-label (u/time-zone-iso-date utc-time @show-utc?)
-                                    :utc-time  utc-time ; TODO is utc-time redundant?
-                                    :filter    utc-time}])
-                                model-times)]
+  (let [processed-times (into (u/reverse-sorted-map)
+                              (map (fn [utc-time]
+                                     [(keyword utc-time)
+                                      {:opt-label (u/time-zone-iso-date utc-time @show-utc?)
+                                       :utc-time  utc-time ; TODO is utc-time redundant?
+                                       :filter    utc-time}])
+                                   model-times))]
     (reset! processed-params
             (assoc-in (get-forecast-opt :params)
                       [:model-init :options]
