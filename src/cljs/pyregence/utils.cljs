@@ -415,3 +415,8 @@
     (.focus)
     (.select))
   (js/document.execCommand "copy"))
+
+(defn reverse-sorted-map
+  "Creates a sorted-map where the keys are sorted in reverse order."
+  []
+  (sorted-map-by (fn [a b] (* -1 (compare a b)))))

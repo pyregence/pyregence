@@ -66,18 +66,18 @@
   (get-in @capabilities [@*forecast key-name]))
 
 (defn process-model-times! [model-times]
-  (let [processed-times (u/mapm (fn [utc-time]
-                                  [(keyword utc-time)
-                                   {:opt-label (u/time-zone-iso-date utc-time @show-utc?)
-                                    :utc-time  utc-time ; TODO is utc-time redundant?
-                                    :filter    utc-time}])
-                                model-times)]
+  (let [processed-times (into (u/reverse-sorted-map)
+                              (map (fn [utc-time]
+                                     [(keyword utc-time)
+                                      {:opt-label (u/time-zone-iso-date utc-time @show-utc?)
+                                       :utc-time  utc-time ; TODO is utc-time redundant?
+                                       :filter    utc-time}])
+                                   model-times))]
     (reset! processed-params
             (assoc-in (get-forecast-opt :params)
                       [:model-init :options]
                       processed-times))
-    (when-not (contains? processed-times (get-in @*params [@*forecast :model-init]))
-      (swap! *params assoc-in [@*forecast :model-init] (ffirst processed-times)))))
+    (swap! *params assoc-in [@*forecast :model-init] (ffirst processed-times))))
 
 (defn get-layers! [get-model-times?]
   (go
@@ -249,11 +249,13 @@
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))
 
+(declare select-param!) ;; FIXME: Look at ways to decouple callbacks
+
 (defn- init-fire-popup! [feature _]
   (let [properties (-> feature (aget "properties") (js->clj))
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
-        props      (-> properties (select-keys ["prettyname" "containper" "acres"]) (vals))
-        body       (apply fp/fire-popup props)]
+        {:strs [name prettyname containper acres]} properties
+        body       (fp/fire-popup prettyname containper acres #(select-param! (keyword name) :fire-name))]
     (mb/init-popup! lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 
@@ -280,7 +282,7 @@
   (swap! *params assoc-in (cons @*forecast keys) val)
   (when-not ((set keys) :underlays)
     (let [main-key (first keys)]
-      (change-type! (not (= main-key :model-init))
+      (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
                     (get-current-layer-key :clear-point?)
                     (get-current-option-key main-key val :auto-zoom?)
                     (get-any-level-key     :max-zoom)))))

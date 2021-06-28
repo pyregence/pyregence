@@ -4,8 +4,12 @@
 
 ;;; Help Dialogs
 
-(def help-dialogs {:terrain {:title "3D Terrain Enabled"
-                             :body  "You have enabled 3D Terrain. Click and drag using your right mouse button to tilt or rotate the map."}})
+(defn get-help-dialog [dialog mobile?]
+  (-> {:terrain {:title "3D Terrain Enabled"
+                 :body  (if mobile?
+                          "You have enabled 3D Terrain. Use two fingers to tilt or rotate the map."
+                          "You have enabled 3D Terrain. Click and drag using your right mouse button to tilt or rotate the map.")}}
+      (get dialog)))
 
 ;;; Session Helpers
 
@@ -20,9 +24,9 @@
 ;;; Public Functions
 
 (defn show-help!
-  [dialog & [always-show]]
-  {:pre [((-> help-dialogs keys set) dialog)]}
+  [dialog & [mobile? always-show]]
+  {:pre [(get-help-dialog dialog mobile?)]}
   (when-not (or always-show (seen-help? dialog))
     (set-help-seen! dialog)
-    (set-message-box-content! (merge (dialog help-dialogs)
-                                     {:mode :close}))))
+    (set-message-box-content! (-> (get-help-dialog dialog mobile?)
+                                  (assoc :mode :close)))))
