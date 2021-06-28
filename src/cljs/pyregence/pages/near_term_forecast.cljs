@@ -251,11 +251,19 @@
 
 (declare select-param!) ;; FIXME: Look at ways to decouple callbacks
 
+(defn- forecast-exists? [fire-name]
+  (contains? (get-in @capabilities [:active-fire :params :fire-name :options])
+             (keyword fire-name)))
+
 (defn- init-fire-popup! [feature _]
   (let [properties (-> feature (aget "properties") (js->clj))
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
         {:strs [name prettyname containper acres]} properties
-        body       (fp/fire-popup prettyname containper acres #(select-param! (keyword name) :fire-name))]
+        on-click   #(select-param! (keyword name) :fire-name)
+        body       (fp/fire-popup prettyname
+                                  containper
+                                  acres
+                                  (when (forecast-exists? name) on-click))]
     (mb/init-popup! lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 

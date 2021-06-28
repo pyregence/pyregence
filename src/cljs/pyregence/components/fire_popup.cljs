@@ -49,4 +49,4 @@
    [:div
     [fire-property "Percent Contained" (str contain-per "%")]
     [fire-property "Acres Burned" acres]
-    [fire-link on-click]]])
+    (when on-click [fire-link on-click])]])
