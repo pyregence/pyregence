@@ -237,11 +237,10 @@
    be either HTML string a hiccup style vector."
   [[lng lat] body {:keys [classname width] :or {width "200px" classname ""}}]
   (clear-popup!)
-  (let [popup       (Popup. #js {:className classname :maxWidth width})
-        placeholder [:div#mb-popup]]
+  (let [popup       (Popup. #js {:className classname :maxWidth width})]
     (doto popup
       (.setLngLat #js [lng lat])
-      (.setHTML (rs/render-to-string placeholder))
+      (.setHTML "<div id='mb-popup'></div>")
       (.addTo @the-map))
     (render body (dom/getElement "mb-popup"))
     (reset! the-popup popup)))

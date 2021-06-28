@@ -6,7 +6,7 @@
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $btn []
+(defn- $popup-btn []
   (with-meta
     {:background    ($/color-picker :yellow)
      :color         ($/color-picker :white)
@@ -36,7 +36,7 @@
   [:div [:strong property ": "] value])
 
 (defn- fire-link [on-click]
-  [:button {:class (<class $btn)
+  [:button {:class    (<class $popup-btn)
             :on-click on-click}
    "Click to View Forecast"])
 

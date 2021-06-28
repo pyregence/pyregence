@@ -21,8 +21,6 @@
                                                     process-toast-messages!]]
             [pyregence.components.svg-icons :refer [pin]]))
 
-(declare select-param!) ;; FIXME: Look at ways to decouple callbacks
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -250,10 +248,12 @@
   (when (get-forecast-opt :block-info?)
     (reset! show-info? false)))
 
+(declare select-param!) ;; FIXME: Look at ways to decouple callbacks
+
 (defn- init-fire-popup! [feature _]
-  (let [properties (-> feature (aget "properties") (js->clj :keywordize-keys true))
-        lnglat     (-> properties (select-keys [:longitude :latitude]) (vals))
-        {:keys [name prettyname containper acres]} properties
+  (let [properties (-> feature (aget "properties") (js->clj))
+        lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
+        {:strs [name prettyname containper acres]} properties
         body       (fp/fire-popup prettyname containper acres #(select-param! (keyword name) :fire-name))]
     (mb/init-popup! lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
