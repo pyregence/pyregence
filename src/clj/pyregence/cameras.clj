@@ -1,7 +1,7 @@
 (ns pyregence.cameras
   (:require [clojure.data.json :as json]
-            [clojure.edn       :as edn]
             [clj-http.client   :as client]
+            [pyregence.config  :refer [get-config]]
             [pyregence.views   :refer [data-response]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -10,18 +10,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Config
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- camera-config []
-  (edn/read-string (slurp "camera-config.edn")))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private wildfire-camera-api-url "https://data.alertwildfire.org/api/firecams/v0")
-(def ^:private wildfire-camera-api-key (:wildfire-camera-api-key (camera-config)))
+(def ^:private wildfire-camera-api-key (get-config :cameras :wildfire-camera-api-key))
 (def ^:private api-defaults            {:headers {"X-Api-Key" wildfire-camera-api-key}})
 (def ^:private cache-max-age           (* 24 60 1000)) ; Once a day
 
