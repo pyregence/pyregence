@@ -23,10 +23,10 @@
                    [:- :.mapboxgl-popup-close-button:focus] {:outline 0}}}))
 
 (defn- $fire-popup-header []
- {:width         "180px"
-  :overflow      "hidden"
-  :text-overflow "ellipsis"
-  :white-space   "nowrap"})
+  {:width         "180px"
+   :overflow      "hidden"
+   :text-overflow "ellipsis"
+   :white-space   "nowrap"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
@@ -42,11 +42,11 @@
 
 (defn fire-popup
   "Popup body for active fires."
-  [fire-name contain-per acres on-click show?]
+  [fire-name contain-per acres on-click show-link?]
   [:div {:class (<class $p-popup-content)}
    [:h6 {:style ($fire-popup-header)}
     fire-name]
    [:div
     [fire-property "Percent Contained" (str contain-per "%")]
     [fire-property "Acres Burned" acres]
-    (when show? [fire-link on-click])]])
+    (when show-link? [fire-link on-click])]])
