@@ -42,11 +42,11 @@
 
 (defn fire-popup
   "Popup body for active fires."
-  [fire-name contain-per acres on-click]
+  [fire-name contain-per acres on-click show?]
   [:div {:class (<class $p-popup-content)}
    [:h6 {:style ($fire-popup-header)}
     fire-name]
    [:div
     [fire-property "Percent Contained" (str contain-per "%")]
     [fire-property "Acres Burned" acres]
-    (when on-click [fire-link on-click])]])
+    (when show? [fire-link on-click])]])

@@ -259,11 +259,11 @@
   (let [properties (-> feature (aget "properties") (js->clj))
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
         {:strs [name prettyname containper acres]} properties
-        on-click   #(select-param! (keyword name) :fire-name)
         body       (fp/fire-popup prettyname
                                   containper
                                   acres
-                                  (when (forecast-exists? name) on-click))]
+                                  #(select-param! (keyword name) :fire-name)
+                                  (forecast-exists? name))]
     (mb/init-popup! lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 
