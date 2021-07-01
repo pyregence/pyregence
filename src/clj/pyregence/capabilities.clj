@@ -53,18 +53,15 @@
   (let [[workspace layer]                      (str/split name-string #":")
         [forecast fire-name init-ts1 init-ts2] (str/split workspace   #"_")
         [layer-group sim-timestamp]            (str/split layer       #"_(?=\d{8}_)")
-        init-timestamp                         (str init-ts1 "_" init-ts2)
-        match-drop?                            (str/includes? name-string "match-drop")
-        match-drop-enabled?                    (get-config :features :match-drop)]
-    (when (or match-drop-enabled? (not match-drop?))
-      {:workspace   workspace
-       :layer-group ""
-       :forecast    forecast
-       :fire-name   fire-name
-       :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
-       :model-init  init-timestamp
-       :sim-time    sim-timestamp
-       :hour        0})))
+        init-timestamp                         (str init-ts1 "_" init-ts2)]
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    forecast
+     :fire-name   fire-name
+     :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
+     :model-init  init-timestamp
+     :sim-time    sim-timestamp
+     :hour        0}))
 
 (defn split-fire-detections [name-string]
   (let [[workspace layer]   (str/split name-string #":")
@@ -125,7 +122,8 @@
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-layer-name full-name))
 
-                          (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                          (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                               (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-active-layer-name full-name))
 
                           (str/starts-with? full-name "fire-detections")
