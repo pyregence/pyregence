@@ -366,8 +366,7 @@
                  (reset! show-match-drop? false)
                  (reset! show-camera? false))
             @show-info?])
-         ;; Remove access to Match-Drop for Prod
-         (when (and (number? user-id) (not mobile?))
+         (when (and (c/feature-enabled? :match-drop) (number? user-id) (not mobile?))
            [:flame
             (str (hs-str @show-match-drop?) " match drop tool")
             #(do (swap! show-match-drop? not)

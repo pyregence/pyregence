@@ -6,6 +6,7 @@
             [clojure.set       :refer [rename-keys]]
             [triangulum.type-conversion :refer [val->long json->clj clj->json]]
             [pyregence.capabilities :refer [set-capabilities!]]
+            [pyregence.config       :refer [get-config]]
             [pyregence.logging      :refer [log-str]]
             [pyregence.sockets      :refer [send-to-server!]]
             [pyregence.views        :refer [data-response]]
@@ -136,6 +137,9 @@
   [{:keys [user-id] :as params}]
   (data-response
     (cond
+      (not (get-config :features :match-drop))
+      {:error "Match drop is currently disabled. Please contact your system administrator to enable it."}
+
       (pos? (count-running-user-match-jobs user-id))
       {:error "Match drop is already running. Please wait until it has completed."}
 

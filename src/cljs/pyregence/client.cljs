@@ -2,6 +2,7 @@
   (:require [goog.dom :as dom]
             [reagent.dom :refer [render]]
             [clojure.string :as str]
+            [pyregence.config                   :as c]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.dashboard          :as dashboard]
             [pyregence.pages.login              :as login]
@@ -26,7 +27,9 @@
     (render [root-component params] (dom/getElement "app"))))
 
 (defn ^:export init [params]
-  (render-root (js->clj params :keywordize-keys true)))
+  (let [clj-params (js->clj params :keywordize-keys true)]
+    (c/set-feature-flags! clj-params)
+    (render-root clj-params)))
 
 (defn safe-split [str pattern]
   (if (str/blank? str)
