@@ -1,10 +1,7 @@
 {:cameras  {:wildfire-camera-api-key "<api-key>"}
  :features {:match-drop false}
- :mail     {:host                  "<host>"
-            :user                  "<user>"
-            :pass                  "<pass>"
-            :tls                   <true/false>
-            :port                  587
-            :base-url              "<base-url>"
-            :recipient-limit       100
-            :mailing-list-interval 600}}
+ :mail     {:host     "<host>"
+            :user     "<user>"
+            :pass     "<pass>"
+            :tls      <true/false>
+            :site-url "<url>"}}
