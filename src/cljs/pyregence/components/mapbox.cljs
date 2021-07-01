@@ -2,7 +2,6 @@
   (:require [goog.dom           :as dom]
             [reagent.core       :as r]
             [reagent.dom        :refer [render]]
-            [reagent.dom.server :as rs]
             [clojure.core.async :refer [go <!]]
             [pyregence.config    :as c]
             [pyregence.utils     :as u]
