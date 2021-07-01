@@ -3,10 +3,8 @@
   (:require [clojure.edn :as edn]
             [pyregence.database :refer [call-sql]]
             [pyregence.views :refer [data-response]]
+            [pyregence.config :refer [get-config]]
             [postal.core :refer [send-message]]))
-
-(defn get-mail-config []
-  (edn/read-string (slurp "email-server.edn")))
 
 ;; TODO get name for greeting line.
 (defn get-password-reset-message [url email reset-key]
@@ -33,7 +31,7 @@
     (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
 
 (defn send-email [email email-type]
-  (let [mail-config (get-mail-config)]
+  (let [mail-config (get-config :mail)]
     (condp = email-type
       :reset    (send-reset-key-email! mail-config
                                        email

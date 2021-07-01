@@ -1,5 +1,7 @@
 (ns pyregence.components.mapbox
-  (:require [reagent.core       :as r]
+  (:require [goog.dom           :as dom]
+            [reagent.core       :as r]
+            [reagent.dom        :refer [render]]
             [reagent.dom.server :as rs]
             [clojure.core.async :refer [go <!]]
             [pyregence.config    :as c]
@@ -235,11 +237,12 @@
    be either HTML string a hiccup style vector."
   [[lng lat] body {:keys [classname width] :or {width "200px" classname ""}}]
   (clear-popup!)
-  (let [popup (Popup. #js {:className classname :maxWidth width})]
+  (let [popup       (Popup. #js {:className classname :maxWidth width})]
     (doto popup
       (.setLngLat #js [lng lat])
-      (.setHTML (rs/render-to-string body))
+      (.setHTML "<div id='mb-popup'></div>")
       (.addTo @the-map))
+    (render body (dom/getElement "mb-popup"))
     (reset! the-popup popup)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

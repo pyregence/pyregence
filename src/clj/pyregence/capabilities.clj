@@ -3,6 +3,7 @@
             [clojure.string     :as str]
             [clojure.set        :as set]
             [clj-http.client    :as client]
+            [pyregence.config   :refer [get-config]]
             [pyregence.database :refer [call-sql]]
             [pyregence.logging  :refer [log log-str]]
             [pyregence.views    :refer [data-response]]))
@@ -121,7 +122,8 @@
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-layer-name full-name))
 
-                          (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                          (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                               (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-active-layer-name full-name))
 
                           (str/starts-with? full-name "fire-detections")
