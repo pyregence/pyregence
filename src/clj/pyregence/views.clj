@@ -2,7 +2,8 @@
   (:require [clojure.data.json :as json]
             [cognitect.transit :as transit]
             [hiccup.page :refer [html5 include-css include-js]]
-            [pl.danieljanus.tagsoup :refer [parse]])
+            [pl.danieljanus.tagsoup :refer [parse]]
+            [pyregence.config :refer [get-config]])
   (:import java.io.ByteArrayOutputStream))
 
 (defn render-dynamic []
@@ -23,7 +24,9 @@
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
-                      (json/write-str (:params request))
+                      (json/write-str (assoc (:params request)
+                                             :features
+                                             (get-config :features)))
                       "); };")]])}))
 
 (def uri->html

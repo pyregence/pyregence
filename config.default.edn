@@ -1,4 +1,5 @@
 {:cameras  {:wildfire-camera-api-key "<api-key>"}
+ :features {:match-drop false}
  :mail     {:host                  "<host>"
             :user                  "<user>"
             :pass                  "<pass>"

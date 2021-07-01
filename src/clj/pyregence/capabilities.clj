@@ -3,6 +3,7 @@
             [clojure.string     :as str]
             [clojure.set        :as set]
             [clj-http.client    :as client]
+            [pyregence.config   :refer [get-config]]
             [pyregence.database :refer [call-sql]]
             [pyregence.logging  :refer [log log-str]]
             [pyregence.views    :refer [data-response]]))
@@ -52,15 +53,18 @@
   (let [[workspace layer]                      (str/split name-string #":")
         [forecast fire-name init-ts1 init-ts2] (str/split workspace   #"_")
         [layer-group sim-timestamp]            (str/split layer       #"_(?=\d{8}_)")
-        init-timestamp                         (str init-ts1 "_" init-ts2)]
-    {:workspace   workspace
-     :layer-group ""
-     :forecast    forecast
-     :fire-name   fire-name
-     :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
-     :model-init  init-timestamp
-     :sim-time    sim-timestamp
-     :hour        0}))
+        init-timestamp                         (str init-ts1 "_" init-ts2)
+        match-drop?                            (str/includes? name-string "match-drop")
+        match-drop-enabled?                    (get-config :features :match-drop)]
+    (when (or match-drop-enabled? (not match-drop?))
+      {:workspace   workspace
+       :layer-group ""
+       :forecast    forecast
+       :fire-name   fire-name
+       :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
+       :model-init  init-timestamp
+       :sim-time    sim-timestamp
+       :hour        0})))
 
 (defn split-fire-detections [name-string]
   (let [[workspace layer]   (str/split name-string #":")
