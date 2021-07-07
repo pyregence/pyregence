@@ -165,7 +165,10 @@
                                                                                 :filter-set #{"fire-detections" "viirs-timestamped"}}
                                                               :modis-hotspots  {:opt-label  "MODIS Hotspots"
                                                                                 :z-index    1
-                                                                                :filter-set #{"fire-detections" "modis-timestamped"}}}
+                                                                                :filter-set #{"fire-detections" "modis-timestamped"}}
+                                                              :goes-imagery    {:opt-label  "GOES-16 Imagery"
+                                                                                :z-index    0
+                                                                                :filter-set #{"fire-detections" "goes16-rgb"}}}
                                              :default-option :active-fires
                                              :options        {:active-fires    {:opt-label  "*All Active Fires"
                                                                                 :style-fn   :default
