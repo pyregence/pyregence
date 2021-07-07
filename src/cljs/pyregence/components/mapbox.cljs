@@ -441,7 +441,7 @@
    :type   "circle"
    :source source-name
    :layout {:visibility "visible"}
-   :paint  {:circle-color        "#FF0000"
+   :paint  {:circle-color        ["interpolate-lab" ["linear"] ["get" "containper"] 0 "#FF0000" 100 "#000000"]
             :circle-opacity      opacity
             :circle-radius       (zoom-interp ["*" 0.4 ["min" 30 ["max" 8 ["*" 30 ["/" ["get" "acres"] 10000]]]]]
                                               ["min" 30 ["max" 8 ["*" 30 ["/" ["get" "acres"] 10000]]]]
