@@ -1,10 +1,20 @@
 (ns pyregence.views
-  (:require [clojure.data.json :as json]
+  (:require [clojure.edn       :as edn]
+            [clojure.string    :as str]
+            [clojure.data.json :as json]
             [cognitect.transit :as transit]
             [hiccup.page :refer [html5 include-css include-js]]
             [pl.danieljanus.tagsoup :refer [parse]]
             [pyregence.config :refer [get-config]])
   (:import java.io.ByteArrayOutputStream))
+
+(defn- find-app-js []
+  (as-> (slurp "target/public/cljs/manifest.edn") app
+    (edn/read-string app)
+    (get app "target/public/cljs/app.js")
+    (str/split app #"/")
+    (last app)
+    (str "/cljs/" app)))
 
 (defn render-dynamic []
   (fn [request]
@@ -17,7 +27,7 @@
                 [:meta {:name "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
                 (include-css "/css/mapbox-gl-v2.2.0.css")
-                (include-js "/js/mapbox-gl-v2.2.0.js" "/cljs/app.js")]
+                (include-js "/js/mapbox-gl-v2.2.0.js" (find-app-js))]
                [:body
                 [:div#near-term-forecast
                  (slurp "resources/html/~header.html")
@@ -61,20 +71,20 @@
 (defn render-static [uri]
   (fn [_]
     (let [{:keys [head-tags body-tags]} (recur-separate-tags (parse (str "resources/html/" (uri->html uri))))]
-    {:status  (if (= uri "/not-found") 404 200)
-     :headers {"Content-Type" "text/html"}
-     :body    (html5
-               [:head
-                (slurp "resources/html/~head.html")
-                head-tags]
-               [:body
-                (slurp "resources/html/~header.html")
-                body-tags
-                [:footer {:class "jumbotron bg-brown mb-0 py-3"}
-                 [:p {:class "text-white text-center mb-0 smaller"}
-                  (str "\u00A9 "
-                       (+ 1900 (.getYear (java.util.Date.)))
-                       " Pyregence - All Rights Reserved | Terms")]]])})))
+      {:status  (if (= uri "/not-found") 404 200)
+       :headers {"Content-Type" "text/html"}
+       :body    (html5
+                 [:head
+                  (slurp "resources/html/~head.html")
+                  head-tags]
+                 [:body
+                  (slurp "resources/html/~header.html")
+                  body-tags
+                  [:footer {:class "jumbotron bg-brown mb-0 py-3"}
+                   [:p {:class "text-white text-center mb-0 smaller"}
+                    (str "\u00A9 "
+                         (+ 1900 (.getYear (java.util.Date.)))
+                         " Pyregence - All Rights Reserved | Terms")]]])})))
 
 (defn body->transit [body]
   (let [out    (ByteArrayOutputStream. 4096)

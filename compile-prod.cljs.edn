@@ -2,6 +2,7 @@
  :output-dir      "target/public/cljs"
  :output-to       "target/public/cljs/app.js"
  :source-map      "target/public/cljs/app.js.map"
+ :fingerprint     true
  :externs         ["resources/mapboxgl_externs.js"]
  :optimizations   :advanced
  :pretty-print    false
