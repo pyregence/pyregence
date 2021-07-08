@@ -1,7 +1,6 @@
 (ns pyregence.email
   (:import java.util.UUID)
-  (:require [clojure.edn :as edn]
-            [pyregence.database :refer [call-sql]]
+  (:require [pyregence.database :refer [call-sql]]
             [pyregence.views :refer [data-response]]
             [pyregence.config :refer [get-config]]
             [postal.core :refer [send-message]]))

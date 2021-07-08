@@ -2,7 +2,6 @@
   (:require [goog.dom           :as dom]
             [reagent.core       :as r]
             [reagent.dom        :refer [render]]
-            [reagent.dom.server :as rs]
             [clojure.core.async :refer [go <!]]
             [pyregence.config    :as c]
             [pyregence.utils     :as u]
@@ -441,9 +440,12 @@
    :type   "circle"
    :source source-name
    :layout {:visibility "visible"}
-   :paint  {:circle-color        "#FF0000"
+   :paint  {:circle-color        ["interpolate-lab" ["linear"] ["get" "containper"] 0 "#FF0000" 100 "#000000"]
             :circle-opacity      opacity
-            :circle-radius       (zoom-interp 8 14 5 20)
+            :circle-radius       (zoom-interp ["*" 0.4 ["min" 30 ["max" 8 ["*" 30 ["/" ["get" "acres"] 10000]]]]]
+                                              ["min" 30 ["max" 8 ["*" 30 ["/" ["get" "acres"] 10000]]]]
+                                              5
+                                              20)
             :circle-stroke-color (on-hover "#FFFF00" "#000000")
             :circle-stroke-width (on-hover 4 2)}})
 
