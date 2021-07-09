@@ -27,7 +27,7 @@
 
  :aliases {:build-db         {:main-opts ["-m" "pyregence.build-db"]}
            :https            {:main-opts ["-m" "pyregence.https"]}
-           :compile-cljs     {:main-opts ["-m" "cljs.main" "-co" "compile-prod.cljs.edn" "-c"]}
+           :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
            :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.11"}}}
            :figwheel         {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.11"}
                                            com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}}
