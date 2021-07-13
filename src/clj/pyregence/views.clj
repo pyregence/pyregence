@@ -1,20 +1,11 @@
 (ns pyregence.views
-  (:require [clojure.edn       :as edn]
-            [clojure.string    :as str]
-            [clojure.data.json :as json]
+  (:require [clojure.data.json :as json]
             [cognitect.transit :as transit]
             [hiccup.page :refer [html5 include-css include-js]]
             [pl.danieljanus.tagsoup :refer [parse]]
-            [pyregence.config :refer [get-config]])
+            [pyregence.config :refer [get-config]]
+            [pyregence.assets :refer [app-js]])
   (:import java.io.ByteArrayOutputStream))
-
-(defn- find-app-js []
-  (as-> (slurp "target/public/cljs/manifest.edn") app
-    (edn/read-string app)
-    (get app "target/public/cljs/app.js")
-    (str/split app #"/")
-    (last app)
-    (str "/cljs/" app)))
 
 (defn render-dynamic []
   (fn [request]
@@ -27,7 +18,7 @@
                 [:meta {:name "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
                 (include-css "/css/mapbox-gl-v2.2.0.css")
-                (include-js "/js/mapbox-gl-v2.2.0.js" (find-app-js))]
+                (include-js "/js/mapbox-gl-v2.2.0.js" (app-js))]
                [:body
                 [:div#near-term-forecast
                  (slurp "resources/html/~header.html")
