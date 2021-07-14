@@ -2,4 +2,6 @@
  :css-dirs ["resources/public/css"]
  :ring-server-options {:port 8080 :join? false}
  :ring-handler pyregence.handler/development-app
- :open-url "http://local.pyregence.org:[[server-port]]/forecast"}
+ :open-url "http://local.pyregence.org:[[server-port]]/forecast"
+ :clean-outputs true
+ :post-build-hooks [pyregence.compile-cljs/post-figwheel-hook]}
