@@ -1,7 +1,8 @@
 (ns pyregence.build-db
   (:require [clojure.java.io :as io]
             [clojure.java.shell :as sh]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [pyregence.config :refer [get-config]]))
 
 (def path-env (System/getenv "PATH"))
 
@@ -93,27 +94,35 @@
         sorted-ns   (topo-sort-namespaces dep-tree)]
     (map ns-to-files sorted-ns)))
 
+(defn run-sql-file [file]
+  (format "psql -h %s -p %d -U %s -d %s -f %s"
+          (get-config :database :host)
+          (get-config :database :port)
+          (get-config :database :user)
+          (get-config :database :dbname)
+          file))
+
 ;; Build functions
 
 (defn load-tables [verbose]
   (println "Loading tables...")
-  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
+  (->> (map run-sql-file
             (topo-sort-files-by-namespace "./src/sql/tables"))
-       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD (get-config :database :password)} verbose)
        (println)))
 
 (defn load-functions [verbose]
   (println "Loading functions...")
-  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
+  (->> (map run-sql-file
             (topo-sort-files-by-namespace "./src/sql/functions"))
-       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD (get-config :database :password)} verbose)
        (println)))
 
 (defn load-default-data [verbose]
   (println "Loading default data...")
-  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
+  (->> (map run-sql-file
             (topo-sort-files-by-namespace "./src/sql/default_data"))
-       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD (get-config :database :password)} verbose)
        (println)))
 
 (defn build-everything [verbose]
@@ -124,7 +133,9 @@
     (->> (sh-wrapper "./src/sql"
                      {:PGPASSWORD password}
                      verbose
-                     "psql -h localhost -U postgres -f create_db.sql")
+                     (format "psql -h %s -p %d -U postgres -d postgres -f create_db.sql"
+                             (get-config :database :host)
+                             (get-config :database :port)))
          (println)))
   (load-tables       verbose)
   (load-functions    verbose)

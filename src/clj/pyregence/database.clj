@@ -1,8 +1,9 @@
 (ns pyregence.database
   (:require [clojure.data.json :as json]
             [clojure.string :as str]
+            [pyregence.config  :refer [get-config]]
             [pyregence.logging :refer [log-str]]
-            [pyregence.views :refer [data-response]]
+            [pyregence.views   :refer [data-response]]
             [next.jdbc :as jdbc]
             [next.jdbc.result-set :as rs]))
 
@@ -32,9 +33,11 @@
 ;;; Static Data
 
 (def pg-db {:dbtype                "postgresql"
-            :dbname                "pyregence"
-            :user                  "pyregence"
-            :password              "pyregence"
+            :dbname                (get-config :database :dbname)
+            :host                  (get-config :database :host)
+            :port                  (get-config :database :port)
+            :user                  (get-config :database :user)
+            :password              (get-config :database :password)
             :reWriteBatchedInserts true})
 
 ;;; Select Queries
