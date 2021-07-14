@@ -16,12 +16,6 @@
      :margin-top    "0.5rem"}
     {:pseudo {:hover {:background-color ($/color-picker :yellow 0.8)}}}))
 
-(defn- $p-popup-content []
-  (with-meta
-    {:display "flex" :flex-direction "column"}
-    {:combinators {[:- :.mapboxgl-popup-close-button] {:font-size "2rem" :padding "3px"}
-                   [:- :.mapboxgl-popup-close-button:focus] {:outline 0}}}))
-
 (defn- $fire-popup-header []
   {:width         "180px"
    :overflow      "hidden"
@@ -36,17 +30,18 @@
   [:div [:strong property ": "] value])
 
 (defn- fire-link [on-click]
-  [:button {:class    (<class $popup-btn)
-            :on-click on-click}
-   "Click to View Forecast"])
+  [:div {:style {:text-align "right" :width "100%"}}
+   [:button {:class    (<class $popup-btn)
+             :on-click on-click}
+    "Click to View Forecast"]])
 
 (defn fire-popup
   "Popup body for active fires."
   [fire-name contain-per acres on-click show-link?]
-  [:div {:class (<class $p-popup-content)}
+  [:div {:style {:display "flex" :flex-direction "column"}}
    [:h6 {:style ($fire-popup-header)}
     fire-name]
    [:div
     [fire-property "Percent Contained" (str contain-per "%")]
-    [fire-property "Acres Burned" acres]
+    [fire-property "Acres Burned" (.toLocaleString acres)]
     (when show-link? [fire-link on-click])]])
