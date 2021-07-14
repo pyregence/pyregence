@@ -37,7 +37,7 @@
             :host                  (get-config :database :host)
             :port                  (get-config :database :port)
             :user                  (get-config :database :user)
-            :password              (get-config :database :pass)
+            :password              (get-config :database :password)
             :reWriteBatchedInserts true})
 
 ;;; Select Queries

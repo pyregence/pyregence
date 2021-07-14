@@ -133,8 +133,9 @@
     (->> (sh-wrapper "./src/sql"
                      {:PGPASSWORD password}
                      verbose
-                     (format "psql -h %s -U postgres -f create_db.sql"
-                             (get-config :database :host)))
+                     (format "psql -h %s -p %d -U postgres -d postgres -f create_db.sql"
+                             (get-config :database :host)
+                             (get-config :database :port)))
          (println)))
   (load-tables       verbose)
   (load-functions    verbose)
