@@ -70,7 +70,10 @@
 
 (defglobal over-write-styles
   [:#header {:position "static"}]
-  [:#nav-row {:padding "0"}])
+  [:#nav-row {:padding "0"}]
+  [:.mapboxgl-popup-close-button {:font-size "1.5rem"
+                                  :padding   ".25rem"}]
+  [:.mapboxgl-popup-close-button:focus {:outline 0}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Pseudo / Class Functions
