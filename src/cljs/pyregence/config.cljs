@@ -11,7 +11,7 @@
 ;; Layer options
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def near-term-forecast-default :fire-risk)
+(def near-term-forecast-default :active-fire)
 (def near-term-forecast-options
   {:fuels        {:opt-label       "Fuels"
                   :filter          "fuels"
@@ -71,12 +71,12 @@
                                                               - Vapor pressure deficit (VPD): Difference between amount of moisture in air and how much it can hold when saturated
                                                               - Hot Dry Windy Index: Similar to FFWI, but based on VPD"
                                                  :options    (array-map
-                                                              :ffwi   {:opt-label "Fosberg Fire Weather Index"
-                                                                       :filter    "ffwi"
-                                                                       :units     ""}
                                                               :tmpf   {:opt-label "Temperature (F)"
                                                                        :filter    "tmpf"
                                                                        :units     "deg F"}
+                                                              :ffwi   {:opt-label "Fosberg Fire Weather Index"
+                                                                       :filter    "ffwi"
+                                                                       :units     ""}
                                                               :rh     {:opt-label "Relative humidity (%)"
                                                                        :filter    "rh"
                                                                        :units     "%"}
