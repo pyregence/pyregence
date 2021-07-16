@@ -1,7 +1,7 @@
 {:main          "pyregence.client"
- :output-dir    "target/public/cljs/out"
+ :output-dir    "target/public/cljs"
  :output-to     "target/public/cljs/app.js"
- :asset-path    "/cljs/out"
+ :asset-path    "/cljs"
  :source-map    true
  :optimizations :none
  :pretty-print  true}
