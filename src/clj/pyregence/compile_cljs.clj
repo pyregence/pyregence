@@ -18,10 +18,9 @@
     (delete-folder folder-name)
     (str opts-file-name " is missing :output-dir.")))
 
-(defn post-figwheel-hook [configs]
-  (if-let [output-to (get-in configs [:options :output-to])]
-    (spit (str (get-in configs [:options :output-dir])
-               "/manifest.edn")
+(defn post-figwheel-hook [config]
+  (if-let [output-to (get-in config [:options :output-to])]
+    (spit (io/file (get-in config [:options :output-dir]) "manifest.edn")
           {output-to output-to})
     (println "Error reading figwheel config.")))
 
