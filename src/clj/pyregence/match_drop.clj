@@ -204,6 +204,17 @@
 (defn- process-message! [job-id {:keys [message response-host]}]
   (update-match-job! job-id {:message (str (get host-names response-host) ": " message)}))
 
+(defn- error-response [response-host response-port message]
+  (when (and response-host response-port) ; TODO: Use spec to validate these fields
+    (send-to-server! response-host
+                     response-port
+                     (json/write-str
+                      {:status        1
+                       :message       (str "Bad Request: " message)
+                       :response-host (get-md-config :app-host)
+                       :response-port (get-md-config :app-port)}
+                      :key-fn (comp kebab->camel name)))))
+
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
   (let [{:keys [fire-name status response-host response-port]
@@ -216,16 +227,8 @@
         0 (process-complete! job-id response)
         1 (process-error!    job-id response)
         2 (process-message!  job-id response)
-        nil)
-      (when (and response-host response-port) ; TODO: Use spec to validate these fields
-        (send-to-server! response-host
-                         response-port
-                         (json/write-str
-                          {:status        1
-                           :message       "Bad Request: Invalid or missing fire-name."
-                           :response-host (get-md-config :app-host)
-                           :response-port (get-md-config :app-port)}
-                          :key-fn (comp kebab->camel name)))))))
+        (error-response response-host response-port "Invalid status code."))
+      (error-response response-host response-port "Invalid or missing fire-name."))))
 
 (defn process-message
   "Accepts a message from the socket server and sends it to be processed."
