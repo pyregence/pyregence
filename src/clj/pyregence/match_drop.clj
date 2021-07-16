@@ -206,17 +206,26 @@
 
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
-  (let [{:keys [fire-name status]
+  (let [{:keys [fire-name status response-host response-port]
          :or {fire-name ""}
          :as response} (nil-on-error (json/read-str msg :key-fn (comp keyword camel->kebab)))
         job-id (-> fire-name (str/split #"-") (last) (val->long))]
-    (when (and (pos? job-id)
-               (= 2 (:md-status (get-match-job job-id))))
+    (if (and (pos? job-id)
+             (= 2 (:md-status (get-match-job job-id))))
       (case status
         0 (process-complete! job-id response)
         1 (process-error!    job-id response)
         2 (process-message!  job-id response)
-        nil))))
+        nil)
+      (when (and response-host response-port) ; TODO: Use spec to validate these fields
+        (send-to-server! response-host
+                         response-port
+                         (json/write-str
+                          {:status        1
+                           :message       "Bad Request: Invalid or missing fire-name."
+                           :response-host (get-md-config :app-host)
+                           :response-port (get-md-config :app-port)}
+                          :key-fn (comp kebab->camel name)))))))
 
 (defn process-message
   "Accepts a message from the socket server and sends it to be processed."
