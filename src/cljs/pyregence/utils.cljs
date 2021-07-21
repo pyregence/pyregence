@@ -36,6 +36,11 @@
       (str/lower-case)
       (str/replace #"[\s-\.\,]+" "-")))
 
+(defn end-with [s end]
+  (str s
+       (when-not (str/ends-with? s end)
+         end)))
+
 ;; Session
 
 (def session-key "pyregence")
