@@ -280,11 +280,15 @@
 ;; WFS/WMS Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def wms-url "https://data.pyregence.org:8443/geoserver/wms")
-(def wfs-url "https://data.pyregence.org:8443/geoserver/wfs")
+(def ^:private geoserver-base-url (atom nil))
+(defn- wms-url [] (str @geoserver-base-url "/wms"))
+(defn- wfs-url [] (str @geoserver-base-url "/wfs"))
+
+(defn set-geoserver-base-url! [url]
+  (reset! geoserver-base-url url))
 
 (defn legend-url [layer]
-  (str wms-url
+  (str (wms-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
@@ -293,7 +297,7 @@
        "&LAYER=" layer))
 
 (defn point-info-url [layer-group bbox]
-  (str wms-url
+  (str (wms-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
@@ -312,7 +316,7 @@
        "&BBOX=" bbox))
 
 (defn get-wfs-feature [layer extent]
-  (str wfs-url
+  (str (wfs-url)
        "?SERVICE=WFS"
        "&REQUEST=GetFeature"
        "&TYPENAME=" layer
@@ -321,7 +325,7 @@
        "&BBOX=" (str/join "," extent) ",EPSG:3857"))
 
 (defn wms-layer-url [layer]
-  (str wms-url
+  (str (wms-url)
        "?SERVICE=WMS"
        "&VERSION=1.3.0"
        "&REQUEST=GetMap"
@@ -336,7 +340,7 @@
        "&LAYERS=" layer))
 
 (defn wfs-layer-url [layer]
-  (str wfs-url
+  (str (wfs-url)
        "?SERVICE=WFS"
        "&VERSION=1.3.0"
        "&REQUEST=GetFeature"

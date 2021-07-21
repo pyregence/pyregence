@@ -5,6 +5,7 @@
               :user     "pyregence"
               :password "pyregence"}
  :features   {:match-drop false}
+ :geoserver  {:base-url "https://data.pyregence.org/geoserver"}
  :match-drop {:app-host      "app.pyregence.org"
               :app-port      31337
               :data-host     "data.pyregence.org"
