@@ -281,8 +281,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private geoserver-base-url (atom nil))
-(defn- wms-url [] (str @geoserver-base-url "/wms"))
-(defn- wfs-url [] (str @geoserver-base-url "/wfs"))
+(defn- wms-url [] (str @geoserver-base-url (when-not (str/ends-with? @geoserver-base-url "/") "/") "wms"))
+(defn- wfs-url [] (str @geoserver-base-url (when-not (str/ends-with? @geoserver-base-url "/") "/") "wfs"))
 
 (defn set-geoserver-base-url! [url]
   (reset! geoserver-base-url url))

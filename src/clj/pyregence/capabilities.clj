@@ -99,7 +99,8 @@
 
 (defn process-layers! [workspace-name]
   (let [xml-response (:body (client/get (str (get-config :geoserver :base-url)
-                                             "/wms?SERVICE=WMS"
+                                             (when-not (str/ends-with? (get-config :geoserver :base-url) "/") "/")
+                                             "wms?SERVICE=WMS"
                                              "&VERSION=1.3.0"
                                              "&REQUEST=GetCapabilities"
                                              (when workspace-name (str "&NAMESPACE=" workspace-name)))))]

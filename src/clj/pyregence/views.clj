@@ -34,9 +34,9 @@
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
-                      (json/write-str (-> (:params request)
-                                          (assoc :features (get-config :features))
-                                          (assoc :geoserver (get-config :geoserver))))
+                      (json/write-str (assoc (:params request)
+                                             :features (get-config :features)
+                                             :geoserver (get-config :geoserver)))
                       "); };")]])}))
 
 (def uri->html
