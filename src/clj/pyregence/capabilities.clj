@@ -3,6 +3,7 @@
             [clojure.string     :as str]
             [clojure.set        :as set]
             [clj-http.client    :as client]
+            [triangulum.utils   :as u]
             [pyregence.config   :refer [get-config]]
             [pyregence.database :refer [call-sql]]
             [pyregence.logging  :refer [log log-str]]
@@ -98,8 +99,7 @@
      :hour        (- (Integer/parseInt year) 1954)}))
 
 (defn process-layers! [workspace-name]
-  (let [xml-response (:body (client/get (str (get-config :geoserver :base-url)
-                                             (when-not (str/ends-with? (get-config :geoserver :base-url) "/") "/")
+  (let [xml-response (:body (client/get (str (u/end-with (get-config :geoserver :base-url) "/")
                                              "wms?SERVICE=WMS"
                                              "&VERSION=1.3.0"
                                              "&REQUEST=GetCapabilities"

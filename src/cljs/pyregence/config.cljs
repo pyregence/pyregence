@@ -1,5 +1,6 @@
 (ns pyregence.config
-  (:require [clojure.string :as str]))
+  (:require [clojure.string  :as str]
+            [pyregence.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
@@ -281,8 +282,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private geoserver-base-url (atom nil))
-(defn- wms-url [] (str @geoserver-base-url (when-not (str/ends-with? @geoserver-base-url "/") "/") "wms"))
-(defn- wfs-url [] (str @geoserver-base-url (when-not (str/ends-with? @geoserver-base-url "/") "/") "wfs"))
+(defn- wms-url [] (str (u/end-with @geoserver-base-url "/") "wms"))
+(defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
 
 (defn set-geoserver-base-url! [url]
   (reset! geoserver-base-url url))
