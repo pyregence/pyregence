@@ -98,8 +98,9 @@
      :hour        (- (Integer/parseInt year) 1954)}))
 
 (defn process-layers! [workspace-name]
-  (let [xml-response (:body (client/get (str "https://data.pyregence.org:8443/geoserver/wms"
-                                             "?SERVICE=WMS"
+  (let [xml-response (:body (client/get (str (get-config :geoserver :base-url)
+                                             (when-not (str/ends-with? (get-config :geoserver :base-url) "/") "/")
+                                             "wms?SERVICE=WMS"
                                              "&VERSION=1.3.0"
                                              "&REQUEST=GetCapabilities"
                                              (when workspace-name (str "&NAMESPACE=" workspace-name)))))]

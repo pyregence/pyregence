@@ -29,6 +29,7 @@
 (defn ^:export init [params]
   (let [clj-params (js->clj params :keywordize-keys true)]
     (c/set-feature-flags! clj-params)
+    (c/set-geoserver-base-url! (get-in clj-params [:geoserver :base-url]))
     (render-root clj-params)))
 
 (defn safe-split [str pattern]
