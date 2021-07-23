@@ -234,9 +234,10 @@
       (mb/set-visible-by-title! name show?))))
 
 (defn select-layer! [new-layer]
-  (reset! *layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100))
-  (reset-underlays!))
+  (let [old-layer-name (get-current-layer-name)
+        new-layer-name (do (reset! *layer-idx new-layer) (get-current-layer-name))]
+    (mb/swap-active-layer! old-layer-name new-layer-name (/ @active-opacity 100))
+    (reset-underlays!)))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]

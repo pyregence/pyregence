@@ -555,18 +555,21 @@
                          (clj->js))]
       (-> @the-map (.setStyle new-style)))))
 
-(defn- hide-fire-layers [layers]
-  (let [pred #(-> % (get "id") (is-selectable?))
+(defn- hide-fire-layers [layers excluded-ids]
+  (let [pred #(let [id (get % "id")]
+                (and (not (contains? excluded-ids id))
+                     (is-selectable? id)))
         f    #(set-visible % false)]
     (map (u/only pred f) layers)))
 
+;; FIXME: Hide old-geo-layer after update-style! is done
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
-  [geo-layer opacity]
-  {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
+  [old-geo-layer new-geo-layer opacity]
+  {:pre [(string? old-geo-layer) (string? new-geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
-        layers (hide-fire-layers (get style "layers"))
-        [new-sources new-layers] (build-wms geo-layer geo-layer opacity true)]
+        layers (hide-fire-layers (get style "layers") #{old-geo-layer})
+        [new-sources new-layers] (build-wms new-geo-layer new-geo-layer opacity true)]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
@@ -578,7 +581,7 @@
   [geo-layer style-fn opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
-        layers (hide-fire-layers (get style "layers"))
+        layers (hide-fire-layers (get style "layers") #{})
         [new-sources new-layers] (if (some? style-fn)
                                    (build-wfs fire-active geo-layer opacity)
                                    (build-wms geo-layer geo-layer opacity true))]
