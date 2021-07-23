@@ -173,6 +173,7 @@
                     new-sources (update "sources" merge new-sources)
                     new-layers  (update "layers" merge-layers new-layers)
                     :always     (clj->js))]
+    (js/console.log "Updated layers: " (map #(.-id %) (.-layers new-style)))
     (-> @the-map (.setStyle new-style))))
 
 (defn- add-icon! [icon-id url]
@@ -559,13 +560,6 @@
                          (clj->js))]
       (-> @the-map (.setStyle new-style)))))
 
-(defn- hide-fire-layers [layers excluded-ids]
-  (let [pred #(let [id (get % "id")]
-                (and (not (contains? excluded-ids id))
-                     (is-selectable? id)))
-        f    #(set-visible % false)]
-    (map (u/only pred f) layers)))
-
 (defn- add-new-active-layer! [layer-id opacity style-fn]
   (let [[new-sources new-layers] (if (some? style-fn)
                                    (build-wfs fire-active layer-id opacity)
@@ -574,20 +568,42 @@
                    :new-sources new-sources
                    :new-layers  new-layers)))
 
-(defn- hide-old-active-layers! [excluded-ids]
-  (let [style  (get-style)
-        layers (hide-fire-layers (get style "layers") excluded-ids)]
-    (update-style! style :layers layers)))
+(defn- hide-fire-layers [layers matching-layer?]
+  (map #(set-visible % false)
+       (filter #(let [id (get % "id")]
+                  (and (matching-layer? id)
+                       (is-selectable? id)))
+               layers)))
+
+;; TODO: Refactor
+(defn- hide-old-active-layers! [& {included-ids :include excluded-ids :exclude}]
+  (let [style           (get-style)
+        matching-layer? (cond (and included-ids excluded-ids)
+                              (fn [id] (and (contains? included-ids id)
+                                            (not (contains? excluded-ids id))))
+
+                              included-ids
+                              (fn [id] (contains? included-ids id))
+
+                              excluded-ids
+                              (fn [id] (not (contains? excluded-ids id)))
+
+                              :else
+                              (fn [id] true))
+        hidden-layers   (hide-fire-layers (get style "layers") matching-layer?)]
+    (js/console.log "Hiding " (count hidden-layers) " layers: " hidden-layers)
+    (update-style! style :new-layers hidden-layers)))
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
-  [layer-id opacity delay-ms]
-  {:pre [(string? layer-id)
+  [old-layer-id new-layer-id opacity delay-ms]
+  {:pre [(string? old-layer-id)
+         (string? new-layer-id)
          (number? opacity)
          (<= 0.0 opacity 1.0)
          (number? delay-ms)]}
-  (add-new-active-layer! layer-id opacity nil)
-  (js/setTimeout #(hide-old-active-layers! #{layer-id}) delay-ms))
+  (add-new-active-layer! new-layer-id opacity nil)
+  (js/setTimeout #(hide-old-active-layers! :include #{old-layer-id}) delay-ms))
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
@@ -598,7 +614,7 @@
          (<= 0.0 opacity 1.0)
          (number? delay-ms)]}
   (add-new-active-layer! layer-id opacity style-fn)
-  (js/setTimeout #(hide-old-active-layers! #{layer-id}) delay-ms))
+  (js/setTimeout #(hide-old-active-layers! :exclude #{layer-id}) delay-ms))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
