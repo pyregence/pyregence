@@ -562,33 +562,39 @@
         f    #(set-visible % false)]
     (map (u/only pred f) layers)))
 
-;; FIXME: Hide old-geo-layer after update-style! is done
-(defn swap-active-layer!
-  "Swaps the active layer. Used to scan through time-series WMS layers."
-  [old-geo-layer new-geo-layer opacity]
-  {:pre [(string? old-geo-layer) (string? new-geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
-  (let [style  (get-style)
-        layers (hide-fire-layers (get style "layers") #{old-geo-layer})
-        [new-sources new-layers] (build-wms new-geo-layer new-geo-layer opacity true)]
-    (update-style! style
-                   :layers      layers
+(defn- add-new-active-layer! [layer-id opacity style-fn]
+  (let [[new-sources new-layers] (if (some? style-fn)
+                                   (build-wfs fire-active layer-id opacity)
+                                   (build-wms layer-id layer-id opacity true))]
+    (update-style! (get-style)
                    :new-sources new-sources
                    :new-layers  new-layers)))
+
+(defn- hide-old-active-layers! [excluded-ids]
+  (let [style  (get-style)
+        layers (hide-fire-layers (get style "layers") excluded-ids)]
+    (update-style! style :layers layers)))
+
+(defn swap-active-layer!
+  "Swaps the active layer. Used to scan through time-series WMS layers."
+  [layer-id opacity delay-ms]
+  {:pre [(string? layer-id)
+         (number? opacity)
+         (<= 0.0 opacity 1.0)
+         (number? delay-ms)]}
+  (add-new-active-layer! layer-id opacity nil)
+  (js/setTimeout #(hide-old-active-layers! #{layer-id}) delay-ms))
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
-  [geo-layer style-fn opacity]
-  {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
-  (let [style  (get-style)
-        layers (hide-fire-layers (get style "layers") #{})
-        [new-sources new-layers] (if (some? style-fn)
-                                   (build-wfs fire-active geo-layer opacity)
-                                   (build-wms geo-layer geo-layer opacity true))]
-    (update-style! style
-                   :layers      layers
-                   :new-sources new-sources
-                   :new-layers  new-layers)))
+  [layer-id style-fn opacity delay-ms]
+  {:pre [(string? layer-id)
+         (number? opacity)
+         (<= 0.0 opacity 1.0)
+         (number? delay-ms)]}
+  (add-new-active-layer! layer-id opacity style-fn)
+  (js/setTimeout #(hide-old-active-layers! #{layer-id}) delay-ms))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."

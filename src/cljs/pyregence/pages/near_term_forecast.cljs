@@ -57,6 +57,7 @@
 (defonce the-cameras       (r/atom nil))
 (defonce loading?          (r/atom true))
 (defonce terrain?          (r/atom false))
+(defonce refresh-delay-ms  (atom 1000)) ; FIXME: Update this via the time slider
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Processing Functions
@@ -234,10 +235,9 @@
       (mb/set-visible-by-title! name show?))))
 
 (defn select-layer! [new-layer]
-  (let [old-layer-name (get-current-layer-name)
-        new-layer-name (do (reset! *layer-idx new-layer) (get-current-layer-name))]
-    (mb/swap-active-layer! old-layer-name new-layer-name (/ @active-opacity 100))
-    (reset-underlays!)))
+  (reset! *layer-idx new-layer)
+  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100) @refresh-delay-ms)
+  (reset-underlays!))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -275,7 +275,7 @@
     (<! (get-layers! get-model-times?))
     (let [source   (get-current-layer-name)
           style-fn (get-current-layer-key :style-fn)]
-      (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
+      (mb/reset-active-layer! source style-fn (/ @active-opacity 100) @refresh-delay-ms)
       (mb/clear-popup!)
       (reset-underlays!)
       (when (some? style-fn)
