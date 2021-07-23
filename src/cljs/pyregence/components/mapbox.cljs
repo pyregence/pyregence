@@ -568,29 +568,30 @@
                    :new-sources new-sources
                    :new-layers  new-layers)))
 
-(defn- hide-fire-layers [layers matching-layer?]
-  (map #(set-visible % false)
-       (filter #(let [id (get % "id")]
-                  (and (matching-layer? id)
-                       (is-selectable? id)))
-               layers)))
+(defn- hide-fire-layers [hide-layer? layers]
+  (->> layers
+       (filter #(is-selectable? (get % "id")))
+       (map #(let [id (get % "id")]
+               (if (hide-layer? id)
+                 (set-visible % false)
+                 (set-visible % true))))))
 
-;; TODO: Refactor
+;; TODO: Refactor cond
 (defn- hide-old-active-layers! [& {included-ids :include excluded-ids :exclude}]
-  (let [style           (get-style)
-        matching-layer? (cond (and included-ids excluded-ids)
-                              (fn [id] (and (contains? included-ids id)
-                                            (not (contains? excluded-ids id))))
+  (let [style         (get-style)
+        hide-layer?   (cond (and included-ids excluded-ids)
+                            (fn [id] (and (contains? included-ids id)
+                                          (not (contains? excluded-ids id))))
 
-                              included-ids
-                              (fn [id] (contains? included-ids id))
+                            included-ids
+                            (fn [id] (contains? included-ids id))
 
-                              excluded-ids
-                              (fn [id] (not (contains? excluded-ids id)))
+                            excluded-ids
+                            (fn [id] (not (contains? excluded-ids id)))
 
-                              :else
-                              (fn [id] true))
-        hidden-layers   (hide-fire-layers (get style "layers") matching-layer?)]
+                            :else
+                            (fn [id] true))
+        hidden-layers (hide-fire-layers hide-layer? (get style "layers"))]
     (js/console.log "Hiding " (count hidden-layers) " layers: " hidden-layers)
     (update-style! style :new-layers hidden-layers)))
 
@@ -602,8 +603,11 @@
          (number? opacity)
          (<= 0.0 opacity 1.0)
          (number? delay-ms)]}
-  (add-new-active-layer! new-layer-id opacity nil)
-  (js/setTimeout #(hide-old-active-layers! :include #{old-layer-id}) delay-ms))
+  (if (layer-exists? new-layer-id)
+    (hide-old-active-layers! :exclude #{new-layer-id})
+    (do (add-new-active-layer! new-layer-id opacity nil)
+        (js/setTimeout #(hide-old-active-layers! :exclude #{new-layer-id})
+                       delay-ms))))
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
@@ -613,8 +617,11 @@
          (number? opacity)
          (<= 0.0 opacity 1.0)
          (number? delay-ms)]}
-  (add-new-active-layer! layer-id opacity style-fn)
-  (js/setTimeout #(hide-old-active-layers! :exclude #{layer-id}) delay-ms))
+  (if (layer-exists? layer-id)
+    (hide-old-active-layers! :exclude #{layer-id})
+    (do (add-new-active-layer! layer-id opacity style-fn)
+        (hide-old-active-layers! :exclude #{layer-id})))
+  #_(js/setTimeout #(hide-old-active-layers! :exclude #{layer-id}) delay-ms))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
