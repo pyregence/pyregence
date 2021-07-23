@@ -97,6 +97,18 @@
      :sim-time    (str year "0101_000000")
      :hour        (- (Integer/parseInt year) 1954)}))
 
+(defn- split-fire-spread-forecast [name-string]
+  (let [[workspace layer]              (str/split name-string #":")
+        [forecast fire-name ts1 ts2]   (str/split workspace #"_")
+        [model fuel percentile output] (str/split layer #"_")
+        model-init                     (str ts1 "_" ts2)]
+    {:workspace   workspace
+     :fire-name   fire-name
+     :forecast    forecast
+     :filter-set  #{forecast fire-name model fuel percentile output model-init}
+     :model-init  model-init
+     :layer-group ""}))
+
 (defn process-layers! [workspace-name]
   (let [xml-response (:body (client/get (str (get-config :geoserver :base-url)
                                              "/wms?SERVICE=WMS"
@@ -117,14 +129,18 @@
                                            (re-seq #"[\d|\.|-]+")
                                            (rest)
                                            (vec))
-                            merge-fn  #(merge % {:layer full-name :extent coords})]
+                            times     (-> (re-find #"<Dimension .*>(.*)</Dimension>" layer)
+                                          (last)
+                                          (or ",")
+                                          (str/split #","))
+                            merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-layer-name full-name))
 
-                          (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                          (and (str/starts-with? full-name "fire-spread")
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
-                          (merge-fn (split-active-layer-name full-name))
+                          (merge-fn (split-fire-spread-forecast full-name))
 
                           (str/starts-with? full-name "fire-detections")
                           (merge-fn (split-fire-detections full-name))
@@ -162,8 +178,8 @@
         (reset! layers new-layers))
       (log message :force-stdout? stdout?)
       (data-response message))
-    (catch Exception _
-      (log-str "Failed to load capabilities."))))
+    (catch Exception e
+      (log-str "Failed to load capabilities.\n" e))))
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]

@@ -324,7 +324,7 @@
        "&SRSNAME=EPSG:3857"
        "&BBOX=" (str/join "," extent) ",EPSG:3857"))
 
-(defn wms-layer-url [layer]
+(defn wms-layer-url [layer & [layer-time]]
   (str (wms-url)
        "?SERVICE=WMS"
        "&VERSION=1.3.0"
@@ -337,7 +337,8 @@
        "&STYLES="
        "&FORMAT_OPTIONS=dpi%3A113"
        "&BBOX={bbox-epsg-3857}"
-       "&LAYERS=" layer))
+       "&LAYERS=" layer
+       (when layer-time (str "&TIME=" layer-time))))
 
 (defn wfs-layer-url [layer]
   (str (wfs-url)

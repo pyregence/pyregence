@@ -397,10 +397,10 @@
 ;; WMS Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wms-source [layer-name]
+(defn- wms-source [layer-name & [layer-time]]
   {:type     "raster"
    :tileSize 256
-   :tiles    [(c/wms-layer-url layer-name)]})
+   :tiles    [(c/wms-layer-url layer-name layer-time)]})
 
 (defn- wms-layer [layer-name source-name opacity visible?]
   {:id     layer-name
@@ -412,9 +412,10 @@
 (defn- build-wms
   "Returns new WMS source and layer in the form `[source [layer]]`.
    `source` must be a valid WMS layer in the geoserver,
-   `opacity` must be a float between 0.0 and 1.0."
-  [id source opacity visibile?]
-  (let [new-source {id (wms-source source)}
+   `opacity` must be a float between 0.0 and 1.0,
+   `layer-time` must be a timestamp with UTC timezone (e.g. '2009-11-01T00:00:00.000Z')."
+  [id source opacity visibile? & [layer-time]]
+  (let [new-source {id (wms-source source layer-time)}
         new-layer  (wms-layer id id opacity visibile?)]
     [new-source [new-layer]]))
 
@@ -562,11 +563,11 @@
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
-  [geo-layer opacity]
+  [geo-layer opacity & [layer-time]]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
         layers (hide-fire-layers (get style "layers"))
-        [new-sources new-layers] (build-wms geo-layer geo-layer opacity true)]
+        [new-sources new-layers] (build-wms geo-layer geo-layer opacity true layer-time)]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
@@ -575,13 +576,13 @@
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
-  [geo-layer style-fn opacity]
+  [geo-layer style-fn opacity & [layer-time]]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
         layers (hide-fire-layers (get style "layers"))
         [new-sources new-layers] (if (some? style-fn)
                                    (build-wfs fire-active geo-layer opacity)
-                                   (build-wms geo-layer geo-layer opacity true))]
+                                   (build-wms geo-layer geo-layer opacity true layer-time))]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
