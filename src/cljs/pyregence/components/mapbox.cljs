@@ -597,31 +597,27 @@
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
-  [old-layer-id new-layer-id opacity delay-ms]
+  [old-layer-id new-layer-id opacity]
   {:pre [(string? old-layer-id)
          (string? new-layer-id)
          (number? opacity)
-         (<= 0.0 opacity 1.0)
-         (number? delay-ms)]}
+         (<= 0.0 opacity 1.0)]}
   (if (layer-exists? new-layer-id)
     (hide-old-active-layers! :exclude #{new-layer-id})
     (do (add-new-active-layer! new-layer-id opacity nil)
-        (js/setTimeout #(hide-old-active-layers! :exclude #{new-layer-id})
-                       delay-ms))))
+        (hide-old-active-layers! :exclude #{new-layer-id}))))
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
-  [layer-id style-fn opacity delay-ms]
+  [layer-id style-fn opacity]
   {:pre [(string? layer-id)
          (number? opacity)
-         (<= 0.0 opacity 1.0)
-         (number? delay-ms)]}
+         (<= 0.0 opacity 1.0)]}
   (if (layer-exists? layer-id)
     (hide-old-active-layers! :exclude #{layer-id})
     (do (add-new-active-layer! layer-id opacity style-fn)
-        (hide-old-active-layers! :exclude #{layer-id})))
-  #_(js/setTimeout #(hide-old-active-layers! :exclude #{layer-id}) delay-ms))
+        (hide-old-active-layers! :exclude #{layer-id}))))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
