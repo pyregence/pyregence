@@ -153,10 +153,14 @@
 (defn- upsert-layer
   "Inserts `new-layer` into `v` if the 'id' does not already exist, or updates
    the matching row if it does exist."
-  [v {:keys [id] :as new-layer}]
-  (if-let [idx (get-layer-idx-by-id id v)]
-    (assoc v idx new-layer)
-    (conj v new-layer)))
+  [v new-layer]
+  (let [id (or (new-layer "id") (new-layer :id))]
+    (if (get-layer-idx-by-id id v)
+      (js/console.log "Updating layer: " id)
+      (js/console.log "Adding layer: " id))
+    (if-let [idx (get-layer-idx-by-id id v)]
+      (assoc v idx new-layer)
+      (conj v new-layer))))
 
 (defn- merge-layers [v new-layers]
   (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
