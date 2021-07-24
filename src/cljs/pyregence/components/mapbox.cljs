@@ -155,9 +155,6 @@
    the matching row if it does exist."
   [v new-layer]
   (let [id (or (new-layer "id") (new-layer :id))]
-    (if (get-layer-idx-by-id id v)
-      (js/console.log "Updating layer: " id)
-      (js/console.log "Adding layer: " id))
     (if-let [idx (get-layer-idx-by-id id v)]
       (assoc v idx new-layer)
       (conj v new-layer))))
@@ -173,7 +170,6 @@
                     new-sources (update "sources" merge new-sources)
                     new-layers  (update "layers" merge-layers new-layers)
                     :always     (clj->js))]
-    (js/console.log "Updated layers: " (map #(.-id %) (.-layers new-style)))
     (-> @the-map (.setStyle new-style))))
 
 (defn- add-icon! [icon-id url]
@@ -592,17 +588,20 @@
                             :else
                             (fn [id] true))
         hidden-layers (hide-fire-layers hide-layer? (get style "layers"))]
-    (js/console.log "Hiding " (count hidden-layers) " layers: " hidden-layers)
     (update-style! style :new-layers hidden-layers)))
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
-  [layer-id opacity]
-  {:pre [(string? layer-id) (number? opacity) (<= 0.0 opacity 1.0)]}
+  [layer-id opacity preserve-old?]
+  {:pre [(string? layer-id)
+         (number? opacity)
+         (<= 0.0 opacity 1.0)
+         (contains? #{true false nil} preserve-old?)]}
   (if (layer-exists? layer-id)
     (hide-old-active-layers! :exclude #{layer-id})
     (do (add-new-active-layer! layer-id opacity nil)
-        (hide-old-active-layers! :exclude #{layer-id}))))
+        (when-not preserve-old?
+          (hide-old-active-layers! :exclude #{layer-id})))))
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,

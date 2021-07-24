@@ -102,11 +102,11 @@
 (defn time-slider [layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone! mobile?]
   (r/with-let [animate?        (r/atom false)
                *speed          (r/atom 1)
-               cycle-layer!    (fn [change]
-                                 (select-layer! (mod (+ change @*layer-idx) (count @layers))))
+               cycle-layer!    (fn [change preserve-old?]
+                                 (select-layer! (mod (+ change @*layer-idx) (count @layers)) preserve-old?))
                loop-animation! (fn la []
                                  (when @animate?
-                                   (cycle-layer! 1)
+                                   (cycle-layer! 1 true)
                                    (js/setTimeout la (get-in c/speeds [@*speed :delay]))))]
     [:div#time-slider {:style ($/combine $/tool ($time-slider))}
      (when-not mobile?
@@ -125,7 +125,7 @@
       [tool-tip-wrapper
        "Previous layer"
        :bottom
-       [tool-button :previous-button #(cycle-layer! -1)]]
+       [tool-button :previous-button #(cycle-layer! -1 false)]]
       [tool-tip-wrapper
        (str (if @animate? "Pause" "Play") " animation")
        :bottom
@@ -136,7 +136,7 @@
       [tool-tip-wrapper
        "Next layer"
        :bottom
-       [tool-button :next-button #(cycle-layer! 1)]]]
+       [tool-button :next-button #(cycle-layer! 1 true)]]]
      [:select {:style ($/combine $dropdown {:width "5rem" :padding "0 0.5rem"})
                :value (or @*speed 1)
                :on-change #(reset! *speed (u/input-int-value %))}

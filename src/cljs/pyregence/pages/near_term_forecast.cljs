@@ -233,9 +233,9 @@
     (when (some? name)
       (mb/set-visible-by-title! name show?))))
 
-(defn select-layer! [new-layer]
+(defn select-layer! [new-layer & [preserve-old?]]
   (reset! *layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100))
+  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100) preserve-old?)
   (reset-underlays!))
 
 (defn select-layer-by-hour! [hour]
