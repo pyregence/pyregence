@@ -590,6 +590,7 @@
         hidden-layers (hide-fire-layers hide-layer? (get style "layers"))]
     (update-style! style :new-layers hidden-layers)))
 
+;; TODO: Merge add-new-active-layer! and hide-old-active-layers!
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
   [layer-id opacity preserve-old?]
@@ -603,6 +604,7 @@
         (when-not preserve-old?
           (hide-old-active-layers! :exclude #{layer-id})))))
 
+;; TODO: Merge add-new-active-layer! and hide-old-active-layers!
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
