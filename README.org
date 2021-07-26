@@ -274,6 +274,32 @@ specify an output path. You can either specify a path relative to
 the toplevel directory of this repository or an absolute path on
 your filesystem. The logger will keep the 10 most recent logs.
 
+*** Running https via nginx (optional)
+
+**** Install required packages
+
+- [[https://nginx.org/en/][nginx]]
+
+
+**** Copy the nginx template and update
+
+Ubuntu example:
+
+#+begin_src sh
+sudo cp nginx/nginx-template.conf /etc/nginx/sites-available/pyregence.conf
+sudo ln -s /etc/nginx/sites-available/pyregence.conf /etc/nginx/sites-enabled/
+sudo nano /etc/nginx/sites-available/pyregence.conf
+sudo service nginx restart
+#+end_src
+
+**** Diagnose errors with nginx by looking in the log
+
+Ubuntu example:
+
+#+begin_src sh
+sudo less +G /var/log/nginx/error.log
+#+end_src
+
 ** License and Distribution
 
 Copyright © 2020-2021 Spatial Informatics Group, LLC.
