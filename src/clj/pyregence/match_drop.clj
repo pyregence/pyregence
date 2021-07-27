@@ -47,6 +47,9 @@
   (let [_ (gensym)]
     `(try ~@body (catch Exception ~_ nil))))
 
+(defn- get-md-config [k]
+  (get-config :match-drop k))
+
 ;;; Static data
 
 (def ^:private host-names
@@ -104,8 +107,8 @@
         model-time    (convert-date-string ignition-time)
         request       (merge params
                              ;; TODO consider different payloads per request instead of one large one.
-                             {:response-host       "pyregence-dev.sig-gis.com"
-                              :response-port       31337
+                             {:response-host       (get-md-config :app-host)
+                              :response-port       (get-md-config :app-port)
                               :fire-name           (str "match-drop-" job-id)
                               :ignition-time       ignition-time
                               ;; Data Provisioning
@@ -127,7 +130,9 @@
                        :request        request}]
     (update-match-job! job-id job)
     (log-str "Initiating match drop job #" job-id)
-    (send-to-server-wrapper! "wx.pyregence.org" 31337 job-id)
+    (send-to-server-wrapper! (get-md-config :wx-host)
+                             (get-md-config :wx-port)
+                             job-id)
     {:job-id job-id}))
 
 ;;; Public API
@@ -167,20 +172,20 @@
 (defn- process-complete! [job-id {:keys [response-host message model]}]
   (when message
     (update-match-job! job-id {:message message}))
-  (case response-host
-    "wx.pyregence.org"
+  (condp = response-host
+    (get-md-config :wx-host)
     (do
-      (send-to-server-wrapper! "elmfire.pyregence.org" 31338 job-id)
-      (send-to-server-wrapper! "gridfire.pyregence.org" 31337 job-id))
+      (send-to-server-wrapper! (get-md-config :elmfire-host) (get-md-config :elmfire-port) job-id)
+      (send-to-server-wrapper! (get-md-config :gridfire-host) (get-md-config :gridfire-port) job-id))
 
     ;; TODO launching two geosync calls for the same directory might break if we switch to image mosaics
-    "elmfire.pyregence.org"
-    (send-to-server-wrapper! "data.pyregence.org" 31337 job-id {:model "elmfire"})
+    (get-md-config :elmfire-host)
+    (send-to-server-wrapper! (get-md-config :data-host) (get-md-config :data-port) job-id {:model "elmfire"})
 
-    "gridfire.pyregence.org"
-    (send-to-server-wrapper! "data.pyregence.org" 31337 job-id {:model "gridfire"})
+    (get-md-config :gridfire-host)
+    (send-to-server-wrapper! (get-md-config :data-host) (get-md-config :data-port) job-id {:model "gridfire"})
 
-    "data.pyregence.org"
+    (get-md-config :data-host)
     (let [{:keys [elmfire-done? gridfire-done? request]} (get-match-job job-id)
           elmfire?  (or elmfire-done?  (= "elmfire" model))
           gridfire? (or gridfire-done? (= "gridfire" model))]

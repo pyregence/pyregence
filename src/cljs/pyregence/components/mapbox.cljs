@@ -442,10 +442,12 @@
    :layout {:visibility "visible"}
    :paint  {:circle-color        ["interpolate-lab" ["linear"] ["get" "containper"] 0 "#FF0000" 100 "#000000"]
             :circle-opacity      opacity
-            :circle-radius       (zoom-interp ["*" 0.4 ["min" 30 ["max" 8 ["*" 30 ["/" ["get" "acres"] 10000]]]]]
-                                              ["min" 30 ["max" 8 ["*" 30 ["/" ["get" "acres"] 10000]]]]
-                                              5
-                                              20)
+            :circle-radius       (zoom-interp 6
+                                              ["interpolate" ["linear"] ["get" "acres"]
+                                               10000 10
+                                               300000 100]
+                                              4
+                                              12)
             :circle-stroke-color (on-hover "#FFFF00" "#000000")
             :circle-stroke-width (on-hover 4 2)}})
 
