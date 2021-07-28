@@ -4,6 +4,7 @@
             [reagent.core :as r]
             [reagent.dom :as rd]
             [clojure.string :as str]
+            [clojure.core.async :refer [go <! timeout]]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]))
 
@@ -229,9 +230,10 @@
 
 ;; TODO abstract this to take content for things like a dropdown log in.
 (defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
-  (r/with-let [show?       (r/atom false)
-               sibling-ref (r/atom nil)]
-    [:div {:on-mouse-over  #(reset! show? true)
+  (r/with-let [show?        (r/atom false)
+               sibling-ref  (r/atom nil)]
+    [:div {:on-mouse-over  #(do (reset! show? true))
+           :on-touch-end   #(go (<! (timeout 1500)) (reset! show? false))
            :on-mouse-leave #(reset! show? false)}
      [sibling-wrapper sibling sibling-ref]
      (when @sibling-ref
