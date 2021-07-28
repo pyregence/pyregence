@@ -39,18 +39,6 @@
                                              (get-config :features)))
                       "); };")]])}))
 
-(def uri->html
-  {"/"                  "home.html"
-   "/about"             "about.html"
-   "/data"              "data.html"
-   "/extreme-weather"   "extreme-weather.html"
-   "/fire-behavior"     "fire-behavior.html"
-   "/forecast-tools"    "forecast-tools.html"
-   "/not-found"         "not-found.html"
-   "/privacy-policy"    "privacy-policy.html"
-   "/scenario-analyses" "scenario-analyses.html"
-   "/terms-of-use"      "terms-of-use.html"})
-
 (defn recur-separate-tags [hiccup]
   (if (vector? hiccup)
     (let [[tag meta & children] hiccup]
@@ -70,7 +58,7 @@
 
 (defn render-static [uri]
   (fn [_]
-    (let [{:keys [head-tags body-tags]} (recur-separate-tags (parse (str "resources/html/" (uri->html uri))))]
+    (let [{:keys [head-tags body-tags]} (recur-separate-tags (parse (str "resources/html/" uri ".html")))]
       {:status  (if (= uri "/not-found") 404 200)
        :headers {"Content-Type" "text/html"}
        :body    (html5
