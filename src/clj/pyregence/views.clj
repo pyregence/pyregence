@@ -16,13 +16,48 @@
     (last app)
     (str "/cljs/" app)))
 
+(defn head-meta-css []
+  [:head
+   [:meta {:name "robots" :content "index, follow"}]
+   [:meta {:charset "utf-8"}]
+   [:meta {:name "viewport"
+           :content "width device-width, initial-scale 1, shrink-to-fit no"}]
+   [:link {:rel         "stylesheet"
+           :href        "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+           :integrity   "sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+           :crossorigin "anonymous"}]
+   [:link {:rel "stylesheet" :href "css/style.css"}]
+   [:link {:rel "icon" :type "image/png" :href "../images/favicon.png"}]
+   [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
+   [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]])
+
+(defn header []
+  [:div {:class "wrapper-navbar"
+         :id    "header"}
+   [:a {:class "skip-link sr-only sr-only-focusable"
+        :href  "#content"}
+    "Skip to content"]
+   [:div {:class "container"}
+    [:div {:class "row align-items-center" :id "nav-row"}
+     [:div {:class "col-md-3 col-6"}
+      [:a {:class "navbar-brand"
+           :rel   "home"
+           :href  "/"
+           :title "Pyregence"}
+       [:img {:src "images/pyregence-logo.svg"
+              :alt "Pyregence logo"
+              :class "real-logo"}]
+       [:img {:src "images/pyregence-logo-white.svg"
+              :class "white-logo"
+              :alt "Pyregence logo white"}]]]]]])
+
 (defn render-dynamic []
   (fn [request]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body    (html5
                [:head
-                (slurp "resources/html/~head.html")
+                (head-meta-css)
                 [:title "Wildfire Forecasts - Pyregence"]
                 [:meta {:name "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
@@ -30,7 +65,7 @@
                 (include-js "/js/mapbox-gl-v2.2.0.js" (find-app-js))]
                [:body
                 [:div#near-term-forecast
-                 (slurp "resources/html/~header.html")
+                 (header)
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
@@ -63,10 +98,10 @@
        :headers {"Content-Type" "text/html"}
        :body    (html5
                  [:head
-                  (slurp "resources/html/~head.html")
+                  (head-meta-css)
                   head-tags]
                  [:body
-                  (slurp "resources/html/~header.html")
+                  (header)
                   body-tags
                   [:footer {:class "jumbotron bg-brown mb-0 py-3"}
                    [:p {:class "text-white text-center mb-0 smaller"}
