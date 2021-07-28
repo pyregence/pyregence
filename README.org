@@ -274,6 +274,55 @@ specify an output path. You can either specify a path relative to
 the toplevel directory of this repository or an absolute path on
 your filesystem. The logger will keep the 10 most recent logs.
 
+*** Running https via nginx (optional)
+
+**** Install required packages
+
+- [[https://nginx.org/en/][nginx]]
+
+**** Copy the nginx template and update
+
+Ubuntu example:
+
+#+begin_src sh
+sudo cp nginx/nginx-template.conf /etc/nginx/sites-available/pyregence.conf
+sudo ln -s /etc/nginx/sites-available/pyregence.conf /etc/nginx/sites-enabled/
+sudo nano /etc/nginx/sites-available/pyregence.conf
+sudo service nginx restart
+#+end_src
+
+**** Alternative server deployment
+
+When using nginx, run the server in http mode only.  If multiple servers are
+running on the same VM, be sure to assign them different ports.  Remember that
+nginx needs port 8080, witch is the default port for the server deployment.
+Instead deploy with a non default port:
+
+#+begin_src sh
+clojure -M:run-server -p 8081
+#+end_src
+
+For HTTPS, each server does not need its own deploy hook. Instead nginx needs
+a single deploy hook:
+
+#+begin_src sh
+sudo nano /etc/letsencrypt/renewal-hooks/deploy/nginx.sh
+#+end_src
+
+Add ~systemctl reload nginx~ to the file and save.
+
+#+begin_src sh
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/nginx.sh
+#+end_src
+
+**** Diagnose errors with nginx by looking in the log
+
+Ubuntu example:
+
+#+begin_src sh
+sudo less +G /var/log/nginx/error.log
+#+end_src
+
 ** License and Distribution
 
 Copyright © 2020-2021 Spatial Informatics Group, LLC.
