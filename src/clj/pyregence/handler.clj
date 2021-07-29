@@ -53,6 +53,7 @@
   (let [next-handler (cond
                        (bad-uri? uri)                 (constantly (data-response "Forbidden" {:status 403}))
                        (contains? dynamic-routes uri) (render-dynamic)
+                       (contains? static-routes uri)  (render-static uri)
                        (str/starts-with? uri "/clj/") (token-resp params clj-handler)
                        (str/starts-with? uri "/sql/") (token-resp params sql-handler)
                        :else                          (render-static "/not-found"))]
