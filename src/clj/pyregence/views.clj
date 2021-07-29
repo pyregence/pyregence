@@ -27,11 +27,11 @@
            :integrity   "sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
            :crossorigin "anonymous"}]
    [:link {:rel "stylesheet" :href "css/style.css"}]
-   [:link {:rel "icon" :type "image/png" :href "../images/favicon.png"}]
+   [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
    [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
    [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]])
 
-(defn header []
+(defn header [server-name]
   [:div {:class "wrapper-navbar"
          :id    "header"}
    [:a {:class "skip-link sr-only sr-only-focusable"
@@ -44,32 +44,32 @@
            :rel   "home"
            :href  "/"
            :title "Pyregence"}
-       [:img {:src "images/pyregence-logo.svg"
+       [:img {:src (str "/images/" (if (str/ends-with? server-name "pyrecast.org") "pyrecast" "pyregence") "-logo.svg")
               :alt "Pyregence logo"
               :class "real-logo"}]
-       [:img {:src "images/pyregence-logo-white.svg"
+       [:img {:src "/images/pyregence-logo-white.svg"
               :class "white-logo"
               :alt "Pyregence logo white"}]]]]]])
 
 (defn render-dynamic []
-  (fn [request]
+  (fn [{:keys [params server-name]}]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body    (html5
                [:head
                 (head-meta-css)
-                [:title "Wildfire Forecasts - Pyregence"]
+                [:title "Wildfire Forecasts"]
                 [:meta {:name "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
                 (include-css "/css/mapbox-gl-v2.2.0.css")
                 (include-js "/js/mapbox-gl-v2.2.0.js" (find-app-js))]
                [:body
                 [:div#near-term-forecast
-                 (header)
+                 (header server-name)
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
-                      (json/write-str (assoc (:params request)
+                      (json/write-str (assoc params
                                              :features
                                              (get-config :features)))
                       "); };")]])}))
@@ -92,7 +92,7 @@
      :body-tags hiccup}))
 
 (defn render-static [uri]
-  (fn [_]
+  (fn [{:keys [server-name]}]
     (let [{:keys [head-tags body-tags]} (recur-separate-tags (parse (str "resources/html/" uri ".html")))]
       {:status  (if (= uri "/not-found") 404 200)
        :headers {"Content-Type" "text/html"}
@@ -101,7 +101,7 @@
                   (head-meta-css)
                   head-tags]
                  [:body
-                  (header)
+                  (header server-name)
                   body-tags
                   [:footer {:class "jumbotron bg-brown mb-0 py-3"}
                    [:p {:class "text-white text-center mb-0 smaller"}
