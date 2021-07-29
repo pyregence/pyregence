@@ -52,13 +52,13 @@
               :alt "Pyregence logo white"}]]]]]])
 
 (defn render-dynamic []
-  (fn [{:keys [server-name] :as request}]
+  (fn [{:keys [params server-name]}]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body    (html5
                [:head
                 (head-meta-css)
-                [:title "Wildfire Forecasts - Pyregence"]
+                [:title "Wildfire Forecasts"]
                 [:meta {:name "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
                 (include-css "/css/mapbox-gl-v2.2.0.css")
@@ -69,7 +69,7 @@
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
-                      (json/write-str (assoc (:params request)
+                      (json/write-str (assoc params
                                              :features
                                              (get-config :features)))
                       "); };")]])}))
