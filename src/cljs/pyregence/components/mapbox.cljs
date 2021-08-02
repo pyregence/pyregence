@@ -609,7 +609,7 @@
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
   [id data]
-  (add-icon! "video-icon" "./images/icons/video.png")
+  (add-icon! "video-icon" "./images/video.png")
   (let [new-source {id {:type "geojson" :data data :generateId true}}
         new-layers [{:id     id
                      :source id
