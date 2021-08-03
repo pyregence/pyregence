@@ -531,7 +531,7 @@
     [:div#match-drop-tool
      [resizable-window
       parent-box
-      300
+      340
       300
       "Match Drop Tool"
       close-fn!
@@ -542,13 +542,19 @@
            c/match-drop-instructions]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
           [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]]
-         [:div {:style {:display "flex" :flex-shrink 0 :margin "0 0 2.5em"}}
+         [:div {:style {:display "flex" :flex-shrink 0 :margin "0 0 .5em"}}
           [lon-lat-position $match-drop-cursor-position "Cursor Position" @moving-lon-lat]
           [:div {:style {:display "flex" :justify-content "flex-end" :align-self "flex-end" :margin-left "auto"}}
-           [:button {:class    "mx-3 mb-1 btn btn-sm text-white"
-                     :style    ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime)))
+           [:button {:class    "mx-3 mb-1 btn btn-sm border-yellow"
+                     :style    (assoc ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime))) :color "white")
                      :on-click #(initiate-match-drop @lon-lat @datetime refresh-fire-names! user-id)}
-            "Submit"]]]])]]
+            "Submit"]]]
+         [:div {:style {:display "flex" :justify-content "center" :flex-shrink 0 :margin "0 0 2.5rem"}}
+          [:a {:class "btn btn-sm text-white"
+               :style {:padding ".5rem .75rem"}
+               :href "/dashboard"
+               :target "_blank"}
+           "Open Dashboard"]]])]]
     (finally
       (mb/remove-event! click-event)
       (mb/remove-event! move-event))))
