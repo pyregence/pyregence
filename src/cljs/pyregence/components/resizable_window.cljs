@@ -80,7 +80,7 @@
     :render
     (fn [_]
       [:div {:style {:border-bottom (str "1px solid " ($/color-picker :border-color)) :width "100%"}}
-       [:label {:style {:margin-left ".5rem"}} title]
+       [:label {:style {:margin-left ".5rem" :margin-top ".25rem"}} title]
        [:span {:class (<class $/p-button-hover)
                :style ($close-button @title-height)
                :on-click on-click}
