@@ -73,7 +73,7 @@
          :or {type "text" disabled? false call-back #(reset! state (input-value %))} required? false} opts]
     [:section {:style ($labeled-input)}
      [:label {:for (u/sentence->kebab label)} label]
-     [:input {:class         (style->class $/p-bordered-input $/style2)
+     [:input {:class         (style->class $/p-bordered-input)
               :auto-complete autocomplete
               :auto-focus    autofocus?
               :disabled      disabled?
