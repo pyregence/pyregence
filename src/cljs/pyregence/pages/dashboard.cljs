@@ -25,13 +25,13 @@
 
 (defn- show-log-modal! [job-id log]
   (set-message-box-content!
-    {:title (str "Match Drop #" job-id)
-     :body  [:div {:style {:max-height "300px"
-                           :overflow-y "scroll"
-                           :overflow-x "hidden"}}
-             (doall (map-indexed (fn [i line] ^{:key i} [:div line])
-                                 (string/split log #"\\n")))]
-     :mode  :close}))
+   {:title (str "Match Drop #" job-id)
+    :body  [:div {:style {:max-height "300px"
+                          :overflow-y "scroll"
+                          :overflow-x "hidden"}}
+            (doall (map-indexed (fn [i line] ^{:key i} [:div line])
+                                (string/split log #"\\n")))]
+    :mode  :close}))
 
 (defn- fmt-datetime [js-date]
   (-> js-date
@@ -100,8 +100,8 @@
      [message-box-modal]
      [:div {:style ($/combine $/flex-col {:padding "2rem 8rem"})}
       [:h3 "Match Drop Dashboard"]
-      [:div {:style {:width     "100%"
-                     :padding   "1rem"}}
+      [:div {:style {:width   "100%"
+                     :padding "1rem"}}
        [match-drop-table]]
       [:div
        [:button {:class    "btn border-yellow text-brown"
