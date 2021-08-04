@@ -44,12 +44,19 @@
            :rel   "home"
            :href  "/"
            :title "Pyregence"}
-       [:img {:src (str "/images/" (if (str/ends-with? server-name "pyrecast.org") "pyrecast" "pyregence") "-logo.svg")
-              :alt "Pyregence logo"
+       [:img {:src   (str "/images/" (if (str/ends-with? server-name "pyrecast.org") "pyrecast" "pyregence") "-logo.svg")
+              :alt   "Pyregence logo"
               :class "real-logo"}]
-       [:img {:src "/images/pyregence-logo-white.svg"
+       [:img {:src   "/images/pyregence-logo-white.svg"
               :class "white-logo"
-              :alt "Pyregence logo white"}]]]]]])
+              :alt   "Pyregence logo white"}]]]
+     [:div {:class "mr-auto"}]
+     (when (str/ends-with? server-name "pyrecast.org")
+       [:a {:class  "col-md-2 col-4"
+            :href   "https://pyregence.org"
+            :target "_blank"}
+        [:img {:class "real-logo" :src "/images/powered-by-pyregence.svg"}]])
+     ]]])
 
 (defn render-dynamic []
   (fn [{:keys [params server-name]}]
