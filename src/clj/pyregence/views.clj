@@ -70,8 +70,7 @@
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
                       (json/write-str (assoc params
-                                             :features
-                                             (get-config :features)))
+                                             :features (get-config :features)))
                       "); };")]])}))
 
 (defn recur-separate-tags [hiccup]

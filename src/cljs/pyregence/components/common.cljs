@@ -49,7 +49,7 @@
   ([label state condition on-click themed?]
    [:div {:style ($/flex-row)
           :on-click #(on-click condition)}
-    [:div {:style ($/combine [$radio (= @state condition) themed?])}]
+    [:div {:style ($radio (= @state condition) themed?)}]
     [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]]))
 
 (defn check-box
@@ -73,7 +73,7 @@
          :or {type "text" disabled? false call-back #(reset! state (input-value %))} required? false} opts]
     [:section {:style ($labeled-input)}
      [:label {:for (u/sentence->kebab label)} label]
-     [:input {:class         (style->class $/p-bordered-input)
+     [:input {:class         (style->class $/p-bordered-input $/style2)
               :auto-complete autocomplete
               :auto-focus    autofocus?
               :disabled      disabled?
