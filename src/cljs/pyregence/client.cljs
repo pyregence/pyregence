@@ -30,6 +30,7 @@
   (let [clj-params (js->clj params :keywordize-keys true)]
     (c/set-feature-flags! clj-params)
     (c/set-geoserver-base-url! (get-in clj-params [:geoserver :base-url]))
+    (c/set-mapbox-access-token! (get-in clj-params [:mapbox :access-token]))
     (render-root clj-params)))
 
 (defn safe-split [str pattern]
