@@ -35,6 +35,7 @@
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
                       (json/write-str (assoc (:params request)
+                                             :mapbox (get-config :mapbox)
                                              :features (get-config :features)
                                              :geoserver (get-config :geoserver)))
                       "); };")]])}))

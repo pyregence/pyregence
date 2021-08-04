@@ -648,8 +648,8 @@
 
 (defn init-map!
   "Initializes the Mapbox map inside of `container` (e.g. \"map\")."
-  [container-id & [opts]]
-  (set! (.-accessToken mapbox) c/mapbox-access-token)
+  [container-id & [opts]] 
+  (set! (.-accessToken mapbox) @c/mapbox-access-token)
   (when-not (.supported mapbox)
     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
                    "Please use the latest version of Chrome, Safari, or Firefox.")))
@@ -659,7 +659,7 @@
                             :dragRotate  false
                             :maxZoom     20
                             :minZoom     3
-                            :style       (-> c/base-map-options c/base-map-default :source)
+                            :style       (-> (c/base-map-options) c/base-map-default :source)
                             :touchPitch  false
                             :trackResize true
                             :transition  {:duration 500 :delay 0}}

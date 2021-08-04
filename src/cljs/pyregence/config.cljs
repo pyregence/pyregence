@@ -382,15 +382,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mapbox Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def mapbox-access-token (atom nil))
 
-(defonce mapbox-access-token "pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw")
+(defn set-mapbox-access-token! [token]
+  (reset! mapbox-access-token token))
 
 (def default-sprite "mapbox://sprites/mspencer-sig/cka8jaky90i9m1iphwh79wr04/3nae2cnmmvrdazx877w1wcuez")
 
 (defn- style-url [id]
-  (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" mapbox-access-token))
+  (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @mapbox-access-token))
 
-(def base-map-options
+(defn base-map-options []
   {:mapbox-topo       {:opt-label "Mapbox Street Topo"
                        :source    (style-url "cka8jaky90i9m1iphwh79wr04")}
    :mapbox-satellite  {:opt-label "Mapbox Satellite"

@@ -250,7 +250,7 @@
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
                            (reset! *base-map id)
-                           (mb/set-base-map-source! (get-in c/base-map-options [@*base-map :source])))]
+                           (mb/set-base-map-source! (get-in (c/base-map-options) [@*base-map :source])))]
     (reset! show-panel? (not mobile?))
     (fn [*params select-param! active-opacity param-options mobile?]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
@@ -286,7 +286,7 @@
             "Base Map"
             "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
             @*base-map
-            c/base-map-options
+            (c/base-map-options)
             false
             select-base-map!]]]]))))
 
