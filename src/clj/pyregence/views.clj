@@ -56,10 +56,8 @@
        (when pyrecast?
          [:a {:class  "col-md-2 col-4"
               :href   "https://pyregence.org"
-              :target "pyregence"
-              :rel    "noopener"}
-          [:img {:class "real-logo" :src "/images/powered-by-pyregence.svg"}]])
-       ]]]))
+              :target "pyregence"}
+          [:img {:class "real-logo" :src "/images/powered-by-pyregence.svg"}]])]]]))
 
 (defn render-dynamic []
   (fn [{:keys [params server-name]}]
