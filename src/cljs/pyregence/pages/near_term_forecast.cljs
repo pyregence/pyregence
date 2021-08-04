@@ -54,7 +54,6 @@
 (defonce *params           (r/atom {}))
 (defonce param-layers      (r/atom []))
 (defonce *layer-idx        (r/atom 0))
-(defonce layer-times       (r/atom nil))
 (defonce the-cameras       (r/atom nil))
 (defonce loading?          (r/atom true))
 (defonce terrain?          (r/atom false))
@@ -95,9 +94,8 @@
                                                (:body (<! (u/call-clj-async! "get-layers"
                                                                              (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
-      (reset! layer-times (-> layers (first) (:times)))
       (reset! param-layers layers)
-      (swap! *layer-idx #(max 0 (min % (- (if @layer-times (count @layer-times) (count @param-layers)) 1))))
+      (swap! *layer-idx #(max 0 (min % (- (count (or times @param-layers)) 1))))
       (when-not (seq @param-layers)
         (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
 
@@ -110,7 +108,7 @@
   (:layer (current-layer) ""))
 
 (defn get-current-layer-time []
-  (when (:times (current-layer))
+  (when-not (empty? (:times (current-layer)))
     (nth (:times (current-layer)) @*layer-idx)))
 
 (defn get-current-layer-hour []
@@ -284,9 +282,8 @@
   (go
     (<! (get-layers! get-model-times?))
     (let [source     (get-current-layer-name)
-          style-fn   (get-current-layer-key :style-fn)
-          layer-time (get-current-layer-time)]
-      (mb/reset-active-layer! source style-fn (/ @active-opacity 100) layer-time)
+          style-fn   (get-current-layer-key :style-fn)]
+      (mb/reset-active-layer! source style-fn (/ @active-opacity 100) (get-current-layer-time))
       (mb/clear-popup!)
       (reset-underlays!)
       (when (some? style-fn)
@@ -499,7 +496,6 @@
          [mc/zoom-bar get-current-layer-extent @mobile? create-share-link terrain?]
          [mc/time-slider
           param-layers
-          layer-times
           *layer-idx
           (get-current-layer-full-time)
           select-layer!

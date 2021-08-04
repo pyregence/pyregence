@@ -413,7 +413,8 @@
   "Returns new WMS source and layer in the form `[source [layer]]`.
    `source` must be a valid WMS layer in the geoserver,
    `opacity` must be a float between 0.0 and 1.0,
-   `layer-time` must be a timestamp with UTC timezone (e.g. '2009-11-01T00:00:00.000Z')."
+   `layer-time` can be a timestamp or range with UTC timezone
+     (e.g. `'2009-11-01T00:00:00.000Z'`, `'2009-11-01T00:00:00.000Z/2009-12-01T00:00:00.000Z'`)."
   [id source opacity visibile? & [layer-time]]
   (let [new-source {id (wms-source source layer-time)}
         new-layer  (wms-layer id id opacity visibile?)]

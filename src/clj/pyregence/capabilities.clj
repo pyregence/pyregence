@@ -138,9 +138,13 @@
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-layer-name full-name))
 
-                          (and (str/starts-with? full-name "fire-spread")
+                          (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-fire-spread-forecast full-name))
+
+                          (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+_\d{8}_\d{6}" full-name)
+                               (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
+                          (merge-fn (split-active-layer-name full-name))
 
                           (str/starts-with? full-name "fire-detections")
                           (merge-fn (split-fire-detections full-name))
@@ -179,7 +183,7 @@
       (log message :force-stdout? stdout?)
       (data-response message))
     (catch Exception e
-      (log-str "Failed to load capabilities.\n" e))))
+      (log-str "Failed to load capabilities.\n" (ex-message e)))))
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]
