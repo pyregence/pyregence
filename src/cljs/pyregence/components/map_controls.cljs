@@ -546,7 +546,7 @@
           [lon-lat-position $match-drop-cursor-position "Cursor Position" @moving-lon-lat]
           [:div {:style {:display "flex" :justify-content "flex-end" :align-self "flex-end" :margin-left "auto"}}
            [:button {:class    "mx-3 mb-1 btn btn-sm border-yellow"
-                     :style    (assoc ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime))) :color "white")
+                     :style    ($/combine ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime))) {:color "white"})
                      :on-click #(initiate-match-drop @lon-lat @datetime refresh-fire-names! user-id)}
             "Submit"]]]
          [:div {:style {:display "flex" :justify-content "center" :flex-shrink 0 :margin "0 0 2.5rem"}}
