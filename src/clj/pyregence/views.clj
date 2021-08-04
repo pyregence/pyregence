@@ -32,31 +32,33 @@
    [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]])
 
 (defn header [server-name]
-  [:div {:class "wrapper-navbar"
-         :id    "header"}
-   [:a {:class "skip-link sr-only sr-only-focusable"
-        :href  "#content"}
-    "Skip to content"]
-   [:div {:class "container"}
-    [:div {:class "row align-items-center" :id "nav-row"}
-     [:div {:class "col-md-3 col-6"}
-      [:a {:class "navbar-brand"
-           :rel   "home"
-           :href  "/"
-           :title "Pyregence"}
-       [:img {:src   (str "/images/" (if (str/ends-with? server-name "pyrecast.org") "pyrecast" "pyregence") "-logo.svg")
-              :alt   "Pyregence logo"
-              :class "real-logo"}]
-       [:img {:src   "/images/pyregence-logo-white.svg"
-              :class "white-logo"
-              :alt   "Pyregence logo white"}]]]
-     [:div {:class "mr-auto"}]
-     (when (str/ends-with? server-name "pyrecast.org")
-       [:a {:class  "col-md-2 col-4"
-            :href   "https://pyregence.org"
-            :target "_blank"}
-        [:img {:class "real-logo" :src "/images/powered-by-pyregence.svg"}]])
-     ]]])
+  (let [pyrecast? (str/ends-with? server-name "pyrecast.org")]
+    [:div {:class "wrapper-navbar"
+           :id    "header"}
+     [:a {:class "skip-link sr-only sr-only-focusable"
+          :href  "#content"}
+      "Skip to content"]
+     [:div {:class "container"}
+      [:div {:class "row align-items-center" :id "nav-row"}
+       [:div {:class "col-md-3 col-6"}
+        [:a {:class "navbar-brand"
+             :rel   "home"
+             :href  "/"
+             :title "Pyregence"}
+         [:img {:src   (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
+                :alt   "Pyregence logo"
+                :class "real-logo"}]
+         [:img {:src   "/images/pyregence-logo-white.svg"
+                :class "white-logo"
+                :alt   "Pyregence logo white"}]]]
+       [:div {:class "mr-auto"}]
+       (when pyrecast?
+         [:a {:class  "col-md-2 col-4"
+              :href   "https://pyregence.org"
+              :target "_blank"
+              :rel    "noopener"}
+          [:img {:class "real-logo" :src "/images/powered-by-pyregence.svg"}]])
+       ]]]))
 
 (defn render-dynamic []
   (fn [{:keys [params server-name]}]
