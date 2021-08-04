@@ -82,8 +82,8 @@
            "Elapsed Time"
            "Logs"]]
    [:tbody
-    (doall (map (fn [{:keys [job-id] :as md}] ^{:key job-id} [match-drop-item md])
-                @match-drops))]])
+    (reverse (map (fn [{:keys [job-id] :as md}] ^{:key job-id} [match-drop-item md])
+                  @match-drops))]])
 
 (defn- redirect-to-login! []
   (u/set-session-storage! {:redirect-from "/dashboard"})
