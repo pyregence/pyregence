@@ -167,7 +167,7 @@
                                                               :modis-hotspots  {:opt-label  "MODIS Hotspots"
                                                                                 :z-index    1
                                                                                 :filter-set #{"fire-detections" "modis-timestamped"}}
-                                                              :goes-imagery    {:opt-label  "GOES-16 Imagery"
+                                                              :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
                                                                                 :z-index    0
                                                                                 :filter-set #{"fire-detections" "goes16-rgb"}}}
                                              :default-option :active-fires
