@@ -44,7 +44,7 @@
        [:div {:class "col-md-3 col-6"}
         [:a {:class "navbar-brand"
              :rel   "home"
-             :href  "/"
+             :href  (if pyrecast? "/" "https://pyregence.org")
              :title "Pyregence"}
          [:img {:src   (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
                 :alt   "Pyregence logo"
