@@ -814,22 +814,21 @@
    :right            "64px"})
 
 (defn- $mouse-lng-lat-inner []
-  {:margin      "0.15rem 0.25rem 0 0.25rem"
-   :font-size   "0.85rem"
-   :font-weight "bold"})
-
+  {:font-size   "0.85rem"
+   :font-weight "bold"
+   :margin      "0.15rem 0.25rem 0 0.25rem"})
 
 (defn mouse-lng-lat
   "Shows the current Longitude/latitude based on current mouse position."
   []
   (r/with-let [moving-lng-lat (r/atom [0 0])
-               move-event (mb/add-mouse-move-xy! #(reset! moving-lng-lat %))]
+               move-event     (mb/add-mouse-move-xy! #(reset! moving-lng-lat %))]
     [:div {:style ($/combine $/tool $mouse-lng-lat)}
      [:div#mouse-lng-lat {:style ($mouse-lng-lat-inner)}
-      [:div#mouse-lng {:style {:display "flex" :justify-content "space-between"}}
+      [:div {:style {:display "flex" :justify-content "space-between"}}
        [:span {:style {:padding-right "0.25rem"}} "Lon: "]
        [:span (u/to-precision 4 (get @moving-lng-lat 0))]]
-      [:div#mouse-lat {:style {:display "flex" :justify-content "space-between"}}
+      [:div {:style {:display "flex" :justify-content "space-between"}}
        [:span "Lat: "]
        [:span (u/to-precision 4 (get @moving-lng-lat 1))]]]]
     (finally
