@@ -509,14 +509,22 @@
    :margin         "0 1rem"})
 
 ;; Components
-(defn- lon-lat-position [$class label lon-lat]
+(defn- lon-lat-position [$class label lon-lat moving?]
   [:div {:class (<class $class)}
    [:div label]
    [:div#md-lonlat
-    [:div#md-lon {:style {:margin-left "0.25rem"}}
-     "Lon: " (u/to-precision 4 (get lon-lat 0))]
-    [:div#md-lat {:style {:margin-left "0.25rem"}}
-     "Lat: " (u/to-precision 4 (get lon-lat 1))]]])
+    [:div#md-lon {:style {:display         "flex"
+                          :flex            1
+                          :justify-content (if moving? "space-between" "start")
+                          :margin-left     "0.25rem"}}
+     [:span {:style {:padding-right "0.25rem"}} "Lat: "]
+     [:span (u/to-precision 4 (get lon-lat 1))]]
+    [:div#md-lat {:style {:display         "flex"
+                          :flex            1
+                          :justify-content (if moving? "space-between" "start")
+                          :margin-left     "0.25rem"}}
+     [:span {:style {:padding-right "0.25rem"}} "Lon: "]
+     [:span (u/to-precision 4 (get lon-lat 0))]]]])
 
 ;; Root component
 (defn match-drop-tool
@@ -540,10 +548,10 @@
          [:div {:style {:flex-grow 1 :margin "0.5rem 1rem" :font-size "0.9rem"}}
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
            c/match-drop-instructions]
-          [lon-lat-position $match-drop-location "Location" @lon-lat]
+          [lon-lat-position $match-drop-location "Location" @lon-lat false]
           [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]]
          [:div {:style {:display "flex" :flex-shrink 0 :margin "0 0 .5em"}}
-          [lon-lat-position $match-drop-cursor-position "Cursor Position" @moving-lon-lat]
+          [lon-lat-position $match-drop-cursor-position "Cursor Position" @moving-lon-lat true]
           [:div {:style {:display "flex" :justify-content "flex-end" :align-self "flex-end" :margin-left "auto"}}
            [:button {:class    "mx-3 mb-1 btn btn-sm border-yellow"
                      :style    ($/combine ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime))) {:color "white"})
@@ -825,11 +833,13 @@
                move-event     (mb/add-mouse-move-xy! #(reset! moving-lng-lat %))]
     [:div {:style ($/combine $/tool $mouse-lng-lat)}
      [:div#mouse-lng-lat {:style ($mouse-lng-lat-inner)}
-      [:div {:style {:display "flex" :justify-content "space-between"}}
+      [:div {:style {:display         "flex"
+                     :justify-content "space-between"}}
+       [:span {:style {:padding-right "0.25rem"}} "Lat: "]
+       [:span (u/to-precision 4 (get @moving-lng-lat 1))]]
+      [:div {:style {:display         "flex"
+                     :justify-content "space-between"}}
        [:span {:style {:padding-right "0.25rem"}} "Lon: "]
-       [:span (u/to-precision 4 (get @moving-lng-lat 0))]]
-      [:div {:style {:display "flex" :justify-content "space-between"}}
-       [:span "Lat: "]
-       [:span (u/to-precision 4 (get @moving-lng-lat 1))]]]]
+       [:span (u/to-precision 4 (get @moving-lng-lat 0))]]]]
     (finally
       (mb/remove-event! move-event))))
