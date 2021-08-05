@@ -800,3 +800,37 @@
       (str (:distance @scale-params) " " (:units @scale-params))]]
     (finally
       (mb/remove-event! move-event))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Longitude/Latitude Control
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- $mouse-lng-lat []
+  {:background-color ($/color-picker :bg-color)
+   :border           (str "1px solid " ($/color-picker :border-color))
+   :bottom           "80px"
+   :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
+   :left             "auto"
+   :right            "64px"})
+
+(defn- $mouse-lng-lat-inner []
+  {:margin      "0.15rem 0.25rem 0 0.25rem"
+   :font-size   "0.85rem"
+   :font-weight "bold"})
+
+
+(defn mouse-lng-lat
+  "Shows the current Longitude/latitude based on current mouse position."
+  []
+  (r/with-let [moving-lng-lat (r/atom [0 0])
+               move-event (mb/add-mouse-move-xy! #(reset! moving-lng-lat %))]
+    [:div {:style ($/combine $/tool $mouse-lng-lat)}
+     [:div#mouse-lng-lat {:style ($mouse-lng-lat-inner)}
+      [:div#mouse-lng {:style {:display "flex" :justify-content "space-between"}}
+       [:span {:style {:padding-right "0.25rem"}} "Lon: "]
+       [:span (u/to-precision 4 (get @moving-lng-lat 0))]]
+      [:div#mouse-lat {:style {:display "flex" :justify-content "space-between"}}
+       [:span "Lat: "]
+       [:span (u/to-precision 4 (get @moving-lng-lat 1))]]]]
+    (finally
+      (mb/remove-event! move-event))))
