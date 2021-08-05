@@ -94,16 +94,18 @@
   (reset! _user-id user-id)
   (user-match-drops user-id)
   (fn [_]
-    [:div {:style ($/combine $/root {:padding  0
-                                     :height   "100%"
+    [:div {:style ($/combine $/root {:height   "100%"
+                                     :padding  0
                                      :position "relative"})}
      [message-box-modal]
      [:div {:style ($/combine $/flex-col {:padding "2rem 8rem"})}
-      [:h3 "Match Drop Dashboard"]
-      [:div {:style {:width     "100%"
-                     :padding   "1rem"}}
-       [match-drop-table]]
-      [:div
-       [:button {:class    "btn border-yellow text-brown"
-                 :on-click #(user-match-drops user-id)}
-        "Refresh"]]]]))
+       [:div {:style {:display "flex"}}
+         [:h3 {:style {:margin-bottom "0"
+                       :margin-right  "1rem"}}
+          "Match Drop Dashboard"]
+         [:button {:class    "btn border-yellow text-brown"
+                   :on-click #(user-match-drops user-id)}
+          "Refresh"]]
+       [:div {:style {:padding "1rem"
+                      :width   "100%"}}
+        [match-drop-table]]]]))
