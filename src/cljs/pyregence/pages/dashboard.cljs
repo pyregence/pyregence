@@ -55,9 +55,9 @@
    [:tr
     (doall (map-indexed (fn [i col] ^{:key i} [:th col]) cols))]])
 
-(defn- match-drop-item [{:keys [job-id md-status message created-at updated-at request log]}]
+(defn- match-drop-item [{:keys [job-id fire-name md-status message created-at updated-at request log]}]
   [:tr
-   [:td job-id]
+   [:td (or fire-name (str "Match Drop " job-id))]
    [:td md-status]
    [:td message]
    [:td (->> (select-keys request [:lon :lat])
@@ -72,7 +72,7 @@
 
 (defn match-drop-table []
   [:table {:class (<class $table) :style {:width "100%"}}
-   [thead ["ID"
+   [thead ["Fire Name"
            "Status"
            "Message"
            "Lon/Lat"
