@@ -19,9 +19,9 @@
                        :offset   (min (/ cur-q max-band) 1.0)
                        :color    (if (< last-q max-band cur-q)
                                    (u/interp-color (get last :color)
-                                                 (get cur  "color")
-                                                 (/ (- max-band last-q)
-                                                    (- cur-q last-q)))
+                                                   (get cur  "color")
+                                                   (/ (- max-band last-q)
+                                                      (- cur-q last-q)))
                                    (get cur "color"))}))
      {:offset 0.0
       :color  (get (first legend-list) "color")}

@@ -25,13 +25,13 @@
 
 (defn- show-log-modal! [job-id log]
   (set-message-box-content!
-    {:title (str "Match Drop #" job-id)
-     :body  [:div {:style {:max-height "300px"
-                           :overflow-y "scroll"
-                           :overflow-x "hidden"}}
-             (doall (map-indexed (fn [i line] ^{:key i} [:div line])
-                                 (string/split log #"\\n")))]
-     :mode  :close}))
+   {:title (str "Match Drop #" job-id)
+    :body  [:div {:style {:max-height "300px"
+                          :overflow-y "scroll"
+                          :overflow-x "hidden"}}
+            (doall (map-indexed (fn [i line] ^{:key i} [:div line])
+                                (string/split log #"\\n")))]
+    :mode  :close}))
 
 (defn- fmt-datetime [js-date]
   (-> js-date
@@ -99,13 +99,13 @@
                                      :position "relative"})}
      [message-box-modal]
      [:div {:style ($/combine $/flex-col {:padding "2rem 8rem"})}
-       [:div {:style {:display "flex"}}
-         [:h3 {:style {:margin-bottom "0"
-                       :margin-right  "1rem"}}
-          "Match Drop Dashboard"]
-         [:button {:class    "btn border-yellow text-brown"
-                   :on-click #(user-match-drops user-id)}
-          "Refresh"]]
-       [:div {:style {:padding "1rem"
-                      :width   "100%"}}
-        [match-drop-table]]]]))
+      [:div {:style {:display "flex"}}
+       [:h3 {:style {:margin-bottom "0"
+                     :margin-right  "1rem"}}
+        "Match Drop Dashboard"]
+       [:button {:class    "btn border-yellow text-brown"
+                 :on-click #(user-match-drops user-id)}
+        "Refresh"]]
+      [:div {:style {:padding "1rem"
+                     :width   "100%"}}
+       [match-drop-table]]]]))
