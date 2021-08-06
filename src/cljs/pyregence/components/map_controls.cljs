@@ -629,9 +629,9 @@
                            :position "absolute"
                            :right    "2rem"}}
             [tool-tip-wrapper
-             "Zoom to Camera"
+             "Zoom Map to Camera"
              :bottom
-             [tool-button :magnify-zoom-in zoom-camera]]] 
+             [tool-button :magnify-zoom-in zoom-camera]]]
            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 
           :else
