@@ -129,10 +129,9 @@
                                            (re-seq #"[\d|\.|-]+")
                                            (rest)
                                            (vec))
-                            times     (-> (re-find #"<Dimension .*>(.*)</Dimension>" layer)
-                                          (last)
-                                          (or ",")
-                                          (str/split #","))
+                            times     (some-> (re-find #"<Dimension .*>(.*)</Dimension>" layer)
+                                              (last)
+                                              (str/split #","))
                             merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
@@ -142,6 +141,7 @@
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-fire-spread-forecast full-name))
 
+                          ;; TODO: Remove once fire forecasts are migrated to Image Mosiac format
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+_\d{8}_\d{6}" full-name)
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-active-layer-name full-name))

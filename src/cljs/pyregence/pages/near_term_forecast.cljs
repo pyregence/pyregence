@@ -90,12 +90,12 @@
                                       (map (fn [[key {:keys [options]}]]
                                              (get-in options [(params key) :filter])))
                                       (remove nil?))))
-          {:keys [layers model-times times]} (t/read (t/reader :json)
+          {:keys [layers model-times]} (t/read (t/reader :json)
                                                (:body (<! (u/call-clj-async! "get-layers"
                                                                              (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! param-layers layers)
-      (swap! *layer-idx #(max 0 (min % (- (count (or times @param-layers)) 1))))
+      (swap! *layer-idx #(max 0 (min % (- (count (or (:times (first @param-layers)) @param-layers)) 1))))
       (when-not (seq @param-layers)
         (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
 
@@ -108,7 +108,7 @@
   (:layer (current-layer) ""))
 
 (defn get-current-layer-time []
-  (when-not (empty? (:times (current-layer)))
+  (when (:times (current-layer))
     (nth (:times (current-layer)) @*layer-idx)))
 
 (defn get-current-layer-hour []
@@ -281,8 +281,8 @@
   [get-model-times? clear? zoom? max-zoom]
   (go
     (<! (get-layers! get-model-times?))
-    (let [source     (get-current-layer-name)
-          style-fn   (get-current-layer-key :style-fn)]
+    (let [source   (get-current-layer-name)
+          style-fn (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source style-fn (/ @active-opacity 100) (get-current-layer-time))
       (mb/clear-popup!)
       (reset-underlays!)

@@ -102,9 +102,7 @@
 (defn time-slider [layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone! mobile?]
   (r/with-let [animate?        (r/atom false)
                *speed          (r/atom 1)
-               step-count      #(count (if-not (empty? (:times (first @layers)))
-                                         (:times (first @layers))
-                                         @layers))
+               step-count      #(count (or (:times (first @layers)) @layers))
                cycle-layer!    (fn [change]
                                  (select-layer! (mod (+ change @*layer-idx) (step-count))))
                loop-animation! (fn la []
