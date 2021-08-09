@@ -517,13 +517,11 @@
     [:div#md-lon {:style {:display         "flex"
                           :flex            1
                           :justify-content "start"}}
-     [:span {:style {:padding-right "0.25rem"}} "Lat: "]
-     [:span (cl-format nil "~,4f" (get lon-lat 1))]]
+     "Lat: " (cl-format nil "~,4f" (get lon-lat 1))]
     [:div#md-lat {:style {:display         "flex"
                           :flex            1
                           :justify-content "start"}}
-     [:span {:style {:padding-right "0.25rem"}} "Lon: "]
-     [:span (cl-format nil "~,4f" (get lon-lat 0))]]]])
+     "Lon: " (cl-format nil "~,4f" (get lon-lat 0))]]])
 
 ;; Root component
 (defn match-drop-tool
@@ -547,15 +545,14 @@
            c/match-drop-instructions]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
           [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]
-          [:div {:style {:display "flex"
-                         :flex-shrink 0
+          [:div {:style {:display        "flex"
+                         :flex-shrink     0
                          :justify-content "space-between"
-                         :margin "0.75rem 0 2.5rem"}}
-
+                         :margin          "0.75rem 0 2.5rem"}}
            [:a {:class "btn btn-sm text-white"
                 :style {:padding ".5rem .75rem"}
                 :href  "/dashboard"
-                :target "_blank"}
+                :target "dashboard"}
             "Dashboard"]
            [:button {:class    "btn btn-sm border-yellow"
                      :style    ($/combine ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime))) {:color "white"})
