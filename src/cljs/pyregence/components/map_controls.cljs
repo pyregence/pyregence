@@ -74,6 +74,7 @@
        :info            [svg/info]
        :layers          [svg/layers]
        :legend          [svg/legend]
+       :magnify-zoom-in [svg/magnify-zoom-in]
        :my-location     [svg/my-location]
        :next-button     [svg/next-button]
        :pause-button    [svg/pause-button]
@@ -625,18 +626,20 @@
            [:div {:style {:position "absolute" :top "2rem" :width "100%" :display "flex" :justify-content "center"}}
             [:label (str "Camera: " (:name @*camera))]]
            [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
-           [:button {:type     "button"
-                     :title    "Zoom to Camera"
-                     :class    "btn btn-sm btn-secondary"
-                     :on-click zoom-camera
-                     :style    {:position "absolute"
-                                :bottom   "2rem"
-                                :right    "2rem"
-                                :padding "2px"}}
-            [:div {:style {:width  "32px"
-                           :height "32px"
-                           :fill   "white"}}
-             [svg/magnify-zoom-in]]]
+           [tool-tip-wrapper
+            "Zoom Map to Camera"
+            :right
+            [:button {:type     "button"
+                      :class    "btn btn-sm btn-secondary"
+                      :on-click zoom-camera
+                      :style    {:position "absolute"
+                                 :bottom   "1.25rem"
+                                 :right    "1rem"
+                                 :padding  "2px"}}
+             [:div {:style {:width  "32px"
+                            :height "32px"
+                            :fill   "white"}}
+              [svg/magnify-zoom-in]]]]
            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 
           :else
