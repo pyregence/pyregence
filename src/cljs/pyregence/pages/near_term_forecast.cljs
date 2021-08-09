@@ -484,6 +484,7 @@
           @mobile?
           user-id]
          [mc/scale-bar @mobile?]
+         (when-not @mobile? [mc/mouse-lng-lat]) 
          [mc/zoom-bar get-current-layer-extent @mobile? create-share-link terrain?]
          [mc/time-slider
           param-layers

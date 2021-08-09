@@ -6,6 +6,7 @@
             [clojure.edn :as edn]
             [clojure.string :as string]
             [clojure.core.async :refer [<! go go-loop timeout]]
+            [clojure.pprint     :refer [cl-format]]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
             [pyregence.config    :as c]
@@ -513,10 +514,14 @@
   [:div {:class (<class $class)}
    [:div label]
    [:div#md-lonlat
-    [:div#md-lon {:style {:margin-left "0.25rem"}}
-     "Lon: " (u/to-precision 4 (get lon-lat 0))]
-    [:div#md-lat {:style {:margin-left "0.25rem"}}
-     "Lat: " (u/to-precision 4 (get lon-lat 1))]]])
+    [:div#md-lon {:style {:display         "flex"
+                          :flex            1
+                          :justify-content "start"}}
+     "Lat: " (cl-format nil "~,4f" (get lon-lat 1))]
+    [:div#md-lat {:style {:display         "flex"
+                          :flex            1
+                          :justify-content "start"}}
+     "Lon: " (cl-format nil "~,4f" (get lon-lat 0))]]])
 
 ;; Root component
 (defn match-drop-tool
@@ -525,13 +530,11 @@
   [parent-box close-fn! refresh-fire-names! user-id]
   (r/with-let [lon-lat        (r/atom [0 0])
                datetime       (r/atom "")
-               moving-lon-lat (r/atom [0 0])
-               click-event    (mb/add-single-click-popup! #(reset! lon-lat %))
-               move-event     (mb/add-mouse-move-xy! #(reset! moving-lon-lat %))]
+               click-event    (mb/add-single-click-popup! #(reset! lon-lat %))]
     [:div#match-drop-tool
      [resizable-window
       parent-box
-      340
+      285
       300
       "Match Drop Tool"
       close-fn!
@@ -541,23 +544,22 @@
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
            c/match-drop-instructions]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
-          [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]]
-         [:div {:style {:display "flex" :flex-shrink 0 :margin "0 0 .5em"}}
-          [lon-lat-position $match-drop-cursor-position "Cursor Position" @moving-lon-lat]
-          [:div {:style {:display "flex" :justify-content "flex-end" :align-self "flex-end" :margin-left "auto"}}
-           [:button {:class    "mx-3 mb-1 btn btn-sm border-yellow"
+          [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]
+          [:div {:style {:display        "flex"
+                         :flex-shrink     0
+                         :justify-content "space-between"
+                         :margin          "0.75rem 0 2.5rem"}}
+           [:a {:class "btn btn-sm text-white"
+                :style {:padding ".5rem .75rem"}
+                :href  "/dashboard"
+                :target "dashboard"}
+            "Dashboard"]
+           [:button {:class    "btn btn-sm border-yellow"
                      :style    ($/combine ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime))) {:color "white"})
                      :on-click #(initiate-match-drop @lon-lat @datetime refresh-fire-names! user-id)}
-            "Submit"]]]
-         [:div {:style {:display "flex" :justify-content "center" :flex-shrink 0 :margin "0 0 2.5rem"}}
-          [:a {:class "btn btn-sm text-white"
-               :style {:padding ".5rem .75rem"}
-               :href "/dashboard"
-               :target "_blank"}
-           "Open Dashboard"]]])]]
+            "Submit"]]]])]]
     (finally
-      (mb/remove-event! click-event)
-      (mb/remove-event! move-event))))
+      (mb/remove-event! click-event))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Wildfire Camera Tool
@@ -798,5 +800,40 @@
     [:div {:style ($/combine $/tool ($scale-line mobile?) {:width (* (:ratio @scale-params) max-width)})}
      [:div {:style ($scale-line-inner)}
       (str (:distance @scale-params) " " (:units @scale-params))]]
+    (finally
+      (mb/remove-event! move-event))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Longitude/Latitude Control
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- $mouse-lng-lat []
+  {:background-color ($/color-picker :bg-color)
+   :border           (str "1px solid " ($/color-picker :border-color))
+   :bottom           "80px"
+   :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
+   :left             "auto"
+   :right            "64px"})
+
+(defn- $mouse-lng-lat-inner []
+  {:font-size   "0.85rem"
+   :font-weight "bold"
+   :margin      "0.15rem 0.25rem 0 0.25rem"})
+
+(defn mouse-lng-lat
+  "Shows the current Longitude/latitude based on current mouse position."
+  []
+  (r/with-let [moving-lng-lat (r/atom [0 0])
+               move-event     (mb/add-mouse-move-xy! #(reset! moving-lng-lat %))]
+    [:div {:style ($/combine $/tool $mouse-lng-lat)}
+     [:div#mouse-lng-lat {:style ($mouse-lng-lat-inner)}
+      [:div {:style {:display         "flex"
+                     :justify-content "space-between"}}
+       [:span {:style {:padding-right "0.25rem"}} "Lat: "]
+       [:span (cl-format nil "~,4f" (get @moving-lng-lat 1))]]
+      [:div {:style {:display         "flex"
+                     :justify-content "space-between"}}
+       [:span {:style {:padding-right "0.25rem"}} "Lon: "]
+       [:span (cl-format nil "~,4f" (get @moving-lng-lat 0))]]]]
     (finally
       (mb/remove-event! move-event))))
