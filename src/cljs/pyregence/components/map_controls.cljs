@@ -225,11 +225,11 @@
     (fn []
       (let [f (fn [{:keys [filter-set]}] (get-layer-name filter-set identity))]
         (go-loop [sorted-underlays (reverse (sort-by :z-index (vals underlays)))]
-                 (let [tail       (rest sorted-underlays)
-                       layer-name (<! (f (first sorted-underlays)))]
-                   (mb/create-wms-layer! layer-name layer-name false)
-                   (when-not (empty? tail)
-                     (recur tail))))))
+          (let [tail       (rest sorted-underlays)
+                layer-name (<! (f (first sorted-underlays)))]
+            (mb/create-wms-layer! layer-name layer-name false)
+            (when-not (empty? tail)
+              (recur tail))))))
 
     :display-name "optional-layers"
 

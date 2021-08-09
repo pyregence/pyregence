@@ -94,10 +94,10 @@
   (when-not (send-to-server! host
                              port
                              (json/write-str
-                               (-> (get-match-job job-id)
-                                   (:request)
-                                   (merge extra-payload))
-                               :key-fn kebab->camel))
+                              (-> (get-match-job job-id)
+                                  (:request)
+                                  (merge extra-payload))
+                              :key-fn kebab->camel))
     (update-match-job! job-id {:md-status 1
                                :message   (str "Connection to " host " failed.")})))
 
@@ -141,18 +141,18 @@
   "Creates a new match drop run and starts the analysis."
   [{:keys [user-id] :as params}]
   (data-response
-    (cond
-      (not (get-config :features :match-drop))
-      {:error "Match drop is currently disabled. Please contact your system administrator to enable it."}
+   (cond
+     (not (get-config :features :match-drop))
+     {:error "Match drop is currently disabled. Please contact your system administrator to enable it."}
 
-      (pos? (count-running-user-match-jobs user-id))
-      {:error "Match drop is already running. Please wait until it has completed."}
+     (pos? (count-running-user-match-jobs user-id))
+     {:error "Match drop is already running. Please wait until it has completed."}
 
-      (< 5 (count-all-running-match-drops))
-      {:error "The queue is currently full. Please try again later."}
+     (< 5 (count-all-running-match-drops))
+     {:error "The queue is currently full. Please try again later."}
 
-      :else
-      (create-match-job! params))))
+     :else
+     (create-match-job! params))))
 
 (defn get-match-drops
   "Returns the user's match drops"

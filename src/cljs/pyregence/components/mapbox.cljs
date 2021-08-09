@@ -648,7 +648,7 @@
 
 (defn init-map!
   "Initializes the Mapbox map inside of `container` (e.g. \"map\")."
-  [container-id & [opts]] 
+  [container-id & [opts]]
   (set! (.-accessToken mapbox) @c/mapbox-access-token)
   (when-not (.supported mapbox)
     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
