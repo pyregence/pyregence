@@ -1,0 +1,5 @@
+{:linters {:shadowed-var      {:level :warning}
+           :single-key-in     {:level :warning}
+           :missing-docstring {:level :warning}}
+ :lint-as {reagent.core/with-let clojure.core/let
+           herb.core/defglobal clj-kondo.lint-as/def-catch-all}}
