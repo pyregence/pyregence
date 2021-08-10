@@ -27,18 +27,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; FIXME: Fill these in as you make static html pages.
-(def static-routes #{"/"
-                     "/about"
-                     "/data"
-                     "/extreme-weather"
-                     "/fire-behavior"
-                     "/forecast-tools"
-                     "/privacy-policy"
-                     "/scenario-analyses"
+(def static-routes #{"/privacy-policy"
                      "/terms-of-use"})
 
 ;; FIXME: Fill these in as you make app pages.
-(def dynamic-routes #{"/admin"
+(def dynamic-routes #{"/"
+                      "/admin"
                       "/dashboard"
                       "/login"
                       "/forecast"
@@ -58,8 +52,8 @@
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
                        (bad-uri? uri)                 (constantly (data-response "Forbidden" {:status 403}))
-                       (contains? static-routes uri)  (render-static uri)
                        (contains? dynamic-routes uri) (render-dynamic)
+                       (contains? static-routes uri)  (render-static uri)
                        (str/starts-with? uri "/clj/") (token-resp params clj-handler)
                        (str/starts-with? uri "/sql/") (token-resp params sql-handler)
                        :else                          (render-static "/not-found"))]

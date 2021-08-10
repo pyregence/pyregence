@@ -103,7 +103,8 @@
                                              "wms?SERVICE=WMS"
                                              "&VERSION=1.3.0"
                                              "&REQUEST=GetCapabilities"
-                                             (when workspace-name (str "&NAMESPACE=" workspace-name)))))]
+                                             (when (pos? (count workspace-name))
+                                               (str "&NAMESPACE=" workspace-name)))))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
       (re-find #"(?<=<Layer>).*(?=</Layer>)" xml)

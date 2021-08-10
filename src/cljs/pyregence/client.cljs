@@ -12,7 +12,8 @@
             [pyregence.pages.verify-email       :as verify-email]))
 
 (def uri->root-component
-  {"/admin"              admin/root-component
+  {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/admin"              admin/root-component
    "/dashboard"          dashboard/root-component
    "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/login"              login/root-component
