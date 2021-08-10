@@ -624,23 +624,23 @@
 
           (some? @*image)
           [:div
-            [:div {:style {:position "absolute" :top "2rem" :width "100%" :display "flex" :justify-content "center"}}
-             [:label (str "Camera: " (:name @*camera))]]
-            [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
-            [tool-tip-wrapper
-             "Zoom Map to Camera"
-             :right
-             [:button {:class    "btn btn-sm btn-secondary"
-                       :on-click zoom-camera
-                       :style    {:position "absolute"
-                                  :bottom   "1.25rem"
-                                  :right    "1rem"
-                                  :padding  "2px"}}
-              [:div {:style {:width  "32px"
-                             :height "32px"
-                             :fill   "white"}}
-               [svg/binoculars]]]]
-            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
+           [:div {:style {:position "absolute" :top "2rem" :width "100%" :display "flex" :justify-content "center"}}
+            [:label (str "Camera: " (:name @*camera))]]
+           [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
+           [tool-tip-wrapper
+            "Zoom Map to Camera"
+            :right
+            [:button {:class    "btn btn-sm btn-secondary"
+                      :on-click zoom-camera
+                      :style    {:position "absolute"
+                                 :bottom   "1.25rem"
+                                 :right    "1rem"
+                                 :padding  "2px"}}
+             [:div {:style {:width  "32px"
+                            :height "32px"
+                            :fill   "white"}}
+              [svg/binoculars]]]]
+           [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 
           :else
           [:div {:style {:padding "1.2em"}}
