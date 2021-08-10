@@ -21,25 +21,37 @@
 
 (defn color-picker
   ([color]
-   (color-picker color 1))
+   (case color
+     :none "rgba(0, 0, 0, 0)"
+     (color-picker color 1)))
   ([color alpha]
    (case color
-     :bg-color     (if @light? "white" (str "rgba(50, 50, 50, .9)"))
-     :border-color (if @light?
-                     (str "rgba(0, 0, 0, "       alpha ")")
-                     (str "rgba(255, 255, 255, " alpha ")"))
-     :font-color   (if @light?
-                     (color-picker :brown)
-                     "rgb(235, 235, 235)")
-     :yellow       (str "rgba(249, 175, 59, "  alpha ")")
-     :blue         (str "rgba(0, 0, 175, "     alpha ")")
-     :black        (str "rgba(0, 0, 0, "       alpha ")")
-     :brown        (str "rgba(96, 65, 31, "    alpha ")")
-     :box-tan      (str "rgba(249, 248, 242, " alpha ")")
-     :dark-green   (str "rgba(0, 100, 0, "     alpha ")")
-     :light-gray   (str "rgba(230, 230, 230, " alpha ")")
-     :red          (str "rgba(200, 0, 0, "     alpha ")")
-     :white        (str "rgba(255, 255, 255, " alpha ")")
+     :bg-color         (if @light?
+                         (color-picker :white)
+                         (color-picker :dark-gray 0.9))
+     :bg-hover-color   (if @light?
+                         (color-picker :dark-gray 0.9)
+                         (color-picker :white))
+     :border-color     (if @light?
+                         (color-picker :brown alpha)
+                         (color-picker :white alpha))
+     :font-color       (if @light?
+                         (color-picker :brown)
+                         "rgb(235, 235, 235)")
+     :font-hover-color (if @light?
+                         (color-picker :white)
+                         (color-picker :black))
+     :yellow           (str "rgba(249, 175, 59, "  alpha ")")
+     :blue             (str "rgba(0, 0, 175, "     alpha ")")
+     :black            (str "rgba(0, 0, 0, "       alpha ")")
+     :brown            (str "rgba(96, 65, 31, "    alpha ")")
+     :box-tan          (str "rgba(249, 248, 242, " alpha ")")
+     :dark-green       (str "rgba(0, 100, 0, "     alpha ")")
+     :light-gray       (str "rgba(230, 230, 230, " alpha ")")
+     :dark-gray        (str "rgba(50, 50, 50, "    alpha ")")
+     :orange           (str "rgba(249, 104, 65, "  alpha ")")
+     :red              (str "rgba(200, 0, 0, "     alpha ")")
+     :white            (str "rgba(255, 255, 255, " alpha ")")
      color)))
 
 (defn to-merge? [modifiers key return]
@@ -110,25 +122,20 @@
        :border-radius    "4px"}
       {:pseudo {:hover {:background-color highlight-color}}})))
 
-(defn p-button [& modifiers]
-  (let [base-style     {:border-width  "0"
-                        :border-radius "3px"
-                        :color         "white"
-                        :cursor        "pointer"
-                        :font-size     ".9rem"
-                        :font-weight   "normal"
-                        :min-width     "10rem"
-                        :text-align    "center"
-                        :padding       ".5rem .75rem"}
-        disabled-style {:cursor        "not-allowed"
-                        :opacity       "0.5"}]
-    (with-meta
-      (if (contains? (set modifiers) :disabled)
-        (merge base-style disabled-style)
-        base-style)
-      {:key    (str/join "-" (sort modifiers))
-       :group  true
-       :pseudo {:disabled disabled-style}})))
+(defn p-button
+  "Styling used for non-tool buttons (e.g. on /dashboard)."
+  [bg-hover-color text-hover-color]
+  (with-meta
+    {:border-width     "2px"
+     :border-style     "solid"
+     :border-radius    "20px / 50%"
+     :font-size        "0.85rem"
+     :outline          "none"
+     :padding          "0.5rem 0.75rem 0.4rem"
+     :text-transform   "uppercase"}
+    {:pseudo {:hover {:background-color (str (color-picker bg-hover-color) " !important")
+                      :color            (str (color-picker text-hover-color) " !important")}
+              :focus {:outline "none"}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style Functions
@@ -137,8 +144,12 @@
 (defn color [color]
   {:color (color-picker color)})
 
-(defn bg-color [color]
-  {:background (color-picker color)})
+(defn bg-color
+  ([color]
+   {:background (color-picker color)}))
+
+(defn border-color [color]
+  {:border-color (color-picker color)})
 
 (defn margin [& modifiers]
   (if (= 1 (count modifiers))

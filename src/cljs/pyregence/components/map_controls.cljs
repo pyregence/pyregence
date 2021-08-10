@@ -543,22 +543,28 @@
         [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
          [:div {:style {:flex-grow 1 :margin "0.5rem 1rem" :font-size "0.9rem"}}
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
-           c/match-drop-instructions]
-          [lon-lat-position $match-drop-location "Location" @lon-lat]
-          [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]
-          [:div {:style {:display        "flex"
-                         :flex-shrink     0
-                         :justify-content "space-between"
-                         :margin          "0.75rem 0 2.5rem"}}
-           [:a {:class "btn btn-sm text-white"
-                :style {:padding ".5rem .75rem"}
-                :href  "/dashboard"
-                :target "dashboard"}
-            "Dashboard"]
-           [:button {:class    "btn btn-sm border-yellow"
-                     :style    ($/combine ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime))) {:color "white"})
-                     :on-click #(initiate-match-drop @lon-lat @datetime refresh-fire-names! user-id)}
-            "Submit"]]]])]]
+             c/match-drop-instructions
+            [lon-lat-position $match-drop-location "Location" @lon-lat]]
+          [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]]
+         [:div {:style {:display "flex" :flex-shrink 0 :margin "0 0 .5em"}
+                [lon-lat-position $match-drop-cursor-position "Cursor Position" @moving-lon-lat]
+                [:div {:style {:display "flex" :justify-content "flex-end" :align-self "flex-end" :margin-left "auto"}}
+                      [:button {:class    (<class $/p-button :orange :white)
+                                :style    ($/combine
+                                           [$/border-color   :yellow]
+                                           [$/bg-color       :bg-color]
+                                           [$/color          :font-color]
+                                           ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime)))
+                                           {:margin-right    "1.25rem"})
+                                :on-click #(initiate-match-drop @lon-lat @datetime refresh-fire-names! user-id)}
+                       "Submit"]]}
+               [:div {:style {:display "flex" :justify-content "center" :flex-shrink 0 :margin "0 0 2.5rem"}}
+                [:button {:class (<class $/p-button :bg-hover-color :font-hover-color)
+                          :style ($/combine [$/bg-color     :bg-color]
+                                            [$/border-color :border-color]
+                                            [$/color        :font-color])
+                          :on-click #(js/window.open "/dashboard" "_blank")}
+                 "Open Dashboard"]]]])]]
     (finally
       (mb/remove-event! click-event))))
 
