@@ -5,6 +5,7 @@
 .nrepl-port
 .rebel_readline_history
 .vscode
+Makefile
 
 # Build Directories and Files
 .key
