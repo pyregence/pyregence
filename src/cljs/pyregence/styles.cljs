@@ -21,9 +21,7 @@
 
 (defn color-picker
   ([color]
-   (case color
-     :none "rgba(0, 0, 0, 0)"
-     (color-picker color 1)))
+   (color-picker color 1))
   ([color alpha]
    (case color
      :bg-color         (if @light?
@@ -52,6 +50,7 @@
      :orange           (str "rgba(249, 104, 65, "  alpha ")")
      :red              (str "rgba(200, 0, 0, "     alpha ")")
      :white            (str "rgba(255, 255, 255, " alpha ")")
+     :transparent      (str "rgba(0, 0, 0, 0)")
      color)))
 
 (defn to-merge? [modifiers key return]
@@ -124,18 +123,25 @@
 
 (defn p-button
   "Styling used for non-tool buttons (e.g. on /dashboard)."
-  [bg-hover-color text-hover-color]
-  (with-meta
-    {:border-width     "2px"
-     :border-style     "solid"
-     :border-radius    "20px / 50%"
-     :font-size        "0.85rem"
-     :outline          "none"
-     :padding          "0.5rem 0.75rem 0.4rem"
-     :text-transform   "uppercase"}
-    {:pseudo {:hover {:background-color (str (color-picker bg-hover-color) " !important")
-                      :color            (str (color-picker text-hover-color) " !important")}
-              :focus {:outline "none"}}}))
+  [bg-color border-color font-color bg-hover-color font-hover-color]
+  (let [base-style     {:background-color (color-picker bg-color)
+                        :border-color     (color-picker border-color)
+                        :border-width     "2px"
+                        :border-style     "solid"
+                        :border-radius    "20px / 50%"
+                        :color            (color-picker font-color)
+                        :font-size        "0.85rem"
+                        :outline          "none"
+                        :padding          "0.5rem 0.75rem 0.4rem"
+                        :text-transform   "uppercase"}
+        disabled-style {:opacity          "0.5"
+                        :pointer-events   "none"}]
+    (with-meta
+      base-style
+      {:pseudo {:disabled disabled-style
+                :hover    {:background-color (color-picker bg-hover-color)
+                           :color            (color-picker font-hover-color)}
+                :focus    {:outline "none"}}})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style Functions

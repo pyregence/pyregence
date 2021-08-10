@@ -123,11 +123,8 @@
           "\u274C"]]))))
 
 (defn button [label color & callback]
-  [:input {:class (<class $/p-button :white :black)
-           :style ($/combine [$/bg-color     color]
-                             [$/border-color :yellow]
-                             [$/color        :white]
-                             [$/margin       "1rem" :h])
+  [:input {:class (<class $/p-button color :yellow :white :white :black)
+           :style ($/margin "1rem" :h)
            :type "button"
            :value label
            :on-click (when (seq callback) (first callback))}])

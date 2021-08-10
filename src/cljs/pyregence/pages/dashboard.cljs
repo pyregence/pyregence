@@ -99,14 +99,13 @@
                                      :position "relative"})}
      [message-box-modal]
      [:div {:style ($/combine $/flex-col {:padding "2rem 8rem"})}
-       [:div {:style {:display "flex"}}
-         [:h3 {:style {:margin-bottom "0"
-                       :margin-right  "1rem"}}
-          "Match Drop Dashboard"]
-         [:button {:class (<class $/p-button :orange :white)
-                   :on-click #(user-match-drops user-id)
-                   :style ($/combine [$/bg-color :none] [$/border-color :yellow] [$/color :brown])}
-          "Refresh"]]
-       [:div {:style {:padding "1rem"
-                      :width   "100%"}}
-        [match-drop-table]]]]))
+      [:div {:style {:display "flex"}}
+       [:h3 {:style {:margin-bottom "0"
+                     :margin-right  "1rem"}}
+        "Match Drop Dashboard"]
+       [:button {:class (<class $/p-button :white :yellow :brown :orange :white)
+                 :on-click #(user-match-drops user-id)}
+        "Refresh"]]
+      [:div {:style {:padding "1rem"
+                     :width   "100%"}}
+       [match-drop-table]]]]))
