@@ -480,10 +480,10 @@
 
 (defn- initiate-match-drop!
   "Initiates the match drop run and initiates polling for updates."
-  [fire-name [lon lat] datetime refresh-fire-names! user-id]
+  [display-name [lon lat] datetime refresh-fire-names! user-id]
   (go
     (let [match-chan (u/call-clj-async! "initiate-md"
-                                        {:fire-name     (if-not (empty? fire-name) fire-name nil)
+                                        {:display-name  (when-not (empty? display-name) display-name)
                                          :ignition-time (u/time-zone-iso-date datetime true)
                                          :lon           lon
                                          :lat           lat
@@ -531,14 +531,14 @@
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular
    location and date/time."
   [parent-box close-fn! refresh-fire-names! user-id]
-  (r/with-let [fire-name      (r/atom "")
-               lon-lat        (r/atom [0 0])
-               datetime       (r/atom "")
-               click-event    (mb/add-single-click-popup! #(reset! lon-lat %))]
+  (r/with-let [display-name (r/atom "")
+               lon-lat      (r/atom [0 0])
+               datetime     (r/atom "")
+               click-event  (mb/add-single-click-popup! #(reset! lon-lat %))]
     [:div#match-drop-tool
      [resizable-window
       parent-box
-      400
+      350
       300
       "Match Drop Tool"
       close-fn!
@@ -547,7 +547,7 @@
          [:div {:style {:flex-grow 1 :margin "0.5rem 1rem" :font-size "0.9rem"}}
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
            c/match-drop-instructions]
-          [labeled-input "Name:" fire-name {:placeholder "New Fire"}]
+          [labeled-input "Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
           [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]
           [:div {:style {:display        "flex"
@@ -561,14 +561,8 @@
             "Dashboard"]
            [:button {:class    "btn btn-sm border-yellow"
                      :style    ($/combine ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime))) {:color "white"})
-                     :on-click #(initiate-match-drop! @fire-name @lon-lat @datetime refresh-fire-names! user-id)}
-            "Submit"]]]
-         [:div {:style {:display "flex" :justify-content "center" :flex-shrink 0 :margin "0 0 2.5rem"}}
-          [:a {:class  "btn btn-sm text-white"
-               :style  {:padding ".5rem .75rem"}
-               :href   "/dashboard"
-               :target "_blank"}
-           "Open Dashboard"]]])]]
+                     :on-click #(initiate-match-drop! @display-name @lon-lat @datetime refresh-fire-names! user-id)}
+            "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event))))
 

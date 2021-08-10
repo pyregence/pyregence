@@ -176,7 +176,7 @@
 (defn get-fire-names []
   (let [match-drop-names (->> (call-sql "get_match_names")
                               (reduce (fn [acc row]
-                                        (assoc acc (:job_id row) (:fire_name row)))
+                                        (assoc acc (:job_id row) (:display_name row)))
                                       {}))]
     (->> @layers
          (filter (fn [{:keys [forecast]}]
@@ -184,7 +184,7 @@
          (map :fire-name)
          (distinct)
          (mapcat (fn [fire-name]
-                   (let [job-id (->> fire-name (re-seq #"\d+") (first))]
+                   (let [job-id (-> fire-name (str/split #"match-drop-") (second))]
                      [(keyword fire-name)
                       {:opt-label  (or (get match-drop-names job-id)
                                        (fire-name-capitalization fire-name))
