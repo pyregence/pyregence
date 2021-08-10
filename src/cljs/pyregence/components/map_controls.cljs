@@ -65,6 +65,7 @@
             :style ($/combine $tool-button ($/fixed-size "32px"))
             :on-click callback}
      (case type
+       :binoculars      [svg/binoculars]
        :camera          [svg/camera]
        :center-on-point [svg/center-on-point]
        :close           [svg/close]
@@ -629,8 +630,7 @@
            [tool-tip-wrapper
             "Zoom Map to Camera"
             :right
-            [:button {:type     "button"
-                      :class    "btn btn-sm btn-secondary"
+            [:button {:class    "btn btn-sm btn-secondary"
                       :on-click zoom-camera
                       :style    {:position "absolute"
                                  :bottom   "1.25rem"
@@ -639,7 +639,7 @@
              [:div {:style {:width  "32px"
                             :height "32px"
                             :fill   "white"}}
-              [svg/magnify-zoom-in]]]]
+              [svg/binoculars]]]]
            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 
           :else
