@@ -633,6 +633,28 @@
                               :fill-opacity 0.8}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
+(defn- mvt-source [layer-name]
+  {:type  "vector"
+   :tiles [(c/mvt-layer-url layer-name)]})
+
+(defn create-fire-history-layer!
+  "Adds red flag warning layer to the map."
+  [id layer-name]
+  (let [new-source {id (mvt-source layer-name)}
+        new-layers [{:id     id
+                     :source id
+                     :source-layer "fire-history"
+                     :type   "fill"
+                     :paint  {:fill-color         ["step" ["get" "Decade"]
+                                                   "#cccccc"  ; Default
+                                                   1990 "#ffffb2"
+                                                   2000 "#fecc5c"
+                                                   2010 "#fd8d3c"
+                                                   2020 "#f03b20"]
+                              :fill-outline-color "#ff0000"
+                              :fill-opacity 0.3}}]]
+    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+
 (defn remove-layer!
   "Removes layer that matches `id`"
   [id]

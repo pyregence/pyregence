@@ -38,25 +38,26 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce options           (r/atom {}))
-(defonce mobile?           (r/atom false))
-(defonce legend-list       (r/atom []))
-(defonce last-clicked-info (r/atom []))
-(defonce show-utc?         (r/atom true))
-(defonce show-info?        (r/atom false))
-(defonce show-match-drop?  (r/atom false))
-(defonce show-camera?      (r/atom false))
-(defonce show-red-flag?    (r/atom false))
-(defonce active-opacity    (r/atom 100.0))
-(defonce capabilities      (r/atom []))
-(defonce *forecast         (r/atom nil))
-(defonce processed-params  (r/atom []))
-(defonce *params           (r/atom {}))
-(defonce param-layers      (r/atom []))
-(defonce *layer-idx        (r/atom 0))
-(defonce the-cameras       (r/atom nil))
-(defonce loading?          (r/atom true))
-(defonce terrain?          (r/atom false))
+(defonce options            (r/atom {}))
+(defonce mobile?            (r/atom false))
+(defonce legend-list        (r/atom []))
+(defonce last-clicked-info  (r/atom []))
+(defonce show-utc?          (r/atom true))
+(defonce show-info?         (r/atom false))
+(defonce show-match-drop?   (r/atom false))
+(defonce show-camera?       (r/atom false))
+(defonce show-red-flag?     (r/atom false))
+(defonce show-fire-history? (r/atom false))
+(defonce active-opacity     (r/atom 100.0))
+(defonce capabilities       (r/atom []))
+(defonce *forecast          (r/atom nil))
+(defonce processed-params   (r/atom []))
+(defonce *params            (r/atom {}))
+(defonce param-layers       (r/atom []))
+(defonce *layer-idx         (r/atom 0))
+(defonce the-cameras        (r/atom nil))
+(defonce loading?           (r/atom true))
+(defonce terrain?           (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Processing Functions
@@ -480,6 +481,7 @@
           show-match-drop?
           show-camera?
           show-red-flag?
+          show-fire-history?
           set-show-info!
           @mobile?
           user-id]

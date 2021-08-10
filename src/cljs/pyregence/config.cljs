@@ -284,6 +284,7 @@
 (def ^:private geoserver-base-url (atom nil))
 (defn- wms-url [] (str (u/end-with @geoserver-base-url "/") "wms"))
 (defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
+(defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
 
 (defn set-geoserver-base-url! [url]
   (reset! geoserver-base-url url))
@@ -348,6 +349,18 @@
        "&OUTPUTFORMAT=application/json"
        "&SRSNAME=EPSG:4326"
        "&TYPENAME=" layer))
+
+(defn mvt-layer-url [layer]
+  (str (mvt-url)
+       "?REQUEST=GetTile"
+       "&SERVICE=WMTS"
+       "&VERSION=1.0.0"
+       "&LAYER=" layer
+       "&STYLE="
+       "&FORMAT=application/vnd.mapbox-vector-tile"
+       "&TILEMATRIX=EPSG:900913:{z}"
+       "&TILEMATRIXSET=EPSG:900913"
+       "&TILECOL={x}&TILEROW={y}"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
