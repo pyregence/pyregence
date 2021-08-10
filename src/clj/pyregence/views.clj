@@ -16,6 +16,9 @@
     (last app)
     (str "/cljs/" app)))
 
+(defn- parse-page [uri]
+  (edn/read-string (slurp (str "resources/pages/" uri ".edn"))))
+
 (defn head-meta-css []
   [:head
    [:meta {:name "robots" :content "index, follow"}]
@@ -102,16 +105,16 @@
 
 (defn render-static [uri]
   (fn [{:keys [server-name]}]
-    (let [{:keys [head-tags body-tags]} (recur-separate-tags (parse (str "resources/html/" uri ".html")))]
+    (let [{:keys [title body]} (parse-page uri)]
       {:status  (if (= uri "/not-found") 404 200)
        :headers {"Content-Type" "text/html"}
        :body    (html5
                  [:head
-                  (head-meta-css)
-                  head-tags]
+                  [:title title]
+                  (head-meta-css)]
                  [:body
                   (header server-name)
-                  body-tags
+                  body
                   [:footer {:class "jumbotron bg-brown mb-0 py-3"}
                    [:p {:class "text-white text-center mb-0 smaller"}
                     (str "\u00A9 "
