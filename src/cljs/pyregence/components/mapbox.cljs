@@ -609,7 +609,7 @@
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
   [id data]
-  (add-icon! "video-icon" "./images/icons/video.png")
+  (add-icon! "video-icon" "./images/video.png")
   (let [new-source {id {:type "geojson" :data data :generateId true}}
         new-layers [{:id     id
                      :source id
@@ -618,8 +618,8 @@
                               :icon-size               0.5
                               :icon-rotate             ["-" ["get" "pan"] 90]
                               :icon-rotation-alignment "map"}
-                     :paint  {:icon-color      (on-hover "#e6550d" "#000000")
-                              :icon-opacity    (on-hover 1.0 0.9)}}]]
+                     :paint  {:icon-color   (on-hover "#e6550d" "#000000")
+                              :icon-opacity (on-hover 1.0 0.9)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn create-red-flag-layer!

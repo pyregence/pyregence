@@ -16,41 +16,72 @@
     (last app)
     (str "/cljs/" app)))
 
+(defn head-meta-css []
+  [:head
+   [:meta {:name "robots" :content "index, follow"}]
+   [:meta {:charset "utf-8"}]
+   [:meta {:name    "viewport"
+           :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
+   [:link {:rel         "stylesheet"
+           :href        "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+           :integrity   "sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+           :crossorigin "anonymous"}]
+   [:link {:rel "stylesheet" :href "css/style.css"}]
+   [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
+   [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
+   [:script "window.name = 'pyrecast'"]
+   [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]])
+
+(defn header [server-name]
+  (let [pyrecast? (str/ends-with? server-name "pyrecast.org")]
+    [:div {:class "wrapper-navbar"
+           :id    "header"}
+     [:a {:class "skip-link sr-only sr-only-focusable"
+          :href  "#content"}
+      "Skip to content"]
+     [:div {:class "container"}
+      [:div {:class "row align-items-center" :id "nav-row"}
+       [:div {:class "col-md-3 col-6"}
+        [:a {:class "navbar-brand"
+             :rel   "home"
+             :href  (if pyrecast? "/" "https://pyregence.org")
+             :title "Pyregence"}
+         [:img {:src   (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
+                :alt   "Pyregence logo"
+                :class "real-logo"}]
+         [:img {:src   "/images/pyregence-logo-white.svg"
+                :class "white-logo"
+                :alt   "Pyregence logo white"}]]]
+       [:div {:class "mr-auto"}]
+       (when pyrecast?
+         [:a {:class  "col-md-2 col-4"
+              :href   "https://pyregence.org"
+              :target "pyregence"}
+          [:img {:class "real-logo" :src "/images/powered-by-pyregence.svg"}]])]]]))
+
 (defn render-dynamic []
-  (fn [request]
+  (fn [{:keys [params server-name]}]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body    (html5
                [:head
-                (slurp "resources/html/~head.html")
-                [:title "Wildfire Forecasts - Pyregence"]
+                (head-meta-css)
+                [:title "Wildfire Forecasts"]
                 [:meta {:name "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
                 (include-css "/css/mapbox-gl-v2.3.1.css")
                 (include-js "/js/mapbox-gl-v2.3.1.js" (find-app-js))]
                [:body
                 [:div#near-term-forecast
-                 (slurp "resources/html/~header.html")
+                 (header server-name)
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
-                      (json/write-str (assoc (:params request)
-                                             :mapbox (get-config :mapbox)
-                                             :features (get-config :features)
+                      (json/write-str (assoc params
+                                             :mapbox    (get-config :mapbox)
+                                             :features  (get-config :features)
                                              :geoserver (get-config :geoserver)))
                       "); };")]])}))
-
-(def uri->html
-  {"/"                  "home.html"
-   "/about"             "about.html"
-   "/data"              "data.html"
-   "/extreme-weather"   "extreme-weather.html"
-   "/fire-behavior"     "fire-behavior.html"
-   "/forecast-tools"    "forecast-tools.html"
-   "/not-found"         "not-found.html"
-   "/privacy-policy"    "privacy-policy.html"
-   "/scenario-analyses" "scenario-analyses.html"
-   "/terms-of-use"      "terms-of-use.html"})
 
 (defn recur-separate-tags [hiccup]
   (if (vector? hiccup)
@@ -70,16 +101,16 @@
      :body-tags hiccup}))
 
 (defn render-static [uri]
-  (fn [_]
-    (let [{:keys [head-tags body-tags]} (recur-separate-tags (parse (str "resources/html/" (uri->html uri))))]
+  (fn [{:keys [server-name]}]
+    (let [{:keys [head-tags body-tags]} (recur-separate-tags (parse (str "resources/html/" uri ".html")))]
       {:status  (if (= uri "/not-found") 404 200)
        :headers {"Content-Type" "text/html"}
        :body    (html5
                  [:head
-                  (slurp "resources/html/~head.html")
+                  (head-meta-css)
                   head-tags]
                  [:body
-                  (slurp "resources/html/~header.html")
+                  (header server-name)
                   body-tags
                   [:footer {:class "jumbotron bg-brown mb-0 py-3"}
                    [:p {:class "text-white text-center mb-0 smaller"}

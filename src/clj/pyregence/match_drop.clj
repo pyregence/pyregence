@@ -64,6 +64,7 @@
   (-> result
       (rename-keys {:created_at    :created-at
                     :elmfire_done  :elmfire-done?
+                    :display_name  :display-name
                     :gridfire_done :gridfire-done?
                     :job_id        :job-id
                     :user_id       :user-id
@@ -86,8 +87,8 @@
 (defn- initialize-match-job! [user-id]
   (sql-primitive (call-sql "initialize_match_job" user-id)))
 
-(defn- update-match-job! [job-id {:keys [md-status message elmfire-done? gridfire-done? request]}]
-  (call-sql "update_match_job" job-id md-status message elmfire-done? gridfire-done? (when (some? request) (clj->json request))))
+(defn- update-match-job! [job-id {:keys [md-status display-name message elmfire-done? gridfire-done? request]}]
+  (call-sql "update_match_job" job-id md-status display-name message elmfire-done? gridfire-done? (when (some? request) (clj->json request))))
 
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]
@@ -102,7 +103,7 @@
                                :message   (str "Connection to " host " failed.")})))
 
 (defn- create-match-job!
-  [{:keys [user-id ignition-time] :as params}]
+  [{:keys [display-name user-id ignition-time] :as params}]
   (let [job-id        (initialize-match-job! user-id)
         model-time    (convert-date-string ignition-time)
         request       (merge params
@@ -123,6 +124,7 @@
                               :geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
                               :action              "add"})
         job           {:user-id        user-id
+                       :display-name   (or display-name (str "Match Drop " job-id))
                        :md-status      2
                        :message        (str "Job " job-id " Initiated.")
                        :elmfire-done?  false

@@ -14,7 +14,7 @@
             [pyregence.components.mapbox    :as mb]
             [pyregence.components.svg-icons :as svg]
             [pyregence.components.help      :as h]
-            [pyregence.components.common           :refer [radio tool-tip-wrapper input-datetime]]
+            [pyregence.components.common           :refer [labeled-input radio tool-tip-wrapper input-datetime]]
             [pyregence.components.messaging        :refer [set-message-box-content!]]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.vega             :refer [vega-box]]))
@@ -65,6 +65,7 @@
             :style ($/combine $tool-button ($/fixed-size "32px"))
             :on-click callback}
      (case type
+       :binoculars      [svg/binoculars]
        :camera          [svg/camera]
        :center-on-point [svg/center-on-point]
        :close           [svg/close]
@@ -477,12 +478,13 @@
             (reset! poll? false))))
       (<! (timeout 5000)))))
 
-(defn- initiate-match-drop
+(defn- initiate-match-drop!
   "Initiates the match drop run and initiates polling for updates."
-  [[lon lat] datetime refresh-fire-names! user-id]
+  [display-name [lon lat] datetime refresh-fire-names! user-id]
   (go
     (let [match-chan (u/call-clj-async! "initiate-md"
-                                        {:ignition-time (u/time-zone-iso-date datetime true)
+                                        {:display-name  (when-not (empty? display-name) display-name)
+                                         :ignition-time (u/time-zone-iso-date datetime true)
                                          :lon           lon
                                          :lat           lat
                                          :user-id       user-id})]
@@ -529,9 +531,10 @@
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular
    location and date/time."
   [parent-box close-fn! refresh-fire-names! user-id]
-  (r/with-let [lon-lat        (r/atom [0 0])
-               datetime       (r/atom "")
-               click-event    (mb/add-single-click-popup! #(reset! lon-lat %))]
+  (r/with-let [display-name (r/atom "")
+               lon-lat      (r/atom [0 0])
+               datetime     (r/atom "")
+               click-event  (mb/add-single-click-popup! #(reset! lon-lat %))]
     [:div#match-drop-tool
      [resizable-window
       parent-box
@@ -544,13 +547,14 @@
          [:div {:style {:flex-grow 1 :margin "0.5rem 1rem" :font-size "0.9rem"}}
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
            c/match-drop-instructions]
+          [labeled-input "Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
           [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]
           [:div {:style {:display         "flex"
                          :flex-shrink     0
                          :justify-content "space-between"
                          :margin          "0.75rem 0 2.5rem"}}
-            [:button {:class (<class $/p-button :bg-color :border-color :font-color :bg-hover-color :font-hover-color)  
+            [:button {:class (<class $/p-button :bg-color :border-color :font-color :bg-hover-color :font-hover-color)
                       :on-click #(js/window.open "/dashboard" "/dashboard")}
              "Dashboard"]
             [:button {:class  (<class $/p-button :bg-color :yellow :font-color :orange :white)
@@ -627,8 +631,7 @@
            [tool-tip-wrapper
             "Zoom Map to Camera"
             :right
-            [:button {:type     "button"
-                      :class    "btn btn-sm btn-secondary"
+            [:button {:class    "btn btn-sm btn-secondary"
                       :on-click zoom-camera
                       :style    {:position "absolute"
                                  :bottom   "1.25rem"
@@ -637,7 +640,7 @@
              [:div {:style {:width  "32px"
                             :height "32px"
                             :fill   "white"}}
-              [svg/magnify-zoom-in]]]]
+              [svg/binoculars]]]]
            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 
           :else

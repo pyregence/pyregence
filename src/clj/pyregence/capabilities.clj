@@ -103,7 +103,8 @@
                                              "wms?SERVICE=WMS"
                                              "&VERSION=1.3.0"
                                              "&REQUEST=GetCapabilities"
-                                             (when workspace-name (str "&NAMESPACE=" workspace-name)))))]
+                                             (when (pos? (count workspace-name))
+                                               (str "&NAMESPACE=" workspace-name)))))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
       (re-find #"(?<=<Layer>).*(?=</Layer>)" xml)
@@ -173,17 +174,23 @@
                     (map str/capitalize (rest parts))))))
 
 (defn get-fire-names []
-  (->> @layers
-       (filter (fn [{:keys [forecast]}]
-                 (= "fire-spread-forecast" forecast)))
-       (map :fire-name)
-       (distinct)
-       (mapcat (fn [fire-name]
-                 [(keyword fire-name)
-                  {:opt-label  (fire-name-capitalization fire-name)
-                   :filter     fire-name
-                   :auto-zoom? true}]))
-       (apply array-map)))
+  (let [match-drop-names (->> (call-sql "get_match_names")
+                              (reduce (fn [acc row]
+                                        (assoc acc (:job_id row) (:display_name row)))
+                                      {}))]
+    (->> @layers
+         (filter (fn [{:keys [forecast]}]
+                   (= "fire-spread-forecast" forecast)))
+         (map :fire-name)
+         (distinct)
+         (mapcat (fn [fire-name]
+                   (let [job-id (-> fire-name (str/split #"match-drop-") (second))]
+                     [(keyword fire-name)
+                      {:opt-label  (or (get match-drop-names job-id)
+                                       (fire-name-capitalization fire-name))
+                       :filter     fire-name
+                       :auto-zoom? true}])))
+         (apply array-map))))
 
 (defn get-user-layers [user-id]
   ; TODO get user-id from session on backend

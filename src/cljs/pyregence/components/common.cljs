@@ -50,7 +50,7 @@
   ([label state condition on-click themed?]
    [:div {:style ($/flex-row)
           :on-click #(on-click condition)}
-    [:div {:style ($/combine [$radio (= @state condition) themed?])}]
+    [:div {:style ($radio (= @state condition) themed?)}]
     [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]]))
 
 (defn check-box
@@ -70,7 +70,7 @@
    - autofocus?
    - required?"
   [label state & [opts]]
-  (let [{:keys [type autocomplete disabled? call-back autofocus? required?]
+  (let [{:keys [type autocomplete disabled? call-back autofocus? required? placeholder]
          :or {type "text" disabled? false call-back #(reset! state (input-value %))} required? false} opts]
     [:section {:style ($labeled-input)}
      [:label {:for (u/sentence->kebab label)} label]
@@ -79,6 +79,7 @@
               :auto-focus    autofocus?
               :disabled      disabled?
               :required      required?
+              :placeholder   placeholder
               :id            (u/sentence->kebab label)
               :type          type
               :value         @state
