@@ -147,7 +147,7 @@
                                                  :options    {:elmfire {:opt-label "ELMFIRE"
                                                                         :filter    "elmfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
-                                                 :hover-text "Forecasts are currently generated from the 06z and 18z weather forecasts. Data are refreshed each day at approximately 5 AM PDT."
+                                                 :hover-text "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label   "Active Fires"
                   :filter      "fire-spread-forecast"
