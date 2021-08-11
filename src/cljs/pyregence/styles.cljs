@@ -24,22 +24,33 @@
    (color-picker color 1))
   ([color alpha]
    (case color
-     :bg-color     (if @light? "white" (str "rgba(50, 50, 50, .9)"))
-     :border-color (if @light?
-                     (str "rgba(0, 0, 0, "       alpha ")")
-                     (str "rgba(255, 255, 255, " alpha ")"))
-     :font-color   (if @light?
-                     (color-picker :brown)
-                     "rgb(235, 235, 235)")
-     :yellow       (str "rgba(249, 175, 59, "  alpha ")")
-     :blue         (str "rgba(0, 0, 175, "     alpha ")")
-     :black        (str "rgba(0, 0, 0, "       alpha ")")
-     :brown        (str "rgba(96, 65, 31, "    alpha ")")
-     :box-tan      (str "rgba(249, 248, 242, " alpha ")")
-     :dark-green   (str "rgba(0, 100, 0, "     alpha ")")
-     :light-gray   (str "rgba(230, 230, 230, " alpha ")")
-     :red          (str "rgba(200, 0, 0, "     alpha ")")
-     :white        (str "rgba(255, 255, 255, " alpha ")")
+     :bg-color         (if @light?
+                         (color-picker :white)
+                         (color-picker :dark-gray 0.9))
+     :bg-hover-color   (if @light?
+                         (color-picker :dark-gray 0.9)
+                         (color-picker :white))
+     :border-color     (if @light?
+                         (color-picker :brown alpha)
+                         (color-picker :white alpha))
+     :font-color       (if @light?
+                         (color-picker :brown)
+                         "rgb(235, 235, 235)")
+     :font-hover-color (if @light?
+                         (color-picker :white)
+                         (color-picker :black))
+     :yellow           (str "rgba(249, 175, 59, "  alpha ")")
+     :blue             (str "rgba(0, 0, 175, "     alpha ")")
+     :black            (str "rgba(0, 0, 0, "       alpha ")")
+     :brown            (str "rgba(96, 65, 31, "    alpha ")")
+     :box-tan          (str "rgba(249, 248, 242, " alpha ")")
+     :dark-green       (str "rgba(0, 100, 0, "     alpha ")")
+     :light-gray       (str "rgba(230, 230, 230, " alpha ")")
+     :dark-gray        (str "rgba(50, 50, 50, "    alpha ")")
+     :orange           (str "rgba(249, 104, 65, "  alpha ")")
+     :red              (str "rgba(200, 0, 0, "     alpha ")")
+     :white            (str "rgba(255, 255, 255, " alpha ")")
+     :transparent      (str "rgba(0, 0, 0, 0)")
      color)))
 
 (defn to-merge? [modifiers key return]
@@ -110,25 +121,29 @@
        :border-radius    "4px"}
       {:pseudo {:hover {:background-color highlight-color}}})))
 
-(defn p-button [& modifiers]
-  (let [base-style     {:border-width  "0"
-                        :border-radius "3px"
-                        :color         "white"
-                        :cursor        "pointer"
-                        :font-size     ".9rem"
-                        :font-weight   "normal"
-                        :min-width     "10rem"
-                        :text-align    "center"
-                        :padding       ".5rem .75rem"}
-        disabled-style {:cursor        "not-allowed"
-                        :opacity       "0.5"}]
+(defn p-button
+  "Styling used for non-tool buttons (e.g. on /dashboard)."
+  [bg-color border-color font-color bg-hover-color font-hover-color]
+  (let [base-style     {:background-color (color-picker bg-color)
+                        :border-color     (color-picker border-color)
+                        :border-width     "2px"
+                        :border-style     "solid"
+                        :border-radius    "20px / 50%"
+                        :color            (color-picker font-color)
+                        :font-size        "0.85rem"
+                        :outline          "none"
+                        :padding          "0.5rem 0.75rem 0.4rem"
+                        :text-transform   "uppercase"}
+        disabled-style {:opacity          "0.5"
+                        :pointer-events   "none"}]
     (with-meta
-      (if (contains? (set modifiers) :disabled)
-        (merge base-style disabled-style)
-        base-style)
-      {:key    (str/join "-" (sort modifiers))
+      base-style
+      {:key    (str/join "-" (sort [bg-color border-color font-color bg-hover-color font-hover-color]))
        :group  true
-       :pseudo {:disabled disabled-style}})))
+       :pseudo {:disabled disabled-style
+                :hover    {:background-color (color-picker bg-hover-color)
+                           :color            (color-picker font-hover-color)}
+                :focus    {:outline "none"}}})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style Functions

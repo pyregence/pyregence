@@ -1,5 +1,4 @@
 (ns pyregence.components.messaging
-  (:require-macros [pyregence.herb-patch :refer [style->class]])
   (:require [herb.core :refer [<class]]
             [reagent.core :as r]
             [clojure.core.async :refer [chan go >! <! timeout]]
@@ -124,8 +123,8 @@
           "\u274C"]]))))
 
 (defn button [label color & callback]
-  [:input {:class (style->class $/p-button)
-           :style ($/combine [$/bg-color color] [$/margin "1rem" :h])
+  [:input {:class (<class $/p-button color :yellow :white :orange :white)
+           :style ($/margin "1rem" :h)
            :type "button"
            :value label
            :on-click (when (seq callback) (first callback))}])

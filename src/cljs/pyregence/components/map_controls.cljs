@@ -550,19 +550,17 @@
           [labeled-input "Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
           [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]
-          [:div {:style {:display        "flex"
+          [:div {:style {:display         "flex"
                          :flex-shrink     0
                          :justify-content "space-between"
                          :margin          "0.75rem 0 2.5rem"}}
-           [:a {:class "btn btn-sm text-white"
-                :style {:padding ".5rem .75rem"}
-                :href  "/dashboard"
-                :target "dashboard"}
-            "Dashboard"]
-           [:button {:class    "btn btn-sm border-yellow"
-                     :style    ($/combine ($/disabled-group (or (= [0 0] @lon-lat) (= "" @datetime))) {:color "white"})
-                     :on-click #(initiate-match-drop! @display-name @lon-lat @datetime refresh-fire-names! user-id)}
-            "Submit"]]]])]]
+            [:button {:class (<class $/p-button :bg-color :border-color :font-color :bg-hover-color :font-hover-color)
+                      :on-click #(js/window.open "/dashboard" "/dashboard")}
+             "Dashboard"]
+            [:button {:class  (<class $/p-button :bg-color :yellow :font-color :orange :white)
+                      :disabled (or (= [0 0] @lon-lat) (= "" @datetime))
+                      :on-click #(initiate-match-drop! @display-name @lon-lat @datetime refresh-fire-names! user-id)}
+             "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event))))
 
