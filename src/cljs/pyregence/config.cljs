@@ -143,13 +143,11 @@
                                                                          :filter    "cfo"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text "Computer fire spread model used to generate active fire and risk forecasts.\n
-                                                             ELMFIRE - Cloud-based operational fire spread model developed at Reax Engineering Inc. (https://doi.org/10.1016/j.firesaf.2013.08.014)."
+                                                             ELMFIRE (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal (https://doi.org/10.1016/j.firesaf.2013.08.014)."
                                                  :options    {:elmfire {:opt-label "ELMFIRE"
                                                                         :filter    "elmfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
-                                                 :hover-text "Twice per day, hundreds of millions of fires are ignited across California at various times in the future under forecasted weather conditions.
-                                                              By modeling their spread, we can identify areas where fires starting at a specific time and location have the potential to spread rapidly or impact assets at risk.
-                                                              Forecasts are currently generated from the 06z and 18z weather forecasts. Data are refreshed each day at approximately 5 AM PDT"
+                                                 :hover-text "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label   "Active Fires"
                   :filter      "fire-spread-forecast"
