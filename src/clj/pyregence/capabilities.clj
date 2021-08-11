@@ -173,8 +173,9 @@
               (into [(str/upper-case (first parts))]
                     (map str/capitalize (rest parts))))))
 
-(defn get-fire-names []
-  (let [match-drop-names (->> (call-sql "get_match_names")
+; FIXME get user-id from session on backend
+(defn get-fire-names [user-id]
+  (let [match-drop-names (->> (call-sql "get_user_match_names" user-id)
                               (reduce (fn [acc row]
                                         (assoc acc (:job_id row) (:display_name row)))
                                       {}))]
@@ -185,11 +186,12 @@
          (distinct)
          (mapcat (fn [fire-name]
                    (let [job-id (-> fire-name (str/split #"match-drop-") (second))]
-                     [(keyword fire-name)
-                      {:opt-label  (or (get match-drop-names job-id)
-                                       (fire-name-capitalization fire-name))
-                       :filter     fire-name
-                       :auto-zoom? true}])))
+                     (when (or (nil? job-id) (contains? match-drop-names job-id))
+                       [(keyword fire-name)
+                        {:opt-label  (or (get match-drop-names job-id)
+                                         (fire-name-capitalization fire-name))
+                         :filter     fire-name
+                         :auto-zoom? true}]))))
          (apply array-map))))
 
 (defn get-user-layers [user-id]
