@@ -138,7 +138,9 @@
                         :pointer-events   "none"}]
     (with-meta
       base-style
-      {:pseudo {:disabled disabled-style
+      {:key    (str/join "-" (sort [bg-color border-color font-color bg-hover-color font-hover-color]))
+       :group  true
+       :pseudo {:disabled disabled-style
                 :hover    {:background-color (color-picker bg-hover-color)
                            :color            (color-picker font-hover-color)}
                 :focus    {:outline "none"}}})))
@@ -150,12 +152,8 @@
 (defn color [color]
   {:color (color-picker color)})
 
-(defn bg-color
-  ([color]
-   {:background (color-picker color)}))
-
-(defn border-color [color]
-  {:border-color (color-picker color)})
+(defn bg-color [color]
+  {:background (color-picker color)})
 
 (defn margin [& modifiers]
   (if (= 1 (count modifiers))

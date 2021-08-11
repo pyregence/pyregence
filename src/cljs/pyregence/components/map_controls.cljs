@@ -538,7 +538,7 @@
     [:div#match-drop-tool
      [resizable-window
       parent-box
-      280
+      350
       300
       "Match Drop Tool"
       close-fn!
@@ -559,7 +559,7 @@
              "Dashboard"]
             [:button {:class  (<class $/p-button :bg-color :yellow :font-color :orange :white)
                       :disabled (or (= [0 0] @lon-lat) (= "" @datetime))
-                      :on-click #(initiate-match-drop @lon-lat @datetime refresh-fire-names! user-id)}
+                      :on-click #(initiate-match-drop! @display-name @lon-lat @datetime refresh-fire-names! user-id)}
              "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event))))

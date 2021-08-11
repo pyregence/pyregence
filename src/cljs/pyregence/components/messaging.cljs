@@ -123,7 +123,7 @@
           "\u274C"]]))))
 
 (defn button [label color & callback]
-  [:input {:class (<class $/p-button color :yellow :white :white :black)
+  [:input {:class (<class $/p-button color :yellow :white :orange :white)
            :style ($/margin "1rem" :h)
            :type "button"
            :value label
