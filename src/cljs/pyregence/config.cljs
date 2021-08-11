@@ -158,7 +158,10 @@
                   :params      {:fire-name  {:opt-label      "Fire Name"
                                              :sort?          true
                                              :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
-                                             :underlays      {:nifs-perimeters {:opt-label  "NIFS Perimeters"
+                                             :underlays      {:us-buildings    {:opt-label  "Structures"
+                                                                                :z-index    4
+                                                                                :filter-set #{"fire-detections" "us-buildings"}}
+                                                              :nifs-perimeters {:opt-label  "NIFS Perimeters"
                                                                                 :z-index    3
                                                                                 :filter-set #{"fire-detections" "nifs-perimeters"}}
                                                               :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
