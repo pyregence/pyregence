@@ -86,23 +86,6 @@
                                              :geoserver (get-config :geoserver)))
                       "); };")]])}))
 
-(defn recur-separate-tags [hiccup]
-  (if (vector? hiccup)
-    (let [[tag meta & children] hiccup]
-      (cond
-        (#{:script :link :title :meta} tag)
-        {:head-tags [hiccup] :body-tags nil}
-
-        children
-        (let [x (map recur-separate-tags children)]
-          {:head-tags (apply concat (map :head-tags x))
-           :body-tags (into [tag meta] (keep :body-tags x))})
-
-        :else
-        {:head-tags nil :body-tags hiccup}))
-    {:head-tags nil
-     :body-tags hiccup}))
-
 (defn render-static [uri]
   (fn [{:keys [server-name]}]
     (let [{:keys [title body]} (parse-page uri)]
