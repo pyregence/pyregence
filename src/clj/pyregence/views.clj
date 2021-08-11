@@ -34,30 +34,28 @@
 
 (defn header [server-name]
   (let [pyrecast? (str/ends-with? server-name "pyrecast.org")]
-    [:div {:class "wrapper-navbar"
-           :id    "header"}
-     [:a {:class "skip-link sr-only sr-only-focusable"
-          :href  "#content"}
-      "Skip to content"]
-     [:div {:class "container"}
-      [:div {:class "row align-items-center" :id "nav-row"}
-       [:div {:class "col-md-3 col-6"}
-        [:a {:class "navbar-brand"
-             :rel   "home"
-             :href  (if pyrecast? "/" "https://pyregence.org")
-             :title "Pyregence"}
-         [:img {:src   (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
-                :alt   "Pyregence logo"
-                :class "real-logo"}]
-         [:img {:src   "/images/pyregence-logo-white.svg"
-                :class "white-logo"
-                :alt   "Pyregence logo white"}]]]
-       [:div {:class "mr-auto"}]
-       (when pyrecast?
-         [:a {:class  "col-md-2 col-4"
-              :href   "https://pyregence.org"
-              :target "pyregence"}
-          [:img {:class "real-logo" :src "/images/powered-by-pyregence.svg"}]])]]]))
+    [:div {:id "header"
+           :style {:display         "flex"
+                   :justify-content "space-between"
+                   :align-items     "center"}}
+      [:a {:rel "home"
+           :href (if pyrecast? "/" "https://pyregence.org")
+           :title "Pyregence"
+           :style {:margin-left   "10%"
+                   :margin-top    "0.3125rem"
+                   :margin-bottom "0.3125rem"}}
+       [:img {:src (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
+              :alt "Pyregence Logo"
+              :style {:height "40px"
+                      :width  "auto"}}]]
+      (when pyrecast?
+        [:a {:href "https://pyregence.org"
+             :target "pyregence"
+             :style {:margin-right "5%"}}
+         [:img {:src "/images/powered-by-pyregence.svg"
+                :alt "Powered by Pyregence Logo"
+                :style {:height "1.25rem"
+                        :width  "auto"}}]])]))
 
 (defn render-dynamic []
   (fn [{:keys [params server-name]}]
