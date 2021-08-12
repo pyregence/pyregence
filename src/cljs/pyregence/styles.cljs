@@ -128,6 +128,7 @@
                         :border-style     "solid"
                         :border-radius    "20px / 50%"
                         :color            (color-picker font-color)
+                        :cursor           "pointer"
                         :font-size        "0.85rem"
                         :outline          "none"
                         :padding          "0.5rem 0.75rem 0.4rem"
