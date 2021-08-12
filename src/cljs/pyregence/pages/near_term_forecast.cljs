@@ -360,9 +360,9 @@
                                                                                  :name  nil}])))})]))
                    @options)))
 
-(defn refresh-fire-names! []
+(defn refresh-fire-names! [user-id]
   (go
-    (as-> (u/call-clj-async! "get-fire-names") fire-names
+    (as-> (u/call-clj-async! "get-fire-names" user-id) fire-names
       (<! fire-names)
       (:body fire-names)
       (edn/read-string fire-names)
@@ -381,7 +381,7 @@
   (go
     (let [{:keys [options-config default]} (c/get-forecast forecast-type)
           user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
-          fire-names-chan  (u/call-clj-async! "get-fire-names")
+          fire-names-chan  (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras     (u/call-clj-async! "get-cameras")]
       (reset! options options-config)
       (reset! *forecast (or (keyword forecast) default))

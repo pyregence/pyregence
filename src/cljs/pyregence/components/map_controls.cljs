@@ -457,7 +457,7 @@
 (defn- poll-status
   "Continually polls for updated information about the match drop run.
    Stops polling on finish or error signal."
-  [job-id refresh-fire-names!]
+  [job-id refresh-fire-names! user-id]
   (go
     (while @poll?
       (let [{:keys [message md-status log]} (-> (u/call-clj-async! "get-md-status" job-id)
@@ -466,7 +466,7 @@
                                                 (edn/read-string))]
         (case md-status
           0 (do
-              (refresh-fire-names!)
+              (refresh-fire-names! user-id)
               (set-message-box-content! {:body (str "Finished running match-drop-" job-id ".")})
               (reset! poll? false))
 
@@ -497,7 +497,7 @@
         (if error
           (set-message-box-content! {:body (str "Error: " error)})
           (do (reset! poll? true)
-              (poll-status job-id refresh-fire-names!)))))))
+              (poll-status job-id refresh-fire-names! user-id)))))))
 
 ;; Styles
 (defn- $match-drop-location []
