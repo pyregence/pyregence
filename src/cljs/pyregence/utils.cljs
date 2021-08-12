@@ -300,6 +300,14 @@
          ":"
          (pad-zero seconds))))
 
+(defn current-timezone-shortcode
+  "Returns the shortcode for the current timezone (e.g. PDT, EST)"
+  []
+  (-> (js/Date.)
+      (.toLocaleTimeString "en-us" #js{:timeZoneName "short"})
+      (.split " ")
+      (last)))
+
 ;;; ->map HOF
 
 (defn mapm [f coll]

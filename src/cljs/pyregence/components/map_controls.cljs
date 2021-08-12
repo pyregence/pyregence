@@ -14,7 +14,7 @@
             [pyregence.components.mapbox    :as mb]
             [pyregence.components.svg-icons :as svg]
             [pyregence.components.help      :as h]
-            [pyregence.components.common           :refer [labeled-input radio tool-tip-wrapper input-datetime]]
+            [pyregence.components.common           :refer [labeled-input radio tool-tip-wrapper input-hour limited-date-picker]]
             [pyregence.components.messaging        :refer [set-message-box-content!]]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.vega             :refer [vega-box]]))
@@ -480,14 +480,17 @@
 
 (defn- initiate-match-drop!
   "Initiates the match drop run and initiates polling for updates."
-  [display-name [lon lat] datetime refresh-fire-names! user-id]
+  [display-name [lon lat] md-date hour refresh-fire-names! user-id]
   (go
-    (let [match-chan (u/call-clj-async! "initiate-md"
-                                        {:display-name  (when-not (empty? display-name) display-name)
-                                         :ignition-time (u/time-zone-iso-date datetime true)
-                                         :lon           lon
-                                         :lat           lat
-                                         :user-id       user-id})]
+    (let [[month date year] (clojure.string/split md-date #"/")
+          zero-month        (- (js/goog.string.parseInt month) 1) ; JS Date months are zero-indexed
+          datetime          (.toString (js/Date. year zero-month date hour 0 0))
+          match-chan        (u/call-clj-async! "initiate-md"
+                                               {:display-name  (when-not (empty? display-name) display-name)
+                                                :ignition-time (u/time-zone-iso-date datetime true)
+                                                :lon           lon
+                                                :lat           lat
+                                                :user-id       user-id})]
       (set-message-box-content! {:title  "Processing Match Drop"
                                  :body   "Initiating match drop run."
                                  :mode   :close
@@ -533,7 +536,8 @@
   [parent-box close-fn! refresh-fire-names! user-id]
   (r/with-let [display-name (r/atom "")
                lon-lat      (r/atom [0 0])
-               datetime     (r/atom "")
+               md-date      (r/atom nil)
+               md-hour      (r/atom nil)
                click-event  (mb/add-single-click-popup! #(reset! lon-lat %))]
     [:div#match-drop-tool
      [resizable-window
@@ -549,7 +553,11 @@
            c/match-drop-instructions]
           [labeled-input "Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
-          [input-datetime "Date/Time" "md-datetime" @datetime #(reset! datetime (u/input-value %))]
+          [:div {:style {:display "flex"}}
+           [:div {:style {:flex "auto" :padding "0 0.5rem 0 0"}}
+            [limited-date-picker "Forecast Date:" "md-date" @md-date #(reset! md-date (u/input-value %)) 7 2]]
+           [:div {:style {:flex "auto" :padding "0 0 0 0.5rem"}}
+            [input-hour "Start Time:" "md-time" @md-hour #(reset! md-hour (u/input-value %))]]]
           [:div {:style {:display         "flex"
                          :flex-shrink     0
                          :justify-content "space-between"
@@ -558,8 +566,8 @@
                       :on-click #(js/window.open "/dashboard" "/dashboard")}
              "Dashboard"]
             [:button {:class  (<class $/p-button :bg-color :yellow :font-color :orange :white)
-                      :disabled (or (= [0 0] @lon-lat) (= "" @datetime))
-                      :on-click #(initiate-match-drop! @display-name @lon-lat @datetime refresh-fire-names! user-id)}
+                      :disabled (or (= [0 0] @lon-lat) (nil? @md-date) (nil? @md-hour))
+                      :on-click #(initiate-match-drop! @display-name @lon-lat @md-date @md-hour refresh-fire-names! user-id)}
              "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event))))
