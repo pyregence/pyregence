@@ -318,7 +318,7 @@
                 :value      share-link}])
      [:input {:on-click on-click
               :class (<class $/p-button :yellow :yellow :white :orange :white)
-              :style (if mobile? {} {:margin-left "0.9rem"})
+              :style (when-not mobile? {:margin-left "0.9rem"})
               :type     "button"
               :value    (if @copied "Copied!" "Copy URL")}]]))
 
