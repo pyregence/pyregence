@@ -551,13 +551,17 @@
           [:a {:style {:margin-left ".25rem"}
                :href "/privacy-policy"
                :target "_blank"} "Privacy Policy"]]]
-        [:div {:style ($/combine $/flex-row {:justify-content "flex-end"})}
+        [:div {:style ($/combine $/flex-row {:justify-content "center"})}
          [:span
-          [:label {:class "btn border-yellow text-brown"
+          [:label {:class (<class $/p-button :white :yellow :brown :orange :white)
+                   :style {:padding-left  "1.75rem"
+                           :padding-right "1.75rem"}
                    :on-click #(u/jump-to-url! "/")}
            "Decline"]
-          [:label {:class "btn border-yellow text-brown"
-                   :style {:margin ".5rem"}
+          [:label {:class (<class $/p-button :white :yellow :brown :orange :white)
+                   :style {:margin        ".5rem"
+                           :padding-left  "1.75rem"
+                           :padding-right "1.75rem"}
                    :on-click #(reset! show-me? false)}
            "Accept"]]]]])))
 

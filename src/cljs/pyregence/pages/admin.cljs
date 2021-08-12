@@ -119,8 +119,10 @@
        [labeled-input "Email Domains (comma separated)" _email-domains]
        [check-box "Auto add user to organization" _auto-add?]
        [check-box "Auto accept user as member" _auto-accept?]
-       [:input {:class "btn border-yellow text-brown"
-                :style ($/combine ($/align :block :right) {:margin-top ".5rem"})
+       [:input {:class (<class $/p-button :white :yellow :brown :orange :white)
+                :style ($/combine ($/align :block :center) {:margin-top    ".5rem"
+                                                            :padding-left  "2rem"
+                                                            :padding-right "2rem"})
                 :type "button"
                 :value "Save"
                 :on-click #(update-org-info! opt-id @_opt-label @_email-domains @_auto-add? @_auto-accept?)}]]]]))
@@ -132,8 +134,8 @@
       [:label opt-label]
       [:label email]]
      [:span {:style ($/combine ($/align :block :right) {:display "flex"})}
-      [:input {:class "btn border-yellow text-brown"
-               :style ($/combine ($/align :block :right) ($sm-button))
+      [:input {:class (<class $/p-button :white :yellow :brown :orange :white)
+               :style ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type "button"
                :value "Remove User"
                :on-click #(remove-org-user! org-user-id)}]
@@ -144,8 +146,8 @@
        (map (fn [{:keys [opt-id opt-label]}]
               [:option {:key opt-id :value opt-id} opt-label])
             roles)]
-      [:input {:class "btn border-yellow text-brown"
-               :style ($/combine ($/align :block :right) ($sm-button))
+      [:input {:class (<class $/p-button :white :yellow :brown :orange :white)
+               :style ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type "button"
                :value "Update Role"
                :on-click #(update-org-user-role! org-user-id @_role-id)}]]]))
@@ -160,8 +162,8 @@
        [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
         [:div {:style {:display "flex" :align-items "flex-end"}}
          [labeled-input "New User" new-email]
-         [:input {:class "btn border-yellow text-brown"
-                  :style ($/combine ($/align :block :right) ($sm-button) {:margin "0 .5rem .5rem"})
+         [:input {:class (<class $/p-button :white :yellow :brown :orange :white)
+                  :style ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                   :type "button"
                   :value "Add User"
                   :on-click #(add-org-user! @new-email)}]]

@@ -304,7 +304,10 @@
                on-click   #(do
                              (u/copy-input-clipboard! "share-link")
                              (reset! copied true))]
-    [:div {:style ($/combine $/flex-row {:width "100%"})}
+    [:div {:style (if mobile?
+                    {:display "flex"
+                     :justify-content "center"}
+                    ($/combine $/flex-row {:width "100%"}))}
      (when-not mobile?
        [:input {:auto-focus true
                 :on-click   on-click
@@ -314,13 +317,8 @@
                 :type       "text"
                 :value      share-link}])
      [:input {:on-click on-click
-              :style    ($/combine ($/bg-color :yellow)
-                                   {:border-radius "3px"
-                                    :border        "none"
-                                    :color         "white"
-                                    :font-size     "0.9rem"
-                                    :margin-left   "1rem"
-                                    :padding       "0.3rem"})
+              :class (<class $/p-button :yellow :yellow :white :orange :white)
+              :style (when-not mobile? {:margin-left "0.9rem"})
               :type     "button"
               :value    (if @copied "Copied!" "Copy URL")}]]))
 

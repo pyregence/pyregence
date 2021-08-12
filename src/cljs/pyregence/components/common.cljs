@@ -1,6 +1,6 @@
 (ns pyregence.components.common
   (:require-macros [pyregence.herb-patch :refer [style->class]])
-  (:require herb.core
+  (:require [herb.core :refer [<class]]
             [reagent.core :as r]
             [reagent.dom :as rd]
             [clojure.string :as str]
@@ -111,7 +111,7 @@
                                                                     :autofocus?   (= 0 i)
                                                                     :required?    true}])
                             fields))
-        [:input {:class "btn border-yellow text-brown"
+        [:input {:class (<class $/p-button :white :yellow :brown :orange :white)
                  :style ($/combine ($/align :block :right) {:margin-top ".5rem"})
                  :type "submit"
                  :value button-text}]
