@@ -108,9 +108,7 @@
       (merge base-style
              (to-merge? modifiers :flex-style  flex-style)
              (to-merge? modifiers :multi-style multi-style))
-      {:key    (str/join "-" (sort modifiers))
-       :group  true
-       :pseudo {:disabled disabled-style}})))
+      {:pseudo {:disabled disabled-style}})))
 
 (defn p-button-hover
   "Background of button is highlighted when `active?` is true or on hover."
@@ -138,9 +136,7 @@
                         :pointer-events   "none"}]
     (with-meta
       base-style
-      {:key    (str/join "-" (sort [bg-color border-color font-color bg-hover-color font-hover-color]))
-       :group  true
-       :pseudo {:disabled disabled-style
+      {:pseudo {:disabled disabled-style
                 :hover    {:background-color (color-picker bg-hover-color)
                            :color            (color-picker font-hover-color)}
                 :focus    {:outline "none"}}})))
