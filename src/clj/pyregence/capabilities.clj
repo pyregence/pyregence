@@ -185,7 +185,10 @@
          (map :fire-name)
          (distinct)
          (mapcat (fn [fire-name]
-                   (let [job-id (-> fire-name (str/split #"match-drop-") (second))]
+                   (let [job-id (some-> fire-name
+                                        (str/split #"match-drop-")
+                                        (second)
+                                        (Integer/parseInt))]
                      (when (or (nil? job-id) (contains? match-drop-names job-id))
                        [(keyword fire-name)
                         {:opt-label  (or (get match-drop-names job-id)
