@@ -69,6 +69,7 @@
        :camera          [svg/camera]
        :center-on-point [svg/center-on-point]
        :close           [svg/close]
+       :clock           [svg/clock]
        :extent          [svg/extent]
        :flag            [svg/flag]
        :flame           [svg/flame]
@@ -343,6 +344,18 @@
   (mb/set-visible-by-title! "red-flag" @show-red-flag?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fire History
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn toggle-fire-history-layer!
+  "Toggles the fire history layer."
+  [show-fire-history?]
+  (swap! show-fire-history? not)
+  (when (and @show-fire-history? (not (mb/layer-exists? "fire-history")))
+    (mb/create-fire-history-layer! "fire-history" "fire-detections%3Afire-history"))
+  (mb/set-visible-by-title! "fire-history" @show-fire-history?))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -357,7 +370,7 @@
 (defn ed-str [enabled?]
   (if enabled? "Disable" "Enable"))
 
-(defn tool-bar [show-info? show-match-drop? show-camera? show-red-flag? set-show-info! mobile? user-id]
+(defn tool-bar [show-info? show-match-drop? show-camera? show-red-flag? show-fire-history? set-show-info! mobile? user-id]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
    (->> [[:layers
           (str (hs-str @show-panel?) " layer selection")
@@ -388,6 +401,10 @@
            [:flag
             (str (hs-str @show-red-flag?) " red flag warnings")
             #(toggle-red-flag-layer! show-red-flag?)])
+         (when-not mobile?
+           [:clock
+            (str (hs-str @show-fire-history?) " fire history")
+            #(toggle-fire-history-layer! show-fire-history?)])
          [:legend
           (str (hs-str @show-legend?) " legend")
           #(swap! show-legend? not)

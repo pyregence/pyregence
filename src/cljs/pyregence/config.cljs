@@ -285,6 +285,7 @@
 (def ^:private geoserver-base-url (atom nil))
 (defn- wms-url [] (str (u/end-with @geoserver-base-url "/") "wms"))
 (defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
+(defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
 
 (defn set-geoserver-base-url! [url]
   (reset! geoserver-base-url url))
@@ -326,7 +327,11 @@
        "&SRSNAME=EPSG:3857"
        "&BBOX=" (str/join "," extent) ",EPSG:3857"))
 
-(defn wms-layer-url [layer]
+(defn wms-layer-url
+  "Generates a Web Mapping Service (WMS) url to download a PNG tile.
+
+   Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
+  [layer]
   (str (wms-url)
        "?SERVICE=WMS"
        "&VERSION=1.3.0"
@@ -341,7 +346,12 @@
        "&BBOX={bbox-epsg-3857}"
        "&LAYERS=" layer))
 
-(defn wfs-layer-url [layer]
+(defn wfs-layer-url
+  "Generates a Web Feature Service (WFS) url to download an entire vector data
+   set as GeoJSON.
+
+   Mapbox GL does support GeoJSON in EPSG:4326. However, it does not support WFS."
+  [layer]
   (str (wfs-url)
        "?SERVICE=WFS"
        "&VERSION=1.3.0"
@@ -349,6 +359,25 @@
        "&OUTPUTFORMAT=application/json"
        "&SRSNAME=EPSG:4326"
        "&TYPENAME=" layer))
+
+(defn mvt-layer-url
+  "Generates a Mapbox Vector Tile (MVT) URL to be used with with Mapbox GL.
+
+   When adding MVT data, the projection must be EPSG:3857 (Web Mercator) or
+   EPSG:900913 (Google Web Mercator). EPSG:900913 is used since GeoServer's
+   embedded [GeoWebCache](https://www.geowebcache.org/) Web Map Tile Service (WMTS)
+   supports EPSG:900913 by default, but does not support EPSG:3857 by default."
+  [layer]
+  (str (mvt-url)
+       "?REQUEST=GetTile"
+       "&SERVICE=WMTS"
+       "&VERSION=1.0.0"
+       "&LAYER=" layer
+       "&STYLE="
+       "&FORMAT=application/vnd.mapbox-vector-tile"
+       "&TILEMATRIX=EPSG:900913:{z}"
+       "&TILEMATRIXSET=EPSG:900913"
+       "&TILECOL={x}&TILEROW={y}"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
