@@ -297,20 +297,21 @@
 ;; Share Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn share-inner-modal [create-share-link]
+(defn share-inner-modal [create-share-link mobile?]
   (r/with-let [copied     (r/atom false)
                share-link (create-share-link)
                on-click   #(do
                              (u/copy-input-clipboard! "share-link")
                              (reset! copied true))]
     [:div {:style ($/combine $/flex-row {:width "100%"})}
-     [:input {:auto-focus true
-              :on-click   on-click
-              :id         "share-link"
-              :style      {:width "100%"}
-              :read-only  true
-              :type       "text"
-              :value      share-link}]
+     (when-not mobile?
+       [:input {:auto-focus true
+                :on-click   on-click
+                :id         "share-link"
+                :style      {:width "100%"}
+                :read-only  true
+                :type       "text"
+                :value      share-link}])
      [:input {:on-click on-click
               :style    ($/combine ($/bg-color :yellow)
                                    {:border-radius "3px"
@@ -421,7 +422,7 @@
                   [[:share
                     "Share current map"
                     #(set-message-box-content! {:title "Share Current Map"
-                                                :body  [share-inner-modal create-share-link]
+                                                :body  [share-inner-modal create-share-link mobile?]
                                                 :mode  :close})]
                    [:terrain
                     (str (ed-str @terrain?) " 3D terrain")
