@@ -300,6 +300,12 @@
          ":"
          (pad-zero seconds))))
 
+(defn current-date-ms
+  "Returns the current date in milliseconds, with hour/minute/seconds/ms set to 0"
+  []
+  (-> (js/Date.)
+      (.setHours 0 0 0 0)))
+
 (defn current-timezone-shortcode
   "Returns the shortcode for the current timezone (e.g. PDT, EST)"
   []
@@ -307,6 +313,11 @@
       (.toLocaleTimeString "en-us" #js{:timeZoneName "short"})
       (.split " ")
       (last)))
+
+(defn format-date
+  "Formats a JS Date into MM/DD/YYYY"
+  [js-date]
+  (str (+ 1 (.getMonth js-date)) "/" (.getDate js-date) "/" (.getFullYear js-date)))
 
 ;;; ->map HOF
 

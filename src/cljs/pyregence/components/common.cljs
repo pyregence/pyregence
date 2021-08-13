@@ -89,32 +89,32 @@
   "Creates a labeled datetime input."
   [label id value on-change]
   [:div
-   [:label {:for id :style {:font-wieight "bold" :font-size "0.9rem"}} label]
+   [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
    [:input {:id id :style {:width "100%"} :type "datetime-local" :value value :on-change on-change}]])
 
 (defn limited-date-picker
   "Creates a date input with limited dates."
   [label id value on-change days-before days-after]
-  (r/with-let [today-ms  (js/Date.now)
-               fmt-date  #(str (+ 1 (.getMonth %)) "/" (.getDate %) "/" (.getFullYear %)) ; JS Date months are zero-indexed
-               today     (fmt-date (js/Date. today-ms))
+  (r/with-let [today-ms  (u/current-date-ms)
+               today     (u/format-date (js/Date. today-ms))
                day-ms    86400000]
     [:div {:style {:display "flex" :flex-direction "column"}}
-     [:label {:for id :style {:font-wieight "bold" :font-size "0.9rem"}} label]
-     [:select {:id id :on-change on-change :value (or value today)}
+     [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
+     [:select {:id id :on-change on-change :defaultValue (or value today)}
       (for [day (range (* -1 days-before) (+ 1 days-after))]
-        (let [date (fmt-date (js/Date. (+ today-ms (* day day-ms))))]
+        (let [date-ms (+ today-ms (* day day-ms))
+              date    (u/format-date (js/Date. date-ms))]
           [:option {:key   date
-                    :value date}
+                    :value date-ms}
            date]))]]))
 
 (defn input-hour
-  "Simple 24-hour input component."
+  "Simple 24-hour input component. Shows the hour with local timezone (e.g. 13:00 PDT)"
   [label id value on-change]
   (let [timezone     (u/current-timezone-shortcode)
         current-hour (.getHours (js/Date.))]
     [:div {:style {:display "flex" :flex-direction "column"}}
-     [:label {:for id :style {:font-wieight "bold" :font-size "0.9rem"}} label]
+     [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
      [:select {:id id :on-change on-change :value (or value current-hour)}
       (for [hour (range 0 24)]
         [:option {:key   hour
