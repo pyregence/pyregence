@@ -96,8 +96,14 @@
                  [:body
                   (header server-name)
                   body
-                  [:footer {:class "jumbotron bg-brown mb-0 py-3"}
-                   [:p {:class "text-white text-center mb-0 smaller"}
+                  [:footer {:class "bg-brown"
+                            :style {:margin-bottom "0"
+                                    :padding       "1rem"}}
+                   [:p {:style {:color          "white"
+                                :font-size      "0.9rem"
+                                :margin-bottom  "0"
+                                :text-align     "center"
+                                :text-transform "uppercase"}}
                     (str "\u00A9 "
                          (+ 1900 (.getYear (java.util.Date.)))
                          " Pyregence - All Rights Reserved | Terms")]]])})))
