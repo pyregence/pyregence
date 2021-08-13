@@ -119,10 +119,8 @@
        [labeled-input "Email Domains (comma separated)" _email-domains]
        [check-box "Auto add user to organization" _auto-add?]
        [check-box "Auto accept user as member" _auto-accept?]
-       [:input {:class (<class $/p-button :white :yellow :brown :orange :white)
-                :style ($/combine ($/align :block :center) {:margin-top    ".5rem"
-                                                            :padding-left  "2rem"
-                                                            :padding-right "2rem"})
+       [:input {:class (<class $/p-form-button :large)
+                :style ($/combine ($/align :block :center) {:margin-top ".5rem"})
                 :type "button"
                 :value "Save"
                 :on-click #(update-org-info! opt-id @_opt-label @_email-domains @_auto-add? @_auto-accept?)}]]]]))
@@ -134,7 +132,7 @@
       [:label opt-label]
       [:label email]]
      [:span {:style ($/combine ($/align :block :right) {:display "flex"})}
-      [:input {:class (<class $/p-button :white :yellow :brown :orange :white)
+      [:input {:class (<class $/p-form-button)
                :style ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type "button"
                :value "Remove User"
@@ -146,7 +144,7 @@
        (map (fn [{:keys [opt-id opt-label]}]
               [:option {:key opt-id :value opt-id} opt-label])
             roles)]
-      [:input {:class (<class $/p-button :white :yellow :brown :orange :white)
+      [:input {:class (<class $/p-form-button)
                :style ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type "button"
                :value "Update Role"
@@ -162,7 +160,7 @@
        [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
         [:div {:style {:display "flex" :align-items "flex-end"}}
          [labeled-input "New User" new-email]
-         [:input {:class (<class $/p-button :white :yellow :brown :orange :white)
+         [:input {:class (<class $/p-form-button)
                   :style ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                   :type "button"
                   :value "Add User"

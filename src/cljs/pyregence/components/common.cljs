@@ -111,7 +111,7 @@
                                                                     :autofocus?   (= 0 i)
                                                                     :required?    true}])
                             fields))
-        [:input {:class (<class $/p-button :white :yellow :brown :orange :white)
+        [:input {:class (<class $/p-form-button)
                  :style ($/combine ($/align :block :right) {:margin-top ".5rem"})
                  :type "submit"
                  :value button-text}]

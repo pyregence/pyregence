@@ -103,7 +103,7 @@
        [:h3 {:style {:margin-bottom "0"
                      :margin-right  "1rem"}}
         "Match Drop Dashboard"]
-       [:button {:class (<class $/p-button :white :yellow :brown :orange :white)
+       [:button {:class (<class $/p-form-button)
                  :on-click #(user-match-drops user-id)}
         "Refresh"]]
       [:div {:style {:padding "1rem"
