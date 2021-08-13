@@ -25,9 +25,8 @@
    [:meta {:charset "utf-8"}]
    [:meta {:name    "viewport"
            :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
-   [:link {:href "css/bootstrap.css"
-           :rel  "stylesheet"}]
-   [:link {:rel "stylesheet" :href "css/style.css"}]
+   (include-css "css/bootstrap.css")
+   (include-css "css/style.css")
    [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
    [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
    [:script "window.name = 'pyrecast'"]
