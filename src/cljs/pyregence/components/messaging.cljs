@@ -122,8 +122,8 @@
                  :on-click #(reset! toast-message-text nil)}
           "\u274C"]]))))
 
-(defn button [label color & callback]
-  [:input {:class (<class $/p-button color :yellow :white :orange :white)
+(defn button [label & callback]
+  [:input {:class (<class $/p-form-button)
            :style ($/margin "1rem" :h)
            :type "button"
            :value label
@@ -144,7 +144,7 @@
              (show-line-break body)])
           (condp = mode
             :close [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
-                    [button "Close" :yellow #(do
-                                               (when action (action))
-                                               (close-message-box!))]]
+                    [button "Close" #(do
+                                       (when action (action))
+                                       (close-message-box!))]]
             [:<>])]]]])))

@@ -486,7 +486,7 @@
           @mobile?
           user-id]
          [mc/scale-bar @mobile?]
-         (when-not @mobile? [mc/mouse-lng-lat]) 
+         (when-not @mobile? [mc/mouse-lng-lat])
          [mc/zoom-bar get-current-layer-extent @mobile? create-share-link terrain?]
          [mc/time-slider
           param-layers
@@ -553,12 +553,12 @@
                :target "_blank"} "Privacy Policy"]]]
         [:div {:style ($/combine $/flex-row {:justify-content "center"})}
          [:span
-          [:label {:class (<class $/p-button :white :yellow :brown :orange :white)
+          [:label {:class (<class $/p-form-button)
                    :style {:padding-left  "1.75rem"
                            :padding-right "1.75rem"}
                    :on-click #(u/jump-to-url! "/")}
            "Decline"]
-          [:label {:class (<class $/p-button :white :yellow :brown :orange :white)
+          [:label {:class (<class $/p-form-button)
                    :style {:margin        ".5rem"
                            :padding-left  "1.75rem"
                            :padding-right "1.75rem"}

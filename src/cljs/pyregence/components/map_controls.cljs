@@ -61,7 +61,7 @@
 (defn tool-button [type callback & [active?]]
   (if (= type :none)
     [:span {:style ($/fixed-size "32px")}]
-    [:span {:class (<class $/p-button-hover active?)
+    [:span {:class (<class $/p-add-hover active?)
             :style ($/combine $tool-button ($/fixed-size "32px"))
             :on-click callback}
      (case type
@@ -308,16 +308,15 @@
                     {:display "flex"
                      :justify-content "center"}
                     ($/combine $/flex-row {:width "100%"}))}
-     (when-not mobile?
-       [:input {:auto-focus true
-                :on-click   on-click
-                :id         "share-link"
-                :style      {:width "100%"}
-                :read-only  true
-                :type       "text"
-                :value      share-link}])
+     [:input {:auto-focus true
+              :on-click   on-click
+              :id         "share-link"
+              :style      {:width "100%"}
+              :read-only  true
+              :type       (if mobile? "hidden" "text")
+              :value      share-link}]
      [:input {:on-click on-click
-              :class (<class $/p-button :yellow :yellow :white :orange :white)
+              :class (<class $/p-form-button)
               :style (when-not mobile? {:margin-left "0.9rem"})
               :type     "button"
               :value    (if @copied "Copied!" "Copy URL")}]]))
@@ -570,7 +569,7 @@
                          :flex-shrink     0
                          :justify-content "space-between"
                          :margin          "0.75rem 0 2.5rem"}}
-            [:button {:class (<class $/p-button :bg-color :border-color :font-color :bg-hover-color :font-hover-color)
+            [:button {:class (<class $/p-themed-button)
                       :on-click #(js/window.open "/dashboard" "/dashboard")}
              "Dashboard"]
             [:button {:class  (<class $/p-button :bg-color :yellow :font-color :orange :white)
@@ -647,7 +646,7 @@
            [tool-tip-wrapper
             "Zoom Map to Camera"
             :right
-            [:button {:class    "btn btn-sm btn-secondary"
+            [:button {:class    (<class $/p-button :bg-color :border-color :font-color :yellow :font-hover-color)
                       :on-click zoom-camera
                       :style    {:position "absolute"
                                  :bottom   "1.25rem"
@@ -655,7 +654,7 @@
                                  :padding  "2px"}}
              [:div {:style {:width  "32px"
                             :height "32px"
-                            :fill   "white"}}
+                            :fill   ($/color-picker :white)}}
               [svg/binoculars]]]]
            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 

@@ -110,7 +110,7 @@
              (to-merge? modifiers :multi-style multi-style))
       {:pseudo {:disabled disabled-style}})))
 
-(defn p-button-hover
+(defn p-add-hover
   "Background of button is highlighted when `active?` is true or on hover."
   [& [active?]]
   (let [highlight-color (color-picker :border-color 0.2)]
@@ -120,8 +120,8 @@
       {:pseudo {:hover {:background-color highlight-color}}})))
 
 (defn p-button
-  "Styling used for non-tool buttons (e.g. on /dashboard)."
-  [bg-color border-color font-color bg-hover-color font-hover-color]
+  "Styling used for non-tool buttons."
+  [bg-color border-color font-color bg-hover-color font-hover-color & [btn-size]]
   (let [base-style     {:background-color (color-picker bg-color)
                         :border-color     (color-picker border-color)
                         :border-width     "2px"
@@ -129,9 +129,14 @@
                         :border-radius    "20px / 50%"
                         :color            (color-picker font-color)
                         :cursor           "pointer"
-                        :font-size        "0.85rem"
+                        :font-size        (case btn-size
+                                            :large "1rem"
+                                            "0.85rem")
                         :outline          "none"
-                        :padding          "0.5rem 0.75rem 0.4rem"
+                        :padding          (case btn-size
+                                            :small "0.5rem 0.35rem 0.4rem"
+                                            :large "0.5rem 1.75rem 0.4rem"
+                                            "0.5rem 0.75rem 0.4rem")
                         :text-transform   "uppercase"}
         disabled-style {:opacity          "0.5"
                         :pointer-events   "none"}]
@@ -141,6 +146,16 @@
                 :hover    {:background-color (color-picker bg-hover-color)
                            :color            (color-picker font-hover-color)}
                 :focus    {:outline "none"}}})))
+
+(defn p-form-button
+  "Styling for form buttons (e.g. the Refresh button on the Match Drop Dashboard)"
+  [& [btn-size]]
+  (p-button :white :yellow :brown :orange :white btn-size))
+
+(defn p-themed-button
+  "Styling for themed buttons (e.g. buttons on Match Drop tool)"
+  [& [btn-size]]
+  (p-button :bg-color :border-color :font-color :bg-hover-color :font-hover-color btn-size))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style Functions
