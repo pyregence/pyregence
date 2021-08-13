@@ -482,13 +482,13 @@
   "Initiates the match drop run and initiates polling for updates."
   [display-name [lon lat] md-date md-hour refresh-fire-names! user-id]
   (go
-    (let [datetime          (.toString (js/Date. (+ md-date (* md-hour 3600000))))
-          match-chan        (u/call-clj-async! "initiate-md"
-                                               {:display-name  (when-not (empty? display-name) display-name)
-                                                :ignition-time (u/time-zone-iso-date datetime true)
-                                                :lon           lon
-                                                :lat           lat
-                                                :user-id       user-id})]
+    (let [datetime   (.toString (js/Date. (+ md-date (* md-hour 3600000))))
+          match-chan (u/call-clj-async! "initiate-md"
+                                        {:display-name  (when-not (empty? display-name) display-name)
+                                         :ignition-time (u/time-zone-iso-date datetime true)
+                                         :lon           lon
+                                         :lat           lat
+                                         :user-id       user-id})]
       (set-message-box-content! {:title  "Processing Match Drop"
                                  :body   "Initiating match drop run."
                                  :mode   :close
@@ -527,20 +527,6 @@
                           :justify-content "start"}}
      "Lon: " (cl-format nil "~,4f" (get lon-lat 0))]]])
 
-(defn- date-picker [md-date]
-  (let [current-date (u/current-date-ms)]
-    (reset! md-date current-date)
-    (fn [md-date]
-      [:div {:style {:flex "auto" :padding "0 0.5rem 0 0"}}
-       [limited-date-picker "Forecast Date:" "md-date" @md-date #(reset! md-date (u/input-int-value %)) 7 0]])))
-
-(defn- hour-picker [md-hour]
-  (let [current-hour (.getHours (js/Date.))]
-    (reset! md-hour current-hour)
-    (fn [md-hour]
-      [:div {:style {:flex "auto" :padding "0 0 0 0.5rem"}}
-       [input-hour "Start Time:" "md-time" @md-hour #(reset! md-hour (u/input-int-value %))]])))
-
 ;; Root component
 (defn match-drop-tool
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular
@@ -548,8 +534,8 @@
   [parent-box close-fn! refresh-fire-names! user-id]
   (r/with-let [display-name (r/atom "")
                lon-lat      (r/atom [0 0])
-               md-date      (r/atom nil) ; Stored in millseconds
-               md-hour      (r/atom nil) ; hour (0-23) in the local timezone
+               md-date      (r/atom (u/current-date-ms)) ; Stored in milliseconds
+               md-hour      (r/atom (.getHours (js/Date.))) ; hour (0-23) in the local timezone
                click-event  (mb/add-single-click-popup! #(reset! lon-lat %))]
     [:div#match-drop-tool
      [resizable-window
@@ -566,8 +552,10 @@
           [labeled-input "Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
           [:div {:style {:display "flex"}}
-           [date-picker md-date]
-           [hour-picker md-hour]]
+           [:div {:style {:flex "auto" :padding "0 0.5rem 0 0"}}
+            [limited-date-picker "Forecast Date:" "md-date" md-date 7 0]]
+           [:div {:style {:flex "auto" :padding "0 0 0 0.5rem"}}
+            [input-hour "Start Time:" "md-time" md-hour]]]
           [:div {:style {:display         "flex"
                          :flex-shrink     0
                          :justify-content "space-between"

@@ -94,13 +94,12 @@
 
 (defn limited-date-picker
   "Creates a date input with limited dates."
-  [label id value on-change days-before days-after]
-  (r/with-let [today-ms  (u/current-date-ms)
-               today     (u/format-date (js/Date. today-ms))
-               day-ms    86400000]
+  [label id value days-before days-after]
+  (let [today-ms (u/current-date-ms)
+        day-ms   86400000]
     [:div {:style {:display "flex" :flex-direction "column"}}
      [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
-     [:select {:id id :on-change on-change :defaultValue (or value today)}
+     [:select {:id id :on-change #(reset! value (u/input-int-value %)) :value @value}
       (for [day (range (* -1 days-before) (+ 1 days-after))]
         (let [date-ms (+ today-ms (* day day-ms))
               date    (u/format-date (js/Date. date-ms))]
@@ -110,12 +109,11 @@
 
 (defn input-hour
   "Simple 24-hour input component. Shows the hour with local timezone (e.g. 13:00 PDT)"
-  [label id value on-change]
-  (let [timezone     (u/current-timezone-shortcode)
-        current-hour (.getHours (js/Date.))]
+  [label id value]
+  (let [timezone (u/current-timezone-shortcode)]
     [:div {:style {:display "flex" :flex-direction "column"}}
      [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
-     [:select {:id id :on-change on-change :value (or value current-hour)}
+     [:select {:id id :on-change #(reset! value (u/input-int-value %)) :value @value}
       (for [hour (range 0 24)]
         [:option {:key   hour
                   :value hour}
