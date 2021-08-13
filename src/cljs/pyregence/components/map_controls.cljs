@@ -39,9 +39,10 @@
      :background-position "right .75rem center"
      :background-repeat   "no-repeat"
      :background-size     "1rem 0.75rem"
-     :border              "1px solid"
      :border-color        ($/color-picker :border-color)
      :border-radius       "2px"
+     :border-size         "1px"
+     :border-width        "solid"
      :color               ($/color-picker :font-color)
      :font-family         "inherit"
      :height              "1.9rem"
@@ -787,9 +788,9 @@
    :user-select      "none"})
 
 (defn- $scale-line-inner []
-  {:border       "2px solid"
-   :border-color ($/color-picker :border-color)
-   :border-top   "none"
+  {:border-color ($/color-picker :border-color)
+   :border-style "solid"
+   :border-width "0 2px 2px 2px"
    :color        ($/color-picker :border-color)
    :font-size    ".75rem"
    :font-weight  "bold"
