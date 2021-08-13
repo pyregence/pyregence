@@ -121,14 +121,15 @@
 
 (defn p-button
   "Styling used for non-tool buttons."
-  [bg-color border-color font-color bg-hover-color font-hover-color & [btn-size]]
+  [bg-color border-color color bg-color-hover color-hover & [btn-size]]
   (let [base-style     {:background-color (color-picker bg-color)
                         :border-color     (color-picker border-color)
                         :border-width     "2px"
                         :border-style     "solid"
                         :border-radius    "20px / 50%"
-                        :color            (color-picker font-color)
+                        :color            (color-picker color)
                         :cursor           "pointer"
+                        :fill             (color-picker color)
                         :font-size        (case btn-size
                                             :large "1rem"
                                             "0.85rem")
@@ -143,8 +144,9 @@
     (with-meta
       base-style
       {:pseudo {:disabled disabled-style
-                :hover    {:background-color (color-picker bg-hover-color)
-                           :color            (color-picker font-hover-color)}
+                :hover    {:background-color (color-picker bg-color-hover)
+                           :color            (color-picker color-hover)
+                           :fill             (color-picker color-hover)}
                 :focus    {:outline "none"}}})))
 
 (defn p-form-button

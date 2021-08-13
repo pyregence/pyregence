@@ -646,15 +646,14 @@
            [tool-tip-wrapper
             "Zoom Map to Camera"
             :right
-            [:button {:class    (<class $/p-button :bg-color :border-color :font-color :yellow :font-hover-color)
+            [:button {:class    (<class $/p-themed-button)
                       :on-click zoom-camera
                       :style    {:position "absolute"
                                  :bottom   "1.25rem"
                                  :right    "1rem"
                                  :padding  "2px"}}
              [:div {:style {:width  "32px"
-                            :height "32px"
-                            :fill   ($/color-picker :white)}}
+                            :height "32px"}}
               [svg/binoculars]]]]
            [:img {:style {:width "100%" :height "auto"} :src @*image}]]
 
