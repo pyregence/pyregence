@@ -555,7 +555,7 @@
           [lon-lat-position $match-drop-location "Location" @lon-lat]
           [:div {:style {:display "flex"}}
            [:div {:style {:flex "auto" :padding "0 0.5rem 0 0"}}
-            [limited-date-picker "Forecast Date:" "md-date" @md-date #(reset! md-date (u/input-value %)) 7 2]]
+            [limited-date-picker "Forecast Date:" "md-date" @md-date #(reset! md-date (u/input-value %)) 7 0]]
            [:div {:style {:flex "auto" :padding "0 0 0 0.5rem"}}
             [input-hour "Start Time:" "md-time" @md-hour #(reset! md-hour (u/input-value %))]]]
           [:div {:style {:display         "flex"
