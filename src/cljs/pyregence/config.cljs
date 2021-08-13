@@ -282,7 +282,7 @@
 ;; WFS/WMS Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private geoserver-base-url (atom nil))
+(defonce ^:private geoserver-base-url (atom nil))
 (defn- wms-url [] (str (u/end-with @geoserver-base-url "/") "wms"))
 (defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
 (defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
@@ -383,7 +383,7 @@
 ;; Feature Flags
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private features (atom nil))
+(defonce ^:private features (atom nil))
 
 (defn set-feature-flags! [config]
   (reset! features (:features config)))
@@ -412,7 +412,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mapbox Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def mapbox-access-token (atom nil))
+
+(defonce mapbox-access-token (atom nil))
 
 (defn set-mapbox-access-token! [token]
   (reset! mapbox-access-token token))

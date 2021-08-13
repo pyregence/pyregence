@@ -590,21 +590,22 @@
 (defn create-wms-layer!
   "Adds WMS layer to the map."
   [id source visible?]
-  (if (is-selectable? id)
-    (set-visible-by-title! id visible?)
-    (let [[new-source new-layers] (build-wms id source 1.0 visible?)
-          style                   (get-style)
-          layers                  (get style "layers")
-          zero-idx                (->> layers
-                                       (keep-indexed (fn [idx layer]
-                                                       (when (is-selectable? (get layer "id")) idx)))
-                                       (first))
-          [before after]          (split-at zero-idx layers)
-          final-layers            (vec (concat before new-layers after))]
-      (swap! custom-layers conj id)
-      (update-style! (get-style)
-                     :new-sources new-source
-                     :layers final-layers))))
+  (when id
+    (if (is-selectable? id)
+      (set-visible-by-title! id visible?)
+      (let [[new-source new-layers] (build-wms id source 1.0 visible?)
+            style                   (get-style)
+            layers                  (get style "layers")
+            zero-idx                (->> layers
+                                         (keep-indexed (fn [idx layer]
+                                                         (when (is-selectable? (get layer "id")) idx)))
+                                         (first))
+            [before after]          (split-at zero-idx layers)
+            final-layers            (vec (concat before new-layers after))]
+        (swap! custom-layers conj id)
+        (update-style! style
+                       :new-sources new-source
+                       :layers final-layers)))))
 
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
