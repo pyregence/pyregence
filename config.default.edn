@@ -5,6 +5,7 @@
               :dbname   "pyregence"
               :user     "pyregence"
               :password "pyregence"}
+ :dev-mode   <true/false>
  :features   {:match-drop false}
  :geoserver  {:base-url "https://data.pyregence.org/geoserver"}
  :match-drop {:app-host      "app.pyregence.org"

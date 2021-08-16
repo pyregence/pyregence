@@ -434,3 +434,12 @@
 (def base-map-default :mapbox-topo)
 
 (def mapbox-dem-url "mapbox://mapbox.mapbox-terrain-dem-v1")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Dev-mode Configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce dev-mode? (atom nil))
+
+(defn set-dev-mode! [val]
+  (reset! dev-mode? val))

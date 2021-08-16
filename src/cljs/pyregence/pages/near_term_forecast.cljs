@@ -519,7 +519,7 @@
    [radio "Dark"  $/light? false #(reset! $/light? %)]])
 
 (defn message-modal []
-  (r/with-let [show-me? (r/atom (not (str/includes? (-> js/window .-location .-origin) "local")))]
+  (r/with-let [show-me? (r/atom (not @c/dev-mode?))] 
     (when @show-me?
       [:div#message-modal {:style ($/modal)}
        [:div {:style ($message-modal @mobile?)}
