@@ -25,11 +25,7 @@
    [:meta {:charset "utf-8"}]
    [:meta {:name    "viewport"
            :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
-   [:link {:rel         "stylesheet"
-           :href        "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-           :integrity   "sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
-           :crossorigin "anonymous"}]
-   [:link {:rel "stylesheet" :href "css/style.css"}]
+   (include-css "css/bootstrap.css" "css/style.css")
    [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
    [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
    [:script "window.name = 'pyrecast'"]
@@ -96,8 +92,14 @@
                  [:body
                   (header server-name)
                   body
-                  [:footer {:class "jumbotron bg-brown mb-0 py-3"}
-                   [:p {:class "text-white text-center mb-0 smaller"}
+                  [:footer {:class "bg-brown"
+                            :style {:margin-bottom "0"
+                                    :padding       "1rem"}}
+                   [:p {:style {:color          "white"
+                                :font-size      "0.9rem"
+                                :margin-bottom  "0"
+                                :text-align     "center"
+                                :text-transform "uppercase"}}
                     (str "\u00A9 "
                          (+ 1900 (.getYear (java.util.Date.)))
                          " Pyregence - All Rights Reserved | Terms")]]])})))

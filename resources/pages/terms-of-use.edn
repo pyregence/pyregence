@@ -1,6 +1,7 @@
 {:title "Terms of Service"
  :body  [:div {:class "doc-page"}
-         [:div {:class "w-75 m-3"}
+         [:div {:style {:margin "1rem"
+                        :width  "75%"}}
           [:div
            [:h2 "TERMS OF USE"]
            [:p "Last Updated: November 10, 2020"]
