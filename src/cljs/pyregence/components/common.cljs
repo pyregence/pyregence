@@ -89,8 +89,35 @@
   "Creates a labeled datetime input."
   [label id value on-change]
   [:div
-   [:label {:for id :style {:font-wieight "bold" :font-size "0.9rem"}} label]
+   [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
    [:input {:id id :style {:width "100%"} :type "datetime-local" :value value :on-change on-change}]])
+
+(defn limited-date-picker
+  "Creates a date input with limited dates."
+  [label id value days-before days-after]
+  (let [today-ms (u/current-date-ms)
+        day-ms   86400000]
+    [:div {:style {:display "flex" :flex-direction "column"}}
+     [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
+     [:select {:id id :on-change #(reset! value (u/input-int-value %)) :value @value}
+      (for [day (range (* -1 days-before) (+ 1 days-after))]
+        (let [date-ms (+ today-ms (* day day-ms))
+              date    (u/format-date (js/Date. date-ms))]
+          [:option {:key   date
+                    :value date-ms}
+           date]))]]))
+
+(defn input-hour
+  "Simple 24-hour input component. Shows the hour with local timezone (e.g. 13:00 PDT)"
+  [label id value]
+  (let [timezone (u/current-timezone-shortcode)]
+    [:div {:style {:display "flex" :flex-direction "column"}}
+     [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
+     [:select {:id id :on-change #(reset! value (u/input-int-value %)) :value @value}
+      (for [hour (range 0 24)]
+        [:option {:key   hour
+                  :value hour}
+         (str hour ":00 " timezone)])]]))
 
 (defn simple-form
   ([title button-text fields on-click]
