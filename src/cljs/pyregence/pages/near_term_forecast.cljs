@@ -519,12 +519,12 @@
    [radio "Dark"  $/light? false #(reset! $/light? %)]])
 
 (defn message-modal []
-  (r/with-let [show-me? (r/atom (not @c/dev-mode?))] 
+  (r/with-let [show-me? (r/atom (not @c/dev-mode?))]
     (when @show-me?
       [:div#message-modal {:style ($/modal)}
        [:div {:style ($message-modal @mobile?)}
-        [:div {:class "bg-yellow"
-               :style {:width "100%"}}
+        [:div {:style {:background "#f9af3b"
+                       :width      "100%"}}
          [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
           "Disclaimer"]]
         [:div {:style {:padding ".5rem" :overflow "auto"}}
@@ -598,8 +598,7 @@
          [message-box-modal]
          (when @loading? [loading-modal])
          [message-modal]
-         [:div {:class "bg-yellow"
-                :style ($app-header)}
+         [:div {:style ($/combine $app-header {:background "#f9af3b"})}
           (when-not @mobile? [theme-select])
           [:span {:style {:display "flex" :padding ".25rem 0"}}
            (doall (map (fn [[key {:keys [opt-label hover-text]}]]

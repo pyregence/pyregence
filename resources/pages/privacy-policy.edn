@@ -1,5 +1,9 @@
 {:title "Privacy Policy"
- :body [:div {:class "doc-page"}
+ :body [:div {:style {:align-items    "center"
+                      :display        "flex"
+                      :flex-direction "column"
+                      :margin-top     "calc(48px + 2.5rem)"
+                      :width          "100%"}}
         [:div {:style {:margin "1rem"
                        :width  "75%"}}
          [:h2 "PRIVACY POLICY"]

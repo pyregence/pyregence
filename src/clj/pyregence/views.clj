@@ -93,8 +93,8 @@
                  [:body
                   (header server-name)
                   body
-                  [:footer {:class "bg-brown"
-                            :style {:margin-bottom "0"
+                  [:footer {:style {:background    "#60411f"
+                                    :margin-bottom "0"
                                     :padding       "1rem"}}
                    [:p {:style {:color          "white"
                                 :font-size      "0.9rem"
