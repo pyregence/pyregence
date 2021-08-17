@@ -25,7 +25,7 @@
    [:meta {:charset "utf-8"}]
    [:meta {:name    "viewport"
            :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
-   (include-css "css/bootstrap.css" "css/style.css")
+   (include-css "css/style.css")
    [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
    [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
    [:script "window.name = 'pyrecast'"]
@@ -93,8 +93,8 @@
                  [:body
                   (header server-name)
                   body
-                  [:footer {:class "bg-brown"
-                            :style {:margin-bottom "0"
+                  [:footer {:style {:background    "#60411f"
+                                    :margin-bottom "0"
                                     :padding       "1rem"}}
                    [:p {:style {:color          "white"
                                 :font-size      "0.9rem"
