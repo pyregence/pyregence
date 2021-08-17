@@ -2,7 +2,7 @@
  :body  [:div {:style {:align-items    "center"
                        :display        "flex"
                        :flex-direction "column"
-                       :margin-top     "calc(48px + 2.5rem)"
+                       :margin-top     "2.5rem"
                        :width          "100%"}}
          [:div {:style {:margin "1rem"
                         :width  "75%"}}
@@ -10,9 +10,9 @@
            [:h2 "TERMS OF USE"]
            [:p "Last Updated: November 10, 2020"]
            [:p
-            "Welcome to Pyregence! We, the Pyregence Consortium, and each and every individual, entity and collaborator therein (“Pyregence”, “we”, “us” or “our”), operate web sites, research facilities, mobile applications, social media pages, and all site-related services (collectively, the “Site”). The Site is provided for your personal and noncommercial use. These Terms of Use, together with the"
+            "Welcome to Pyregence! We, the Pyregence Consortium, and each and every individual, entity and collaborator therein (“Pyregence”, “we”, “us” or “our”), operate web sites, research facilities, mobile applications, social media pages, and all site-related services (collectively, the “Site”). The Site is provided for your personal and noncommercial use. These Terms of Use, together with the "
             [:a {:href "/privacy-policy"} "Privacy Policy"]
-            "and any documents and licenses expressly incorporated (collectively these “Terms”) govern your access to and use of the Site, whether as a guest or registered user. By using the Site, you agree to these Terms. If you do not agree to the Terms, do not use the Site. You will still be bound by the Terms as they existed when you last used the Site. We reserve the right to make changes to these Terms at any time. Please check back from time to time to ensure you are aware of any updates or changes."]
+            " and any documents and licenses expressly incorporated (collectively these “Terms”) govern your access to and use of the Site, whether as a guest or registered user. By using the Site, you agree to these Terms. If you do not agree to the Terms, do not use the Site. You will still be bound by the Terms as they existed when you last used the Site. We reserve the right to make changes to these Terms at any time. Please check back from time to time to ensure you are aware of any updates or changes."]
            [:p
             [:strong [:u "THESE TERMS INCLUDE IMPORTANT INFORMATION ABOUT LIMITATIONS OF LIABILITY AND AN AGREEMENT TO SUBMIT ALL DISPUTES TO INDIVIDUAL MANDATORY ARBITRATION – PLEASE READ CAREFULLY"]]]]
           [:div
