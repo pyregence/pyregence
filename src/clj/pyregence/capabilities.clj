@@ -127,7 +127,7 @@
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-active-layer-name full-name))
 
-                          (str/starts-with? full-name "fire-detections")
+                          (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
                           (merge-fn (split-fire-detections full-name))
 
                           (str/starts-with? full-name "fuels")
