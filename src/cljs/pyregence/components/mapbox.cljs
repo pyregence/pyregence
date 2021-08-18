@@ -28,7 +28,7 @@
 (def ^:private the-marker    (r/atom nil))
 (def ^:private the-popup     (r/atom nil))
 (def ^:private events        (atom {}))
-(def ^:private feature-state (atom nil))
+(def ^:private feature-state (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
