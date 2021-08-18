@@ -628,7 +628,7 @@
                               :icon-size               0.5
                               :icon-rotate             ["-" ["get" "pan"] 90]
                               :icon-rotation-alignment "map"}
-                     :paint  {:icon-color      (on-selected "#C24B29" "#e6550d" "#000000")}}]]
+                     :paint  {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn create-red-flag-layer!
