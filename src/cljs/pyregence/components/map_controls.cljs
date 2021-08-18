@@ -669,7 +669,8 @@
           [:div {:style {:padding "1.2em"}}
            (str "Loading camera " (:name @*camera) "...")]))]]
     (finally
-      (mb/remove-layer! "fire-cameras"))))
+      (mb/remove-layer! "fire-cameras")
+      (mb/clear-selected-highlight! "fire-cameras"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Information Tool

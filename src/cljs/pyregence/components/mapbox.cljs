@@ -29,6 +29,7 @@
 (def ^:private the-popup  (r/atom nil))
 (def ^:private events     (atom {}))
 (def ^:private hovered-id (atom nil))
+(def ^:private selected-id (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -294,18 +295,22 @@
   (add-event! "mousemove" (fn [e] (-> e (event->lnglat) (f)))))
 
 (defn- clear-highlight!
-  "Clears the highlight of WFS features."
-  [source]
-  (when (some? @hovered-id)
-    (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover false})
-    (reset! hovered-id nil)))
+  "Clears the appropriate highlight of WFS features."
+  [source state-atom state-tag]
+  (when (some? @state-atom)
+    (.setFeatureState @the-map #js {:source source :id @state-atom} (clj->js {state-tag false}))
+    (reset! state-atom nil)))
 
 (defn- feature-highlight!
-  "Highlights a particular WFS features."
-  [source feature-id]
-  (clear-highlight! source)
-  (reset! hovered-id feature-id)
-  (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover true}))
+  "Sets the appropriate highlight of WFS features."
+  [source feature-id state-atom state-tag]
+  (clear-highlight! source state-atom state-tag)
+  (reset! state-atom feature-id)
+  (.setFeatureState @the-map #js {:source source :id @state-atom} (clj->js {state-tag true})))
+
+(defn clear-selected-highlight!
+  [source]
+  (clear-highlight! source selected-id :selected))
 
 (defn add-feature-highlight!
   "Adds events to highlight WFS features. Optionally can provide a function `f`,
@@ -316,16 +321,16 @@
   (remove-events! "click" layer)
   (add-event! "mouseenter"
               (fn [e]
-                (when-let [feature-id (-> e (aget "features") (first) (aget "id"))]
-                  (feature-highlight! source feature-id)))
+                (when-let [feature (-> e (aget "features") (first))]
+                  (feature-highlight! source (aget feature "id") hovered-id :hover)))
               :layer layer)
   (add-event! "mouseleave"
-              #(clear-highlight! source)
+              #(clear-highlight! source hovered-id :hover)
               :layer layer)
   (add-event! "click"
               (fn [e]
                 (when-let [feature (-> e (aget "features") (first))]
-                  (feature-highlight! source (aget feature "id"))
+                  (feature-highlight! source (aget feature "id") selected-id :selected)
                   (when f (f feature (event->lnglat e)))))
               :layer layer))
 
@@ -435,6 +440,10 @@
 (defn- on-hover [on off]
   ["case" ["boolean" ["feature-state" "hover"] false] on off])
 
+(defn- on-selected [selected hovered off]
+  ["case" ["boolean" ["feature-state" "selected"] false] selected
+   ["boolean" ["feature-state" "hover"] false] hovered off])
+
 (defn- incident-layer [layer-name source-name opacity]
   {:id     layer-name
    :type   "circle"
@@ -463,7 +472,7 @@
             :text-size          16
             :visibility         "visible"}
    :paint  {:text-color      "#000000"
-            :text-halo-color ["case" ["boolean" ["feature-state" "hover"] false] "#FFFF00" "#FFFFFF"]
+            :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
             :text-halo-width 1.5
             :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}})
 
@@ -619,8 +628,7 @@
                               :icon-size               0.5
                               :icon-rotate             ["-" ["get" "pan"] 90]
                               :icon-rotation-alignment "map"}
-                     :paint  {:icon-color   (on-hover "#e6550d" "#000000")
-                              :icon-opacity (on-hover 1.0 0.9)}}]]
+                     :paint  {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn create-red-flag-layer!
