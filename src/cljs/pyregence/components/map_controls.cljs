@@ -616,7 +616,7 @@
                zoom-camera (fn []
                              (let [{:keys [longitude latitude tilt pan]} @*camera]
                                (reset! terrain? true)
-                               (h/show-help! :zoom-map mobile?)
+                               (h/show-help! :terrain mobile?)
                                (mb/toggle-dimensions! true)
                                (mb/fly-to! {:center [longitude latitude]
                                             :zoom 15

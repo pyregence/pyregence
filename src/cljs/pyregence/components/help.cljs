@@ -8,11 +8,7 @@
   (-> {:terrain {:title "3D Terrain Enabled"
                  :body  (if mobile?
                           "You have enabled 3D Terrain. Use two fingers to tilt or rotate the map."
-                          "You have enabled 3D Terrain. Click and drag using your right mouse button to tilt or rotate the map.")}
-       :zoom-map {:title "3D Terrain Enabled"
-                  :body  (if mobile?
-                           "You have enabled 3D Terrain. Use two fingers to tilt or rotate the map."
-                           "You have enabled 3D Terrain. Click and drag using your right mouse button to tilt or rotate the map.")}}
+                          "You have enabled 3D Terrain. Click and drag using your right mouse button to tilt or rotate the map.")}}
       (get dialog)))
 
 ;;; Session Helpers
