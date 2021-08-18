@@ -451,7 +451,7 @@
             :circle-stroke-color (on-hover "#FFFF00" "#000000")
             :circle-stroke-width (on-hover 4 2)}})
 
-(defn- incident-labels-layer [layer-name source-name opacity]
+(defn- incident-layer-label [layer-name source-name opacity]
   {:id     layer-name
    :type   "symbol"
    :source source-name
@@ -476,7 +476,7 @@
   (let [new-source {id (wfs-source source)}
         labels-id  (str id "-labels")
         new-layers [(incident-layer id id opacity)
-                    (incident-labels-layer labels-id id opacity)]]
+                    (incident-layer-label labels-id id opacity)]]
     [new-source new-layers]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
