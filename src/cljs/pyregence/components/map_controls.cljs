@@ -610,12 +610,13 @@
          (:body)
          (js/URL.createObjectURL))))
 
-(defn camera-tool [cameras parent-box terrain? close-fn!]
+(defn camera-tool [cameras parent-box mobile? terrain? close-fn!]
   (r/with-let [*camera     (r/atom nil)
                *image      (r/atom nil)
                zoom-camera (fn []
                              (let [{:keys [longitude latitude tilt pan]} @*camera]
                                (reset! terrain? true)
+                               (h/show-help! :terrain mobile?)
                                (mb/toggle-dimensions! true)
                                (mb/fly-to! {:center [longitude latitude]
                                             :zoom 15
