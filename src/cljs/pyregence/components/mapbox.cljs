@@ -25,11 +25,10 @@
 (defonce the-map       (r/atom nil))
 (defonce custom-layers (atom #{}))
 
-(def ^:private the-marker (r/atom nil))
-(def ^:private the-popup  (r/atom nil))
-(def ^:private events     (atom {}))
-(def ^:private hovered-id (atom nil))
-(def ^:private selected-id (atom nil))
+(def ^:private the-marker    (r/atom nil))
+(def ^:private the-popup     (r/atom nil))
+(def ^:private events        (atom {}))
+(def ^:private feature-state (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -294,23 +293,19 @@
   [f]
   (add-event! "mousemove" (fn [e] (-> e (event->lnglat) (f)))))
 
-(defn- clear-highlight!
+(defn clear-highlight!
   "Clears the appropriate highlight of WFS features."
-  [source state-atom state-tag]
-  (when (some? @state-atom)
-    (.setFeatureState @the-map #js {:source source :id @state-atom} (clj->js {state-tag false}))
-    (reset! state-atom nil)))
+  [source state-tag]
+  (when-let [id (get-in @feature-state [source state-tag])]
+    (.setFeatureState @the-map #js {:source source :id id} (clj->js {state-tag false}))
+    (swap! feature-state assoc-in [source state-tag] nil)))
 
 (defn- feature-highlight!
   "Sets the appropriate highlight of WFS features."
-  [source feature-id state-atom state-tag]
-  (clear-highlight! source state-atom state-tag)
-  (reset! state-atom feature-id)
-  (.setFeatureState @the-map #js {:source source :id @state-atom} (clj->js {state-tag true})))
-
-(defn clear-selected-highlight!
-  [source]
-  (clear-highlight! source selected-id :selected))
+  [source feature-id state-tag]
+  (clear-highlight! source state-tag)
+  (swap! feature-state assoc-in [source state-tag] feature-id)
+  (.setFeatureState @the-map #js {:source source :id feature-id} (clj->js {state-tag true})))
 
 (defn add-feature-highlight!
   "Adds events to highlight WFS features. Optionally can provide a function `f`,
@@ -322,15 +317,18 @@
   (add-event! "mouseenter"
               (fn [e]
                 (when-let [feature (-> e (aget "features") (first))]
-                  (feature-highlight! source (aget feature "id") hovered-id :hover)))
+                  (feature-highlight! source (aget feature "id") :hover)))
               :layer layer)
   (add-event! "mouseleave"
-              #(clear-highlight! source hovered-id :hover)
+              #(clear-highlight! source :hover)
+              :layer layer)
+  (add-event! "mouseout"
+              #(clear-highlight! source :hover)
               :layer layer)
   (add-event! "click"
               (fn [e]
                 (when-let [feature (-> e (aget "features") (first))]
-                  (feature-highlight! source (aget feature "id") selected-id :selected)
+                  (feature-highlight! source (aget feature "id") :selected)
                   (when f (f feature (event->lnglat e)))))
               :layer layer))
 
