@@ -395,10 +395,9 @@
                  (set-show-info! false)
                  (reset! show-match-drop? false))
             @show-camera?])
-         (when-not mobile?
-           [:flag
-            (str (hs-str @show-red-flag?) " red flag warnings")
-            #(toggle-red-flag-layer! show-red-flag?)])
+         [:flag
+          (str (hs-str @show-red-flag?) " red flag warnings")
+          #(toggle-red-flag-layer! show-red-flag?)]
          (when-not mobile?
            [:clock
             (str (hs-str @show-fire-history?) " fire history")
