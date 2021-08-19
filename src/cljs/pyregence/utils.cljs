@@ -444,3 +444,18 @@
   "Creates a sorted-map where the keys are sorted in reverse order."
   []
   (sorted-map-by (fn [a b] (* -1 (compare a b)))))
+
+(defn direction
+  "Converts degrees to a direction."
+  [degrees]
+  (condp >= degrees
+    22.5 "North"
+    67.5 "Northeast"
+    112.5 "East"
+    157.5 "Southeast"
+    202.5 "South"
+    247.5 "Southwest"
+    292.5 "West"
+    337.5 "Northwest"
+    360   "North"
+    ""))

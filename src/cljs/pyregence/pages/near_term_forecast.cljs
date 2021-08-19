@@ -199,7 +199,7 @@
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all"))))) ; TODO make a more generic way to do this.
 
-(defn process-point-info! [json-res]
+(defn- process-timeline-point-info! [json-res]
   (reset! last-clicked-info [])
   (reset! last-clicked-info
           (as-> json-res pi
@@ -220,14 +220,29 @@
                   pi
                   @param-layers))))
 
+(defn- process-single-point-info! [json-res]
+  (reset! last-clicked-info [])
+  (reset! last-clicked-info
+          (as-> json-res pi
+            (u/try-js-aget pi "features")
+            (map (fn [pi-layer]
+                   {:band   (first (.values js/Object (u/try-js-aget pi-layer "properties")))
+                    :vec-id 1})
+                 pi))))
+
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
-  (let [layer-group (get-current-layer-group)]
-    (when-not (u/missing-data? layer-group point-info)
+  (let [layer-name          (get-current-layer-name)
+        layer-group         (get-current-layer-group)
+        single?             (str/blank? layer-group)
+        layer               (if single? layer-name layer-group)
+        process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
+    (when-not (u/missing-data? layer point-info)
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
-                (c/point-info-url layer-group
-                                  (str/join "," point-info))))))
+                (c/point-info-url layer
+                                  (str/join "," point-info)
+                                  (if single? 1 1000))))))
 
 (defn- reset-underlays! []
   (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
@@ -467,6 +482,7 @@
                *layer-idx
                select-layer-by-hour!
                (get-current-layer-key :units)
+               (get-current-layer-key :convert)
                (get-current-layer-hour)
                @legend-list
                @last-clicked-info

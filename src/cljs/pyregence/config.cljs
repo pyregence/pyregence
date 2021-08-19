@@ -16,7 +16,6 @@
 (def near-term-forecast-options
   {:fuels        {:opt-label       "Fuels"
                   :filter          "fuels"
-                  :block-info?     true
                   :reverse-legend? false
                   :hover-text      "Layers related to fuel and potential fire behavior."
                   :params          {:model {:opt-label  "Source"
@@ -24,14 +23,11 @@
                                                          California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020.\n
                                                          2021 California fuelscape prepared by Pyrologix, LLC (https://pyrologix.com), 2021."
                                             :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
-                                                                         :filter    "landfire-2.0.0"
-                                                                         :units     ""}
+                                                                         :filter    "landfire-2.0.0"}
                                                          :cfo           {:opt-label "California Forest Obs."
-                                                                         :filter    "cfo-2020"
-                                                                         :units     ""}
+                                                                         :filter    "cfo-2020"}
                                                          :ca-fuelscapes {:opt-label "2021 CA fuelscape"
-                                                                         :filter    "ca-fuelscapes"
-                                                                         :units     ""}}}
+                                                                         :filter    "ca-fuelscapes"}}}
                                     :layer {:opt-label  "Layer"
                                             :hover-text "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
                                             :options    (array-map
@@ -40,25 +36,30 @@
                                                                   :units     ""}
                                                          :asp    {:opt-label "Aspect"
                                                                   :filter    "asp"
-                                                                  :units     ""}
+                                                                  :units     ""
+                                                                  :convert   #(str (u/direction %) " (" % "°)")}
                                                          :slp    {:opt-label "Slope (degrees)"
                                                                   :filter    "slp"
-                                                                  :units     "degrees"}
+                                                                  :units     "°"}
                                                          :dem    {:opt-label "Elevation (ft)"
                                                                   :filter    "dem"
-                                                                  :units     ""}
+                                                                  :units     "ft"
+                                                                  :convert   #(u/to-precision 1 (* % 3.28084))}
                                                          :cc     {:opt-label "Canopy Cover (%)"
                                                                   :filter    "cc"
                                                                   :units     "%"}
                                                          :ch     {:opt-label "Canopy Height (m)"
                                                                   :filter    "ch"
-                                                                  :units     "m"}
+                                                                  :units     "m"
+                                                                  :convert   #(u/to-precision 1 (/ % 10))}
                                                          :cbh    {:opt-label "Canopy Base Height (m)"
                                                                   :filter    "cbh"
-                                                                  :units     "m"}
+                                                                  :units     "m"
+                                                                  :convert   #(u/to-precision 1 (/ % 10))}
                                                          :cbd    {:opt-label "Crown Bulk Density (kg/m^3)"
                                                                   :filter    "cbd"
-                                                                  :units     "kg/m^3"})}
+                                                                  :units     "kg/m^3"
+                                                                  :convert   #(u/to-precision 2 %)})}
                                     :model-init {:opt-label  "Model Creation Time"
                                                  :hover-text "Time the data was created."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
@@ -299,7 +300,7 @@
        "&FORMAT=application/json"
        "&LAYER=" layer))
 
-(defn point-info-url [layer-group bbox]
+(defn point-info-url [layer-group bbox feature-count]
   (str (wms-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
@@ -308,7 +309,7 @@
        "&INFO_FORMAT=application/json"
        "&LAYERS=" layer-group
        "&QUERY_LAYERS=" layer-group
-       "&FEATURE_COUNT=1000"
+       "&FEATURE_COUNT=" feature-count
        "&TILED=true"
        "&I=0"
        "&J=0"
