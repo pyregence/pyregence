@@ -576,13 +576,13 @@
                          :flex-shrink     0
                          :justify-content "space-between"
                          :margin          "0.75rem 0 2.5rem"}}
-            [:button {:class (<class $/p-themed-button)
-                      :on-click #(js/window.open "/dashboard" "/dashboard")}
-             "Dashboard"]
-            [:button {:class  (<class $/p-button :bg-color :yellow :font-color :orange :white)
-                      :disabled (or (= [0 0] @lon-lat) (nil? @md-date) (nil? @md-hour))
-                      :on-click #(initiate-match-drop! @display-name @lon-lat @md-date @md-hour refresh-fire-names! user-id)}
-             "Submit"]]]])]]
+           [:button {:class (<class $/p-themed-button)
+                     :on-click #(js/window.open "/dashboard" "/dashboard")}
+            "Dashboard"]
+           [:button {:class  (<class $/p-button :bg-color :yellow :font-color :orange :white)
+                     :disabled (or (= [0 0] @lon-lat) (nil? @md-date) (nil? @md-hour))
+                     :on-click #(initiate-match-drop! @display-name @lon-lat @md-date @md-hour refresh-fire-names! user-id)}
+            "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event))))
 
@@ -670,7 +670,7 @@
            (str "Loading camera " (:name @*camera) "...")]))]]
     (finally
       (mb/remove-layer! "fire-cameras")
-      (mb/clear-selected-highlight! "fire-cameras"))))
+      (mb/clear-highlight! "fire-cameras" :selected))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Information Tool
