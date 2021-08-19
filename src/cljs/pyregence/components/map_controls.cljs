@@ -715,35 +715,35 @@
       last-clicked-info]
      [information-div last-clicked-info *layer-idx units info-height]]))
 
-(defn- single-point-info [box-height _ last-clicked-info legend-list units convert]
-  (let [band          (:band last-clicked-info)
-        fmt-band      (if (fn? convert) (convert band) band)
-        legend-lookup (reduce (fn [acc li] (assoc acc (js/parseFloat (get li "quantity")) li)) {} legend-list)
-        quantities    (sort (keys legend-lookup))
-        low           (last (take-while #(< % band) quantities))
-        high          (last (take-while #(> % band) (reverse quantities)))
-        ratio         (/ (- band low) (- high low))
-        color         (cond
-                        (every? #(not (nil? %)) [high low])
-                        (u/interp-color (get-in legend-lookup [low "color"]) (get-in legend-lookup [high "color"]) ratio)
+(defn- single-point-info [box-height _ band legend-list units convert]
+  (let [legend-map (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
+        color      (or (get-in legend-map [band "color"])
+                       (let [[low high] (u/find-boundary-values band (sort (keys legend-map)))]
+                         (cond
+                           (and high low)
+                           (u/interp-color (get-in legend-map [low "color"])
+                                           (get-in legend-map [high "color"])
+                                           (/ (- band low) (- high low)))
 
-                        (not (nil? low))
-                        (get-in legend-lookup [low "color"])
+                           (not (nil? low))
+                           (get-in legend-map [low "color"])
 
-                        (not (nil? high))
-                        (get-in legend-lookup [high "color"]))]
-    [:div {:style {:align-items "center"
-                   :display "flex"
-                   :height box-height
+                           (not (nil? high))
+                           (get-in legend-map [high "color"]))))]
+    [:div {:style {:align-items     "center"
+                   :display         "flex"
+                   :height          box-height
                    :justify-content "center"
-                   :position "relative"
-                   :width "100%"}}
+                   :position        "relative"
+                   :width           "100%"}}
      [:div {:style {:display "flex" :flex-direction "row"}}
-      [:div {:style {:background-color (get-in legend-lookup [band "color"] color)
-                     :height "1.5rem"
-                     :width "1.5rem"
-                     :margin-right "0.5rem"}}]
-      [:h4 (u/end-with (get-in legend-lookup [band "label"] fmt-band) units)]]]))
+      [:div {:style {:background-color color
+                     :height           "1.5rem"
+                     :width            "1.5rem"
+                     :margin-right     "0.5rem"}}]
+      [:h4 (u/end-with (or (get-in legend-map [band "label"])
+                           (if (fn? convert) (convert band) band))
+                       units)]]]))
 
 (defn information-tool [get-point-info!
                         parent-box
@@ -775,16 +775,16 @@
             (nil? last-clicked-info)
             [loading-cover box-height box-width "Loading..."]
 
-            (= 1 (count last-clicked-info))
+            (number? last-clicked-info)
             [single-point-info
              box-height
              box-width
-             (first last-clicked-info)
+             last-clicked-info
              legend-list
              units
              convert]
 
-            (seq last-clicked-info)
+            (seq? last-clicked-info)
             [vega-information
              box-height
              box-width

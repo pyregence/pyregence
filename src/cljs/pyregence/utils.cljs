@@ -459,3 +459,28 @@
     337.5 "Northwest"
     360   "North"
     ""))
+
+(defn find-boundary-values
+  "Returns the two values from a sorted collection that bound v.
+   When v is less than the first value, returns `[nil first]`,
+   and if v is greater than the last value, returns `[last nil]`"
+  ([v coll]
+   (let [f (first coll)
+         s (second coll)
+         l (last coll)]
+     (cond
+       (< v f)
+       [nil f]
+
+       (> v l)
+       [l nil]
+
+       :else
+       (find-boundary-values v s coll))))
+  ([v s coll]
+   (and s
+        (if (< v s)
+          (take 2 coll)
+          (recur v
+                 (second (rest coll))
+                 (rest coll))))))

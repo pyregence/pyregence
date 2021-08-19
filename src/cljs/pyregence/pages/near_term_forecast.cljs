@@ -223,12 +223,12 @@
 (defn- process-single-point-info! [json-res]
   (reset! last-clicked-info [])
   (reset! last-clicked-info
-          (as-> json-res pi
-            (u/try-js-aget pi "features")
-            (map (fn [pi-layer]
-                   {:band   (first (.values js/Object (u/try-js-aget pi-layer "properties")))
-                    :vec-id 1})
-                 pi))))
+          (-> json-res
+              (u/try-js-aget "features")
+              (first)
+              (u/try-js-aget "properties")
+              (js/Object.values)
+              (first))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
