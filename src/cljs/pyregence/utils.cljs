@@ -449,7 +449,7 @@
   "Refreshes the specified function every specified interval (ms) of time.
    Exit the go-loop by doing `put! exit-ch :exit` elsewhere in the code
    when the on-refresh-fn should exit.
-   (e.g. `(when <exit-condition-met> (put! exit-ch :exit)))`"
+   ex: `(when <exit-condition-met> (put! exit-ch :exit))`"
   [on-refresh-fn interval exit-ch]
   (go-loop []
     (let [[result _] (alts! [(timeout interval) exit-ch])]
