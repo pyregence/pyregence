@@ -103,7 +103,12 @@
                                 :text-transform "uppercase"}}
                     (str "\u00A9 "
                          (+ 1900 (.getYear (java.util.Date.)))
-                         " Pyregence - All Rights Reserved | Terms")]]])})))
+                         " Pyregence - All Rights Reserved | ")
+                    [:a {:href  "/terms-of-use"
+                         :style {:color         "#ffffff"
+                                 :border-bottom "none"
+                                 :font-weight   "400"}}
+                     "Terms"]]]])})))
 
 (defn body->transit [body]
   (let [out    (ByteArrayOutputStream. 4096)

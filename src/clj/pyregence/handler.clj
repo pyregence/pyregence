@@ -28,7 +28,8 @@
 
 ;; FIXME: Fill these in as you make static html pages.
 (def static-routes #{"/privacy-policy"
-                     "/terms-of-use"})
+                     "/terms-of-use"
+                     "/data"})
 
 ;; FIXME: Fill these in as you make app pages.
 (def dynamic-routes #{"/"

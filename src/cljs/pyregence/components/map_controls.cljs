@@ -293,7 +293,32 @@
             @*base-map
             (c/base-map-options)
             false
-            select-base-map!]]]]))))
+            select-base-map!]]
+          [:section {:style {:position "absolute"
+                             :bottom   "0.25rem"
+                             :width    "100%"}}
+            [:article {:style {:padding-left  "1rem"
+                               :padding-right "1rem"
+                               :margin-bottom "0.5rem"}}
+             [:div {:style {:display         "flex"
+                            :justify-content "center"
+                            :background      ($/color-picker :transparent)
+                            :box-shadow      "0px 0px 5px #bbbbbb"
+                            :padding         "0.5em"
+                            :border-radius   "8px"}}
+              [:p {:style {:font-family "Avenir"
+                           :font-weight "bold"
+                           :margin      "0"
+                           :text-align  "center"}}
+               "For more information about the data, click "
+               [:a {:href   "/data"
+                    :target "_blank"
+                    :style  {:color         ($/color-picker :white)
+                             :border-bottom (str "0.5px solid " ($/color-picker :white))
+                             :font-weight   "bold"}}
+                "here"]
+               "."]]]]]]))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Share Tool
