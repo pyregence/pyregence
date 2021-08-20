@@ -17,124 +17,124 @@
         [:div {:style {:align-items    "center"
                        :display        "flex"
                        :flex-direction "column"
-                       :width          "100%"}}]
-        [:div {:style {:margin "1rem"
-                       :width  "90%"}}
-         [:section {:style {:margin-bottom "3rem"
-                            :margin-top    "3rem"}}
-          [:div {:style {:width "100%"
-                         :padding-right "15px"
-                         :padding-left  "15px"
-                         :margin-right  "auto"
-                         :margin-left   "auto"}}
-           [:p {:style {:font-size  "1.1rem"
-                        :text-align "center"}}
-            "This page provides download access to data that are being used to support the Pyregence project. Datasets will be posted to this page as soon as they have been vetted by the Pyregence Team."]]]
-         [:section {:style {:margin-bottom "3rem"}}
-          [:div {:style {:display   "flex"
-                         :flex-wrap "wrap"}}
-           [:article {:style {:padding-left  "1rem"
-                              :padding-right "1rem"
-                              :margin-bottom "1.5rem"}}
-            [:div {:style {:background    "#ffffff"
-                           :box-shadow    "0px 0px 5px #bbbbbb"
-                           :padding       "2em"
-                           :border-radius "8px"}}
-             [:h3 {:style {:font-family   "Avenir"
-                           :font-weight   "bold"}}
-              "Courtney Aviation Datasets"]
-             [:div {:style {:width        "80px"
-                            :border-color "#f9af3b"
-                            :box-sizing   "border-box"
-                            :height       "1px"
-                            :border-width "2px"
-                            :border-style "solid"
-                            :margin       "30px 0"}}]
-             [:p "Pyregence has available for sharing roughly 17 TB of data from test flyovers performed by Courtney Aviation on behalf of the USDA Forest Service National Infrared Operations (NIROPS) Unit and the California Department of Forestry and Fire Protection (CalFire)."]
-             [:h4 "The data includes:"]
-             [:ul
-              [:li "lower-res processed data"]
-              [:li "raw full-res .OWI data"]
-              [:li ".TIF long-wavelength infrared (LWIR) orthomosaics at a good resolution (the data Courtney Aviation uses for mapping)"]
-              [:li "16-bit (per band) medium resolution RGB and near-infrared (NIR) .TIF mosaics taken during the CalFire siege"]
-              [:li "NIROPS 16-bit LWIR mosaics for all missions"]
-              [:li "RGB and NIR mosaics for 20–30 missions"]]
-             [:p "To request this data, please write to "
-              [:a {:href "mailto:contact@pyregence.org"}
-               "contact@pyregence.org."]]]]]]
-         [:section {:style {:margin-bottom "3rem"}}
-          [:div {:style {:display   "flex"
-                         :flex-wrap "wrap"}}
-           [:article {:style {:padding-left  "1rem"
-                              :padding-right "1rem"
-                              :margin-bottom "1.5rem"}}
-            [:div {:style {:background    "#ffffff"
-                           :box-shadow    "0px 0px 5px #bbbbbb"
-                           :padding       "2em"
-                           :border-radius "8px"}}
-             [:h3 {:style {:font-family   "Avenir"
-                           :font-weight   "bold"}}
-              "Upper Air Profiler Pilot Test (Workgroup #1)"]
-             [:div {:style {:width        "80px"
-                            :border-color "#f9af3b"
-                            :box-sizing   "border-box"
-                            :height       "1px"
-                            :border-width "2px"
-                            :border-style "solid"
-                            :margin       "30px 0"}}]
-             [:p "The objectives of the upper-air pilot study are to determine if upper-air wind data can be used by utilities to improve short-term (up to 15 hours) and very-short-term (from 0 to 3 hours) extreme wind forecasts, and enhance situational awareness during high-wind events. The project team has deployed Atmospheric Systems Corporation (ASC) Model 2000 sodar system near Cobb Mountain in northern California and will explore the potential to integrate the collected data into next-generation fire models and data management systems currently used by utilities for routine operations. To meet these objectives, members from Workgroup #1 will leverage and augment existing meteorological networks with upper-air wind measurements and provide data for use in meteorological models and other data management systems currently used by utilities."]
-             [:h4 "Data can be accessed from:"]
-             [:ul
-              [:li "Pyregence Sodar Data - "
-               [:a {:href   "https://cecsig.sonomatech.com/windsodar.jsp"
-                    :target "_blank"
-                    :rel    "noreferrer"}
-                "https://cecsig.sonomatech.com/windsodar.jsp"]]]]]]]
-         [:section {:style {:margin-bottom "3rem"}}
-          [:div {:style {:display   "flex"
-                         :flex-wrap "wrap"}}
-           [:article {:style {:padding-left  "1rem"
-                              :padding-right "1rem"
-                              :margin-bottom "1.5rem"}}
-            [:div {:style {:background    "#ffffff"
-                           :box-shadow    "0px 0px 5px #bbbbbb"
-                           :padding       "2em"
-                           :border-radius "8px"}}
-             [:h3 {:style {:font-family   "Avenir"
-                           :font-weight   "bold"}}
-              "Near-term Wildfire Forecast Data (Workgroup #3)"]
-             [:div {:style {:width        "80px"
-                            :border-color "#f9af3b"
-                            :box-sizing   "border-box"
-                            :height       "1px"
-                            :border-width "2px"
-                            :border-style "solid"
-                            :margin       "30px 0"}}]
-             [:h4 "Datasets that are currently used, or planned for inclusion into near-term forecast models, include:"]
-             [:ul
-              [:li "Fuel and topography rasters for all static inputs required by current-generation fire spread models."]
-              [:li "5-day fire weather forecasts refreshed every 6 hours, that provide hourly meteorological inputs and fuel moisture content values necessary to drive real-time fire spread/risk forecasts."]
-              [:li "16-day forecasts of conventional National Fire Danger Rating System (NFDRS) indices."]
-              [:li "Structure density raster."]
-              [:li "National Agriculture Imagery Program (NAIP) orthoimagery."]
-              [:li "Real-time National Weather Service (NWS) red flag warning and fire weather watch polygons."]
-              [:li "Real-time locations of ongoing large fires identified by the National Interagency Fire Center (NIFC)."]
-              [:li "Near real time fire progression mapping data from the National Infrared Operations (NIROPS) and GeoMAC (Geospatial Multi-Agency Coordination)."]
-              [:li "Near real time satellite-based fire detection data from Terra/Aqua Moderate Resolution Imaging Spectroradiometer (MODIS) and Suomi National Polar-orbiting Partnership (NPP) Visible Infrared Imaging Radiometer Suite (VIIRS)."]
-              [:li "Fire progression data for selected recent fires of historical significance in California."]
-              [:li "Archived weather forecast or analysis data for the above fires of historical significance."]
-              [:li "Publicly accessible maps of electricity assets and damage to electricity assets from wildfire."]]
-             [:h4 "Data can be accessed from the following links:"]
-             [:ul
-              [:li "Interactive data exploration - "
-               [:a {:href   "https://pyrecast.org"
-                    :target "_blank"}
-                "pyrecast.org"]]
-              [:li "Near-term forecast data - "
-               [:a {:href   "https://data.pyregence.org"
-                    :target "_blank"}
-                "data.pyregence.org"]]
-              [:li "Geospatial data can be accessed from our GeoServer - "
-               [:a {:href   "https://data.pyregence.org:8443/geoserver"
-                    :target "_blank"}
-                "https://data.pyregence.org:8443/geoserver"]]]]]]]]]}
+                       :width          "100%"}}
+         [:div {:style {:margin "1rem"
+                        :width  "90%"}}
+          [:section {:style {:margin-bottom "3rem"
+                             :margin-top    "3rem"}}
+           [:div {:style {:width "100%"
+                          :padding-right "15px"
+                          :padding-left  "15px"
+                          :margin-right  "auto"
+                          :margin-left   "auto"}}
+            [:p {:style {:font-size  "1.1rem"
+                         :text-align "center"}}
+             "This page provides download access to data that are being used to support the Pyregence project. Datasets will be posted to this page as soon as they have been vetted by the Pyregence Team."]]]
+          [:section {:style {:margin-bottom "3rem"}}
+           [:div {:style {:display   "flex"
+                          :flex-wrap "wrap"}}
+            [:article {:style {:padding-left  "1rem"
+                               :padding-right "1rem"
+                               :margin-bottom "1.5rem"}}
+             [:div {:style {:background    "#ffffff"
+                            :box-shadow    "0px 0px 5px #bbbbbb"
+                            :padding       "2em"
+                            :border-radius "8px"}}
+              [:h3 {:style {:font-family   "Avenir"
+                            :font-weight   "bold"}}
+               "Courtney Aviation Datasets"]
+              [:div {:style {:width        "80px"
+                             :border-color "#f9af3b"
+                             :box-sizing   "border-box"
+                             :height       "1px"
+                             :border-width "2px"
+                             :border-style "solid"
+                             :margin       "30px 0"}}]
+              [:p "Pyregence has available for sharing roughly 17 TB of data from test flyovers performed by Courtney Aviation on behalf of the USDA Forest Service National Infrared Operations (NIROPS) Unit and the California Department of Forestry and Fire Protection (CalFire)."]
+              [:h4 "The data includes:"]
+              [:ul
+               [:li "lower-res processed data"]
+               [:li "raw full-res .OWI data"]
+               [:li ".TIF long-wavelength infrared (LWIR) orthomosaics at a good resolution (the data Courtney Aviation uses for mapping)"]
+               [:li "16-bit (per band) medium resolution RGB and near-infrared (NIR) .TIF mosaics taken during the CalFire siege"]
+               [:li "NIROPS 16-bit LWIR mosaics for all missions"]
+               [:li "RGB and NIR mosaics for 20–30 missions"]]
+              [:p "To request this data, please write to "
+               [:a {:href "mailto:contact@pyregence.org"}
+                "contact@pyregence.org."]]]]]]
+          [:section {:style {:margin-bottom "3rem"}}
+           [:div {:style {:display   "flex"
+                          :flex-wrap "wrap"}}
+            [:article {:style {:padding-left  "1rem"
+                               :padding-right "1rem"
+                               :margin-bottom "1.5rem"}}
+             [:div {:style {:background    "#ffffff"
+                            :box-shadow    "0px 0px 5px #bbbbbb"
+                            :padding       "2em"
+                            :border-radius "8px"}}
+              [:h3 {:style {:font-family   "Avenir"
+                            :font-weight   "bold"}}
+               "Upper Air Profiler Pilot Test (Workgroup #1)"]
+              [:div {:style {:width        "80px"
+                             :border-color "#f9af3b"
+                             :box-sizing   "border-box"
+                             :height       "1px"
+                             :border-width "2px"
+                             :border-style "solid"
+                             :margin       "30px 0"}}]
+              [:p "The objectives of the upper-air pilot study are to determine if upper-air wind data can be used by utilities to improve short-term (up to 15 hours) and very-short-term (from 0 to 3 hours) extreme wind forecasts, and enhance situational awareness during high-wind events. The project team has deployed Atmospheric Systems Corporation (ASC) Model 2000 sodar system near Cobb Mountain in northern California and will explore the potential to integrate the collected data into next-generation fire models and data management systems currently used by utilities for routine operations. To meet these objectives, members from Workgroup #1 will leverage and augment existing meteorological networks with upper-air wind measurements and provide data for use in meteorological models and other data management systems currently used by utilities."]
+              [:h4 "Data can be accessed from:"]
+              [:ul
+               [:li "Pyregence Sodar Data - "
+                [:a {:href   "https://cecsig.sonomatech.com/windsodar.jsp"
+                     :target "_blank"
+                     :rel    "noreferrer"}
+                 "https://cecsig.sonomatech.com/windsodar.jsp"]]]]]]]
+          [:section {:style {:margin-bottom "3rem"}}
+           [:div {:style {:display   "flex"
+                          :flex-wrap "wrap"}}
+            [:article {:style {:padding-left  "1rem"
+                               :padding-right "1rem"
+                               :margin-bottom "1.5rem"}}
+             [:div {:style {:background    "#ffffff"
+                            :box-shadow    "0px 0px 5px #bbbbbb"
+                            :padding       "2em"
+                            :border-radius "8px"}}
+              [:h3 {:style {:font-family   "Avenir"
+                            :font-weight   "bold"}}
+               "Near-term Wildfire Forecast Data (Workgroup #3)"]
+              [:div {:style {:width        "80px"
+                             :border-color "#f9af3b"
+                             :box-sizing   "border-box"
+                             :height       "1px"
+                             :border-width "2px"
+                             :border-style "solid"
+                             :margin       "30px 0"}}]
+              [:h4 "Datasets that are currently used, or planned for inclusion into near-term forecast models, include:"]
+              [:ul
+               [:li "Fuel and topography rasters for all static inputs required by current-generation fire spread models."]
+               [:li "5-day fire weather forecasts refreshed every 6 hours, that provide hourly meteorological inputs and fuel moisture content values necessary to drive real-time fire spread/risk forecasts."]
+               [:li "16-day forecasts of conventional National Fire Danger Rating System (NFDRS) indices."]
+               [:li "Structure density raster."]
+               [:li "National Agriculture Imagery Program (NAIP) orthoimagery."]
+               [:li "Real-time National Weather Service (NWS) red flag warning and fire weather watch polygons."]
+               [:li "Real-time locations of ongoing large fires identified by the National Interagency Fire Center (NIFC)."]
+               [:li "Near real time fire progression mapping data from the National Infrared Operations (NIROPS) and GeoMAC (Geospatial Multi-Agency Coordination)."]
+               [:li "Near real time satellite-based fire detection data from Terra/Aqua Moderate Resolution Imaging Spectroradiometer (MODIS) and Suomi National Polar-orbiting Partnership (NPP) Visible Infrared Imaging Radiometer Suite (VIIRS)."]
+               [:li "Fire progression data for selected recent fires of historical significance in California."]
+               [:li "Archived weather forecast or analysis data for the above fires of historical significance."]
+               [:li "Publicly accessible maps of electricity assets and damage to electricity assets from wildfire."]]
+              [:h4 "Data can be accessed from the following links:"]
+              [:ul
+               [:li "Interactive data exploration - "
+                [:a {:href   "https://pyrecast.org"
+                     :target "_blank"}
+                 "pyrecast.org"]]
+               [:li "Near-term forecast data - "
+                [:a {:href   "https://data.pyregence.org"
+                     :target "_blank"}
+                 "data.pyregence.org"]]
+               [:li "Geospatial data can be accessed from our GeoServer - "
+                [:a {:href   "https://data.pyregence.org:8443/geoserver"
+                     :target "_blank"}
+                 "https://data.pyregence.org:8443/geoserver"]]]]]]]]]]}
