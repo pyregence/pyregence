@@ -5,7 +5,7 @@
             [herb.core :refer [<class]]
             [clojure.edn :as edn]
             [clojure.string :as string]
-            [clojure.core.async :refer [<! >! go go-loop timeout chan]]
+            [clojure.core.async :refer [<! go go-loop put! timeout chan]]
             [clojure.pprint     :refer [cl-format]]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
@@ -611,16 +611,7 @@
          (js/URL.createObjectURL))))
 
 (defn- refresh-camera-image! [*image *camera]
-  (go (reset! *image (<! (get-current-image-src (:name @*camera))))))
-
-(defn- refresh-on-interval
-  "Refreshes the specified function every specified interval (ms) of time."
-  [on-refresh-fn interval exit-ch *id]
-  (go-loop []
-    (let [[value ch] (alts! [(timeout interval) exit-ch])]
-      (when-not (and (= ch exit-ch) (not= value *id)) ;refresh the function unless we hit the exit-ch and the id on click has changed
-        (on-refresh-fn)
-        (recur)))))
+  (go (reset! *image (<! (get-current-image-src *camera)))))
 
 (defn camera-tool [cameras parent-box mobile? terrain? close-fn!]
   (r/with-let [*camera     (r/atom nil)
@@ -636,13 +627,13 @@
                                             :bearing pan
                                             :pitch (min (+ 90 tilt) 85)}) 400))
                on-click    (fn [features]
-                             (let [*id (aget features "id")]
-                              (reset! *camera (js->clj (aget features "properties") :keywordize-keys true))
-                              (reset! *image nil)
-                              (when (some? (:name @*camera))
-                                (refresh-camera-image! *image *camera)
-                                (go (>! exit-ch *id))
-                                (refresh-on-interval #(refresh-camera-image! *image *camera) 60000 exit-ch *id))))]
+                             (let [*new-camera (-> features (aget "properties") (js->clj :keywordize-keys true) (:name))]
+                               (when-not (nil? @*camera) (put! exit-ch :exit))
+                               (reset! *camera *new-camera)
+                               (reset! *image nil)
+                               (when (some? @*camera)
+                                 (refresh-camera-image! *image @*camera)
+                                 (u/refresh-on-interval! #(refresh-camera-image! *image @*camera) 60000 exit-ch))))]
     (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
     (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)
     [:div#wildfire-camera-tool
@@ -665,7 +656,7 @@
           (some? @*image)
           [:div
            [:div {:style {:position "absolute" :top "2rem" :width "100%" :display "flex" :justify-content "center"}}
-            [:label (str "Camera: " (:name @*camera))]]
+            [:label (str "Camera: " @*camera)]]
            [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
            [tool-tip-wrapper
             "Zoom Map to Camera"
@@ -683,8 +674,9 @@
 
           :else
           [:div {:style {:padding "1.2em"}}
-           (str "Loading camera " (:name @*camera) "...")]))]]
+           (str "Loading camera " @*camera) "..."]))]]
     (finally
+      (put! exit-ch :exit)
       (mb/remove-layer! "fire-cameras")
       (mb/clear-selected-highlight! "fire-cameras"))))
 

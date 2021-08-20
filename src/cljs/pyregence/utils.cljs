@@ -2,7 +2,7 @@
   (:require [cljs.reader :as edn]
             [clojure.string :as str]
             [clojure.set    :as sets]
-            [clojure.core.async :refer [go <!]]
+            [clojure.core.async :refer [alts! go <! timeout go-loop]]
             [cljs.core.async.interop :refer-macros [<p!]]))
 
 (defn input-value
@@ -444,3 +444,12 @@
   "Creates a sorted-map where the keys are sorted in reverse order."
   []
   (sorted-map-by (fn [a b] (* -1 (compare a b)))))
+
+(defn refresh-on-interval!
+  "Refreshes the specified function every specified interval (ms) of time."
+  [on-refresh-fn interval exit-ch]
+  (go-loop []
+    (let [[result _] (alts! [(timeout interval) exit-ch])]
+      (when-not (= :exit result) ;refresh the function unless we hit the exit-ch
+        (on-refresh-fn)
+        (recur)))))
