@@ -168,7 +168,10 @@
    :position         "absolute"
    :transition       "all 200ms ease-in"
    :width            (if mobile? "100%" "18rem")
-   :z-index          "101"})
+   :z-index          "101"
+   :display          "flex"
+   :justify-content  "space-between"
+   :flex-direction   "column"})
 
 (defn $layer-selection []
   {:border-bottom (str "2px solid " ($/color-picker :border-color))
@@ -260,64 +263,58 @@
     (fn [*params select-param! active-opacity param-options mobile?]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
-         [:div {:style {:overflow "auto"}}
-          [:div#layer-selection {:style {:padding "1rem"}}
-           [:div {:style {:display "flex" :justify-content "space-between"}}
-            [:label {:style ($layer-selection)} "Layer Selection"]
-            [:span {:style {:margin-right "-.5rem"}}
-             [tool-button :close #(reset! show-panel? false)]]]
-           (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
-                  (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                    ^{:key hover-text}
-                    [:<>
-                     [panel-dropdown
-                      opt-label
-                      hover-text
-                      (get *params key)
-                      sorted-options
-                      (= 1 (count sorted-options))
-                      #(select-param! % key)
-                      selected-param-set]
-                     (when underlays
-                       [optional-layers underlays *params select-param!])]))
-                param-options)
-           [:div {:style {:margin-top ".5rem"}}
-            [:label (str "Opacity: " @active-opacity)]
-            [:input {:style {:width "100%"}
-                     :type "range" :min "0" :max "100" :value @active-opacity
-                     :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                     (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-           [panel-dropdown
-            "Base Map"
-            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
-            @*base-map
-            (c/base-map-options)
-            false
-            select-base-map!]]
-          [:section {:style {:position "absolute"
-                             :bottom   "0.25rem"
-                             :width    "100%"}}
-            [:article {:style {:padding-left  "1rem"
-                               :padding-right "1rem"
-                               :margin-bottom "0.5rem"}}
-             [:div {:style {:display         "flex"
-                            :justify-content "center"
-                            :background      ($/color-picker :transparent)
-                            :box-shadow      "0px 0px 5px #bbbbbb"
-                            :padding         "0.5em"
-                            :border-radius   "8px"}}
-              [:p {:style {:font-family "Avenir"
-                           :font-weight "bold"
+         [:div#layer-selection {:style {:padding "1rem"}}
+          [:div {:style {:display         "flex"
+                         :justify-content "center"}}
+           [:label {:style ($layer-selection)} "Layer Selection"]
+           [:span {:style {:margin-right "-.5rem"}}
+            [tool-button :close #(reset! show-panel? false)]]]
+          (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
+                 (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                   ^{:key hover-text}
+                   [:<>
+                    [panel-dropdown
+                     opt-label
+                     hover-text
+                     (get *params key)
+                     sorted-options
+                     (= 1 (count sorted-options))
+                     #(select-param! % key)
+                     selected-param-set]
+                    (when underlays
+                      [optional-layers underlays *params select-param!])]))
+               param-options)
+          [:div {:style {:margin-top ".5rem"}}
+           [:label (str "Opacity: " @active-opacity)]
+           [:input {:style {:width "100%"}
+                    :type "range" :min "0" :max "100" :value @active-opacity
+                    :on-change #(do (reset! active-opacity (u/input-int-value %))
+                                    (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
+          [panel-dropdown
+           "Base Map"
+           "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
+           @*base-map
+           (c/base-map-options)
+           false
+           select-base-map!]]
+         [:section#help-section {:style {:width    "100%"}}
+           [:article {:style {:padding-left  "1rem"
+                              :padding-right "1rem"
+                              :margin-bottom "0.5rem"}}
+            [:div {:style {:display         "flex"
+                           :justify-content "center"
+                           :background      ($/color-picker :transparent)
+                           :box-shadow      "0px 0px 5px #bbbbbb"
+                           :padding         "0.5em"
+                           :border-radius   "8px"}}
+             [:a {:href   "/data"
+                  :target "_blank"
+                  :style  {:color       ($/color-picker :white)
+                           :font-family "Avenir"
+                           :font-style  "italic"
                            :margin      "0"
                            :text-align  "center"}}
-               "For more information about the data, click "
-               [:a {:href   "/data"
-                    :target "_blank"
-                    :style  {:color         ($/color-picker :white)
-                             :border-bottom (str "0.5px solid " ($/color-picker :white))
-                             :font-weight   "bold"}}
-                "here"]
-               "."]]]]]]))))
+              "Learn more about the data."]]]]]))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

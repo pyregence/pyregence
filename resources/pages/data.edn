@@ -135,6 +135,6 @@
                      :target "_blank"}
                  "data.pyregence.org"]]
                [:li "Geospatial data can be accessed from our GeoServer - "
-                [:a {:href   "https://data.pyregence.org:8443/geoserver"
+                [:a {:href   "http://data.pyregence.org/geoserver"
                      :target "_blank"}
-                 "https://data.pyregence.org:8443/geoserver"]]]]]]]]]]}
+                 "http://data.pyregence.org/geoserver"]]]]]]]]]]}
