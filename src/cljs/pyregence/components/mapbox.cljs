@@ -455,8 +455,8 @@
                                                300000 100]
                                               4
                                               12)
-            :circle-stroke-color (on-hover "#FFFF00" "#000000")
-            :circle-stroke-width (on-hover 4 2)}})
+            :circle-stroke-color (on-selected "#FFFF00" "#FFFF00" "#000000")
+            :circle-stroke-width (on-selected 4 4 2)}})
 
 (defn- incident-labels-layer [layer-name source-name opacity]
   {:id     layer-name
