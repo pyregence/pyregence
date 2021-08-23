@@ -1,12 +1,12 @@
 (ns pyregence.components.common
   (:require-macros [pyregence.herb-patch :refer [style->class]])
-  (:require [herb.core :refer [<class]]
-            [reagent.core :as r]
-            [reagent.dom :as rd]
-            [clojure.string :as str]
+  (:require [herb.core          :refer [<class]]
+            [reagent.core       :as r]
+            [reagent.dom        :as rd]
+            [clojure.string     :as str]
             [clojure.core.async :refer [go <! timeout]]
-            [pyregence.styles :as $]
-            [pyregence.utils  :as u]))
+            [pyregence.styles   :as $]
+            [pyregence.utils    :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -48,7 +48,7 @@
   ([label state condition on-click]
    (radio label state condition on-click false))
   ([label state condition on-click themed?]
-   [:div {:style ($/flex-row)
+   [:div {:style    ($/flex-row)
           :on-click #(on-click condition)}
     [:div {:style ($radio (= @state condition) themed?)}]
     [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]]))
@@ -56,9 +56,9 @@
 (defn check-box
   [label-text state]
   [:span {:style {:margin-bottom ".5rem"}}
-   [:input {:style {:margin-right ".25rem"}
-            :type "checkbox"
-            :checked @state
+   [:input {:style     {:margin-right ".25rem"}
+            :type      "checkbox"
+            :checked   @state
             :on-change #(swap! state not)}]
    [:label label-text]])
 
@@ -89,8 +89,13 @@
   "Creates a labeled datetime input."
   [label id value on-change]
   [:div
-   [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
-   [:input {:id id :style {:width "100%"} :type "datetime-local" :value value :on-change on-change}]])
+   [:label {:for   id
+            :style {:font-size "0.9rem" :font-weight "bold" }} label]
+   [:input {:id        id
+            :style     {:width "100%"}
+            :type      "datetime-local"
+            :value     value
+            :on-change on-change}]])
 
 (defn limited-date-picker
   "Creates a date input with limited dates."
@@ -98,8 +103,11 @@
   (let [today-ms (u/current-date-ms)
         day-ms   86400000]
     [:div {:style {:display "flex" :flex-direction "column"}}
-     [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
-     [:select {:id id :on-change #(reset! value (u/input-int-value %)) :value @value}
+     [:label {:for   id
+              :style {:font-size "0.9rem" :font-weight "bold" }} label]
+     [:select {:id        id
+               :on-change #(reset! value (u/input-int-value %))
+               :value     @value}
       (for [day (range (* -1 days-before) (+ 1 days-after))]
         (let [date-ms (+ today-ms (* day day-ms))
               date    (u/format-date (js/Date. date-ms))]
@@ -112,8 +120,11 @@
   [label id value]
   (let [timezone (u/current-timezone-shortcode)]
     [:div {:style {:display "flex" :flex-direction "column"}}
-     [:label {:for id :style {:font-weight "bold" :font-size "0.9rem"}} label]
-     [:select {:id id :on-change #(reset! value (u/input-int-value %)) :value @value}
+     [:label {:for   id
+              :style {:font-size "0.9rem" :font-weight "bold" }} label]
+     [:select {:id        id
+               :on-change #(reset! value (u/input-int-value %))
+               :value     @value}
       (for [hour (range 0 24)]
         [:option {:key   hour
                   :value hour}
@@ -123,8 +134,8 @@
   ([title button-text fields on-click]
    (simple-form title button-text fields on-click nil))
   ([title button-text fields on-click footer]
-   [:form {:style {:height "fit-content" :width "25rem"}
-           :action "#"
+   [:form {:style     {:height "fit-content" :width "25rem"}
+           :action    "#"
            :on-submit #(do (.preventDefault %) (.stopPropagation %) (on-click %))}
     [:div {:style ($/action-box)}
      [:div {:style ($/action-header)}
@@ -140,7 +151,7 @@
                             fields))
         [:input {:class (<class $/p-form-button)
                  :style ($/combine ($/align :block :right) {:margin-top ".5rem"})
-                 :type "submit"
+                 :type  "submit"
                  :value button-text}]
         (when footer (footer))]]]]]))
 
@@ -166,14 +177,14 @@
    :border-radius    "6px"
    :color            ($/color-picker :bg-color)
    :left             tip-x
+   :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
    :opacity          (if show? 1.0 0.0)
+   :padding          ".5rem"
+   :position         "fixed"
    :top              tip-y
    :transition       (if show?
                        "opacity 310ms ease-in"
                        "opacity 300ms ease-out, left 0s ease-out 300ms, top 0s ease-out 300ms")
-   :position         "fixed"
-   :padding          ".5rem"
-   :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
    :z-index          200})
 
 (defn interpose-react [tag items]
