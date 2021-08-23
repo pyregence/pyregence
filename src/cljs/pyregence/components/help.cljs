@@ -1,5 +1,5 @@
 (ns pyregence.components.help
-  (:require [pyregence.utils                :as u]
+  (:require [pyregence.utils :as u]
             [pyregence.components.messaging :refer [set-message-box-content!]]))
 
 ;;; Help Dialogs
