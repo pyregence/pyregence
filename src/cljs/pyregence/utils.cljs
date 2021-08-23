@@ -456,3 +456,28 @@
       (when-not (= :exit result)
         (on-refresh-fn)
         (recur)))))
+
+(defn direction
+  "Converts degrees to a direction."
+  [degrees]
+  (condp >= degrees
+    22.5 "North"
+    67.5 "Northeast"
+    112.5 "East"
+    157.5 "Southeast"
+    202.5 "South"
+    247.5 "Southwest"
+    292.5 "West"
+    337.5 "Northwest"
+    360   "North"
+    ""))
+
+(defn find-boundary-values
+  "Returns the two values from a sorted collection that bound v."
+  [v coll]
+  (loop [coll coll]
+    (let [s (second coll)]
+      (and s
+           (if (< v s)
+             (take 2 coll)
+             (recur (next coll)))))))
