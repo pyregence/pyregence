@@ -1,12 +1,12 @@
 (ns pyregence.components.map-controls
-  (:require [reagent.core       :as r]
-            [reagent.dom        :as rd]
-            [reagent.dom.server :as rs]
-            [herb.core :refer [<class]]
-            [clojure.edn :as edn]
-            [clojure.string :as string]
-            [clojure.core.async :refer [<! go go-loop put! timeout chan]]
-            [clojure.pprint     :refer [cl-format]]
+  (:require [reagent.core        :as r]
+            [reagent.dom         :as rd]
+            [reagent.dom.server  :as rs]
+            [herb.core           :refer [<class]]
+            [clojure.edn         :as edn]
+            [clojure.string      :as string]
+            [clojure.core.async  :refer [<! go go-loop put! timeout chan]]
+            [clojure.pprint      :refer [cl-format]]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
             [pyregence.config    :as c]
@@ -54,16 +54,16 @@
 
 (defn $tool-button []
   {:cursor  "pointer"
+   :fill    ($/color-picker :font-color)
    :height  "100%"
    :padding ".25rem"
-   :width   "100%"
-   :fill    ($/color-picker :font-color)})
+   :width   "100%"})
 
 (defn tool-button [type callback & [active?]]
   (if (= type :none)
     [:span {:style ($/fixed-size "32px")}]
-    [:span {:class (<class $/p-add-hover active?)
-            :style ($/combine $tool-button ($/fixed-size "32px"))
+    [:span {:class    (<class $/p-add-hover active?)
+            :style    ($/combine $tool-button ($/fixed-size "32px"))
             :on-click callback}
      (case type
        :binoculars      [svg/binoculars]
@@ -95,13 +95,13 @@
 
 (defn $time-slider []
   {:align-items  "center"
-   :display      "flex"
-   :margin-right "auto"
-   :margin-left  "auto"
-   :left         "0"
-   :right        "0"
-   :padding      ".5rem"
    :bottom       "1rem"
+   :display      "flex"
+   :left         "0"
+   :margin-left  "auto"
+   :margin-right "auto"
+   :padding      ".5rem"
+   :right        "0"
    :width        "min-content"})
 
 (defn time-slider [layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone! mobile?]
@@ -120,10 +120,10 @@
         [radio "Local" show-utc? false select-time-zone! true]])
      [:div {:style ($/flex-col)}
       [:input {:style {:width "12rem"}
-               :type "range"
-               :min "0"
-               :max (dec (count @layers))
-               :value (min (dec (count @layers)) (or @*layer-idx 0))
+               :type      "range"
+               :min       "0"
+               :max       (dec (count @layers))
+               :value     (min (dec (count @layers)) (or @*layer-idx 0))
                :on-change #(select-layer! (u/input-int-value %))}]
       [:label layer-full-time]]
      [:span {:style {:display "flex" :margin "0 1rem"}}
@@ -142,8 +142,8 @@
        "Next layer"
        :bottom
        [tool-button :next-button #(cycle-layer! 1)]]]
-     [:select {:style ($/combine $dropdown {:width "5rem" :padding "0 0.5rem"})
-               :value (or @*speed 1)
+     [:select {:style     ($/combine $dropdown {:padding "0 0.5rem" :width "5rem"})
+               :value     (or @*speed 1)
                :on-change #(reset! *speed (u/input-int-value %))}
       (map-indexed (fn [id {:keys [opt-label]}]
                      [:option {:key id :value id} opt-label])
@@ -187,13 +187,13 @@
                               {:margin "0 .25rem 4px 0"
                                :fill   ($/color-picker :font-color)})}
       [svg/help]]]]
-   [:select {:style ($dropdown)
-             :value (or val :none)
-             :disabled disabled?
+   [:select {:style     ($dropdown)
+             :value     (or val :none)
+             :disabled  disabled?
              :on-change #(call-back (u/input-keyword %))}
     (map (fn [[key {:keys [opt-label disabled]}]]
-           [:option {:key key
-                     :value key
+           [:option {:key      key
+                     :value    key
                      :disabled (and (some? disabled)
                                     (u/intersects? disabled selected-param-set))}
             opt-label])
@@ -210,10 +210,10 @@
   (let [show? (:show? layer)]
     [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
      [:div {:style {:display "flex"}}
-      [:input {:style {:margin ".25rem .5rem 0 0"}
-               :type "checkbox"
-               :id id
-               :checked show?
+      [:input {:style     {:margin ".25rem .5rem 0 0"}
+               :type      "checkbox"
+               :id        id
+               :checked   show?
                :on-change (fn []
                             (go
                               (let [layer-name (or (:name layer)
@@ -283,8 +283,11 @@
                 param-options)
            [:div {:style {:margin-top ".5rem"}}
             [:label (str "Opacity: " @active-opacity)]
-            [:input {:style {:width "100%"}
-                     :type "range" :min "0" :max "100" :value @active-opacity
+            [:input {:style     {:width "100%"}
+                     :type      "range"
+                     :min       "0"
+                     :max       "100"
+                     :value     @active-opacity
                      :on-change #(do (reset! active-opacity (u/input-int-value %))
                                      (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
            [panel-dropdown
@@ -306,7 +309,7 @@
                              (u/copy-input-clipboard! "share-link")
                              (reset! copied true))]
     [:div {:style (if mobile?
-                    {:display "flex"
+                    {:display         "flex"
                      :justify-content "center"}
                     ($/combine $/flex-row {:width "100%"}))}
      [:input {:auto-focus true
@@ -317,8 +320,8 @@
               :type       (if mobile? "hidden" "text")
               :value      share-link}]
      [:input {:on-click on-click
-              :class (<class $/p-form-button)
-              :style (when-not mobile? {:margin-left "0.9rem"})
+              :class    (<class $/p-form-button)
+              :style    (when-not mobile? {:margin-left "0.9rem"})
               :type     "button"
               :value    (if @copied "Copied!" "Copy URL")}]]))
 
@@ -561,7 +564,7 @@
       close-fn!
       (fn [_ _]
         [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
-         [:div {:style {:flex-grow 1 :margin "0.5rem 1rem" :font-size "0.9rem"}}
+         [:div {:style {:flex-grow 1 :font-size "0.9rem" :margin "0.5rem 1rem"}}
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
            c/match-drop-instructions]
           [labeled-input "Name:" display-name {:placeholder "New Fire"}]
@@ -575,10 +578,10 @@
                          :flex-shrink     0
                          :justify-content "space-between"
                          :margin          "0.75rem 0 2.5rem"}}
-           [:button {:class (<class $/p-themed-button)
+           [:button {:class    (<class $/p-themed-button)
                      :on-click #(js/window.open "/dashboard" "/dashboard")}
             "Dashboard"]
-           [:button {:class  (<class $/p-button :bg-color :yellow :font-color :orange :white)
+           [:button {:class    (<class $/p-button :bg-color :yellow :font-color :orange :white)
                      :disabled (or (= [0 0] @lon-lat) (nil? @md-date) (nil? @md-hour))
                      :on-click #(initiate-match-drop! @display-name @lon-lat @md-date @md-hour refresh-fire-names! user-id)}
             "Submit"]]]])]]
@@ -646,29 +649,35 @@
           (nil? @*camera)
           [:div {:style {:padding "1.2em"}}
            "Click on a camera to view the most recent image. Powered by "
-           [:a {:href "http://www.alertwildfire.org/"
-                :ref "noreferrer noopener"
+           [:a {:href   "http://www.alertwildfire.org/"
+                :ref    "noreferrer noopener"
                 :target "_blank"}
             "Alert Wildfire"] "."]
 
           (some? @image-url)
           [:div
-           [:div {:style {:position "absolute" :top "2rem" :width "100%" :display "flex" :justify-content "center"}}
+           [:div {:style {:display         "flex"
+                          :justify-content "center"
+                          :position        "absolute"
+                          :top             "2rem"
+                          :width           "100%"}}
             [:label (str "Camera: " (:name @*camera))]]
-           [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
+           [:img {:src   "images/awf_logo.png"
+                  :style ($/combine $awf-logo-style)}]
            [tool-tip-wrapper
             "Zoom Map to Camera"
             :right
             [:button {:class    (<class $/p-themed-button)
                       :on-click zoom-camera
-                      :style    {:position "absolute"
-                                 :bottom   "1.25rem"
-                                 :right    "1rem"
-                                 :padding  "2px"}}
-             [:div {:style {:width  "32px"
-                            :height "32px"}}
+                      :style    {:bottom   "1.25rem"
+                                 :padding  "2px"
+                                 :position "absolute"
+                                 :right    "1rem"}}
+             [:div {:style {:height "32px"
+                            :width  "32px"}}
               [svg/binoculars]]]]
-           [:img {:style {:width "100%" :height "auto"} :src @image-url}]]
+           [:img {:src   @image-url
+                  :style {:height "auto" :width "100%"}}]]
 
           :else
           [:div {:style {:padding "1.2em"}}
@@ -742,8 +751,8 @@
      [:div {:style {:display "flex" :flex-direction "row"}}
       [:div {:style {:background-color color
                      :height           "1.5rem"
-                     :width            "1.5rem"
-                     :margin-right     "0.5rem"}}]
+                     :margin-right     "0.5rem"
+                     :width            "1.5rem"}}]
       [:h4 (u/end-with (or (get-in legend-map [band "label"])
                            (if (fn? convert) (convert band) band))
                        units)]]]))
@@ -817,10 +826,10 @@
    :width            "1rem"})
 
 (defn $legend-location [show?]
-  {:top        "16px"
-   :left       (if show? "19rem" "1rem")
-   :transition "all 200ms ease-in"
-   :padding    ".25rem"})
+  {:left       (if show? "19rem" "1rem")
+   :padding    ".25rem"
+   :top        "16px"
+   :transition "all 200ms ease-in"})
 
 (defn legend-box [legend-list reverse? mobile?]
   (reset! show-legend? (not mobile?))
