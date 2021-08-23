@@ -714,11 +714,39 @@
       last-clicked-info]
      [information-div last-clicked-info *layer-idx units info-height]]))
 
+(defn- single-point-info [box-height _ band legend-list units convert]
+  (let [legend-map  (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
+        legend-keys (sort (keys legend-map))
+        color       (or (get-in legend-map [(-> band
+                                                (max (first legend-keys))
+                                                (min (last legend-keys)))
+                                            "color"])
+                        (let [[low high] (u/find-boundary-values band (sort (keys legend-map)))]
+                          (when (and high low)
+                            (u/interp-color (get-in legend-map [low "color"])
+                                            (get-in legend-map [high "color"])
+                                            (/ (- band low) (- high low))))))]
+    [:div {:style {:align-items     "center"
+                   :display         "flex"
+                   :height          box-height
+                   :justify-content "center"
+                   :position        "relative"
+                   :width           "100%"}}
+     [:div {:style {:display "flex" :flex-direction "row"}}
+      [:div {:style {:background-color color
+                     :height           "1.5rem"
+                     :width            "1.5rem"
+                     :margin-right     "0.5rem"}}]
+      [:h4 (u/end-with (or (get-in legend-map [band "label"])
+                           (if (fn? convert) (convert band) band))
+                       units)]]]))
+
 (defn information-tool [get-point-info!
                         parent-box
                         *layer-idx
                         select-layer!
                         units
+                        convert
                         cur-hour
                         legend-list
                         last-clicked-info
@@ -743,7 +771,16 @@
             (nil? last-clicked-info)
             [loading-cover box-height box-width "Loading..."]
 
-            (seq last-clicked-info)
+            (number? last-clicked-info)
+            [single-point-info
+             box-height
+             box-width
+             last-clicked-info
+             legend-list
+             units
+             convert]
+
+            (seq? last-clicked-info)
             [vega-information
              box-height
              box-width
