@@ -90,7 +90,8 @@
   [label id value on-change]
   [:div
    [:label {:for   id
-            :style {:font-size "0.9rem" :font-weight "bold" }} label]
+            :style {:font-size "0.9rem" :font-weight "bold"}}
+    label]
    [:input {:id        id
             :style     {:width "100%"}
             :type      "datetime-local"
@@ -104,7 +105,8 @@
         day-ms   86400000]
     [:div {:style {:display "flex" :flex-direction "column"}}
      [:label {:for   id
-              :style {:font-size "0.9rem" :font-weight "bold" }} label]
+              :style {:font-size "0.9rem" :font-weight "bold"}}
+      label]
      [:select {:id        id
                :on-change #(reset! value (u/input-int-value %))
                :value     @value}
@@ -121,7 +123,8 @@
   (let [timezone (u/current-timezone-shortcode)]
     [:div {:style {:display "flex" :flex-direction "column"}}
      [:label {:for   id
-              :style {:font-size "0.9rem" :font-weight "bold" }} label]
+              :style {:font-size "0.9rem" :font-weight "bold"}}
+      label]
      [:select {:id        id
                :on-change #(reset! value (u/input-int-value %))
                :value     @value}
