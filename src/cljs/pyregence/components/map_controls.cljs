@@ -598,28 +598,27 @@
    :top       "2rem"
    :width     "10%"})
 
-(defn- get-current-image [camera]
+(defn- get-current-image [camera-name]
   (u/call-remote! :post-blob
                   "clj/get-current-image"
-                  {:clj-args (list camera)}))
+                  {:clj-args (list camera-name)}))
 
-(defn- get-current-image-src [camera]
+(defn- get-current-image-src [camera-name]
   (go
-    (->> (get-current-image camera)
+    (->> (get-current-image camera-name)
          (<!)
          (:body)
          (js/URL.createObjectURL))))
 
-(defn- refresh-camera-image! [image-url camera-name]
-  (go (reset! image-url (<! (get-current-image-src camera-name)))))
+(defn- refresh-camera-image! [image-url *camera]
+  (go (reset! image-url (<! (get-current-image-src (:name *camera))))))
 
 (defn camera-tool [cameras parent-box mobile? terrain? close-fn!]
-  (r/with-let [camera      (r/atom nil)
-               camera-name (r/atom nil)
+  (r/with-let [*camera     (r/atom nil)
                image-url   (r/atom nil)
                exit-ch     (chan)
                zoom-camera (fn []
-                             (let [{:keys [longitude latitude tilt pan]} @camera]
+                             (let [{:keys [longitude latitude tilt pan]} @*camera]
                                (reset! terrain? true)
                                (h/show-help! :terrain mobile?)
                                (mb/toggle-dimensions! true)
@@ -629,13 +628,11 @@
                                             :pitch (min (+ 90 tilt) 85)}) 400))
                on-click    (fn [features]
                              (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
-                               (let [new-camera-name (:name new-camera)]
-                                 (when (some? @camera-name) (put! exit-ch :exit))
-                                 (reset! camera new-camera)
-                                 (reset! camera-name new-camera-name)
-                                 (reset! image-url nil)
-                                 (refresh-camera-image! image-url @camera-name)
-                                 (u/refresh-on-interval! #(refresh-camera-image! image-url @camera-name) 60000 exit-ch))))]
+                               (when (some? @*camera) (put! exit-ch :exit))
+                               (reset! *camera new-camera)
+                               (reset! image-url nil)
+                               (refresh-camera-image! image-url @*camera)
+                               (u/refresh-on-interval! #(refresh-camera-image! image-url @*camera) 60000 exit-ch)))]
     (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
     (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)
     [:div#wildfire-camera-tool
@@ -647,7 +644,7 @@
       close-fn!
       (fn [_ _]
         (cond
-          (nil? @camera-name)
+          (nil? @*camera)
           [:div {:style {:padding "1.2em"}}
            "Click on a camera to view the most recent image. Powered by "
            [:a {:href "http://www.alertwildfire.org/"
@@ -658,7 +655,7 @@
           (some? @image-url)
           [:div
            [:div {:style {:position "absolute" :top "2rem" :width "100%" :display "flex" :justify-content "center"}}
-            [:label (str "Camera: " @camera-name)]]
+            [:label (str "Camera: " (:name @*camera))]]
            [:img {:src "images/awf_logo.png" :style ($/combine $awf-logo-style)}]
            [tool-tip-wrapper
             "Zoom Map to Camera"
@@ -676,7 +673,7 @@
 
           :else
           [:div {:style {:padding "1.2em"}}
-           (str "Loading camera " @camera-name) "..."]))]]
+           (str "Loading camera " (:name @*camera) "...")]))]]
     (finally
       (put! exit-ch :exit)
       (mb/remove-layer! "fire-cameras")
