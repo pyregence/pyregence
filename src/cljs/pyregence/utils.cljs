@@ -461,23 +461,11 @@
     ""))
 
 (defn find-boundary-values
-  "Returns the two values from a sorted collection that bound v.
-  When v is less than the first value, returns `[nil first]`,
-  and if v is greater than the last value, returns `[last nil]`"
+  "Returns the two values from a sorted collection that bound v."
   [v coll]
-  (let [f (first coll)
-        l (last coll)]
-    (cond
-      (< v f)
-      [nil f]
-
-      (> v l)
-      [l nil]
-
-      :else
-      (loop [coll coll]
-        (let [s (second coll)]
-          (and s
-               (if (< v s)
-                 (take 2 coll)
-                 (recur (next coll)))))))))
+  (loop [coll coll]
+    (let [s (second coll)]
+      (and s
+           (if (< v s)
+             (take 2 coll)
+             (recur (next coll)))))))

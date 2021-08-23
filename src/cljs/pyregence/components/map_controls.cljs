@@ -716,20 +716,17 @@
      [information-div last-clicked-info *layer-idx units info-height]]))
 
 (defn- single-point-info [box-height _ band legend-list units convert]
-  (let [legend-map (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
-        color      (or (get-in legend-map [band "color"])
-                       (let [[low high] (u/find-boundary-values band (sort (keys legend-map)))]
-                         (cond
-                           (and high low)
-                           (u/interp-color (get-in legend-map [low "color"])
-                                           (get-in legend-map [high "color"])
-                                           (/ (- band low) (- high low)))
-
-                           (not (nil? low))
-                           (get-in legend-map [low "color"])
-
-                           (not (nil? high))
-                           (get-in legend-map [high "color"]))))]
+  (let [legend-map  (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
+        legend-keys (sort (keys legend-map))
+        color       (or (get-in legend-map [(-> band
+                                                (max (first legend-keys))
+                                                (min (last legend-keys)))
+                                            "color"])
+                        (let [[low high] (u/find-boundary-values band (sort (keys legend-map)))]
+                          (when (and high low)
+                            (u/interp-color (get-in legend-map [low "color"])
+                                            (get-in legend-map [high "color"])
+                                            (/ (- band low) (- high low))))))]
     [:div {:style {:align-items     "center"
                    :display         "flex"
                    :height          box-height
