@@ -226,15 +226,17 @@
   (r/create-class
    {:component-did-mount
     (fn []
-      (let [status (fn [{:keys [id]}] (get-in *params [:underlays id :show?]))
-            f      (fn [{:keys [filter-set]}] (get-layer-name filter-set identity))]
-        (go-loop [sorted-underlays (reverse (sort-by :z-index (map (fn [[id v]] (assoc v :id id)) underlays)))]
-          (let [underlayer (first sorted-underlays)
-                tail       (rest sorted-underlays)
-                layer-name (<! (f underlayer))]
-            (mb/create-wms-layer! layer-name layer-name (status underlayer))
-            (when-not (empty? tail)
-              (recur tail))))))
+      (go-loop [sorted-underlays (->> underlays
+                                      (map (fn [[id v]] (assoc v :id id)))
+                                      (sort-by :z-index)
+                                      (reverse))]
+        (let [{:keys [id filter-set]} (first sorted-underlays)
+              layer-name (<! (get-layer-name filter-set identity))]
+          (mb/create-wms-layer! layer-name
+                                layer-name
+                                (get-in *params [:underlays id :show?]))
+          (when-let [tail (seq (rest sorted-underlays))]
+            (recur tail)))))
 
     :display-name "optional-layers"
 
