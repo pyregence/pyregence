@@ -66,7 +66,7 @@
     [:<>
      [toast-message]
      [:div {:style ($/combine ($/disabled-group @pending?)
-                    {:display "flex" :justify-content "center" :margin "5rem"})}
+                              {:display "flex" :justify-content "center" :margin "5rem"})}
       (if @forgot?
         [simple-form
          "Request New Password"
