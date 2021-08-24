@@ -1,10 +1,10 @@
 (ns pyregence.database
-  (:require [clojure.data.json :as json]
-            [clojure.string :as str]
-            [pyregence.config  :refer [get-config]]
-            [pyregence.logging :refer [log-str]]
-            [pyregence.views   :refer [data-response]]
-            [next.jdbc :as jdbc]
+  (:require [clojure.data.json    :as json]
+            [clojure.string       :as str]
+            [pyregence.config     :refer [get-config]]
+            [pyregence.logging    :refer [log-str]]
+            [pyregence.views      :refer [data-response]]
+            [next.jdbc            :as jdbc]
             [next.jdbc.result-set :as rs]))
 
 ;;; Helper Functions
