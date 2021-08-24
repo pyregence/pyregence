@@ -39,18 +39,18 @@
      :font-hover-color (if @light?
                          (color-picker :white)
                          (color-picker :black))
-     :yellow           (str "rgba(249, 175, 59, "  alpha ")")
-     :blue             (str "rgba(0, 0, 175, "     alpha ")")
      :black            (str "rgba(0, 0, 0, "       alpha ")")
-     :brown            (str "rgba(96, 65, 31, "    alpha ")")
+     :blue             (str "rgba(0, 0, 175, "     alpha ")")
      :box-tan          (str "rgba(249, 248, 242, " alpha ")")
+     :brown            (str "rgba(96, 65, 31, "    alpha ")")
+     :dark-gray        (str "rgba(50, 50, 50, "    alpha ")")
      :dark-green       (str "rgba(0, 100, 0, "     alpha ")")
      :light-gray       (str "rgba(230, 230, 230, " alpha ")")
-     :dark-gray        (str "rgba(50, 50, 50, "    alpha ")")
      :orange           (str "rgba(249, 104, 65, "  alpha ")")
      :red              (str "rgba(200, 0, 0, "     alpha ")")
-     :white            (str "rgba(255, 255, 255, " alpha ")")
      :transparent      (str "rgba(0, 0, 0, 0)")
+     :white            (str "rgba(255, 255, 255, " alpha ")")
+     :yellow           (str "rgba(249, 175, 59, "  alpha ")")
      color)))
 
 (defn to-merge? [modifiers key return]
@@ -62,17 +62,17 @@
 
 (defglobal general
   [:* {:box-sizing "border-box"
-       :padding    "0px"
-       :margin     "0px"}]
+       :margin     "0px"
+       :padding    "0px"}]
 
   [:label {:font-size     "1rem"
            :font-weight   "bold"
            :margin-bottom "0"}])
 
 (defglobal body-and-content-divs
-  [:body {:background-color "white"
-          :position         "relative"
-          :height           "100vh"}]
+  [:body {:background-color (color-picker :white)
+          :height           "100vh"
+          :position         "relative"}]
   [:#app {:height "100%"}]
   [:#near-term-forecast {:display        "flex"
                          :flex-direction "column"
@@ -91,7 +91,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn p-bordered-input [& modifiers]
-  (let [base-style     {:background-color "white"
+  (let [base-style     {:background-color (color-picker :white)
                         :border           "1px solid"
                         :border-color     (color-picker :brown)
                         :border-radius    "2px"
@@ -115,7 +115,7 @@
   [& [active?]]
   (let [highlight-color (color-picker :border-color 0.2)]
     (with-meta
-      {:background-color (if active? highlight-color "transparent")
+      {:background-color (if active? highlight-color (color-picker :transparent))
        :border-radius    "4px"}
       {:pseudo {:hover {:background-color highlight-color}}})))
 
@@ -144,10 +144,10 @@
     (with-meta
       base-style
       {:pseudo {:disabled disabled-style
+                :focus    {:outline "none"}
                 :hover    {:background-color (color-picker bg-color-hover)
                            :color            (color-picker color-hover)
-                           :fill             (color-picker color-hover)}
-                :focus    {:outline "none"}}})))
+                           :fill             (color-picker color-hover)}}})))
 
 (defn p-form-button
   "Styling for form buttons (e.g. the Refresh button on the Match Drop Dashboard)"
@@ -285,17 +285,17 @@
     {}))
 
 (defn root []
-  {:display        "flex"
-   :flex-direction "column"
-   :padding        "0 1rem"
-   :align-items    "center"
+  {:align-items    "center"
+   :display        "flex"
    :flex           "1 1 0"
-   :overflow       "auto"})
+   :flex-direction "column"
+   :overflow       "auto"
+   :padding        "0 1rem"})
 
 (defn modal []
   {:background-color "rgba(0,0,0,0.4)"
-   :left             "0"
    :height           "100%"
+   :left             "0"
    :position         "absolute"
    :top              "0"
    :width            "100%"
@@ -303,15 +303,15 @@
 
 (defn outline [color]
   (let [rgb (color-picker color)]
-    {:background   "white"
+    {:background   (color-picker :white)
      :border-color rgb
      :border-style "solid"
      :color        rgb}))
 
 (defn text-ellipsis []
-  {:white-space   "nowrap"
-   :overflow      "hidden"
-   :text-overflow "ellipsis"})
+  {:overflow      "hidden"
+   :text-overflow "ellipsis"
+   :white-space   "nowrap"})
 
 (defn fixed-size [size]
   {:float      "left"
@@ -335,17 +335,17 @@
   {:background-color (color-picker :white)
    :border           light-border
    :border-radius    "5px"
-   :overflow         "hidden"
    :display          "flex"
    :flex-direction   "column"
    :height           "100%"
+   :overflow         "hidden"
    :padding          "0"
    :width            "100%"})
 
 (defn action-header []
-  {:background-color (color-picker :yellow)
+  {:align-items      "center"
+   :background-color (color-picker :yellow)
    :border-bottom    light-border
-   :align-items      "center"
    :display          "flex"
    :flex-direction   "row"
    :flex-wrap        "nowrap"
