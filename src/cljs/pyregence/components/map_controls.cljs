@@ -319,11 +319,11 @@
               :read-only  true
               :type       (if mobile? "hidden" "text")
               :value      share-link}]
-     [:input {:on-click on-click
-              :class    (<class $/p-form-button)
+     [:input {:class    (<class $/p-form-button)
               :style    (when-not mobile? {:margin-left "0.9rem"})
               :type     "button"
-              :value    (if @copied "Copied!" "Copy URL")}]]))
+              :value    (if @copied "Copied!" "Copy URL")
+              :on-click on-click}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Red Flag Warning
