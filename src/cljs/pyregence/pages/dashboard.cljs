@@ -1,13 +1,13 @@
 (ns pyregence.pages.dashboard
-  (:require [reagent.core :as r]
-            [herb.core    :refer [<class]]
-            [cljs.reader  :as edn]
+  (:require [reagent.core       :as r]
+            [herb.core          :refer [<class]]
+            [cljs.reader        :as edn]
             [clojure.core.async :refer [go <!]]
             [clojure.string     :as string]
+            [pyregence.utils    :as u]
+            [pyregence.styles   :as $]
             [pyregence.components.messaging :refer [set-message-box-content!
-                                                    message-box-modal]]
-            [pyregence.utils                :as u]
-            [pyregence.styles               :as $]))
+                                                    message-box-modal]]))
 
 ;; State
 
@@ -103,7 +103,7 @@
        [:h3 {:style {:margin-bottom "0"
                      :margin-right  "1rem"}}
         "Match Drop Dashboard"]
-       [:button {:class (<class $/p-form-button)
+       [:button {:class    (<class $/p-form-button)
                  :on-click #(user-match-drops user-id)}
         "Refresh"]]
       [:div {:style {:padding "1rem"

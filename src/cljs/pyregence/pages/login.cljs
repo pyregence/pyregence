@@ -1,8 +1,8 @@
 (ns pyregence.pages.login
-  (:require [reagent.core :as r]
+  (:require [reagent.core       :as r]
             [clojure.core.async :refer [go <! timeout]]
-            [pyregence.utils  :as u]
-            [pyregence.styles :as $]
+            [pyregence.utils    :as u]
+            [pyregence.styles   :as $]
             [pyregence.components.common    :refer [simple-form]]
             [pyregence.components.messaging :refer [toast-message!
                                                     toast-message
@@ -55,8 +55,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn reset-link []
-  [:a {:style ($/align :block :left)
-       :href "#"
+  [:a {:style    ($/align :block :left)
+       :href     "#"
        :on-click #(reset! forgot? true)} "Forgot Password?"])
 
 (defn root-component [_]
@@ -64,8 +64,9 @@
   (fn [_]
     [:<>
      [toast-message]
-     [:div {:style ($/combine ($/disabled-group @pending?)
-                              {:display "flex" :justify-content "center" :margin "5rem"})}
+     [:div {:style ($/combine
+                    ($/disabled-group @pending?)
+                    {:display "flex" :justify-content "center" :margin "5rem"})}
       (if @forgot?
         [simple-form
          "Request New Password"
