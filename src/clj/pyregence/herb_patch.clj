@@ -1,6 +1,6 @@
 (ns pyregence.herb-patch
   (:require [clojure.spec.alpha :as s]
-            [herb.core :as herb]))
+            [herb.core          :as herb]))
 
 (s/def ::style (s/spec
                 (s/cat :identifier   (s/+ (s/alt :kw keyword? :str string?))

@@ -1,8 +1,8 @@
 (ns pyregence.build-db
-  (:require [clojure.java.io :as io]
+  (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
-            [clojure.string :as str]
-            [pyregence.config :refer [get-config]]))
+            [clojure.string     :as str]
+            [pyregence.config   :refer [get-config]]))
 
 (def path-env (System/getenv "PATH"))
 

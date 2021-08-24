@@ -1,8 +1,8 @@
 (ns pyregence.sockets
-  (:import (java.io BufferedReader)
+  (:import (java.io  BufferedReader)
            (java.net Socket ServerSocket))
-  (:require [clojure.java.io :as io]
-            [clojure.string  :as s]
+  (:require [clojure.java.io   :as io]
+            [clojure.string    :as s]
             [pyregence.logging :refer [log log-str]]))
 
 ;;=================================

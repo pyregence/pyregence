@@ -1,12 +1,12 @@
 (ns pyregence.views
+  (:import java.io.ByteArrayOutputStream)
   (:require [clojure.edn       :as edn]
             [clojure.string    :as str]
             [clojure.data.json :as json]
             [cognitect.transit :as transit]
-            [hiccup.page :refer [html5 include-css include-js]]
+            [hiccup.page            :refer [html5 include-css include-js]]
             [pl.danieljanus.tagsoup :refer [parse]]
-            [pyregence.config :refer [get-config]])
-  (:import java.io.ByteArrayOutputStream))
+            [pyregence.config       :refer [get-config]]))
 
 (defn- find-app-js []
   (as-> (slurp "target/public/cljs/manifest.edn") app
@@ -33,26 +33,26 @@
 
 (defn header [server-name]
   (let [pyrecast? (str/ends-with? server-name "pyrecast.org")]
-    [:div {:id "header"
-           :style {:display         "flex"
-                   :justify-content "space-between"
-                   :align-items     "center"}}
-      [:a {:rel "home"
-           :href (if pyrecast? "/" "https://pyregence.org")
+    [:div {:id    "header"
+           :style {:align-items     "center"
+                   :display         "flex"
+                   :justify-content "space-between"}}
+      [:a {:rel   "home"
+           :href  (if pyrecast? "/" "https://pyregence.org")
            :title "Pyregence"
-           :style {:margin-left   "10%"
-                   :margin-top    "0.3125rem"
-                   :margin-bottom "0.3125rem"}}
-       [:img {:src (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
-              :alt "Pyregence Logo"
+           :style {:margin-bottom "0.3125rem"
+                   :margin-left   "10%"
+                   :margin-top    "0.3125rem"}}
+       [:img {:src   (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
+              :alt   "Pyregence Logo"
               :style {:height "40px"
                       :width  "auto"}}]]
       (when pyrecast?
-        [:a {:href "https://pyregence.org"
+        [:a {:href   "https://pyregence.org"
              :target "pyregence"
-             :style {:margin-right "5%"}}
-         [:img {:src "/images/powered-by-pyregence.svg"
-                :alt "Powered by Pyregence Logo"
+             :style  {:margin-right "5%"}}
+         [:img {:src   "/images/powered-by-pyregence.svg"
+                :alt   "Powered by Pyregence Logo"
                 :style {:height "1.25rem"
                         :width  "auto"}}]])]))
 
@@ -64,7 +64,7 @@
                [:head
                 (head-meta-css)
                 [:title "Wildfire Forecasts"]
-                [:meta {:name "description"
+                [:meta {:name    "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
                 (include-css "/css/mapbox-gl-v2.3.1.css")
                 (include-js "/js/mapbox-gl-v2.3.1.js" (find-app-js))]
@@ -119,8 +119,8 @@
   ([body]
    (data-response body {}))
   ([body {:keys [status type session]
-          :or {status 200 type :edn}
-          :as params}]
+          :or   {status 200 type :edn}
+          :as   params}]
    (merge (when (contains? params :session) {:session session})
           {:status  status
            :headers {"Content-Type" (condp = type
