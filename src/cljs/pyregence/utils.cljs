@@ -1,7 +1,7 @@
 (ns pyregence.utils
-  (:require [cljs.reader :as edn]
-            [clojure.string :as str]
-            [clojure.set    :as sets]
+  (:require [cljs.reader        :as edn]
+            [clojure.string     :as str]
+            [clojure.set        :as sets]
             [clojure.core.async :refer [alts! go <! timeout go-loop]]
             [cljs.core.async.interop :refer-macros [<p!]]))
 
@@ -140,7 +140,7 @@
                             (map (fn [[k v]] (str (pr-str k) "=" (pr-str v))))
                             (str/join "&")
                             (js/encodeURIComponent))
-          fetch-params {:method "get"
+          fetch-params {:method  "get"
                         :headers {"Accept" "application/edn"
                                   "Content-Type" "application/edn"}}
           edn-string   (<! (fetch-and-process (str url
@@ -153,16 +153,16 @@
 ;; Combines status and error message into return value
 (defmethod call-remote! :post [_ url data]
   (go
-    (let [fetch-params {:method "post"
+    (let [fetch-params {:method  "post"
                         :headers (merge {"Accept" "application/edn"}
                                         (when-not (= (type data) js/FormData)
                                           {"Content-Type" "application/edn"}))
-                        :body (cond
-                                (= js/FormData (type data)) data
-                                data                        (pr-str data)
-                                :else                       nil)}
-          response      (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
-                                   fetch-params))]
+                        :body    (cond
+                                   (= js/FormData (type data)) data
+                                   data                        (pr-str data)
+                                   :else                       nil)}
+          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+                                  fetch-params))]
       (if response
         {:success (.-ok response)
          :status  (.-status response)
@@ -173,16 +173,16 @@
 
 (defmethod call-remote! :post-text [_ url data]
   (go
-    (let [fetch-params {:method "post"
+    (let [fetch-params {:method  "post"
                         :headers (merge {"Accept" "application/transit+json"}
                                         (when-not (= (type data) js/FormData)
                                           {"Content-Type" "application/edn"}))
-                        :body (cond
-                                (= js/FormData (type data)) data
-                                data                        (pr-str data)
-                                :else                       nil)}
-          response      (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
-                                   fetch-params))]
+                        :body    (cond
+                                   (= js/FormData (type data)) data
+                                   data                        (pr-str data)
+                                   :else                       nil)}
+          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+                                  fetch-params))]
       (if response
         {:success (.-ok response)
          :status  (.-status response)
@@ -193,16 +193,16 @@
 
 (defmethod call-remote! :post-blob [_ url data]
   (go
-    (let [fetch-params {:method "post"
+    (let [fetch-params {:method  "post"
                         :headers (merge {"Accept" "application/transit+json"}
                                         (when-not (= (type data) js/FormData)
                                           {"Content-Type" "application/edn"}))
-                        :body (cond
-                                (= js/FormData (type data)) data
-                                data                        (pr-str data)
-                                :else                       nil)}
-          response      (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
-                                   fetch-params))]
+                        :body    (cond
+                                   (= js/FormData (type data)) data
+                                   data                        (pr-str data)
+                                   :else                       nil)}
+          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+                                  fetch-params))]
       (if response
         {:success (.-ok response)
          :status  (.-status response)
@@ -290,8 +290,8 @@
   (js-date->iso-string (js-date-from-string date-str) show-utc?))
 
 (defn ms->hhmmss [ms]
-  (let [sec (/ ms 1000)
-        hours (js/Math.round (/ sec 3600))
+  (let [sec     (/ ms 1000)
+        hours   (js/Math.round (/ sec 3600))
         minutes (js/Math.round (/ (mod sec 3600) 60))
         seconds (js/Math.round (mod (mod sec 3600) 60))]
     (str (pad-zero hours)
@@ -461,8 +461,8 @@
   "Converts degrees to a direction."
   [degrees]
   (condp >= degrees
-    22.5 "North"
-    67.5 "Northeast"
+    22.5  "North"
+    67.5  "Northeast"
     112.5 "East"
     157.5 "Southeast"
     202.5 "South"
