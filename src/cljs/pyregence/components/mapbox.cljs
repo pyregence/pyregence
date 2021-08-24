@@ -1,8 +1,8 @@
 (ns pyregence.components.mapbox
-  (:require [goog.dom           :as dom]
-            [reagent.core       :as r]
-            [reagent.dom        :refer [render]]
-            [clojure.core.async :refer [go <!]]
+  (:require [goog.dom            :as dom]
+            [reagent.core        :as r]
+            [reagent.dom         :refer [render]]
+            [clojure.core.async  :refer [go <!]]
             [pyregence.config    :as c]
             [pyregence.utils     :as u]
             [pyregence.geo-utils :as g]))
@@ -616,7 +616,7 @@
         (swap! custom-layers conj id)
         (update-style! style
                        :new-sources new-source
-                       :layers final-layers)))))
+                       :layers      final-layers)))))
 
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
@@ -627,9 +627,9 @@
                      :source id
                      :type   "symbol"
                      :layout {:icon-image              "video-icon"
-                              :icon-size               0.5
                               :icon-rotate             ["-" ["get" "pan"] 90]
-                              :icon-rotation-alignment "map"}
+                              :icon-rotation-alignment "map"
+                              :icon-size               0.5}
                      :paint  {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
@@ -652,18 +652,18 @@
   "Adds red flag warning layer to the map."
   [id layer-name]
   (let [new-source {id (mvt-source layer-name)}
-        new-layers [{:id     id
-                     :source id
+        new-layers [{:id           id
+                     :source       id
                      :source-layer "fire-history"
-                     :type   "fill"
-                     :paint  {:fill-color         ["step" ["get" "Decade"]
-                                                   "#cccccc"  ; Default
-                                                   1990 "#ffffb2"
-                                                   2000 "#fecc5c"
-                                                   2010 "#fd8d3c"
-                                                   2020 "#f03b20"]
-                              :fill-outline-color "#ff0000"
-                              :fill-opacity 0.3}}]]
+                     :type         "fill"
+                     :paint        {:fill-color         ["step" ["get" "Decade"]
+                                                         "#cccccc"  ; Default
+                                                         1990 "#ffffb2"
+                                                         2000 "#fecc5c"
+                                                         2010 "#fd8d3c"
+                                                         2020 "#f03b20"]
+                                    :fill-opacity       0.3
+                                    :fill-outline-color "#ff0000"}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn remove-layer!

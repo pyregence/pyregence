@@ -21,8 +21,8 @@
    ($/fixed-size "1.5rem")
    {:bottom   "0"
     :cursor   "sw-resize"
-    :position "absolute"
     :left     "0"
+    :position "absolute"
     :z-index  "3"}))
 
 (defn $sw-drag-icon []
@@ -37,9 +37,9 @@
 
 (defn $close-button [height]
   {:fill     ($/color-picker :font-color)
-   :right    ".25rem"
    :height   height
    :position "absolute"
+   :right    ".25rem"
    :width    height})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -62,10 +62,10 @@
                        (reset! box-height (- mouse-y p-top 12)))))
        :on-drag-start #(reset! drag-started? true)}]
      [:div {:style ($sw-drag-icon)}
-      [:span {:style {:height       "100%"
+      [:span {:style {:border-right (str "1px solid " ($/color-picker :border-color))
                       :display      "flex"
-                      :margin-right "2px"
-                      :border-right (str "1px solid " ($/color-picker :border-color))}}]]]))
+                      :height       "100%"
+                      :margin-right "2px"}}]]]))
 
 (defn title-div [title title-height on-click]
   (r/create-class
@@ -81,8 +81,8 @@
     (fn [_]
       [:div {:style {:border-bottom (str "1px solid " ($/color-picker :border-color)) :width "100%"}}
        [:label {:style {:margin-left ".5rem" :margin-top ".25rem"}} title]
-       [:span {:class (<class $/p-add-hover)
-               :style ($close-button @title-height)
+       [:span {:class    (<class $/p-add-hover)
+               :style    ($close-button @title-height)
                :on-click on-click}
         [close]]])}))
 

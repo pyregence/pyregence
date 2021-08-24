@@ -1,9 +1,9 @@
 (ns pyregence.components.messaging
-  (:require [herb.core :refer [<class]]
-            [reagent.core :as r]
+  (:require [herb.core          :refer [<class]]
+            [reagent.core       :as r]
             [clojure.core.async :refer [chan go >! <! timeout]]
-            [clojure.string :as str]
-            [pyregence.styles :as $]))
+            [clojure.string     :as str]
+            [pyregence.styles   :as $]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -70,12 +70,12 @@
 
 (defn $alert-transition [show-full?]
   (if show-full?
-    {:transition "opacity 500ms ease-in"
-     :opacity    "1"
-     :top        "1rem"}
-    {:transition "opacity 500ms ease-out"
-     :opacity    "0"
-     :top        "-100rem"}))
+    {:opacity    "1"
+     :top        "1rem"
+     :transition "opacity 500ms ease-in"}
+    {:opacity    "0"
+     :top        "-100rem"
+     :transition "opacity 500ms ease-out"}))
 
 (defn $p-alert-close []
   (with-meta
@@ -86,9 +86,9 @@
     {:pseudo {:hover {:background-color ($/color-picker :black 0.15)}}}))
 
 (defn $message-box []
-  {:min-width "35%"
+  {:margin    "15% auto"
    :max-width "55%"
-   :margin    "15% auto"
+   :min-width "35%"
    :width     "fit-content"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -118,15 +118,15 @@
         [:div#toast-message {:style ($/combine $alert-box [$alert-transition message?])}
          [:span {:style ($/padding ".5rem")}
           (show-line-break @message)]
-         [:span {:class (<class $p-alert-close)
+         [:span {:class    (<class $p-alert-close)
                  :on-click #(reset! toast-message-text nil)}
           "\u274C"]]))))
 
 (defn button [label & callback]
-  [:input {:class (<class $/p-form-button)
-           :style ($/margin "1rem" :h)
-           :type "button"
-           :value label
+  [:input {:class    (<class $/p-form-button)
+           :style    ($/margin "1rem" :h)
+           :type     "button"
+           :value    label
            :on-click (when (seq callback) (first callback))}])
 
 (defn message-box-modal []
