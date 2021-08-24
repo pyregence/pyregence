@@ -57,15 +57,15 @@
 (defn reset-link []
   [:a {:style    ($/align :block :left)
        :href     "#"
-       :on-click #(reset! forgot? true)} "Forgot Password?"])
+       :on-click #(reset! forgot? true)}
+   "Forgot Password?"])
 
 (defn root-component [_]
   (process-toast-messages!)
   (fn [_]
     [:<>
      [toast-message]
-     [:div {:style ($/combine
-                    ($/disabled-group @pending?)
+     [:div {:style ($/combine ($/disabled-group @pending?)
                     {:display "flex" :justify-content "center" :margin "5rem"})}
       (if @forgot?
         [simple-form
