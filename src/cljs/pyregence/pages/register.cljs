@@ -1,8 +1,8 @@
 (ns pyregence.pages.register
-  (:require [reagent.core :as r]
+  (:require [reagent.core       :as r]
             [clojure.core.async :refer [go <! timeout]]
-            [pyregence.utils  :as u]
-            [pyregence.styles :as $]
+            [pyregence.utils    :as u]
+            [pyregence.styles   :as $]
             [pyregence.components.common    :refer [simple-form]]
             [pyregence.components.messaging :refer [toast-message!
                                                     toast-message

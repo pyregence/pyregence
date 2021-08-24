@@ -1,7 +1,7 @@
 (ns pyregence.pages.verify-email
-  (:require [reagent.core :as r]
+  (:require [reagent.core       :as r]
             [clojure.core.async :refer [go <! timeout]]
-            [pyregence.utils :as u]))
+            [pyregence.utils    :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State

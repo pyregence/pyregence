@@ -1,6 +1,6 @@
 (ns ^:figwheel-hooks pyregence.client
-  (:require [goog.dom :as dom]
-            [reagent.dom :refer [render]]
+  (:require [goog.dom                           :as dom]
+            [reagent.dom                        :refer [render]]
             [pyregence.config                   :as c]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.dashboard          :as dashboard]
