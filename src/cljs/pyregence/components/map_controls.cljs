@@ -313,7 +313,7 @@
                            :display         "flex"
                            :justify-content "center"
                            :padding         "0.5em"}}
-             [:a {:href   "https://pyregence.org/wildfire-forecasting/fire-forecasting-data/"
+             [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
                   :target "_blank"
                   :style  {:color       ($/color-picker :white)
                            :font-family "Avenir"
