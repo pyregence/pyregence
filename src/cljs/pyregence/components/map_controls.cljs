@@ -316,13 +316,17 @@
                     {:display         "flex"
                      :justify-content "center"}
                     ($/combine $/flex-row {:width "100%"}))}
-     [:input {:auto-focus true
-              :on-click   on-click
-              :id         "share-link"
-              :style      {:width "100%"}
+     [:input {:id         "share-link"
+              :style      (if mobile?
+                            {:position "absolute"
+                             :width    "1rem"
+                             :z-index  "-1"}
+                            {:width "100%"})
+              :auto-focus true
               :read-only  true
-              :type       (if mobile? "hidden" "text")
-              :value      share-link}]
+              :type       "text"
+              :value      share-link
+              :on-click   on-click}]
      [:input {:class    (<class $/p-form-button)
               :style    (when-not mobile? {:margin-left "0.9rem"})
               :type     "button"
