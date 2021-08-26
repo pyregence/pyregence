@@ -559,14 +559,15 @@
            quiet enjoyment, accuracy, integration, merchantability or fitness for any particular purpose,
            and all warranties arising from any course of dealing, course of performance, or usage of trade."]
          [:label {:style {:margin "1rem .25rem 0 0"}}
-          "Please see our"
+          "Please see our "
           [:a {:style {:margin-right ".25rem"}
                :href "/terms-of-use"
                :target "_blank"} "Terms of Use"]
           "and"
           [:a {:style {:margin-left ".25rem"}
                :href "/privacy-policy"
-               :target "_blank"} "Privacy Policy"]]]
+               :target "_blank"} "Privacy Policy"]
+          "."]]
         [:div {:style ($/combine $/flex-row {:justify-content "center"})}
          [:span
           [:label {:class (<class $/p-form-button)
