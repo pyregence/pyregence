@@ -306,6 +306,13 @@
 ;; Share Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn $share-link [mobile?]
+  (if mobile?
+    {:position "absolute"
+     :width    "1rem"
+     :z-index  "-1"}
+    {:width "100%"}))
+
 (defn share-inner-modal [create-share-link mobile?]
   (r/with-let [copied     (r/atom false)
                share-link (create-share-link)
@@ -317,11 +324,7 @@
                      :justify-content "center"}
                     ($/combine $/flex-row {:width "100%"}))}
      [:input {:id         "share-link"
-              :style      (if mobile?
-                            {:position "absolute"
-                             :width    "1rem"
-                             :z-index  "-1"}
-                            {:width "100%"})
+              :style      ($share-link mobile?)
               :auto-focus true
               :read-only  true
               :type       "text"
