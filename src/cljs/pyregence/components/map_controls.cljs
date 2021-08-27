@@ -646,7 +646,7 @@
                                (reset! image-url nil)
                                (refresh-camera-image! image-url @*camera)
                                (u/refresh-on-interval! #(refresh-camera-image! image-url @*camera) 60000 exit-ch)))
-               ;; TODO, this form is sloppy.  Maybe return some value to store?
+               ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _           (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
                _           (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
     [:div#wildfire-camera-tool

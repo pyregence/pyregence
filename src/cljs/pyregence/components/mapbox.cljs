@@ -571,7 +571,6 @@
       (-> @the-map (.setStyle new-style)))))
 
 (defn- hide-selectable-layers [layers]
-  (println @custom-layers)
   (map (u/call-when #(-> % (get "id") (is-selectable?))
                     #(set-visible % false))
        layers))
@@ -609,6 +608,8 @@
   "Adds WMS layer to the map."
   [id source visible?]
   (when id
+    ;; FIXME, This is different than wanting to hide the layers as you switch forecast type.
+    ;;        Check if layer exists in the entire set of data.
     (if (is-selectable? id)
       (set-visible-by-title! id visible?)
       (let [[new-source new-layers] (build-wms id source 1.0 visible?)
@@ -620,6 +621,9 @@
                                          (first))
             [before after]          (split-at zero-idx layers)
             final-layers            (vec (concat before new-layers after))]
+        ;; FIXME, add meta data to layers instead of storing the layers here.
+        ;;        For example, the underlay layers need to be hidden when changing forecast types, but not change opacity.
+        (swap! custom-layers conj id)
         (update-style! style
                        :new-sources new-source
                        :layers      final-layers)))))
