@@ -26,7 +26,7 @@
 (defonce custom-layers (atom #{}))
 
 (def ^:private the-marker    (r/atom nil))
-(def ^:private popups        (atom {}))
+(def ^:private the-popup     (r/atom nil))
 (def ^:private events        (atom {}))
 (def ^:private feature-state (atom {}))
 
@@ -225,24 +225,28 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn clear-popup!
-  "Remove a specific popup from the map."
-  [popup-type]
-  (when (some? (popup-type @popups))
-    (.remove (popup-type @popups))
-    (swap! popups assoc popup-type nil)))
+  "Remove a popup from the map."
+  ([]
+   (when (some? @the-popup)
+     (.remove @the-popup)
+     (reset! the-popup nil)))
+  ([popup-type]
+   (when (and (some? @the-popup) (= popup-type (.. @the-popup -options -type)))
+     (.remove @the-popup)
+     (reset! the-popup nil))))
 
 (defn init-popup!
   "Creates a popup at `[lng lat]`, with `body` as the contents. `body` can
    be either HTML string a hiccup style vector."
   [popup-type [lng lat] body {:keys [classname width] :or {width "200px" classname ""}}]
-  (clear-popup! popup-type)
-  (let [popup (Popup. #js {:className classname :maxWidth width})]
+  (clear-popup!)
+  (let [popup (Popup. #js {:className classname :maxWidth width :type popup-type})]
     (doto popup
       (.setLngLat #js [lng lat])
       (.setHTML "<div id='mb-popup'></div>")
       (.addTo @the-map))
     (render body (dom/getElement "mb-popup"))
-    (swap! popups assoc popup-type popup)))
+    (reset! the-popup popup)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
@@ -636,12 +640,14 @@
 (defn create-red-flag-layer!
   "Adds red flag warning layer to the map."
   [id data]
-  (let [new-source {id {:type "geojson" :data data :generateId true}}
+  (let [color      ["concat" "#" ["get" "color"]]
+        new-source {id {:type "geojson" :data data :generateId true}}
         new-layers [{:id     id
                      :source id
                      :type   "fill"
-                     :paint  {:fill-color   ["concat" "#" ["get" "color"]]
-                              :fill-opacity (on-selected 1 1 0.6)}}]]
+                     :paint  {:fill-color         color
+                              :fill-outline-color (on-hover "#000000" color)
+                              :fill-opacity       (on-hover 1 0.3)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn- mvt-source [layer-name]

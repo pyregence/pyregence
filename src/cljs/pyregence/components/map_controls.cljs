@@ -348,7 +348,7 @@
     (add-red-flag-layer!))
   (mb/set-visible-by-title! "red-flag" @show-red-flag?)
   (mb/clear-highlight! "red-flag" :selected)
-  (mb/clear-popup! :red-flag))
+  (mb/clear-popup! "red-flag"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fire History
