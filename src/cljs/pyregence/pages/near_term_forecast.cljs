@@ -11,7 +11,7 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.fire-popup   :as fp]
+            [pyregence.components.popups       :as p]
             [pyregence.components.map-controls :as mc]
             [pyregence.components.mapbox       :as mb]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
@@ -275,13 +275,19 @@
   (let [properties (-> feature (aget "properties") (js->clj))
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
         {:strs [name prettyname containper acres]} properties
-        body       (fp/fire-popup prettyname
+        body       (p/fire-popup prettyname
                                   containper
                                   acres
                                   #(select-param! (keyword name) :fire-name)
                                   (forecast-exists? name))]
-    (mb/init-popup! lnglat body {:width "200px"})
+    (mb/init-popup! :fire lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
+
+(defn- init-red-flag-popup! [feature lnglat]
+  (let [properties (-> feature (aget "properties") (js->clj))
+        {:strs [onset url prod_type]} properties
+        body       (p/red-flag-popup onset url prod_type)]
+    (mb/init-popup! :red-flag lnglat body {:width "200px"})))
 
 (defn change-type!
   "Changes the type of data that is being shown on the map."
@@ -291,10 +297,12 @@
     (let [source   (get-current-layer-name)
           style-fn (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
-      (mb/clear-popup!)
+      (mb/clear-popup! :red-flag)
+      (mb/clear-popup! :fire)
       (reset-underlays!)
       (when (some? style-fn)
-        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!))
+        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!)
+        (mb/add-feature-highlight! "red-flag" "red-flag" init-red-flag-popup!))
       (get-legend! source))
     (if clear?
       (clear-info!)

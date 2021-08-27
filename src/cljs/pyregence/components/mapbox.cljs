@@ -26,7 +26,7 @@
 (defonce custom-layers (atom #{}))
 
 (def ^:private the-marker    (r/atom nil))
-(def ^:private the-popup     (r/atom nil))
+(def ^:private popups        (atom {}))
 (def ^:private events        (atom {}))
 (def ^:private feature-state (atom {}))
 
@@ -225,24 +225,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn clear-popup!
-  "Removes popup from the map."
-  []
-  (when (some? @the-popup)
-    (.remove @the-popup)
-    (reset! the-popup nil)))
+  "Remove a specific popup from the map."
+  [popup-type]
+  (when (some? (popup-type @popups))
+    (.remove (popup-type @popups))
+    (swap! popups assoc popup-type nil)))
 
 (defn init-popup!
   "Creates a popup at `[lng lat]`, with `body` as the contents. `body` can
    be either HTML string a hiccup style vector."
-  [[lng lat] body {:keys [classname width] :or {width "200px" classname ""}}]
-  (clear-popup!)
-  (let [popup       (Popup. #js {:className classname :maxWidth width})]
+  [popup-type [lng lat] body {:keys [classname width] :or {width "200px" classname ""}}]
+  (clear-popup! popup-type)
+  (let [popup (Popup. #js {:className classname :maxWidth width})]
     (doto popup
       (.setLngLat #js [lng lat])
       (.setHTML "<div id='mb-popup'></div>")
       (.addTo @the-map))
     (render body (dom/getElement "mb-popup"))
-    (reset! the-popup popup)))
+    (swap! popups assoc popup-type popup)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
@@ -641,7 +641,7 @@
                      :source id
                      :type   "fill"
                      :paint  {:fill-color   ["concat" "#" ["get" "color"]]
-                              :fill-opacity 0.8}}]]
+                              :fill-opacity (on-selected 1 1 0.6)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn- mvt-source [layer-name]
