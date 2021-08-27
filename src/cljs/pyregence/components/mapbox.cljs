@@ -23,6 +23,7 @@
 
 ;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
 (defonce the-map       (r/atom nil))
+;; TODO, what is custom mean in this context?  Use layer metadata instead of an atom
 (defonce custom-layers (atom #{}))
 
 (def ^:private the-marker    (r/atom nil))
@@ -71,6 +72,7 @@
   [id]
   (some #(= id (get % "id")) (get (get-style) "layers")))
 
+;; TODO, selectable is a confusing name for this.
 (defn- is-selectable? [s]
   (@custom-layers s))
 
@@ -161,8 +163,10 @@
 (defn- merge-layers [v new-layers]
   (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
 
-(defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
-  (swap! custom-layers into (map :id new-layers))
+(defn- update-style! [style & {:keys [sources layers new-sources new-layers selectable?]}]
+  ;; TODO, add type to meta data instead
+  (when selectable?
+    (swap! custom-layers into (map :id new-layers)))
   (let [new-style (cond-> style
                     sources     (assoc "sources" sources)
                     layers      (assoc "layers" layers)
@@ -376,9 +380,9 @@
   [id opacity]
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
-        layers     (get style "layers")
-        pred       #(-> % (get "id") (is-selectable?))
-        new-layers (map (u/only pred #(set-opacity % opacity)) layers)]
+        new-layers (map (u/call-when #(-> % (get "id") (is-selectable?))
+                                     #(set-opacity % opacity))
+                        (get style "layers"))]
     (update-style! style :layers new-layers)))
 
 (defn- set-visible
@@ -566,22 +570,24 @@
                          (clj->js))]
       (-> @the-map (.setStyle new-style)))))
 
-(defn- hide-fire-layers [layers]
-  (let [pred #(-> % (get "id") (is-selectable?))
-        f    #(set-visible % false)]
-    (map (u/only pred f) layers)))
+(defn- hide-selectable-layers [layers]
+  (println @custom-layers)
+  (map (u/call-when #(-> % (get "id") (is-selectable?))
+                    #(set-visible % false))
+       layers))
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
   [geo-layer opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
-        layers (hide-fire-layers (get style "layers"))
+        layers (hide-selectable-layers (get style "layers"))
         [new-sources new-layers] (build-wms geo-layer geo-layer opacity true)]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
-                   :new-layers  new-layers)))
+                   :new-layers  new-layers
+                   :selectable? true)))
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
@@ -589,14 +595,15 @@
   [geo-layer style-fn opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
-        layers (hide-fire-layers (get style "layers"))
+        layers (hide-selectable-layers (get style "layers"))
         [new-sources new-layers] (if (some? style-fn)
                                    (build-wfs fire-active geo-layer opacity)
                                    (build-wms geo-layer geo-layer opacity true))]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
-                   :new-layers  new-layers)))
+                   :new-layers  new-layers
+                   :selectable? true)))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
@@ -613,7 +620,6 @@
                                          (first))
             [before after]          (split-at zero-idx layers)
             final-layers            (vec (concat before new-layers after))]
-        (swap! custom-layers conj id)
         (update-style! style
                        :new-sources new-source
                        :layers      final-layers)))))

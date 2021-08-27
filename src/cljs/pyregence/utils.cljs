@@ -422,7 +422,7 @@
   (let [factor (.pow js/Math 10 n)]
     (/ (Math/round (* dbl factor)) factor)))
 
-(defn only
+(defn call-when
   "Returns a function calls `f` only when `x` passes `pred`. Can be used in
    mapping over a collection like so:
    `(map (only even? #(* % 2)) xs)`"
