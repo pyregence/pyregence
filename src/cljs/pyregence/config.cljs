@@ -203,8 +203,9 @@
                                                           GridFire is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."
                                              :options    {:elmfire  {:opt-label "ELMFIRE"
                                                                      :filter    "elmfire"}
-                                                          :gridfire {:opt-label "GridFire"
-                                                                     :filter    "gridfire"}}}
+                                                          ;; :gridfire {:opt-label "GridFire"
+                                                          ;;            :filter    "gridfire"}
+                                                          }}
                                 :model-init {:opt-label  "Forecast Start Time"
                                              :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                              :options    {:loading {:opt-label "Loading..."}}}}}})
