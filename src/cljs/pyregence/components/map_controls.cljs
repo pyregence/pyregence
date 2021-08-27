@@ -800,7 +800,7 @@
              units
              convert]
 
-            (seq? last-clicked-info)
+            (coll? last-clicked-info)
             [vega-information
              box-height
              box-width
