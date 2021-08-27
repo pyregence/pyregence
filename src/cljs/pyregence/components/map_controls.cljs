@@ -786,7 +786,7 @@
             [loading-cover
              box-height
              box-width
-             "Click on the map to see a change over time graph."]
+             "Click on the map to view the value(s) of particular point."]
 
             (nil? last-clicked-info)
             [loading-cover box-height box-width "Loading..."]
@@ -800,7 +800,7 @@
              units
              convert]
 
-            (coll? last-clicked-info)
+            (not-empty last-clicked-info)
             [vega-information
              box-height
              box-width
