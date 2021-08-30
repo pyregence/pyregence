@@ -191,11 +191,10 @@
              :value     (or val :none)
              :disabled  disabled?
              :on-change #(call-back (u/input-keyword %))}
-    (map (fn [[key {:keys [opt-label disabled]}]]
+    (map (fn [[key {:keys [opt-label disabled?]}]]
            [:option {:key      key
                      :value    key
-                     :disabled (and (some? disabled)
-                                    (u/intersects? disabled selected-param-set))}
+                     :disabled (and (fn? disabled?) (disabled?))}
             opt-label])
          options)]])
 
@@ -244,15 +243,16 @@
     (fn [underlays *params]
       [:<>
        (doall
-        (map (fn [[key {:keys [opt-label filter-set z-index]}]]
+        (map (fn [[key {:keys [opt-label filter-set z-index enabled?]}]]
                (let [underlays (:underlays *params)]
-                 ^{:key key}
-                 [optional-layer
-                  opt-label
-                  filter-set
-                  (get underlays key)
-                  (fn [k v] (select-param! v :underlays key k))
-                  key]))
+                 (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
+                   ^{:key key}
+                   [optional-layer
+                    opt-label
+                    filter-set
+                    (get underlays key)
+                    (fn [k v] (select-param! v :underlays key k))
+                    key])))
              underlays))])}))
 
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
@@ -412,7 +412,7 @@
          [:flag
           (str (hs-str @show-red-flag?) " red flag warnings")
           #(toggle-red-flag-layer! show-red-flag?)]
-         (when-not mobile?
+         (when (and (c/feature-enabled? :fire-history) (not mobile?))
            [:clock
             (str (hs-str @show-fire-history?) " fire history")
             #(toggle-fire-history-layer! show-fire-history?)])
