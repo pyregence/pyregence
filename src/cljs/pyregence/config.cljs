@@ -3,6 +3,18 @@
             [pyregence.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Feature Flags
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce ^:private features (atom nil))
+
+(defn set-feature-flags! [config]
+  (reset! features (:features config)))
+
+(defn feature-enabled? [feature-name]
+  (get @features feature-name))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -11,9 +23,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Layer options
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; FIXME: Figure out where to move configs coming from config.edn
-(declare feature-enabled?)
 
 (def near-term-forecast-default :active-fire)
 (def near-term-forecast-options
@@ -210,7 +219,7 @@
                                                           GridFire is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."
                                              :options    {:elmfire  {:opt-label "ELMFIRE"
                                                                      :filter    "elmfire"}
-                                                          :gridfire {:disabled? #(not (feature-enabled? :gridfire))
+                                                          :gridfire {:enabled?  #(feature-enabled? :gridfire)
                                                                      :opt-label "GridFire"
                                                                      :filter    "gridfire"}}}
                                 :model-init {:opt-label  "Forecast Start Time"
@@ -384,18 +393,6 @@
        "&TILEMATRIX=EPSG:900913:{z}"
        "&TILEMATRIXSET=EPSG:900913"
        "&TILECOL={x}&TILEROW={y}"))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Feature Flags
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defonce ^:private features (atom nil))
-
-(defn set-feature-flags! [config]
-  (reset! features (:features config)))
-
-(defn feature-enabled? [feature-name]
-  (get @features feature-name))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scroll speeds for time slider
