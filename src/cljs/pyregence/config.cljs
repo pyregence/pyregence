@@ -3,6 +3,18 @@
             [pyregence.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Feature Flags
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce ^:private features (atom nil))
+
+(defn set-feature-flags! [config]
+  (reset! features (:features config)))
+
+(defn feature-enabled? [feature-name]
+  (get @features feature-name))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -157,7 +169,8 @@
                   :params      {:fire-name  {:opt-label      "Fire Name"
                                              :sort?          true
                                              :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
-                                             :underlays      {:us-buildings    {:opt-label  "Structures"
+                                             :underlays      {:us-buildings    {:enabled?   #(feature-enabled? :structures)
+                                                                                :opt-label  "Structures"
                                                                                 :z-index    4
                                                                                 :filter-set #{"fire-detections" "us-buildings"}}
                                                               :nifs-perimeters {:opt-label  "NIFS Perimeters"
@@ -206,7 +219,8 @@
                                                           GridFire is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."
                                              :options    {:elmfire  {:opt-label "ELMFIRE"
                                                                      :filter    "elmfire"}
-                                                          :gridfire {:opt-label "GridFire"
+                                                          :gridfire {:enabled?  #(feature-enabled? :gridfire)
+                                                                     :opt-label "GridFire"
                                                                      :filter    "gridfire"}}}
                                 :model-init {:opt-label  "Forecast Start Time"
                                              :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
@@ -379,18 +393,6 @@
        "&TILEMATRIX=EPSG:900913:{z}"
        "&TILEMATRIXSET=EPSG:900913"
        "&TILECOL={x}&TILEROW={y}"))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Feature Flags
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defonce ^:private features (atom nil))
-
-(defn set-feature-flags! [config]
-  (reset! features (:features config)))
-
-(defn feature-enabled? [feature-name]
-  (get @features feature-name))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scroll speeds for time slider
