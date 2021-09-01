@@ -282,6 +282,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def wms-url "https://data.pyregence.org:8443/geoserver/wms")
+(def wmts-url "https://data.pyregence.org:8443/geoserver/gwc/service/wmts")
 (def wfs-url "https://data.pyregence.org:8443/geoserver/wfs")
 
 (defn legend-url [layer]
@@ -321,20 +322,21 @@
        "&SRSNAME=EPSG:3857"
        "&BBOX=" (str/join "," extent) ",EPSG:3857"))
 
-(defn wms-layer-url [layer]
-  (str wms-url
-       "?SERVICE=WMS"
-       "&VERSION=1.3.0"
-       "&REQUEST=GetMap"
+(defn wms-layer-url
+  "Generates a Web Mapping Service (WMS) url to download a PNG tile.
+
+   Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
+  [layer]
+  (str wmts-url
+       "?REQUEST=GetTile"
+       "&SERVICE=WMTS"
+       "&VERSION=1.0.0"
+       "&LAYER=" layer
+       "&STYLE="
        "&FORMAT=image/png"
-       "&TRANSPARENT=true"
-       "&WIDTH=256"
-       "&HEIGHT=256"
-       "&CRS=EPSG%3A3857"
-       "&STYLES="
-       "&FORMAT_OPTIONS=dpi%3A113"
-       "&BBOX={bbox-epsg-3857}"
-       "&LAYERS=" layer))
+       "&TILEMATRIX=EPSG:900913:{z}"
+       "&TILEMATRIXSET=EPSG:900913"
+       "&TILECOL={x}&TILEROW={y}"))
 
 (defn wfs-layer-url [layer]
   (str wfs-url
