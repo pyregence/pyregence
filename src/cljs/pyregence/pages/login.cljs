@@ -22,7 +22,7 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn log-in! []
+(defn- log-in! []
   (go
     (if (:success (<! (u/call-clj-async! "log-in" @email @password)))
       (let [url (:redirect-from (u/get-session-storage) "/forecast")]
@@ -32,7 +32,7 @@
       (toast-message! ["Invalid login credentials. Please try again."
                        "If you feel this is an error, check your email for the verification email."]))))
 
-(defn request-password! []
+(defn- request-password! []
   (go
     (reset! pending? true)
     (toast-message! "Submitting request. This may take a moment...")
@@ -54,7 +54,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn reset-link []
+(defn- reset-link []
   [:a {:style    ($/align :block :left)
        :href     "#"
        :on-click #(reset! forgot? true)}
