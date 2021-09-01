@@ -285,6 +285,7 @@
 
 (defonce ^:private geoserver-base-url (atom nil))
 (defn- wms-url [] (str (u/end-with @geoserver-base-url "/") "wms"))
+(defn- wmts-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
 (defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
 (defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
 
@@ -333,19 +334,16 @@
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
   [layer]
-  (str (wms-url)
-       "?SERVICE=WMS"
-       "&VERSION=1.3.0"
-       "&REQUEST=GetMap"
+  (str (wmts-url)
+       "?REQUEST=GetTile"
+       "&SERVICE=WMTS"
+       "&VERSION=1.0.0"
+       "&LAYER=" layer
+       "&STYLE="
        "&FORMAT=image/png"
-       "&TRANSPARENT=true"
-       "&WIDTH=256"
-       "&HEIGHT=256"
-       "&CRS=EPSG%3A3857"
-       "&STYLES="
-       "&FORMAT_OPTIONS=dpi%3A113"
-       "&BBOX={bbox-epsg-3857}"
-       "&LAYERS=" layer))
+       "&TILEMATRIX=EPSG:900913:{z}"
+       "&TILEMATRIXSET=EPSG:900913"
+       "&TILECOL={x}&TILEROW={y}"))
 
 (defn wfs-layer-url
   "Generates a Web Feature Service (WFS) url to download an entire vector data
