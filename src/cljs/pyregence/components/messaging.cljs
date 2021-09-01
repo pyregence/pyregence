@@ -42,7 +42,7 @@
   [content]
   (swap! message-box-content merge content))
 
-(defn close-message-box!
+(defn- close-message-box!
   "Sets message content map to empty values."
   []
   (reset! message-box-content blank-message-box))
@@ -51,7 +51,7 @@
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $alert-box []
+(defn- $alert-box []
   {:align-items     "center"
    :background      "white"
    :border          "1.5px solid #009"
@@ -68,7 +68,7 @@
    :width           "50%"
    :z-index         "10000"})
 
-(defn $alert-transition [show-full?]
+(defn- $alert-transition [show-full?]
   (if show-full?
     {:opacity    "1"
      :top        "1rem"
@@ -77,7 +77,7 @@
      :top        "-100rem"
      :transition "opacity 500ms ease-out"}))
 
-(defn $p-alert-close []
+(defn- $p-alert-close []
   (with-meta
     {:border-radius "4px"
      :cursor        "pointer"
@@ -85,7 +85,7 @@
      :padding       ".5rem .75rem .5rem .5rem"}
     {:pseudo {:hover {:background-color ($/color-picker :black 0.15)}}}))
 
-(defn $message-box []
+(defn- $message-box []
   {:margin    "15% auto"
    :max-width "55%"
    :min-width "35%"
@@ -95,12 +95,12 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn interpose-react [tag items]
+(defn- interpose-react [tag items]
   [:<> (for [i (butlast items)]
          ^{:key i} [:<> i tag])
    (last items)])
 
-(defn show-line-break [text]
+(defn- show-line-break [text]
   (let [items (if (coll? text)
                 (vec text)
                 (str/split text #"\n"))]
@@ -122,7 +122,7 @@
                  :on-click #(reset! toast-message-text nil)}
           "\u274C"]]))))
 
-(defn button [label & callback]
+(defn- button [label & callback]
   [:input {:class    (<class $/p-form-button)
            :style    ($/margin "1rem" :h)
            :type     "button"

@@ -4,7 +4,7 @@
 
 ;;; Help Dialogs
 
-(defn get-help-dialog [dialog mobile?]
+(defn- get-help-dialog [dialog mobile?]
   (-> {:terrain {:title "3D Terrain Enabled"
                  :body  (if mobile?
                           "You have enabled 3D Terrain. Use two fingers to tilt or rotate the map."

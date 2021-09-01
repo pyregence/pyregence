@@ -42,6 +42,27 @@
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- get-style
+  "Returns mapbox style object."
+  []
+  (-> @the-map .getStyle (js->clj)))
+
+(defn- index-of
+  "Returns first index of item in collection that matches predicate."
+  [pred xs]
+  (->> xs
+       (keep-indexed (fn [idx x] (when (pred x) idx)))
+       (first)))
+
+(defn- get-layer-idx-by-id
+  "Returns index of layer with matching id."
+  [id layers]
+  (index-of #(= id (get % "id")) layers))
+
+;; TODO, selectable is a confusing name for this.
+(defn- is-selectable? [s]
+  (@custom-layers s))
+
 (defn get-zoom-info
   "Get zoom information. Returns [zoom min-zoom max-zoom]."
   []
@@ -50,31 +71,10 @@
      (.getMinZoom m)
      (.getMaxZoom m)]))
 
-(defn- get-style
-  "Returns mapbox style object."
-  []
-  (-> @the-map .getStyle (js->clj)))
-
-(defn index-of
-  "Returns first index of item in collection that matches predicate."
-  [pred xs]
-  (->> xs
-       (keep-indexed (fn [idx x] (when (pred x) idx)))
-       (first)))
-
-(defn get-layer-idx-by-id
-  "Returns index of layer with matching id."
-  [id layers]
-  (index-of #(= id (get % "id")) layers))
-
 (defn layer-exists?
   "Returns true if the layer with matching id exists."
   [id]
   (some #(= id (get % "id")) (get (get-style) "layers")))
-
-;; TODO, selectable is a confusing name for this.
-(defn- is-selectable? [s]
-  (@custom-layers s))
 
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.
@@ -209,7 +209,7 @@
     (.remove @the-marker)
     (reset! the-marker nil)))
 
-(defn init-point!
+(defn- init-point!
   "Creates a marker at `[lng lat]`"
   [lng lat]
   (clear-point!)
@@ -219,7 +219,7 @@
       (.addTo @the-map))
     (reset! the-marker marker)))
 
-(defn add-point-on-click!
+(defn- add-point-on-click!
   "Callback for `click` listener."
   [[lng lat]]
   (init-point! lng lat))
@@ -252,7 +252,7 @@
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn add-event!
+(defn- add-event!
   "Adds a listener for `event` with callback `f`. Returns the function `f`, which
    must be stored and passed to `remove-event!` when removing the listener.
    Warning: Only one listener per global/layer event can be added."
@@ -272,7 +272,7 @@
       (.off @the-map event func))
     (swap! events dissoc (hash f))))
 
-(defn remove-events!
+(defn- remove-events!
   "Removes all listeners matching `event-name`. Can also supply `layer-name` to
    only remove events for specific layers."
   [event-name & [layer-name]]
@@ -342,7 +342,7 @@
   (add-event! "zoomend" #(f (get (get-zoom-info) 0))))
 
 ;; TODO: Implement
-(defn add-layer-load-fail! [f])
+(defn- add-layer-load-fail! [f])
 
 (defn add-map-move!
   "Calls `f` on 'move' event."
@@ -517,7 +517,7 @@
 (defn- is-terrain? [s]
   (= s mapbox-dem))
 
-(defn toggle-rotation!
+(defn- toggle-rotation!
   "Toggles whether the map can be rotated via right-click or touch."
   [enabled?]
   (let [toggle-drag-rotate-fn  (if enabled? #(.enable %) #(.disable %))
@@ -526,7 +526,7 @@
       (-> .-dragRotate (toggle-drag-rotate-fn))
       (-> .-touchZoomRotate (toggle-touch-rotate-fn)))))
 
-(defn toggle-pitch!
+(defn- toggle-pitch!
   "Toggles whether changing pitch via touch is enabled."
   [enabled?]
   (let [toggle-fn (if enabled? #(.enable %) #(.disable %))]
