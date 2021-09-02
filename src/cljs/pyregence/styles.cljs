@@ -53,7 +53,7 @@
      :yellow           (str "rgba(249, 175, 59, "  alpha ")")
      color)))
 
-(defn to-merge? [modifiers key return]
+(defn- to-merge? [modifiers key return]
   (when (contains? (set modifiers) key) return))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -163,12 +163,6 @@
 ;; Style Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn color [color]
-  {:color (color-picker color)})
-
-(defn bg-color [color]
-  {:background (color-picker color)})
-
 (defn margin [& modifiers]
   (if (= 1 (count modifiers))
     {:margin (first modifiers)}
@@ -201,23 +195,6 @@
                    :padding-bottom size}
                :h {:padding-left   size
                    :padding-right  size}
-               {})))))
-
-(defn border [& modifiers]
-  (if (= 1 (count modifiers))
-    {:border (first modifiers)}
-    (apply merge
-           {}
-           (for [[style position] (partition 2 modifiers)]
-             (case position
-               :t {:border-top    style}
-               :b {:border-bottom style}
-               :l {:border-left   style}
-               :r {:border-right  style}
-               :v {:border-top    style
-                   :border-bottom style}
-               :h {:border-left   style
-                   :border-right  style}
                {})))))
 
 (defn align [type position]
@@ -271,13 +248,6 @@
    :flex-direction  "column"
    :justify-content "flex-start"})
 
-(defn font [& modifiers]
-  (apply merge
-         {}
-         (for [[attr val] (partition 2 modifiers)]
-           (when (contains? #{:style :variant :weight :size :family} attr)
-             {(keyword (str "font-" (name attr))) val}))))
-
 (defn disabled-group [disabled?]
   (if disabled?
     {:opacity        "0.4"
@@ -300,18 +270,6 @@
    :top              "0"
    :width            "100%"
    :z-index          "5000"})
-
-(defn outline [color]
-  (let [rgb (color-picker color)]
-    {:background   (color-picker :white)
-     :border-color rgb
-     :border-style "solid"
-     :color        rgb}))
-
-(defn text-ellipsis []
-  {:overflow      "hidden"
-   :text-overflow "ellipsis"
-   :white-space   "nowrap"})
 
 (defn fixed-size [size]
   {:float      "left"

@@ -333,15 +333,6 @@
        "&STYLES="
        "&BBOX=" bbox))
 
-(defn get-wfs-feature [layer extent]
-  (str (wfs-url)
-       "?SERVICE=WFS"
-       "&REQUEST=GetFeature"
-       "&TYPENAME=" layer
-       "&OUTPUTFORMAT=application/json"
-       "&SRSNAME=EPSG:3857"
-       "&BBOX=" (str/join "," extent) ",EPSG:3857"))
-
 (defn wms-layer-url
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
 
