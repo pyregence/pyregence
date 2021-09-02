@@ -34,6 +34,7 @@
 (def dynamic-routes #{"/"
                       "/admin"
                       "/dashboard"
+                      "/help"
                       "/login"
                       "/forecast"
                       "/long-term-forecast"
