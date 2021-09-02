@@ -87,7 +87,7 @@
                                                  :options    (array-map
                                                               :tmpf   {:opt-label "Temperature (F)"
                                                                        :filter    "tmpf"
-                                                                       :units     "deg F"}
+                                                                       :units     "\u00B0F"}
                                                               :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                        :filter    "ffwi"
                                                                        :units     ""}

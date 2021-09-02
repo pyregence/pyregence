@@ -491,7 +491,11 @@
               [mc/match-drop-tool @my-box #(reset! show-match-drop? false) refresh-fire-names! user-id])
             (when @show-camera?
               [mc/camera-tool @the-cameras @my-box @mobile? terrain? #(reset! show-camera? false)])])
-         [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
+         [mc/legend-box
+          @legend-list
+          (get-forecast-opt :reverse-legend?)
+          @mobile?
+          (get-current-layer-key :units)]
          [mc/tool-bar
           show-info?
           show-match-drop?
