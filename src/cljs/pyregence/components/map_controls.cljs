@@ -83,6 +83,7 @@
        :pause-button    [svg/pause-button]
        :play-button     [svg/play-button]
        :previous-button [svg/previous-button]
+       :reset           [svg/reset]
        :share           [svg/share]
        :terrain         [svg/terrain]
        :zoom-in         [svg/zoom-in]
@@ -635,10 +636,16 @@
                                (reset! terrain? true)
                                (h/show-help! :terrain mobile?)
                                (mb/toggle-dimensions! true)
-                               (mb/fly-to! {:center [longitude latitude]
-                                            :zoom 15
+                               (mb/fly-to! {:center  [longitude latitude]
+                                            :zoom    15
                                             :bearing pan
-                                            :pitch (min (+ 90 tilt) 85)}) 400))
+                                            :pitch   (min (+ 90 tilt) 85)}) 400))
+               reset-view  (fn []
+                             (let [{:keys [longitude latitude]} @*camera]
+                               (reset! terrain? false)
+                               (mb/toggle-dimensions! false)
+                               (mb/fly-to! {:center [longitude latitude]
+                                            :zoom   6})))
                on-click    (fn [features]
                              (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
                                (when (some? @*camera) (put! exit-ch :exit))
@@ -676,6 +683,19 @@
             [:label (str "Camera: " (:name @*camera))]]
            [:img {:src   "images/awf_logo.png"
                   :style ($/combine $awf-logo-style)}]
+           (when @terrain?
+             [tool-tip-wrapper
+              "Reset View"
+              :left
+              [:button {:class    (<class $/p-themed-button)
+                        :on-click reset-view
+                        :style    {:bottom   "1.25rem"
+                                   :padding  "2px"
+                                   :position "absolute"
+                                   :left     "1rem"}}
+               [:div {:style {:height "32px"
+                              :width  "32px"}}
+                [svg/reset]]]])
            [tool-tip-wrapper
             "Zoom Map to Camera"
             :right
