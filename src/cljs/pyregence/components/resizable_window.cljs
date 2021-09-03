@@ -97,5 +97,5 @@
       (when (> @box-width  (/ p-width  1.5)) (reset! box-width  (/ p-width 1.5)))
       [:div#resizable {:style ($/combine $/tool ($resizable-window (max init-height @box-height) (max init-width @box-width)))}
        [title-div title title-height close-fn!]
-       (render-content (- @box-height @title-height) @box-width)
+       (render-content (- @box-height @title-height) @box-width @title-height)
        [drag-sw-icon p-height p-width p-top box-height box-width]])))

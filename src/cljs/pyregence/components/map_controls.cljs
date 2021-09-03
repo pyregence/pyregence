@@ -573,7 +573,7 @@
       300
       "Match Drop Tool"
       close-fn!
-      (fn [_ _]
+      (fn [_ _ _]
         [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
          [:div {:style {:flex-grow 1 :font-size "0.9rem" :margin "0.5rem 1rem"}}
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
@@ -656,7 +656,7 @@
       460
       "Wildfire Camera Tool"
       close-fn!
-      (fn [_ _]
+      (fn [_ _ _]
         (cond
           (nil? @*camera)
           [:div {:style {:padding "1.2em"}}
@@ -729,7 +729,7 @@
              " "
              units)]])}))
 
-(defn vega-information [box-height box-width *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
+(defn- vega-information [box-height box-width *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
   (r/with-let [info-height (r/atom 0)]
     [:<>
      [vega-box
@@ -779,21 +779,25 @@
                         legend-list
                         last-clicked-info
                         close-fn!]
-  (r/with-let [click-event (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
+  (r/with-let [click-event      (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))
+               init-box-height  200
+               init-box-width   400]
     [:div#info-tool
      [resizable-window
       parent-box
-      200
-      400
+      init-box-height
+      init-box-width
       "Point Information"
       close-fn!
-      (fn [box-height box-width]
-        (let [has-point? (mb/get-overlay-center)]
+      (fn [box-height box-width title-height]
+        (let [has-point? (mb/get-overlay-center)
+              height     (max (- init-box-height title-height) box-height)
+              width      (max init-box-width box-width)]
           (cond
             (not has-point?)
             [loading-cover
-             box-height
-             box-width
+             height
+             width
              "Click on the map to view the value(s) of particular point."]
 
             (nil? last-clicked-info)
@@ -801,8 +805,8 @@
 
             (number? last-clicked-info)
             [single-point-info
-             box-height
-             box-width
+             height
+             width
              last-clicked-info
              legend-list
              units
@@ -810,8 +814,8 @@
 
             (not-empty last-clicked-info)
             [vega-information
-             box-height
-             box-width
+             height
+             width
              *layer-idx
              select-layer!
              units
