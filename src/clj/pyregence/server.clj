@@ -39,14 +39,14 @@
 
 (def cli-options
   [["-p" "--http-port PORT" "Port for http, default 8080"
-    :default 8080
+    :default  8080
     :parse-fn #(if (int? %) % (Integer/parseInt %))
     :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
    ["-P" "--https-port PORT" "Port for https (e.g. 8443)"
     :parse-fn #(if (int? %) % (Integer/parseInt %))
     :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
    ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
-    :default "prod"
+    :default  "prod"
     :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
    ["-o" "--output-dir DIR" "Output directory for log files. When a directory is not provided, output will be to stdout."
     :default ""]])

@@ -1,8 +1,8 @@
 (ns pyregence.components.mapbox
-  (:require [goog.dom           :as dom]
-            [reagent.core       :as r]
-            [reagent.dom        :refer [render]]
-            [clojure.core.async :refer [go <!]]
+  (:require [goog.dom            :as dom]
+            [reagent.core        :as r]
+            [reagent.dom         :refer [render]]
+            [clojure.core.async  :refer [go <!]]
             [pyregence.config    :as c]
             [pyregence.utils     :as u]
             [pyregence.geo-utils :as g]))
@@ -23,12 +23,13 @@
 
 ;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
 (defonce the-map       (r/atom nil))
+;; TODO, what is custom mean in this context?  Use layer metadata instead of an atom
 (defonce custom-layers (atom #{}))
 
-(def ^:private the-marker (r/atom nil))
-(def ^:private the-popup  (r/atom nil))
-(def ^:private events     (atom {}))
-(def ^:private hovered-id (atom nil))
+(def ^:private the-marker    (r/atom nil))
+(def ^:private the-popup     (r/atom nil))
+(def ^:private events        (atom {}))
+(def ^:private feature-state (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -71,6 +72,7 @@
   [id]
   (some #(= id (get % "id")) (get (get-style) "layers")))
 
+;; TODO, selectable is a confusing name for this.
 (defn- is-selectable? [s]
   (@custom-layers s))
 
@@ -161,8 +163,10 @@
 (defn- merge-layers [v new-layers]
   (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
 
-(defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
-  (swap! custom-layers into (map :id new-layers))
+(defn- update-style! [style & {:keys [sources layers new-sources new-layers selectable?]}]
+  ;; TODO, add type to meta data instead
+  (when selectable?
+    (swap! custom-layers into (map :id new-layers)))
   (let [new-style (cond-> style
                     sources     (assoc "sources" sources)
                     layers      (assoc "layers" layers)
@@ -293,19 +297,19 @@
   [f]
   (add-event! "mousemove" (fn [e] (-> e (event->lnglat) (f)))))
 
-(defn- clear-highlight!
-  "Clears the highlight of WFS features."
-  [source]
-  (when (some? @hovered-id)
-    (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover false})
-    (reset! hovered-id nil)))
+(defn clear-highlight!
+  "Clears the appropriate highlight of WFS features."
+  [source state-tag]
+  (when-let [id (get-in @feature-state [source state-tag])]
+    (.setFeatureState @the-map #js {:source source :id id} (clj->js {state-tag false}))
+    (swap! feature-state assoc-in [source state-tag] nil)))
 
 (defn- feature-highlight!
-  "Highlights a particular WFS features."
-  [source feature-id]
-  (clear-highlight! source)
-  (reset! hovered-id feature-id)
-  (.setFeatureState @the-map #js {:source source :id @hovered-id} #js {:hover true}))
+  "Sets the appropriate highlight of WFS features."
+  [source feature-id state-tag]
+  (clear-highlight! source state-tag)
+  (swap! feature-state assoc-in [source state-tag] feature-id)
+  (.setFeatureState @the-map #js {:source source :id feature-id} (clj->js {state-tag true})))
 
 (defn add-feature-highlight!
   "Adds events to highlight WFS features. Optionally can provide a function `f`,
@@ -316,16 +320,19 @@
   (remove-events! "click" layer)
   (add-event! "mouseenter"
               (fn [e]
-                (when-let [feature-id (-> e (aget "features") (first) (aget "id"))]
-                  (feature-highlight! source feature-id)))
+                (when-let [feature (-> e (aget "features") (first))]
+                  (feature-highlight! source (aget feature "id") :hover)))
               :layer layer)
   (add-event! "mouseleave"
-              #(clear-highlight! source)
+              #(clear-highlight! source :hover)
+              :layer layer)
+  (add-event! "mouseout"
+              #(clear-highlight! source :hover)
               :layer layer)
   (add-event! "click"
               (fn [e]
                 (when-let [feature (-> e (aget "features") (first))]
-                  (feature-highlight! source (aget feature "id"))
+                  (feature-highlight! source (aget feature "id") :selected)
                   (when f (f feature (event->lnglat e)))))
               :layer layer))
 
@@ -373,9 +380,9 @@
   [id opacity]
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
-        layers     (get style "layers")
-        pred       #(-> % (get "id") (is-selectable?))
-        new-layers (map (u/only pred #(set-opacity % opacity)) layers)]
+        new-layers (map (u/call-when #(-> % (get "id") (is-selectable?))
+                                     #(set-opacity % opacity))
+                        (get style "layers"))]
     (update-style! style :layers new-layers)))
 
 (defn- set-visible
@@ -433,7 +440,15 @@
   ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
 
 (defn- on-hover [on off]
-  ["case" ["boolean" ["feature-state" "hover"] false] on off])
+  ["case" ["boolean" ["feature-state" "hover"] false]
+   on
+   off])
+
+(defn- on-selected [selected hovered off]
+  ["case"
+   ["boolean" ["feature-state" "selected"] false] selected
+   ["boolean" ["feature-state" "hover"] false] hovered
+   off])
 
 (defn- incident-layer [layer-name source-name opacity]
   {:id     layer-name
@@ -463,7 +478,7 @@
             :text-size          16
             :visibility         "visible"}
    :paint  {:text-color      "#000000"
-            :text-halo-color ["case" ["boolean" ["feature-state" "hover"] false] "#FFFF00" "#FFFFFF"]
+            :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
             :text-halo-width 1.5
             :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}})
 
@@ -555,22 +570,23 @@
                          (clj->js))]
       (-> @the-map (.setStyle new-style)))))
 
-(defn- hide-fire-layers [layers]
-  (let [pred #(-> % (get "id") (is-selectable?))
-        f    #(set-visible % false)]
-    (map (u/only pred f) layers)))
+(defn- hide-selectable-layers [layers]
+  (map (u/call-when #(-> % (get "id") (is-selectable?))
+                    #(set-visible % false))
+       layers))
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
   [geo-layer opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
-        layers (hide-fire-layers (get style "layers"))
+        layers (hide-selectable-layers (get style "layers"))
         [new-sources new-layers] (build-wms geo-layer geo-layer opacity true)]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
-                   :new-layers  new-layers)))
+                   :new-layers  new-layers
+                   :selectable? true)))
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
@@ -578,33 +594,39 @@
   [geo-layer style-fn opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
-        layers (hide-fire-layers (get style "layers"))
+        layers (hide-selectable-layers (get style "layers"))
         [new-sources new-layers] (if (some? style-fn)
                                    (build-wfs fire-active geo-layer opacity)
                                    (build-wms geo-layer geo-layer opacity true))]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
-                   :new-layers  new-layers)))
+                   :new-layers  new-layers
+                   :selectable? true)))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
   [id source visible?]
-  (if (is-selectable? id)
-    (set-visible-by-title! id visible?)
-    (let [[new-source new-layers] (build-wms id source 1.0 visible?)
-          style                   (get-style)
-          layers                  (get style "layers")
-          zero-idx                (->> layers
-                                       (keep-indexed (fn [idx layer]
-                                                       (when (is-selectable? (get layer "id")) idx)))
-                                       (first))
-          [before after]          (split-at zero-idx layers)
-          final-layers            (vec (concat before new-layers after))]
-      (swap! custom-layers conj id)
-      (update-style! (get-style)
-                     :new-sources new-source
-                     :layers final-layers))))
+  (when id
+    ;; FIXME, This is different than wanting to hide the layers as you switch forecast type.
+    ;;        Check if layer exists in the entire set of data.
+    (if (is-selectable? id)
+      (set-visible-by-title! id visible?)
+      (let [[new-source new-layers] (build-wms id source 1.0 visible?)
+            style                   (get-style)
+            layers                  (get style "layers")
+            zero-idx                (->> layers
+                                         (keep-indexed (fn [idx layer]
+                                                         (when (is-selectable? (get layer "id")) idx)))
+                                         (first))
+            [before after]          (split-at zero-idx layers)
+            final-layers            (vec (concat before new-layers after))]
+        ;; FIXME, add meta data to layers instead of storing the layers here.
+        ;;        For example, the underlay layers need to be hidden when changing forecast types, but not change opacity.
+        (swap! custom-layers conj id)
+        (update-style! style
+                       :new-sources new-source
+                       :layers      final-layers)))))
 
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
@@ -615,11 +637,10 @@
                      :source id
                      :type   "symbol"
                      :layout {:icon-image              "video-icon"
-                              :icon-size               0.5
                               :icon-rotate             ["-" ["get" "pan"] 90]
-                              :icon-rotation-alignment "map"}
-                     :paint  {:icon-color   (on-hover "#e6550d" "#000000")
-                              :icon-opacity (on-hover 1.0 0.9)}}]]
+                              :icon-rotation-alignment "map"
+                              :icon-size               0.5}
+                     :paint  {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn create-red-flag-layer!
@@ -631,6 +652,28 @@
                      :type   "fill"
                      :paint  {:fill-color   ["concat" "#" ["get" "color"]]
                               :fill-opacity 0.8}}]]
+    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+
+(defn- mvt-source [layer-name]
+  {:type  "vector"
+   :tiles [(c/mvt-layer-url layer-name)]})
+
+(defn create-fire-history-layer!
+  "Adds red flag warning layer to the map."
+  [id layer-name]
+  (let [new-source {id (mvt-source layer-name)}
+        new-layers [{:id           id
+                     :source       id
+                     :source-layer "fire-history"
+                     :type         "fill"
+                     :paint        {:fill-color         ["step" ["get" "Decade"]
+                                                         "#cccccc"  ; Default
+                                                         1990 "#ffffb2"
+                                                         2000 "#fecc5c"
+                                                         2010 "#fd8d3c"
+                                                         2020 "#f03b20"]
+                                    :fill-opacity       0.3
+                                    :fill-outline-color "#ff0000"}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn remove-layer!
@@ -649,7 +692,7 @@
 (defn init-map!
   "Initializes the Mapbox map inside of `container` (e.g. \"map\")."
   [container-id & [opts]]
-  (set! (.-accessToken mapbox) c/mapbox-access-token)
+  (set! (.-accessToken mapbox) @c/mapbox-access-token)
   (when-not (.supported mapbox)
     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
                    "Please use the latest version of Chrome, Safari, or Firefox.")))
@@ -659,7 +702,7 @@
                             :dragRotate  false
                             :maxZoom     20
                             :minZoom     3
-                            :style       (-> c/base-map-options c/base-map-default :source)
+                            :style       (-> (c/base-map-options) c/base-map-default :source)
                             :touchPitch  false
                             :trackResize true
                             :transition  {:duration 500 :delay 0}}

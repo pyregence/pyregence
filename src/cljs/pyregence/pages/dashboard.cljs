@@ -1,13 +1,13 @@
 (ns pyregence.pages.dashboard
-  (:require [reagent.core :as r]
-            [herb.core    :refer [<class]]
-            [cljs.reader  :as edn]
+  (:require [reagent.core       :as r]
+            [herb.core          :refer [<class]]
+            [cljs.reader        :as edn]
             [clojure.core.async :refer [go <!]]
             [clojure.string     :as string]
+            [pyregence.utils    :as u]
+            [pyregence.styles   :as $]
             [pyregence.components.messaging :refer [set-message-box-content!
-                                                    message-box-modal]]
-            [pyregence.utils                :as u]
-            [pyregence.styles               :as $]))
+                                                    message-box-modal]]))
 
 ;; State
 
@@ -55,9 +55,9 @@
    [:tr
     (doall (map-indexed (fn [i col] ^{:key i} [:th col]) cols))]])
 
-(defn- match-drop-item [{:keys [job-id md-status message created-at updated-at request log]}]
+(defn- match-drop-item [{:keys [job-id display-name md-status message created-at updated-at request log]}]
   [:tr
-   [:td job-id]
+   [:td display-name]
    [:td md-status]
    [:td message]
    [:td (->> (select-keys request [:lon :lat])
@@ -72,7 +72,7 @@
 
 (defn match-drop-table []
   [:table {:class (<class $table) :style {:width "100%"}}
-   [thead ["ID"
+   [thead ["Fire Name"
            "Status"
            "Message"
            "Lon/Lat"
@@ -82,8 +82,8 @@
            "Elapsed Time"
            "Logs"]]
    [:tbody
-    (doall (map (fn [{:keys [job-id] :as md}] ^{:key job-id} [match-drop-item md])
-                @match-drops))]])
+    (reverse (map (fn [{:keys [job-id] :as md}] ^{:key job-id} [match-drop-item md])
+                  @match-drops))]])
 
 (defn- redirect-to-login! []
   (u/set-session-storage! {:redirect-from "/dashboard"})
@@ -94,16 +94,18 @@
   (reset! _user-id user-id)
   (user-match-drops user-id)
   (fn [_]
-    [:div {:style ($/combine $/root {:padding  0
-                                     :height   "100%"
+    [:div {:style ($/combine $/root {:height   "100%"
+                                     :padding  0
                                      :position "relative"})}
      [message-box-modal]
      [:div {:style ($/combine $/flex-col {:padding "2rem 8rem"})}
-      [:h3 "Match Drop Dashboard"]
-      [:div {:style {:width   "100%"
-                     :padding "1rem"}}
-       [match-drop-table]]
-      [:div
-       [:button {:class    "btn border-yellow text-brown"
+      [:div {:style {:display "flex"}}
+       [:h3 {:style {:margin-bottom "0"
+                     :margin-right  "1rem"}}
+        "Match Drop Dashboard"]
+       [:button {:class    (<class $/p-form-button)
                  :on-click #(user-match-drops user-id)}
-        "Refresh"]]]]))
+        "Refresh"]]
+      [:div {:style {:padding "1rem"
+                     :width   "100%"}}
+       [match-drop-table]]]]))

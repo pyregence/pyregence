@@ -29,7 +29,12 @@ VALUES
     -- 3
     ('lautenberger@reaxengineering.com', 'Chris Lautenberger', 'not-a-password', '{:theme :dark, :timezone :utc}'),
     -- 4 TODO remove this account and have liberty users add themselves
-    ('liberty-demo', 'Liberty Demo Account', crypt('#liberty2019#', gen_salt('bf')), '{:theme :dark, :timezone :utc}');
+    ('liberty-demo', 'Liberty Demo Account', crypt('#liberty2019#', gen_salt('bf')), '{:theme :dark, :timezone :utc}'),
+    -- 5
+    ('rsheperd@sig-gis.com', 'RJ Sheperd', 'not-a-password', '{:theme :dark, :timezone :utc}'),
+    -- 6
+    ('obaldwinedwards@sig-gis.com', 'Oliver Baldwin Edwards', 'not-a-password', '{:theme :dark, :timezone :utc}');
+
 
 UPDATE users SET verified = TRUE WHERE email = 'liberty-demo';
 
@@ -39,13 +44,19 @@ VALUES
     (2, 1, 1),
     (2, 2, 1),
     (2, 3, 1),
+    (2, 5, 1),
+    (2, 6, 1),
     (3, 1, 1),
     (3, 2, 1),
     (3, 3, 1),
     (3, 4, 1),
+    (3, 5, 1),
+    (3, 6, 1),
     (4, 1, 1),
     (4, 2, 1),
-    (4, 3, 1);
+    (4, 3, 1),
+    (4, 5, 1),
+    (4, 6, 1);
 
 INSERT INTO organization_layers
     (organization_rid, layer_path, layer_config)

@@ -1,8 +1,8 @@
 (ns pyregence.utils
-  (:require [cljs.reader :as edn]
-            [clojure.string :as str]
-            [clojure.set    :as sets]
-            [clojure.core.async :refer [go <!]]
+  (:require [cljs.reader        :as edn]
+            [clojure.string     :as str]
+            [clojure.set        :as sets]
+            [clojure.core.async :refer [alts! go <! timeout go-loop]]
             [cljs.core.async.interop :refer-macros [<p!]]))
 
 (defn input-value
@@ -35,6 +35,11 @@
   (-> string
       (str/lower-case)
       (str/replace #"[\s-\.\,]+" "-")))
+
+(defn end-with [s end]
+  (str s
+       (when-not (str/ends-with? s end)
+         end)))
 
 ;; Session
 
@@ -135,7 +140,7 @@
                             (map (fn [[k v]] (str (pr-str k) "=" (pr-str v))))
                             (str/join "&")
                             (js/encodeURIComponent))
-          fetch-params {:method "get"
+          fetch-params {:method  "get"
                         :headers {"Accept" "application/edn"
                                   "Content-Type" "application/edn"}}
           edn-string   (<! (fetch-and-process (str url
@@ -148,16 +153,16 @@
 ;; Combines status and error message into return value
 (defmethod call-remote! :post [_ url data]
   (go
-    (let [fetch-params {:method "post"
+    (let [fetch-params {:method  "post"
                         :headers (merge {"Accept" "application/edn"}
                                         (when-not (= (type data) js/FormData)
                                           {"Content-Type" "application/edn"}))
-                        :body (cond
-                                (= js/FormData (type data)) data
-                                data                        (pr-str data)
-                                :else                       nil)}
-          response      (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
-                                   fetch-params))]
+                        :body    (cond
+                                   (= js/FormData (type data)) data
+                                   data                        (pr-str data)
+                                   :else                       nil)}
+          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+                                  fetch-params))]
       (if response
         {:success (.-ok response)
          :status  (.-status response)
@@ -168,16 +173,16 @@
 
 (defmethod call-remote! :post-text [_ url data]
   (go
-    (let [fetch-params {:method "post"
+    (let [fetch-params {:method  "post"
                         :headers (merge {"Accept" "application/transit+json"}
                                         (when-not (= (type data) js/FormData)
                                           {"Content-Type" "application/edn"}))
-                        :body (cond
-                                (= js/FormData (type data)) data
-                                data                        (pr-str data)
-                                :else                       nil)}
-          response      (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
-                                   fetch-params))]
+                        :body    (cond
+                                   (= js/FormData (type data)) data
+                                   data                        (pr-str data)
+                                   :else                       nil)}
+          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+                                  fetch-params))]
       (if response
         {:success (.-ok response)
          :status  (.-status response)
@@ -188,16 +193,16 @@
 
 (defmethod call-remote! :post-blob [_ url data]
   (go
-    (let [fetch-params {:method "post"
+    (let [fetch-params {:method  "post"
                         :headers (merge {"Accept" "application/transit+json"}
                                         (when-not (= (type data) js/FormData)
                                           {"Content-Type" "application/edn"}))
-                        :body (cond
-                                (= js/FormData (type data)) data
-                                data                        (pr-str data)
-                                :else                       nil)}
-          response      (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
-                                   fetch-params))]
+                        :body    (cond
+                                   (= js/FormData (type data)) data
+                                   data                        (pr-str data)
+                                   :else                       nil)}
+          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+                                  fetch-params))]
       (if response
         {:success (.-ok response)
          :status  (.-status response)
@@ -285,8 +290,8 @@
   (js-date->iso-string (js-date-from-string date-str) show-utc?))
 
 (defn ms->hhmmss [ms]
-  (let [sec (/ ms 1000)
-        hours (js/Math.round (/ sec 3600))
+  (let [sec     (/ ms 1000)
+        hours   (js/Math.round (/ sec 3600))
         minutes (js/Math.round (/ (mod sec 3600) 60))
         seconds (js/Math.round (mod (mod sec 3600) 60))]
     (str (pad-zero hours)
@@ -294,6 +299,25 @@
          (pad-zero minutes)
          ":"
          (pad-zero seconds))))
+
+(defn current-date-ms
+  "Returns the current date in milliseconds, with hour/minute/seconds/ms set to 0"
+  []
+  (-> (js/Date.)
+      (.setHours 0 0 0 0)))
+
+(defn current-timezone-shortcode
+  "Returns the shortcode for the current timezone (e.g. PDT, EST)"
+  []
+  (-> (js/Date.)
+      (.toLocaleTimeString "en-us" #js{:timeZoneName "short"})
+      (.split " ")
+      (last)))
+
+(defn format-date
+  "Formats a JS Date into MM/DD/YYYY"
+  [js-date]
+  (str (+ 1 (.getMonth js-date)) "/" (.getDate js-date) "/" (.getFullYear js-date)))
 
 ;;; ->map HOF
 
@@ -398,7 +422,7 @@
   (let [factor (.pow js/Math 10 n)]
     (/ (Math/round (* dbl factor)) factor)))
 
-(defn only
+(defn call-when
   "Returns a function calls `f` only when `x` passes `pred`. Can be used in
    mapping over a collection like so:
    `(map (only even? #(* % 2)) xs)`"
@@ -420,3 +444,40 @@
   "Creates a sorted-map where the keys are sorted in reverse order."
   []
   (sorted-map-by (fn [a b] (* -1 (compare a b)))))
+
+(defn refresh-on-interval!
+  "Refreshes the specified function every specified interval (ms) of time.
+   Exit the go-loop by doing `put! exit-ch :exit` elsewhere in the code
+   when the on-refresh-fn should exit.
+   ex: `(when <exit-condition-met> (put! exit-ch :exit))`"
+  [on-refresh-fn interval exit-ch]
+  (go-loop []
+    (let [[result _] (alts! [(timeout interval) exit-ch])]
+      (when-not (= :exit result)
+        (on-refresh-fn)
+        (recur)))))
+
+(defn direction
+  "Converts degrees to a direction."
+  [degrees]
+  (condp >= degrees
+    22.5  "North"
+    67.5  "Northeast"
+    112.5 "East"
+    157.5 "Southeast"
+    202.5 "South"
+    247.5 "Southwest"
+    292.5 "West"
+    337.5 "Northwest"
+    360   "North"
+    ""))
+
+(defn find-boundary-values
+  "Returns the two values from a sorted collection that bound v."
+  [v coll]
+  (loop [coll coll]
+    (let [s (second coll)]
+      (and s
+           (if (< v s)
+             (take 2 coll)
+             (recur (next coll)))))))

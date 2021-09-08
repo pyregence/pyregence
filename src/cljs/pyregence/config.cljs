@@ -1,5 +1,18 @@
 (ns pyregence.config
-  (:require [clojure.string :as str]))
+  (:require [clojure.string  :as str]
+            [pyregence.utils :as u]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Feature Flags
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce ^:private features (atom nil))
+
+(defn set-feature-flags! [config]
+  (reset! features (:features config)))
+
+(defn feature-enabled? [feature-name]
+  (get @features feature-name))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
@@ -15,7 +28,6 @@
 (def near-term-forecast-options
   {:fuels        {:opt-label       "Fuels"
                   :filter          "fuels"
-                  :block-info?     true
                   :reverse-legend? false
                   :hover-text      "Layers related to fuel and potential fire behavior."
                   :params          {:model {:opt-label  "Source"
@@ -23,14 +35,11 @@
                                                          California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020.\n
                                                          2021 California fuelscape prepared by Pyrologix, LLC (https://pyrologix.com), 2021."
                                             :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
-                                                                         :filter    "landfire-2.0.0"
-                                                                         :units     ""}
+                                                                         :filter    "landfire-2.0.0"}
                                                          :cfo           {:opt-label "California Forest Obs."
-                                                                         :filter    "cfo-2020"
-                                                                         :units     ""}
+                                                                         :filter    "cfo-2020"}
                                                          :ca-fuelscapes {:opt-label "2021 CA fuelscape"
-                                                                         :filter    "ca-fuelscapes"
-                                                                         :units     ""}}}
+                                                                         :filter    "ca-fuelscapes"}}}
                                     :layer {:opt-label  "Layer"
                                             :hover-text "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
                                             :options    (array-map
@@ -39,25 +48,30 @@
                                                                   :units     ""}
                                                          :asp    {:opt-label "Aspect"
                                                                   :filter    "asp"
-                                                                  :units     ""}
+                                                                  :units     ""
+                                                                  :convert   #(str (u/direction %) " (" % "°)")}
                                                          :slp    {:opt-label "Slope (degrees)"
                                                                   :filter    "slp"
-                                                                  :units     "degrees"}
+                                                                  :units     "°"}
                                                          :dem    {:opt-label "Elevation (ft)"
                                                                   :filter    "dem"
-                                                                  :units     ""}
+                                                                  :units     "ft"
+                                                                  :convert   #(u/to-precision 1 (* % 3.28084))}
                                                          :cc     {:opt-label "Canopy Cover (%)"
                                                                   :filter    "cc"
                                                                   :units     "%"}
                                                          :ch     {:opt-label "Canopy Height (m)"
                                                                   :filter    "ch"
-                                                                  :units     "m"}
+                                                                  :units     "m"
+                                                                  :convert   #(u/to-precision 1 (/ % 10))}
                                                          :cbh    {:opt-label "Canopy Base Height (m)"
                                                                   :filter    "cbh"
-                                                                  :units     "m"}
+                                                                  :units     "m"
+                                                                  :convert   #(u/to-precision 1 (/ % 10))}
                                                          :cbd    {:opt-label "Crown Bulk Density (kg/m^3)"
                                                                   :filter    "cbd"
-                                                                  :units     "kg/m^3"})}
+                                                                  :units     "kg/m^3"
+                                                                  :convert   #(u/to-precision 2 %)})}
                                     :model-init {:opt-label  "Model Creation Time"
                                                  :hover-text "Time the data was created."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
@@ -142,13 +156,11 @@
                                                                          :filter    "cfo"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text "Computer fire spread model used to generate active fire and risk forecasts.\n
-                                                             ELMFIRE - Cloud-based operational fire spread model developed at Reax Engineering Inc. (https://doi.org/10.1016/j.firesaf.2013.08.014)."
+                                                             ELMFIRE (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal (https://doi.org/10.1016/j.firesaf.2013.08.014)."
                                                  :options    {:elmfire {:opt-label "ELMFIRE"
                                                                         :filter    "elmfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
-                                                 :hover-text "Twice per day, hundreds of millions of fires are ignited across California at various times in the future under forecasted weather conditions.
-                                                              By modeling their spread, we can identify areas where fires starting at a specific time and location have the potential to spread rapidly or impact assets at risk.
-                                                              Forecasts are currently generated from the 06z and 18z weather forecasts. Data are refreshed each day at approximately 5 AM PDT"
+                                                 :hover-text "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label   "Active Fires"
                   :filter      "fire-spread-forecast"
@@ -157,7 +169,11 @@
                   :params      {:fire-name  {:opt-label      "Fire Name"
                                              :sort?          true
                                              :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
-                                             :underlays      {:nifs-perimeters {:opt-label  "NIFS Perimeters"
+                                             :underlays      {:us-buildings    {:enabled?   #(feature-enabled? :structures)
+                                                                                :opt-label  "Structures"
+                                                                                :z-index    4
+                                                                                :filter-set #{"fire-detections" "us-buildings"}}
+                                                              :nifs-perimeters {:opt-label  "NIFS Perimeters"
                                                                                 :z-index    3
                                                                                 :filter-set #{"fire-detections" "nifs-perimeters"}}
                                                               :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
@@ -166,7 +182,7 @@
                                                               :modis-hotspots  {:opt-label  "MODIS Hotspots"
                                                                                 :z-index    1
                                                                                 :filter-set #{"fire-detections" "modis-timestamped"}}
-                                                              :goes-imagery    {:opt-label  "GOES-16 Imagery"
+                                                              :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
                                                                                 :z-index    0
                                                                                 :filter-set #{"fire-detections" "goes16-rgb"}}}
                                              :default-option :active-fires
@@ -203,9 +219,9 @@
                                                           GridFire is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."
                                              :options    {:elmfire  {:opt-label "ELMFIRE"
                                                                      :filter    "elmfire"}
-                                                          ;; :gridfire {:opt-label "GridFire"
-                                                          ;;            :filter    "gridfire"}
-                                                          }}
+                                                          :gridfire {:enabled?  #(feature-enabled? :gridfire)
+                                                                     :opt-label "GridFire"
+                                                                     :filter    "gridfire"}}}
                                 :model-init {:opt-label  "Forecast Start Time"
                                              :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                              :options    {:loading {:opt-label "Loading..."}}}}}})
@@ -220,48 +236,48 @@
                     :filter     "wg4_FireSim"
                     :hover-text "Wildfire scenario projections for area burned with varied emissions and population scenarios."
                     :block-info? true
-                    :params     {:model   {:opt-label  "Global Climate Model"
-                                           :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
+                    :params     {:model      {:opt-label  "Global Climate Model"
+                                              :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
                                                         Projected future climate from these four models can be described as producing:
                                                         HadGEM2-ES - A warmer/dry simulation
                                                         CNRM-CM5 - A cooler/wetter simulation
                                                         CanESM2 - An average simulation
                                                         MIROC5 - A model that is most unlike the first three to offer the best coverage of different possibilities."
-                                           :auto-zoom? true
-                                           :options    {:can-esm2   {:opt-label "CanESM2"
-                                                                     :filter    "CanESM2"
-                                                                     :units     ""}
-                                                        :hadgem2-es {:opt-label "HadGEM2-ES"
-                                                                     :filter    "HadGEM2-ES"
-                                                                     :units     ""}
-                                                        :cnrm-cm5   {:opt-label "CNRM-CM5"
-                                                                     :filter    "CNRM-CM5"
-                                                                     :units     ""}
-                                                        :miroc5     {:opt-label "MIROC5"
-                                                                     :filter    "MIROC5"
-                                                                     :units     ""}}}
-                                 :prob    {:opt-label  "RCP Scenario"
-                                           :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
+                                              :auto-zoom? true
+                                              :options    {:can-esm2   {:opt-label "CanESM2"
+                                                                        :filter    "CanESM2"
+                                                                        :units     ""}
+                                                           :hadgem2-es {:opt-label "HadGEM2-ES"
+                                                                        :filter    "HadGEM2-ES"
+                                                                        :units     ""}
+                                                           :cnrm-cm5   {:opt-label "CNRM-CM5"
+                                                                        :filter    "CNRM-CM5"
+                                                                        :units     ""}
+                                                           :miroc5     {:opt-label "MIROC5"
+                                                                        :filter    "MIROC5"
+                                                                        :units     ""}}}
+                                 :prob       {:opt-label  "RCP Scenario"
+                                              :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
                                                         Options include:
                                                         4.5 - emissions start declining starting in 2045 to reach half the levels of CO2 of 2050 by 2100.
                                                         8.5 - emissions keep rising throughout the 2100."
-                                           :options    {:p45 {:opt-label "4.5"
-                                                              :filter    "45"
-                                                              :units     ""}
-                                                        :p85 {:opt-label "8.5"
-                                                              :filter    "85"
-                                                              :units     ""}}}
-                                 :measure {:opt-label  "Population Growth Scenario"
-                                           :hover-text "Vary population growth."
-                                           :options    {:bau  {:opt-label "Central"
-                                                               :filter    "bau"
-                                                               :units     ""}
-                                                        :high {:opt-label "High"
-                                                               :filter    "H"
-                                                               :units     ""}
-                                                        :low  {:opt-label "Low"
-                                                               :filter    "L"
-                                                               :units     ""}}}
+                                              :options    {:p45 {:opt-label "4.5"
+                                                                 :filter    "45"
+                                                                 :units     ""}
+                                                           :p85 {:opt-label "8.5"
+                                                                 :filter    "85"
+                                                                 :units     ""}}}
+                                 :measure    {:opt-label  "Population Growth Scenario"
+                                              :hover-text "Vary population growth."
+                                              :options    {:bau  {:opt-label "Central"
+                                                                  :filter    "bau"
+                                                                  :units     ""}
+                                                           :high {:opt-label "High"
+                                                                  :filter    "H"
+                                                                  :units     ""}
+                                                           :low  {:opt-label "Low"
+                                                                  :filter    "L"
+                                                                  :units     ""}}}
                                  :model-init {:opt-label  "Scenario Year"
                                               :hover-text "Year"
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
@@ -281,12 +297,16 @@
 ;; WFS/WMS Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def wms-url "https://data.pyregence.org:8443/geoserver/wms")
-(def wmts-url "https://data.pyregence.org:8443/geoserver/gwc/service/wmts")
-(def wfs-url "https://data.pyregence.org:8443/geoserver/wfs")
+(defonce ^:private geoserver-base-url (atom nil))
+(defn- wms-url [] (str (u/end-with @geoserver-base-url "/") "wms"))
+(defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
+(defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
+
+(defn set-geoserver-base-url! [url]
+  (reset! geoserver-base-url url))
 
 (defn legend-url [layer]
-  (str wms-url
+  (str (wms-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
@@ -294,8 +314,8 @@
        "&FORMAT=application/json"
        "&LAYER=" layer))
 
-(defn point-info-url [layer-group bbox]
-  (str wms-url
+(defn point-info-url [layer-group bbox feature-count]
+  (str (wms-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
@@ -303,7 +323,7 @@
        "&INFO_FORMAT=application/json"
        "&LAYERS=" layer-group
        "&QUERY_LAYERS=" layer-group
-       "&FEATURE_COUNT=1000"
+       "&FEATURE_COUNT=" feature-count
        "&TILED=true"
        "&I=0"
        "&J=0"
@@ -314,7 +334,7 @@
        "&BBOX=" bbox))
 
 (defn get-wfs-feature [layer extent]
-  (str wfs-url
+  (str (wfs-url)
        "?SERVICE=WFS"
        "&REQUEST=GetFeature"
        "&TYPENAME=" layer
@@ -327,7 +347,7 @@
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
   [layer]
-  (str wmts-url
+  (str (mvt-url)
        "?REQUEST=GetTile"
        "&SERVICE=WMTS"
        "&VERSION=1.0.0"
@@ -338,8 +358,13 @@
        "&TILEMATRIXSET=EPSG:900913"
        "&TILECOL={x}&TILEROW={y}"))
 
-(defn wfs-layer-url [layer]
-  (str wfs-url
+(defn wfs-layer-url
+  "Generates a Web Feature Service (WFS) url to download an entire vector data
+   set as GeoJSON.
+
+   Mapbox GL does support GeoJSON in EPSG:4326. However, it does not support WFS."
+  [layer]
+  (str (wfs-url)
        "?SERVICE=WFS"
        "&VERSION=1.3.0"
        "&REQUEST=GetFeature"
@@ -347,17 +372,24 @@
        "&SRSNAME=EPSG:4326"
        "&TYPENAME=" layer))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Feature Flags
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn mvt-layer-url
+  "Generates a Mapbox Vector Tile (MVT) URL to be used with with Mapbox GL.
 
-(def ^:private features (atom nil))
-
-(defn set-feature-flags! [config]
-  (reset! features (:features config)))
-
-(defn feature-enabled? [feature-name]
-  (get @features feature-name))
+   When adding MVT data, the projection must be EPSG:3857 (Web Mercator) or
+   EPSG:900913 (Google Web Mercator). EPSG:900913 is used since GeoServer's
+   embedded [GeoWebCache](https://www.geowebcache.org/) Web Map Tile Service (WMTS)
+   supports EPSG:900913 by default, but does not support EPSG:3857 by default."
+  [layer]
+  (str (mvt-url)
+       "?REQUEST=GetTile"
+       "&SERVICE=WMTS"
+       "&VERSION=1.0.0"
+       "&LAYER=" layer
+       "&STYLE="
+       "&FORMAT=application/vnd.mapbox-vector-tile"
+       "&TILEMATRIX=EPSG:900913:{z}"
+       "&TILEMATRIXSET=EPSG:900913"
+       "&TILECOL={x}&TILEROW={y}"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scroll speeds for time slider
@@ -381,14 +413,17 @@
 ;; Mapbox Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce mapbox-access-token "pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw")
+(defonce mapbox-access-token (atom nil))
+
+(defn set-mapbox-access-token! [token]
+  (reset! mapbox-access-token token))
 
 (def default-sprite "mapbox://sprites/mspencer-sig/cka8jaky90i9m1iphwh79wr04/3nae2cnmmvrdazx877w1wcuez")
 
 (defn- style-url [id]
-  (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" mapbox-access-token))
+  (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @mapbox-access-token))
 
-(def base-map-options
+(defn base-map-options []
   {:mapbox-topo       {:opt-label "Mapbox Street Topo"
                        :source    (style-url "cka8jaky90i9m1iphwh79wr04")}
    :mapbox-satellite  {:opt-label "Mapbox Satellite"
@@ -399,3 +434,12 @@
 (def base-map-default :mapbox-topo)
 
 (def mapbox-dem-url "mapbox://mapbox.mapbox-terrain-dem-v1")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Dev-mode Configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce dev-mode? (atom nil))
+
+(defn set-dev-mode! [val]
+  (reset! dev-mode? val))

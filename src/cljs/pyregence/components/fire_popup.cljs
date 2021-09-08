@@ -1,5 +1,5 @@
 (ns pyregence.components.fire-popup
-  (:require [herb.core :refer [<class]]
+  (:require [herb.core        :refer [<class]]
             [pyregence.styles :as $]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -9,18 +9,18 @@
 (defn- $popup-btn []
   (with-meta
     {:background    ($/color-picker :yellow)
-     :color         ($/color-picker :white)
-     :border-radius "3px"
      :border        "none"
-     :padding       "0.25rem 0.5rem"
-     :margin-top    "0.5rem"}
+     :border-radius "3px"
+     :color         ($/color-picker :white)
+     :margin-top    "0.5rem"
+     :padding       "0.25rem 0.5rem"}
     {:pseudo {:hover {:background-color ($/color-picker :yellow 0.8)}}}))
 
 (defn- $fire-popup-header []
-  {:width         "180px"
-   :overflow      "hidden"
+  {:overflow      "hidden"
    :text-overflow "ellipsis"
-   :white-space   "nowrap"})
+   :white-space   "nowrap"
+   :width         "180px"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component

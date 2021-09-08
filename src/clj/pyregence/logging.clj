@@ -13,7 +13,7 @@
   (subs string 0 (min length (count string))))
 
 (defn log [data & {:keys [newline? pprint? force-stdout?]
-                   :or {newline? true pprint? false force-stdout? false}}]
+                   :or   {newline? true pprint? false force-stdout? false}}]
   (let [timestamp    (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.))
         log-filename (str (.format (SimpleDateFormat. "YYYY-MM-dd") (Date.)) ".log")
         max-data     (max-length data 500)

@@ -1,10 +1,10 @@
 (ns pyregence.components.vega
   (:require [cljsjs.vega-embed]
-            [reagent.core :as r]
-            [reagent.dom :as rd]
+            [reagent.core    :as r]
+            [reagent.dom     :as rd]
+            [pyregence.utils :as u]
             [clojure.core.async :refer [go]]
-            [cljs.core.async.interop :refer-macros [<p!]]
-            [pyregence.utils :as u]))
+            [cljs.core.async.interop :refer-macros [<p!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -19,9 +19,9 @@
                        :offset   (min (/ cur-q max-band) 1.0)
                        :color    (if (< last-q max-band cur-q)
                                    (u/interp-color (get last :color)
-                                                 (get cur  "color")
-                                                 (/ (- max-band last-q)
-                                                    (- cur-q last-q)))
+                                                   (get cur  "color")
+                                                   (/ (- max-band last-q)
+                                                      (- cur-q last-q)))
                                    (get cur "color"))}))
      {:offset 0.0
       :color  (get (first legend-list) "color")}
@@ -45,8 +45,8 @@
                                     {:field "time" :title "Time" :type "nominal"}]}
                :layer [{:mark {:type        "line"
                                :interpolate "monotone"
-                               :stroke      {:x2 0
-                                             :y1 1
+                               :stroke      {:x2       0
+                                             :y1       1
                                              :gradient "linear"
                                              :stops    (create-stops legend-list last-clicked-info)}}}
                          ;; Layer with all points for selection
@@ -60,7 +60,7 @@
                         :mark     {:type   "point"
                                    :filled true}
                         :encoding {:size {:condition {:selection :point-hover :value 150}
-                                          :value 75}
+                                          :value     75}
                                    :color {:field  "band"
                                            :type   "quantitative"
                                            :scale  (create-scale legend-list)
@@ -71,7 +71,7 @@
                                :fill   "black"
                                :stroke "black"}
                         :encoding {:size {:condition {:selection :point-hover :value 150}
-                                          :value 75}}}]}]})
+                                          :value     75}}}]}]})
 
 (defn render-vega [spec layer-click! elem]
   (when (and spec (seq (get-in spec [:data :values])))

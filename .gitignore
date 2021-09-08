@@ -1,18 +1,16 @@
 # Developer Tool Config Files
-.clj-kondo
 .cpcache
 .DS_Store
 .nrepl-port
 .rebel_readline_history
 .vscode
+.clj-kondo/*
+!.clj-kondo/config.edn
 
 # Build Directories and Files
-.key
-email-server.edn
-logs
-target
+/.key
+/logs
+/target
 
 # Configuration files
-config.edn
-email-server.edn
-camera-config.edn
+/config.edn

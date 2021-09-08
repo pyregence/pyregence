@@ -64,6 +64,7 @@
   (-> result
       (rename-keys {:created_at    :created-at
                     :elmfire_done  :elmfire-done?
+                    :display_name  :display-name
                     :gridfire_done :gridfire-done?
                     :job_id        :job-id
                     :user_id       :user-id
@@ -86,23 +87,23 @@
 (defn- initialize-match-job! [user-id]
   (sql-primitive (call-sql "initialize_match_job" user-id)))
 
-(defn- update-match-job! [job-id {:keys [md-status message elmfire-done? gridfire-done? request]}]
-  (call-sql "update_match_job" job-id md-status message elmfire-done? gridfire-done? (when (some? request) (clj->json request))))
+(defn- update-match-job! [job-id {:keys [md-status display-name message elmfire-done? gridfire-done? request]}]
+  (call-sql "update_match_job" job-id md-status display-name message elmfire-done? gridfire-done? (when (some? request) (clj->json request))))
 
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]
   (when-not (send-to-server! host
                              port
                              (json/write-str
-                               (-> (get-match-job job-id)
-                                   (:request)
-                                   (merge extra-payload))
-                               :key-fn kebab->camel))
+                              (-> (get-match-job job-id)
+                                  (:request)
+                                  (merge extra-payload))
+                              :key-fn kebab->camel))
     (update-match-job! job-id {:md-status 1
                                :message   (str "Connection to " host " failed.")})))
 
 (defn- create-match-job!
-  [{:keys [user-id ignition-time] :as params}]
+  [{:keys [display-name user-id ignition-time] :as params}]
   (let [job-id        (initialize-match-job! user-id)
         model-time    (convert-date-string ignition-time)
         request       (merge params
@@ -123,6 +124,7 @@
                               :geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
                               :action              "add"})
         job           {:user-id        user-id
+                       :display-name   (or display-name (str "Match Drop " job-id))
                        :md-status      2
                        :message        (str "Job " job-id " Initiated.")
                        :elmfire-done?  false
@@ -141,18 +143,18 @@
   "Creates a new match drop run and starts the analysis."
   [{:keys [user-id] :as params}]
   (data-response
-    (cond
-      (not (get-config :features :match-drop))
-      {:error "Match drop is currently disabled. Please contact your system administrator to enable it."}
+   (cond
+     (not (get-config :features :match-drop))
+     {:error "Match drop is currently disabled. Please contact your system administrator to enable it."}
 
-      (pos? (count-running-user-match-jobs user-id))
-      {:error "Match drop is already running. Please wait until it has completed."}
+     (pos? (count-running-user-match-jobs user-id))
+     {:error "Match drop is already running. Please wait until it has completed."}
 
-      (< 5 (count-all-running-match-drops))
-      {:error "The queue is currently full. Please try again later."}
+     (< 5 (count-all-running-match-drops))
+     {:error "The queue is currently full. Please try again later."}
 
-      :else
-      (create-match-job! params))))
+     :else
+     (create-match-job! params))))
 
 (defn get-match-drops
   "Returns the user's match drops"
@@ -204,19 +206,31 @@
 (defn- process-message! [job-id {:keys [message response-host]}]
   (update-match-job! job-id {:message (str (get host-names response-host) ": " message)}))
 
+(defn- error-response [response-host response-port message]
+  (when (and response-host response-port) ; TODO: Use spec to validate these fields
+    (send-to-server! response-host
+                     response-port
+                     (json/write-str
+                      {:status        1
+                       :message       (str "Bad Request: " message)
+                       :response-host (get-md-config :app-host)
+                       :response-port (get-md-config :app-port)}
+                      :key-fn (comp kebab->camel name)))))
+
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
-  (let [{:keys [fire-name status]
+  (let [{:keys [fire-name status response-host response-port]
          :or {fire-name ""}
          :as response} (nil-on-error (json/read-str msg :key-fn (comp keyword camel->kebab)))
         job-id (-> fire-name (str/split #"-") (last) (val->long))]
-    (when (and (pos? job-id)
-               (= 2 (:md-status (get-match-job job-id))))
+    (if (and (pos? job-id)
+             (= 2 (:md-status (get-match-job job-id))))
       (case status
         0 (process-complete! job-id response)
         1 (process-error!    job-id response)
         2 (process-message!  job-id response)
-        nil))))
+        (error-response response-host response-port "Invalid status code."))
+      (error-response response-host response-port "Invalid or missing fire-name."))))
 
 (defn process-message
   "Accepts a message from the socket server and sends it to be processed."

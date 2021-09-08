@@ -1,7 +1,7 @@
 (ns pyregence.remote-api
   (:require [clojure.data.json :as json]
-            [clojure.repl :refer [demunge]]
-            [clojure.string :as str]
+            [clojure.repl      :refer [demunge]]
+            [clojure.string    :as str]
             [pyregence.authentication :refer [add-new-user
                                               add-org-user
                                               get-org-list
