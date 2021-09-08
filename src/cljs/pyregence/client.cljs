@@ -4,6 +4,7 @@
             [pyregence.config                   :as c]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.dashboard          :as dashboard]
+            [pyregence.pages.help               :as help]
             [pyregence.pages.login              :as login]
             [pyregence.pages.near-term-forecast :as ntf]
             [pyregence.pages.register           :as register]
@@ -17,6 +18,7 @@
    "/admin"              admin/root-component
    "/dashboard"          dashboard/root-component
    "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/help"               help/root-component
    "/login"              login/root-component
    "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
    "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
