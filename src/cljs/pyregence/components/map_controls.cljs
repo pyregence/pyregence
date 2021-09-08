@@ -573,7 +573,7 @@
       300
       "Match Drop Tool"
       close-fn!
-      (fn [_ _ _]
+      (fn [_ _]
         [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
          [:div {:style {:flex-grow 1 :font-size "0.9rem" :margin "0.5rem 1rem"}}
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
@@ -656,7 +656,7 @@
       460
       "Wildfire Camera Tool"
       close-fn!
-      (fn [_ _ _]
+      (fn [_ _]
         (cond
           (nil? @*camera)
           [:div {:style {:padding "1.2em"}}
@@ -779,25 +779,21 @@
                         legend-list
                         last-clicked-info
                         close-fn!]
-  (r/with-let [click-event      (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))
-               init-box-height  200
-               init-box-width   400]
+  (r/with-let [click-event      (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
     [:div#info-tool
      [resizable-window
       parent-box
-      init-box-height
-      init-box-width
+      200
+      400
       "Point Information"
       close-fn!
-      (fn [box-height box-width title-height]
-        (let [has-point? (mb/get-overlay-center)
-              height     (max (- init-box-height title-height) box-height)
-              width      (max init-box-width box-width)]
+      (fn [box-height box-width]
+        (let [has-point? (mb/get-overlay-center)]
           (cond
             (not has-point?)
             [loading-cover
-             height
-             width
+             box-height
+             box-width
              "Click on the map to view the value(s) of particular point."]
 
             (nil? last-clicked-info)
@@ -805,8 +801,8 @@
 
             (number? last-clicked-info)
             [single-point-info
-             height
-             width
+             box-height
+             box-width
              last-clicked-info
              legend-list
              units
@@ -814,8 +810,8 @@
 
             (not-empty last-clicked-info)
             [vega-information
-             height
-             width
+             box-height
+             box-width
              *layer-idx
              select-layer!
              units
