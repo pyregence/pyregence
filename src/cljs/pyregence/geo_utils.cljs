@@ -19,6 +19,18 @@
         y (-> lat (+ 90.0) (/ 360.0) (* Math/PI) (Math/tan) (Math/log) (* earth-radius))]
     [x y]))
 
+(defn EPSG:3857->4326
+  "Convert web mercator(3857) x/y coordinates to wgs84(4326) lon/lat coordinates."
+  [[x y]]
+  {:pre  [(number? x) (number? y)]
+   :post [(fn [[lon lat]] (and (number? lon)
+                               (<= -180.0 lon 180.0)
+                               (number? lat)
+                               (<= -90.0 lat 90.0)))]}
+  (let [lon (/ x 111319.490778)
+        lat (-> y (/ earth-radius) (Math/exp) (Math/atan) (/ Math/PI) (* 360.0) (- 90.0))]
+    [lon lat]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Resolution
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

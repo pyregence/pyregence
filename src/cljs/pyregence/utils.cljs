@@ -380,6 +380,25 @@
     (re-matches #"^-?([\d]+[\d\,]*\.*[\d]+)$|^-?([\d]+)$" v)
     (number? v)))
 
+(defn num-str-compare
+  "Compare two strings as numbers if they are numeric"
+  [asc x y]
+  (let [both-numbers? (and (is-numeric? x) (is-numeric? y))
+        sort-x        (if both-numbers? (js/parseFloat x) x)
+        sort-y        (if both-numbers? (js/parseFloat y) y)]
+    (if asc
+      (compare sort-x sort-y)
+      (compare sort-y sort-x))))
+
+(defn find-key-by-id
+  ([coll id]
+   (find-key-by-id coll id :opt-label))
+  ([coll id k]
+   (some #(when (= (:opt-id %) id) (get % k)) coll)))
+
+(defn find-by-id [coll id]
+  (some #(when (= (:opt-id %) id) %) coll))
+
 (defn try-js-aget [obj & values]
   (try
     (reduce
