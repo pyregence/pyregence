@@ -693,8 +693,9 @@
                                    :padding  "2px"
                                    :position "absolute"
                                    :left     "1rem"}}
-               [:div {:style {:height "32px"
-                              :width  "32px"}}
+               [:div {:style {:height    "32px"
+                              :transform "translate(1px, 1px)"
+                              :width     "32px"}}
                 [svg/reset]]]])
            [tool-tip-wrapper
             "Zoom Map to Camera"
