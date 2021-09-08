@@ -380,6 +380,12 @@
     (re-matches #"^-?([\d]+[\d\,]*\.*[\d]+)$|^-?([\d]+)$" v)
     (number? v)))
 
+(defn intersects? [s1 s2]
+  {:pre [(every? set? [s1 s2])]}
+  (-> (sets/intersection s1 s2)
+      (count)
+      (pos?)))
+
 (defn num-str-compare
   "Compare two strings as numbers if they are numeric"
   [asc x y]
