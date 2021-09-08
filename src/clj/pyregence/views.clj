@@ -30,7 +30,7 @@
            :content  "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
    [:meta {:property "og:image" :content "/images/pyrecast-logo.png"}]
    [:meta {:property "og:url" :content "https://pyrecast.org/"}]
-   (include-css "css/style.css")
+   (include-css "/css/style.css")
    [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
    [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
    [:script "window.name = 'pyrecast'"]

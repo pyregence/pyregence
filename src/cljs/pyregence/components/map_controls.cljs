@@ -843,9 +843,9 @@
    :top        "16px"
    :transition "all 200ms ease-in"})
 
-(defn legend-box [legend-list reverse? mobile?]
+(defn legend-box [legend-list reverse? mobile? units]
   (reset! show-legend? (not mobile?))
-  (fn [legend-list reverse? mobile?]
+  (fn [legend-list reverse? mobile? units]
     (when (and @show-legend? (seq legend-list))
       [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel?))}
        [:div {:style {:display "flex" :flex-direction "column"}}
@@ -853,7 +853,10 @@
                        ^{:key i}
                        [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
                         [:div {:style ($legend-color (get leg "color"))}]
-                        [:label (get leg "label")]])
+                        [:label (str (get leg "label")
+                                     (if (or (= units "%") (= units "\u00B0F"))
+                                       units
+                                       (str " " units)))]])
                      (if reverse?
                        (reverse legend-list)
                        legend-list))]])))
