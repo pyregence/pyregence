@@ -80,6 +80,7 @@
        :magnify-zoom-in [svg/magnify-zoom-in]
        :my-location     [svg/my-location]
        :next-button     [svg/next-button]
+       :right-arrow     [svg/right-arrow]
        :pause-button    [svg/pause-button]
        :play-button     [svg/play-button]
        :previous-button [svg/previous-button]
@@ -155,19 +156,18 @@
 
 (defn $collapsible-panel [show? mobile?]
   {:background-color ($/color-picker :bg-color)
-   :border-right     (str "1px solid " ($/color-picker :border-color))
    :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
    :color            ($/color-picker :font-color)
    :height           "100%"
    :left             (if show?
                        "0"
                        (if mobile?
-                         "calc(-100% + 2px)"
-                         "calc(-18rem + 2px)"))
-   :overflow         "auto"
+                         "calc(-65% - 2px)"
+                         "calc(-18rem - 2px)"))
+   :overflow         "display"
    :position         "absolute"
    :transition       "all 200ms ease-in"
-   :width            (if mobile? "100%" "18rem")
+   :width            (if mobile? "65%" "18rem")
    :z-index          "101"})
 
 (defn $layer-selection []
@@ -255,6 +255,46 @@
                     key])))
              underlays))])}))
 
+(defn hs-str [hide?]
+  (if hide? "Hide" "Show"))
+
+(defn- $collapsible-button []
+   {:background-color           ($/color-picker :bg-color)
+    :border-bottom-right-radius "5px"
+    :border-color               ($/color-picker :transparent)
+    :border-style               "solid"
+    :border-top-right-radius    "5px"
+    :border-width               "0px"
+    :box-shadow                 (str "3px 1px 4px 0 rgb(0, 0, 0, 0.25)")
+    :cursor                     "pointer"
+    :fill                       ($/color-picker :font-color)
+    :height                     "40px"
+    :width                      "28px"})
+
+(defn- collapsible-button []
+  [:button
+   {:style    ($collapsible-button)
+    :on-click #(swap! show-panel? not)}
+   [:div {:style {:align-items     "center"
+                  :display         "flex"
+                  :flex-direction  "column"
+                  :justify-content "center"
+                  :transform       (if @show-panel? "rotate(180deg)" "none")}}
+    [svg/right-arrow]]])
+
+(defn- collapsible-toggle [mobile?]
+  [:div#collapsible-toggle
+   {:style {:display  "block"
+            :left     "100%"
+            :position "absolute"
+            :top      "50%"}}
+   (if mobile?
+     [collapsible-button]
+     [tool-tip-wrapper
+      (str (hs-str @show-panel?) " layer selection")
+      :left
+      (collapsible-button)])])
+
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
@@ -265,6 +305,7 @@
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
          [:div {:style {:overflow "auto"}}
+          [collapsible-toggle mobile?]
           [:div#layer-selection {:style {:padding "1rem"}}
            [:div {:style {:display "flex" :justify-content "space-between"}}
             [:label {:style ($layer-selection)} "Layer Selection"]
@@ -376,19 +417,12 @@
    :flex-direction "column"
    :right          "16px"})
 
-(defn hs-str [hide?]
-  (if hide? "Hide" "Show"))
-
 (defn ed-str [enabled?]
   (if enabled? "Disable" "Enable"))
 
 (defn tool-bar [show-info? show-match-drop? show-camera? show-red-flag? show-fire-history? set-show-info! mobile? user-id]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
-   (->> [[:layers
-          (str (hs-str @show-panel?) " layer selection")
-          #(swap! show-panel? not)
-          false]
-         (when-not mobile?
+   (->> [(when-not mobile?
            [:info
             (str (hs-str @show-info?) " point information")
             #(do (set-show-info! (not @show-info?))
