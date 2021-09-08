@@ -763,31 +763,43 @@
      [information-div last-clicked-info *layer-idx units info-height]]))
 
 (defn- single-point-info [box-height _ band legend-list units convert]
-  (let [legend-map  (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
-        legend-keys (sort (keys legend-map))
-        color       (or (get-in legend-map [(-> band
-                                                (max (first legend-keys))
-                                                (min (last legend-keys)))
-                                            "color"])
-                        (let [[low high] (u/find-boundary-values band (sort (keys legend-map)))]
-                          (when (and high low)
-                            (u/interp-color (get-in legend-map [low "color"])
-                                            (get-in legend-map [high "color"])
-                                            (/ (- band low) (- high low))))))]
+  (let [legend-map    (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
+        legend-keys   (sort (keys legend-map))
+        color         (or (get-in legend-map [(-> band
+                                                  (max (first legend-keys))
+                                                  (min (last legend-keys)))
+                                              "color"])
+                          (let [[low high] (u/find-boundary-values band (sort (keys legend-map)))]
+                            (when (and high low)
+                              (u/interp-color (get-in legend-map [low "color"])
+                                              (get-in legend-map [high "color"])
+                                              (/ (- band low) (- high low))))))]
     [:div {:style {:align-items     "center"
                    :display         "flex"
+                   :flex-direction  "column"
                    :height          box-height
-                   :justify-content "center"
+                   :justify-content "space-around"
                    :position        "relative"
                    :width           "100%"}}
-     [:div {:style {:display "flex" :flex-direction "row"}}
+     [:div {:style {:display        "flex"
+                    :flex-direction "row"
+                    :margin-top     "0.75rem"}}
       [:div {:style {:background-color color
                      :height           "1.5rem"
                      :margin-right     "0.5rem"
                      :width            "1.5rem"}}]
       [:h4 (u/end-with (or (get-in legend-map [band "label"])
                            (if (fn? convert) (convert band) band))
-                       units)]]]))
+                       units)]]
+     (when (some? ((fn [v] (= "TU1" (get v "label"))) (vals legend-map))) ;TODO: need a better way to check for FBFM layer
+      [:div {:style {:margin "0.125rem 0.75rem"}}
+       [:p {:style {:margin-bottom "0.125rem"
+                    :text-align    "center"}}
+        [:strong "Fuel Type: "]
+        (get-in c/fbfm40-lookup [band :fuel-type])]
+       [:p {:style {:margin-bottom "0"}}
+        [:strong "Description: "]
+        (get-in c/fbfm40-lookup [band :description])]])]))
 
 (defn information-tool [get-point-info!
                         parent-box
