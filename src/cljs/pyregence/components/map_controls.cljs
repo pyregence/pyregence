@@ -745,7 +745,6 @@
 (defn- single-point-info [box-height _ band legend-list units convert]
   (let [legend-map    (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
         legend-keys   (sort (keys legend-map))
-        legend-labels (into #{} (map #(get % "label") (vals legend-map)))
         color         (or (get-in legend-map [(-> band
                                                   (max (first legend-keys))
                                                   (min (last legend-keys)))
@@ -772,7 +771,7 @@
       [:h4 (u/end-with (or (get-in legend-map [band "label"])
                            (if (fn? convert) (convert band) band))
                        units)]]
-     (when (contains? legend-labels "TU1");TODO: need a better way to check for FBFM layer
+     (when (some? ((fn [v] (= "TU1" (get v "label"))) (vals legend-map))) ;TODO: need a better way to check for FBFM layer
       [:div {:style {:margin "0.125rem 0.75rem"}}
        [:p {:style {:margin-bottom "0.125rem"
                     :text-align    "center"}}
