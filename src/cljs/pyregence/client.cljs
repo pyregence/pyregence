@@ -30,7 +30,7 @@
   (let [root-component (-> js/window .-location .-pathname uri->root-component)]
     (render [root-component params] (dom/getElement "app"))))
 
-(defn ^:export init
+(defn- ^:export init
   "Define the init function to be called from window.onload()."
   [params]
   (let [clj-params (js->clj params :keywordize-keys true)
@@ -44,7 +44,7 @@
     (c/set-mapbox-access-token! (get-in cur-params [:mapbox :access-token]))
     (render-root cur-params)))
 
-(defn ^:after-load mount-root!
+(defn- ^:after-load mount-root!
   "A hook for figwheel to call the init function again."
   []
   (println "Rerunning init function for figwheel.")
