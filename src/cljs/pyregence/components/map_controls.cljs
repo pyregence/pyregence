@@ -268,7 +268,7 @@
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
          [:div#layer-selection {:style {:padding "1rem"}}
-          [:div {:style {:display         "flex" :justify-content "center"}}
+          [:div {:style {:display "flex" :justify-content "center"}}
            [:label {:style ($layer-selection)} "Layer Selection"]
            [:span {:style {:margin-right "-.5rem"}}
             [tool-button :close #(reset! show-panel? false)]]]
