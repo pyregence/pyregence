@@ -779,7 +779,7 @@
                         legend-list
                         last-clicked-info
                         close-fn!]
-  (r/with-let [click-event      (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
+  (r/with-let [click-event (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
     [:div#info-tool
      [resizable-window
       parent-box
