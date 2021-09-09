@@ -685,7 +685,7 @@
                   :style ($/combine $awf-logo-style)}]
            (when @terrain?
              [tool-tip-wrapper
-              "Reset View"
+              "Zoom Out to 2D"
               :left
               [:button {:class    (<class $/p-themed-button)
                         :on-click reset-view
