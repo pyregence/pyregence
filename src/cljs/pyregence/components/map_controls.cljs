@@ -158,16 +158,13 @@
   {:background-color ($/color-picker :bg-color)
    :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
    :color            ($/color-picker :font-color)
-   :display          "flex"
-   :flex-direction   "column"
    :height           "100%"
-   :justify-content  "space-between"
    :left             (if show?
                        "0"
                        (if mobile?
                          "calc(-65% - 2px)"
                          "calc(-18rem - 2px)"))
-   :overflow         "display"
+   :overflow         "visible"
    :position         "absolute"
    :transition       "all 200ms ease-in"
    :width            (if mobile? "65%" "18rem")
@@ -298,6 +295,26 @@
       :left
       (collapsible-button)])])
 
+(defn- help-section []
+  [:section#help-section {:style {:width "100%"}}
+   [:article {:style {:margin-bottom "0.5rem"
+                      :padding-left  "1rem"
+                      :padding-right "1rem"}}
+    [:div {:style {:background      ($/color-picker :transparent)
+                   :border-radius   "8px"
+                   :box-shadow      "0px 0px 5px #bbbbbb"
+                   :display         "flex"
+                   :justify-content "center"
+                   :padding         "0.5em"}}
+     [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
+          :target "_blank"
+          :style  {:color       ($/color-picker :white)
+                   :font-family "Avenir"
+                   :font-style  "italic"
+                   :margin      "0"
+                   :text-align  "center"}}
+      "Learn more about the data."]]]])
+
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
@@ -307,61 +324,49 @@
     (fn [*params select-param! active-opacity param-options mobile?]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
-         [collapsible-toggle mobile?]
-         [:div#layer-selection {:style {:padding "1rem"}}
-          [:div {:style {:display "flex" :justify-content "center"}}
-           [:label {:style ($layer-selection)} "Layer Selection"]
-           [:span {:style {:margin-right "-.5rem"}}
-            [tool-button :close #(reset! show-panel? false)]]]
-          (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
-                 (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                   ^{:key hover-text}
-                   [:<>
-                    [panel-dropdown
-                     opt-label
-                     hover-text
-                     (get *params key)
-                     sorted-options
-                     (= 1 (count sorted-options))
-                     #(select-param! % key)
-                     selected-param-set]
-                    (when underlays
-                      [optional-layers underlays *params select-param!])]))
-               param-options)
-          [:div {:style {:margin-top ".5rem"}}
-           [:label (str "Opacity: " @active-opacity)]
-           [:input {:style     {:width "100%"}
-                    :type      "range"
-                    :min       "0"
-                    :max       "100"
-                    :value     @active-opacity
-                    :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                    (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-          [panel-dropdown
-           "Base Map"
-           "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
-           @*base-map
-           (c/base-map-options)
-           false
-           select-base-map!]]
-         [:section#help-section {:style {:width "100%"}}
-           [:article {:style {:margin-bottom "0.5rem"
-                              :padding-left  "1rem"
-                              :padding-right "1rem"}}
-            [:div {:style {:background      ($/color-picker :transparent)
-                           :border-radius   "8px"
-                           :box-shadow      "0px 0px 5px #bbbbbb"
-                           :display         "flex"
-                           :justify-content "center"
-                           :padding         "0.5em"}}
-             [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
-                  :target "_blank"
-                  :style  {:color       ($/color-picker :white)
-                           :font-family "Avenir"
-                           :font-style  "italic"
-                           :margin      "0"
-                           :text-align  "center"}}
-              "Learn more about the data."]]]]]))))
+         [:div {:style {:display         "flex"
+                        :flex-direction  "column"
+                        :height          "100%"
+                        :justify-content "space-between"
+                        :overflow-y      "auto"}}
+          [collapsible-toggle mobile?]
+          [:div#layer-selection {:style {:padding "1rem"}}
+           [:div {:style {:display "flex" :justify-content "center"}}
+            [:label {:style ($layer-selection)} "Layer Selection"]
+            [:span {:style {:margin-right "-.5rem"}}
+             [tool-button :close #(reset! show-panel? false)]]]
+           (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
+                  (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                    ^{:key hover-text}
+                    [:<>
+                     [panel-dropdown
+                      opt-label
+                      hover-text
+                      (get *params key)
+                      sorted-options
+                      (= 1 (count sorted-options))
+                      #(select-param! % key)
+                      selected-param-set]
+                     (when underlays
+                       [optional-layers underlays *params select-param!])]))
+                param-options)
+           [:div {:style {:margin-top ".5rem"}}
+            [:label (str "Opacity: " @active-opacity)]
+            [:input {:style     {:width "100%"}
+                     :type      "range"
+                     :min       "0"
+                     :max       "100"
+                     :value     @active-opacity
+                     :on-change #(do (reset! active-opacity (u/input-int-value %))
+                                     (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
+           [panel-dropdown
+            "Base Map"
+            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
+            @*base-map
+            (c/base-map-options)
+            false
+            select-base-map!]]
+          [help-section]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Share Tool
