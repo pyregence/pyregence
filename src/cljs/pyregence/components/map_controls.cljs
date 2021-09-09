@@ -83,7 +83,6 @@
        :pause-button    [svg/pause-button]
        :play-button     [svg/play-button]
        :previous-button [svg/previous-button]
-       :reset           [svg/reset]
        :share           [svg/share]
        :terrain         [svg/terrain]
        :zoom-in         [svg/zoom-in]
@@ -693,10 +692,9 @@
                                    :padding  "2px"
                                    :position "absolute"
                                    :left     "1rem"}}
-               [:div {:style {:height    "32px"
-                              :transform "translate(1px, 1px)"
-                              :width     "32px"}}
-                [svg/reset]]]])
+               [:div {:style {:height "32px"
+                              :width  "32px"}}
+                [svg/return]]]])
            [tool-tip-wrapper
             "Zoom Map to Camera"
             :right

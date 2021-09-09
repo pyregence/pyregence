@@ -28,7 +28,7 @@
                          (color-picker :white)
                          (color-picker :dark-gray 0.9))
      :bg-hover-color   (if @light?
-                         (color-picker :dark-gray 0.9)
+                         (color-picker :brown)
                          (color-picker :white))
      :border-color     (if @light?
                          (color-picker :brown alpha)
