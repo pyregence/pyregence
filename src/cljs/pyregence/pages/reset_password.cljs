@@ -23,7 +23,7 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn reset-password! []
+(defn- reset-password! []
   (go
     (reset! pending? true)
     (let [errors (remove nil?

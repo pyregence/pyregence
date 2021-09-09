@@ -53,7 +53,7 @@
      :yellow           (str "rgba(249, 175, 59, "  alpha ")")
      color)))
 
-(defn to-merge? [modifiers key return]
+(defn- to-merge? [modifiers key return]
   (when (contains? (set modifiers) key) return))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -9,14 +9,14 @@
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $resizable-window [box-height box-width]
+(defn- $resizable-window [box-height box-width]
   {:height      box-height
    :overflow    "hidden"
    :right       "72px"
    :top         "1rem"
    :width       box-width})
 
-(defn $sw-drag []
+(defn- $sw-drag []
   (merge
    ($/fixed-size "1.5rem")
    {:bottom   "0"
@@ -25,7 +25,7 @@
     :position "absolute"
     :z-index  "3"}))
 
-(defn $sw-drag-icon []
+(defn- $sw-drag-icon []
   {:border-right (str "1px solid " ($/color-picker :border-color))
    :bottom       "-.5rem"
    :height       "1rem"
@@ -35,7 +35,7 @@
    :width        "1rem"
    :z-index      "2"})
 
-(defn $close-button [height]
+(defn- $close-button [height]
   {:fill     ($/color-picker :font-color)
    :height   height
    :position "absolute"
@@ -46,7 +46,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn drag-sw-icon [p-height p-width p-top box-height box-width init-height init-width]
+(defn- drag-sw-icon [p-height p-width p-top box-height box-width init-height init-width]
   (r/with-let [drag-started? (r/atom false)]
     [:<>
      [:div#drag-icon
@@ -67,7 +67,7 @@
                       :height       "100%"
                       :margin-right "2px"}}]]]))
 
-(defn title-div [title title-height on-click]
+(defn- title-div [title title-height on-click]
   (r/create-class
    {:component-did-mount
     (fn [this]

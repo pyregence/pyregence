@@ -158,7 +158,10 @@
    :border-right     (str "1px solid " ($/color-picker :border-color))
    :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
    :color            ($/color-picker :font-color)
+   :display          "flex"
+   :flex-direction   "column"
    :height           "100%"
+   :justify-content  "space-between"
    :left             (if show?
                        "0"
                        (if mobile?
@@ -264,43 +267,60 @@
     (fn [*params select-param! active-opacity param-options mobile?]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
-         [:div {:style {:overflow "auto"}}
-          [:div#layer-selection {:style {:padding "1rem"}}
-           [:div {:style {:display "flex" :justify-content "space-between"}}
-            [:label {:style ($layer-selection)} "Layer Selection"]
-            [:span {:style {:margin-right "-.5rem"}}
-             [tool-button :close #(reset! show-panel? false)]]]
-           (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
-                  (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                    ^{:key hover-text}
-                    [:<>
-                     [panel-dropdown
-                      opt-label
-                      hover-text
-                      (get *params key)
-                      sorted-options
-                      (= 1 (count sorted-options))
-                      #(select-param! % key)
-                      selected-param-set]
-                     (when underlays
-                       [optional-layers underlays *params select-param!])]))
-                param-options)
-           [:div {:style {:margin-top ".5rem"}}
-            [:label (str "Opacity: " @active-opacity)]
-            [:input {:style     {:width "100%"}
-                     :type      "range"
-                     :min       "0"
-                     :max       "100"
-                     :value     @active-opacity
-                     :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                     (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-           [panel-dropdown
-            "Base Map"
-            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
-            @*base-map
-            (c/base-map-options)
-            false
-            select-base-map!]]]]))))
+         [:div#layer-selection {:style {:padding "1rem"}}
+          [:div {:style {:display "flex" :justify-content "center"}}
+           [:label {:style ($layer-selection)} "Layer Selection"]
+           [:span {:style {:margin-right "-.5rem"}}
+            [tool-button :close #(reset! show-panel? false)]]]
+          (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
+                 (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                   ^{:key hover-text}
+                   [:<>
+                    [panel-dropdown
+                     opt-label
+                     hover-text
+                     (get *params key)
+                     sorted-options
+                     (= 1 (count sorted-options))
+                     #(select-param! % key)
+                     selected-param-set]
+                    (when underlays
+                      [optional-layers underlays *params select-param!])]))
+               param-options)
+          [:div {:style {:margin-top ".5rem"}}
+           [:label (str "Opacity: " @active-opacity)]
+           [:input {:style     {:width "100%"}
+                    :type      "range"
+                    :min       "0"
+                    :max       "100"
+                    :value     @active-opacity
+                    :on-change #(do (reset! active-opacity (u/input-int-value %))
+                                    (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
+          [panel-dropdown
+           "Base Map"
+           "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
+           @*base-map
+           (c/base-map-options)
+           false
+           select-base-map!]]
+         [:section#help-section {:style {:width "100%"}}
+           [:article {:style {:margin-bottom "0.5rem"
+                              :padding-left  "1rem"
+                              :padding-right "1rem"}}
+            [:div {:style {:background      ($/color-picker :transparent)
+                           :border-radius   "8px"
+                           :box-shadow      "0px 0px 5px #bbbbbb"
+                           :display         "flex"
+                           :justify-content "center"
+                           :padding         "0.5em"}}
+             [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
+                  :target "_blank"
+                  :style  {:color       ($/color-picker :white)
+                           :font-family "Avenir"
+                           :font-style  "italic"
+                           :margin      "0"
+                           :text-align  "center"}}
+              "Learn more about the data."]]]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Share Tool
@@ -743,31 +763,43 @@
      [information-div last-clicked-info *layer-idx units info-height]]))
 
 (defn- single-point-info [box-height _ band legend-list units convert]
-  (let [legend-map  (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
-        legend-keys (sort (keys legend-map))
-        color       (or (get-in legend-map [(-> band
-                                                (max (first legend-keys))
-                                                (min (last legend-keys)))
-                                            "color"])
-                        (let [[low high] (u/find-boundary-values band (sort (keys legend-map)))]
-                          (when (and high low)
-                            (u/interp-color (get-in legend-map [low "color"])
-                                            (get-in legend-map [high "color"])
-                                            (/ (- band low) (- high low))))))]
+  (let [legend-map    (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
+        legend-keys   (sort (keys legend-map))
+        color         (or (get-in legend-map [(-> band
+                                                  (max (first legend-keys))
+                                                  (min (last legend-keys)))
+                                              "color"])
+                          (let [[low high] (u/find-boundary-values band (sort (keys legend-map)))]
+                            (when (and high low)
+                              (u/interp-color (get-in legend-map [low "color"])
+                                              (get-in legend-map [high "color"])
+                                              (/ (- band low) (- high low))))))]
     [:div {:style {:align-items     "center"
                    :display         "flex"
+                   :flex-direction  "column"
                    :height          box-height
-                   :justify-content "center"
+                   :justify-content "space-around"
                    :position        "relative"
                    :width           "100%"}}
-     [:div {:style {:display "flex" :flex-direction "row"}}
+     [:div {:style {:display        "flex"
+                    :flex-direction "row"
+                    :margin-top     "0.75rem"}}
       [:div {:style {:background-color color
                      :height           "1.5rem"
                      :margin-right     "0.5rem"
                      :width            "1.5rem"}}]
       [:h4 (u/end-with (or (get-in legend-map [band "label"])
                            (if (fn? convert) (convert band) band))
-                       units)]]]))
+                       units)]]
+     (when (some? ((fn [v] (= "TU1" (get v "label"))) (vals legend-map))) ;TODO: need a better way to check for FBFM layer
+      [:div {:style {:margin "0.125rem 0.75rem"}}
+       [:p {:style {:margin-bottom "0.125rem"
+                    :text-align    "center"}}
+        [:strong "Fuel Type: "]
+        (get-in c/fbfm40-lookup [band :fuel-type])]
+       [:p {:style {:margin-bottom "0"}}
+        [:strong "Description: "]
+        (get-in c/fbfm40-lookup [band :description])]])]))
 
 (defn information-tool [get-point-info!
                         parent-box
@@ -843,9 +875,9 @@
    :top        "16px"
    :transition "all 200ms ease-in"})
 
-(defn legend-box [legend-list reverse? mobile?]
+(defn legend-box [legend-list reverse? mobile? units]
   (reset! show-legend? (not mobile?))
-  (fn [legend-list reverse? mobile?]
+  (fn [legend-list reverse? mobile? units]
     (when (and @show-legend? (seq legend-list))
       [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel?))}
        [:div {:style {:display "flex" :flex-direction "column"}}
@@ -853,7 +885,10 @@
                        ^{:key i}
                        [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
                         [:div {:style ($legend-color (get leg "color"))}]
-                        [:label (get leg "label")]])
+                        [:label (str (get leg "label")
+                                     (if (or (= units "%") (= units "\u00B0F"))
+                                       units
+                                       (str " " units)))]])
                      (if reverse?
                        (reverse legend-list)
                        legend-list))]])))

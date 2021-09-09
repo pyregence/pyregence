@@ -133,8 +133,8 @@ Replace *X* with the PostgreSQL version installed on your computer.
 
 *** Modifying hosts file
 
-Add the following line to your hosts file. This local url will be
-launched by Figwheel (see next section).
+Add the following line to your hosts file. This local url will allows
+for a natural URL in the browser.
 
 #+begin_example
 127.0.0.1 local.pyregence.org
@@ -149,7 +149,7 @@ directory and run:
 clojure -M:figwheel
 #+end_src
 
-This will start a webserver on http://local.pyregence.org:8080 (also
+This will start a web server on http://local.pyregence.org:8080 (also
 accessible from http://localhost:8080), which serves up the website in
 dev mode. Any changes to CLJS files will be automatically pushed to
 the browser when the files are saved. Any changes to CLJ files will be
