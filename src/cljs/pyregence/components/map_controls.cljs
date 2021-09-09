@@ -747,7 +747,7 @@
        [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
         (str (:band (get last-clicked-info @*layer-idx)) (u/clean-units units))]])}))
 
-(defn vega-information [box-height box-width *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
+(defn- vega-information [box-height box-width *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
   (r/with-let [info-height (r/atom 0)]
     [:<>
      [vega-box
