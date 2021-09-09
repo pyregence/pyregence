@@ -4,6 +4,7 @@
             [pyregence.config                   :as c]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.dashboard          :as dashboard]
+            [pyregence.pages.help               :as help]
             [pyregence.pages.login              :as login]
             [pyregence.pages.near-term-forecast :as ntf]
             [pyregence.pages.register           :as register]
@@ -17,6 +18,7 @@
    "/admin"              admin/root-component
    "/dashboard"          dashboard/root-component
    "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/help"               help/root-component
    "/login"              login/root-component
    "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
    "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
@@ -28,7 +30,7 @@
   (let [root-component (-> js/window .-location .-pathname uri->root-component)]
     (render [root-component params] (dom/getElement "app"))))
 
-(defn ^:export init
+(defn- ^:export init
   "Define the init function to be called from window.onload()."
   [params]
   (let [clj-params (js->clj params :keywordize-keys true)
@@ -42,7 +44,7 @@
     (c/set-mapbox-access-token! (get-in cur-params [:mapbox :access-token]))
     (render-root cur-params)))
 
-(defn ^:after-load mount-root!
+(defn- ^:after-load mount-root!
   "A hook for figwheel to call the init function again."
   []
   (println "Rerunning init function for figwheel.")

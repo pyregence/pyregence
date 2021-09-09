@@ -13,7 +13,7 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn verify-account! [email reset-key]
+(defn- verify-account! [email reset-key]
   (go
     (if (:success (<! (u/call-clj-async! "verify-user-email" email reset-key)))
       (do

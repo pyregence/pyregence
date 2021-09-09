@@ -27,18 +27,18 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-org-users-list [org-id]
+(defn- get-org-users-list [org-id]
   (go
     (reset! org-users
             (edn/read-string (:body (<! (u/call-clj-async! "get-org-users-list" org-id)))))))
 
-(defn get-org-list []
+(defn- get-org-list []
   (go
     (reset! orgs (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
     (reset! *org (:opt-id (first @orgs)))
     (get-org-users-list @*org)))
 
-(defn update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
+(defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
   (go
     (<! (u/call-clj-async! "update-org-info"
                            opt-id
@@ -49,7 +49,7 @@
     (get-org-list)
     (toast-message! "Organization info updated.")))
 
-(defn add-org-user! [email]
+(defn- add-org-user! [email]
   (go
     (let [res (<! (u/call-clj-async! "add-org-user" @*org email))]
       (if (:success res)
@@ -57,19 +57,19 @@
             (toast-message! (str "User " email " added.")))
         (toast-message! (:body res))))))
 
-(defn update-org-user-role! [org-user-id role-id]
+(defn- update-org-user-role! [org-user-id role-id]
   (go
     (<! (u/call-clj-async! "update-org-user-role" org-user-id role-id))
     (get-org-users-list @*org)
     (toast-message! "User role updated.")))
 
-(defn remove-org-user! [org-user-id]
+(defn- remove-org-user! [org-user-id]
   (go
     (<! (u/call-clj-async! "remove-org-user" org-user-id))
     (get-org-users-list @*org)
     (toast-message! "User removed.")))
 
-(defn select-org [org-id]
+(defn- select-org [org-id]
   (reset! *org org-id)
   (get-org-users-list @*org))
 
@@ -77,24 +77,21 @@
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $org-item [selected?]
+(defn- $org-item [selected?]
   (merge {:border-bottom (str "1px solid " ($/color-picker :brown))
           :padding       ".75rem"}
          (when selected? {:background-color ($/color-picker :yellow 0.3)})))
-
-(defn $sm-button []
-  {:padding "4px 6px"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn org-item [org-id name]
+(defn- org-item [org-id name]
   [:label {:style    ($org-item (= org-id @*org))
            :on-click #(select-org org-id)}
    name])
 
-(defn org-list []
+(defn- org-list []
   [:div#org-list
    [:div {:style ($/action-box)}
     [:div {:style ($/action-header)}
@@ -105,7 +102,7 @@
                     ^{:key opt-id} [org-item opt-id opt-label])
                   @orgs))]]]])
 
-(defn org-settings [{:keys [opt-id opt-label email-domains auto-add? auto-accept?]}]
+(defn- org-settings [{:keys [opt-id opt-label email-domains auto-add? auto-accept?]}]
   (r/with-let [_opt-label     (r/atom opt-label)
                _email-domains (r/atom email-domains)
                _auto-add?     (r/atom auto-add?)
@@ -125,7 +122,7 @@
                 :value    "Save"
                 :on-click #(update-org-info! opt-id @_opt-label @_email-domains @_auto-add? @_auto-accept?)}]]]]))
 
-(defn user-item [org-user-id opt-label email role-id]
+(defn- user-item [org-user-id opt-label email role-id]
   (r/with-let [_role-id (r/atom role-id)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
@@ -150,7 +147,7 @@
                :value    "Update Role"
                :on-click #(update-org-user-role! org-user-id @_role-id)}]]]))
 
-(defn org-users-list []
+(defn- org-users-list []
   (r/with-let [new-email (r/atom "")]
     [:div#org-users {:style {:margin-top "2rem"}}
      [:div {:style ($/action-box)}

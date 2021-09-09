@@ -93,13 +93,13 @@
 
 ;;; Fetch results
 
-(defn chan? [c]
+(defn- chan? [c]
   (= (type c) cljs.core.async.impl.channels/ManyToManyChannel))
 
-(defn promise? [p]
+(defn- promise? [p]
   (instance? js/Promise p))
 
-(defn fetch
+(defn- fetch
   "Launches a js/window.fetch operation. Returns a channel that will
   receive the response or nil if a network error occurs. The options
   map will be automatically converted to a JS object for the fetch
@@ -231,7 +231,7 @@
       num-str
       (str "0" num-str))))
 
-(defn get-time-zone
+(defn- get-time-zone
   "Returns the string code for the local timezone."
   [js-date]
   (-> js-date
@@ -339,7 +339,7 @@
 
 ;;; Colors
 
-(defn to-hex-str [num]
+(defn- to-hex-str [num]
   (let [hex-num (.toString (.round js/Math num) 16)]
     (if (= 2 (count hex-num))
       hex-num
@@ -360,7 +360,7 @@
 
 ;;; Misc Functions
 
-(defn no-data? [x]
+(defn- no-data? [x]
   (or
    (and (number? x) (.isNaN js/Number x))
    (and (string? x)
@@ -375,7 +375,7 @@
 (defn missing-data? [& args]
   (some no-data? args))
 
-(defn is-numeric? [v]
+(defn- is-numeric? [v]
   (if (string? v)
     (re-matches #"^-?([\d]+[\d\,]*\.*[\d]+)$|^-?([\d]+)$" v)
     (number? v)))
