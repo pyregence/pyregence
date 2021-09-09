@@ -226,14 +226,12 @@
 
 (defn clear-popup!
   "Remove a popup from the map."
-  ([]
-   (when (some? @the-popup)
-     (.remove @the-popup)
-     (reset! the-popup nil)))
-  ([popup-type]
-   (when (and (some? @the-popup) (= popup-type (.. @the-popup -options -type)))
-     (.remove @the-popup)
-     (reset! the-popup nil))))
+  [& [popup-type]]
+  (when (and (some? @the-popup)
+             (or (nil? popup-type)
+                 (= popup-type (.. @the-popup -options -type))))
+    (.remove @the-popup)
+    (reset! the-popup nil)))
 
 (defn init-popup!
   "Creates a popup at `[lng lat]`, with `body` as the contents. `body` can
@@ -647,7 +645,7 @@
                      :type   "fill"
                      :paint  {:fill-color         color
                               :fill-outline-color (on-hover "#000000" color)
-                              :fill-opacity       (on-hover 1 0.3)}}]]
+                              :fill-opacity       (on-hover 1 0.4)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn- mvt-source [layer-name]

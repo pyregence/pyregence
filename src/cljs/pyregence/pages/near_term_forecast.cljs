@@ -11,9 +11,9 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.popups       :as p]
             [pyregence.components.map-controls :as mc]
             [pyregence.components.mapbox       :as mb]
+            [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
             [pyregence.components.messaging :refer [message-box-modal
                                                     toast-message
@@ -275,7 +275,7 @@
   (let [properties (-> feature (aget "properties") (js->clj))
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
         {:strs [name prettyname containper acres]} properties
-        body       (p/fire-popup prettyname
+        body       (fire-popup prettyname
                                   containper
                                   acres
                                   #(select-param! (keyword name) :fire-name)
@@ -286,7 +286,7 @@
 (defn- init-red-flag-popup! [feature lnglat]
   (let [properties (-> feature (aget "properties") (js->clj))
         {:strs [onset url prod_type]} properties
-        body       (p/red-flag-popup onset url prod_type)]
+        body       (red-flag-popup onset url prod_type)]
     (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
 
 (defn change-type!
