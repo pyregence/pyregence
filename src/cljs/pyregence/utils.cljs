@@ -481,3 +481,10 @@
            (if (< v s)
              (take 2 coll)
              (recur (next coll)))))))
+
+(defn clean-units
+  "Cleans units by adding/not adding a space when needed for units."
+  [units]
+  (if (or (= units "%") (= units "\u00B0F"))
+    units
+    (str " " units)))

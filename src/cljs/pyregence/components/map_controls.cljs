@@ -419,7 +419,8 @@
   (swap! show-red-flag? not)
   (when (and @show-red-flag? (not (mb/layer-exists? "red-flag")))
     (add-red-flag-layer!))
-  (mb/set-visible-by-title! "red-flag" @show-red-flag?))
+  (mb/set-visible-by-title! "red-flag" @show-red-flag?)
+  (mb/clear-popup! "red-flag"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fire History
@@ -694,10 +695,16 @@
                                (reset! terrain? true)
                                (h/show-help! :terrain mobile?)
                                (mb/toggle-dimensions! true)
-                               (mb/fly-to! {:center [longitude latitude]
-                                            :zoom 15
+                               (mb/fly-to! {:center  [longitude latitude]
+                                            :zoom    15
                                             :bearing pan
-                                            :pitch (min (+ 90 tilt) 85)}) 400))
+                                            :pitch   (min (+ 90 tilt) 85)}) 400))
+               reset-view  (fn []
+                             (let [{:keys [longitude latitude]} @*camera]
+                               (reset! terrain? false)
+                               (mb/toggle-dimensions! false)
+                               (mb/fly-to! {:center [longitude latitude]
+                                            :zoom   6})))
                on-click    (fn [features]
                              (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
                                (when (some? @*camera) (put! exit-ch :exit))
@@ -735,6 +742,19 @@
             [:label (str "Camera: " (:name @*camera))]]
            [:img {:src   "images/awf_logo.png"
                   :style ($/combine $awf-logo-style)}]
+           (when @terrain?
+             [tool-tip-wrapper
+              "Zoom Out to 2D"
+              :left
+              [:button {:class    (<class $/p-themed-button)
+                        :on-click reset-view
+                        :style    {:bottom   "1.25rem"
+                                   :padding  "2px"
+                                   :position "absolute"
+                                   :left     "1rem"}}
+               [:div {:style {:height "32px"
+                              :width  "32px"}}
+                [svg/return]]]])
            [tool-tip-wrapper
             "Zoom Map to Camera"
             :right
@@ -784,11 +804,9 @@
     (fn [_]
       [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
        [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
-        (str (:band (get last-clicked-info @*layer-idx))
-             " "
-             units)]])}))
+        (str (:band (get last-clicked-info @*layer-idx)) (u/clean-units units))]])}))
 
-(defn vega-information [box-height box-width *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
+(defn- vega-information [box-height box-width *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
   (r/with-let [info-height (r/atom 0)]
     [:<>
      [vega-box
@@ -924,10 +942,7 @@
                        ^{:key i}
                        [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
                         [:div {:style ($legend-color (get leg "color"))}]
-                        [:label (str (get leg "label")
-                                     (if (or (= units "%") (= units "\u00B0F"))
-                                       units
-                                       (str " " units)))]])
+                        [:label (str (get leg "label") (u/clean-units units))]])
                      (if reverse?
                        (reverse legend-list)
                        legend-list))]])))

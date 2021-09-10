@@ -46,7 +46,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- drag-sw-icon [p-height p-width p-top box-height box-width]
+(defn- drag-sw-icon [p-height p-width p-top box-height box-width init-height init-width]
   (r/with-let [drag-started? (r/atom false)]
     [:<>
      [:div#drag-icon
@@ -57,9 +57,9 @@
                    (let [mouse-x (.-clientX %)
                          mouse-y (.-clientY %)]
                      (when (< (/ p-width 3) (+ mouse-x 68) (- p-width 50))
-                       (reset! box-width (- p-width (+ mouse-x 68))))
+                       (reset! box-width (max init-width (- p-width (+ mouse-x 68)))))
                      (when (> (/ p-height 1.5) (- mouse-y p-top 12) 50)
-                       (reset! box-height (- mouse-y p-top 12)))))
+                       (reset! box-height (max init-height (- mouse-y p-top 12))))))
        :on-drag-start #(reset! drag-started? true)}]
      [:div {:style ($sw-drag-icon)}
       [:span {:style {:border-right (str "1px solid " ($/color-picker :border-color))
@@ -95,7 +95,7 @@
           p-top    (aget parent-rec "top")]
       (when (> @box-height (/ p-height 1.5)) (reset! box-height (/ p-height 1.5)))
       (when (> @box-width  (/ p-width  1.5)) (reset! box-width  (/ p-width 1.5)))
-      [:div#resizable {:style ($/combine $/tool ($resizable-window (max init-height @box-height) (max init-width @box-width)))}
+      [:div#resizable {:style ($/combine $/tool ($resizable-window @box-height @box-width))}
        [title-div title title-height close-fn!]
        (render-content (- @box-height @title-height) @box-width)
-       [drag-sw-icon p-height p-width p-top box-height box-width]])))
+       [drag-sw-icon p-height p-width p-top box-height box-width init-height init-width]])))
