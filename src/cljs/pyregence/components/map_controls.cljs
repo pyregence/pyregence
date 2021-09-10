@@ -26,6 +26,9 @@
 (defonce show-panel?  (r/atom true))
 (defonce show-legend? (r/atom true))
 
+(defn hs-str [hide?]
+  (if hide? "Hide" "Show"))
+
 (defn $dropdown []
   (let [arrow (-> ($/color-picker :font-color)
                   (svg/dropdown-arrow)
@@ -162,12 +165,11 @@
    :left             (if show?
                        "0"
                        (if mobile?
-                         "calc(-65% - 2px)"
+                         "calc(-100% - 2px)"
                          "calc(-18rem - 2px)"))
-   :overflow         "visible"
    :position         "absolute"
    :transition       "all 200ms ease-in"
-   :width            (if mobile? "65%" "18rem")
+   :width            (if mobile? "100%" "18rem")
    :z-index          "101"})
 
 (defn $layer-selection []
@@ -255,9 +257,6 @@
                     key])))
              underlays))])}))
 
-(defn hs-str [hide?]
-  (if hide? "Hide" "Show"))
-
 (defn- $collapsible-button []
    {:background-color           ($/color-picker :bg-color)
     :border-bottom-right-radius "5px"
@@ -284,7 +283,7 @@
 
 (defn- collapsible-toggle [mobile?]
   [:div#collapsible-toggle
-   {:style {:display  "block"
+   {:style {:display  (if (and @show-panel? mobile?) "none" "block")
             :left     "100%"
             :position "absolute"
             :top      "50%"}}
@@ -293,7 +292,7 @@
      [tool-tip-wrapper
       (str (hs-str @show-panel?) " layer selection")
       :left
-      (collapsible-button)])])
+      [collapsible-button]])])
 
 (defn- help-section []
   [:section#help-section {:style {:width "100%"}}
