@@ -373,7 +373,8 @@
   (swap! show-red-flag? not)
   (when (and @show-red-flag? (not (mb/layer-exists? "red-flag")))
     (add-red-flag-layer!))
-  (mb/set-visible-by-title! "red-flag" @show-red-flag?))
+  (mb/set-visible-by-title! "red-flag" @show-red-flag?)
+  (mb/clear-popup! "red-flag"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fire History
