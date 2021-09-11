@@ -643,29 +643,39 @@
          (:body)
          (js/URL.createObjectURL))))
 
+(defn- get-current-camera-time [camera-name]
+  (go
+   (-> (u/call-remote! :post
+                       "clj/get-camera-time"
+                       {:clj-args (list camera-name)})
+       (<!)
+       (:body))))
+
 (defn- refresh-camera-image! [image-url *camera]
   (go (reset! image-url (<! (get-current-image-src (:name *camera))))))
 
 (defn camera-tool [cameras parent-box mobile? terrain? close-fn!]
-  (r/with-let [*camera     (r/atom nil)
-               image-url   (r/atom nil)
-               exit-ch     (chan)
-               zoom-camera (fn []
-                             (let [{:keys [longitude latitude tilt pan]} @*camera]
-                               (reset! terrain? true)
-                               (h/show-help! :terrain mobile?)
-                               (mb/toggle-dimensions! true)
-                               (mb/fly-to! {:center [longitude latitude]
-                                            :zoom 15
-                                            :bearing pan
-                                            :pitch (min (+ 90 tilt) 85)}) 400))
-               on-click    (fn [features]
-                             (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
-                               (when (some? @*camera) (put! exit-ch :exit))
-                               (reset! *camera new-camera)
-                               (reset! image-url nil)
-                               (refresh-camera-image! image-url @*camera)
-                               (u/refresh-on-interval! #(refresh-camera-image! image-url @*camera) 60000 exit-ch)))
+  (r/with-let [*camera      (r/atom nil)
+               *camera-time (r/atom nil)
+               image-url    (r/atom nil)
+               exit-ch      (chan)
+               zoom-camera  (fn []
+                              (let [{:keys [longitude latitude tilt pan]} @*camera]
+                                (reset! terrain? true)
+                                (h/show-help! :terrain mobile?)
+                                (mb/toggle-dimensions! true)
+                                (mb/fly-to! {:center [longitude latitude]
+                                             :zoom 15
+                                             :bearing pan
+                                             :pitch (min (+ 90 tilt) 85)}) 400))
+               on-click     (fn [features]
+                              (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
+                                (when (some? @*camera) (put! exit-ch :exit))
+                                (reset! *camera new-camera)
+                                (reset! image-url nil)
+                                (go (reset! *camera-time (<! (get-current-camera-time (:name @*camera)))))
+                                (refresh-camera-image! image-url @*camera)
+                                (u/refresh-on-interval! #(refresh-camera-image! image-url @*camera) 60000 exit-ch)))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _           (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
                _           (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
@@ -677,43 +687,49 @@
       "Wildfire Camera Tool"
       close-fn!
       (fn [_ _]
-        (cond
-          (nil? @*camera)
-          [:div {:style {:padding "1.2em"}}
-           "Click on a camera to view the most recent image. Powered by "
-           [:a {:href   "http://www.alertwildfire.org/"
-                :ref    "noreferrer noopener"
-                :target "_blank"}
-            "Alert Wildfire"] "."]
+        (let [time-difference-hours (u/ms->hr (u/get-time-difference (u/camera-time->js-date @*camera-time)))]
+          (cond
+            (nil? @*camera)
+            [:div {:style {:padding "1.2em"}}
+             "Click on a camera to view the most recent image. Powered by "
+             [:a {:href   "http://www.alertwildfire.org/"
+                  :ref    "noreferrer noopener"
+                  :target "_blank"}
+              "Alert Wildfire"] "."]
 
-          (some? @image-url)
-          [:div
-           [:div {:style {:display         "flex"
-                          :justify-content "center"
-                          :position        "absolute"
-                          :top             "2rem"
-                          :width           "100%"}}
-            [:label (str "Camera: " (:name @*camera))]]
-           [:img {:src   "images/awf_logo.png"
-                  :style ($/combine $awf-logo-style)}]
-           [tool-tip-wrapper
-            "Zoom Map to Camera"
-            :right
-            [:button {:class    (<class $/p-themed-button)
-                      :on-click zoom-camera
-                      :style    {:bottom   "1.25rem"
-                                 :padding  "2px"
-                                 :position "absolute"
-                                 :right    "1rem"}}
-             [:div {:style {:height "32px"
-                            :width  "32px"}}
-              [svg/binoculars]]]]
-           [:img {:src   @image-url
-                  :style {:height "auto" :width "100%"}}]]
+            (and (some? @*camera-time)
+                 (> time-difference-hours 8))
+            [:div {:style {:padding "1.2em"}}
+             (str "This camera has not been refreshed for " (u/to-precision 1 time-difference-hours) " hours. Please try again later.")]
 
-          :else
-          [:div {:style {:padding "1.2em"}}
-           (str "Loading camera " (:name @*camera) "...")]))]]
+            (some? @image-url)
+            [:div
+             [:div {:style {:display         "flex"
+                            :justify-content "center"
+                            :position        "absolute"
+                            :top             "2rem"
+                            :width           "100%"}}
+              [:label (str "Camera: " (:name @*camera))]]
+             [:img {:src   "images/awf_logo.png"
+                    :style ($/combine $awf-logo-style)}]
+             [tool-tip-wrapper
+              "Zoom Map to Camera"
+              :right
+              [:button {:class    (<class $/p-themed-button)
+                        :on-click zoom-camera
+                        :style    {:bottom   "1.25rem"
+                                   :padding  "2px"
+                                   :position "absolute"
+                                   :right    "1rem"}}
+               [:div {:style {:height "32px"
+                              :width  "32px"}}
+                [svg/binoculars]]]]
+             [:img {:src   @image-url
+                    :style {:height "auto" :width "100%"}}]]
+
+            :else
+            [:div {:style {:padding "1.2em"}}
+             (str "Loading camera " (:name @*camera) "...")])))]]
     (finally
       (put! exit-ch :exit)
       (mb/remove-layer! "fire-cameras")
