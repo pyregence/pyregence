@@ -707,12 +707,12 @@
                                              :zoom    15
                                              :bearing pan
                                              :pitch   (min (+ 90 tilt) 85)}) 400))
-               reset-view  (fn []
-                             (let [{:keys [longitude latitude]} @*camera]
-                               (reset! terrain? false)
-                               (mb/toggle-dimensions! false)
-                               (mb/fly-to! {:center [longitude latitude]
-                                            :zoom   6})))
+               reset-view   (fn []
+                              (let [{:keys [longitude latitude]} @*camera]
+                                (reset! terrain? false)
+                                (mb/toggle-dimensions! false)
+                                (mb/fly-to! {:center [longitude latitude]
+                                             :zoom   6})))
                on-click     (fn [features]
                               (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
                                 (when (some? @*camera) (put! exit-ch :exit))
@@ -721,10 +721,9 @@
                                 (go (reset! *camera-time (<! (get-current-camera-time (:name @*camera)))))
                                 (refresh-camera-image! image-url @*camera)
                                 (u/refresh-on-interval! #(refresh-camera-image! image-url @*camera) 60000 exit-ch)))
-
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
-               _           (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
-               _           (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
+               _            (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
+               _            (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
     [:div#wildfire-camera-tool
      [resizable-window
       parent-box
@@ -789,7 +788,6 @@
             :else
             [:div {:style {:padding "1.2em"}}
              (str "Loading camera " (:name @*camera) "...")])))]]
-
     (finally
       (put! exit-ch :exit)
       (mb/remove-layer! "fire-cameras")
