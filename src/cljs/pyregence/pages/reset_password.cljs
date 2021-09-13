@@ -53,7 +53,10 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn root-component [params]
+(defn root-component
+  "The root component for the /reset-password page.
+   Displays the reset password form."
+  [params]
   (reset! email     (:email     params ""))
   (reset! reset-key (:reset-key params ""))
   (process-toast-messages!)

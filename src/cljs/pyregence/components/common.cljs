@@ -119,11 +119,38 @@
     :reagent-render
     (fn [sibling _] sibling)}))
 
+(defn- tool-tip []
+  (let [tool-ref (atom nil)
+        position (r/atom [-1000 -1000 -1000 -1000])]
+    (r/create-class
+     {:component-did-mount
+      (fn [this]
+        (let [{:keys [sibling-ref arrow-position show?]} (r/props this)]
+          (reset! tool-ref (rd/dom-node this))
+          (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?))))
+
+      :component-did-update
+      (fn [this [_ prev-props]]
+        (let [{:keys [tool-tip-text sibling-ref arrow-position show?]} (r/props this)]
+          (when (or (not= tool-tip-text (:tool-tip-text prev-props))
+                    (not= show?         (:show? prev-props)))
+            (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?)))))
+
+      :render
+      (fn [this]
+        (let [{:keys [tool-tip-text arrow-position show?]} (r/props this)
+              [tip-x tip-y arrow-x arrow-y] @position]
+          [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
+           [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
+           [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
+            [show-line-break tool-tip-text]]]))})))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn radio
+  "A component for radio button."
   ([label state condition on-click]
    (radio label state condition on-click false))
   ([label state condition on-click themed?]
@@ -133,6 +160,7 @@
     [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]]))
 
 (defn check-box
+  "A component for check boxes."
   [label-text state]
   [:span {:style {:margin-bottom ".5rem"}}
    [:input {:style     {:margin-right ".25rem"}
@@ -200,6 +228,7 @@
          (str hour ":00 " timezone)])]]))
 
 (defn simple-form
+  "Simple form component. Adds input fields, an input button, and optionally a footer."
   ([title button-text fields on-click]
    (simple-form title button-text fields on-click nil))
   ([title button-text fields on-click footer]
@@ -224,34 +253,10 @@
                  :value button-text}]
         (when footer (footer))]]]]]))
 
-(defn tool-tip []
-  (let [tool-ref (atom nil)
-        position (r/atom [-1000 -1000 -1000 -1000])]
-    (r/create-class
-     {:component-did-mount
-      (fn [this]
-        (let [{:keys [sibling-ref arrow-position show?]} (r/props this)]
-          (reset! tool-ref (rd/dom-node this))
-          (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?))))
-
-      :component-did-update
-      (fn [this [_ prev-props]]
-        (let [{:keys [tool-tip-text sibling-ref arrow-position show?]} (r/props this)]
-          (when (or (not= tool-tip-text (:tool-tip-text prev-props))
-                    (not= show?         (:show? prev-props)))
-            (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?)))))
-
-      :render
-      (fn [this]
-        (let [{:keys [tool-tip-text arrow-position show?]} (r/props this)
-              [tip-x tip-y arrow-x arrow-y] @position]
-          [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
-           [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
-           [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
-            [show-line-break tool-tip-text]]]))})))
-
 ;; TODO abstract this to take content for things like a dropdown log in.
-(defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
+(defn tool-tip-wrapper
+  "Adds a tooltip given the desired text, direction of the tooltip, and the element."
+  [tool-tip-text arrow-position sibling]
   (r/with-let [show?        (r/atom false)
                sibling-ref  (r/atom nil)]
     [:div {:on-mouse-over  #(do (reset! show? true))

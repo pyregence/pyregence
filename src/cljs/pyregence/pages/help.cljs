@@ -4,7 +4,9 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn root-component [_]
+(defn root-component
+  "The root component of the /help page."
+  [_]
   [:div {:id "help-page"}
    [:h1 {:style {:margin     "5rem 2.5rem"
                  :text-align "center"}}

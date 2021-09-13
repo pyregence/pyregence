@@ -60,7 +60,10 @@
        :on-click #(reset! forgot? true)}
    "Forgot Password?"])
 
-(defn root-component [_]
+(defn root-component
+  "The root component for the /login page.
+   Displays either the login form or request new password form and a link to the register page."
+  [_]
   (process-toast-messages!)
   (fn [_]
     [:<>

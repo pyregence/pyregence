@@ -24,9 +24,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn toast-message! [message]
+  "Puts a message onto the toast message channel."
   (go (>! toast-message-chan message)))
 
 (defn process-toast-messages! []
+  "Perpetually takes a message off of the toast message channel and updates the appropriate atom.
+   Waits 5.5 seconds before looking for the next message on the channel."
   (go (loop [message (<! toast-message-chan)]
         (reset! toast-message-text message)
         (<! (timeout 5000))
@@ -110,7 +113,9 @@
         (doseq [i items] (println i))
         [:<> (interpose-react [:br] (conj (subvec items 0 9)
                                           "See console for complete list."))]))))
-(defn toast-message []
+(defn toast-message
+  "Creates a toast message component."
+  []
   (let [message (r/atom "")]
     (fn []
       (let [message? (not (nil? @toast-message-text))]
@@ -129,7 +134,9 @@
            :value    label
            :on-click (when (seq callback) (first callback))}])
 
-(defn message-box-modal []
+(defn message-box-modal
+  "Creates a message box modal component."
+  []
   (let [{:keys [title body mode action]} @message-box-content]
     (when-not (= "" title)
       [:div {:style ($/modal)}
