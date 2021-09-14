@@ -167,7 +167,10 @@
                       [user-item opt-id opt-label email role-id])
                     @org-users))]]]]))
 
-(defn root-component [{:keys [user-id]}]
+(defn root-component
+  "The root component for the /admin page.
+   Displays the organization list, settings, and users."
+  [{:keys [user-id]}]
   (process-toast-messages!)
   (reset! _user-id user-id)
   (get-org-list)

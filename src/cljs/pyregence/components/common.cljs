@@ -124,6 +124,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn radio
+  "A component for radio button."
   ([label state condition on-click]
    (radio label state condition on-click false))
   ([label state condition on-click themed?]
@@ -133,6 +134,7 @@
     [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]]))
 
 (defn check-box
+  "A component for check boxes."
   [label-text state]
   [:span {:style {:margin-bottom ".5rem"}}
    [:input {:style     {:margin-right ".25rem"}
@@ -200,6 +202,7 @@
          (str hour ":00 " timezone)])]]))
 
 (defn simple-form
+  "Simple form component. Adds input fields, an input button, and optionally a footer."
   ([title button-text fields on-click]
    (simple-form title button-text fields on-click nil))
   ([title button-text fields on-click footer]
@@ -224,7 +227,7 @@
                  :value button-text}]
         (when footer (footer))]]]]]))
 
-(defn tool-tip []
+(defn- tool-tip []
   (let [tool-ref (atom nil)
         position (r/atom [-1000 -1000 -1000 -1000])]
     (r/create-class
@@ -251,7 +254,9 @@
             [show-line-break tool-tip-text]]]))})))
 
 ;; TODO abstract this to take content for things like a dropdown log in.
-(defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
+(defn tool-tip-wrapper
+  "Adds a tooltip given the desired text, direction of the tooltip, and the element."
+  [tool-tip-text arrow-position sibling]
   (r/with-let [show?        (r/atom false)
                sibling-ref  (r/atom nil)]
     [:div {:on-mouse-over  #(do (reset! show? true))
