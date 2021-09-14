@@ -11,7 +11,9 @@
 
 (defonce light? (r/atom false))
 
-(defn combine [& styles]
+(defn combine
+  "Combines all provided styles into one map."
+  [& styles]
   (apply merge
          (for [style styles]
            (cond
@@ -20,6 +22,7 @@
              (vector? style) (apply (first style) (rest style))))))
 
 (defn color-picker
+  "Returns the rgba string of a provided color keyword and opacity."
   ([color]
    (color-picker color 1))
   ([color alpha]
@@ -90,7 +93,10 @@
 ;; Pseudo / Class Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn p-bordered-input [& modifiers]
+(defn p-bordered-input
+  "A Herb class for a bordered input with a style when disabled.
+   Optionally takes a :flex-style and/or :multi-style as `modifiers`."
+  [& modifiers]
   (let [base-style     {:background-color (color-picker :white)
                         :border           "1px solid"
                         :border-color     (color-picker :brown)
@@ -111,7 +117,8 @@
       {:pseudo {:disabled disabled-style}})))
 
 (defn p-add-hover
-  "Background of button is highlighted when `active?` is true or on hover."
+  "A Herb class for a background color on hover.
+   Background of button is highlighted when `active?` is true or on hover."
   [& [active?]]
   (let [highlight-color (color-picker :border-color 0.2)]
     (with-meta
@@ -120,7 +127,8 @@
       {:pseudo {:hover {:background-color highlight-color}}})))
 
 (defn p-button
-  "Styling used for non-tool buttons."
+  "A Herb class for non-tool buttons.
+   Optionally takes :small or :large for the size of the button."
   [bg-color border-color color bg-color-hover color-hover & [btn-size]]
   (let [base-style     {:background-color (color-picker bg-color)
                         :border-color     (color-picker border-color)
@@ -150,12 +158,12 @@
                            :fill             (color-picker color-hover)}}})))
 
 (defn p-form-button
-  "Styling for form buttons (e.g. the Refresh button on the Match Drop Dashboard)"
+  "A Herb class for form buttons (e.g. the Refresh button on the Match Drop Dashboard)."
   [& [btn-size]]
   (p-button :white :yellow :brown :orange :white btn-size))
 
 (defn p-themed-button
-  "Styling for themed buttons (e.g. buttons on Match Drop tool)"
+  "A Herb class for themed buttons (e.g. buttons on Match Drop tool)."
   [& [btn-size]]
   (p-button :bg-color :border-color :font-color :bg-hover-color :font-hover-color btn-size))
 
@@ -163,13 +171,19 @@
 ;; Style Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn color [color]
+(defn color
+  "A shortcut for adding a color style."
+  [color]
   {:color (color-picker color)})
 
-(defn bg-color [color]
+(defn bg-color
+  "A shortcut for adding a background color style."
+  [color]
   {:background (color-picker color)})
 
-(defn margin [& modifiers]
+(defn margin
+  "A shortcut for adding margin styles given the amount and direction keyword."
+  [& modifiers]
   (if (= 1 (count modifiers))
     {:margin (first modifiers)}
     (apply merge
@@ -186,7 +200,9 @@
                    :margin-right  size}
                {})))))
 
-(defn padding [& modifiers]
+(defn padding
+  "A shortcut for adding padding styles given the amount and direction keyword."
+  [& modifiers]
   (if (= 1 (count modifiers))
     {:padding (first modifiers)}
     (apply merge
@@ -203,7 +219,9 @@
                    :padding-right  size}
                {})))))
 
-(defn border [& modifiers]
+(defn border
+  "A shortcut for adding border styles given the amount and direction keyword."
+  [& modifiers]
   (if (= 1 (count modifiers))
     {:border (first modifiers)}
     (apply merge
@@ -220,7 +238,9 @@
                    :border-right  style}
                {})))))
 
-(defn align [type position]
+(defn align
+  "A shortcut for adding different alignment styles given the type and position."
+  [type position]
   (let [style (str (name type) "-" (name position))]
     (case (keyword style)
       :text-center  {:text-align "center"}
@@ -258,33 +278,44 @@
                      :align-items     "flex-end"}
       {})))
 
-(defn flex-row []
+(defn flex-row
+  "A shortcut for adding a flex row style."
+  []
   {:align-items     "center"
    :display         "flex"
    :flex-direction  "row"
    :flex-wrap       "nowrap"
    :justify-content "space-between"})
 
-(defn flex-col []
+(defn flex-col
+  "A shortcut for adding a flex column style."
+  []
   {:align-items     "center"
    :display         "flex"
    :flex-direction  "column"
    :justify-content "flex-start"})
 
-(defn font [& modifiers]
+(defn font
+  "A shortcut for adding a font style.
+   Takes font attributes their associated values (eg. :size '10px' :family 'Arial')"
+  [& modifiers]
   (apply merge
          {}
          (for [[attr val] (partition 2 modifiers)]
            (when (contains? #{:style :variant :weight :size :family} attr)
              {(keyword (str "font-" (name attr))) val}))))
 
-(defn disabled-group [disabled?]
+(defn disabled-group
+  "A shortcut for adding disabled styling."
+  [disabled?]
   (if disabled?
     {:opacity        "0.4"
      :pointer-events "none"}
     {}))
 
-(defn root []
+(defn root
+  "A shortcut for the root styling of a page."
+  []
   {:align-items    "center"
    :display        "flex"
    :flex           "1 1 0"
@@ -292,7 +323,9 @@
    :overflow       "auto"
    :padding        "0 1rem"})
 
-(defn modal []
+(defn modal
+  "A shortcut for modal styling."
+  []
   {:background-color "rgba(0,0,0,0.4)"
    :height           "100%"
    :left             "0"
@@ -301,26 +334,34 @@
    :width            "100%"
    :z-index          "5000"})
 
-(defn outline [color]
+(defn outline
+  "A shortcut for adding a solid, colored border."
+  [color]
   (let [rgb (color-picker color)]
     {:background   (color-picker :white)
      :border-color rgb
      :border-style "solid"
      :color        rgb}))
 
-(defn text-ellipsis []
+(defn text-ellipsis
+  "A shortcut for adding ellipsis on content overflow."
+  []
   {:overflow      "hidden"
    :text-overflow "ellipsis"
    :white-space   "nowrap"})
 
-(defn fixed-size [size]
+(defn fixed-size
+  "A shortcut that makes an element a fixed size."
+  [size]
   {:float      "left"
    :height     size
    :min-height size
    :min-width  size
    :width      size})
 
-(defn tool []
+(defn tool
+  "A shortcut for tool styling (eg. the legend or time slider)."
+  []
   {:background-color (color-picker :bg-color)
    :border           (str "1px solid " (color-picker :border-color))
    :border-radius    "5px"
@@ -331,7 +372,9 @@
 
 (def light-border (str "1.2px solid " (color-picker :brown)))
 
-(defn action-box []
+(defn action-box
+  "A shortcut for styling an action box."
+  []
   {:background-color (color-picker :white)
    :border           light-border
    :border-radius    "5px"
@@ -342,7 +385,9 @@
    :padding          "0"
    :width            "100%"})
 
-(defn action-header []
+(defn action-header
+  "A shortcut for styling the header within an action box."
+  []
   {:align-items      "center"
    :background-color (color-picker :yellow)
    :border-bottom    light-border
