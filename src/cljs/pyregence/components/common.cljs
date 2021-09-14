@@ -119,32 +119,6 @@
     :reagent-render
     (fn [sibling _] sibling)}))
 
-(defn- tool-tip []
-  (let [tool-ref (atom nil)
-        position (r/atom [-1000 -1000 -1000 -1000])]
-    (r/create-class
-     {:component-did-mount
-      (fn [this]
-        (let [{:keys [sibling-ref arrow-position show?]} (r/props this)]
-          (reset! tool-ref (rd/dom-node this))
-          (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?))))
-
-      :component-did-update
-      (fn [this [_ prev-props]]
-        (let [{:keys [tool-tip-text sibling-ref arrow-position show?]} (r/props this)]
-          (when (or (not= tool-tip-text (:tool-tip-text prev-props))
-                    (not= show?         (:show? prev-props)))
-            (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?)))))
-
-      :render
-      (fn [this]
-        (let [{:keys [tool-tip-text arrow-position show?]} (r/props this)
-              [tip-x tip-y arrow-x arrow-y] @position]
-          [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
-           [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
-           [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
-            [show-line-break tool-tip-text]]]))})))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -252,6 +226,32 @@
                  :type  "submit"
                  :value button-text}]
         (when footer (footer))]]]]]))
+
+(defn- tool-tip []
+  (let [tool-ref (atom nil)
+        position (r/atom [-1000 -1000 -1000 -1000])]
+    (r/create-class
+     {:component-did-mount
+      (fn [this]
+        (let [{:keys [sibling-ref arrow-position show?]} (r/props this)]
+          (reset! tool-ref (rd/dom-node this))
+          (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?))))
+
+      :component-did-update
+      (fn [this [_ prev-props]]
+        (let [{:keys [tool-tip-text sibling-ref arrow-position show?]} (r/props this)]
+          (when (or (not= tool-tip-text (:tool-tip-text prev-props))
+                    (not= show?         (:show? prev-props)))
+            (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?)))))
+
+      :render
+      (fn [this]
+        (let [{:keys [tool-tip-text arrow-position show?]} (r/props this)
+              [tip-x tip-y arrow-x arrow-y] @position]
+          [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
+           [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
+           [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
+            [show-line-break tool-tip-text]]]))})))
 
 ;; TODO abstract this to take content for things like a dropdown log in.
 (defn tool-tip-wrapper
