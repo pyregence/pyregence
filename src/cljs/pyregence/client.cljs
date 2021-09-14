@@ -26,12 +26,14 @@
    "/reset-password"     reset-password/root-component
    "/verify-email"       verify-email/root-component})
 
-(defn ^:private render-root [params]
+(defn- render-root
+  "Renders the root component for the current URI."
+  [params]
   (let [root-component (-> js/window .-location .-pathname uri->root-component)]
     (render [root-component params] (dom/getElement "app"))))
 
 (defn- ^:export init
-  "Define the init function to be called from window.onload()."
+  "Defines the init function to be called from window.onload()."
   [params]
   (let [clj-params (js->clj params :keywordize-keys true)
         cur-params (if (seq clj-params)

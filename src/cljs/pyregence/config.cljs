@@ -8,10 +8,14 @@
 
 (defonce ^:private features (atom nil))
 
-(defn set-feature-flags! [config]
+(defn set-feature-flags!
+  "Sets the features atom with the specified features from `config.edn`."
+  [config]
   (reset! features (:features config)))
 
-(defn feature-enabled? [feature-name]
+(defn feature-enabled?
+  "Checks whether or not a specific featue is enabled."
+  [feature-name]
   (get @features feature-name))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -427,7 +431,7 @@
                            :description "No data are available for this pixel"}})
 
 (defn get-forecast
-  "Retrieve forecast options and default tab"
+  "Retrieves the forecast options and default tab."
   [forecast-type]
   {:pre [(contains? #{:long-term :near-term} forecast-type)]}
   (forecast-type forecasts))
@@ -441,10 +445,14 @@
 (defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
 (defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
 
-(defn set-geoserver-base-url! [url]
+(defn set-geoserver-base-url!
+  "Sets the base URL of the Geoserver given the value from `config.edn`."
+  [url]
   (reset! geoserver-base-url url))
 
-(defn legend-url [layer]
+(defn legend-url
+  "Generates a URL for the legend given a layer."
+  [layer]
   (str (wms-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
@@ -453,7 +461,9 @@
        "&FORMAT=application/json"
        "&LAYER=" layer))
 
-(defn point-info-url [layer-group bbox feature-count]
+(defn point-info-url
+  "Generates a URL for the point information."
+  [layer-group bbox feature-count]
   (str (wms-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
@@ -545,7 +555,9 @@
 
 (defonce mapbox-access-token (atom nil))
 
-(defn set-mapbox-access-token! [token]
+(defn set-mapbox-access-token!
+  "Sets the Mapbox access token given the value from `config.edn`."
+  [token]
   (reset! mapbox-access-token token))
 
 (def default-sprite "mapbox://sprites/mspencer-sig/cka8jaky90i9m1iphwh79wr04/3nae2cnmmvrdazx877w1wcuez")
@@ -553,7 +565,9 @@
 (defn- style-url [id]
   (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @mapbox-access-token))
 
-(defn base-map-options []
+(defn base-map-options
+  "Provides the configuration for the different Mapbox map view options."
+  []
   {:mapbox-topo       {:opt-label "Mapbox Street Topo"
                        :source    (style-url "cka8jaky90i9m1iphwh79wr04")}
    :mapbox-satellite  {:opt-label "Mapbox Satellite"
@@ -571,5 +585,7 @@
 
 (defonce dev-mode? (atom nil))
 
-(defn set-dev-mode! [val]
+(defn set-dev-mode!
+  "Sets the dev mode given the value from `config.edn`."
+  [val]
   (reset! dev-mode? val))
