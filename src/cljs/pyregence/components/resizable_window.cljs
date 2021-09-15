@@ -86,7 +86,10 @@
                :on-click on-click}
         [close]]])}))
 
-(defn resizable-window [parent-rec init-height init-width title close-fn! render-content]
+(defn resizable-window
+  "A component for a resizable window. Takes in the window's parent, initial dimensions,
+   close function, and content to render inside."
+  [parent-rec init-height init-width title close-fn! render-content]
   (r/with-let [box-height   (r/atom init-height)
                box-width    (r/atom init-width)
                title-height (r/atom 0)]

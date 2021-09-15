@@ -24,6 +24,7 @@
 ;;; Public Functions
 
 (defn show-help!
+  "Shows the help modal popup for the given dialog and device."
   [dialog & [mobile? always-show]]
   {:pre [(get-help-dialog dialog mobile?)]}
   (when (or always-show (not (seen-help? dialog)))
