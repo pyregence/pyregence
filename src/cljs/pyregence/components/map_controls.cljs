@@ -258,17 +258,17 @@
              underlays))])}))
 
 (defn- $collapsible-button []
-   {:background-color           ($/color-picker :bg-color)
-    :border-bottom-right-radius "5px"
-    :border-color               ($/color-picker :transparent)
-    :border-style               "solid"
-    :border-top-right-radius    "5px"
-    :border-width               "0px"
-    :box-shadow                 (str "3px 1px 4px 0 rgb(0, 0, 0, 0.25)")
-    :cursor                     "pointer"
-    :fill                       ($/color-picker :font-color)
-    :height                     "40px"
-    :width                      "28px"})
+  {:background-color           ($/color-picker :bg-color)
+   :border-bottom-right-radius "5px"
+   :border-color               ($/color-picker :transparent)
+   :border-style               "solid"
+   :border-top-right-radius    "5px"
+   :border-width               "0px"
+   :box-shadow                 (str "3px 1px 4px 0 rgb(0, 0, 0, 0.25)")
+   :cursor                     "pointer"
+   :fill                       ($/color-picker :font-color)
+   :height                     "40px"
+   :width                      "28px"})
 
 (defn- collapsible-button []
   [:button
@@ -670,50 +670,60 @@
    :top       "2rem"
    :width     "10%"})
 
-(defn- get-current-image [camera-name]
-  (u/call-remote! :post-blob
-                  "clj/get-current-image"
-                  {:clj-args (list camera-name)}))
-
-(defn- get-current-image-src [camera-name]
+(defn- get-camera-image-chan [active-camera]
   (go
-    (->> (get-current-image camera-name)
+    (->> (u/call-clj-async! "get-current-image" :post-blob (:name active-camera))
          (<!)
          (:body)
          (js/URL.createObjectURL))))
 
-(defn- refresh-camera-image! [image-url *camera]
-  (go (reset! image-url (<! (get-current-image-src (:name *camera))))))
+(defn- get-camera-age-chan [active-camera]
+  (go
+    (->> (u/call-clj-async! "get-camera-time" (:name active-camera))
+         (<!)
+         (:body)
+         (edn/read-string)
+         (u/camera-time->js-date)
+         (u/get-time-difference)
+         (u/ms->hr))))
 
 (defn camera-tool [cameras parent-box mobile? terrain? close-fn!]
-  (r/with-let [*camera     (r/atom nil)
-               image-url   (r/atom nil)
-               exit-ch     (chan)
-               zoom-camera (fn []
-                             (let [{:keys [longitude latitude tilt pan]} @*camera]
-                               (reset! terrain? true)
-                               (h/show-help! :terrain mobile?)
-                               (mb/toggle-dimensions! true)
-                               (mb/fly-to! {:center  [longitude latitude]
-                                            :zoom    15
-                                            :bearing pan
-                                            :pitch   (min (+ 90 tilt) 85)}) 400))
-               reset-view  (fn []
-                             (let [{:keys [longitude latitude]} @*camera]
-                               (reset! terrain? false)
-                               (mb/toggle-dimensions! false)
-                               (mb/fly-to! {:center [longitude latitude]
-                                            :zoom   6})))
-               on-click    (fn [features]
-                             (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
-                               (when (some? @*camera) (put! exit-ch :exit))
-                               (reset! *camera new-camera)
-                               (reset! image-url nil)
-                               (refresh-camera-image! image-url @*camera)
-                               (u/refresh-on-interval! #(refresh-camera-image! image-url @*camera) 60000 exit-ch)))
+  (r/with-let [active-camera (r/atom nil)
+               camera-age    (r/atom 0)
+               image-src     (r/atom nil)
+               exit-ch       (chan)
+               zoom-camera   (fn []
+                               (let [{:keys [longitude latitude tilt pan]} @active-camera]
+                                 (reset! terrain? true)
+                                 (h/show-help! :terrain mobile?)
+                                 (mb/toggle-dimensions! true)
+                                 (mb/fly-to! {:center  [longitude latitude]
+                                              :zoom    15
+                                              :bearing pan
+                                              :pitch   (min (+ 90 tilt) 85)}) 400))
+               reset-view    (fn []
+                               (let [{:keys [longitude latitude]} @active-camera]
+                                 (reset! terrain? false)
+                                 (mb/toggle-dimensions! false)
+                                 (mb/fly-to! {:center [longitude latitude]
+                                              :zoom   6})))
+               on-click      (fn [features]
+                               (go
+                                 (when-let [new-camera  (js->clj (aget features "properties") :keywordize-keys true)]
+                                   (when (some? @active-camera) (put! exit-ch :exit))
+                                   (reset! active-camera new-camera)
+                                   (reset! camera-age 0)
+                                   (reset! image-src nil)
+                                   (let [age-chan   (get-camera-age-chan @active-camera)
+                                         image-chan (get-camera-image-chan @active-camera)]
+                                     (when (> 4 (reset! camera-age (<! age-chan)))
+                                       (reset! image-src (<! image-chan))
+                                       (u/refresh-on-interval! #(reset! image-src (<! (get-camera-image-chan @active-camera)))
+                                                               60000
+                                                               exit-ch))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
-               _           (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
-               _           (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
+               _             (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
+               _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
     [:div#wildfire-camera-tool
      [resizable-window
       parent-box
@@ -723,7 +733,7 @@
       close-fn!
       (fn [_ _]
         (cond
-          (nil? @*camera)
+          (nil? @active-camera)
           [:div {:style {:padding "1.2em"}}
            "Click on a camera to view the most recent image. Powered by "
            [:a {:href   "http://www.alertwildfire.org/"
@@ -731,14 +741,18 @@
                 :target "_blank"}
             "Alert Wildfire"] "."]
 
-          (some? @image-url)
+          (>= @camera-age 4)
+          [:div {:style {:padding "1.2em"}}
+           (str "This camera has not been refreshed for " (u/to-precision 1 @camera-age) " hours. Please try again later.")]
+
+          (some? @image-src)
           [:div
            [:div {:style {:display         "flex"
                           :justify-content "center"
                           :position        "absolute"
                           :top             "2rem"
                           :width           "100%"}}
-            [:label (str "Camera: " (:name @*camera))]]
+            [:label (str "Camera: " (:name @active-camera))]]
            [:img {:src   "images/awf_logo.png"
                   :style ($/combine $awf-logo-style)}]
            (when @terrain?
@@ -766,12 +780,12 @@
              [:div {:style {:height "32px"
                             :width  "32px"}}
               [svg/binoculars]]]]
-           [:img {:src   @image-url
+           [:img {:src   @image-src
                   :style {:height "auto" :width "100%"}}]]
 
           :else
           [:div {:style {:padding "1.2em"}}
-           (str "Loading camera " (:name @*camera) "...")]))]]
+           (str "Loading camera " (:name @active-camera) "...")]))]]
     (finally
       (put! exit-ch :exit)
       (mb/remove-layer! "fire-cameras")
@@ -848,14 +862,14 @@
                            (if (fn? convert) (convert band) band))
                        units)]]
      (when (some? ((fn [v] (= "TU1" (get v "label"))) (vals legend-map))) ;TODO: need a better way to check for FBFM layer
-      [:div {:style {:margin "0.125rem 0.75rem"}}
-       [:p {:style {:margin-bottom "0.125rem"
-                    :text-align    "center"}}
-        [:strong "Fuel Type: "]
-        (get-in c/fbfm40-lookup [band :fuel-type])]
-       [:p {:style {:margin-bottom "0"}}
-        [:strong "Description: "]
-        (get-in c/fbfm40-lookup [band :description])]])]))
+       [:div {:style {:margin "0.125rem 0.75rem"}}
+        [:p {:style {:margin-bottom "0.125rem"
+                     :text-align    "center"}}
+         [:strong "Fuel Type: "]
+         (get-in c/fbfm40-lookup [band :fuel-type])]
+        [:p {:style {:margin-bottom "0"}}
+         [:strong "Description: "]
+         (get-in c/fbfm40-lookup [band :description])]])]))
 
 (defn information-tool [get-point-info!
                         parent-box
