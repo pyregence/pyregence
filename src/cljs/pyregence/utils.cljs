@@ -239,7 +239,7 @@
 ;; TODO This whole routing should be more generic
 (def ^:private post-options #{:get :post :post-text :post-blob})
 
-(defn call-clj-async! 
+(defn call-clj-async!
   "Calls a given function from the backend and returns a go block
    containing the function's response."
   [clj-fn-name & args]
@@ -569,6 +569,6 @@
 (defn clean-units
   "Cleans units by adding/not adding a space when needed for units."
   [units]
-  (if (or (= units "%") (= units "\u00B0F") (= units "\u00B0"))
+  (if (#{"%" "\u00B0F" "\u00B0"} units)
     units
     (str " " units)))
