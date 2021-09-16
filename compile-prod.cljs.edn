@@ -3,7 +3,8 @@
  :output-to       "target/public/cljs/app.js"
  :source-map      "target/public/cljs/app.js.map"
  :fingerprint     true
- :externs         ["resources/mapboxgl_externs.js"]
+ :externs         ["resources/mapboxgl_externs.js"
+                   "resources/introjs_externs.js"]
  :optimizations   :advanced
  :pretty-print    false
  :closure-defines {"goog.DEBUG" false}}

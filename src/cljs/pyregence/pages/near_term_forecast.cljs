@@ -12,6 +12,7 @@
             [pyregence.utils  :as u]
             [pyregence.config :as c]
             [pyregence.components.fire-popup   :as fp]
+            [pyregence.components.intro-js     :as intro]
             [pyregence.components.map-controls :as mc]
             [pyregence.components.mapbox       :as mb]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
@@ -529,7 +530,7 @@
                :on-mouse-up #(reset! mouse-down? false)}]))
 
 (defn theme-select []
-  [:div {:style {:position "absolute" :left "3rem" :display "flex"}}
+  [:div#theme-select {:style {:position "absolute" :left "3rem" :display "flex"}}
    [:label {:style {:margin "4px .5rem 0"}} "Theme:"]
    [radio "Light" $/light? true  #(reset! $/light? %)]
    [radio "Dark"  $/light? false #(reset! $/light? %)]])
@@ -579,7 +580,9 @@
                    :style {:margin        ".5rem"
                            :padding-left  "1.75rem"
                            :padding-right "1.75rem"}
-                   :on-click #(reset! show-me? false)}
+                   :on-click #(do
+                                (reset! show-me? false)
+                                (intro/init-tour!))}
            "Accept"]]]]])))
 
 (defn loading-modal []
@@ -615,7 +618,7 @@
          [message-box-modal]
          (when @loading? [loading-modal])
          [message-modal]
-         [:div {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
+         [:div#app-header {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
           (when-not @mobile? [theme-select])
           [:span {:style {:display "flex" :padding ".25rem 0"}}
            (doall (map (fn [[key {:keys [opt-label hover-text]}]]
