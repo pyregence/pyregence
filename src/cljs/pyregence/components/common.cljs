@@ -65,7 +65,7 @@
 ;; Private Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- interpose-react [tag items]
+(defn- interpose-react-line-break [tag items]
   [:<> (doall
         (map-indexed
          (fn [idx item] ^{:key idx} [:<> item tag])
@@ -76,7 +76,19 @@
   (let [items (if (coll? text)
                 (vec text)
                 (str/split text #"\n"))]
-    (interpose-react [:br] items)))
+    (interpose-react-line-break [:br] items)))
+
+(defn- interpose-react-link [tag items]
+  [:<> (for [i items] ^{:key i}
+         (if (boolean (re-find #"http" i))
+           [:<> [tag {:href i} i]]
+           [:<> i]))])
+
+(defn- show-link [text]
+  (let [items (if (coll? text)
+                (vec text)
+                (str/split text #" :url "))]
+    (interpose-react-link :a items)))
 
 (defn- calc-tool-position [sibling-ref tool-ref arrow-position show?]
   (if (and tool-ref show?)
@@ -248,7 +260,7 @@
           [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
            [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
            [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
-            [show-line-break tool-tip-text]]]))})))
+            tool-tip-text]]))})))
 
 ;; TODO abstract this to take content for things like a dropdown log in.
 (defn tool-tip-wrapper [tool-tip-text arrow-position sibling]

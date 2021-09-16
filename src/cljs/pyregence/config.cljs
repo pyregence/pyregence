@@ -31,9 +31,30 @@
                   :reverse-legend? false
                   :hover-text      "Layers related to fuel and potential fire behavior."
                   :params          {:model {:opt-label  "Source"
-                                            :hover-text "Stock LANDFIRE 2.0.0 data (https://landfire.gov) at 30 m resolution.\n
-                                                         California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020.\n
-                                                         2021 California fuelscape prepared by Pyrologix, LLC (https://pyrologix.com), 2021."
+                                            :hover-text [:p {:style {:margin-bottom "0"}}
+                                                         "Stock "
+                                                         [:strong "LANDFIRE 2.0.0"]
+                                                         " data ("
+                                                         [:a {:href   "https://landfire.gov"
+                                                              :target "_blank"}
+                                                          "https://landfire.gov"]
+                                                         ") at 30 m resolution."
+                                                         [:br]
+                                                         [:br]
+                                                         [:strong "California Forest Observatory"]
+                                                         " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
+                                                         [:a {:href   "https://forestobservatory.com"
+                                                              :target "_blank"}
+                                                          "https://forestobservatory.com"]
+                                                         "), © Salo Sciences, Inc. 2020."
+                                                         [:br]
+                                                         [:br]
+                                                         [:strong "2021 California fuelscape"]
+                                                         " prepared by Pyrologix, LLC ("
+                                                         [:a {:href   "https://pyrologix.com"
+                                                              :target "_blank"}
+                                                          "https://pyrologix.com"]
+                                                         "), 2021."]
                                             :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
                                                                          :filter    "landfire-2.0.0"}
                                                          :cfo           {:opt-label "California Forest Obs."
@@ -80,10 +101,20 @@
                   :reverse-legend? true
                   :hover-text      "8-day forecast of key parameters affecting wildfire behavior obtained from operational National Weather Service forecast models."
                   :params          {:band       {:opt-label  "Weather Parameter"
-                                                 :hover-text "8-day forecast updated 4x daily pulled from three operational weather models. Available quantities include common weather parameters plus fire weather indices:\n
-                                                              - Fosberg Fire Weather Index (FFWI): A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature
-                                                              - Vapor pressure deficit (VPD): Difference between amount of moisture in air and how much it can hold when saturated
-                                                              - Hot Dry Windy Index: Similar to FFWI, but based on VPD"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              "8-day forecast updated 4x daily pulled from three operational weather models. Available quantities include common weather parameters plus fire weather indices:"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "- Fosberg Fire Weather Index (FFWI)"]
+                                                              ": A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "- Vapor pressure deficit (VPD)"]
+                                                              ": Difference between amount of moisture in air and how much it can hold when saturated."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "- Hot Dry Windy Index"]
+                                                              ": Similar to FFWI, but based on VPD."]
                                                  :options    (array-map
                                                               :tmpf   {:opt-label "Temperature (F)"
                                                                        :filter    "tmpf"
@@ -120,11 +151,24 @@
                   :reverse-legend? true
                   :hover-text      "5-day forecast of fire consequence maps. Every day over 500 million hypothetical fires are ignited across California to evaluate potential fire risk.\n"
                   :params          {:output     {:opt-label  "Output"
-                                                 :hover-text "Key fire spread model outputs based on modeling 6-hours of fire spread without fire suppression activities within 6 hours of time shown in time slider. Options include:\n
-                                                             Relative Burn Probability - Relative likelihood that an area is burned by fires that have not yet ignited within the next six hours of time shown in time slider.\n
-                                                             Impacted Structures - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future.\n
-                                                             Fire Area - Modeled fire size in acres by ignition location and time of ignition.\n
-                                                             Fire Volume - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              "Key fire spread model outputs based on modeling 6-hours of fire spread without fire suppression activities within 6 hours of time shown in time slider. Options include:"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Relative Burn Probability"]
+                                                              " - Relative likelihood that an area is burned by fires that have not yet ignited within the next six hours of time shown in time slider."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Impacted Structures"]
+                                                              " - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fire Area"]
+                                                              " - Modeled fire size in acres by ignition location and time of ignition."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fire Volume"]
+                                                              " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
                                                  :options    {:times-burned {:opt-label "Relative burn probability"
                                                                              :filter    "times-burned"
                                                                              :units     "Times"}
@@ -138,25 +182,55 @@
                                                                              :filter    "fire-volume"
                                                                              :units     "Acre-ft"}}}
                                     :pattern    {:opt-label  "Ignition Pattern"
-                                                 :hover-text "Fires are ignited randomly across California at various times in the future so their impacts can be modeled. Patterns include:\n
-                                                             Human Caused - Anthropogenic fires (fires from all causes except lightning).\n
-                                                             Transmission Lines - Fires ignited in close proximity to overhead electrical transmission lines.\n"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              "Fires are ignited randomly across California at various times in the future so their impacts can be modeled. Patterns include:"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Human Caused"]
+                                                              " - Anthropogenic fires (fires from all causes except lightning)."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Transmission Lines"]
+                                                              " - Fires ignited in close proximity to overhead electrical transmission lines."]
                                                  :options    {:all        {:opt-label    "Human-caused ignitions"
                                                                            :filter       "all"}
                                                               :tlines     {:opt-label    "Transmission lines"
                                                                            :filter       "tlines"
                                                                            :clear-point? true}}}
                                     :fuel       {:opt-label  "Fuel"
-                                                 :hover-text "Source of surface and canopy fuel inputs:\n
-                                                              - 2021 California fuelscape prepared by Pyrologix, LLC (https://pyrologix.com), 2021.\n
-                                                              - California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020."
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              "Source of surface and canopy fuel inputs:"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "- 2021 California fuelscape"]
+                                                              " prepared by Pyrologix, LLC ("
+                                                              [:a {:href   "https://pyrologix.com"
+                                                                   :target "_blank"}
+                                                               "https://pyrologix.com"]
+                                                              "), 2021."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "- California Forest Observatory"]
+                                                              " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
+                                                              [:a {:href   "https://forestobservatory.com"
+                                                                   :target "_blank"}
+                                                               "https://forestobservatory.com"]
+                                                              "), © Salo Sciences, Inc. 2020."]
                                                  :options    {:landfire {:opt-label "2021 CA fuelscape"
                                                                          :filter    "landfire"}
                                                               :cfo      {:opt-label "2020 CA Forest Obs."
                                                                          :filter    "cfo"}}}
                                     :model      {:opt-label  "Model"
-                                                 :hover-text "Computer fire spread model used to generate active fire and risk forecasts.\n
-                                                             ELMFIRE (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal (https://doi.org/10.1016/j.firesaf.2013.08.014)."
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              "Computer fire spread model used to generate active fire and risk forecasts."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "ELMFIRE"]
+                                                              " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
+                                                              [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
+                                                                   :target "_blank"}
+                                                               "https://doi.org/10.1016/j.firesaf.2013.08.014"]
+                                                              ")."]
                                                  :options    {:elmfire {:opt-label "ELMFIRE"
                                                                         :filter    "elmfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
@@ -209,14 +283,38 @@
                                                               :10 {:opt-label "Smallest (10th percentile)"
                                                                    :filter    "10"}}}
                                 :fuel       {:opt-label  "Fuel"
-                                             :hover-text "Source of surface and canopy fuel inputs:\n
-                                                          - 2021 California fuelscape prepared by Pyrologix, LLC (https://pyrologix.com), 2021.\n
-                                                          - California Forest Observatory – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory (https://forestobservatory.com), © Salo Sciences, Inc. 2020."
+                                             :hover-text [:p {:style {:margin-bottom "0"}}
+                                                          "Source of surface and canopy fuel inputs:"
+                                                          [:br]
+                                                          [:br]
+                                                          [:strong  "- 2021 California fuelscape"]
+                                                          " prepared by Pyrologix, LLC ("
+                                                          [:a {:href   "https://pyrologix.com"
+                                                               :target "_blank"}
+                                                           "https://pyrologix.com"]
+                                                          "), 2021."
+                                                          [:br]
+                                                          [:br]
+                                                          [:strong "- California Forest Observatory"]
+                                                          " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
+                                                          [:a {:href   "https://forestobservatory.com"
+                                                               :target "_blank"}
+                                                           "https://forestobservatory.com"]
+                                                          "), © Salo Sciences, Inc. 2020."]
                                              :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.0.0"
                                                                      :filter    "landfire"}}}
                                 :model      {:opt-label  "Model"
-                                             :hover-text "ELMFIRE (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal (https://doi.org/10.1016/j.firesaf.2013.08.014).\n
-                                                          GridFire is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."
+                                             :hover-text [:p {:style {:margin-bottom "0"}}
+                                                          [:strong "ELMFIRE"]
+                                                          " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
+                                                          [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
+                                                               :target "_blank"}
+                                                           "https://doi.org/10.1016/j.firesaf.2013.08.014"]
+                                                          ")."
+                                                          [:br]
+                                                          [:br]
+                                                          [:strong "GridFire"]
+                                                          " is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."]
                                              :options    {:elmfire  {:opt-label "ELMFIRE"
                                                                      :filter    "elmfire"}
                                                           :gridfire {:enabled?  #(feature-enabled? :gridfire)
