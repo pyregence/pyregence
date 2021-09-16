@@ -60,7 +60,10 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn root-component [_]
+(defn root-component
+  "The root component for the /register page.
+   Displays the register form and a link to the login page."
+  [_]
   (process-toast-messages!)
   (fn [_]
     [:<>

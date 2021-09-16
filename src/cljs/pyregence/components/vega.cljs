@@ -111,7 +111,9 @@
        {:style {:height (:box-height (r/props this))
                 :width  (:box-width  (r/props this))}}])}))
 
-(defn vega-box [box-height box-width layer-click! units current-hour legend-list last-clicked-info]
+(defn vega-box
+  "A function to create a Vega line plot."
+  [box-height box-width layer-click! units current-hour legend-list last-clicked-info]
   [vega-canvas {:spec         (layer-line-plot units current-hour legend-list last-clicked-info)
                 :box-height   box-height
                 :box-width    box-width

@@ -111,6 +111,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn radio
+  "A component for radio button."
   ([label state condition on-click]
    (radio label state condition on-click false))
   ([label state condition on-click themed?]
@@ -120,6 +121,7 @@
     [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]]))
 
 (defn check-box
+  "A component for check boxes."
   [label-text state]
   [:span {:style {:margin-bottom ".5rem"}}
    [:input {:style     {:margin-right ".25rem"}
@@ -187,6 +189,7 @@
          (str hour ":00 " timezone)])]]))
 
 (defn simple-form
+  "Simple form component. Adds input fields, an input button, and optionally a footer."
   ([title button-text fields on-click]
    (simple-form title button-text fields on-click nil))
   ([title button-text fields on-click footer]
@@ -237,8 +240,14 @@
            [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
             tool-tip-text]]))})))
 
+<<<<<<< HEAD
 (defn tool-tip-wrapper
   "Adds a tooltip given the desired text (or Hiccup), direction of the tooltip, and the element."
+=======
+;; TODO abstract this to take content for things like a dropdown log in.
+(defn tool-tip-wrapper
+  "Adds a tooltip given the desired text, direction of the tooltip, and the element."
+>>>>>>> development
   [tool-tip-text arrow-position sibling]
   (r/with-let [show?        (r/atom false)
                sibling-ref  (r/atom nil)]

@@ -6,37 +6,42 @@
             [cljs.core.async.interop :refer-macros [<p!]]))
 
 (defn input-value
-  "Return the value property of the target property of an event."
+  "Returns the value property of the target property of an event."
   [event]
   (-> event .-target .-value))
 
 (defn input-int-value
+  "Given an event, returns the value as an integer."
   [event]
   (js/parseInt (input-value event)))
 
 (defn input-float-value
+  "Given an event, returns the value as a float."
   [event]
   (js/parseFloat (input-value event)))
 
 (defn input-keyword
+  "Given an event, returns the value as a Clojure keyword."
   [event]
   (keyword (input-value event)))
 
 (defn input-file
-  "Return the file of the target property of an event."
+  "Returns the file of the target property of an event."
   [event]
   (-> event .-target .-files (aget 0)))
 
 ;; Text
 
 (defn sentence->kebab
-  "Converts string to kebab-string"
+  "Converts a string to a kebab-case string."
   [string]
   (-> string
       (str/lower-case)
       (str/replace #"[\s-\.\,]+" "-")))
 
-(defn end-with [s end]
+(defn end-with
+  "Appends `end` to `s` as long as `s` doesn't already end with `end`."
+  [s end]
   (str s
        (when-not (str/ends-with? s end)
          end)))
@@ -48,17 +53,25 @@
 (defn- save-session-storage! [data]
   (.setItem (.-sessionStorage js/window) session-key (pr-str data)))
 
-(defn get-session-storage []
+(defn get-session-storage
+  "Gets the pyregence session storage data."
+  []
   (edn/read-string (.getItem (.-sessionStorage js/window) session-key)))
 
-(defn set-session-storage! [data]
+(defn set-session-storage!
+  "Sets the pyregence session storage given data to store."
+  [data]
   (save-session-storage! (merge (get-session-storage) data)))
 
-(defn remove-session-storage! [& keys]
+(defn remove-session-storage!
+  "Removes the specified pyregence session storage data given keywords."
+  [& keys]
   (let [data (get-session-storage)]
     (save-session-storage! (apply dissoc data keys))))
 
-(defn clear-session-storage! []
+(defn clear-session-storage!
+  "Clears the pyregence session storage data."
+  []
   (save-session-storage! {}))
 
 ;;; Local Storage
@@ -66,24 +79,33 @@
 (defn- save-local-storage! [data]
   (.setItem (.-localStorage js/window) session-key (pr-str data)))
 
-(defn get-local-storage []
+(defn get-local-storage
+  "Gets the pyregence local storage data."
+  []
   (edn/read-string (.getItem (.-localStorage js/window) session-key)))
 
-(defn set-local-storage! [data]
+(defn set-local-storage!
+  "Sets the pyregence local storage given data to store."
+  [data]
   (save-local-storage! (merge (get-session-storage) data)))
 
-(defn remove-local-storage! [& keys]
+(defn remove-local-storage!
+  "Removes the specified pyregence local storage data given keywords."
+  [& keys]
   (let [data (get-local-storage)]
     (save-local-storage! (apply dissoc data keys))))
 
-(defn clear-local-storage! []
+(defn clear-local-storage!
+  "Clears the pyregence local storage data."
+  []
   (save-local-storage! {}))
 
 ;;; Browser Management
 
 (defn jump-to-url!
+  "Redirects the current window to the given URL."
   ([url]
-   (let [origin (.-origin (.-location js/window))
+   (let [origin  (.-origin (.-location js/window))
          cur-url (str/replace (.-href (.-location js/window)) origin "")]
      (when-not (= cur-url url) (set! (.-location js/window) url))))
   ([url window-name]
@@ -214,10 +236,27 @@
 (defmethod call-remote! :default [method _ _]
   (throw (ex-info (str "No such method (" method ") defined for pyregence.utils/call-remote!") {})))
 
-(defn call-clj-async! [clj-fn-name & args]
-  (call-remote! :post-text
-                (str "/clj/" clj-fn-name)
-                (if (= js/FormData (type (first args))) (first args) {:clj-args args})))
+;; TODO This whole routing should be more generic
+(def ^:private post-options #{:get :post :post-text :post-blob})
+
+(defn call-clj-async! 
+  "Calls a given function from the backend and returns a go block
+   containing the function's response."
+  [clj-fn-name & args]
+  (let [first-arg (first args)
+        method    (or (post-options first-arg) :post-text)
+        data      (cond
+                    (= js/FormData (type first-arg))
+                    first-arg
+
+                    (= :post-text method)
+                    {:clj-args args}
+
+                    :else
+                    {:clj-args (rest args)})]
+    (call-remote! method
+                  (str "/clj/" clj-fn-name)
+                  data)))
 
 ;;; Process Returned Results
 
@@ -225,7 +264,9 @@
 
 ;;; Time processing
 
-(defn pad-zero [num]
+(defn pad-zero
+  "Adds a zero in front of a given number if it's a single digit (eg. turn 2 into 02)."
+  [num]
   (let [num-str (str num)]
     (if (= 2 (count num-str))
       num-str
@@ -289,7 +330,9 @@
   [date-str show-utc?]
   (js-date->iso-string (js-date-from-string date-str) show-utc?))
 
-(defn ms->hhmmss [ms]
+(defn ms->hhmmss
+  "Converts milliseconds into 'hours:minutes:seconds'."
+  [ms]
   (let [sec     (/ ms 1000)
         hours   (js/Math.round (/ sec 3600))
         minutes (js/Math.round (/ (mod sec 3600) 60))
@@ -299,6 +342,11 @@
          (pad-zero minutes)
          ":"
          (pad-zero seconds))))
+
+(defn ms->hr
+  "Converts milliseconds to hours."
+  [ms]
+  (/ ms (* 1000 60 60)))
 
 (defn current-date-ms
   "Returns the current date in milliseconds, with hour/minute/seconds/ms set to 0"
@@ -319,16 +367,37 @@
   [js-date]
   (str (+ 1 (.getMonth js-date)) "/" (.getDate js-date) "/" (.getFullYear js-date)))
 
+(defn camera-time->js-date
+  "Converts a time from the cameras API (YYYY-MM-DD HH:MM:SS.MFS) into a JS Date in UTC."
+  [camera-time]
+  (js/Date. (as-> camera-time %
+              (str/split % #" ")
+              (interpose "T" %)
+              (concat % "Z")
+              (apply str %))))
+
+(defn get-time-difference
+  "Returns the difference in milliseconds between a JS Date object and the current time.
+   Optionally returns the difference between two different JS Date objects."
+  [js-date & [js-date-opt]]
+  (if (some? js-date-opt)
+    (- (.getTime js-date) (.getTime js-date-opt))
+    (- (.getTime (js/Date.)) (.getTime js-date))))
+
 ;;; ->map HOF
 
-(defn mapm [f coll]
+(defn mapm
+  "A version of `map` that uses transients."
+  [f coll]
   (persistent!
    (reduce (fn [acc cur]
              (conj! acc (f cur)))
            (transient {})
            coll)))
 
-(defn filterm [f coll]
+(defn filterm
+  "A version of `filter` that uses transients."
+  [f coll]
   (persistent!
    (reduce (fn [acc cur]
              (if (f cur)
@@ -345,7 +414,10 @@
       hex-num
       (str "0" hex-num))))
 
-(defn interp-color [from to ratio]
+(defn interp-color
+  "Returns a hex-code representing the interpolation of
+   two provided colors and an interpolation ratio."
+  [from to ratio]
   (when (and from to)
     (let [fr (js/parseInt (subs from 1 3) 16)
           fg (js/parseInt (subs from 3 5) 16)
@@ -370,9 +442,14 @@
    (and (coll?   x) (empty? x))
    (nil? x)))
 
-(defn has-data? [x] (not (no-data? x)))
+(defn has-data?
+  "Checks if an input of any type has data."
+  [x]
+  (not (no-data? x)))
 
-(defn missing-data? [& args]
+(defn missing-data?
+  "Checks if an input of any type is missing specific data."
+  [& args]
   (some no-data? args))
 
 (defn- is-numeric? [v]
@@ -380,14 +457,16 @@
     (re-matches #"^-?([\d]+[\d\,]*\.*[\d]+)$|^-?([\d]+)$" v)
     (number? v)))
 
-(defn intersects? [s1 s2]
+(defn intersects?
+  "Checks whether or not two sets intersect."
+  [s1 s2]
   {:pre [(every? set? [s1 s2])]}
   (-> (sets/intersection s1 s2)
       (count)
       (pos?)))
 
 (defn num-str-compare
-  "Compare two strings as numbers if they are numeric"
+  "Compares two strings as numbers if they are numeric."
   [asc x y]
   (let [both-numbers? (and (is-numeric? x) (is-numeric? y))
         sort-x        (if both-numbers? (js/parseFloat x) x)
@@ -397,15 +476,20 @@
       (compare sort-y sort-x))))
 
 (defn find-key-by-id
+  "Finds the value of a key by id if one exists."
   ([coll id]
    (find-key-by-id coll id :opt-label))
   ([coll id k]
    (some #(when (= (:opt-id %) id) (get % k)) coll)))
 
-(defn find-by-id [coll id]
+(defn find-by-id
+  "Finds the value of a specific id if one exists."
+  [coll id]
   (some #(when (= (:opt-id %) id) %) coll))
 
-(defn try-js-aget [obj & values]
+(defn try-js-aget
+  "Trys to call `aget` on the specified object."
+  [obj & values]
   (try
     (reduce
      (fn [acc cur]
@@ -417,7 +501,7 @@
     (catch js/Error e (js/console.log e))))
 
 (defn to-precision
-  "Round a double to n significant digits."
+  "Rounds a double to n significant digits."
   [n dbl]
   (let [factor (.pow js/Math 10 n)]
     (/ (Math/round (* dbl factor)) factor)))
