@@ -24,9 +24,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn toast-message! [message]
+  "Puts a message onto the toast message channel."
   (go (>! toast-message-chan message)))
 
 (defn process-toast-messages! []
+  "Perpetually takes a message off of the toast message channel and updates the appropriate atom.
+   Waits 5.5 seconds before looking for the next message on the channel."
   (go (loop [message (<! toast-message-chan)]
         (reset! toast-message-text message)
         (<! (timeout 5000))
@@ -42,7 +45,7 @@
   [content]
   (swap! message-box-content merge content))
 
-(defn close-message-box!
+(defn- close-message-box!
   "Sets message content map to empty values."
   []
   (reset! message-box-content blank-message-box))
@@ -51,7 +54,7 @@
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $alert-box []
+(defn- $alert-box []
   {:align-items     "center"
    :background      "white"
    :border          "1.5px solid #009"
@@ -68,7 +71,7 @@
    :width           "50%"
    :z-index         "10000"})
 
-(defn $alert-transition [show-full?]
+(defn- $alert-transition [show-full?]
   (if show-full?
     {:opacity    "1"
      :top        "1rem"
@@ -77,7 +80,7 @@
      :top        "-100rem"
      :transition "opacity 500ms ease-out"}))
 
-(defn $p-alert-close []
+(defn- $p-alert-close []
   (with-meta
     {:border-radius "4px"
      :cursor        "pointer"
@@ -85,7 +88,7 @@
      :padding       ".5rem .75rem .5rem .5rem"}
     {:pseudo {:hover {:background-color ($/color-picker :black 0.15)}}}))
 
-(defn $message-box []
+(defn- $message-box []
   {:margin    "15% auto"
    :max-width "55%"
    :min-width "35%"
@@ -95,12 +98,12 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn interpose-react [tag items]
+(defn- interpose-react [tag items]
   [:<> (for [i (butlast items)]
          ^{:key i} [:<> i tag])
    (last items)])
 
-(defn show-line-break [text]
+(defn- show-line-break [text]
   (let [items (if (coll? text)
                 (vec text)
                 (str/split text #"\n"))]
@@ -110,7 +113,9 @@
         (doseq [i items] (println i))
         [:<> (interpose-react [:br] (conj (subvec items 0 9)
                                           "See console for complete list."))]))))
-(defn toast-message []
+(defn toast-message
+  "Creates a toast message component."
+  []
   (let [message (r/atom "")]
     (fn []
       (let [message? (not (nil? @toast-message-text))]
@@ -122,14 +127,16 @@
                  :on-click #(reset! toast-message-text nil)}
           "\u274C"]]))))
 
-(defn button [label & callback]
+(defn- button [label & callback]
   [:input {:class    (<class $/p-form-button)
            :style    ($/margin "1rem" :h)
            :type     "button"
            :value    label
            :on-click (when (seq callback) (first callback))}])
 
-(defn message-box-modal []
+(defn message-box-modal
+  "Creates a message box modal component."
+  []
   (let [{:keys [title body mode action]} @message-box-content]
     (when-not (= "" title)
       [:div {:style ($/modal)}

@@ -41,7 +41,7 @@
 
 ;; Styles
 
-(defn $table []
+(defn- $table []
   ^{:combinators {[:descendant :td] {:border  "1px solid lightgray"
                                      :padding "0.4rem"}
                   [:descendant :th] {:border  "1px solid lightgray"
@@ -70,7 +70,7 @@
    [:td (u/ms->hhmmss (- updated-at created-at))]
    [:td [:a {:href "#" :on-click #(show-log-modal! job-id log)} "View Logs"]]])
 
-(defn match-drop-table []
+(defn- match-drop-table []
   [:table {:class (<class $table) :style {:width "100%"}}
    [thead ["Fire Name"
            "Status"
@@ -89,7 +89,10 @@
   (u/set-session-storage! {:redirect-from "/dashboard"})
   (u/jump-to-url! "/login"))
 
-(defn root-component [{:keys [user-id]}]
+(defn root-component
+  "The root comopnent for the match drop /dashboard page.
+   Displays a header, refresh button, and a table of a user's match drops "
+  [{:keys [user-id]}]
   (when (nil? user-id) (redirect-to-login!))
   (reset! _user-id user-id)
   (user-match-drops user-id)

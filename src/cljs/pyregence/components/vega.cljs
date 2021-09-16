@@ -10,7 +10,7 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn create-stops [legend-list last-clicked-info]
+(defn- create-stops [legend-list last-clicked-info]
   (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 last-clicked-info)]
     (reductions
      (fn [last cur] (let [last-q (get last :quantity  0.0)
@@ -27,12 +27,12 @@
       :color  (get (first legend-list) "color")}
      (rest legend-list))))
 
-(defn create-scale [legend-list]
+(defn- create-scale [legend-list]
   {:type   "linear"
    :domain (mapv #(get % "quantity") legend-list)
    :range  (mapv #(get % "color")    legend-list)})
 
-(defn layer-line-plot [units current-hour legend-list last-clicked-info]
+(defn- layer-line-plot [units current-hour legend-list last-clicked-info]
   {:width    "container"
    :height   "container"
    :autosize {:type "fit" :resize true}
@@ -73,7 +73,7 @@
                         :encoding {:size {:condition {:selection :point-hover :value 150}
                                           :value     75}}}]}]})
 
-(defn render-vega [spec layer-click! elem]
+(defn- render-vega [spec layer-click! elem]
   (when (and spec (seq (get-in spec [:data :values])))
     (go
       (try
@@ -93,7 +93,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn vega-canvas []
+(defn- vega-canvas []
   (r/create-class
    {:component-did-mount
     (fn [this]
@@ -111,7 +111,9 @@
        {:style {:height (:box-height (r/props this))
                 :width  (:box-width  (r/props this))}}])}))
 
-(defn vega-box [box-height box-width layer-click! units current-hour legend-list last-clicked-info]
+(defn vega-box
+  "A function to create a Vega line plot."
+  [box-height box-width layer-click! units current-hour legend-list last-clicked-info]
   [vega-canvas {:spec         (layer-line-plot units current-hour legend-list last-clicked-info)
                 :box-height   box-height
                 :box-width    box-width

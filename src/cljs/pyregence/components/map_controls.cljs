@@ -26,6 +26,9 @@
 (defonce show-panel?  (r/atom true))
 (defonce show-legend? (r/atom true))
 
+(defn hs-str [hide?]
+  (if hide? "Hide" "Show"))
+
 (defn $dropdown []
   (let [arrow (-> ($/color-picker :font-color)
                   (svg/dropdown-arrow)
@@ -80,6 +83,7 @@
        :magnify-zoom-in [svg/magnify-zoom-in]
        :my-location     [svg/my-location]
        :next-button     [svg/next-button]
+       :right-arrow     [svg/right-arrow]
        :pause-button    [svg/pause-button]
        :play-button     [svg/play-button]
        :previous-button [svg/previous-button]
@@ -155,16 +159,14 @@
 
 (defn $collapsible-panel [show? mobile?]
   {:background-color ($/color-picker :bg-color)
-   :border-right     (str "1px solid " ($/color-picker :border-color))
    :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
    :color            ($/color-picker :font-color)
    :height           "100%"
    :left             (if show?
                        "0"
                        (if mobile?
-                         "calc(-100% + 2px)"
-                         "calc(-18rem + 2px)"))
-   :overflow         "auto"
+                         "calc(-100% - 2px)"
+                         "calc(-18rem - 2px)"))
    :position         "absolute"
    :transition       "all 200ms ease-in"
    :width            (if mobile? "100%" "18rem")
@@ -255,6 +257,63 @@
                     key])))
              underlays))])}))
 
+(defn- $collapsible-button []
+  {:background-color           ($/color-picker :bg-color)
+   :border-bottom-right-radius "5px"
+   :border-color               ($/color-picker :transparent)
+   :border-style               "solid"
+   :border-top-right-radius    "5px"
+   :border-width               "0px"
+   :box-shadow                 (str "3px 1px 4px 0 rgb(0, 0, 0, 0.25)")
+   :cursor                     "pointer"
+   :fill                       ($/color-picker :font-color)
+   :height                     "40px"
+   :width                      "28px"})
+
+(defn- collapsible-button []
+  [:button
+   {:style    ($collapsible-button)
+    :on-click #(swap! show-panel? not)}
+   [:div {:style {:align-items     "center"
+                  :display         "flex"
+                  :flex-direction  "column"
+                  :justify-content "center"
+                  :transform       (if @show-panel? "rotate(180deg)" "none")}}
+    [svg/right-arrow]]])
+
+(defn- collapsible-toggle [mobile?]
+  [:div#collapsible-toggle
+   {:style {:display  (if (and @show-panel? mobile?) "none" "block")
+            :left     "100%"
+            :position "absolute"
+            :top      "50%"}}
+   (if mobile?
+     [collapsible-button]
+     [tool-tip-wrapper
+      (str (hs-str @show-panel?) " layer selection")
+      :left
+      [collapsible-button]])])
+
+(defn- help-section []
+  [:section#help-section {:style {:width "100%"}}
+   [:article {:style {:margin-bottom "0.5rem"
+                      :padding-left  "1rem"
+                      :padding-right "1rem"}}
+    [:div {:style {:background      ($/color-picker :transparent)
+                   :border-radius   "8px"
+                   :box-shadow      "0px 0px 5px #bbbbbb"
+                   :display         "flex"
+                   :justify-content "center"
+                   :padding         "0.5em"}}
+     [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
+          :target "_blank"
+          :style  {:color       ($/color-picker :white)
+                   :font-family "Avenir"
+                   :font-style  "italic"
+                   :margin      "0"
+                   :text-align  "center"}}
+      "Learn more about the data."]]]])
+
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
@@ -264,9 +323,14 @@
     (fn [*params select-param! active-opacity param-options mobile?]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
-         [:div {:style {:overflow "auto"}}
+         [:div {:style {:display         "flex"
+                        :flex-direction  "column"
+                        :height          "100%"
+                        :justify-content "space-between"
+                        :overflow-y      "auto"}}
+          [collapsible-toggle mobile?]
           [:div#layer-selection {:style {:padding "1rem"}}
-           [:div {:style {:display "flex" :justify-content "space-between"}}
+           [:div {:style {:display "flex" :justify-content "center"}}
             [:label {:style ($layer-selection)} "Layer Selection"]
             [:span {:style {:margin-right "-.5rem"}}
              [tool-button :close #(reset! show-panel? false)]]]
@@ -300,7 +364,8 @@
             @*base-map
             (c/base-map-options)
             false
-            select-base-map!]]]]))))
+            select-base-map!]]
+          [help-section]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Share Tool
@@ -353,7 +418,8 @@
   (swap! show-red-flag? not)
   (when (and @show-red-flag? (not (mb/layer-exists? "red-flag")))
     (add-red-flag-layer!))
-  (mb/set-visible-by-title! "red-flag" @show-red-flag?))
+  (mb/set-visible-by-title! "red-flag" @show-red-flag?)
+  (mb/clear-popup! "red-flag"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fire History
@@ -376,19 +442,12 @@
    :flex-direction "column"
    :right          "16px"})
 
-(defn hs-str [hide?]
-  (if hide? "Hide" "Show"))
-
 (defn ed-str [enabled?]
   (if enabled? "Disable" "Enable"))
 
 (defn tool-bar [show-info? show-match-drop? show-camera? show-red-flag? show-fire-history? set-show-info! mobile? user-id]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
-   (->> [[:layers
-          (str (hs-str @show-panel?) " layer selection")
-          #(swap! show-panel? not)
-          false]
-         (when-not mobile?
+   (->> [(when-not mobile?
            [:info
             (str (hs-str @show-info?) " point information")
             #(do (set-show-info! (not @show-info?))
@@ -611,44 +670,60 @@
    :top       "2rem"
    :width     "10%"})
 
-(defn- get-current-image [camera-name]
-  (u/call-remote! :post-blob
-                  "clj/get-current-image"
-                  {:clj-args (list camera-name)}))
-
-(defn- get-current-image-src [camera-name]
+(defn- get-camera-image-chan [active-camera]
   (go
-    (->> (get-current-image camera-name)
+    (->> (u/call-clj-async! "get-current-image" :post-blob (:name active-camera))
          (<!)
          (:body)
          (js/URL.createObjectURL))))
 
-(defn- refresh-camera-image! [image-url *camera]
-  (go (reset! image-url (<! (get-current-image-src (:name *camera))))))
+(defn- get-camera-age-chan [active-camera]
+  (go
+    (->> (u/call-clj-async! "get-camera-time" (:name active-camera))
+         (<!)
+         (:body)
+         (edn/read-string)
+         (u/camera-time->js-date)
+         (u/get-time-difference)
+         (u/ms->hr))))
 
 (defn camera-tool [cameras parent-box mobile? terrain? close-fn!]
-  (r/with-let [*camera     (r/atom nil)
-               image-url   (r/atom nil)
-               exit-ch     (chan)
-               zoom-camera (fn []
-                             (let [{:keys [longitude latitude tilt pan]} @*camera]
-                               (reset! terrain? true)
-                               (h/show-help! :terrain mobile?)
-                               (mb/toggle-dimensions! true)
-                               (mb/fly-to! {:center [longitude latitude]
-                                            :zoom 15
-                                            :bearing pan
-                                            :pitch (min (+ 90 tilt) 85)}) 400))
-               on-click    (fn [features]
-                             (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
-                               (when (some? @*camera) (put! exit-ch :exit))
-                               (reset! *camera new-camera)
-                               (reset! image-url nil)
-                               (refresh-camera-image! image-url @*camera)
-                               (u/refresh-on-interval! #(refresh-camera-image! image-url @*camera) 60000 exit-ch)))
+  (r/with-let [active-camera (r/atom nil)
+               camera-age    (r/atom 0)
+               image-src     (r/atom nil)
+               exit-ch       (chan)
+               zoom-camera   (fn []
+                               (let [{:keys [longitude latitude tilt pan]} @active-camera]
+                                 (reset! terrain? true)
+                                 (h/show-help! :terrain mobile?)
+                                 (mb/toggle-dimensions! true)
+                                 (mb/fly-to! {:center  [longitude latitude]
+                                              :zoom    15
+                                              :bearing pan
+                                              :pitch   (min (+ 90 tilt) 85)}) 400))
+               reset-view    (fn []
+                               (let [{:keys [longitude latitude]} @active-camera]
+                                 (reset! terrain? false)
+                                 (mb/toggle-dimensions! false)
+                                 (mb/fly-to! {:center [longitude latitude]
+                                              :zoom   6})))
+               on-click      (fn [features]
+                               (go
+                                 (when-let [new-camera  (js->clj (aget features "properties") :keywordize-keys true)]
+                                   (when (some? @active-camera) (put! exit-ch :exit))
+                                   (reset! active-camera new-camera)
+                                   (reset! camera-age 0)
+                                   (reset! image-src nil)
+                                   (let [age-chan   (get-camera-age-chan @active-camera)
+                                         image-chan (get-camera-image-chan @active-camera)]
+                                     (when (> 4 (reset! camera-age (<! age-chan)))
+                                       (reset! image-src (<! image-chan))
+                                       (u/refresh-on-interval! #(reset! image-src (<! (get-camera-image-chan @active-camera)))
+                                                               60000
+                                                               exit-ch))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
-               _           (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
-               _           (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
+               _             (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
+               _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
     [:div#wildfire-camera-tool
      [resizable-window
       parent-box
@@ -658,7 +733,7 @@
       close-fn!
       (fn [_ _]
         (cond
-          (nil? @*camera)
+          (nil? @active-camera)
           [:div {:style {:padding "1.2em"}}
            "Click on a camera to view the most recent image. Powered by "
            [:a {:href   "http://www.alertwildfire.org/"
@@ -666,16 +741,33 @@
                 :target "_blank"}
             "Alert Wildfire"] "."]
 
-          (some? @image-url)
+          (>= @camera-age 4)
+          [:div {:style {:padding "1.2em"}}
+           (str "This camera has not been refreshed for " (u/to-precision 1 @camera-age) " hours. Please try again later.")]
+
+          (some? @image-src)
           [:div
            [:div {:style {:display         "flex"
                           :justify-content "center"
                           :position        "absolute"
                           :top             "2rem"
                           :width           "100%"}}
-            [:label (str "Camera: " (:name @*camera))]]
+            [:label (str "Camera: " (:name @active-camera))]]
            [:img {:src   "images/awf_logo.png"
                   :style ($/combine $awf-logo-style)}]
+           (when @terrain?
+             [tool-tip-wrapper
+              "Zoom Out to 2D"
+              :left
+              [:button {:class    (<class $/p-themed-button)
+                        :on-click reset-view
+                        :style    {:bottom   "1.25rem"
+                                   :padding  "2px"
+                                   :position "absolute"
+                                   :left     "1rem"}}
+               [:div {:style {:height "32px"
+                              :width  "32px"}}
+                [svg/return]]]])
            [tool-tip-wrapper
             "Zoom Map to Camera"
             :right
@@ -688,12 +780,12 @@
              [:div {:style {:height "32px"
                             :width  "32px"}}
               [svg/binoculars]]]]
-           [:img {:src   @image-url
+           [:img {:src   @image-src
                   :style {:height "auto" :width "100%"}}]]
 
           :else
           [:div {:style {:padding "1.2em"}}
-           (str "Loading camera " (:name @*camera) "...")]))]]
+           (str "Loading camera " (:name @active-camera) "...")]))]]
     (finally
       (put! exit-ch :exit)
       (mb/remove-layer! "fire-cameras")
@@ -725,11 +817,9 @@
     (fn [_]
       [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
        [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
-        (str (:band (get last-clicked-info @*layer-idx))
-             " "
-             units)]])}))
+        (str (:band (get last-clicked-info @*layer-idx)) (u/clean-units units))]])}))
 
-(defn vega-information [box-height box-width *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
+(defn- vega-information [box-height box-width *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
   (r/with-let [info-height (r/atom 0)]
     [:<>
      [vega-box
@@ -743,31 +833,43 @@
      [information-div last-clicked-info *layer-idx units info-height]]))
 
 (defn- single-point-info [box-height _ band legend-list units convert]
-  (let [legend-map  (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
-        legend-keys (sort (keys legend-map))
-        color       (or (get-in legend-map [(-> band
-                                                (max (first legend-keys))
-                                                (min (last legend-keys)))
-                                            "color"])
-                        (let [[low high] (u/find-boundary-values band (sort (keys legend-map)))]
-                          (when (and high low)
-                            (u/interp-color (get-in legend-map [low "color"])
-                                            (get-in legend-map [high "color"])
-                                            (/ (- band low) (- high low))))))]
+  (let [legend-map    (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
+        legend-keys   (sort (keys legend-map))
+        color         (or (get-in legend-map [(-> band
+                                                  (max (first legend-keys))
+                                                  (min (last legend-keys)))
+                                              "color"])
+                          (let [[low high] (u/find-boundary-values band (sort (keys legend-map)))]
+                            (when (and high low)
+                              (u/interp-color (get-in legend-map [low "color"])
+                                              (get-in legend-map [high "color"])
+                                              (/ (- band low) (- high low))))))]
     [:div {:style {:align-items     "center"
                    :display         "flex"
+                   :flex-direction  "column"
                    :height          box-height
-                   :justify-content "center"
+                   :justify-content "space-around"
                    :position        "relative"
                    :width           "100%"}}
-     [:div {:style {:display "flex" :flex-direction "row"}}
+     [:div {:style {:display        "flex"
+                    :flex-direction "row"
+                    :margin-top     "0.75rem"}}
       [:div {:style {:background-color color
                      :height           "1.5rem"
                      :margin-right     "0.5rem"
                      :width            "1.5rem"}}]
       [:h4 (u/end-with (or (get-in legend-map [band "label"])
                            (if (fn? convert) (convert band) band))
-                       units)]]]))
+                       units)]]
+     (when (some? ((fn [v] (= "TU1" (get v "label"))) (vals legend-map))) ;TODO: need a better way to check for FBFM layer
+       [:div {:style {:margin "0.125rem 0.75rem"}}
+        [:p {:style {:margin-bottom "0.125rem"
+                     :text-align    "center"}}
+         [:strong "Fuel Type: "]
+         (get-in c/fbfm40-lookup [band :fuel-type])]
+        [:p {:style {:margin-bottom "0"}}
+         [:strong "Description: "]
+         (get-in c/fbfm40-lookup [band :description])]])]))
 
 (defn information-tool [get-point-info!
                         parent-box
@@ -843,9 +945,9 @@
    :top        "16px"
    :transition "all 200ms ease-in"})
 
-(defn legend-box [legend-list reverse? mobile?]
+(defn legend-box [legend-list reverse? mobile? units]
   (reset! show-legend? (not mobile?))
-  (fn [legend-list reverse? mobile?]
+  (fn [legend-list reverse? mobile? units]
     (when (and @show-legend? (seq legend-list))
       [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel?))}
        [:div {:style {:display "flex" :flex-direction "column"}}
@@ -853,7 +955,7 @@
                        ^{:key i}
                        [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
                         [:div {:style ($legend-color (get leg "color"))}]
-                        [:label (get leg "label")]])
+                        [:label (str (get leg "label") (u/clean-units units))]])
                      (if reverse?
                        (reverse legend-list)
                        legend-list))]])))

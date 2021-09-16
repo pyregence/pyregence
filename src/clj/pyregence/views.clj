@@ -25,7 +25,12 @@
    [:meta {:charset "utf-8"}]
    [:meta {:name    "viewport"
            :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
-   (include-css "css/style.css")
+   [:meta {:property "og:title" :content "Pyrecast"}]
+   [:meta {:property "og:description"
+           :content  "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
+   [:meta {:property "og:image" :content "/images/pyrecast-logo.png"}]
+   [:meta {:property "og:url" :content "https://pyrecast.org/"}]
+   (include-css "/css/style.css")
    [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
    [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
    [:script "window.name = 'pyrecast'"]
@@ -37,24 +42,24 @@
            :style {:align-items     "center"
                    :display         "flex"
                    :justify-content "space-between"}}
-      [:a {:rel   "home"
-           :href  (if pyrecast? "/" "https://pyregence.org")
-           :title "Pyregence"
-           :style {:margin-bottom "0.3125rem"
-                   :margin-left   "10%"
-                   :margin-top    "0.3125rem"}}
-       [:img {:src   (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
-              :alt   "Pyregence Logo"
-              :style {:height "40px"
-                      :width  "auto"}}]]
-      (when pyrecast?
-        [:a {:href   "https://pyregence.org"
-             :target "pyregence"
-             :style  {:margin-right "5%"}}
-         [:img {:src   "/images/powered-by-pyregence.svg"
-                :alt   "Powered by Pyregence Logo"
-                :style {:height "1.25rem"
-                        :width  "auto"}}]])]))
+     [:a {:rel   "home"
+          :href  (if pyrecast? "/" "https://pyregence.org")
+          :title "Pyregence"
+          :style {:margin-bottom "0.3125rem"
+                  :margin-left   "10%"
+                  :margin-top    "0.3125rem"}}
+      [:img {:src   (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
+             :alt   "Pyregence Logo"
+             :style {:height "40px"
+                     :width  "auto"}}]]
+     (when pyrecast?
+       [:a {:href   "https://pyregence.org"
+            :target "pyregence"
+            :style  {:margin-right "5%"}}
+        [:img {:src   "/images/powered-by-pyregence.svg"
+               :alt   "Powered by Pyregence Logo"
+               :style {:height "1.25rem"
+                       :width  "auto"}}]])]))
 
 (defn render-dynamic []
   (fn [{:keys [params server-name]}]
@@ -71,6 +76,18 @@
                [:body
                 [:div#near-term-forecast
                  (header server-name)
+                 (let [announcement (slurp "announcement.txt")]    ; TODO This will be moved to the front end for better UX.
+                   (when (pos? (count announcement))
+                     [:p {:style {:color            "#eec922"
+                                  :background-color "#e63232"
+                                  :text-align       "center"
+                                  :padding          "5px"
+                                  :margin           "0px"
+                                  :position         "fixed"
+                                  :top              "0"
+                                  :width            "100vw"
+                                  :z-index          100}}
+                      announcement]))
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("

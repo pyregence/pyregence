@@ -8,10 +8,14 @@
 
 (defonce ^:private features (atom nil))
 
-(defn set-feature-flags! [config]
+(defn set-feature-flags!
+  "Sets the features atom with the specified features from `config.edn`."
+  [config]
   (reset! features (:features config)))
 
-(defn feature-enabled? [feature-name]
+(defn feature-enabled?
+  "Checks whether or not a specific featue is enabled."
+  [feature-name]
   (get @features feature-name))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -87,7 +91,7 @@
                                                  :options    (array-map
                                                               :tmpf   {:opt-label "Temperature (F)"
                                                                        :filter    "tmpf"
-                                                                       :units     "deg F"}
+                                                                       :units     "\u00B0F"}
                                                               :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                        :filter    "ffwi"
                                                                        :units     ""}
@@ -287,8 +291,147 @@
                           :long-term {:options-config long-term-forecast-options
                                       :default        long-term-forecast-default}})
 
+(def fbfm40-lookup {91    {:label       "NB1"
+                           :fuel-type   "Non-burnable"
+                           :description "Urban or suburban development; insufficient wildland fuel to carry wildland fire."}
+                    92    {:label       "NB2"
+                           :fuel-type   "Non-burnable"
+                           :description "Snow/ice."}
+                    93    {:label       "NB3"
+                           :fuel-type   "Non-burnable"
+                           :description "Agricultural field, maintained in nonburnable condition."}
+                    98    {:label       "NB8"
+                           :fuel-type   "Non-burnable"
+                           :description "Open water."}
+                    99    {:label       "NB9"
+                           :fuel-type   "Non-burnable"
+                           :description "Bare ground."}
+                    101   {:label       "GR1"
+                           :fuel-type   "Grass"
+                           :description "Grass is short, patchy, and possibly heavily grazed. Spread rate moderate; flame length low."}
+                    102   {:label       "GR2"
+                           :fuel-type   "Grass"
+                           :description "Moderately coarse continuous grass, average depth about 1 foot. Spread rate high; flame length moderate."}
+                    103   {:label       "GR3"
+                           :fuel-type   "Grass"
+                           :description "Very coarse grass, average depth about 2 feet. Spread rate high; flame length moderate."}
+                    104   {:label       "GR4"
+                           :fuel-type   "Grass"
+                           :description "Moderately coarse continuous grass, average depth about 2 feet. Spread rate very high; flame length high."}
+                    105   {:label       "GR5"
+                           :fuel-type   "Grass"
+                           :description "Dense, coarse grass, average depth about 1 to 2 feet. Spread rate very high; flame length high."}
+                    106   {:label       "GR6"
+                           :fuel-type   "Grass"
+                           :description "Dryland grass about 1 to 2 feet tall. Spread rate very high; flame length very high."}
+                    107   {:label       "GR7"
+                           :fuel-type   "Grass"
+                           :description "Moderately coarse continuous grass, average depth about 3 feet. Spread rate very high; flame length very high."}
+                    108   {:label       "GR8"
+                           :fuel-type   "Grass"
+                           :description "Heavy, coarse, continuous grass 3 to 5 feet tall. Spread rate very high; flame length very high."}
+                    109   {:label       "GR9"
+                           :fuel-type   "Grass"
+                           :description "Very heavy, coarse, continuous grass 5 to 8 feet tall. Spread rate extreme; flame length extreme."}
+                    121   {:label       "GS1"
+                           :fuel-type   "Grass-Shrub"
+                           :description "Shrubs are about 1 foot high, low grass load. Spread rate moderate; flame length low."}
+                    122   {:label       "GS2"
+                           :fuel-type   "Grass-Shrub"
+                           :description "Shrubs are 1 to 3 feet high, moderate grass load. Spread rate high; flame length moderate."}
+                    123   {:label       "GS3"
+                           :fuel-type   "Grass-Shrub"
+                           :description "Moderate grass/shrub load, average grass/shrub depth less than 2 feet. Spread rate high; flame length moderate."}
+                    124   {:label       "GS4"
+                           :fuel-type   "Grass-Shrub"
+                           :description "Heavy grass/shrub load, depth greater than 2 feet. Spread rate high; flame length very high."}
+                    141   {:label       "SH1"
+                           :fuel-type   "Shrub"
+                           :description "Low shrub fuel load, fuelbed depth about 1 foot; some grass may be present. Spread rate very low; flame length very low."}
+                    142   {:label       "SH2"
+                           :fuel-type   "Shrub"
+                           :description "Moderate fuel load (higher than SH1), depth about 1 foot, no grass fuel present. Spread rate low; flame length low."}
+                    143   {:label       "SH3"
+                           :fuel-type   "Shrub"
+                           :description "Moderate shrub load, possibly with pine overstory or herbaceous fuel, fuel bed depth 2 to 3 feet. Spread rate low; flame length low."}
+                    144   {:label       "SH4"
+                           :fuel-type   "Shrub"
+                           :description "Low to moderate shrub and litter load, possibly with pine overstory, fuel bed depth about 3 feet. Spread rate high; flame length moderate."}
+                    145   {:label       "SH5"
+                           :fuel-type   "Shrub"
+                           :description "Heavy shrub load, depth 4 to 6 feet. Spread rate very high; flame length very high."}
+                    146   {:label       "SH6"
+                           :fuel-type   "Shrub"
+                           :description "Dense shrubs, little or no herb fuel, depth about 2 feet. Spread rate high; flame length high."}
+                    147   {:label       "SH7"
+                           :fuel-type   "Shrub"
+                           :description "Very heavy shrub load, depth 4 to 6 feet. Spread rate lower than SH5, but flame length similar. Spread rate high; flame length very high."}
+                    148   {:label       "SH8"
+                           :fuel-type   "Shrub"
+                           :description "Dense shrubs, little or no herb fuel, depth about 3 feet. Spread rates high; flame length high."}
+                    149   {:label       "SH9"
+                           :fuel-type   "Shrub"
+                           :description "Dense, finely branched shrubs with significant fine dead fuel, about 4 to 6 feet tall; some herbaceous fuel may be present. Spread rate high, flame length very high."}
+                    161   {:label       "TU1"
+                           :fuel-type   "Timber-Understory"
+                           :description "Fuelbed is low load of grass and/or shrub with litter. Spread rate low; flame length low."}
+                    162   {:label       "TU2"
+                           :fuel-type   "Timber-Understory"
+                           :description "Fuelbed is moderate litter load with shrub component. Spread rate moderate; flame length low."}
+                    163   {:label       "TU3"
+                           :fuel-type   "Timber-Understory"
+                           :description "Fuelbed is moderate litter load with grass and shrub components. Spread rate high; flame length moderate."}
+                    164   {:label       "TU4"
+                           :fuel-type   "Timber-Understory"
+                           :description "Fuelbed is short conifer trees with grass or moss understory. Spread rate moderate; flame length moderate."}
+                    165   {:label       "TU5"
+                           :fuel-type   "Timber-Understory"
+                           :description "Fuelbed is high load conifer litter with shrub understory. Spread rate moderate; flame length moderate."}
+                    181   {:label       "TL1"
+                           :fuel-type   "Timber-Litter"
+                           :description "Light to moderate load, fuels 1 to 2 inches deep. Spread rate very low; flame length very low."}
+                    182   {:label       "TL2"
+                           :fuel-type   "Timber-Litter"
+                           :description "Low load, compact. Spread rate very low; flame length very low."}
+                    183   {:label       "TL3"
+                           :fuel-type   "Timber-Litter"
+                           :description "Moderate load conifer litter. Spread rate very low; flame length low."}
+                    184   {:label       "TL4"
+                           :fuel-type   "Timber-Litter"
+                           :description "Moderate load, includes small diameter downed logs. Spread rate low; flame length low."}
+                    185   {:label       "TL5"
+                           :fuel-type   "Timber-Litter"
+                           :description "High load conifer litter; light slash or mortality fuel. Spread rate low; flame length low."}
+                    186   {:label       "TL6"
+                           :fuel-type   "Timber-Litter"
+                           :description "Moderate load, less compact. Spread rate moderate; flame length low."}
+                    187   {:label       "TL7"
+                           :fuel-type   "Timber-Litter"
+                           :description "Heavy load, includes larger diameter downed logs. Spread rate low; flame length low."}
+                    188   {:label       "TL8"
+                           :fuel-type   "Timber-Litter"
+                           :description "Moderate load and compactness may include small amount of herbaceous load. Spread rate moderate; flame length low."}
+                    189   {:label       "TL9"
+                           :fuel-type   "Timber-Litter"
+                           :description "Very high load broadleaf litter; heavy needle-drape in otherwise sparse shrub layer. Spread rate moderate; flame length moderate."}
+                    201   {:label       "SB1"
+                           :fuel-type   "Slash-Blowdown"
+                           :description "Fine fuel load is 10 to 20 tons/acre, weighted toward fuels 1 to 3 inches diameter class, depth is less than 1 foot. Spread rate moderate; flame length low."}
+                    202   {:label       "SB2"
+                           :fuel-type   "Slash-Blowdown"
+                           :description "Fine fuel load is 7 to 12 tons/acre, evenly distributed across 0 to 0.25, 0.25 to 1, and 1 to 3 inch diameter classes, depth is about 1 foot. Spread rate moderate; flame length moderate. Blowdown is scattered, with many trees still standing. Spread rate moderate; flame length moderate."}
+                    203   {:label       "SB3"
+                           :fuel-type   "Slash-Blowdown"
+                           :description "Fine fuel load is 7 to 12 tons/acre, weighted toward 0 to 0.25 inch diameter class, depth is more than 1 foot. Spread rate high; flame length high. Blowdown is moderate, trees compacted to near the ground. Spread rate high; flame length high."}
+                    204   {:label       "SB4"
+                           :fuel-type   "Slash-Blowdown"
+                           :description "Blowdown is total, fuelbed not compacted, foliage still attached. Spread rate very high; flame length very high."}
+                    -9999 {:label       "NoData"
+                           :fuel-type   "No Data"
+                           :description "No data are available for this pixel"}})
+
 (defn get-forecast
-  "Retrieve forecast options and default tab"
+  "Retrieves the forecast options and default tab."
   [forecast-type]
   {:pre [(contains? #{:long-term :near-term} forecast-type)]}
   (forecast-type forecasts))
@@ -302,10 +445,14 @@
 (defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
 (defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
 
-(defn set-geoserver-base-url! [url]
+(defn set-geoserver-base-url!
+  "Sets the base URL of the Geoserver given the value from `config.edn`."
+  [url]
   (reset! geoserver-base-url url))
 
-(defn legend-url [layer]
+(defn legend-url
+  "Generates a URL for the legend given a layer."
+  [layer]
   (str (wms-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
@@ -314,7 +461,9 @@
        "&FORMAT=application/json"
        "&LAYER=" layer))
 
-(defn point-info-url [layer-group bbox feature-count]
+(defn point-info-url
+  "Generates a URL for the point information."
+  [layer-group bbox feature-count]
   (str (wms-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
@@ -333,33 +482,21 @@
        "&STYLES="
        "&BBOX=" bbox))
 
-(defn get-wfs-feature [layer extent]
-  (str (wfs-url)
-       "?SERVICE=WFS"
-       "&REQUEST=GetFeature"
-       "&TYPENAME=" layer
-       "&OUTPUTFORMAT=application/json"
-       "&SRSNAME=EPSG:3857"
-       "&BBOX=" (str/join "," extent) ",EPSG:3857"))
-
 (defn wms-layer-url
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
   [layer]
-  (str (wms-url)
-       "?SERVICE=WMS"
-       "&VERSION=1.3.0"
-       "&REQUEST=GetMap"
+  (str (mvt-url)
+       "?REQUEST=GetTile"
+       "&SERVICE=WMTS"
+       "&VERSION=1.0.0"
+       "&LAYER=" layer
+       "&STYLE="
        "&FORMAT=image/png"
-       "&TRANSPARENT=true"
-       "&WIDTH=256"
-       "&HEIGHT=256"
-       "&CRS=EPSG%3A3857"
-       "&STYLES="
-       "&FORMAT_OPTIONS=dpi%3A113"
-       "&BBOX={bbox-epsg-3857}"
-       "&LAYERS=" layer))
+       "&TILEMATRIX=EPSG:900913:{z}"
+       "&TILEMATRIXSET=EPSG:900913"
+       "&TILECOL={x}&TILEROW={y}"))
 
 (defn wfs-layer-url
   "Generates a Web Feature Service (WFS) url to download an entire vector data
@@ -418,7 +555,9 @@
 
 (defonce mapbox-access-token (atom nil))
 
-(defn set-mapbox-access-token! [token]
+(defn set-mapbox-access-token!
+  "Sets the Mapbox access token given the value from `config.edn`."
+  [token]
   (reset! mapbox-access-token token))
 
 (def default-sprite "mapbox://sprites/mspencer-sig/cka8jaky90i9m1iphwh79wr04/3nae2cnmmvrdazx877w1wcuez")
@@ -426,7 +565,9 @@
 (defn- style-url [id]
   (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @mapbox-access-token))
 
-(defn base-map-options []
+(defn base-map-options
+  "Provides the configuration for the different Mapbox map view options."
+  []
   {:mapbox-topo       {:opt-label "Mapbox Street Topo"
                        :source    (style-url "cka8jaky90i9m1iphwh79wr04")}
    :mapbox-satellite  {:opt-label "Mapbox Satellite"
@@ -444,5 +585,7 @@
 
 (defonce dev-mode? (atom nil))
 
-(defn set-dev-mode! [val]
+(defn set-dev-mode!
+  "Sets the dev mode given the value from `config.edn`."
+  [val]
   (reset! dev-mode? val))

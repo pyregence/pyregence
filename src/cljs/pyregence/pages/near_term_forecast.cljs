@@ -11,10 +11,10 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.fire-popup   :as fp]
-            [pyregence.components.intro-js     :as intro]
             [pyregence.components.map-controls :as mc]
             [pyregence.components.mapbox       :as mb]
+            [pyregence.components.intro-js  :refer init-tour!]
+            [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
             [pyregence.components.messaging :refer [message-box-modal
                                                     toast-message
@@ -276,13 +276,19 @@
   (let [properties (-> feature (aget "properties") (js->clj))
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
         {:strs [name prettyname containper acres]} properties
-        body       (fp/fire-popup prettyname
+        body       (fire-popup prettyname
                                   containper
                                   acres
                                   #(select-param! (keyword name) :fire-name)
                                   (forecast-exists? name))]
-    (mb/init-popup! lnglat body {:width "200px"})
+    (mb/init-popup! "fire" lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
+
+(defn- init-red-flag-popup! [feature lnglat]
+  (let [properties (-> feature (aget "properties") (js->clj))
+        {:strs [onset url prod_type]} properties
+        body       (red-flag-popup onset url prod_type)]
+    (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
 
 (defn change-type!
   "Changes the type of data that is being shown on the map."
@@ -295,7 +301,8 @@
       (mb/clear-popup!)
       (reset-underlays!)
       (when (some? style-fn)
-        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!))
+        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!)
+        (mb/add-feature-highlight! "red-flag" "red-flag" init-red-flag-popup!))
       (get-legend! source))
     (if clear?
       (clear-info!)
@@ -492,7 +499,11 @@
               [mc/match-drop-tool @my-box #(reset! show-match-drop? false) refresh-fire-names! user-id])
             (when @show-camera?
               [mc/camera-tool @the-cameras @my-box @mobile? terrain? #(reset! show-camera? false)])])
-         [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
+         [mc/legend-box
+          @legend-list
+          (get-forecast-opt :reverse-legend?)
+          @mobile?
+          (get-current-layer-key :units)]
          [mc/tool-bar
           show-info?
           show-match-drop?
@@ -582,7 +593,7 @@
                            :padding-right "1.75rem"}
                    :on-click #(do
                                 (reset! show-me? false)
-                                (intro/init-tour!))}
+                                (init-tour!))}
            "Accept"]]]]])))
 
 (defn loading-modal []

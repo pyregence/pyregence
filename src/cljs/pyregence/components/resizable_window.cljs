@@ -9,14 +9,14 @@
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $resizable-window [box-height box-width]
+(defn- $resizable-window [box-height box-width]
   {:height      box-height
    :overflow    "hidden"
    :right       "72px"
    :top         "1rem"
    :width       box-width})
 
-(defn $sw-drag []
+(defn- $sw-drag []
   (merge
    ($/fixed-size "1.5rem")
    {:bottom   "0"
@@ -25,7 +25,7 @@
     :position "absolute"
     :z-index  "3"}))
 
-(defn $sw-drag-icon []
+(defn- $sw-drag-icon []
   {:border-right (str "1px solid " ($/color-picker :border-color))
    :bottom       "-.5rem"
    :height       "1rem"
@@ -35,7 +35,7 @@
    :width        "1rem"
    :z-index      "2"})
 
-(defn $close-button [height]
+(defn- $close-button [height]
   {:fill     ($/color-picker :font-color)
    :height   height
    :position "absolute"
@@ -46,7 +46,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn drag-sw-icon [p-height p-width p-top box-height box-width]
+(defn- drag-sw-icon [p-height p-width p-top box-height box-width init-height init-width]
   (r/with-let [drag-started? (r/atom false)]
     [:<>
      [:div#drag-icon
@@ -57,9 +57,9 @@
                    (let [mouse-x (.-clientX %)
                          mouse-y (.-clientY %)]
                      (when (< (/ p-width 3) (+ mouse-x 68) (- p-width 50))
-                       (reset! box-width (- p-width (+ mouse-x 68))))
+                       (reset! box-width (max init-width (- p-width (+ mouse-x 68)))))
                      (when (> (/ p-height 1.5) (- mouse-y p-top 12) 50)
-                       (reset! box-height (- mouse-y p-top 12)))))
+                       (reset! box-height (max init-height (- mouse-y p-top 12))))))
        :on-drag-start #(reset! drag-started? true)}]
      [:div {:style ($sw-drag-icon)}
       [:span {:style {:border-right (str "1px solid " ($/color-picker :border-color))
@@ -67,7 +67,7 @@
                       :height       "100%"
                       :margin-right "2px"}}]]]))
 
-(defn title-div [title title-height on-click]
+(defn- title-div [title title-height on-click]
   (r/create-class
    {:component-did-mount
     (fn [this]
@@ -86,7 +86,10 @@
                :on-click on-click}
         [close]]])}))
 
-(defn resizable-window [parent-rec init-height init-width title close-fn! render-content]
+(defn resizable-window
+  "A component for a resizable window. Takes in the window's parent, initial dimensions,
+   close function, and content to render inside."
+  [parent-rec init-height init-width title close-fn! render-content]
   (r/with-let [box-height   (r/atom init-height)
                box-width    (r/atom init-width)
                title-height (r/atom 0)]
@@ -95,7 +98,7 @@
           p-top    (aget parent-rec "top")]
       (when (> @box-height (/ p-height 1.5)) (reset! box-height (/ p-height 1.5)))
       (when (> @box-width  (/ p-width  1.5)) (reset! box-width  (/ p-width 1.5)))
-      [:div#resizable {:style ($/combine $/tool ($resizable-window (max init-height @box-height) (max init-width @box-width)))}
+      [:div#resizable {:style ($/combine $/tool ($resizable-window @box-height @box-width))}
        [title-div title title-height close-fn!]
        (render-content (- @box-height @title-height) @box-width)
-       [drag-sw-icon p-height p-width p-top box-height box-width]])))
+       [drag-sw-icon p-height p-width p-top box-height box-width init-height init-width]])))

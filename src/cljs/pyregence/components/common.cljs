@@ -9,32 +9,17 @@
             [pyregence.utils    :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helper Functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; These are needed here to prevent circular dependencies
-
-(defn input-value
-  "Return the value property of the target property of an event."
-  [event]
-  (-> event .-target .-value))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $labeled-input []
+(defn- $labeled-input []
   {:display        "flex"
    :flex           1
    :flex-direction "column"
    :padding-bottom ".5rem"
    :width          "100%"})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI Components
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn $radio [checked? themed?]
+(defn- $radio [checked? themed?]
   (merge
    (when checked? {:background-color ($/color-picker (if themed? :border-color :black) 0.6)})
    {:border        "2px solid"
@@ -44,7 +29,102 @@
     :margin-right  ".4rem"
     :width         "1rem"}))
 
+(defn- $arrow [arrow-x arrow-y arrow-position show?]
+  {:background-color ($/color-picker :font-color)
+   :border-top       (when (#{:top :right} arrow-position)    (str "1.5px solid " ($/color-picker :bg-color)))
+   :border-right     (when (#{:bottom :right} arrow-position) (str "1.5px solid " ($/color-picker :bg-color)))
+   :border-bottom    (when (#{:left :bottom} arrow-position)  (str "1.5px solid " ($/color-picker :bg-color)))
+   :border-left      (when (#{:top :left} arrow-position)     (str "1.5px solid " ($/color-picker :bg-color)))
+   :content          "close-quote"
+   :height           "16px"
+   :left             arrow-x
+   :position         "fixed"
+   :top              arrow-y
+   :transform        "rotate(45deg)"
+   :transition       (when-not show? "left 0s ease-out 300ms, top 0s ease-out 300ms")
+   :width            "16px"
+   :z-index          201})
+
+(defn- $tool-tip [tip-x tip-y arrow-position show?]
+  {:background-color ($/color-picker :font-color)
+   :border           (str "1.5px solid " ($/color-picker :bg-color))
+   :border-radius    "6px"
+   :color            ($/color-picker :bg-color)
+   :left             tip-x
+   :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
+   :opacity          (if show? 1.0 0.0)
+   :padding          ".5rem"
+   :position         "fixed"
+   :top              tip-y
+   :transition       (if show?
+                       "opacity 310ms ease-in"
+                       "opacity 300ms ease-out, left 0s ease-out 300ms, top 0s ease-out 300ms")
+   :z-index          200})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Private Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- interpose-react [tag items]
+  [:<> (doall
+        (map-indexed
+         (fn [idx item] ^{:key idx} [:<> item tag])
+         (butlast items)))
+   (last items)])
+
+(defn- show-line-break [text]
+  (let [items (if (coll? text)
+                (vec text)
+                (str/split text #"\n"))]
+    (interpose-react [:br] items)))
+
+(defn- calc-tool-position [sibling-ref tool-ref arrow-position show?]
+  (if (and tool-ref show?)
+    (let [sibling-box     (.getBoundingClientRect sibling-ref)
+          tool-box        (.getBoundingClientRect tool-ref)
+          tool-width      (aget tool-box "width")
+          tool-height     (aget tool-box "height")
+          max-x           (- (.-innerWidth js/window) tool-width 6)
+          max-y           (- (.-innerHeight js/window) tool-height 6)
+          [arrow-x tip-x] (condp #(%1 %2) arrow-position
+                            #{:top :bottom}
+                            (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
+                              [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
+
+                            #{:left}
+                            (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
+                              [(+ sibling-x 4.7) (+ sibling-x 13)])
+
+                            (let [sibling-x (aget sibling-box "x")]
+                              [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
+          [arrow-y tip-y] (condp #(%1 %2) arrow-position
+                            #{:left :right}
+                            (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
+                              [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
+
+                            #{:top}
+                            (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
+                              [(+ sibling-y 3) (+ sibling-y 11)])
+
+                            (let [sibling-y (aget sibling-box "y")]
+                              [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
+      [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y]) ; There is a 56px y offset for the header
+    [-1000 -1000 -1000 -1000]))
+
+(defn- sibling-wrapper [sibling sibling-ref]
+  (r/create-class
+   {:component-did-mount
+    (fn [this] (reset! sibling-ref (rd/dom-node this)))
+
+    :reagent-render
+    (fn [sibling _] sibling)}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UI Components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn radio
+  "A component for radio button."
   ([label state condition on-click]
    (radio label state condition on-click false))
   ([label state condition on-click themed?]
@@ -54,6 +134,7 @@
     [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]]))
 
 (defn check-box
+  "A component for check boxes."
   [label-text state]
   [:span {:style {:margin-bottom ".5rem"}}
    [:input {:style     {:margin-right ".25rem"}
@@ -71,7 +152,7 @@
    - required?"
   [label state & [opts]]
   (let [{:keys [type autocomplete disabled? call-back autofocus? required? placeholder]
-         :or {type "text" disabled? false call-back #(reset! state (input-value %))} required? false} opts]
+         :or {type "text" disabled? false call-back #(reset! state (u/input-value %))} required? false} opts]
     [:section {:style ($labeled-input)}
      [:label {:for (u/sentence->kebab label)} label]
      [:input {:class         (style->class $/p-bordered-input)
@@ -84,19 +165,6 @@
               :type          type
               :value         @state
               :on-change     call-back}]]))
-
-(defn input-datetime
-  "Creates a labeled datetime input."
-  [label id value on-change]
-  [:div
-   [:label {:for   id
-            :style {:font-size "0.9rem" :font-weight "bold"}}
-    label]
-   [:input {:id        id
-            :style     {:width "100%"}
-            :type      "datetime-local"
-            :value     value
-            :on-change on-change}]])
 
 (defn limited-date-picker
   "Creates a date input with limited dates."
@@ -134,6 +202,7 @@
          (str hour ":00 " timezone)])]]))
 
 (defn simple-form
+  "Simple form component. Adds input fields, an input button, and optionally a footer."
   ([title button-text fields on-click]
    (simple-form title button-text fields on-click nil))
   ([title button-text fields on-click footer]
@@ -158,85 +227,7 @@
                  :value button-text}]
         (when footer (footer))]]]]]))
 
-(defn $arrow [arrow-x arrow-y arrow-position show?]
-  {:background-color ($/color-picker :font-color)
-   :border-top       (when (#{:top :right} arrow-position)    (str "1.5px solid " ($/color-picker :bg-color)))
-   :border-right     (when (#{:bottom :right} arrow-position) (str "1.5px solid " ($/color-picker :bg-color)))
-   :border-bottom    (when (#{:left :bottom} arrow-position)  (str "1.5px solid " ($/color-picker :bg-color)))
-   :border-left      (when (#{:top :left} arrow-position)     (str "1.5px solid " ($/color-picker :bg-color)))
-   :content          "close-quote"
-   :height           "16px"
-   :left             arrow-x
-   :position         "fixed"
-   :top              arrow-y
-   :transform        "rotate(45deg)"
-   :transition       (when-not show? "left 0s ease-out 300ms, top 0s ease-out 300ms")
-   :width            "16px"
-   :z-index          201})
-
-(defn $tool-tip [tip-x tip-y arrow-position show?]
-  {:background-color ($/color-picker :font-color)
-   :border           (str "1.5px solid " ($/color-picker :bg-color))
-   :border-radius    "6px"
-   :color            ($/color-picker :bg-color)
-   :left             tip-x
-   :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
-   :opacity          (if show? 1.0 0.0)
-   :padding          ".5rem"
-   :position         "fixed"
-   :top              tip-y
-   :transition       (if show?
-                       "opacity 310ms ease-in"
-                       "opacity 300ms ease-out, left 0s ease-out 300ms, top 0s ease-out 300ms")
-   :z-index          200})
-
-(defn interpose-react [tag items]
-  [:<> (doall
-        (map-indexed
-         (fn [idx item] ^{:key idx} [:<> item tag])
-         (butlast items)))
-   (last items)])
-
-(defn show-line-break [text]
-  (let [items (if (coll? text)
-                (vec text)
-                (str/split text #"\n"))]
-    (interpose-react [:br] items)))
-
-(defn calc-tool-position [sibling-ref tool-ref arrow-position show?]
-  (if (and tool-ref show?)
-    (let [sibling-box     (.getBoundingClientRect sibling-ref)
-          tool-box        (.getBoundingClientRect tool-ref)
-          tool-width      (aget tool-box "width")
-          tool-height     (aget tool-box "height")
-          max-x           (- (.-innerWidth js/window) tool-width 6)
-          max-y           (- (.-innerHeight js/window) tool-height 6)
-          [arrow-x tip-x] (condp #(%1 %2) arrow-position
-                            #{:top :bottom}
-                            (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
-                              [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
-
-                            #{:left}
-                            (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
-                              [(+ sibling-x 4.7) (+ sibling-x 13)])
-
-                            (let [sibling-x (aget sibling-box "x")]
-                              [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
-          [arrow-y tip-y] (condp #(%1 %2) arrow-position
-                            #{:left :right}
-                            (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
-                              [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
-
-                            #{:top}
-                            (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
-                              [(+ sibling-y 3) (+ sibling-y 11)])
-
-                            (let [sibling-y (aget sibling-box "y")]
-                              [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
-      [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y]) ; There is a 56px y offset for the header
-    [-1000 -1000 -1000 -1000]))
-
-(defn tool-tip []
+(defn- tool-tip []
   (let [tool-ref (atom nil)
         position (r/atom [-1000 -1000 -1000 -1000])]
     (r/create-class
@@ -262,16 +253,10 @@
            [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
             [show-line-break tool-tip-text]]]))})))
 
-(defn sibling-wrapper [sibling sibling-ref]
-  (r/create-class
-   {:component-did-mount
-    (fn [this] (reset! sibling-ref (rd/dom-node this)))
-
-    :reagent-render
-    (fn [sibling _] sibling)}))
-
 ;; TODO abstract this to take content for things like a dropdown log in.
-(defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
+(defn tool-tip-wrapper
+  "Adds a tooltip given the desired text, direction of the tooltip, and the element."
+  [tool-tip-text arrow-position sibling]
   (r/with-let [show?        (r/atom false)
                sibling-ref  (r/atom nil)]
     [:div {:on-mouse-over  #(do (reset! show? true))

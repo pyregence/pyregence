@@ -23,7 +23,7 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn add-user! []
+(defn- add-user! []
   (go
     (toast-message! "Creating new account. This may take a moment...")
     (if (and (:success (<! (u/call-clj-async! "add-new-user" @email @full-name @password)))
@@ -35,7 +35,7 @@
       (toast-message! ["An error occurred while registering."
                        "Please contact support@pyregence.org for help."]))))
 
-(defn register! []
+(defn- register! []
   (go
     (reset! pending? true)
     (let [email-chan (u/call-clj-async! "user-email-taken" @email)
@@ -60,7 +60,10 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn root-component [_]
+(defn root-component
+  "The root component for the /register page.
+   Displays the register form and a link to the login page."
+  [_]
   (process-toast-messages!)
   (fn [_]
     [:<>
