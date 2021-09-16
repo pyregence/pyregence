@@ -236,13 +236,27 @@
 (defmethod call-remote! :default [method _ _]
   (throw (ex-info (str "No such method (" method ") defined for pyregence.utils/call-remote!") {})))
 
-(defn call-clj-async!
+;; TODO This whole routing should be more generic
+(def ^:private post-options #{:get :post :post-text :post-blob})
+
+(defn call-clj-async! 
   "Calls a given function from the backend and returns a go block
    containing the function's response."
   [clj-fn-name & args]
-  (call-remote! :post-text
-                (str "/clj/" clj-fn-name)
-                (if (= js/FormData (type (first args))) (first args) {:clj-args args})))
+  (let [first-arg (first args)
+        method    (or (post-options first-arg) :post-text)
+        data      (cond
+                    (= js/FormData (type first-arg))
+                    first-arg
+
+                    (= :post-text method)
+                    {:clj-args args}
+
+                    :else
+                    {:clj-args (rest args)})]
+    (call-remote! method
+                  (str "/clj/" clj-fn-name)
+                  data)))
 
 ;;; Process Returned Results
 
@@ -329,6 +343,11 @@
          ":"
          (pad-zero seconds))))
 
+(defn ms->hr
+  "Converts milliseconds to hours."
+  [ms]
+  (/ ms (* 1000 60 60)))
+
 (defn current-date-ms
   "Returns the current date in milliseconds, with hour/minute/seconds/ms set to 0"
   []
@@ -347,6 +366,23 @@
   "Formats a JS Date into MM/DD/YYYY"
   [js-date]
   (str (+ 1 (.getMonth js-date)) "/" (.getDate js-date) "/" (.getFullYear js-date)))
+
+(defn camera-time->js-date
+  "Converts a time from the cameras API (YYYY-MM-DD HH:MM:SS.MFS) into a JS Date in UTC."
+  [camera-time]
+  (js/Date. (as-> camera-time %
+              (str/split % #" ")
+              (interpose "T" %)
+              (concat % "Z")
+              (apply str %))))
+
+(defn get-time-difference
+  "Returns the difference in milliseconds between a JS Date object and the current time.
+   Optionally returns the difference between two different JS Date objects."
+  [js-date & [js-date-opt]]
+  (if (some? js-date-opt)
+    (- (.getTime js-date) (.getTime js-date-opt))
+    (- (.getTime (js/Date.)) (.getTime js-date))))
 
 ;;; ->map HOF
 
