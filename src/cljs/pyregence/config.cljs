@@ -198,7 +198,7 @@
                                              :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
                                              :options    {:burned {:opt-label "Forecasted fire location"
                                                                    :filter    "hours-since-burned"
-                                                                   :units     "Hours"}}}
+                                                                   :units     ""}}}
                                 :burn-pct   {:opt-label      "Predicted Fire Size"
                                              :default-option :50
                                              :hover-text     "Each fire forecast is an ensemble of 1,000 separate simulations to account for uncertainty in model inputs. This leads to a range of predicted fire sizes, five of which can be selected from the dropdown menu."
