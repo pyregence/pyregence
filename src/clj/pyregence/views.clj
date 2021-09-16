@@ -71,7 +71,7 @@
                 [:title "Wildfire Forecasts"]
                 [:meta {:name    "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
-                (include-css "/css/mapbox-gl-v2.3.1.css" "/css/intro-js-v4.2.2.css")
+                (include-css "/css/mapbox-gl-v2.3.1.css" "/css/intro-js-v4.2.2.css" "/css/introjs-modern.css")
                 (include-js "/js/mapbox-gl-v2.3.1.js" "/js/intro-js-v4.2.2.min.js" (find-app-js))]
                [:body
                 [:div#near-term-forecast
