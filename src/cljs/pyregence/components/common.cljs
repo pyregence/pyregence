@@ -65,19 +65,6 @@
 ;; Private Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- interpose-react [tag items]
-  [:<> (doall
-        (map-indexed
-         (fn [idx item] ^{:key idx} [:<> item tag])
-         (butlast items)))
-   (last items)])
-
-(defn- show-line-break [text]
-  (let [items (if (coll? text)
-                (vec text)
-                (str/split text #"\n"))]
-    (interpose-react [:br] items)))
-
 (defn- calc-tool-position [sibling-ref tool-ref arrow-position show?]
   (if (and tool-ref show?)
     (let [sibling-box     (.getBoundingClientRect sibling-ref)
@@ -251,11 +238,10 @@
           [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
            [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
            [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
-            [show-line-break tool-tip-text]]]))})))
+            tool-tip-text]]))})))
 
-;; TODO abstract this to take content for things like a dropdown log in.
 (defn tool-tip-wrapper
-  "Adds a tooltip given the desired text, direction of the tooltip, and the element."
+  "Adds a tooltip given the desired text (or Hiccup), direction of the tooltip, and the element."
   [tool-tip-text arrow-position sibling]
   (r/with-let [show?        (r/atom false)
                sibling-ref  (r/atom nil)]
