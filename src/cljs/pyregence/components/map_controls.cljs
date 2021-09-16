@@ -846,16 +846,16 @@
                      :width            "1.5rem"}}]
       [:h4 (u/end-with (or (get-in legend-map [band "label"])
                            (if (fn? convert) (convert band) band))
-                       units)]]
-     (when (some? ((fn [v] (= "TU1" (get v "label"))) (vals legend-map))) ;TODO: need a better way to check for FBFM layer
-      [:div {:style {:margin "0.125rem 0.75rem"}}
-       [:p {:style {:margin-bottom "0.125rem"
-                    :text-align    "center"}}
-        [:strong "Fuel Type: "]
-        (get-in c/fbfm40-lookup [band :fuel-type])]
-       [:p {:style {:margin-bottom "0"}}
-        [:strong "Description: "]
-        (get-in c/fbfm40-lookup [band :description])]])]))
+                       (u/clean-units units))]]
+     (when (contains? (into #{} (map #(get % "label") (vals legend-map))) "TU1") ;TODO: need a better way to check for FBFM layer
+       [:div {:style {:margin "0.125rem 0.75rem"}}
+        [:p {:style {:margin-bottom "0.125rem"
+                     :text-align    "center"}}
+         [:strong "Fuel Type: "]
+         (get-in c/fbfm40-lookup [band :fuel-type])]
+        [:p {:style {:margin-bottom "0"}}
+         [:strong "Description: "]
+         (get-in c/fbfm40-lookup [band :description])]])]))
 
 (defn information-tool [get-point-info!
                         parent-box

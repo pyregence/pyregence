@@ -533,6 +533,6 @@
 (defn clean-units
   "Cleans units by adding/not adding a space when needed for units."
   [units]
-  (if (or (= units "%") (= units "\u00B0F"))
+  (if (or (= units "%") (= units "\u00B0F") (= units "\u00B0"))
     units
     (str " " units)))
