@@ -56,7 +56,7 @@
                                                                   :convert   #(str (u/direction %) " (" % "°)")}
                                                          :slp    {:opt-label "Slope (degrees)"
                                                                   :filter    "slp"
-                                                                  :units     "°"}
+                                                                  :units     "\u00B0"}
                                                          :dem    {:opt-label "Elevation (ft)"
                                                                   :filter    "dem"
                                                                   :units     "ft"
