@@ -65,31 +65,6 @@
 ;; Private Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- interpose-react-line-break [tag items]
-  [:<> (doall
-        (map-indexed
-         (fn [idx item] ^{:key idx} [:<> item tag])
-         (butlast items)))
-   (last items)])
-
-(defn- show-line-break [text]
-  (let [items (if (coll? text)
-                (vec text)
-                (str/split text #"\n"))]
-    (interpose-react-line-break [:br] items)))
-
-(defn- interpose-react-link [tag items]
-  [:<> (for [i items] ^{:key i}
-         (if (boolean (re-find #"http" i))
-           [:<> [tag {:href i} i]]
-           [:<> i]))])
-
-(defn- show-link [text]
-  (let [items (if (coll? text)
-                (vec text)
-                (str/split text #" :url "))]
-    (interpose-react-link :a items)))
-
 (defn- calc-tool-position [sibling-ref tool-ref arrow-position show?]
   (if (and tool-ref show?)
     (let [sibling-box     (.getBoundingClientRect sibling-ref)
@@ -236,7 +211,7 @@
                  :value button-text}]
         (when footer (footer))]]]]]))
 
-(defn tool-tip []
+(defn- tool-tip []
   (let [tool-ref (atom nil)
         position (r/atom [-1000 -1000 -1000 -1000])]
     (r/create-class
@@ -262,8 +237,9 @@
            [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
             tool-tip-text]]))})))
 
-;; TODO abstract this to take content for things like a dropdown log in.
-(defn tool-tip-wrapper [tool-tip-text arrow-position sibling]
+(defn tool-tip-wrapper
+  "Adds a tooltip given the desired text (or Hiccup), direction of the tooltip, and the element."
+  [tool-tip-text arrow-position sibling]
   (r/with-let [show?        (r/atom false)
                sibling-ref  (r/atom nil)]
     [:div {:on-mouse-over  #(do (reset! show? true))
