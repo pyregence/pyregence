@@ -13,7 +13,7 @@
             [pyregence.config :as c]
             [pyregence.components.map-controls :as mc]
             [pyregence.components.mapbox       :as mb]
-            [pyregence.components.intro-js  :refer init-tour!]
+            [pyregence.components.intro-js  :refer [init-tour!]]
             [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
             [pyregence.components.messaging :refer [message-box-modal
