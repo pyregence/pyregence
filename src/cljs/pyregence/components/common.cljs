@@ -240,14 +240,8 @@
            [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
             tool-tip-text]]))})))
 
-<<<<<<< HEAD
 (defn tool-tip-wrapper
   "Adds a tooltip given the desired text (or Hiccup), direction of the tooltip, and the element."
-=======
-;; TODO abstract this to take content for things like a dropdown log in.
-(defn tool-tip-wrapper
-  "Adds a tooltip given the desired text, direction of the tooltip, and the element."
->>>>>>> development
   [tool-tip-text arrow-position sibling]
   (r/with-let [show?        (r/atom false)
                sibling-ref  (r/atom nil)]
