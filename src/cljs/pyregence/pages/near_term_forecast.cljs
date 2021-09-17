@@ -439,12 +439,16 @@
    :position "absolute"
    :width    "100%"})
 
-(defn $message-modal [mobile?]
+(defn $message-modal [mobile? loading?]
   {:background-color "white"
    :border-radius    "3px"
    :display          "flex"
    :flex-direction   "column"
-   :margin           (if mobile? ".25rem" "8rem auto")
+   :margin           (if (and mobile? loading?)
+                       "10rem .5rem .5rem .5rem"
+                       (if mobile?
+                         ".25rem"
+                         "8rem auto"))
    :overflow         "hidden"
    :max-height       (if mobile? "calc(100% - .5rem)" "50%")
    :width            (if mobile? "unset" "25rem")})
@@ -549,7 +553,7 @@
   (r/with-let [show-me? (r/atom (not @c/dev-mode?))]
     (when @show-me?
       [:div#message-modal {:style ($/modal)}
-       [:div {:style ($message-modal @mobile?)}
+       [:div {:style ($message-modal @mobile? false)}
         [:div {:style {:background ($/color-picker :yellow)
                        :width      "100%"}}
          [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
@@ -595,7 +599,7 @@
 
 (defn loading-modal []
   [:div#message-modal {:style ($/modal)}
-   [:div {:style ($message-modal false)}
+   [:div {:style ($message-modal @mobile? true)}
     [:h3 {:style {:padding "1rem"}} "Loading..."]]])
 
 (defn root-component [{:keys [user-id] :as params}]
