@@ -445,7 +445,7 @@
    :display          "flex"
    :flex-direction   "column"
    :margin           (if (and mobile? loading?)
-                       "10rem .5rem .5rem .5rem"
+                       "10rem 4rem .5rem 4rem"
                        (if mobile?
                          ".25rem"
                          "8rem auto"))
@@ -600,7 +600,10 @@
 (defn loading-modal []
   [:div#message-modal {:style ($/modal)}
    [:div {:style ($message-modal @mobile? true)}
-    [:h3 {:style {:padding "1rem"}} "Loading..."]]])
+    [:h3 {:style {:margin-bottom "0"
+                  :padding       "1rem"
+                  :text-align    "center"}}
+     "Loading..."]]])
 
 (defn root-component [{:keys [user-id] :as params}]
   (let [height (r/atom "100%")]
