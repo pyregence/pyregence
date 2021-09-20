@@ -444,11 +444,10 @@
    :border-radius    "3px"
    :display          "flex"
    :flex-direction   "column"
-   :margin           (if (and mobile? loading?)
-                       "10rem 4rem .5rem 4rem"
-                       (if mobile?
-                         ".25rem"
-                         "8rem auto"))
+   :margin           (cond
+                       (and mobile? loading?) "10rem 4rem .5rem 4rem"
+                       mobile?                ".25rem"
+                       :else                  "8rem auto")
    :overflow         "hidden"
    :max-height       (if mobile? "calc(100% - .5rem)" "50%")
    :width            (if mobile? "unset" "25rem")})
