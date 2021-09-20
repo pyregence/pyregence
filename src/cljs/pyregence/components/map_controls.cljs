@@ -278,6 +278,7 @@
                   :display         "flex"
                   :flex-direction  "column"
                   :justify-content "center"
+                  :padding         "0.1rem"
                   :transform       (if @show-panel? "rotate(180deg)" "none")}}
     [svg/right-arrow]]])
 
