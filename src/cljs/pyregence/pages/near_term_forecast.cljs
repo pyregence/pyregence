@@ -587,7 +587,7 @@
           [:label {:class (<class $/p-form-button)
                    :style {:padding-left  "1.75rem"
                            :padding-right "1.75rem"}
-                   :on-click #(u/jump-to-url! "/")}
+                   :on-click #(u/jump-to-url! "https://pyregence.org/")}
            "Decline"]
           [:label {:class (<class $/p-form-button)
                    :style {:margin        ".5rem"
