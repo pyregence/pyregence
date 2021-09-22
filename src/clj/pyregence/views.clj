@@ -1,4 +1,5 @@
 (ns pyregence.views
+  (:import java.io.ByteArrayOutputStream)
   (:require [clojure.edn       :as edn]
             [clojure.string    :as str]
             [clojure.data.json :as json]
@@ -132,7 +133,7 @@
                      "Terms"]]]])})))
 
 (defn body->transit [body]
-  (let [out    (io/ByteArrayOutputStream. 4096)
+  (let [out    (ByteArrayOutputStream. 4096)
         writer (transit/writer out :json)]
     (transit/write writer body)
     (.toString out)))
