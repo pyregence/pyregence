@@ -544,9 +544,9 @@
 
 (defn stop-refresh!
   "Take a chan from refresh-on-interval! and stops the refresh."
-  [chan]
-  (when (chan? chan)
-    (put! chan :exit)))
+  [exit-chan]
+  (when (chan? exit-chan)
+    (put! exit-chan :exit)))
 
 (defn direction
   "Converts degrees to a direction."
