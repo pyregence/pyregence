@@ -694,7 +694,7 @@
   (r/with-let [active-camera (r/atom nil)
                camera-age    (r/atom 0)
                image-src     (r/atom nil)
-               exit-ch       (chan)
+               exit-chan     (r/atom nil)
                zoom-camera   (fn []
                                (let [{:keys [longitude latitude tilt pan]} @active-camera]
                                  (reset! terrain? true)
@@ -712,8 +712,8 @@
                                               :zoom   6})))
                on-click      (fn [features]
                                (go
-                                 (when-let [new-camera  (js->clj (aget features "properties") :keywordize-keys true)]
-                                   (when (some? @active-camera) (put! exit-ch :exit))
+                                 (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
+                                   (u/stop-refresh! @exit-chan)
                                    (reset! active-camera new-camera)
                                    (reset! camera-age 0)
                                    (reset! image-src nil)
@@ -721,9 +721,9 @@
                                          image-chan (get-camera-image-chan @active-camera)]
                                      (when (> 4 (reset! camera-age (<! age-chan)))
                                        (reset! image-src (<! image-chan))
-                                       (u/refresh-on-interval! #(reset! image-src (<! (get-camera-image-chan @active-camera)))
-                                                               60000
-                                                               exit-ch))))))
+                                       (reset! exit-chan
+                                               (u/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
+                                                                       60000)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _             (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
                _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
@@ -790,7 +790,7 @@
           [:div {:style {:padding "1.2em"}}
            (str "Loading camera " (:name @active-camera) "...")]))]]
     (finally
-      (put! exit-ch :exit)
+      (u/stop-refresh! @exit-chan)
       (mb/remove-layer! "fire-cameras")
       (mb/clear-highlight! "fire-cameras" :selected))))
 
