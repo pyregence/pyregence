@@ -97,7 +97,7 @@
 ;; Time Slider
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $time-slider []
+(defn $time-slider [mobile?]
   {:align-items  "center"
    :bottom       "1rem"
    :display      "flex"
@@ -106,7 +106,7 @@
    :margin-right "auto"
    :padding      ".5rem"
    :right        "0"
-   :width        "min-content"})
+   :width        (if mobile? "20rem" "min-content")})
 
 (defn time-slider [layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone! mobile?]
   (r/with-let [animate?        (r/atom false)
@@ -117,7 +117,7 @@
                                  (when @animate?
                                    (cycle-layer! 1)
                                    (js/setTimeout la (get-in c/speeds [@*speed :delay]))))]
-    [:div#time-slider {:style ($/combine $/tool ($time-slider))}
+    [:div#time-slider {:style ($/combine $/tool ($time-slider mobile?))}
      (when-not mobile?
        [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
         [radio "UTC"   show-utc? true  select-time-zone! true]
@@ -146,12 +146,13 @@
        "Next layer"
        :bottom
        [tool-button :next-button #(cycle-layer! 1)]]]
-     [:select {:style     ($/combine $dropdown {:padding "0 0.5rem" :width "5rem"})
-               :value     (or @*speed 1)
-               :on-change #(reset! *speed (u/input-int-value %))}
-      (map-indexed (fn [id {:keys [opt-label]}]
-                     [:option {:key id :value id} opt-label])
-                   c/speeds)]]))
+     (when-not mobile?
+       [:select {:style     ($/combine $dropdown {:padding "0 0.5rem" :width "5rem"})
+                 :value     (or @*speed 1)
+                 :on-change #(reset! *speed (u/input-int-value %))}
+        (map-indexed (fn [id {:keys [opt-label]}]
+                       [:option {:key id :value id} opt-label])
+                     c/speeds)])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Collapsible Panel
