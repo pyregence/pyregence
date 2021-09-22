@@ -1,9 +1,9 @@
 (ns pyregence.components.mapbox
-  (:require [clojure.string      :as str]
-            [goog.dom            :as dom]
+  (:require [goog.dom            :as dom]
             [reagent.core        :as r]
             [reagent.dom         :refer [render]]
             [clojure.core.async  :refer [go <!]]
+            [clojure.string      :as str]
             [pyregence.config    :as c]
             [pyregence.utils     :as u]
             [pyregence.geo-utils :as g]))
@@ -622,8 +622,6 @@
                                          (first))
             [before after]          (split-at zero-idx layers)
             final-layers            (vec (concat before new-layers after))]
-        ;; FIXME, add meta data to layers instead of storing the layers here.
-        ;;        For example, the underlay layers need to be hidden when changing forecast types, but not change opacity.
         (update-style! style
                        :new-sources new-source
                        :layers      final-layers)))))
