@@ -1,5 +1,6 @@
 (ns pyregence.components.mapbox
-  (:require [goog.dom            :as dom]
+  (:require [clojure.string      :as str]
+            [goog.dom            :as dom]
             [reagent.core        :as r]
             [reagent.dom         :refer [render]]
             [clojure.core.async  :refer [go <!]]
@@ -22,9 +23,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
-(defonce the-map       (r/atom nil))
-;; TODO, what is custom mean in this context?  Use layer metadata instead of an atom
-(defonce custom-layers (atom #{}))
+(defonce the-map (r/atom nil))
 
 (def ^:private the-marker    (r/atom nil))
 (def ^:private the-popup     (r/atom nil))
@@ -42,8 +41,17 @@
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:private pyregence-layers
+  #{"fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
+    "fire-weather-forecast" "fuels-and-topography" "fire-cameras" "red-flag"})
+
+(defn- is-selectable?
+  "Checks whether or not a layer is a custom Pyregence layer."
+  [id]
+  (pyregence-layers (first (str/split id #"_"))))
+
 (defn- get-style
-  "Returns mapbox style object."
+  "Returns the Mapbox style object."
   []
   (-> @the-map .getStyle (js->clj)))
 
@@ -58,10 +66,6 @@
   "Returns index of layer with matching id."
   [id layers]
   (index-of #(= id (get % "id")) layers))
-
-;; TODO, selectable is a confusing name for this.
-(defn- is-selectable? [s]
-  (@custom-layers s))
 
 (defn get-zoom-info
   "Get zoom information. Returns [zoom min-zoom max-zoom]."
@@ -163,10 +167,7 @@
 (defn- merge-layers [v new-layers]
   (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
 
-(defn- update-style! [style & {:keys [sources layers new-sources new-layers selectable?]}]
-  ;; TODO, add type to meta data instead
-  (when selectable?
-    (swap! custom-layers into (map :id new-layers)))
+(defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
   (let [new-style (cond-> style
                     sources     (assoc "sources" sources)
                     layers      (assoc "layers" layers)
@@ -587,8 +588,7 @@
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
-                   :new-layers  new-layers
-                   :selectable? true)))
+                   :new-layers  new-layers)))
 
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
@@ -603,8 +603,7 @@
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
-                   :new-layers  new-layers
-                   :selectable? true)))
+                   :new-layers  new-layers)))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
@@ -625,7 +624,6 @@
             final-layers            (vec (concat before new-layers after))]
         ;; FIXME, add meta data to layers instead of storing the layers here.
         ;;        For example, the underlay layers need to be hidden when changing forecast types, but not change opacity.
-        (swap! custom-layers conj id)
         (update-style! style
                        :new-sources new-source
                        :layers      final-layers)))))
@@ -686,7 +684,6 @@
   (let [cur-style       (get-style)
         layers          (get cur-style "layers")
         filtered-layers (remove #(= id (get % "id")) layers)]
-    (swap! custom-layers disj id)
     (update-style! cur-style :layers filtered-layers)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
