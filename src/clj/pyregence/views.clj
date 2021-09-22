@@ -1,8 +1,8 @@
 (ns pyregence.views
-  (:import java.io.ByteArrayOutputStream)
   (:require [clojure.edn       :as edn]
             [clojure.string    :as str]
             [clojure.data.json :as json]
+            [clojure.java.io   :as io]
             [cognitect.transit :as transit]
             [hiccup.page            :refer [html5 include-css include-js]]
             [pl.danieljanus.tagsoup :refer [parse]]
@@ -79,18 +79,19 @@
                [:body
                 [:div#near-term-forecast
                  (header server-name)
-                 (let [announcement (slurp "announcement.txt")]    ; TODO This will be moved to the front end for better UX.
-                   (when (pos? (count announcement))
-                     [:p {:style {:color            "#eec922"
-                                  :background-color "#e63232"
-                                  :text-align       "center"
-                                  :padding          "5px"
-                                  :margin           "0px"
-                                  :position         "fixed"
-                                  :top              "0"
-                                  :width            "100vw"
-                                  :z-index          100}}
-                      announcement]))
+                 (when (.exists (io/as-file "announcement.txt"))
+                   (let [announcement (slurp "announcement.txt")]    ; TODO This will be moved to the front end for better UX.
+                     (when (pos? (count announcement))
+                       [:p {:style {:color            "#eec922"
+                                    :background-color "#e63232"
+                                    :text-align       "center"
+                                    :padding          "5px"
+                                    :margin           "0px"
+                                    :position         "fixed"
+                                    :top              "0"
+                                    :width            "100vw"
+                                    :z-index          100}}
+                        announcement])))
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
@@ -131,7 +132,7 @@
                      "Terms"]]]])})))
 
 (defn body->transit [body]
-  (let [out    (ByteArrayOutputStream. 4096)
+  (let [out    (io/ByteArrayOutputStream. 4096)
         writer (transit/writer out :json)]
     (transit/write writer body)
     (.toString out)))
