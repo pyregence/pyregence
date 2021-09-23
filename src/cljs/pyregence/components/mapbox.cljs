@@ -55,11 +55,6 @@
   []
   (-> @the-map .getStyle (js->clj)))
 
-(defn- get-all-layers
-  "Returns the layers attribute of the root Mapbox style object."
-  []
-  (-> @the-map .getStyle .-layers (js->clj)))
-
 (defn- get-layer
   "Gets a specific layer object by id."
   [id]
@@ -395,7 +390,7 @@
   (let [style      (get-style)
         new-layers (map (u/call-when #(-> % (get "id") (is-selectable?))
                                      #(set-opacity % opacity))
-                        (get-all-layers))]
+                        (get style "layers"))]
     (update-style! style :layers new-layers)))
 
 (defn- set-visible
@@ -408,7 +403,7 @@
   [id visible?]
   {:pre [(string? id) (boolean? visible?)]}
   (let [style  (get-style)
-        layers (get-all-layers)]
+        layers (get style "layers")]
     (when-let [idx (get-layer-idx-by-id id layers)]
       (let [new-layers (assoc-in layers [idx "layout" "visibility"] (if visible? "visible" "none"))]
         (update-style! style :layers new-layers)))))
@@ -572,7 +567,7 @@
           keep?      (fn [s] (or (is-selectable? s) (is-terrain? s)))
           sources    (->> (get cur-style "sources")
                           (u/filterm (fn [[k _]] (keep? (name k)))))
-          layers     (->> (get-all-layers)
+          layers     (->> (get cur-style "layers")
                           (filter (fn [l] (is-selectable? (get l "id")))))
           new-style  (-> (<! style-chan)
                          (js->clj)
@@ -593,7 +588,7 @@
   [geo-layer opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
-        layers (hide-selectable-layers (get-all-layers))
+        layers (hide-selectable-layers (get style "layers"))
         [new-sources new-layers] (build-wms geo-layer geo-layer opacity true)]
     (update-style! style
                    :layers      layers
@@ -606,7 +601,7 @@
   [geo-layer style-fn opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
-        layers (hide-selectable-layers (get-all-layers))
+        layers (hide-selectable-layers (get style "layers"))
         [new-sources new-layers] (if (some? style-fn)
                                    (build-wfs fire-active geo-layer opacity)
                                    (build-wms geo-layer geo-layer opacity true))]
@@ -623,7 +618,7 @@
       (set-visible-by-title! id visible?)
       (let [[new-source new-layers] (build-wms id source 1.0 visible?)
             style                   (get-style)
-            layers                  (get-all-layers)
+            layers                  (get style "layers")
             zero-idx                (->> layers
                                          (keep-indexed (fn [idx layer]
                                                          (when (is-selectable? (get layer "id")) idx)))
@@ -688,7 +683,7 @@
   "Removes layer that matches `id`"
   [id]
   (let [cur-style       (get-style)
-        layers          (get-all-layers)
+        layers          (get cur-style "layers")
         filtered-layers (remove #(= id (get % "id")) layers)]
     (update-style! cur-style :layers filtered-layers)))
 
