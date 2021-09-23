@@ -530,7 +530,7 @@
                    ;;   #(mb/center-on-overlay!)]
                    [:extent
                     "Zoom to fit layer"
-                    #(mb/zoom-to-extent! (get-current-layer-extent) mobile?)]
+                    #(mb/zoom-to-extent! (get-current-layer-extent))]
                    [:zoom-in
                     "Zoom in"
                     #(select-zoom! (inc @*zoom))]

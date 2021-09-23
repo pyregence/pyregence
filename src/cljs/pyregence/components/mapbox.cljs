@@ -107,11 +107,11 @@
 
 (defn zoom-to-extent!
   "Pans/zooms the map to the provided extents."
-  [[minx miny maxx maxy] mobile? & [max-zoom]]
+  [[minx miny maxx maxy] & [max-zoom]]
   (.fitBounds @the-map
               (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
               (-> {:linear  true
-                   :padding (if mobile? 0 {:top 0 :bottom 0 :left 290 :right 0})}
+                   :padding {:top 20 :bottom 75 :left 0 :right 0}}
                   (merge (when max-zoom {:maxZoom max-zoom}))
                   (clj->js))))
 

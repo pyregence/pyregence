@@ -307,7 +307,7 @@
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))
     (when zoom?
-      (mb/zoom-to-extent! (get-current-layer-extent) @mobile? max-zoom))))
+      (mb/zoom-to-extent! (get-current-layer-extent) max-zoom))))
 
 (defn select-param! [val & keys]
   (swap! *params assoc-in (cons @*forecast keys) val)
