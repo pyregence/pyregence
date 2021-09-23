@@ -55,6 +55,11 @@
   []
   (-> @the-map .getStyle (js->clj)))
 
+(defn- get-layer
+  "Gets a specific layer object by id."
+  [id]
+  (.getLayer @the-map id))
+
 (defn- index-of
   "Returns first index of item in collection that matches predicate."
   [pred xs]
@@ -78,7 +83,7 @@
 (defn layer-exists?
   "Returns true if the layer with matching id exists."
   [id]
-  (some #(= id (get % "id")) (get (get-style) "layers")))
+  (some? (get-layer id)))
 
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.
@@ -609,9 +614,7 @@
   "Adds WMS layer to the map."
   [id source visible?]
   (when id
-    ;; FIXME, This is different than wanting to hide the layers as you switch forecast type.
-    ;;        Check if layer exists in the entire set of data.
-    (if (is-selectable? id)
+    (if (layer-exists? id)
       (set-visible-by-title! id visible?)
       (let [[new-source new-layers] (build-wms id source 1.0 visible?)
             style                   (get-style)
