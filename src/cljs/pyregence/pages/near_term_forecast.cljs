@@ -48,6 +48,7 @@
 (defonce show-camera?       (r/atom false))
 (defonce show-red-flag?     (r/atom false))
 (defonce show-fire-history? (r/atom false))
+(defonce show-theme-select? (r/atom true))
 (defonce active-opacity     (r/atom 100.0))
 (defonce capabilities       (r/atom []))
 (defonce *forecast          (r/atom nil))
@@ -612,6 +613,7 @@
         (let [update-fn (fn [& _]
                           (-> js/window (.scrollTo 0 0))
                           (reset! mobile? (> 700.0 (.-innerWidth js/window)))
+                          (reset! show-theme-select? (> (.-innerWidth js/window) 800.0))
                           (reset! height  (str (- (.-innerHeight js/window)
                                                   (-> js/document
                                                       (.getElementById "header")
@@ -633,7 +635,7 @@
          (when @loading? [loading-modal])
          [message-modal]
          [:div {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
-          (when-not @mobile? [theme-select])
+          (when @show-theme-select? [theme-select])
           [:span {:style {:display "flex" :padding ".25rem 0"}}
            (doall (map (fn [[key {:keys [opt-label hover-text]}]]
                          ^{:key key}
