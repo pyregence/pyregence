@@ -74,7 +74,7 @@
 
 (defglobal body-and-content-divs
   [:body {:background-color (color-picker :white)
-          :height           "100vh"
+          :height           "100%"
           :position         "relative"}]
   [:#app {:height "100%"}]
   [:#near-term-forecast {:display        "flex"
