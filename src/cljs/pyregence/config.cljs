@@ -33,6 +33,7 @@
   {:fuels        {:opt-label       "Fuels"
                   :filter          "fuels"
                   :reverse-legend? false
+                  :time-slider?    false
                   :hover-text      "Layers related to fuel and potential fire behavior."
                   :params          {:model {:opt-label  "Source"
                                             :hover-text [:p {:style {:margin-bottom "0"}}
@@ -103,6 +104,7 @@
    :fire-weather {:opt-label       "Weather"
                   :filter          "fire-weather-forecast"
                   :reverse-legend? true
+                  :time-slider?    true
                   :hover-text      "8-day forecast of key parameters affecting wildfire behavior obtained from operational National Weather Service forecast models."
                   :params          {:band       {:opt-label  "Weather Parameter"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
@@ -153,6 +155,7 @@
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
                   :reverse-legend? true
+                  :time-slider?    true
                   :hover-text      "5-day forecast of fire consequence maps. Every day over 500 million hypothetical fires are ignited across California to evaluate potential fire risk.\n"
                   :params          {:output     {:opt-label  "Output"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
@@ -240,93 +243,94 @@
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
-   :active-fire  {:opt-label   "Active Fires"
-                  :filter      "fire-spread-forecast"
-                  :block-info? true
-                  :hover-text  "3-day forecasts of active fires with burning areas established from satellite-based heat detection."
-                  :params      {:fire-name  {:opt-label      "Fire Name"
-                                             :sort?          true
-                                             :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
-                                             :underlays      {:us-buildings    {:enabled?   #(feature-enabled? :structures)
-                                                                                :opt-label  "Structures"
-                                                                                :z-index    4
-                                                                                :filter-set #{"fire-detections" "us-buildings"}}
-                                                              :nifs-perimeters {:opt-label  "NIFS Perimeters"
-                                                                                :z-index    3
-                                                                                :filter-set #{"fire-detections" "nifs-perimeters"}}
-                                                              :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
-                                                                                :z-index    2
-                                                                                :filter-set #{"fire-detections" "viirs-timestamped"}}
-                                                              :modis-hotspots  {:opt-label  "MODIS Hotspots"
-                                                                                :z-index    1
-                                                                                :filter-set #{"fire-detections" "modis-timestamped"}}
-                                                              :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
-                                                                                :z-index    0
-                                                                                :filter-set #{"fire-detections" "goes16-rgb"}}}
-                                             :default-option :active-fires
-                                             :options        {:active-fires    {:opt-label  "*All Active Fires"
-                                                                                :style-fn   :default
-                                                                                :filter-set #{"fire-detections" "active-fires"}
-                                                                                :auto-zoom? false}}}
-                                :output     {:opt-label  "Output"
-                                             :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
-                                             :options    {:burned {:opt-label "Forecasted fire location"
-                                                                   :filter    "hours-since-burned"
-                                                                   :units     ""}}}
-                                :burn-pct   {:opt-label      "Predicted Fire Size"
-                                             :default-option :50
-                                             :hover-text     "Each fire forecast is an ensemble of 1,000 separate simulations to account for uncertainty in model inputs. This leads to a range of predicted fire sizes, five of which can be selected from the dropdown menu."
-                                             :options        {:90 {:opt-label "Largest (90th percentile)"
-                                                                   :filter    "90"}
-                                                              :70 {:opt-label "Larger (70th percentile)"
-                                                                   :filter    "70"}
-                                                              :50 {:opt-label "Median (50th percentile)"
-                                                                   :filter    "50"}
-                                                              :30 {:opt-label "Smaller (30th percentile)"
-                                                                   :filter    "30"}
-                                                              :10 {:opt-label "Smallest (10th percentile)"
-                                                                   :filter    "10"}}}
-                                :fuel       {:opt-label  "Fuel"
-                                             :hover-text [:p {:style {:margin-bottom "0"}}
-                                                          "Source of surface and canopy fuel inputs:"
-                                                          [:br]
-                                                          [:br]
-                                                          [:strong  "- 2021 California fuelscape"]
-                                                          " prepared by Pyrologix, LLC ("
-                                                          [:a {:href   "https://pyrologix.com"
-                                                               :target "_blank"}
-                                                           "https://pyrologix.com"]
-                                                          "), 2021."
-                                                          [:br]
-                                                          [:br]
-                                                          [:strong "- California Forest Observatory"]
-                                                          " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
-                                                          [:a {:href   "https://forestobservatory.com"
-                                                               :target "_blank"}
-                                                           "https://forestobservatory.com"]
-                                                          "), © Salo Sciences, Inc. 2020."]
-                                             :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.0.0"
-                                                                     :filter    "landfire"}}}
-                                :model      {:opt-label  "Model"
-                                             :hover-text [:p {:style {:margin-bottom "0"}}
-                                                          [:strong "ELMFIRE"]
-                                                          " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
-                                                          [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
-                                                               :target "_blank"}
-                                                           "https://doi.org/10.1016/j.firesaf.2013.08.014"]
-                                                          ")."
-                                                          [:br]
-                                                          [:br]
-                                                          [:strong "GridFire"]
-                                                          " is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."]
-                                             :options    {:elmfire  {:opt-label "ELMFIRE"
-                                                                     :filter    "elmfire"}
-                                                          :gridfire {:enabled?  #(feature-enabled? :gridfire)
-                                                                     :opt-label "GridFire"
-                                                                     :filter    "gridfire"}}}
-                                :model-init {:opt-label  "Forecast Start Time"
-                                             :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
-                                             :options    {:loading {:opt-label "Loading..."}}}}}})
+   :active-fire  {:opt-label    "Active Fires"
+                  :filter       "fire-spread-forecast"
+                  :block-info?  true
+                  :time-slider? true
+                  :hover-text   "3-day forecasts of active fires with burning areas established from satellite-based heat detection."
+                  :params       {:fire-name  {:opt-label      "Fire Name"
+                                              :sort?          true
+                                              :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
+                                              :underlays      {:us-buildings    {:enabled?   #(feature-enabled? :structures)
+                                                                                 :opt-label  "Structures"
+                                                                                 :z-index    4
+                                                                                 :filter-set #{"fire-detections" "us-buildings"}}
+                                                               :nifs-perimeters {:opt-label  "NIFS Perimeters"
+                                                                                 :z-index    3
+                                                                                 :filter-set #{"fire-detections" "nifs-perimeters"}}
+                                                               :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
+                                                                                 :z-index    2
+                                                                                 :filter-set #{"fire-detections" "viirs-timestamped"}}
+                                                               :modis-hotspots  {:opt-label  "MODIS Hotspots"
+                                                                                 :z-index    1
+                                                                                 :filter-set #{"fire-detections" "modis-timestamped"}}
+                                                               :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
+                                                                                 :z-index    0
+                                                                                 :filter-set #{"fire-detections" "goes16-rgb"}}}
+                                              :default-option :active-fires
+                                              :options        {:active-fires    {:opt-label  "*All Active Fires"
+                                                                                 :style-fn   :default
+                                                                                 :filter-set #{"fire-detections" "active-fires"}
+                                                                                 :auto-zoom? false}}}
+                                 :output     {:opt-label  "Output"
+                                              :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
+                                              :options    {:burned {:opt-label "Forecasted fire location"
+                                                                    :filter    "hours-since-burned"
+                                                                    :units     ""}}}
+                                 :burn-pct   {:opt-label      "Predicted Fire Size"
+                                              :default-option :50
+                                              :hover-text     "Each fire forecast is an ensemble of 1,000 separate simulations to account for uncertainty in model inputs. This leads to a range of predicted fire sizes, five of which can be selected from the dropdown menu."
+                                              :options        {:90 {:opt-label "Largest (90th percentile)"
+                                                                    :filter    "90"}
+                                                               :70 {:opt-label "Larger (70th percentile)"
+                                                                    :filter    "70"}
+                                                               :50 {:opt-label "Median (50th percentile)"
+                                                                    :filter    "50"}
+                                                               :30 {:opt-label "Smaller (30th percentile)"
+                                                                    :filter    "30"}
+                                                               :10 {:opt-label "Smallest (10th percentile)"
+                                                                    :filter    "10"}}}
+                                 :fuel       {:opt-label  "Fuel"
+                                              :hover-text [:p {:style {:margin-bottom "0"}}
+                                                           "Source of surface and canopy fuel inputs:"
+                                                           [:br]
+                                                           [:br]
+                                                           [:strong  "- 2021 California fuelscape"]
+                                                           " prepared by Pyrologix, LLC ("
+                                                           [:a {:href   "https://pyrologix.com"
+                                                                :target "_blank"}
+                                                            "https://pyrologix.com"]
+                                                           "), 2021."
+                                                           [:br]
+                                                           [:br]
+                                                           [:strong "- California Forest Observatory"]
+                                                           " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
+                                                           [:a {:href   "https://forestobservatory.com"
+                                                                :target "_blank"}
+                                                            "https://forestobservatory.com"]
+                                                           "), © Salo Sciences, Inc. 2020."]
+                                              :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.0.0"
+                                                                      :filter    "landfire"}}}
+                                 :model      {:opt-label  "Model"
+                                              :hover-text [:p {:style {:margin-bottom "0"}}
+                                                           [:strong "ELMFIRE"]
+                                                           " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
+                                                           [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
+                                                                :target "_blank"}
+                                                            "https://doi.org/10.1016/j.firesaf.2013.08.014"]
+                                                           ")."
+                                                           [:br]
+                                                           [:br]
+                                                           [:strong "GridFire"]
+                                                           " is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."]
+                                              :options    {:elmfire  {:opt-label "ELMFIRE"
+                                                                      :filter    "elmfire"}
+                                                           :gridfire {:enabled?  #(feature-enabled? :gridfire)
+                                                                      :opt-label "GridFire"
+                                                                      :filter    "gridfire"}}}
+                                 :model-init {:opt-label  "Forecast Start Time"
+                                              :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
+                                              :options    {:loading {:opt-label "Loading..."}}}}}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WG4 Scenario Planning
