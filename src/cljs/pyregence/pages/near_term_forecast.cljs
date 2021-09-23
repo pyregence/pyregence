@@ -518,14 +518,15 @@
          [mc/scale-bar @mobile?]
          (when-not @mobile? [mc/mouse-lng-lat])
          [mc/zoom-bar get-current-layer-extent @mobile? create-share-link terrain?]
-         [mc/time-slider
-          param-layers
-          *layer-idx
-          (get-current-layer-full-time)
-          select-layer!
-          show-utc?
-          select-time-zone!
-          @mobile?]])})))
+         (when (get-forecast-opt :time-slider?)
+           [mc/time-slider
+            param-layers
+            *layer-idx
+            (get-current-layer-full-time)
+            select-layer!
+            show-utc?
+            select-time-zone!
+            @mobile?])])})))
 
 (defn pop-up []
   [:div#pin {:style ($/fixed-size "2rem")}
