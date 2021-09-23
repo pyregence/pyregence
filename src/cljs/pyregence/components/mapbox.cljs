@@ -41,7 +41,7 @@
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private pyregence-layers
+(def ^:private project-layers
   #{"fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
     "fire-weather-forecast" "fuels-and-topography" "fire-cameras" "red-flag"})
 
@@ -52,7 +52,7 @@
 (defn- is-project-layer?
   "Checks whether or not a layer is a custom project layer."
   [id]
-  (pyregence-layers (first (str/split id #"_"))))
+  (project-layers (first (str/split id #"_"))))
 
 (defn- is-forecast-layer?
   "Checks whether or not a layer is a forceast layer."
@@ -588,7 +588,9 @@
                          (clj->js))]
       (-> @the-map (.setStyle new-style)))))
 
-(defn- hide-on-active-change [layers]
+(defn- hide-forecast-layers
+  "Given layers, hides any layer that is in the forecast-layers set."
+  [layers]
   (map (u/call-when #(-> % (get "id") (is-forecast-layer?))
                     #(set-visible % false))
        layers))
@@ -598,7 +600,7 @@
   [geo-layer opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
-        layers (hide-on-active-change (get style "layers"))
+        layers (hide-forecast-layers (get style "layers"))
         [new-sources new-layers] (build-wms geo-layer geo-layer opacity true)]
     (update-style! style
                    :layers      layers
@@ -611,7 +613,7 @@
   [geo-layer style-fn opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
-        layers (hide-on-active-change (get style "layers"))
+        layers (hide-forecast-layers (get style "layers"))
         [new-sources new-layers] (if (some? style-fn)
                                    (build-wfs fire-active geo-layer opacity)
                                    (build-wms geo-layer geo-layer opacity true))]
