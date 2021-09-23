@@ -115,7 +115,8 @@
   [[minx miny maxx maxy] & [max-zoom]]
   (.fitBounds @the-map
               (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
-              (-> {:linear true}
+              (-> {:linear  true
+                   :padding {:top 20 :bottom 75 :left 0 :right 0}}
                   (merge (when max-zoom {:maxZoom max-zoom}))
                   (clj->js))))
 
