@@ -726,7 +726,7 @@
                                                                exit-ch))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _             (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
-               _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
+               _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" mobile? on-click)]
     [:div#wildfire-camera-tool
      [resizable-window
       parent-box

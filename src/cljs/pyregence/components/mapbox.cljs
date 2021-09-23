@@ -323,21 +323,22 @@
 (defn add-feature-highlight!
   "Adds events to highlight WFS features. Optionally can provide a function `f`,
    which will be called on click as `(f <feature-js-object> [lng lat])`"
-  [layer source & [f]]
+  [layer source mobile? & [f]]
   (remove-events! "mousemove" layer)
   (remove-events! "mouseleave" layer)
   (remove-events! "click" layer)
-  (add-event! "mouseenter"
-              (fn [e]
-                (when-let [feature (-> e (aget "features") (first))]
-                  (feature-highlight! source (aget feature "id") :hover)))
-              :layer layer)
-  (add-event! "mouseleave"
-              #(clear-highlight! source :hover)
-              :layer layer)
-  (add-event! "mouseout"
-              #(clear-highlight! source :hover)
-              :layer layer)
+  (when-not mobile?
+    (add-event! "mouseenter"
+                (fn [e]
+                  (when-let [feature (-> e (aget "features") (first))]
+                    (feature-highlight! source (aget feature "id") :hover)))
+                :layer layer)
+    (add-event! "mouseleave"
+                #(clear-highlight! source :hover)
+                :layer layer)
+    (add-event! "mouseout"
+                #(clear-highlight! source :hover)
+                :layer layer))
   (add-event! "click"
               (fn [e]
                 (when-let [feature (-> e (aget "features") (first))]
