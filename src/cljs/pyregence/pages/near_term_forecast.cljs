@@ -612,7 +612,7 @@
       (fn [_]
         (let [update-fn (fn [& _]
                           (-> js/window (.scrollTo 0 0))
-                          (reset! mobile? (> 700.0 (.-innerWidth js/window)))
+                          (reset! mobile? (> 800.0 (.-innerWidth js/window)))
                           (reset! height  (str (- (.-innerHeight js/window)
                                                   (-> js/document
                                                       (.getElementById "header")
