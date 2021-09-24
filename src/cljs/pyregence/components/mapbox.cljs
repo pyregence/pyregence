@@ -49,6 +49,10 @@
   #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
     "fire-weather-forecast" "fuels-and-topography"})
 
+(def ^:private opacity-change-layers ; all layers whose opacity should change
+  #{"fire-spread-forecast" "fire-risk-forecast" "fire-active" "fire-active-labels"
+    "fire-weather-forecast" "fuels-and-topography"})
+
 (defn- is-project-layer?
   "Checks whether or not a layer is a custom project layer."
   [id]
@@ -58,6 +62,12 @@
   "Checks whether or not a layer is a forceast layer."
   [id]
   (forecast-layers (first (str/split id #"_"))))
+
+(defn- should-opacity-change?
+  "Checks whether or not a layer's opacity should change."
+  [id]
+  (opacity-change-layers (first (str/split id #"_"))))
+
 
 (defn- get-style
   "Returns the Mapbox style object."
@@ -330,8 +340,8 @@
   (.setFeatureState @the-map #js {:source source :id feature-id} (clj->js {state-tag true})))
 
 (defn add-feature-highlight!
-  "Adds events to highlight WFS features. Optionally can provide a function `f`,
-   which will be called on click as `(f <feature-js-object> [lng lat])`"
+  "Adds events to highlight WFS features. Optionally can provide a function `click-fn`,
+   which will be called on click as `(click-fn <feature-js-object> [lng lat])`"
   [layer source mobile? & [click-fn]]
   (remove-events! "mousemove" layer)
   (remove-events! "mouseleave" layer)
@@ -399,7 +409,7 @@
   [id opacity]
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
-        new-layers (map (u/call-when #(-> % (get "id") (is-project-layer?))
+        new-layers (map (u/call-when #(-> % (get "id") (should-opacity-change?))
                                      #(set-opacity % opacity))
                         (get style "layers"))]
     (update-style! style :layers new-layers)))
