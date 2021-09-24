@@ -323,7 +323,7 @@
 (defn add-feature-highlight!
   "Adds events to highlight WFS features. Optionally can provide a function `f`,
    which will be called on click as `(f <feature-js-object> [lng lat])`"
-  [layer source mobile? & [f]]
+  [layer source mobile? & [click-fn]]
   (remove-events! "mousemove" layer)
   (remove-events! "mouseleave" layer)
   (remove-events! "click" layer)
@@ -343,7 +343,7 @@
               (fn [e]
                 (when-let [feature (-> e (aget "features") (first))]
                   (feature-highlight! source (aget feature "id") :selected)
-                  (when f (f feature (event->lnglat e)))))
+                  (when (fn? click-fn) (click-fn feature (event->lnglat e)))))
               :layer layer))
 
 (defn add-map-zoom-end!
