@@ -42,11 +42,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private project-layers
-  #{"fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
+  #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
     "fire-weather-forecast" "fuels-and-topography" "fire-cameras" "red-flag"})
 
 (def ^:private forecast-layers
-  #{"fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
+  #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
     "fire-weather-forecast" "fuels-and-topography"})
 
 (defn- is-project-layer?
