@@ -310,7 +310,7 @@
                    :padding         "0.5em"}}
      [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
           :target "_blank"
-          :style  {:color       ($/color-picker :white)
+          :style  {:color       ($/color-picker :font-color)
                    :font-family "Avenir"
                    :font-style  "italic"
                    :margin      "0"
