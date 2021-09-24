@@ -298,8 +298,7 @@
 
 (defn- help-section []
   [:section#help-section {:style {:width "100%"}}
-   [:article {:style {:margin-bottom "0.5rem"
-                      :margin-top    "4rem"
+   [:article {:style {:margin        "0.5rem 0"
                       :padding-left  "1rem"
                       :padding-right "1rem"}}
     [:div {:style {:background      ($/color-picker :transparent)
