@@ -300,8 +300,8 @@
       (mb/clear-popup!)
       (reset-underlays!)
       (when (some? style-fn)
-        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!)
-        (mb/add-feature-highlight! "red-flag" "red-flag" init-red-flag-popup!))
+        (mb/add-feature-highlight! "fire-active" "fire-active" @mobile? init-fire-popup!)
+        (mb/add-feature-highlight! "red-flag" "red-flag" @mobile? init-red-flag-popup!))
       (get-legend! source))
     (if clear?
       (clear-info!)

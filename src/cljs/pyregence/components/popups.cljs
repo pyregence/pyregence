@@ -63,5 +63,5 @@
    [:h6 {:style ($popup-header)}
     prod-type]
    [:div
-    [fire-property "Onset date" onset]
+    [fire-property "Issued until" onset]
     [red-flag-link url]]])
