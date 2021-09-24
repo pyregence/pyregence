@@ -42,14 +42,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private project-layers
+  "All layers added in addition to the default Mapbox layers."
   #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
     "fire-weather-forecast" "fuels-and-topography" "fire-cameras" "red-flag"})
 
 (def ^:private forecast-layers
+  "All layers corresponding to a forecast. Excludes cameras and red-flag warnings."
   #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
     "fire-weather-forecast" "fuels-and-topography"})
 
-(def ^:private opacity-change-layers ; all layers whose opacity should change
+(def ^:private opacity-change-layers
+  "All layers whose opacity should change. Excludes any underlays (fire-detections)."
   #{"fire-spread-forecast" "fire-risk-forecast" "fire-active" "fire-active-labels"
     "fire-weather-forecast" "fuels-and-topography"})
 
@@ -67,7 +70,6 @@
   "Checks whether or not a layer's opacity should change."
   [id]
   (opacity-change-layers (first (str/split id #"_"))))
-
 
 (defn- get-style
   "Returns the Mapbox style object."
@@ -405,8 +407,8 @@
     (update layer "paint" merge new-paint)))
 
 (defn set-opacity-by-title!
-  "Sets the opacity of the layer."
-  [id opacity]
+  "Sets the opacity of all layers whose opacity should change."
+  [id opacity] ;TODO, this function doesn't make sense as is because it sets the opacity of all layers currently active, not just one layer by id.
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
         new-layers (map (u/call-when #(-> % (get "id") (should-opacity-change?))
