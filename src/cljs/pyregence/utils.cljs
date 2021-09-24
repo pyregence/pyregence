@@ -2,7 +2,7 @@
   (:require [cljs.reader        :as edn]
             [clojure.string     :as str]
             [clojure.set        :as sets]
-            [clojure.core.async :refer [alts! go <! timeout go-loop]]
+            [clojure.core.async :refer [alts! go <! timeout go-loop chan put!]]
             [cljs.core.async.interop :refer-macros [<p!]]))
 
 (defn input-value
@@ -531,15 +531,22 @@
 
 (defn refresh-on-interval!
   "Refreshes the specified function every specified interval (ms) of time.
-   Exit the go-loop by doing `put! exit-ch :exit` elsewhere in the code
-   when the on-refresh-fn should exit.
-   ex: `(when <exit-condition-met> (put! exit-ch :exit))`"
-  [on-refresh-fn interval exit-ch]
-  (go-loop []
-    (let [[result _] (alts! [(timeout interval) exit-ch])]
-      (when-not (= :exit result)
-        (on-refresh-fn)
-        (recur)))))
+   Exit the go-loop by doing `put! exit-chan :exit` elsewhere in the code.
+   Use stop-refresh! for simplicity"
+  [on-refresh-fn interval]
+  (let [exit-chan (chan)]
+    (go-loop []
+      (let [[result _] (alts! [(timeout interval) exit-chan])]
+        (when-not (= :exit result)
+          (on-refresh-fn)
+          (recur))))
+    exit-chan))
+
+(defn stop-refresh!
+  "Take a chan from refresh-on-interval! and stops the refresh."
+  [exit-chan]
+  (when (chan? exit-chan)
+    (put! exit-chan :exit)))
 
 (defn direction
   "Converts degrees to a direction."
