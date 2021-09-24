@@ -52,12 +52,12 @@ h2 {
 }
 p a:link, p a:visited {
     font-weight: 700;
-    border-bottom: 1px solid #333;
-    color: #60411f;
+    color: #007bff;
     text-decoration: none;
 }
 p a:hover, p a:active {
-    text-decoration: none;
+    color: #0056b3;
+    text-decoration: underline;
 }
 #content p {
     display: inline-block;
