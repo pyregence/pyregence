@@ -29,6 +29,12 @@
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
 
+(defn- is-fbfm-layer?
+  "Takes in the current legend-list and returns whether or not it contains the FBFM40 layer."
+  [legend-list]
+  (let [legend-map (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)]
+    (some #(= "TU1" (get % "label")) (vals legend-map))))
+
 (defn $dropdown []
   (let [arrow (-> ($/color-picker :font-color)
                   (svg/dropdown-arrow)
@@ -863,7 +869,7 @@
       [:h4 (u/end-with (or (get-in legend-map [band "label"])
                            (if (fn? convert) (convert band) band))
                        (u/clean-units units))]]
-     (when (some #(= "TU1" (get % "label")) (vals legend-map)) ;TODO: need a better way to check for FBFM layer
+     (when (is-fbfm-layer? legend-list)
        [:div {:style {:margin "0.125rem 0.75rem"}}
         [:p {:style {:margin-bottom "0.125rem"
                      :text-align    "center"}}
@@ -952,7 +958,14 @@
   (fn [legend-list reverse? mobile? units]
     (when (and @show-legend? (seq legend-list))
       [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel?))}
-       [:div {:style {:display "flex" :flex-direction "column"}}
+       [:div {:style (if (is-fbfm-layer? legend-list)
+                       {:display        "flex"
+                        :flex-direction "column"
+                        :height         "25rem"
+                        :overflow-y     "auto"
+                        :padding-right  "0.5rem"}
+                       {:display        "flex"
+                        :flex-direction "column"})}
         (map-indexed (fn [i leg]
                        ^{:key i}
                        [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}

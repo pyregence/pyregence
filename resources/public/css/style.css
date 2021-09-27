@@ -71,6 +71,7 @@ p a:hover, p a:active {
 }
 
 
+/* All styles below are from Boostrap */
 article, aside, figcaption, figure, footer, header, hgroup, main, nav, section {
   display: block;
 }
