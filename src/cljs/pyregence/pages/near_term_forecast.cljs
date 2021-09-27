@@ -503,7 +503,7 @@
               [mc/camera-tool @the-cameras @my-box @mobile? terrain? #(reset! show-camera? false)])])
          [mc/legend-box
           @legend-list
-          (get-forecast-opt :reverse-legend?)
+          (get-current-layer-key :reverse-legend?)
           @mobile?
           (get-current-layer-key :units)]
          [mc/tool-bar
