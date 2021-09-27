@@ -941,9 +941,13 @@
    :margin-right     ".5rem"
    :width            "1rem"})
 
-(defn $legend-location [show?]
+(defn $legend-location [show? mobile?]
   {:left       (if show? "19rem" "1rem")
+   :max-height (if mobile?
+                 "calc(100% - 100px)"
+                 "calc(100% - 32px)")
    :padding    ".25rem"
+   :overflow-y "auto"
    :top        "16px"
    :transition "all 200ms ease-in"})
 
@@ -951,11 +955,9 @@
   (reset! show-legend? (not mobile?))
   (fn [legend-list reverse? mobile? units]
     (when (and @show-legend? (seq legend-list))
-      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel?))}
+      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile?))}
        [:div {:style {:display        "flex"
                       :flex-direction "column"
-                      :max-height     "50vh"
-                      :overflow-y     "auto"
                       :padding-right  "0.5rem"}}
         (map-indexed (fn [i leg]
                        ^{:key i}
