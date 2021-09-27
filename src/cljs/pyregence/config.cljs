@@ -67,7 +67,13 @@
                                                          :ca-fuelscapes {:opt-label "2021 CA fuelscape"
                                                                          :filter    "ca-fuelscapes"}}}
                                     :layer {:opt-label  "Layer"
-                                            :hover-text "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
+                                            :hover-text [:p {:style {:margin-bottom "0"}}
+                                                         "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
+                                                         [:br]
+                                                         [:br]
+                                                         "Use the "
+                                                         [:strong "Point Information"]
+                                                         " tool for more detailed information about a selected point."]
                                             :options    (array-map
                                                          :fbfm40 {:opt-label "Fire Behavior Fuel Model 40"
                                                                   :filter    "fbfm40"
