@@ -417,9 +417,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private forecasts {:near-term {:options-config near-term-forecast-options
-                                      :default        near-term-forecast-default}
+                                      :default        near-term-forecast-default
+                                      :layers         near-term-forecast-layers}
                           :long-term {:options-config long-term-forecast-options
-                                      :default        long-term-forecast-default}})
+                                      :default        long-term-forecast-default
+                                      :layers         long-term-forecast-layers}})
 
 (defn get-forecast
   "Retrieves the forecast options and default tab."
