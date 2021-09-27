@@ -100,9 +100,9 @@
                                                                   :units           "m"
                                                                   :convert         #(u/to-precision 1 (/ % 10))
                                                                   :reverse-legend? true}
-                                                         :cbd    {:opt-label       "Crown Bulk Density (kg/m^3)"
+                                                         :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
                                                                   :filter          "cbd"
-                                                                  :units           "kg/m^3"
+                                                                  :units           "kg/m\u00b3"
                                                                   :convert         #(u/to-precision 2 %)
                                                                   :reverse-legend? true})}
                                     :model-init {:opt-label  "Model Creation Time"
@@ -163,6 +163,10 @@
                                                               :hdw    {:opt-label       "Hot-Dry-Windy Index (hPa*m/s)"
                                                                        :filter          "hdw"
                                                                        :units           "hPa*m/s"
+                                                                       :reverse-legend? true}
+                                                              :smoke  {:opt-label       "Smoke density (\u00b5g/m\u00b3)"
+                                                                       :filter          "smoke"
+                                                                       :units           "\u00b5g/m\u00b3"
                                                                        :reverse-legend? true})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
