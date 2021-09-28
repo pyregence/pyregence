@@ -129,36 +129,36 @@
                                                               [:strong "- Hot Dry Windy Index"]
                                                               ": Similar to FFWI, but based on VPD."]
                                                  :options    (array-map
-                                                              :tmpf   {:opt-label       "Temperature (F)"
-                                                                       :filter          "tmpf"
-                                                                       :units           "\u00B0F"}
-                                                              :ffwi   {:opt-label       "Fosberg Fire Weather Index"
-                                                                       :filter          "ffwi"
-                                                                       :units           ""}
-                                                              :rh     {:opt-label       "Relative humidity (%)"
-                                                                       :filter          "rh"
-                                                                       :units           "%"}
-                                                              :ws     {:opt-label       "Sustained wind speed (mph)"
-                                                                       :filter          "ws"
-                                                                       :units           "mph"}
-                                                              :wg     {:opt-label       "Wind gust (mph)"
-                                                                       :filter          "wg"
-                                                                       :units           "mph"}
-                                                              :apcp01 {:opt-label       "1-hour precipitation (in)"
-                                                                       :filter          "apcp01"
-                                                                       :units           "inches"}
-                                                              :meq    {:opt-label       "Fine dead fuel moisture (%)"
-                                                                       :filter          "meq"
-                                                                       :units           "%"}
-                                                              :vpd    {:opt-label       "Vapor pressure deficit (hPa)"
-                                                                       :filter          "vpd"
-                                                                       :units           "hPa"}
-                                                              :hdw    {:opt-label       "Hot-Dry-Windy Index (hPa*m/s)"
-                                                                       :filter          "hdw"
-                                                                       :units           "hPa*m/s"}
-                                                              :smoke  {:opt-label       "Smoke density (\u00b5g/m\u00b3)"
-                                                                       :filter          "smoke"
-                                                                       :units           "\u00b5g/m\u00b3"})}
+                                                              :tmpf   {:opt-label "Temperature (F)"
+                                                                       :filter    "tmpf"
+                                                                       :units     "\u00B0F"}
+                                                              :ffwi   {:opt-label "Fosberg Fire Weather Index"
+                                                                       :filter    "ffwi"
+                                                                       :units     ""}
+                                                              :rh     {:opt-label "Relative humidity (%)"
+                                                                       :filter    "rh"
+                                                                       :units     "%"}
+                                                              :ws     {:opt-label "Sustained wind speed (mph)"
+                                                                       :filter    "ws"
+                                                                       :units     "mph"}
+                                                              :wg     {:opt-label "Wind gust (mph)"
+                                                                       :filter    "wg"
+                                                                       :units     "mph"}
+                                                              :apcp01 {:opt-label "1-hour precipitation (in)"
+                                                                       :filter    "apcp01"
+                                                                       :units     "inches"}
+                                                              :meq    {:opt-label "Fine dead fuel moisture (%)"
+                                                                       :filter    "meq"
+                                                                       :units     "%"}
+                                                              :vpd    {:opt-label "Vapor pressure deficit (hPa)"
+                                                                       :filter    "vpd"
+                                                                       :units     "hPa"}
+                                                              :hdw    {:opt-label "Hot-Dry-Windy Index (hPa*m/s)"
+                                                                       :filter    "hdw"
+                                                                       :units     "hPa*m/s"}
+                                                              :smoke  {:opt-label "Smoke density (\u00b5g/m\u00b3)"
+                                                                       :filter    "smoke"
+                                                                       :units     "\u00b5g/m\u00b3"})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
@@ -186,18 +186,18 @@
                                                               [:br]
                                                               [:strong "Fire Volume"]
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
-                                                 :options    {:times-burned {:opt-label       "Relative burn probability"
-                                                                             :filter          "times-burned"
-                                                                             :units           "Times"}
-                                                              :impacted     {:opt-label       "Impacted structures"
-                                                                             :filter          "impacted-structures"
-                                                                             :units           "Structures"}
-                                                              :fire-area    {:opt-label       "Fire area"
-                                                                             :filter          "fire-area"
-                                                                             :units           "Acres"}
-                                                              :fire-volume  {:opt-label       "Fire volume"
-                                                                             :filter          "fire-volume"
-                                                                             :units           "Acre-ft"}}}
+                                                 :options    {:times-burned {:opt-label "Relative burn probability"
+                                                                             :filter    "times-burned"
+                                                                             :units     "Times"}
+                                                              :impacted     {:opt-label "Impacted structures"
+                                                                             :filter    "impacted-structures"
+                                                                             :units     "Structures"}
+                                                              :fire-area    {:opt-label "Fire area"
+                                                                             :filter    "fire-area"
+                                                                             :units     "Acres"}
+                                                              :fire-volume  {:opt-label "Fire volume"
+                                                                             :filter    "fire-volume"
+                                                                             :units     "Acre-ft"}}}
                                     :pattern    {:opt-label  "Ignition Pattern"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Fires are ignited randomly across California at various times in the future so their impacts can be modeled. Patterns include:"
