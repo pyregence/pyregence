@@ -138,10 +138,9 @@
 
 ;; TODO, can we make this the default everywhere?
 (defn get-any-level-key [key-name]
-  (let [layer-key (get-current-layer-key key-name)]
-    (if (nil? layer-key)
+  (or (get-current-layer-key key-name)
       (get-options-key key-name)
-      layer-key)))
+      (get-forecast-opt key-name)))
 
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
@@ -503,7 +502,7 @@
               [mc/camera-tool @the-cameras @my-box @mobile? terrain? #(reset! show-camera? false)])])
          [mc/legend-box
           @legend-list
-          (get-current-layer-key :reverse-legend?)
+          (get-any-level-key :reverse-legend?)
           @mobile?
           (get-current-layer-key :units)]
          [mc/tool-bar
