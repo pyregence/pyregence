@@ -25,7 +25,7 @@
 (def california-extent [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Layer options
+;; WG3 Forecast
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def near-term-forecast-default :active-fire)
@@ -341,8 +341,23 @@
                                               :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
 
+(def near-term-forecast-layers
+  "All of the different layer sets for the near term forecast.
+   Project - All layers added in addition to the default Mapbox layers.
+   Forecast - All layers corresponding to a forecast. Excludes cameras and red-flag warnings.
+   Opacity change - All layers whose opacity should change. Excludes any underlays (fire-detections)."
+  {:project-layers        #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast"
+                            "fire-active" "fire-active-labels" "fire-weather-forecast"
+                            "fuels-and-topography" "fire-cameras" "red-flag"}
+   :forecast-layers       #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast"
+                            "fire-active" "fire-active-labels" "fire-weather-forecast"
+                            "fuels-and-topography"}
+   :opacity-change-layers #{"fire-spread-forecast" "fire-risk-forecast"
+                            "fire-active" "fire-active-labels" "fire-weather-forecast"
+                            "fuels-and-topography"}})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; WG4 Scenario Planning
+;; WG4 Forecast
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def long-term-forecast-default :fire-scenarios)
@@ -397,10 +412,35 @@
                                               :hover-text "Year"
                                               :options    {:loading {:opt-label "Loading..."}}}}}})
 
+(def long-term-forecast-layers
+  "All of the different layer sets for the long term forecast.
+   Project - All layers added in addition to the default Mapbox layers.
+   Forecast - All layers corresponding to a forecast.
+   Opacity change - All layers whose opacity should change."
+  {:project-layers        #{}
+   :forecast-layers       #{}
+   :opacity-change-layers #{}})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Forecast Configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def ^:private forecasts {:near-term {:options-config near-term-forecast-options
-                                      :default        near-term-forecast-default}
+                                      :default        near-term-forecast-default
+                                      :layers         near-term-forecast-layers}
                           :long-term {:options-config long-term-forecast-options
-                                      :default        long-term-forecast-default}})
+                                      :default        long-term-forecast-default
+                                      :layers         long-term-forecast-layers}})
+
+(defn get-forecast
+  "Retrieves the forecast options and default tab."
+  [forecast-type]
+  {:pre [(contains? #{:long-term :near-term} forecast-type)]}
+  (forecast-type forecasts))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fire Behavior Fuel Model lookup table
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def fbfm40-lookup {91    {:label       "NB1"
                            :fuel-type   "Non-burnable"
@@ -540,12 +580,6 @@
                     -9999 {:label       "NoData"
                            :fuel-type   "No Data"
                            :description "No data are available for this pixel"}})
-
-(defn get-forecast
-  "Retrieves the forecast options and default tab."
-  [forecast-type]
-  {:pre [(contains? #{:long-term :near-term} forecast-type)]}
-  (forecast-type forecasts))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WFS/WMS Configuration

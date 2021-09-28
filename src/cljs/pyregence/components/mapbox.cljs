@@ -23,7 +23,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
-(defonce the-map (r/atom nil))
+(defonce the-map    (r/atom nil))
+;; Layer sets for a forecast as defined in `config.cljs`
+(defonce layer-sets (r/atom nil))
 
 (def ^:private the-marker    (r/atom nil))
 (def ^:private the-popup     (r/atom nil))
@@ -41,35 +43,20 @@
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private project-layers
-  "All layers added in addition to the default Mapbox layers."
-  #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
-    "fire-weather-forecast" "fuels-and-topography" "fire-cameras" "red-flag"})
-
-(def ^:private forecast-layers
-  "All layers corresponding to a forecast. Excludes cameras and red-flag warnings."
-  #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast" "fire-active" "fire-active-labels"
-    "fire-weather-forecast" "fuels-and-topography"})
-
-(def ^:private opacity-change-layers
-  "All layers whose opacity should change. Excludes any underlays (fire-detections)."
-  #{"fire-spread-forecast" "fire-risk-forecast" "fire-active" "fire-active-labels"
-    "fire-weather-forecast" "fuels-and-topography"})
-
 (defn- is-project-layer?
   "Checks whether or not a layer is a custom project layer."
   [id]
-  (project-layers (first (str/split id #"_"))))
+  ((:project-layers @layer-sets) (first (str/split id #"_"))))
 
 (defn- is-forecast-layer?
   "Checks whether or not a layer is a forceast layer."
   [id]
-  (forecast-layers (first (str/split id #"_"))))
+  ((:forecast-layers @layer-sets) (first (str/split id #"_"))))
 
 (defn- should-opacity-change?
   "Checks whether or not a layer's opacity should change."
   [id]
-  (opacity-change-layers (first (str/split id #"_"))))
+  ((:opacity-change-layers @layer-sets) (first (str/split id #"_"))))
 
 (defn- get-style
   "Returns the Mapbox style object."
@@ -717,12 +704,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn init-map!
-  "Initializes the Mapbox map inside of `container` (e.g. \"map\")."
-  [container-id & [opts]]
+  "Initializes the Mapbox map inside of `container` (e.g. \"map\").
+   Sets the proper layer sets based on the forecast type."
+  [container-id layers & [opts]]
   (set! (.-accessToken mapbox) @c/mapbox-access-token)
   (when-not (.supported mapbox)
     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
                    "Please use the latest version of Chrome, Safari, or Firefox.")))
+  (reset! layer-sets layers)
   (reset! the-map
           (Map.
            (clj->js (merge {:container   container-id
