@@ -863,7 +863,7 @@
       [:h4 (u/end-with (or (get-in legend-map [band "label"])
                            (if (fn? convert) (convert band) band))
                        (u/clean-units units))]]
-     (when (some #(= "TU1" (get % "label")) (vals legend-map)) ;TODO: need a better way to check for FBFM layer
+     (when (some #(= "TU1" (get % "label")) legend-list)
        [:div {:style {:margin "0.125rem 0.75rem"}}
         [:p {:style {:margin-bottom "0.125rem"
                      :text-align    "center"}}
@@ -941,9 +941,13 @@
    :margin-right     ".5rem"
    :width            "1rem"})
 
-(defn $legend-location [show?]
+(defn $legend-location [show? mobile?]
   {:left       (if show? "19rem" "1rem")
+   :max-height (if mobile?
+                 "calc(100% - 100px)"
+                 "calc(100% - 32px)")
    :padding    ".25rem"
+   :overflow-y "auto"
    :top        "16px"
    :transition "all 200ms ease-in"})
 
@@ -951,8 +955,10 @@
   (reset! show-legend? (not mobile?))
   (fn [legend-list reverse? mobile? units]
     (when (and @show-legend? (seq legend-list))
-      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel?))}
-       [:div {:style {:display "flex" :flex-direction "column"}}
+      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile?))}
+       [:div {:style {:display        "flex"
+                      :flex-direction "column"
+                      :padding-right  "0.5rem"}}
         (map-indexed (fn [i leg]
                        ^{:key i}
                        [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
