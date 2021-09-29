@@ -306,7 +306,7 @@
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))
     (when zoom?
-      (mb/zoom-to-extent! (get-current-layer-extent) max-zoom))))
+      (mb/zoom-to-extent! (get-current-layer-extent) (current-layer) max-zoom))))
 
 (defn select-param! [val & keys]
   (swap! *params assoc-in (cons @*forecast keys) val)
@@ -516,7 +516,7 @@
           user-id]
          [mc/scale-bar @mobile?]
          (when-not @mobile? [mc/mouse-lng-lat])
-         [mc/zoom-bar get-current-layer-extent @mobile? create-share-link terrain?]
+         [mc/zoom-bar get-current-layer-extent current-layer @mobile? create-share-link terrain?]
          (when (get-forecast-opt :time-slider?)
            [mc/time-slider
             param-layers
