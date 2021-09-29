@@ -488,7 +488,7 @@
                                   :right
                                   [tool-button icon on-click active?]])))])
 
-(defn zoom-bar [get-current-layer-extent mobile? create-share-link terrain?]
+(defn zoom-bar [get-current-layer-extent current-layer mobile? create-share-link terrain?]
   (r/with-let [minZoom      (r/atom 0)
                maxZoom      (r/atom 28)
                *zoom        (r/atom 10)
@@ -529,7 +529,7 @@
                    ;;   #(mb/center-on-overlay!)]
                    [:extent
                     "Zoom to fit layer"
-                    #(mb/zoom-to-extent! (get-current-layer-extent))]
+                    #(mb/zoom-to-extent! (get-current-layer-extent) (current-layer))]
                    [:zoom-in
                     "Zoom in"
                     #(select-zoom! (inc @*zoom))]
