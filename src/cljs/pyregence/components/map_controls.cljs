@@ -939,17 +939,20 @@
   {:background-color color
    :height           "1rem"
    :margin-right     ".5rem"
-   :width            "1rem"})
+   :min-width        "1rem"})
 
 (defn $legend-location [show? mobile?]
-  {:left       (if show? "19rem" "1rem")
-   :max-height (if mobile?
-                 "calc(100% - 100px)"
-                 "calc(100% - 32px)")
-   :padding    ".25rem"
-   :overflow-y "auto"
-   :top        "16px"
-   :transition "all 200ms ease-in"})
+  {:left          (if show? "19rem" "1rem")
+   :max-height    (if mobile?
+                    "calc(100% - 100px)"
+                    "calc(100% - 32px)")
+   :overflow-x    "hidden"
+   :overflow-y    "auto"
+   :padding-left  ".5rem"
+   :padding-right ".75rem"
+   :padding-top   ".5rem"
+   :top           "16px"
+   :transition    "all 200ms ease-in"})
 
 (defn legend-box [legend-list reverse? mobile? units]
   (reset! show-legend? (not mobile?))
@@ -957,8 +960,7 @@
     (when (and @show-legend? (seq legend-list))
       [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile?))}
        [:div {:style {:display        "flex"
-                      :flex-direction "column"
-                      :padding-right  "0.5rem"}}
+                      :flex-direction "column"}}
         (map-indexed (fn [i leg]
                        ^{:key i}
                        [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
