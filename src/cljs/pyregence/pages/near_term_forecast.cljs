@@ -284,8 +284,8 @@
 
 (defn- init-red-flag-popup! [feature lnglat]
   (let [properties (-> feature (aget "properties") (js->clj))
-        {:strs [onset url prod_type]} properties
-        body       (red-flag-popup onset url prod_type)]
+        {:strs [url prod_type onset ends]} properties
+        body       (red-flag-popup url prod_type onset ends)]
     (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
 
 (defn change-type!

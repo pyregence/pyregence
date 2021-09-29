@@ -58,10 +58,11 @@
 
 (defn red-flag-popup
   "Popup body for red-flag warning layer."
-  [onset url prod-type]
+  [url prod-type onset ends]
   [:div {:style {:display "flex" :flex-direction "column"}}
    [:h6 {:style ($popup-header)}
     prod-type]
    [:div
-    [fire-property "Issued until" onset]
+    [fire-property "Onset" onset]
+    [fire-property "Ends" ends]
     [red-flag-link url]]])

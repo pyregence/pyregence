@@ -50,7 +50,7 @@
        (filter (fn [{:keys [properties]}] (keep-hazards (:phenom properties))))
        (mapv (fn [f] {:geometry   (:geometry f)
                       :properties (select-keys (:properties f)
-                                               [:cap_id :onset :phenom :event :msg_type :url :prod_type :color])}))))
+                                               [:cap_id :onset :ends :phenom :event :msg_type :url :prod_type :color])}))))
 
 (defn- ->feature-collection [features]
   {:type     "FeatureCollection"
