@@ -15,7 +15,8 @@
             [pyregence.components.svg-icons :as svg]
             [pyregence.components.help      :as h]
             [pyregence.components.common           :refer [labeled-input radio tool-tip-wrapper input-hour limited-date-picker]]
-            [pyregence.components.messaging        :refer [set-message-box-content!]]
+            [pyregence.components.messaging        :refer [toast-message!
+                                                           set-message-box-content!]]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.vega             :refer [vega-box]]))
 
@@ -418,8 +419,12 @@
   "Toggle the red-flag warning layer"
   [show-red-flag?]
   (swap! show-red-flag? not)
-  (when (and @show-red-flag? (not (mb/layer-exists? "red-flag")))
-    (add-red-flag-layer!))
+  (if (not (mb/layer-exists? "red-flag"))
+    (do
+      (toast-message! "There are no Red Flag Warnings at this time.")
+      (reset! show-red-flag? false))
+    (when @show-red-flag?
+      (add-red-flag-layer!)))
   (mb/set-visible-by-title! "red-flag" @show-red-flag?)
   (mb/clear-popup! "red-flag"))
 
