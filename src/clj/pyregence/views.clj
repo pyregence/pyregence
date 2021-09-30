@@ -29,10 +29,10 @@
    [:meta {:property "og:title" :content "Pyrecast"}]
    [:meta {:property "og:description"
            :content  "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
-   [:meta {:property "og:image" :content "/images/pyrecast-logo-1200.png"}]
+   [:meta {:property "og:image" :content "/images/pyrecast-logo-social-media.png"}]
    [:meta {:property "og:url" :content "https://pyrecast.org/"}]
    [:meta {:property "twitter:title" :content "Pyrecast"}]
-   [:meta {:property "twitter:image" :content "/images/pyrecast-logo-1200.png"}]
+   [:meta {:property "twitter:image" :content "/images/pyrecast-logo-social-media.png"}]
    [:meta {:property "twitter:card" :content "summary_large_image"}]
    (include-css "/css/style.css")
    [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
