@@ -421,7 +421,7 @@
   (swap! show-red-flag? not)
   (if (not (mb/layer-exists? "red-flag"))
     (do
-      (toast-message! "There are no Red Flag Warnings at this time.")
+      (toast-message! "There are no red flag warnings at this time.")
       (reset! show-red-flag? false))
     (when @show-red-flag?
       (add-red-flag-layer!)))
