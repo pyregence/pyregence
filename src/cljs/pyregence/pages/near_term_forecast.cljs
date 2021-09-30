@@ -516,7 +516,7 @@
           user-id]
          [mc/scale-bar @mobile?]
          (when-not @mobile? [mc/mouse-lng-lat])
-         [mc/zoom-bar get-current-layer-extent current-layer @mobile? create-share-link terrain?]
+         [mc/zoom-bar (get-current-layer-extent) (current-layer) @mobile? create-share-link terrain?]
          (when (get-forecast-opt :time-slider?)
            [mc/time-slider
             param-layers
