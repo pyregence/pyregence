@@ -43,8 +43,8 @@
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- convert-layer-id
-  "Converts a layer id from something like
+(defn- get-layer-type
+  "Gets the layer type from the id string. Example:
    fire-detections_active-fires:active-fires_20210929_155400 => fire-detections"
   [id]
   (first (str/split id #"_")))
@@ -52,17 +52,17 @@
 (defn- is-project-layer?
   "Checks whether or not a layer is a custom project layer."
   [id]
-  ((:project-layers @layer-sets) (convert-layer-id id)))
+  ((:project-layers @layer-sets) (get-layer-type id)))
 
 (defn- is-forecast-layer?
   "Checks whether or not a layer is a forceast layer."
   [id]
-  ((:forecast-layers @layer-sets) (convert-layer-id id)))
+  ((:forecast-layers @layer-sets) (get-layer-type id)))
 
 (defn- should-opacity-change?
   "Checks whether or not a layer's opacity should change."
   [id]
-  ((:opacity-change-layers @layer-sets) (convert-layer-id id)))
+  ((:opacity-change-layers @layer-sets) (get-layer-type id)))
 
 (defn- get-style
   "Returns the Mapbox style object."
@@ -130,7 +130,7 @@
   (.fitBounds @the-map
               (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
               (-> {:linear  true
-                   :padding (if (#{"fire-risk-forecast" "fire-detections"} (convert-layer-id (:layer current-layer)))
+                   :padding (if (#{"fire-risk-forecast" "fire-detections"} (get-layer-type (:layer current-layer)))
                               {:top 30 :bottom 150 :left 0 :right 0}
                               0)}
                   (merge (when max-zoom {:maxZoom max-zoom}))
