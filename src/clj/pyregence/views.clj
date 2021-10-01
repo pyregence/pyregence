@@ -81,10 +81,10 @@
                 [:div#near-term-forecast
                  (header server-name)
                  (when (.exists (io/as-file "announcement.txt"))
-                   (let [announcement (slurp "announcement.txt")]    ; TODO This will be moved to the front end for better UX.
+                   (let [announcement (slurp "announcement.txt")] ; TODO This will be moved to the front end for better UX.
                      (when (pos? (count announcement))
-                       [:div#banner {:style {:color            "#eec922"
-                                             :background-color "#e63232"
+                       [:div#banner {:style {:background-color "#e63232"
+                                             :color            "#eec922"
                                              :font-size        "2rem"
                                              :margin           "0px"
                                              :padding          "5px"
@@ -93,8 +93,8 @@
                                              :top              "0"
                                              :width            "100vw"
                                              :z-index          100}}
-                        [:h4 announcement]
-                        [:h4 {:style {:cursor "pointer" :position "fixed" :right "2rem" :top "5px"}
+                        [:h4 {:style {:margin "0"}} announcement]
+                        [:h4 {:style   {:cursor "pointer" :position "fixed" :right "2rem" :top "5px"}
                               :onClick "document.getElementById('banner').style.display='none'"}
                          "X"]])))
                  [:div#app]]
