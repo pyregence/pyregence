@@ -83,19 +83,25 @@
                  (when (.exists (io/as-file "announcement.txt"))
                    (let [announcement (slurp "announcement.txt")]    ; TODO This will be moved to the front end for better UX.
                      (when (pos? (count announcement))
-                       [:p {:style {:color            "#eec922"
-                                    :background-color "#e63232"
-                                    :text-align       "center"
-                                    :padding          "5px"
-                                    :margin           "0px"
-                                    :position         "fixed"
-                                    :top              "0"
-                                    :width            "100vw"
-                                    :z-index          100}}
-                        announcement])))
+                       [:div#banner {:style {:color            "#eec922"
+                                             :background-color "#e63232"
+                                             :font-size        "2rem"
+                                             :margin           "0px"
+                                             :padding          "5px"
+                                             :position         "fixed"
+                                             :text-align       "center"
+                                             :top              "0"
+                                             :width            "100vw"
+                                             :z-index          100}}
+                        [:h4 announcement]
+                        [:h4 {:style {:cursor "pointer" :position "fixed" :right "2rem" :top "5px"}
+                              :onClick "document.getElementById('banner').style.display='none'"}
+                         "X"]])))
                  [:div#app]]
                 [:script {:type "text/javascript"}
-                 (str "window.onload = function () { pyregence.client.init("
+                 (str "window.onload = function () {
+                       setTimeout(function () {document.getElementById('banner').style.display='none'}, 10000);
+                       pyregence.client.init("
                       (json/write-str (assoc params
                                              :dev-mode  (get-config :dev-mode)
                                              :mapbox    (get-config :mapbox)
