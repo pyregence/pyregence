@@ -65,6 +65,42 @@
                :style {:height "1.25rem"
                        :width  "auto"}}]])]))
 
+(defn- announcement-banner []
+  (let [announcement (slurp "announcement.txt")] ; TODO This will be moved to the front end for better UX.
+    (when (pos? (count announcement))
+      [:div#banner {:style {:background-color "#f96841"
+                            :box-shadow       "3px 1px 4px 0 rgb(0, 0, 0, 0.25)"
+                            :color            "#ffffff"
+                            :font-size        "2rem"
+                            :margin           "0px"
+                            :padding          "5px"
+                            :position         "fixed"
+                            :text-align       "center"
+                            :top              "0"
+                            :width            "100vw"
+                            :z-index          100}}
+       [:p {:style {:font-size "16px" :margin "0 27px 0 0"}}
+        announcement]
+       [:button {:style   {:background-color "transparent"
+                           :border-color     "#ffffff"
+                           :border-radius    "50%"
+                           :border-style     "solid"
+                           :border-width     "2px"
+                           :cursor           "pointer"
+                           :display          "flex"
+                           :height           "25px"
+                           :justify-content  "center"
+                           :position         "fixed"
+                           :right            "5px"
+                           :top              "5px"
+                           :width            "25px"}
+                 :onClick "document.getElementById('banner').style.display='none'"}
+        [:svg {:viewBox "0 0 48 48" :fill "#ffffff"}
+         [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
+                   11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]
+         [:path {:d    "M0 0h48v48h-48z"
+                 :fill "none"}]]]])))
+
 (defn render-dynamic []
   (fn [{:keys [params server-name]}]
     {:status  200
@@ -81,22 +117,7 @@
                 [:div#near-term-forecast
                  (header server-name)
                  (when (.exists (io/as-file "announcement.txt"))
-                   (let [announcement (slurp "announcement.txt")] ; TODO This will be moved to the front end for better UX.
-                     (when (pos? (count announcement))
-                       [:div#banner {:style {:background-color "#e63232"
-                                             :color            "#eec922"
-                                             :font-size        "2rem"
-                                             :margin           "0px"
-                                             :padding          "5px"
-                                             :position         "fixed"
-                                             :text-align       "center"
-                                             :top              "0"
-                                             :width            "100vw"
-                                             :z-index          100}}
-                        [:h4 {:style {:margin "0"}} announcement]
-                        [:h4 {:style   {:cursor "pointer" :position "fixed" :right "2rem" :top "5px"}
-                              :onClick "document.getElementById('banner').style.display='none'"}
-                         "X"]])))
+                   (announcement-banner))
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () {
