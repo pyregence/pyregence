@@ -5,9 +5,8 @@
             [clojure.data.json :as json]
             [clojure.java.io   :as io]
             [cognitect.transit :as transit]
-            [hiccup.page            :refer [html5 include-css include-js]]
-            [pl.danieljanus.tagsoup :refer [parse]]
-            [pyregence.config       :refer [get-config]]))
+            [hiccup.page      :refer [html5 include-css include-js]]
+            [pyregence.config :refer [get-config]]))
 
 (defn- find-app-js []
   (as-> (slurp "target/public/cljs/manifest.edn") app
@@ -66,7 +65,7 @@
                        :width  "auto"}}]])]))
 
 (defn- announcement-banner []
-  (let [announcement (slurp "announcement.txt")] ; TODO This will be moved to the front end for better UX.
+  (let [announcement (slurp "announcement.txt")]
     (when (pos? (count announcement))
       [:div#banner {:style {:background-color "#f96841"
                             :box-shadow       "3px 1px 4px 0 rgb(0, 0, 0, 0.25)"
@@ -114,6 +113,7 @@
                [:body
                 [:div#near-term-forecast
                  (header server-name)
+                 ;; TODO announcement-banner will be moved to the front end for better UX.
                  (when (.exists (io/as-file "announcement.txt"))
                    (announcement-banner))
                  [:div#app]]
