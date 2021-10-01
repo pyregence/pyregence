@@ -137,10 +137,15 @@
         (vals (get-forecast-opt :params))))
 
 ;; TODO, can we make this the default everywhere?
-(defn get-any-level-key [key-name]
-  (or (get-current-layer-key key-name)
-      (get-options-key key-name)
-      (get-forecast-opt key-name)))
+(defn get-any-level-key
+  "Gets the first non-nil value of a given key starting from the bottom level in
+   a forecast in `config.cljs` and going to the top. Allows for bottom level keys
+   to override a default top level key (such as for `:time-slider?`)."
+  [key-name]
+  (first (filter some?
+                 [(get-current-layer-key key-name)
+                  (get-options-key       key-name)
+                  (get-forecast-opt      key-name)])))
 
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
@@ -517,7 +522,7 @@
          [mc/scale-bar @mobile?]
          (when-not @mobile? [mc/mouse-lng-lat])
          [mc/zoom-bar (get-current-layer-extent) (current-layer) @mobile? create-share-link terrain?]
-         (when (get-forecast-opt :time-slider?)
+         (when (get-any-level-key :time-slider?)
            [mc/time-slider
             param-layers
             *layer-idx
