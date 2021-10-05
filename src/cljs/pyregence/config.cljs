@@ -62,7 +62,7 @@
                                                       [:br]
                                                       [:br]
                                                       [:strong "California Ecosystem Climate Solutions"]
-                                                      "- Data provided by the "
+                                                      " - Data provided by the "
                                                       [:a {:href   "https://california-ecosystem-climate.solutions/"
                                                            :target "_blank"}
                                                        "California Ecosystem Climate Solutions"]
