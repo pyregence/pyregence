@@ -1,12 +1,13 @@
 (ns pyregence.views
+  (:import java.io.ByteArrayOutputStream)
   (:require [clojure.edn       :as edn]
             [clojure.string    :as str]
             [clojure.data.json :as json]
+            [clojure.java.io   :as io]
             [cognitect.transit :as transit]
-            [hiccup.page :refer [html5 include-css include-js]]
+            [hiccup.page            :refer [html5 include-css include-js]]
             [pl.danieljanus.tagsoup :refer [parse]]
-            [pyregence.config :refer [get-config]])
-  (:import java.io.ByteArrayOutputStream))
+            [pyregence.config       :refer [get-config]]))
 
 (defn- find-app-js []
   (as-> (slurp "target/public/cljs/manifest.edn") app
@@ -16,75 +17,120 @@
     (last app)
     (str "/cljs/" app)))
 
+(defn- parse-page [uri]
+  (edn/read-string (slurp (str "resources/pages/" uri ".edn"))))
+
+(defn head-meta-css []
+  [:head
+   [:meta {:name "robots" :content "index, follow"}]
+   [:meta {:charset "utf-8"}]
+   [:meta {:name    "viewport"
+           :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
+   [:meta {:property "og:title" :content "Pyrecast"}]
+   [:meta {:property "og:description"
+           :content  "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
+   [:meta {:property "og:image" :content "/images/pyrecast-logo-social-media.png"}]
+   [:meta {:property "og:url" :content "https://pyrecast.org/"}]
+   [:meta {:property "twitter:title" :content "Pyrecast"}]
+   [:meta {:property "twitter:image" :content "https://pyrecast.org/images/pyrecast-logo-social-media.png"}]
+   [:meta {:property "twitter:card" :content "summary_large_image"}]
+   (include-css "/css/style.css")
+   [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
+   [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
+   [:script "window.name = 'pyrecast'"]
+   [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]])
+
+(defn header [server-name]
+  (let [pyrecast? (str/ends-with? server-name "pyrecast.org")]
+    [:div {:id    "header"
+           :style {:align-items     "center"
+                   :display         "flex"
+                   :justify-content "space-between"}}
+     [:a {:rel   "home"
+          :href  (if pyrecast? "/" "https://pyregence.org")
+          :title "Pyregence"
+          :style {:margin-bottom "0.3125rem"
+                  :margin-left   "10%"
+                  :margin-top    "0.3125rem"}}
+      [:img {:src   (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
+             :alt   "Pyregence Logo"
+             :style {:height "40px"
+                     :width  "auto"}}]]
+     (when pyrecast?
+       [:a {:href   "https://pyregence.org"
+            :target "pyregence"
+            :style  {:margin-right "5%"}}
+        [:img {:src   "/images/powered-by-pyregence.svg"
+               :alt   "Powered by Pyregence Logo"
+               :style {:height "1.25rem"
+                       :width  "auto"}}]])]))
+
 (defn render-dynamic []
-  (fn [request]
+  (fn [{:keys [params server-name]}]
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body    (html5
                [:head
-                (slurp "resources/html/~head.html")
-                [:title "Wildfire Forecasts - Pyregence"]
-                [:meta {:name "description"
+                (head-meta-css)
+                [:title "Wildfire Forecasts"]
+                [:meta {:name    "description"
                         :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
-                (include-css "/css/mapbox-gl-v2.2.0.css")
-                (include-js "/js/mapbox-gl-v2.2.0.js" (find-app-js))]
+                (include-css "/css/mapbox-gl-v2.3.1.css")
+                (include-js "/js/mapbox-gl-v2.3.1.js" (find-app-js))]
                [:body
                 [:div#near-term-forecast
-                 (slurp "resources/html/~header.html")
+                 (header server-name)
+                 (when (.exists (io/as-file "announcement.txt"))
+                   (let [announcement (slurp "announcement.txt")]    ; TODO This will be moved to the front end for better UX.
+                     (when (pos? (count announcement))
+                       [:p {:style {:color            "#eec922"
+                                    :background-color "#e63232"
+                                    :text-align       "center"
+                                    :padding          "5px"
+                                    :margin           "0px"
+                                    :position         "fixed"
+                                    :top              "0"
+                                    :width            "100vw"
+                                    :z-index          100}}
+                        announcement])))
                  [:div#app]]
                 [:script {:type "text/javascript"}
                  (str "window.onload = function () { pyregence.client.init("
-                      (json/write-str (-> (:params request)
-                                          (assoc :features (get-config :features))
-                                          (assoc :geoserver (get-config :geoserver))))
+                      (json/write-str (assoc params
+                                             :dev-mode  (get-config :dev-mode)
+                                             :mapbox    (get-config :mapbox)
+                                             :features  (get-config :features)
+                                             :geoserver (get-config :geoserver)))
                       "); };")]])}))
 
-(def uri->html
-  {"/"                  "home.html"
-   "/about"             "about.html"
-   "/data"              "data.html"
-   "/extreme-weather"   "extreme-weather.html"
-   "/fire-behavior"     "fire-behavior.html"
-   "/forecast-tools"    "forecast-tools.html"
-   "/not-found"         "not-found.html"
-   "/privacy-policy"    "privacy-policy.html"
-   "/scenario-analyses" "scenario-analyses.html"
-   "/terms-of-use"      "terms-of-use.html"})
-
-(defn recur-separate-tags [hiccup]
-  (if (vector? hiccup)
-    (let [[tag meta & children] hiccup]
-      (cond
-        (#{:script :link :title :meta} tag)
-        {:head-tags [hiccup] :body-tags nil}
-
-        children
-        (let [x (map recur-separate-tags children)]
-          {:head-tags (apply concat (map :head-tags x))
-           :body-tags (into [tag meta] (keep :body-tags x))})
-
-        :else
-        {:head-tags nil :body-tags hiccup}))
-    {:head-tags nil
-     :body-tags hiccup}))
-
 (defn render-static [uri]
-  (fn [_]
-    (let [{:keys [head-tags body-tags]} (recur-separate-tags (parse (str "resources/html/" (uri->html uri))))]
+  (fn [{:keys [server-name]}]
+    (let [{:keys [title body]} (parse-page uri)]
       {:status  (if (= uri "/not-found") 404 200)
        :headers {"Content-Type" "text/html"}
        :body    (html5
                  [:head
-                  (slurp "resources/html/~head.html")
-                  head-tags]
+                  [:title title]
+                  (head-meta-css)]
                  [:body
-                  (slurp "resources/html/~header.html")
-                  body-tags
-                  [:footer {:class "jumbotron bg-brown mb-0 py-3"}
-                   [:p {:class "text-white text-center mb-0 smaller"}
+                  (header server-name)
+                  body
+                  [:footer {:style {:background    "#60411f"
+                                    :margin-bottom "0"
+                                    :padding       "1rem"}}
+                   [:p {:style {:color          "white"
+                                :font-size      "0.9rem"
+                                :margin-bottom  "0"
+                                :text-align     "center"
+                                :text-transform "uppercase"}}
                     (str "\u00A9 "
                          (+ 1900 (.getYear (java.util.Date.)))
-                         " Pyregence - All Rights Reserved | Terms")]]])})))
+                         " Pyregence - All Rights Reserved | ")
+                    [:a {:href  "/terms-of-use"
+                         :style {:border-bottom "none"
+                                 :color         "#ffffff"
+                                 :font-weight   "400"}}
+                     "Terms"]]]])})))
 
 (defn body->transit [body]
   (let [out    (ByteArrayOutputStream. 4096)
@@ -100,8 +146,8 @@
   ([body]
    (data-response body {}))
   ([body {:keys [status type session]
-          :or {status 200 type :edn}
-          :as params}]
+          :or   {status 200 type :edn}
+          :as   params}]
    (merge (when (contains? params :session) {:session session})
           {:status  status
            :headers {"Content-Type" (condp = type

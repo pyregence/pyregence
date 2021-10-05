@@ -1,10 +1,15 @@
 {:cameras    {:wildfire-camera-api-key "<api-key>"}
+ :mapbox     {:access-token "<access-token>"}
  :database   {:host     "localhost"
               :port     5432
               :dbname   "pyregence"
               :user     "pyregence"
               :password "pyregence"}
- :features   {:match-drop false}
+ :dev-mode   <true/false>
+ :features   {:match-drop   true
+              :fire-history false
+              :structures   false
+              :gridfire     false}
  :geoserver  {:base-url "https://data.pyregence.org/geoserver"}
  :match-drop {:app-host      "app.pyregence.org"
               :app-port      31337

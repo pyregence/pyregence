@@ -4,7 +4,7 @@
 
 ;;; Help Dialogs
 
-(defn get-help-dialog [dialog mobile?]
+(defn- get-help-dialog [dialog mobile?]
   (-> {:terrain {:title "3D Terrain Enabled"
                  :body  (if mobile?
                           "You have enabled 3D Terrain. Use two fingers to tilt or rotate the map."
@@ -24,9 +24,10 @@
 ;;; Public Functions
 
 (defn show-help!
+  "Shows the help modal popup for the given dialog and device."
   [dialog & [mobile? always-show]]
   {:pre [(get-help-dialog dialog mobile?)]}
-  (when-not (or always-show (seen-help? dialog))
+  (when (or always-show (not (seen-help? dialog)))
     (set-help-seen! dialog)
     (set-message-box-content! (-> (get-help-dialog dialog mobile?)
                                   (assoc :mode :close)))))

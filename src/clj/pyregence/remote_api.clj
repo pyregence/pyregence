@@ -1,7 +1,7 @@
 (ns pyregence.remote-api
   (:require [clojure.data.json :as json]
-            [clojure.repl :refer [demunge]]
-            [clojure.string :as str]
+            [clojure.repl      :refer [demunge]]
+            [clojure.string    :as str]
             [pyregence.authentication :refer [add-new-user
                                               add-org-user
                                               get-org-list
@@ -17,6 +17,7 @@
                                               update-user-info
                                               verify-user-email]]
             [pyregence.cameras        :refer [get-cameras
+                                              get-camera-time
                                               get-current-image]]
             [pyregence.capabilities   :refer [get-all-layers
                                               get-fire-names
@@ -35,6 +36,7 @@
                "add-new-user"         add-new-user
                "get-all-layers"       get-all-layers
                "get-cameras"          get-cameras
+               "get-camera-time"      get-camera-time
                "get-current-image"    get-current-image
                "get-fire-names"       get-fire-names
                "get-layers"           get-layers

@@ -1,9 +1,9 @@
 (ns pyregence.email
   (:import java.util.UUID)
   (:require [pyregence.database :refer [call-sql]]
-            [pyregence.views :refer [data-response]]
-            [pyregence.config :refer [get-config]]
-            [postal.core :refer [send-message]]))
+            [pyregence.views    :refer [data-response]]
+            [pyregence.config   :refer [get-config]]
+            [postal.core        :refer [send-message]]))
 
 ;; TODO get name for greeting line.
 (defn get-password-reset-message [url email reset-key]

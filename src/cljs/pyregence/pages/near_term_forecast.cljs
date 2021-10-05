@@ -11,9 +11,9 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.fire-popup   :as fp]
             [pyregence.components.map-controls :as mc]
             [pyregence.components.mapbox       :as mb]
+            [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
             [pyregence.components.messaging :refer [message-box-modal
                                                     toast-message
@@ -38,25 +38,26 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce options           (r/atom {}))
-(defonce mobile?           (r/atom false))
-(defonce legend-list       (r/atom []))
-(defonce last-clicked-info (r/atom []))
-(defonce show-utc?         (r/atom true))
-(defonce show-info?        (r/atom false))
-(defonce show-match-drop?  (r/atom false))
-(defonce show-camera?      (r/atom false))
-(defonce show-red-flag?    (r/atom false))
-(defonce active-opacity    (r/atom 100.0))
-(defonce capabilities      (r/atom []))
-(defonce *forecast         (r/atom nil))
-(defonce processed-params  (r/atom []))
-(defonce *params           (r/atom {}))
-(defonce param-layers      (r/atom []))
-(defonce *layer-idx        (r/atom 0))
-(defonce the-cameras       (r/atom nil))
-(defonce loading?          (r/atom true))
-(defonce terrain?          (r/atom false))
+(defonce options            (r/atom {}))
+(defonce mobile?            (r/atom false))
+(defonce legend-list        (r/atom []))
+(defonce last-clicked-info  (r/atom []))
+(defonce show-utc?          (r/atom true))
+(defonce show-info?         (r/atom false))
+(defonce show-match-drop?   (r/atom false))
+(defonce show-camera?       (r/atom false))
+(defonce show-red-flag?     (r/atom false))
+(defonce show-fire-history? (r/atom false))
+(defonce active-opacity     (r/atom 100.0))
+(defonce capabilities       (r/atom []))
+(defonce *forecast          (r/atom nil))
+(defonce processed-params   (r/atom []))
+(defonce *params            (r/atom {}))
+(defonce param-layers       (r/atom []))
+(defonce *layer-idx         (r/atom 0))
+(defonce the-cameras        (r/atom nil))
+(defonce loading?           (r/atom true))
+(defonce terrain?           (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Processing Functions
@@ -146,10 +147,9 @@
 
 ;; TODO, can we make this the default everywhere?
 (defn get-any-level-key [key-name]
-  (let [layer-key (get-current-layer-key key-name)]
-    (if (nil? layer-key)
+  (or (get-current-layer-key key-name)
       (get-options-key key-name)
-      layer-key)))
+      (get-forecast-opt key-name)))
 
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
@@ -207,7 +207,7 @@
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all"))))) ; TODO make a more generic way to do this.
 
-(defn process-point-info! [json-res]
+(defn- process-timeline-point-info! [json-res]
   (reset! last-clicked-info [])
   (reset! last-clicked-info
           (as-> json-res pi
@@ -228,14 +228,29 @@
                   pi
                   @param-layers))))
 
+(defn- process-single-point-info! [json-res]
+  (reset! last-clicked-info [])
+  (reset! last-clicked-info
+          (-> json-res
+              (u/try-js-aget "features")
+              (first)
+              (u/try-js-aget "properties")
+              (js/Object.values)
+              (first))))
+
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
   (reset! last-clicked-info nil)
-  (let [layer-group (get-current-layer-group)]
-    (when-not (u/missing-data? layer-group point-info)
+  (let [layer-name          (get-current-layer-name)
+        layer-group         (get-current-layer-group)
+        single?             (str/blank? layer-group)
+        layer               (if single? layer-name layer-group)
+        process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
+    (when-not (u/missing-data? layer point-info)
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
-                (c/point-info-url layer-group
-                                  (str/join "," point-info))))))
+                (c/point-info-url layer
+                                  (str/join "," point-info)
+                                  (if single? 1 1000))))))
 
 (defn- reset-underlays! []
   (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
@@ -268,13 +283,19 @@
   (let [properties (-> feature (aget "properties") (js->clj))
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
         {:strs [name prettyname containper acres]} properties
-        body       (fp/fire-popup prettyname
+        body       (fire-popup prettyname
                                   containper
                                   acres
                                   #(select-param! (keyword name) :fire-name)
                                   (forecast-exists? name))]
-    (mb/init-popup! lnglat body {:width "200px"})
+    (mb/init-popup! "fire" lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
+
+(defn- init-red-flag-popup! [feature lnglat]
+  (let [properties (-> feature (aget "properties") (js->clj))
+        {:strs [url prod_type onset ends]} properties
+        body       (red-flag-popup url prod_type onset ends)]
+    (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
 
 (defn change-type!
   "Changes the type of data that is being shown on the map."
@@ -287,13 +308,14 @@
       (mb/clear-popup!)
       (reset-underlays!)
       (when (some? style-fn)
-        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!))
+        (mb/add-feature-highlight! "fire-active" "fire-active" @mobile? init-fire-popup!)
+        (mb/add-feature-highlight! "red-flag" "red-flag" @mobile? init-red-flag-popup!))
       (get-legend! source))
     (if clear?
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))
     (when zoom?
-      (mb/zoom-to-extent! (get-current-layer-extent) max-zoom))))
+      (mb/zoom-to-extent! (get-current-layer-extent) (current-layer) max-zoom))))
 
 (defn select-param! [val & keys]
   (swap! *params assoc-in (cons @*forecast keys) val)
@@ -369,9 +391,9 @@
                                                                                  :name  nil}])))})]))
                    @options)))
 
-(defn refresh-fire-names! []
+(defn refresh-fire-names! [user-id]
   (go
-    (as-> (u/call-clj-async! "get-fire-names") fire-names
+    (as-> (u/call-clj-async! "get-fire-names" user-id) fire-names
       (<! fire-names)
       (:body fire-names)
       (edn/read-string fire-names)
@@ -388,14 +410,14 @@
 
 (defn initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
-    (let [{:keys [options-config default]} (c/get-forecast forecast-type)
+    (let [{:keys [options-config default layers]} (c/get-forecast forecast-type)
           user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
-          fire-names-chan  (u/call-clj-async! "get-fire-names")
+          fire-names-chan  (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras     (u/call-clj-async! "get-cameras")]
       (reset! options options-config)
       (reset! *forecast (or (keyword forecast) default))
       (reset! *layer-idx (if layer-idx (js/parseInt layer-idx) 0))
-      (mb/init-map! "map" (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
+      (mb/init-map! "map" layers (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
                              (params->selected-options @options @*forecast params))
@@ -425,12 +447,15 @@
    :position "absolute"
    :width    "100%"})
 
-(defn $message-modal [mobile?]
+(defn $message-modal [mobile? loading?]
   {:background-color "white"
    :border-radius    "3px"
    :display          "flex"
    :flex-direction   "column"
-   :margin           (if mobile? ".25rem" "8rem auto")
+   :margin           (cond
+                       (and mobile? loading?) "10rem 4rem .5rem 4rem"
+                       mobile?                ".25rem"
+                       :else                  "8rem auto")
    :overflow         "hidden"
    :max-height       (if mobile? "calc(100% - .5rem)" "50%")
    :width            (if mobile? "unset" "25rem")})
@@ -475,6 +500,7 @@
                *layer-idx
                select-layer-by-hour!
                (get-current-layer-key :units)
+               (get-current-layer-key :convert)
                (get-current-layer-hour)
                @legend-list
                @last-clicked-info
@@ -482,26 +508,33 @@
             (when @show-match-drop?
               [mc/match-drop-tool @my-box #(reset! show-match-drop? false) refresh-fire-names! user-id])
             (when @show-camera?
-              [mc/camera-tool @the-cameras @my-box terrain? #(reset! show-camera? false)])])
-         [mc/legend-box @legend-list (get-forecast-opt :reverse-legend?) @mobile?]
+              [mc/camera-tool @the-cameras @my-box @mobile? terrain? #(reset! show-camera? false)])])
+         [mc/legend-box
+          @legend-list
+          (get-any-level-key :reverse-legend?)
+          @mobile?
+          (get-current-layer-key :units)]
          [mc/tool-bar
           show-info?
           show-match-drop?
           show-camera?
           show-red-flag?
+          show-fire-history?
           set-show-info!
           @mobile?
           user-id]
          [mc/scale-bar @mobile?]
-         [mc/zoom-bar get-current-layer-extent @mobile? create-share-link terrain?]
-         [mc/time-slider
-          param-layers
-          *layer-idx
-          (get-current-layer-full-time)
-          select-layer!
-          show-utc?
-          select-time-zone!
-          @mobile?]])})))
+         (when-not @mobile? [mc/mouse-lng-lat])
+         [mc/zoom-bar (get-current-layer-extent) (current-layer) @mobile? create-share-link terrain?]
+         (when (get-forecast-opt :time-slider?)
+           [mc/time-slider
+            param-layers
+            *layer-idx
+            (get-current-layer-full-time)
+            select-layer!
+            show-utc?
+            select-time-zone!
+            @mobile?])])})))
 
 (defn pop-up []
   [:div#pin {:style ($/fixed-size "2rem")}
@@ -525,12 +558,12 @@
    [radio "Dark"  $/light? false #(reset! $/light? %)]])
 
 (defn message-modal []
-  (r/with-let [show-me? (r/atom (not (str/includes? (-> js/window .-location .-origin) "local")))]
+  (r/with-let [show-me? (r/atom (not @c/dev-mode?))]
     (when @show-me?
       [:div#message-modal {:style ($/modal)}
-       [:div {:style ($message-modal @mobile?)}
-        [:div {:class "bg-yellow"
-               :style {:width "100%"}}
+       [:div {:style ($message-modal @mobile? false)}
+        [:div {:style {:background ($/color-picker :yellow)
+                       :width      "100%"}}
          [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
           "Disclaimer"]]
         [:div {:style {:padding ".5rem" :overflow "auto"}}
@@ -549,28 +582,36 @@
            quiet enjoyment, accuracy, integration, merchantability or fitness for any particular purpose,
            and all warranties arising from any course of dealing, course of performance, or usage of trade."]
          [:label {:style {:margin "1rem .25rem 0 0"}}
-          "Please see our"
+          "Please see our "
           [:a {:style {:margin-right ".25rem"}
                :href "/terms-of-use"
                :target "_blank"} "Terms of Use"]
           "and"
           [:a {:style {:margin-left ".25rem"}
                :href "/privacy-policy"
-               :target "_blank"} "Privacy Policy"]]]
-        [:div {:style ($/combine $/flex-row {:justify-content "flex-end"})}
+               :target "_blank"} "Privacy Policy"]
+          "."]]
+        [:div {:style ($/combine $/flex-row {:justify-content "center"})}
          [:span
-          [:label {:class "btn border-yellow text-brown"
-                   :on-click #(u/jump-to-url! "/")}
+          [:label {:class (<class $/p-form-button)
+                   :style {:padding-left  "1.75rem"
+                           :padding-right "1.75rem"}
+                   :on-click #(u/jump-to-url! "https://pyregence.org/")}
            "Decline"]
-          [:label {:class "btn border-yellow text-brown"
-                   :style {:margin ".5rem"}
+          [:label {:class (<class $/p-form-button)
+                   :style {:margin        ".5rem"
+                           :padding-left  "1.75rem"
+                           :padding-right "1.75rem"}
                    :on-click #(reset! show-me? false)}
            "Accept"]]]]])))
 
 (defn loading-modal []
   [:div#message-modal {:style ($/modal)}
-   [:div {:style ($message-modal false)}
-    [:h3 {:style {:padding "1rem"}} "Loading..."]]])
+   [:div {:style ($message-modal @mobile? true)}
+    [:h3 {:style {:margin-bottom "0"
+                  :padding       "1rem"
+                  :text-align    "center"}}
+     "Loading..."]]])
 
 (defn root-component [{:keys [user-id] :as params}]
   (let [height (r/atom "100%")]
@@ -579,7 +620,7 @@
       (fn [_]
         (let [update-fn (fn [& _]
                           (-> js/window (.scrollTo 0 0))
-                          (reset! mobile? (> 700.0 (.-innerWidth js/window)))
+                          (reset! mobile? (> 800.0 (.-innerWidth js/window)))
                           (reset! height  (str (- (.-innerHeight js/window)
                                                   (-> js/document
                                                       (.getElementById "header")
@@ -600,8 +641,7 @@
          [message-box-modal]
          (when @loading? [loading-modal])
          [message-modal]
-         [:div {:class "bg-yellow"
-                :style ($app-header)}
+         [:div {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
           (when-not @mobile? [theme-select])
           [:span {:style {:display "flex" :padding ".25rem 0"}}
            (doall (map (fn [[key {:keys [opt-label hover-text]}]]

@@ -46,6 +46,11 @@
     (when (= 200 status)
       (json/read-str body :key-fn keyword))))
 
+(defn- api-get-camera [camera-name]
+  (let [{:keys [status body]} (api-request (str "cameras?name=" camera-name))]
+    (when (= 200 status)
+      (json/read-str body :key-fn keyword))))
+
 (defn- api-current-image
   [camera-name]
   {:pre [(string? camera-name)]}
@@ -57,15 +62,16 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- site->feature [{:keys [name site position]}]
+(defn- site->feature [{:keys [name site position update_time]}]
   {:type       "Feature"
    :geometry   {:type        "Point"
                 :coordinates [(:longitude site) (:latitude site)]}
-   :properties {:latitude  (:latitude site)
-                :longitude (:longitude site)
-                :name      name
-                :pan       (:pan position)
-                :tilt      (:tilt position)}})
+   :properties {:latitude    (:latitude site)
+                :longitude   (:longitude site)
+                :name        name
+                :pan         (:pan position)
+                :tilt        (:tilt position)
+                :update-time update_time}})
 
 (defn- ->feature-collection [features]
   {:type     "FeatureCollection"
@@ -85,6 +91,14 @@
                                           (->feature-collection))]
                      (reset-cache! new-cameras)
                      new-cameras))))
+
+(defn get-camera-time
+  "Gets the last time a specific camera was updated (in UTC)."
+  [camera-name]
+  {:pre [(string? camera-name)]}
+  (data-response (-> (api-get-camera camera-name)
+                     (first)
+                     (:update_time))))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.

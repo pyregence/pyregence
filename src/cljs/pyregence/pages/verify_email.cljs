@@ -1,7 +1,7 @@
 (ns pyregence.pages.verify-email
-  (:require [reagent.core :as r]
+  (:require [reagent.core       :as r]
             [clojure.core.async :refer [go <! timeout]]
-            [pyregence.utils :as u]))
+            [pyregence.utils    :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -13,7 +13,7 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn verify-account! [email reset-key]
+(defn- verify-account! [email reset-key]
   (go
     (if (:success (<! (u/call-clj-async! "verify-user-email" email reset-key)))
       (do
@@ -25,7 +25,10 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn root-component [params]
+(defn root-component
+  "The root component for the /verify-email page.
+   Displays the appropriate message depending on the email verification status."
+  [params]
   (verify-account! (or (:email params) "") (or (:reset-key params) ""))
   [:div {:style {:display "flex" :justify-content "center" :margin "5rem"}}
    [:h4 (if @pending?

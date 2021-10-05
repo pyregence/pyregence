@@ -3,6 +3,7 @@
             [clojure.string     :as str]
             [clojure.set        :as set]
             [clj-http.client    :as client]
+            [triangulum.utils   :as u]
             [pyregence.config   :refer [get-config]]
             [pyregence.database :refer [call-sql]]
             [pyregence.logging  :refer [log log-str]]
@@ -110,11 +111,12 @@
      :layer-group ""}))
 
 (defn process-layers! [workspace-name]
-  (let [xml-response (:body (client/get (str (get-config :geoserver :base-url)
-                                             "/wms?SERVICE=WMS"
+  (let [xml-response (:body (client/get (str (u/end-with (get-config :geoserver :base-url) "/")
+                                             "wms?SERVICE=WMS"
                                              "&VERSION=1.3.0"
                                              "&REQUEST=GetCapabilities"
-                                             (when workspace-name (str "&NAMESPACE=" workspace-name)))))]
+                                             (when (pos? (count workspace-name))
+                                               (str "&NAMESPACE=" workspace-name)))))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
       (re-find #"(?<=<Layer>).*(?=</Layer>)" xml)
@@ -146,7 +148,7 @@
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-active-layer-name full-name))
 
-                          (str/starts-with? full-name "fire-detections")
+                          (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
                           (merge-fn (split-fire-detections full-name))
 
                           (str/starts-with? full-name "fuels")
@@ -191,18 +193,29 @@
               (into [(str/upper-case (first parts))]
                     (map str/capitalize (rest parts))))))
 
-(defn get-fire-names []
-  (->> @layers
-       (filter (fn [{:keys [forecast]}]
-                 (= "fire-spread-forecast" forecast)))
-       (map :fire-name)
-       (distinct)
-       (mapcat (fn [fire-name]
-                 [(keyword fire-name)
-                  {:opt-label  (fire-name-capitalization fire-name)
-                   :filter     fire-name
-                   :auto-zoom? true}]))
-       (apply array-map)))
+; FIXME get user-id from session on backend
+(defn get-fire-names [user-id]
+  (let [match-drop-names (->> (call-sql "get_user_match_names" user-id)
+                              (reduce (fn [acc row]
+                                        (assoc acc (:job_id row) (:display_name row)))
+                                      {}))]
+    (->> @layers
+         (filter (fn [{:keys [forecast]}]
+                   (= "fire-spread-forecast" forecast)))
+         (map :fire-name)
+         (distinct)
+         (mapcat (fn [fire-name]
+                   (let [job-id (some-> fire-name
+                                        (str/split #"match-drop-")
+                                        (second)
+                                        (Integer/parseInt))]
+                     (when (or (nil? job-id) (contains? match-drop-names job-id))
+                       [(keyword fire-name)
+                        {:opt-label  (or (get match-drop-names job-id)
+                                         (fire-name-capitalization fire-name))
+                         :filter     fire-name
+                         :auto-zoom? true}]))))
+         (apply array-map))))
 
 (defn get-user-layers [user-id]
   ; TODO get user-id from session on backend

@@ -8,9 +8,8 @@ on a continuously updated stream of weather data.
 At this time, Pyregence displays results from these open source fire
 behavior models:
 
-1. [[https://github.com/pyregence/gridfire][GridFire]]
-2. [[https://github.com/pyregence/elmfire][ELMFIRE]]
-3. [[https://github.com/pyregence/quicfire][QuicFire]]
+1. [[https://github.com/pyregence/elmfire][ELMFIRE]]
+2. [[https://github.com/pyregence/gridfire][GridFire]]
 
 ** Installation Requirements
 
@@ -18,6 +17,21 @@ behavior models:
 - [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
 - [[https://www.postgresql.org/download][Postgresql (version 12)]]
 - [[https://postgis.net/install][PostGIS (version 3)]]
+
+** Application Configuration
+
+On startup, the Pyregence application reads a file called config.edn
+in the toplevel directory of this repository, which contains various
+user-configurable system parameters. A sample file called
+config.default.edn is provided with this repository to get you
+started. To begin, simply rename (or copy) it to config.edn. Then edit
+it according to the following sections.
+
+Please note that you must replace all values surrounded with angle
+brackets (e.g., "<api-key>") with actual values for the application to
+work correctly. While most of the fields should be self-explanatory,
+the ~:wildfire-camera-api-key~ field may not be. This is simply an API
+key for the [[http://alertwildfire.org][AlertWildfire]] API.
 
 ** Postgresql Database Setup
 
@@ -115,24 +129,12 @@ C:\Program Files\PostgreSQL\X\bin
 
 Replace *X* with the PostgreSQL version installed on your computer.
 
-*** Step 3: Add Cameras Configuration
-
-1. Copy the default camera config file in the project directory:
-#+begin_src sh
-cp camera-config.default.edn camera-config.edn
-#+end_src
-
-2. Ask one of the developers for the API key to
-[[http://alertwildfire.org][AlertWildfire]] API.
-
-3. Open camera-config.edn and replace "REPLACE_ME" with the API key.
-
 ** Development Web Server
 
 *** Modifying hosts file
 
-Add the following line to your hosts file. This local url will be
-launched by Figwheel (see next section).
+Add the following line to your hosts file. This local url will allows
+for a natural URL in the browser.
 
 #+begin_example
 127.0.0.1 local.pyregence.org
@@ -147,7 +149,7 @@ directory and run:
 clojure -M:figwheel
 #+end_src
 
-This will start a webserver on http://local.pyregence.org:8080 (also
+This will start a web server on http://local.pyregence.org:8080 (also
 accessible from http://localhost:8080), which serves up the website in
 dev mode. Any changes to CLJS files will be automatically pushed to
 the browser when the files are saved. Any changes to CLJ files will be
@@ -174,21 +176,6 @@ system performance.
 
 - [[https://certbot.eff.org/][certbot]]
 - [[https://www.openssl.org/source/][openssl]]
-
-*** Email Server
-
-To set up the email server for system emails, start by creating a file
-named `email-server.edn` in the root directory of the application. Add
-the following EDN object containing server details to the file,
-replacing the values with your own:
-
-#+begin_src clojure
-{:site-url "https://pyregence.org"
- :host     "smtp.gmail.com"
- :user     "example@gmail.com"
- :pass     "changeme"
- :ssl      true}
-#+end_src
 
 *** Enabling https
 
@@ -273,6 +260,55 @@ have the system log to YYYY-DD-MM.log, use the "-o path" option to
 specify an output path. You can either specify a path relative to
 the toplevel directory of this repository or an absolute path on
 your filesystem. The logger will keep the 10 most recent logs.
+
+*** Running https via nginx (optional)
+
+**** Install required packages
+
+- [[https://nginx.org/en/][nginx]]
+
+**** Copy the nginx template and update
+
+Ubuntu example:
+
+#+begin_src sh
+sudo cp nginx/nginx-template.conf /etc/nginx/sites-available/pyregence.conf
+sudo ln -s /etc/nginx/sites-available/pyregence.conf /etc/nginx/sites-enabled/
+sudo nano /etc/nginx/sites-available/pyregence.conf
+sudo service nginx restart
+#+end_src
+
+**** Alternative server deployment
+
+When using nginx, run the server in http mode only.  If multiple servers are
+running on the same VM, be sure to assign them different ports.  Remember that
+nginx needs port 8080, witch is the default port for the server deployment.
+Instead deploy with a non default port:
+
+#+begin_src sh
+clojure -M:run-server -p 8081
+#+end_src
+
+For HTTPS, each server does not need its own deploy hook. Instead nginx needs
+a single deploy hook:
+
+#+begin_src sh
+sudo nano /etc/letsencrypt/renewal-hooks/deploy/nginx.sh
+#+end_src
+
+Add ~systemctl reload nginx~ to the file and save.
+
+#+begin_src sh
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/nginx.sh
+#+end_src
+
+**** Diagnose errors with nginx by looking in the log
+
+Ubuntu example:
+
+#+begin_src sh
+sudo less +G /var/log/nginx/error.log
+#+end_src
 
 ** License and Distribution
 
