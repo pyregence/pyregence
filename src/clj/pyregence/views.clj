@@ -35,9 +35,9 @@
    [:meta {:property "twitter:card" :content "summary_large_image"}]
    (include-css "/css/style.css")
    [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
-   [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
+   [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id=G-850QRLWH9G"}]
    [:script "window.name = 'pyrecast'"]
-   [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]])
+   [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-850QRLWH9G')"]])
 
 (defn header [server-name]
   (let [pyrecast? (str/ends-with? server-name "pyrecast.org")]
