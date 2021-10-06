@@ -194,10 +194,11 @@
              :value     (or val :none)
              :disabled  disabled?
              :on-change #(call-back (u/input-keyword %))}
-    (map (fn [[key {:keys [opt-label enabled?]}]]
+    (map (fn [[key {:keys [opt-label enabled? disabled-for]}]]
            [:option {:key      key
                      :value    key
-                     :disabled (and (fn? enabled?) (not (enabled?)))}
+                     :disabled (or (and (set? disabled-for) (some selected-param-set disabled-for))
+                                   (and (fn? enabled?) (not (enabled?))))}
             opt-label])
          options)]])
 
