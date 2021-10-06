@@ -520,7 +520,6 @@
   [element-id]
   {:pre [(string? element-id)]}
   (doto (js/document.getElementById element-id)
-    (.focus)
     (.select))
   (js/document.execCommand "copy"))
 
