@@ -38,6 +38,7 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce animate?           (r/atom false))
 (defonce options            (r/atom {}))
 (defonce mobile?            (r/atom false))
 (defonce legend-list        (r/atom []))
@@ -312,6 +313,10 @@
   (swap! *params assoc-in (cons @*forecast keys) val)
   (when-not ((set keys) :underlays)
     (let [main-key (first keys)]
+      (when (and (= main-key :fire-name))
+        (select-layer! 0)
+        (swap! *params assoc-in (cons @*forecast [:burn-pct]) :50)
+        (reset! animate? false))
       (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
                     (get-current-layer-key :clear-point?)
                     (get-current-option-key main-key val :auto-zoom?)
@@ -525,6 +530,7 @@
             select-layer!
             show-utc?
             select-time-zone!
+            animate?
             @mobile?])])})))
 
 (defn pop-up []

@@ -109,9 +109,8 @@
    :right        "0"
    :width        (if mobile? "20rem" "min-content")})
 
-(defn time-slider [layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone! mobile?]
-  (r/with-let [animate?        (r/atom false)
-               *speed          (r/atom 1)
+(defn time-slider [layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone! animate? mobile?]
+  (r/with-let [*speed          (r/atom 1)
                cycle-layer!    (fn [change]
                                  (select-layer! (mod (+ change @*layer-idx) (count @layers))))
                loop-animation! (fn la []
