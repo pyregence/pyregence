@@ -72,10 +72,10 @@
     (when (some? metadata)
       (safe-get-property metadata property))))
 
-(defn- is-layer-in-set?
-  "Checks whether or not a layer is in a specified layer set."
-  [id layer-set]
-  (if ((layer-set @layer-sets) (get-layer-type id))
+(defn- is-layer-type-in-set?
+  "Checks whether or not a layer type is in a specified layer set."
+  [type layer-set]
+  (if ((layer-set @layer-sets) type)
     true
     false))
 
@@ -420,7 +420,7 @@
   [id opacity] ;TODO, this function doesn't make sense as is because it sets the opacity of all layers currently active, not just one layer by id.
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
-        new-layers (map (u/call-when #(-> % (get "id") (get-layer-metadata-value "opacity-change?"))
+        new-layers (map (u/call-when #(-> % (get "id") (get-layer-metadata-value "type") (is-layer-type-in-set? :opacity-change-layers))
                                      #(set-opacity % opacity))
                         (get style "layers"))]
     (update-style! style :layers new-layers)))
@@ -454,10 +454,7 @@
    :type     "raster"
    :source   source-name
    :layout   {:visibility (if visible? "visible" "none")}
-   :metadata {:type            (get-layer-type layer-name)
-              :project-layer?  (is-layer-in-set? layer-name :project-layers)
-              :forecast-layer? (is-layer-in-set? layer-name :forecast-layers)
-              :opacity-change? (is-layer-in-set? layer-name :opacity-change-layers)}
+   :metadata {:type (get-layer-type layer-name)}
    :paint    {:raster-opacity opacity}})
 
 (defn- build-wms
@@ -499,10 +496,7 @@
    :type     "circle"
    :source   source-name
    :layout   {:visibility "visible"}
-   :metadata {:type            (get-layer-type layer-name)
-              :project-layer?  (is-layer-in-set? layer-name :project-layers)
-              :forecast-layer? (is-layer-in-set? layer-name :forecast-layers)
-              :opacity-change? (is-layer-in-set? layer-name :opacity-change-layers)}
+   :metadata {:type (get-layer-type layer-name)}
    :paint    {:circle-color        ["interpolate-lab" ["linear"] ["get" "containper"] 0 "#FF0000" 100 "#000000"]
               :circle-opacity      opacity
               :circle-radius       (zoom-interp 6
@@ -525,10 +519,7 @@
               :text-offset        [0 0.6]
               :text-size          16
               :visibility         "visible"}
-   :metadata {:type            (get-layer-type layer-name)
-              :project-layer?  (is-layer-in-set? layer-name :project-layers)
-              :forecast-layer? (is-layer-in-set? layer-name :forecast-layers)
-              :opacity-change? (is-layer-in-set? layer-name :opacity-change-layers)}
+   :metadata {:type (get-layer-type layer-name)}
    :paint    {:text-color      "#000000"
               :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
               :text-halo-width 1.5
@@ -608,11 +599,11 @@
   (go
     (let [style-chan (u/fetch-and-process source {} (fn [res] (.json res)))
           cur-style  (get-style)
-          keep?      (fn [s] (or (get-layer-metadata-value s "project-layer?") (is-terrain? s)))
+          keep?      (fn [s] (or (is-layer-type-in-set? (get-layer-metadata-value s "type") :project-layers) (is-terrain? s)))
           sources    (->> (get cur-style "sources")
                           (u/filterm (fn [[k _]] (keep? (name k)))))
           layers     (->> (get cur-style "layers")
-                          (filter (fn [l] (get-layer-metadata-value (get l "id") "project-layer?"))))
+                          (filter (fn [l] (is-layer-type-in-set? (get-layer-metadata-value (get l "id") "type") :project-layers))))
           new-style  (-> (<! style-chan)
                          (js->clj)
                          (assoc "sprite" c/default-sprite)
@@ -625,7 +616,7 @@
 (defn- hide-forecast-layers
   "Given layers, hides any layer that is in the forecast-layers set."
   [layers]
-  (map (u/call-when #(-> % (get "id") (get-layer-metadata-value "forecast-layer?"))
+  (map (u/call-when #(-> % (get "id") (get-layer-metadata-value "type") (is-layer-type-in-set? :forecast-layers))
                     #(set-visible % false))
        layers))
 
@@ -667,7 +658,8 @@
             layers                  (get style "layers")
             zero-idx                (->> layers
                                          (keep-indexed (fn [idx layer]
-                                                         (when (get-layer-metadata-value (get layer "id") "project-layer?") idx)))
+                                                         (when (is-layer-type-in-set? (get-layer-metadata-value (get layer "id") "type") :project-layers)
+                                                           idx)))
                                          (first))
             [before after]          (split-at zero-idx layers)
             final-layers            (vec (concat before new-layers after))]
@@ -687,10 +679,7 @@
                                 :icon-rotate             ["-" ["get" "pan"] 90]
                                 :icon-rotation-alignment "map"
                                 :icon-size               0.5}
-                     :metadata {:type            (get-layer-type id)
-                                :project-layer?  (is-layer-in-set? id :project-layers)
-                                :forecast-layer? (is-layer-in-set? id :forecast-layers)
-                                :opacity-change? (is-layer-in-set? id :opacity-change-layers)}
+                     :metadata {:type (get-layer-type id)}
                      :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
@@ -702,10 +691,7 @@
         new-layers [{:id       id
                      :source   id
                      :type     "fill"
-                     :metadata {:type            (get-layer-type id)
-                                :project-layer?  (is-layer-in-set? id :project-layers)
-                                :forecast-layer? (is-layer-in-set? id :forecast-layers)
-                                :opacity-change? (is-layer-in-set? id :opacity-change-layers)}
+                     :metadata {:type (get-layer-type id)}
                      :paint    {:fill-color         color
                                 :fill-outline-color (on-hover "#000000" color)
                                 :fill-opacity       (on-hover 1 0.4)}}]]
@@ -723,10 +709,7 @@
                      :source       id
                      :source-layer "fire-history"
                      :type         "fill"
-                     :metadata     {:type            (get-layer-type id)
-                                    :project-layer?  (is-layer-in-set? id :project-layers)
-                                    :forecast-layer? (is-layer-in-set? id :forecast-layers)
-                                    :opacity-change? (is-layer-in-set? id :opacity-change-layers)}
+                     :metadata     {:type (get-layer-type id)}
                      :paint        {:fill-color         ["step" ["get" "Decade"]
                                                          "#cccccc"  ; Default
                                                          1990 "#ffffb2"
