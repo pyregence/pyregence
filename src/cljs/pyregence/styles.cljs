@@ -64,9 +64,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defglobal general
-  [:* {:box-sizing "border-box"
-       :margin     "0px"
-       :padding    "0px"}]
+  [:* {:box-sizing "border-box"}]
 
   [:label {:font-size     "1rem"
            :font-weight   "bold"

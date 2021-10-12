@@ -7,8 +7,11 @@
             [pyregence.pages.help               :as help]
             [pyregence.pages.login              :as login]
             [pyregence.pages.near-term-forecast :as ntf]
+            [pyregence.pages.not-found          :as not-found]
+            [pyregence.pages.privacy-policy     :as privacy]
             [pyregence.pages.register           :as register]
             [pyregence.pages.reset-password     :as reset-password]
+            [pyregence.pages.terms-of-use       :as terms]
             [pyregence.pages.verify-email       :as verify-email]))
 
 (defonce ^:private original-params (atom {}))
@@ -22,14 +25,18 @@
    "/login"              login/root-component
    "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
    "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/privacy-policy"     privacy/root-component
    "/register"           register/root-component
    "/reset-password"     reset-password/root-component
+   "/terms-of-use"       terms/root-component
    "/verify-email"       verify-email/root-component})
 
 (defn- render-root
   "Renders the root component for the current URI."
   [params]
-  (let [root-component (-> js/window .-location .-pathname uri->root-component)]
+  (let [root-component (if (:valid? params)
+                         (-> js/window .-location .-pathname uri->root-component)
+                         not-found/root-component)]
     (render [root-component params] (dom/getElement "app"))))
 
 (defn- ^:export init
