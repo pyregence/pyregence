@@ -15,7 +15,8 @@
             [pyregence.components.svg-icons :as svg]
             [pyregence.components.help      :as h]
             [pyregence.components.common           :refer [labeled-input radio tool-tip-wrapper input-hour limited-date-picker]]
-            [pyregence.components.messaging        :refer [set-message-box-content!]]
+            [pyregence.components.messaging        :refer [toast-message!
+                                                           set-message-box-content!]]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.components.vega             :refer [vega-box]]))
 
@@ -407,19 +408,20 @@
 ;; Red Flag Warning
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- add-red-flag-layer! []
-  (go
-    (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
-                   (:body)
-                   (js/JSON.parse))]
-      (mb/create-red-flag-layer! "red-flag" data))))
-
 (defn toggle-red-flag-layer!
   "Toggle the red-flag warning layer"
   [show-red-flag?]
   (swap! show-red-flag? not)
-  (when (and @show-red-flag? (not (mb/layer-exists? "red-flag")))
-    (add-red-flag-layer!))
+  (go
+    (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
+                   (:body)
+                   (js/JSON.parse))]
+      (if (not (some? data))
+        (do
+          (toast-message! "There are no red flag warnings at this time.")
+          (reset! show-red-flag? false))
+        (when (and @show-red-flag? (not (mb/layer-exists? "red-flag")))
+          (mb/create-red-flag-layer! "red-flag" data)))))
   (mb/set-visible-by-title! "red-flag" @show-red-flag?)
   (mb/clear-popup! "red-flag"))
 
