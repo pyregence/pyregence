@@ -514,6 +514,7 @@
           @legend-list
           (get-any-level-key :reverse-legend?)
           @mobile?
+          (get-any-level-key :time-slider?)
           (get-current-layer-key :units)]
          [mc/tool-bar
           show-info?
