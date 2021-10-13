@@ -957,7 +957,7 @@
 
 (defn legend-box [legend-list reverse? mobile? time-slider? units]
   (reset! show-legend? (not mobile?))
-  (fn [legend-list reverse? mobile? units]
+  (fn [legend-list reverse? mobile? time-slider? units]
     (when (and @show-legend? (seq legend-list))
       [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile? time-slider?))}
        [:div {:style {:display        "flex"
