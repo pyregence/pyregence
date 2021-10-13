@@ -36,7 +36,8 @@
    :z-index      "2"})
 
 (defn- $close-button [height]
-  {:fill     ($/color-picker :font-color)
+  {:cursor   "pointer"
+   :fill     ($/color-picker :font-color)
    :height   height
    :position "absolute"
    :right    ".25rem"

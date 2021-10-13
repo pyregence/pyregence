@@ -303,10 +303,11 @@
                                                                                     :z-index    0
                                                                                     :filter-set #{"fire-detections" "goes16-rgb"}}}
                                                  :default-option :active-fires
-                                                 :options        {:active-fires    {:opt-label  "*All Active Fires"
-                                                                                    :style-fn   :default
-                                                                                    :filter-set #{"fire-detections" "active-fires"}
-                                                                                    :auto-zoom? false}}}
+                                                 :options        {:active-fires    {:opt-label    "*All Active Fires"
+                                                                                    :style-fn     :default
+                                                                                    :filter-set   #{"fire-detections" "active-fires"}
+                                                                                    :auto-zoom?   false
+                                                                                    :time-slider? false}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
                                                  :options    {:burned {:opt-label       "Forecasted fire location"
