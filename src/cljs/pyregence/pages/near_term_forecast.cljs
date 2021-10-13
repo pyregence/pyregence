@@ -38,6 +38,7 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce animate?           (r/atom false))
 (defonce options            (r/atom {}))
 (defonce mobile?            (r/atom false))
 (defonce legend-list        (r/atom []))
@@ -146,10 +147,15 @@
         (vals (get-forecast-opt :params))))
 
 ;; TODO, can we make this the default everywhere?
-(defn get-any-level-key [key-name]
-  (or (get-current-layer-key key-name)
-      (get-options-key key-name)
-      (get-forecast-opt key-name)))
+(defn get-any-level-key
+  "Gets the first non-nil value of a given key starting from the bottom level in
+   a forecast in `config.cljs` and going to the top. Allows for bottom level keys
+   to override a default top level key (such as for `:time-slider?`)."
+  [key-name]
+  (first (filter some?
+                 [(get-current-layer-key key-name)
+                  (get-options-key       key-name)
+                  (get-forecast-opt      key-name)])))
 
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
@@ -321,6 +327,10 @@
   (swap! *params assoc-in (cons @*forecast keys) val)
   (when-not ((set keys) :underlays)
     (let [main-key (first keys)]
+      (when (and (= main-key :fire-name))
+        (select-layer! 0)
+        (swap! *params assoc-in (cons @*forecast [:burn-pct]) :50)
+        (reset! animate? false))
       (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
                     (get-current-layer-key :clear-point?)
                     (get-current-option-key main-key val :auto-zoom?)
@@ -526,7 +536,7 @@
          [mc/scale-bar @mobile?]
          (when-not @mobile? [mc/mouse-lng-lat])
          [mc/zoom-bar (get-current-layer-extent) (current-layer) @mobile? create-share-link terrain?]
-         (when (get-forecast-opt :time-slider?)
+         (when (get-any-level-key :time-slider?)
            [mc/time-slider
             param-layers
             *layer-idx
@@ -534,6 +544,7 @@
             select-layer!
             show-utc?
             select-time-zone!
+            animate?
             @mobile?])])})))
 
 (defn pop-up []
