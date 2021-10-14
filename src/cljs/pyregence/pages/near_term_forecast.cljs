@@ -514,6 +514,7 @@
           @legend-list
           (get-any-level-key :reverse-legend?)
           @mobile?
+          (get-any-level-key :time-slider?)
           (get-current-layer-key :units)]
          [mc/tool-bar
           show-info?
@@ -524,9 +525,15 @@
           set-show-info!
           @mobile?
           user-id]
-         [mc/scale-bar @mobile?]
+         [mc/scale-bar @mobile? (get-any-level-key :time-slider?)]
          (when-not @mobile? [mc/mouse-lng-lat])
-         [mc/zoom-bar (get-current-layer-extent) (current-layer) @mobile? create-share-link terrain?]
+         [mc/zoom-bar
+          (get-current-layer-extent)
+          (current-layer)
+          @mobile?
+          create-share-link
+          terrain?
+          (get-any-level-key :time-slider?)]
          (when (get-any-level-key :time-slider?)
            [mc/time-slider
             param-layers

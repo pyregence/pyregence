@@ -490,7 +490,7 @@
                                   :right
                                   [tool-button icon on-click active?]])))])
 
-(defn zoom-bar [current-layer-extent current-layer mobile? create-share-link terrain?]
+(defn zoom-bar [current-layer-extent current-layer mobile? create-share-link terrain? time-slider?]
   (r/with-let [minZoom      (r/atom 0)
                maxZoom      (r/atom 28)
                *zoom        (r/atom 10)
@@ -504,7 +504,7 @@
       (reset! minZoom min)
       (reset! maxZoom max))
     (mb/add-map-zoom-end! #(reset! *zoom %))
-    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if mobile? "90px" "36px")})}
+    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if (and mobile? time-slider?) "90px" "36px")})}
      (map-indexed (fn [i [icon hover-text on-click]]
                     ^{:key i} [tool-tip-wrapper
                                hover-text
@@ -943,9 +943,9 @@
    :margin-right     ".5rem"
    :min-width        "1rem"})
 
-(defn $legend-location [show? mobile?]
+(defn $legend-location [show? mobile? time-slider?]
   {:left          (if show? "19rem" "1rem")
-   :max-height    (if mobile?
+   :max-height    (if (and mobile? time-slider?)
                     "calc(100% - 100px)"
                     "calc(100% - 32px)")
    :overflow-x    "hidden"
@@ -956,11 +956,11 @@
    :top           "16px"
    :transition    "all 200ms ease-in"})
 
-(defn legend-box [legend-list reverse? mobile? units]
+(defn legend-box [legend-list reverse? mobile? time-slider? units]
   (reset! show-legend? (not mobile?))
-  (fn [legend-list reverse? mobile? units]
+  (fn [legend-list reverse? mobile? time-slider? units]
     (when (and @show-legend? (seq legend-list))
-      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile?))}
+      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile? time-slider?))}
        [:div {:style {:display        "flex"
                       :flex-direction "column"}}
         (map-indexed (fn [i leg]
@@ -976,10 +976,10 @@
 ;; Scale Control
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $scale-line [mobile?]
+(defn- $scale-line [mobile? time-slider?]
   {:background-color ($/color-picker :bg-color)
    :border           (str "1px solid " ($/color-picker :border-color))
-   :bottom           (if mobile? "90px" "36px")
+   :bottom           (if (and mobile? time-slider?) "90px" "36px")
    :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
    :left             "auto"
    :right            "64px"
@@ -998,11 +998,11 @@
 
 (defn scale-bar
   "Scale bar control which resizes based on map zoom/location."
-  [mobile?]
+  [mobile? time-slider?]
   (r/with-let [max-width    100.0
                scale-params (r/atom {:distance 0 :ratio 1 :units "ft"})
                move-event   (mb/add-map-move! #(reset! scale-params (g/imperial-scale (mb/get-distance-meters))))]
-    [:div {:style ($/combine $/tool ($scale-line mobile?) {:width (* (:ratio @scale-params) max-width)})}
+    [:div#scale-bar {:style ($/combine $/tool ($scale-line mobile? time-slider?) {:width (* (:ratio @scale-params) max-width)})}
      [:div {:style ($scale-line-inner)}
       (str (:distance @scale-params) " " (:units @scale-params))]]
     (finally
