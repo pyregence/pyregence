@@ -637,21 +637,40 @@
        "&STYLES="
        "&BBOX=" bbox))
 
-(defn wms-layer-url
-  "Generates a Web Mapping Service (WMS) url to download a PNG tile.
-   Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
+; TODO: Use this definition of wms-layer-url once GWC is enabled again.
+; (defn wms-layer-url
+;   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
+;    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
+;
+;   [layer & [layer-time]]
+;   (str (mvt-url)
+;        "?REQUEST=GetTile"
+;        "&SERVICE=WMTS"
+;        "&VERSION=1.0.0"
+;        "&LAYER=" layer
+;        "&STYLE="
+;        "&FORMAT=image/png"
+;        "&TILEMATRIX=EPSG:900913:{z}"
+;        "&TILEMATRIXSET=EPSG:900913"
+;        "&TILECOL={x}&TILEROW={y}"
+;        (when layer-time (str "&TIME=" layer-time))))
 
+(defn wms-layer-url
+  "Generates a Web Mapping Service (WMS) url to download a PNG tile."
   [layer & [layer-time]]
-  (str (mvt-url)
-       "?REQUEST=GetTile"
-       "&SERVICE=WMTS"
-       "&VERSION=1.0.0"
-       "&LAYER=" layer
-       "&STYLE="
+  (str (wms-url)
+       "?SERVICE=WMS"
+       "&VERSION=1.3.0"
+       "&REQUEST=GetMap"
        "&FORMAT=image/png"
-       "&TILEMATRIX=EPSG:900913:{z}"
-       "&TILEMATRIXSET=EPSG:900913"
-       "&TILECOL={x}&TILEROW={y}"
+       "&TRANSPARENT=true"
+       "&WIDTH=256"
+       "&HEIGHT=256"
+       "&CRS=EPSG%3A3857"
+       "&STYLES="
+       "&FORMAT_OPTIONS=dpi%3A113"
+       "&BBOX={bbox-epsg-3857}"
+       "&LAYERS=" layer
        (when layer-time (str "&TIME=" layer-time))))
 
 (defn wfs-layer-url
