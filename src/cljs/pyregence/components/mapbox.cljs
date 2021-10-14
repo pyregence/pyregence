@@ -596,22 +596,18 @@
   "Sets the base map source."
   [source]
   (go
-    (let [style-chan (u/fetch-and-process source {} (fn [res] (.json res)))
-          cur-style  (get-style)
-          keep?      (fn [s] (or (is-layer-type-in-set? (get-layer-metadata-by-id s "type") :project-layers) (is-terrain? s)))
-          sources    (->> (get cur-style "sources")
-                          (u/filterm (fn [[k _]] (keep? (name k)))))
-          layers     (->> (get cur-style "layers")
-                          (filter (fn [l]
-                                    (is-layer-type-in-set? (get-layer-metadata l "type") :project-layers))))
-          new-style  (-> (<! style-chan)
-                         (js->clj)
-                         (assoc "sprite" c/default-sprite)
-                         (merge (select-keys cur-style ["terrain"]))
-                         (update "sources" merge sources)
-                         (update "layers" concat layers)
-                         (clj->js))]
-      (-> @the-map (.setStyle new-style)))))
+    (let [style-chan  (u/fetch-and-process source {} (fn [res] (.json res)))
+          cur-style   (get-style)
+          keep?       (fn [s] (or (is-layer-type-in-set? (get-layer-metadata-by-id s "type") :project-layers) (is-terrain? s)))
+          cur-sources (->> (get cur-style "sources")
+                           (u/filterm (fn [[k _]] (keep? (name k)))))
+          cur-layers  (->> (get cur-style "layers")
+                           (filter (fn [l] (is-layer-type-in-set? (get-layer-metadata l "type") :project-layers))))
+          new-style   (-> (<! style-chan)
+                          (js->clj))]
+      (update-style! cur-style
+                     :sources (merge (get new-style "sources") cur-sources)
+                     :layers  (concat (get new-style "layers") cur-layers)))))
 
 (defn- hide-forecast-layers
   "Given layers, hides any layer that is in the forecast-layers set."

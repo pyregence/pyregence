@@ -54,7 +54,7 @@
   [:div {:style {:text-align "right" :width "100%"}}
    [:button {:class    (<class $popup-btn)
              :on-click #(js/window.open url)}
-    "Click for More Details"]])
+    "Click for More Info"]])
 
 (defn red-flag-popup
   "Popup body for red-flag warning layer."
