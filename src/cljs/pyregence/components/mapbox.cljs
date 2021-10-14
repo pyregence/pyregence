@@ -43,34 +43,33 @@
 ;; Layer Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- safe-get-property
-  "If a specific property exists on a JS object, returns that value.
-   Otherwise, return nil."
-  [object property]
-  (when (some? object)
-    (if (.hasOwnProperty object property)
-      (aget object property)
-      nil)))
-
 (defn- get-layer
   "Gets a specific layer object by id."
   [id]
   (.getLayer @the-map id))
 
 (defn- get-layer-type
-  "Gets a layer's type from its id string. Example:
+  "Returns the layer's type from its id string. Example:
    fire-detections_active-fires:active-fires_20210929_155400 => fire-detections"
   [id]
   (first (str/split id #"_")))
 
-(defn- get-layer-metadata-value
+(defn- get-layer-metadata
+  "Gets the value of a specified property of a layer's metadata."
+  [layer property]
+  (let [metadata (when (some? layer)
+                   (get layer "metadata"))]
+    (when (some? metadata)
+      (get metadata property))))
+
+(defn- get-layer-metadata-by-id
   "Gets the value of a specified property of a layer's metadata by id."
   [layer-id property]
   (let [layer    (get-layer layer-id)
         metadata (when (some? layer)
-                   (safe-get-property layer "metadata"))]
+                   (u/try-js-aget layer "metadata"))]
     (when (some? metadata)
-      (safe-get-property metadata property))))
+      (u/try-js-aget metadata property))))
 
 (defn- is-layer-type-in-set?
   "Checks whether or not a layer type is in a specified layer set."
@@ -420,7 +419,7 @@
   [id opacity] ;TODO, this function doesn't make sense as is because it sets the opacity of all layers currently active, not just one layer by id.
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
-        new-layers (map (u/call-when #(-> % (get "id") (get-layer-metadata-value "type") (is-layer-type-in-set? :opacity-change-layers))
+        new-layers (map (u/call-when #(-> % (get-layer-metadata "type") (is-layer-type-in-set? :opacity-change-layers))
                                      #(set-opacity % opacity))
                         (get style "layers"))]
     (update-style! style :layers new-layers)))
@@ -599,11 +598,12 @@
   (go
     (let [style-chan (u/fetch-and-process source {} (fn [res] (.json res)))
           cur-style  (get-style)
-          keep?      (fn [s] (or (is-layer-type-in-set? (get-layer-metadata-value s "type") :project-layers) (is-terrain? s)))
+          keep?      (fn [s] (or (is-layer-type-in-set? (get-layer-metadata-by-id s "type") :project-layers) (is-terrain? s)))
           sources    (->> (get cur-style "sources")
                           (u/filterm (fn [[k _]] (keep? (name k)))))
           layers     (->> (get cur-style "layers")
-                          (filter (fn [l] (is-layer-type-in-set? (get-layer-metadata-value (get l "id") "type") :project-layers))))
+                          (filter (fn [l]
+                                    (is-layer-type-in-set? (get-layer-metadata l "type") :project-layers))))
           new-style  (-> (<! style-chan)
                          (js->clj)
                          (assoc "sprite" c/default-sprite)
@@ -616,7 +616,7 @@
 (defn- hide-forecast-layers
   "Given layers, hides any layer that is in the forecast-layers set."
   [layers]
-  (map (u/call-when #(-> % (get "id") (get-layer-metadata-value "type") (is-layer-type-in-set? :forecast-layers))
+  (map (u/call-when #(-> % (get-layer-metadata "type") (is-layer-type-in-set? :forecast-layers))
                     #(set-visible % false))
        layers))
 
@@ -658,7 +658,7 @@
             layers                  (get style "layers")
             zero-idx                (->> layers
                                          (keep-indexed (fn [idx layer]
-                                                         (when (is-layer-type-in-set? (get-layer-metadata-value (get layer "id") "type") :project-layers)
+                                                         (when (is-layer-type-in-set? (get-layer-metadata layer "type") :project-layers)
                                                            idx)))
                                          (first))
             [before after]          (split-at zero-idx layers)
