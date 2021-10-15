@@ -434,7 +434,7 @@
   [show-fire-history?]
   (swap! show-fire-history? not)
   (when (and @show-fire-history? (not (mb/layer-exists? "fire-history")))
-    (mb/create-fire-history-layer! "fire-history" "fire-detections%3Afire-history"))
+    (mb/create-fire-history-layer! "fire-history" "fire-detections_fire-history%3Afire-history"))
   (mb/set-visible-by-title! "fire-history" @show-fire-history?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

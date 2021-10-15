@@ -131,6 +131,9 @@
                           (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
                           (merge-fn (split-fire-detections full-name))
 
+                          (re-matches #"fire-detections.*:(fire_history|us-buildings).*" full-name)
+                          (merge-fn (split-fire-detections full-name))
+
                           (str/starts-with? full-name "fuels")
                           (merge-fn (split-fuels full-name))
 
