@@ -12,7 +12,8 @@
 (defonce server           (atom nil))
 (defonce clean-up-service (atom nil))
 
-(def expiration-time "1 hour in msecs" (* 1000 60 60))
+(def ^:private expiration-time "1 hour in msecs" (* 1000 60 60))
+(def ^:private keystore-scan-interval 60)
 
 (defn- expired? [last-mod-time]
   (let [current-time (System/currentTimeMillis)]
@@ -69,6 +70,7 @@
                            :ssl-port      https-port
                            :keystore      "./.key/keystore.pkcs12"
                            :keystore-type "pkcs12"
+                           :keystore-scan-interval keystore-scan-interval
                            :key-password  "foobar"}))]
         (if (and (not has-key?) https-port)
           (println "ERROR:\n"
