@@ -894,7 +894,11 @@
       "Point Information"
       close-fn!
       (fn [box-height box-width]
-        (let [has-point? (mb/get-overlay-center)]
+        (let [has-point? (mb/get-overlay-center)
+              no-info    [loading-cover
+                          box-height
+                          box-width
+                          "This point does not have any information."]]
           (cond
             (not has-point?)
             [loading-cover
@@ -905,6 +909,8 @@
             (nil? last-clicked-info)
             [loading-cover box-height box-width "Loading..."]
 
+            (neg? last-clicked-info) no-info
+
             (number? last-clicked-info)
             [single-point-info
              box-height
@@ -913,6 +919,8 @@
              legend-list
              units
              convert]
+
+            (-> last-clicked-info (first) (:band) (neg?)) no-info
 
             (not-empty last-clicked-info)
             [vega-information
@@ -925,11 +933,7 @@
              legend-list
              last-clicked-info]
 
-            :else
-            [loading-cover
-             box-height
-             box-width
-             "This point does not have any information."])))]]
+            :else no-info)))]]
     (finally
       (mb/remove-event! click-event))))
 
