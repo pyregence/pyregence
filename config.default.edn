@@ -6,6 +6,7 @@
               :user     "pyregence"
               :password "pyregence"}
  :dev-mode   <true/false>
+ :use-gwc?   true
  :features   {:match-drop   true
               :fire-history false
               :structures   false

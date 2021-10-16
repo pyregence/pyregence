@@ -614,6 +614,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce ^:private geoserver-base-url (atom nil))
+(defonce ^:private use-gwc?           (atom nil))
 (defn- wms-url [] (str (u/end-with @geoserver-base-url "/") "wms"))
 (defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
 (defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
@@ -622,6 +623,12 @@
   "Sets the base URL of the Geoserver given the value from `config.edn`."
   [url]
   (reset! geoserver-base-url url))
+
+(defn set-gwc!
+  "Sets whether or not GeoWebCache should be used in the WMS URL structure
+   for GeoServer requests."
+  [use?]
+  (reset! use-gwc? use?))
 
 (defn legend-url
   "Generates a URL for the legend given a layer."
@@ -660,16 +667,19 @@
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
   [layer]
-  (str (mvt-url)
-       "?REQUEST=GetTile"
-       "&SERVICE=WMTS"
-       "&VERSION=1.0.0"
-       "&LAYER=" layer
-       "&STYLE="
-       "&FORMAT=image/png"
-       "&TILEMATRIX=EPSG:900913:{z}"
-       "&TILEMATRIXSET=EPSG:900913"
-       "&TILECOL={x}&TILEROW={y}"))
+  ; TODO: change this into an if statement where the else clause
+  ; contains the appropriate URL structure for not using GeoWebCache.
+  (when use-gwc?
+    (str (mvt-url)
+         "?REQUEST=GetTile"
+         "&SERVICE=WMTS"
+         "&VERSION=1.0.0"
+         "&LAYER=" layer
+         "&STYLE="
+         "&FORMAT=image/png"
+         "&TILEMATRIX=EPSG:900913:{z}"
+         "&TILEMATRIXSET=EPSG:900913"
+         "&TILECOL={x}&TILEROW={y}")))
 
 (defn wfs-layer-url
   "Generates a Web Feature Service (WFS) url to download an entire vector data
