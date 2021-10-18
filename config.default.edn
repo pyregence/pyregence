@@ -7,8 +7,8 @@
               :password "pyregence"}
  :dev-mode   <true/false>
  :features   {:match-drop   true
-              :fire-history false
-              :structures   false
+              :fire-history true
+              :structures   true
               :gridfire     false}
  :geoserver  {:base-url "https://data.pyregence.org/geoserver"}
  :match-drop {:app-host      "app.pyregence.org"
