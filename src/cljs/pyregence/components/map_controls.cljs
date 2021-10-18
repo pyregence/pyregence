@@ -158,7 +158,7 @@
 ;; Collapsible Panel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $collapsible-panel [show? mobile?]
+(defn- $collapsible-panel [show? mobile?]
   {:background-color ($/color-picker :bg-color)
    :box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
    :color            ($/color-picker :font-color)
@@ -173,12 +173,12 @@
    :width            (if mobile? "100%" "18rem")
    :z-index          "101"})
 
-(defn layer-selection-header []
-  [:div {:style {:background-color ($/color-picker :header-color)
-                 :display          "flex"
-                 :justify-content  "space-between"
-                 :margin-bottom    "0.5rem"
-                 :padding          "0.5rem 1rem"}}
+(defn- collapsible-panel-header []
+  [:div#collapsible-panel-header
+   {:style {:background-color ($/color-picker :header-color)
+            :display          "flex"
+            :justify-content  "space-between"
+            :padding          "0.5rem 1rem"}}
    [:span {:style {:fill         ($/color-picker :font-color)
                    :height       "2rem"
                    :margin-right "0.5rem"
@@ -294,8 +294,8 @@
                   :transform       (if @show-panel? "rotate(180deg)" "none")}}
     [svg/right-arrow]]])
 
-(defn- collapsible-toggle [mobile?]
-  [:div#collapsible-toggle
+(defn- collapsible-panel-toggle [mobile?]
+  [:div#collapsible-panel-toggle
    {:style {:display  (if (and @show-panel? mobile?) "none" "block")
             :left     "100%"
             :position "absolute"
@@ -336,47 +336,47 @@
     (fn [*params select-param! active-opacity param-options mobile?]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
-         [:div {:style {:height     "100%"
-                        :overflow-y "auto"}}
-          [collapsible-toggle mobile?]
-          [layer-selection-header]
-          [:div {:style {:display         "flex"
-                         :flex-direction  "column"
-                         :height          "calc(100% - 4rem)" 
-                         :justify-content "space-between"}}
-           [:div#layer-selection {:style {:padding "0 1rem 1rem"}}
-            (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
-                   (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                     ^{:key hover-text}
-                     [:<>
-                      [panel-dropdown
-                       opt-label
-                       hover-text
-                       (get *params key)
-                       sorted-options
-                       (= 1 (count sorted-options))
-                       #(select-param! % key)
-                       selected-param-set]
-                      (when underlays
-                        [optional-layers underlays *params select-param!])]))
-                 param-options)
-            [:div {:style {:margin-top ".5rem"}}
-             [:label (str "Opacity: " @active-opacity)]
-             [:input {:style     {:width "100%"}
-                      :type      "range"
-                      :min       "0"
-                      :max       "100"
-                      :value     @active-opacity
-                      :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                      (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-            [panel-dropdown
-             "Base Map"
-             "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
-             @*base-map
-             (c/base-map-options)
-             false
-             select-base-map!]]
-           [help-section]]]]))))
+         [collapsible-panel-toggle mobile?]
+         [collapsible-panel-header]
+         [:div#collapsible-panel-body
+          {:style {:display         "flex"
+                   :flex-direction  "column"
+                   :height          "calc(100% - 3.25rem)"
+                   :justify-content "space-between"
+                   :overflow-y      "auto"}}
+          [:div#layer-selection {:style {:padding "0.5rem 1rem 1rem"}}
+           (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
+                  (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                    ^{:key hover-text}
+                    [:<>
+                     [panel-dropdown
+                      opt-label
+                      hover-text
+                      (get *params key)
+                      sorted-options
+                      (= 1 (count sorted-options))
+                      #(select-param! % key)
+                      selected-param-set]
+                     (when underlays
+                       [optional-layers underlays *params select-param!])]))
+                param-options)
+           [:div {:style {:margin-top ".5rem"}}
+            [:label (str "Opacity: " @active-opacity)]
+            [:input {:style     {:width "100%"}
+                     :type      "range"
+                     :min       "0"
+                     :max       "100"
+                     :value     @active-opacity
+                     :on-change #(do (reset! active-opacity (u/input-int-value %))
+                                     (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
+           [panel-dropdown
+            "Base Map"
+            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
+            @*base-map
+            (c/base-map-options)
+            false
+            select-base-map!]]
+          [help-section]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Share Tool
