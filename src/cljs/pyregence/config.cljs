@@ -667,9 +667,7 @@
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
   [layer]
-  ; TODO: change this into an if statement where the else clause
-  ; contains the appropriate URL structure for not using GeoWebCache.
-  (when use-gwc?
+  (if @use-gwc?
     (str (mvt-url)
          "?REQUEST=GetTile"
          "&SERVICE=WMTS"
@@ -679,7 +677,20 @@
          "&FORMAT=image/png"
          "&TILEMATRIX=EPSG:900913:{z}"
          "&TILEMATRIXSET=EPSG:900913"
-         "&TILECOL={x}&TILEROW={y}")))
+         "&TILECOL={x}&TILEROW={y}")
+    (str (wms-url)
+       "?SERVICE=WMS"
+       "&VERSION=1.3.0"
+       "&REQUEST=GetMap"
+       "&FORMAT=image/png"
+       "&TRANSPARENT=true"
+       "&WIDTH=256"
+       "&HEIGHT=256"
+       "&CRS=EPSG%3A3857"
+       "&STYLES="
+       "&FORMAT_OPTIONS=dpi%3A113"
+       "&BBOX={bbox-epsg-3857}"
+       "&LAYERS=" layer)))
 
 (defn wfs-layer-url
   "Generates a Web Feature Service (WFS) url to download an entire vector data
