@@ -199,7 +199,6 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
-  (reset! legend-list [])
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all"))))) ; TODO make a more generic way to do this.
@@ -316,9 +315,10 @@
 
 (defn select-param! [val & keys]
   (swap! *params assoc-in (cons @*forecast keys) val)
+  (reset! legend-list [])
   (when-not ((set keys) :underlays)
     (let [main-key (first keys)]
-      (when (and (= main-key :fire-name))
+      (when (= main-key :fire-name)
         (select-layer! 0)
         (swap! *params assoc-in (cons @*forecast [:burn-pct]) :50)
         (reset! animate? false))
@@ -332,6 +332,7 @@
     (doseq [[_ {:keys [name]}] (get-in @*params [@*forecast :underlays])]
       (when (some? name)
         (mb/set-visible-by-title! name false)))
+    (reset! legend-list [])
     (reset! *forecast key)
     (reset! processed-params (get-forecast-opt :params))
     (reset-underlays!)
