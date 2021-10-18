@@ -944,10 +944,10 @@
    :min-width        "1rem"})
 
 (defn $legend-location [show? mobile? time-slider?]
-  {:left          (if show? "19rem" "1rem")
+  {:left          (if (and show? (not mobile?)) "20rem" "2rem")
    :max-height    (if (and mobile? time-slider?)
-                    "calc(100% - 100px)"
-                    "calc(100% - 32px)")
+                    "calc(100% - 106px)"
+                    "calc(100% - 52px)")
    :overflow-x    "hidden"
    :overflow-y    "auto"
    :padding-left  ".5rem"
