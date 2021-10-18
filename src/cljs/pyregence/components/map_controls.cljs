@@ -158,9 +158,9 @@
 ;; Collapsible Panel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $collapsible-panel [show? mobile?]
+(defn- $collapsible-panel [show? mobile?]
   {:background-color ($/color-picker :bg-color)
-   :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
+   :box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
    :color            ($/color-picker :font-color)
    :height           "100%"
    :left             (if show?
@@ -173,11 +173,21 @@
    :width            (if mobile? "100%" "18rem")
    :z-index          "101"})
 
-(defn $layer-selection []
-  {:border-bottom (str "2px solid " ($/color-picker :border-color))
-   :font-size     "1.5rem"
-   :margin-bottom ".5rem"
-   :width         "100%"})
+(defn- collapsible-panel-header []
+  [:div#collapsible-panel-header
+   {:style {:background-color ($/color-picker :header-color)
+            :display          "flex"
+            :justify-content  "space-between"
+            :padding          "0.5rem 1rem"}}
+   [:span {:style {:fill         ($/color-picker :font-color)
+                   :height       "2rem"
+                   :margin-right "0.5rem"
+                   :width        "2rem"}}
+    [svg/layers]]
+   [:label {:style {:font-size "1.5rem"}}
+    "Layer Selection"]
+   [:span {:style {:margin-right "-.5rem"}}
+    [tool-button :close #(reset! show-panel? false)]]])
 
 (defn panel-dropdown [title tool-tip-text val options disabled? call-back & [selected-param-set]]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
@@ -284,8 +294,8 @@
                   :transform       (if @show-panel? "rotate(180deg)" "none")}}
     [svg/right-arrow]]])
 
-(defn- collapsible-toggle [mobile?]
-  [:div#collapsible-toggle
+(defn- collapsible-panel-toggle [mobile?]
+  [:div#collapsible-panel-toggle
    {:style {:display  (if (and @show-panel? mobile?) "none" "block")
             :left     "100%"
             :position "absolute"
@@ -326,17 +336,15 @@
     (fn [*params select-param! active-opacity param-options mobile?]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
-         [:div {:style {:display         "flex"
-                        :flex-direction  "column"
-                        :height          "100%"
-                        :justify-content "space-between"
-                        :overflow-y      "auto"}}
-          [collapsible-toggle mobile?]
-          [:div#layer-selection {:style {:padding "1rem"}}
-           [:div {:style {:display "flex" :justify-content "center"}}
-            [:label {:style ($layer-selection)} "Layer Selection"]
-            [:span {:style {:margin-right "-.5rem"}}
-             [tool-button :close #(reset! show-panel? false)]]]
+         [collapsible-panel-toggle mobile?]
+         [collapsible-panel-header]
+         [:div#collapsible-panel-body
+          {:style {:display         "flex"
+                   :flex-direction  "column"
+                   :height          "calc(100% - 3.25rem)"
+                   :justify-content "space-between"
+                   :overflow-y      "auto"}}
+          [:div#layer-selection {:style {:padding "0.5rem 1rem 1rem"}}
            (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
                   (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
                     ^{:key hover-text}
