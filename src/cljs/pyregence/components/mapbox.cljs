@@ -598,11 +598,15 @@
   (go
     (let [style-chan  (u/fetch-and-process source {} (fn [res] (.json res)))
           cur-style   (get-style)
-          keep?       (fn [s] (or (is-layer-type-in-set? (get-layer-metadata-by-id s "type") :project-layers) (is-terrain? s)))
           cur-sources (->> (get cur-style "sources")
-                           (u/filterm (fn [[k _]] (keep? (name k)))))
+                           (u/filterm (fn [[k _]]
+                                        (let [sname (name k)]
+                                          (or (is-terrain? sname)
+                                              (is-layer-type-in-set? (get-layer-metadata-by-id sname "type")
+                                                                     :project-layers))))))
           cur-layers  (->> (get cur-style "layers")
-                           (filter (fn [l] (is-layer-type-in-set? (get-layer-metadata l "type") :project-layers))))
+                           (filter #(is-layer-type-in-set? (get-layer-metadata % "type")
+                                                           :project-layers)))
           new-style   (-> (<! style-chan)
                           (js->clj))]
       (update-style! cur-style
@@ -654,7 +658,8 @@
             layers                  (get style "layers")
             zero-idx                (->> layers
                                          (keep-indexed (fn [idx layer]
-                                                         (when (is-layer-type-in-set? (get-layer-metadata layer "type") :project-layers)
+                                                         (when (is-layer-type-in-set? (get-layer-metadata layer "type")
+                                                                                      :project-layers)
                                                            idx)))
                                          (first))
             [before after]          (split-at zero-idx layers)
