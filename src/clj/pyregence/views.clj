@@ -16,9 +16,6 @@
     (last app)
     (str "/cljs/" app)))
 
-(defn- parse-page [uri]
-  (edn/read-string (slurp (str "resources/pages/" uri ".edn"))))
-
 (defn head-meta-css []
   [:head
    [:meta {:name "robots" :content "index, follow"}]
@@ -77,7 +74,7 @@
                             :top              "0"
                             :width            "100vw"
                             :z-index          100}}
-       [:p {:style {:font-size   "18px"
+       [:p {:style {:font-size    "18px"
                     :font-weight "bold"
                     :margin      "0 30px 0 0"}}
         announcement]
@@ -89,6 +86,7 @@
                            :cursor           "pointer"
                            :display          "flex"
                            :height           "25px"
+                           :padding          "0"
                            :position         "fixed"
                            :right            "10px"
                            :top              "5px"
@@ -98,9 +96,9 @@
          [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
                    11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]])))
 
-(defn render-dynamic []
+(defn render-page [valid?]
   (fn [{:keys [params server-name]}]
-    {:status  200
+    {:status  (if valid? 200 404)
      :headers {"Content-Type" "text/html"}
      :body    (html5
                [:head
@@ -127,35 +125,6 @@
                                              :features  (get-config :features)
                                              :geoserver (get-config :geoserver)))
                       "); };")]])}))
-
-(defn render-static [uri]
-  (fn [{:keys [server-name]}]
-    (let [{:keys [title body]} (parse-page uri)]
-      {:status  (if (= uri "/not-found") 404 200)
-       :headers {"Content-Type" "text/html"}
-       :body    (html5
-                 [:head
-                  [:title title]
-                  (head-meta-css)]
-                 [:body
-                  (header server-name)
-                  body
-                  [:footer {:style {:background    "#60411f"
-                                    :margin-bottom "0"
-                                    :padding       "1rem"}}
-                   [:p {:style {:color          "white"
-                                :font-size      "0.9rem"
-                                :margin-bottom  "0"
-                                :text-align     "center"
-                                :text-transform "uppercase"}}
-                    (str "\u00A9 "
-                         (+ 1900 (.getYear (java.util.Date.)))
-                         " Pyregence - All Rights Reserved | ")
-                    [:a {:href  "/terms-of-use"
-                         :style {:border-bottom "none"
-                                 :color         "#ffffff"
-                                 :font-weight   "400"}}
-                     "Terms"]]]])})))
 
 (defn body->transit [body]
   (let [out    (ByteArrayOutputStream. 4096)
