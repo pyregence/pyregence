@@ -909,9 +909,8 @@
             (nil? last-clicked-info)
             [loading-cover box-height box-width "Loading..."]
 
-            (neg? last-clicked-info) no-info
-
-            (number? last-clicked-info)
+            (and (number? last-clicked-info)
+                 (>= last-clicked-info -50))
             [single-point-info
              box-height
              box-width
@@ -920,7 +919,9 @@
              units
              convert]
 
-            (-> last-clicked-info (first) (:band) (neg?)) no-info
+            (or (< last-clicked-info -50)
+                (-> last-clicked-info (first) (:band) (< -50)))
+            no-info
 
             (not-empty last-clicked-info)
             [vega-information
