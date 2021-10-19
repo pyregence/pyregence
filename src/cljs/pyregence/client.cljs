@@ -25,6 +25,7 @@
    "/login"              login/root-component
    "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
    "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/not-found"          not-found/root-component
    "/privacy-policy"     privacy/root-component
    "/register"           register/root-component
    "/reset-password"     reset-password/root-component
@@ -34,9 +35,8 @@
 (defn- render-root
   "Renders the root component for the current URI."
   [params]
-  (let [root-component (if (:valid? params)
-                         (-> js/window .-location .-pathname uri->root-component)
-                         not-found/root-component)]
+  (let [uri            (-> js/window .-location .-pathname)
+        root-component (or (uri->root-component uri) (uri->root-component "/not-found"))]
     (render [root-component params] (dom/getElement "app"))))
 
 (defn- ^:export init

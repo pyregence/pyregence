@@ -181,8 +181,8 @@
       [:strong [:u "Claims of Copyright Infringement"]]
       " We respect the intellectual property rights of others. If you believe that any content on our Site or other activity taking place on our Site infringes a work protected by copyright, please notice us by e-mail at "
       [:a {:href "mailto:contact@pyregence.org"} "contact@pyregence.org."]
-      " Your notice must comply with the Digital Millennium Copyright Act (17 U.S.C. §512) (the “DMCA”).  Upon receipt of a DMCA-compliant notice, we will respond and proceed in accordance with the DMCA."
-      [:p "We have also put in place a Repeat Infringer Policy to address situations in which a particular individual is the subject of multiple DMCA notices.  If we determine that an individual has violated our Repeat Infringer Policy, then we may, in our sole discretion, take any number of steps, such as issuing warnings, suspending or terminating the individual’s account, or any other measures that we deem appropriate."]]]
+      " Your notice must comply with the Digital Millennium Copyright Act (17 U.S.C. §512) (the “DMCA”).  Upon receipt of a DMCA-compliant notice, we will respond and proceed in accordance with the DMCA."]
+     [:p "We have also put in place a Repeat Infringer Policy to address situations in which a particular individual is the subject of multiple DMCA notices.  If we determine that an individual has violated our Repeat Infringer Policy, then we may, in our sole discretion, take any number of steps, such as issuing warnings, suspending or terminating the individual’s account, or any other measures that we deem appropriate."]]
     [:div
      [:h3 "IX. CHANGES."]
      [:p

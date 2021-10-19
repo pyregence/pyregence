@@ -269,6 +269,7 @@
    :cursor                     "pointer"
    :fill                       ($/color-picker :font-color)
    :height                     "40px"
+   :padding                    "0"
    :width                      "28px"})
 
 (defn- collapsible-button []

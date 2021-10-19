@@ -97,8 +97,7 @@
                                              :dev-mode  (get-config :dev-mode)
                                              :mapbox    (get-config :mapbox)
                                              :features  (get-config :features)
-                                             :geoserver (get-config :geoserver)
-                                             :valid?    valid?))
+                                             :geoserver (get-config :geoserver)))
                       "); };")]])}))
 
 (defn body->transit [body]
