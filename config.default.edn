@@ -6,11 +6,11 @@
               :user     "pyregence"
               :password "pyregence"}
  :dev-mode   <true/false>
- :use-gwc?   true
- :features   {:match-drop   true
-              :fire-history false
-              :structures   false
-              :gridfire     false}
+ :features   {:match-drop        true
+              :fire-history      false
+              :structures        false
+              :gridfire          false
+              :image-mosaic-gwc  true}
  :geoserver  {:base-url "https://data.pyregence.org/geoserver"}
  :match-drop {:app-host      "app.pyregence.org"
               :app-port      31337

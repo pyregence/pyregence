@@ -44,7 +44,6 @@
     (c/set-feature-flags! cur-params)
     (c/set-geoserver-base-url! (get-in cur-params [:geoserver :base-url]))
     (c/set-mapbox-access-token! (get-in cur-params [:mapbox :access-token]))
-    (c/set-gwc! (get-in cur-params [:use-gwc?]))
     (render-root cur-params)))
 
 (defn- ^:after-load mount-root!
