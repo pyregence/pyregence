@@ -40,39 +40,52 @@
 (def ^:private mapbox-dem  "mapbox-dem")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Map Information
+;; Layer Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- get-layer-type
-  "Gets the layer type from the id string. Example:
-   fire-detections_active-fires:active-fires_20210929_155400 => fire-detections"
-  [id]
-  (first (str/split id #"_")))
-
-(defn- is-project-layer?
-  "Checks whether or not a layer is a custom project layer."
-  [id]
-  ((:project-layers @layer-sets) (get-layer-type id)))
-
-(defn- is-forecast-layer?
-  "Checks whether or not a layer is a forceast layer."
-  [id]
-  ((:forecast-layers @layer-sets) (get-layer-type id)))
-
-(defn- should-opacity-change?
-  "Checks whether or not a layer's opacity should change."
-  [id]
-  ((:opacity-change-layers @layer-sets) (get-layer-type id)))
-
-(defn- get-style
-  "Returns the Mapbox style object."
-  []
-  (-> @the-map .getStyle (js->clj)))
 
 (defn- get-layer
   "Gets a specific layer object by id."
   [id]
   (.getLayer @the-map id))
+
+(defn- get-layer-type
+  "Returns the layer's type from its id string. Example:
+   fire-detections_active-fires:active-fires_20210929_155400 => fire-detections"
+  [id]
+  (first (str/split id #"_")))
+
+(defn- get-layer-metadata
+  "Gets the value of a specified property of a layer's metadata."
+  [layer property]
+  (let [metadata (when (some? layer)
+                   (get layer "metadata"))]
+    (when (some? metadata)
+      (get metadata property))))
+
+(defn- get-layer-metadata-by-id
+  "Gets the value of a specified property of a layer's metadata by id."
+  [layer-id property]
+  (let [layer    (get-layer layer-id)
+        metadata (when (some? layer)
+                   (u/try-js-aget layer "metadata"))]
+    (when (some? metadata)
+      (u/try-js-aget metadata property))))
+
+(defn- is-layer-type-in-set?
+  "Checks whether or not a layer type is in a specified layer set."
+  [type layer-set]
+  (if ((layer-set @layer-sets) type)
+    true
+    false))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Map Information
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-style
+  "Returns the Mapbox style object."
+  []
+  (-> @the-map .getStyle (js->clj)))
 
 (defn- index-of
   "Returns first index of item in collection that matches predicate."
@@ -406,7 +419,7 @@
   [id opacity] ;TODO, this function doesn't make sense as is because it sets the opacity of all layers currently active, not just one layer by id.
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
-        new-layers (map (u/call-when #(-> % (get "id") (should-opacity-change?))
+        new-layers (map (u/call-when #(-> % (get-layer-metadata "type") (is-layer-type-in-set? :opacity-change-layers))
                                      #(set-opacity % opacity))
                         (get style "layers"))]
     (update-style! style :layers new-layers)))
@@ -436,11 +449,12 @@
    :tiles    [(c/wms-layer-url layer-name)]})
 
 (defn- wms-layer [layer-name source-name opacity visible?]
-  {:id     layer-name
-   :type   "raster"
-   :source source-name
-   :layout {:visibility (if visible? "visible" "none")}
-   :paint  {:raster-opacity opacity}})
+  {:id       layer-name
+   :type     "raster"
+   :source   source-name
+   :layout   {:visibility (if visible? "visible" "none")}
+   :metadata {:type (get-layer-type layer-name)}
+   :paint    {:raster-opacity opacity}})
 
 (defn- build-wms
   "Returns new WMS source and layer in the form `[source [layer]]`.
@@ -477,36 +491,38 @@
    off])
 
 (defn- incident-layer [layer-name source-name opacity]
-  {:id     layer-name
-   :type   "circle"
-   :source source-name
-   :layout {:visibility "visible"}
-   :paint  {:circle-color        ["interpolate-lab" ["linear"] ["get" "containper"] 0 "#FF0000" 100 "#000000"]
-            :circle-opacity      opacity
-            :circle-radius       (zoom-interp 6
-                                              ["interpolate" ["linear"] ["get" "acres"]
-                                               10000 10
-                                               300000 100]
-                                              4
-                                              12)
-            :circle-stroke-color (on-hover "#FFFF00" "#000000")
-            :circle-stroke-width (on-hover 4 2)}})
+  {:id       layer-name
+   :type     "circle"
+   :source   source-name
+   :layout   {:visibility "visible"}
+   :metadata {:type (get-layer-type layer-name)}
+   :paint    {:circle-color        ["interpolate-lab" ["linear"] ["get" "containper"] 0 "#FF0000" 100 "#000000"]
+              :circle-opacity      opacity
+              :circle-radius       (zoom-interp 6
+                                                ["interpolate" ["linear"] ["get" "acres"]
+                                                 10000 10
+                                                 300000 100]
+                                                4
+                                                12)
+              :circle-stroke-color (on-hover "#FFFF00" "#000000")
+              :circle-stroke-width (on-hover 4 2)}})
 
 (defn- incident-layer-label [layer-name source-name opacity]
-  {:id     layer-name
-   :type   "symbol"
-   :source source-name
-   :layout {:text-anchor        "top"
-            :text-allow-overlap true
-            :text-field         ["to-string" ["get" "prettyname"]]
-            :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
-            :text-offset        [0 0.6]
-            :text-size          16
-            :visibility         "visible"}
-   :paint  {:text-color      "#000000"
-            :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
-            :text-halo-width 1.5
-            :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}})
+  {:id       layer-name
+   :type     "symbol"
+   :source   source-name
+   :layout   {:text-anchor        "top"
+              :text-allow-overlap true
+              :text-field         ["to-string" ["get" "prettyname"]]
+              :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
+              :text-offset        [0 0.6]
+              :text-size          16
+              :visibility         "visible"}
+   :metadata {:type (get-layer-type layer-name)}
+   :paint    {:text-color      "#000000"
+              :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
+              :text-halo-width 1.5
+              :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}})
 
 (defn- build-wfs
   "Returns a new WFS source and layers in the form `[source layers]`.
@@ -580,26 +596,27 @@
   "Sets the base map source."
   [source]
   (go
-    (let [style-chan (u/fetch-and-process source {} (fn [res] (.json res)))
-          cur-style  (get-style)
-          keep?      (fn [s] (or (is-project-layer? s) (is-terrain? s)))
-          sources    (->> (get cur-style "sources")
-                          (u/filterm (fn [[k _]] (keep? (name k)))))
-          layers     (->> (get cur-style "layers")
-                          (filter (fn [l] (is-project-layer? (get l "id")))))
-          new-style  (-> (<! style-chan)
-                         (js->clj)
-                         (assoc "sprite" c/default-sprite)
-                         (merge (select-keys cur-style ["terrain"]))
-                         (update "sources" merge sources)
-                         (update "layers" concat layers)
-                         (clj->js))]
-      (-> @the-map (.setStyle new-style)))))
+    (let [style-chan  (u/fetch-and-process source {} (fn [res] (.json res)))
+          cur-style   (get-style)
+          cur-sources (->> (get cur-style "sources")
+                           (u/filterm (fn [[k _]]
+                                        (let [sname (name k)]
+                                          (or (is-terrain? sname)
+                                              (is-layer-type-in-set? (get-layer-metadata-by-id sname "type")
+                                                                     :project-layers))))))
+          cur-layers  (->> (get cur-style "layers")
+                           (filter #(is-layer-type-in-set? (get-layer-metadata % "type")
+                                                           :project-layers)))
+          new-style   (-> (<! style-chan)
+                          (js->clj))]
+      (update-style! cur-style
+                     :sources (merge (get new-style "sources") cur-sources)
+                     :layers  (concat (get new-style "layers") cur-layers)))))
 
 (defn- hide-forecast-layers
   "Given layers, hides any layer that is in the forecast-layers set."
   [layers]
-  (map (u/call-when #(-> % (get "id") (is-forecast-layer?))
+  (map (u/call-when #(-> % (get-layer-metadata "type") (is-layer-type-in-set? :forecast-layers))
                     #(set-visible % false))
        layers))
 
@@ -641,7 +658,9 @@
             layers                  (get style "layers")
             zero-idx                (->> layers
                                          (keep-indexed (fn [idx layer]
-                                                         (when (is-project-layer? (get layer "id")) idx)))
+                                                         (when (is-layer-type-in-set? (get-layer-metadata layer "type")
+                                                                                      :project-layers)
+                                                           idx)))
                                          (first))
             [before after]          (split-at zero-idx layers)
             final-layers            (vec (concat before new-layers after))]
@@ -654,14 +673,15 @@
   [id data]
   (add-icon! "video-icon" "./images/video.png")
   (let [new-source {id {:type "geojson" :data data :generateId true}}
-        new-layers [{:id     id
-                     :source id
-                     :type   "symbol"
-                     :layout {:icon-image              "video-icon"
-                              :icon-rotate             ["-" ["get" "pan"] 90]
-                              :icon-rotation-alignment "map"
-                              :icon-size               0.5}
-                     :paint  {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
+        new-layers [{:id       id
+                     :source   id
+                     :type     "symbol"
+                     :layout   {:icon-image              "video-icon"
+                                :icon-rotate             ["-" ["get" "pan"] 90]
+                                :icon-rotation-alignment "map"
+                                :icon-size               0.5}
+                     :metadata {:type (get-layer-type id)}
+                     :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn create-red-flag-layer!
@@ -669,12 +689,13 @@
   [id data]
   (let [color      ["concat" "#" ["get" "color"]]
         new-source {id {:type "geojson" :data data :generateId true}}
-        new-layers [{:id     id
-                     :source id
-                     :type   "fill"
-                     :paint  {:fill-color         color
-                              :fill-outline-color (on-hover "#000000" color)
-                              :fill-opacity       (on-hover 1 0.4)}}]]
+        new-layers [{:id       id
+                     :source   id
+                     :type     "fill"
+                     :metadata {:type (get-layer-type id)}
+                     :paint    {:fill-color         color
+                                :fill-outline-color (on-hover "#000000" color)
+                                :fill-opacity       (on-hover 1 0.4)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
 (defn- mvt-source [layer-name]
@@ -689,6 +710,7 @@
                      :source       id
                      :source-layer "fire-history"
                      :type         "fill"
+                     :metadata     {:type (get-layer-type id)}
                      :paint        {:fill-color         ["step" ["get" "Decade"]
                                                          "#cccccc"  ; Default
                                                          1990 "#ffffb2"

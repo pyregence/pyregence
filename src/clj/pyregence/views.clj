@@ -5,9 +5,8 @@
             [clojure.data.json :as json]
             [clojure.java.io   :as io]
             [cognitect.transit :as transit]
-            [hiccup.page            :refer [html5 include-css include-js]]
-            [pl.danieljanus.tagsoup :refer [parse]]
-            [pyregence.config       :refer [get-config]]))
+            [hiccup.page      :refer [html5 include-css include-js]]
+            [pyregence.config :refer [get-config]]))
 
 (defn- find-app-js []
   (as-> (slurp "target/public/cljs/manifest.edn") app
@@ -62,6 +61,41 @@
                :style {:height "1.25rem"
                        :width  "auto"}}]])]))
 
+(defn- announcement-banner []
+  (let [announcement (slurp "announcement.txt")]
+    (when (pos? (count announcement))
+      [:div#banner {:style {:background-color "#f96841"
+                            :box-shadow       "3px 1px 4px 0 rgb(0, 0, 0, 0.25)"
+                            :color            "#ffffff"
+                            :margin           "0px"
+                            :padding          "5px"
+                            :position         "fixed"
+                            :text-align       "center"
+                            :top              "0"
+                            :width            "100vw"
+                            :z-index          100}}
+       [:p {:style {:font-size    "18px"
+                    :font-weight "bold"
+                    :margin      "0 30px 0 0"}}
+        announcement]
+       [:button {:style   {:background-color "transparent"
+                           :border-color     "#ffffff"
+                           :border-radius    "50%"
+                           :border-style     "solid"
+                           :border-width     "2px"
+                           :cursor           "pointer"
+                           :display          "flex"
+                           :height           "25px"
+                           :padding          "0"
+                           :position         "fixed"
+                           :right            "10px"
+                           :top              "5px"
+                           :width            "25px"}
+                 :onClick "document.getElementById('banner').style.display='none'"}
+        [:svg {:viewBox "0 0 48 48" :fill "#ffffff"}
+         [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
+                   11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]])))
+
 (defn render-page [valid?]
   (fn [{:keys [params server-name]}]
     {:status  (if valid? 200 404)
@@ -77,22 +111,14 @@
                [:body
                 [:div#near-term-forecast
                  (header server-name)
+                 ;; TODO announcement-banner will be moved to the front end for better UX.
                  (when (.exists (io/as-file "announcement.txt"))
-                   (let [announcement (slurp "announcement.txt")]    ; TODO This will be moved to the front end for better UX.
-                     (when (pos? (count announcement))
-                       [:p {:style {:color            "#eec922"
-                                    :background-color "#e63232"
-                                    :text-align       "center"
-                                    :padding          "5px"
-                                    :margin           "0px"
-                                    :position         "fixed"
-                                    :top              "0"
-                                    :width            "100vw"
-                                    :z-index          100}}
-                        announcement])))
+                   (announcement-banner))
                  [:div#app]]
                 [:script {:type "text/javascript"}
-                 (str "window.onload = function () { pyregence.client.init("
+                 (str "window.onload = function () {
+                       setTimeout(function () {document.getElementById('banner').style.display='none'}, 10000);
+                       pyregence.client.init("
                       (json/write-str (assoc params
                                              :dev-mode  (get-config :dev-mode)
                                              :mapbox    (get-config :mapbox)
