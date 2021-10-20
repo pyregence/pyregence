@@ -425,7 +425,7 @@
     (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
                    (:body)
                    (js/JSON.parse))]
-      (if (not (some? data))
+      (if (empty? (.-features data))
         (do
           (toast-message! "There are no red flag warnings at this time.")
           (reset! show-red-flag? false))
