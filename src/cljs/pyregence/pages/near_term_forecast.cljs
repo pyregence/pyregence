@@ -646,7 +646,8 @@
 
       :reagent-render
       (fn [_]
-        [:div {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
+        [:div#near-term-forecast
+         {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
          [toast-message]
          [message-box-modal]
          (when @loading? [loading-modal])
