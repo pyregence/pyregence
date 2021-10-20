@@ -12,32 +12,46 @@
             [pyregence.pages.register           :as register]
             [pyregence.pages.reset-password     :as reset-password]
             [pyregence.pages.terms-of-use       :as terms]
-            [pyregence.pages.verify-email       :as verify-email]))
+            [pyregence.pages.verify-email       :as verify-email]
+            [pyregence.components.page-layout   :refer [wrap-page-ha
+                                                        wrap-page-hf]]))
 
 (defonce ^:private original-params (atom {}))
 
-(def ^:private uri->root-component
+(def ^:private uri->root-component-ha
+  "All root-componets for URIs that shold have a header and announcement-banner."
   {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/admin"              admin/root-component
    "/dashboard"          dashboard/root-component
    "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
-   "/help"               help/root-component
    "/login"              login/root-component
    "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
    "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
-   "/not-found"          not-found/root-component
-   "/privacy-policy"     privacy/root-component
    "/register"           register/root-component
    "/reset-password"     reset-password/root-component
-   "/terms-of-use"       terms/root-component
    "/verify-email"       verify-email/root-component})
+
+(def ^:private uri->root-component-hf
+  "All root-componets for URIs that shold have a header and a footer."
+  {"/help"               help/root-component
+   "/not-found"          not-found/root-component
+   "/privacy-policy"     privacy/root-component
+   "/terms-of-use"       terms/root-component})
 
 (defn- render-root
   "Renders the root component for the current URI."
   [params]
-  (let [uri            (-> js/window .-location .-pathname)
-        root-component (or (uri->root-component uri) (uri->root-component "/not-found"))]
-    (render [root-component params] (dom/getElement "app"))))
+  (let [uri (-> js/window .-location .-pathname)]
+    (render (cond
+              (uri->root-component-ha uri)
+              (wrap-page-ha ((uri->root-component-ha uri) params))
+
+              (uri->root-component-hf uri)
+              (wrap-page-hf ((uri->root-component-hf uri) params))
+
+              :else
+              (wrap-page-hf ((uri->root-component-hf "/not-found") params)))
+            (dom/getElement "app"))))
 
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."

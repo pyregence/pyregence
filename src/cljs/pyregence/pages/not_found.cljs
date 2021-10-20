@@ -1,5 +1,4 @@
-(ns pyregence.pages.not-found
-  (:require [pyregence.components.common :refer [footer]]))
+(ns pyregence.pages.not-found)
 
 (defn- body []
   [:div {:style {:margin-top "100px"}}
@@ -12,7 +11,6 @@
 
 (defn root-component
   "The root component for the 404 page."
-  [_] 
-  [:<>
-   [body]
-   [footer]])
+  [_]
+  (fn [_]
+    [body]))

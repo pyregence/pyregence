@@ -1,5 +1,4 @@
-(ns pyregence.pages.terms-of-use
-  (:require [pyregence.components.common :refer [footer]]))
+(ns pyregence.pages.terms-of-use)
 
 (defn- body []
   [:div {:style {:align-items    "center"
@@ -194,7 +193,6 @@
 
 (defn root-component
   "The root component for the /terms-of-use page."
-  [_] 
-  [:<>
-   [body]
-   [footer]])
+  [_]
+  (fn [_]
+    [body]))

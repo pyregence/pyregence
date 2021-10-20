@@ -1,5 +1,4 @@
-(ns pyregence.pages.privacy-policy
-  (:require [pyregence.components.common :refer [footer]]))
+(ns pyregence.pages.privacy-policy)
 
 (defn- body []
   [:div {:style {:align-items    "center"
@@ -126,7 +125,6 @@
 
 (defn root-component
   "The root component for the /privacy-policy page."
-  [_] 
-  [:<>
-   [body]
-   [footer]])
+  [_]
+  (fn [_]
+    [body]))
