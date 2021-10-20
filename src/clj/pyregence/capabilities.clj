@@ -110,6 +110,26 @@
      :model-init  model-init
      :layer-group ""}))
 
+(defn- split-fire-risk-forecast [name-string]
+  (let [[workspace layer-group] (str/split name-string #":")
+        [forecast ts1 ts2]      (str/split workspace #"_")
+        model-init         (str ts1 "_" ts2)]
+    {:workspace   workspace
+     :forecast    forecast
+     :layer-group name-string
+     :filter-set  (into #{forecast model-init} (str/split layer-group #"_"))
+     :model-init  model-init}))
+
+(defn- split-fire-weather-forecast [name-string]
+  (let [[workspace layer]  (str/split name-string #":")
+        [forecast ts1 ts2] (str/split workspace #"_")
+        model-init         (str ts1 "_" ts2)]
+    {:workspace   workspace
+     :forecast    forecast
+     :layer-group name-string
+     :filter-set  #{forecast layer model-init}
+     :model-init  model-init}))
+
 (defn process-layers! [workspace-name]
   (let [xml-response (:body (client/get (str (u/end-with (get-config :geoserver :base-url) "/")
                                              "wms?SERVICE=WMS"
@@ -138,6 +158,12 @@
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-layer-name full-name))
+
+                          (re-matches #"fire-risk-forecast_\d{8}_\d{2}:([\w\d_|-]+)+" full-name)
+                          (merge-fn (split-fire-risk-forecast full-name))
+
+                          (re-matches #"fire-weather-forecast_\d{8}_\d{2}:([\w\d|-]+)" full-name)
+                          (merge-fn (split-fire-weather-forecast full-name))
 
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
