@@ -14,7 +14,7 @@
   (reset! features (:features config)))
 
 (defn feature-enabled?
-  "Checks whether or not a specific featue is enabled."
+  "Checks whether or not a specific feature is enabled."
   [feature-name]
   (get @features feature-name))
 
@@ -58,13 +58,24 @@
                                                       [:a {:href   "https://pyrologix.com"
                                                            :target "_blank"}
                                                        "https://pyrologix.com"]
-                                                      "), 2021."]
+                                                      "), 2021."
+                                                      [:br]
+                                                      [:br]
+                                                      [:strong "California Ecosystem Climate Solutions"]
+                                                      " - Data provided by the "
+                                                      [:a {:href   "https://california-ecosystem-climate.solutions/"
+                                                           :target "_blank"}
+                                                       "California Ecosystem Climate Solutions"]
+                                                      ", Wang et al. (2021)."]
+
                                          :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
                                                                       :filter    "landfire-2.0.0"}
                                                       :cfo           {:opt-label "California Forest Obs."
                                                                       :filter    "cfo-2020"}
                                                       :ca-fuelscapes {:opt-label "2021 CA fuelscape"
-                                                                      :filter    "ca-fuelscapes"}}}
+                                                                      :filter    "ca-fuelscapes"}
+                                                      :cec           {:opt-label "CA Ecosystem Climate Solutions"
+                                                                      :filter    "cec"}}}
                                  :layer {:opt-label  "Layer"
                                          :hover-text [:p {:style {:margin-bottom "0"}}
                                                       "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
@@ -82,35 +93,42 @@
                                                                :filter          "asp"
                                                                :units           ""
                                                                :convert         #(str (u/direction %) " (" % "°)")
-                                                               :reverse-legend? false}
+                                                               :reverse-legend? false
+                                                               :disabled-for    #{:cec}}
                                                       :slp    {:opt-label       "Slope (degrees)"
                                                                :filter          "slp"
                                                                :units           "\u00B0"
-                                                               :reverse-legend? true}
+                                                               :reverse-legend? true
+                                                               :disabled-for    #{:cec}}
                                                       :dem    {:opt-label       "Elevation (ft)"
                                                                :filter          "dem"
                                                                :units           "ft"
                                                                :convert         #(u/to-precision 1 (* % 3.28084))
-                                                               :reverse-legend? true}
+                                                               :reverse-legend? true
+                                                               :disabled-for    #{:cec}}
                                                       :cc     {:opt-label       "Canopy Cover (%)"
                                                                :filter          "cc"
                                                                :units           "%"
-                                                               :reverse-legend? true}
+                                                               :reverse-legend? true
+                                                               :disabled-for    #{:cec}}
                                                       :ch     {:opt-label       "Canopy Height (m)"
                                                                :filter          "ch"
                                                                :units           "m"
                                                                :convert         #(u/to-precision 1 (/ % 10))
-                                                               :reverse-legend? true}
+                                                               :reverse-legend? true
+                                                               :disabled-for    #{:cec}}
                                                       :cbh    {:opt-label       "Canopy Base Height (m)"
                                                                :filter          "cbh"
                                                                :units           "m"
                                                                :convert         #(u/to-precision 1 (/ % 10))
-                                                               :reverse-legend? true}
+                                                               :reverse-legend? true
+                                                               :disabled-for    #{:cec}}
                                                       :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
                                                                :filter          "cbd"
                                                                :units           "kg/m\u00b3"
                                                                :convert         #(u/to-precision 2 %)
-                                                               :reverse-legend? true})}
+                                                               :reverse-legend? true
+                                                               :disabled-for    #{:cec}})}
                                  :model-init {:opt-label  "Model Creation Time"
                                               :hover-text "Time the data was created."
                                               :options    {:loading {:opt-label "Loading..."}}}}}
@@ -640,19 +658,45 @@
 (defn wms-layer-url
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
-  [layer & [layer-time]]
-  (str (mvt-url)
-       "?REQUEST=GetTile"
-       "&SERVICE=WMTS"
-       "&VERSION=1.0.0"
-       "&LAYER=" layer
-       "&STYLE="
-       "&FORMAT=image/png"
-       "&TILEMATRIX=EPSG:900913:{z}"
-       "&TILEMATRIXSET=EPSG:900913"
-       "&TILECOL={x}&TILEROW={y}"
-       (when (some? layer-time)
-         (str "&TIME=" layer-time))))
+  ([layer]
+   (str (mvt-url)
+        "?REQUEST=GetTile"
+        "&SERVICE=WMTS"
+        "&VERSION=1.0.0"
+        "&LAYER=" layer
+        "&STYLE="
+        "&FORMAT=image/png"
+        "&TILEMATRIX=EPSG:900913:{z}"
+        "&TILEMATRIXSET=EPSG:900913"
+        "&TILECOL={x}&TILEROW={y}"))
+
+  ([layer layer-time]
+   (if (feature-enabled? :image-mosaic-gwc)
+     (str (mvt-url)
+          "?REQUEST=GetTile"
+          "&SERVICE=WMTS"
+          "&VERSION=1.0.0"
+          "&LAYER=" layer
+          "&STYLE="
+          "&FORMAT=image/png"
+          "&TILEMATRIX=EPSG:900913:{z}"
+          "&TILEMATRIXSET=EPSG:900913"
+          "&TILECOL={x}&TILEROW={y}"
+          "&TIME=" layer-time)
+     (str (wms-url)
+          "?SERVICE=WMS"
+          "&VERSION=1.3.0"
+          "&REQUEST=GetMap"
+          "&FORMAT=image/png"
+          "&TRANSPARENT=true"
+          "&WIDTH=256"
+          "&HEIGHT=256"
+          "&CRS=EPSG%3A3857"
+          "&STYLES="
+          "&FORMAT_OPTIONS=dpi%3A113"
+          "&BBOX={bbox-epsg-3857}"
+          "&LAYERS=" layer
+          "&TIME=" layer-time))))
 
 (defn wfs-layer-url
   "Generates a Web Feature Service (WFS) url to download an entire vector data
@@ -715,8 +759,6 @@
   "Sets the Mapbox access token given the value from `config.edn`."
   [token]
   (reset! mapbox-access-token token))
-
-(def default-sprite "mapbox://sprites/mspencer-sig/cka8jaky90i9m1iphwh79wr04/3nae2cnmmvrdazx877w1wcuez")
 
 (defn- style-url [id]
   (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @mapbox-access-token))

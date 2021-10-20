@@ -159,9 +159,9 @@
 ;; Collapsible Panel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $collapsible-panel [show? mobile?]
+(defn- $collapsible-panel [show? mobile?]
   {:background-color ($/color-picker :bg-color)
-   :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
+   :box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
    :color            ($/color-picker :font-color)
    :height           "100%"
    :left             (if show?
@@ -174,11 +174,21 @@
    :width            (if mobile? "100%" "18rem")
    :z-index          "101"})
 
-(defn $layer-selection []
-  {:border-bottom (str "2px solid " ($/color-picker :border-color))
-   :font-size     "1.5rem"
-   :margin-bottom ".5rem"
-   :width         "100%"})
+(defn- collapsible-panel-header []
+  [:div#collapsible-panel-header
+   {:style {:background-color ($/color-picker :header-color)
+            :display          "flex"
+            :justify-content  "space-between"
+            :padding          "0.5rem 1rem"}}
+   [:span {:style {:fill         ($/color-picker :font-color)
+                   :height       "2rem"
+                   :margin-right "0.5rem"
+                   :width        "2rem"}}
+    [svg/layers]]
+   [:label {:style {:font-size "1.5rem"}}
+    "Layer Selection"]
+   [:span {:style {:margin-right "-.5rem"}}
+    [tool-button :close #(reset! show-panel? false)]]])
 
 (defn panel-dropdown [title tool-tip-text val options disabled? call-back & [selected-param-set]]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
@@ -195,10 +205,11 @@
              :value     (or val :none)
              :disabled  disabled?
              :on-change #(call-back (u/input-keyword %))}
-    (map (fn [[key {:keys [opt-label enabled?]}]]
+    (map (fn [[key {:keys [opt-label enabled? disabled-for]}]]
            [:option {:key      key
                      :value    key
-                     :disabled (and (fn? enabled?) (not (enabled?)))}
+                     :disabled (or (and (set? disabled-for) (some selected-param-set disabled-for))
+                                   (and (fn? enabled?) (not (enabled?))))}
             opt-label])
          options)]])
 
@@ -270,6 +281,7 @@
    :cursor                     "pointer"
    :fill                       ($/color-picker :font-color)
    :height                     "40px"
+   :padding                    "0"
    :width                      "28px"})
 
 (defn- collapsible-button []
@@ -284,8 +296,8 @@
                   :transform       (if @show-panel? "rotate(180deg)" "none")}}
     [svg/right-arrow]]])
 
-(defn- collapsible-toggle [mobile?]
-  [:div#collapsible-toggle
+(defn- collapsible-panel-toggle [mobile?]
+  [:div#collapsible-panel-toggle
    {:style {:display  (if (and @show-panel? mobile?) "none" "block")
             :left     "100%"
             :position "absolute"
@@ -326,17 +338,15 @@
     (fn [*params select-param! active-opacity param-options mobile?]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
-         [:div {:style {:display         "flex"
-                        :flex-direction  "column"
-                        :height          "100%"
-                        :justify-content "space-between"
-                        :overflow-y      "auto"}}
-          [collapsible-toggle mobile?]
-          [:div#layer-selection {:style {:padding "1rem"}}
-           [:div {:style {:display "flex" :justify-content "center"}}
-            [:label {:style ($layer-selection)} "Layer Selection"]
-            [:span {:style {:margin-right "-.5rem"}}
-             [tool-button :close #(reset! show-panel? false)]]]
+         [collapsible-panel-toggle mobile?]
+         [collapsible-panel-header]
+         [:div#collapsible-panel-body
+          {:style {:display         "flex"
+                   :flex-direction  "column"
+                   :height          "calc(100% - 3.25rem)"
+                   :justify-content "space-between"
+                   :overflow-y      "auto"}}
+          [:div#layer-selection {:style {:padding "0.5rem 1rem 1rem"}}
            (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
                   (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
                     ^{:key hover-text}
@@ -490,7 +500,7 @@
                                   :right
                                   [tool-button icon on-click active?]])))])
 
-(defn zoom-bar [current-layer-extent current-layer mobile? create-share-link terrain?]
+(defn zoom-bar [current-layer-extent current-layer mobile? create-share-link terrain? time-slider?]
   (r/with-let [minZoom      (r/atom 0)
                maxZoom      (r/atom 28)
                *zoom        (r/atom 10)
@@ -504,7 +514,7 @@
       (reset! minZoom min)
       (reset! maxZoom max))
     (mb/add-map-zoom-end! #(reset! *zoom %))
-    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if mobile? "90px" "36px")})}
+    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if (and mobile? time-slider?) "90px" "36px")})}
      (map-indexed (fn [i [icon hover-text on-click]]
                     ^{:key i} [tool-tip-wrapper
                                hover-text
@@ -894,7 +904,11 @@
       "Point Information"
       close-fn!
       (fn [box-height box-width]
-        (let [has-point? (mb/get-overlay-center)]
+        (let [has-point? (mb/get-overlay-center)
+              no-info    [loading-cover
+                          box-height
+                          box-width
+                          "This point does not have any information."]]
           (cond
             (not has-point?)
             [loading-cover
@@ -905,7 +919,8 @@
             (nil? last-clicked-info)
             [loading-cover box-height box-width "Loading..."]
 
-            (number? last-clicked-info)
+            (and (number? last-clicked-info)
+                 (>= last-clicked-info -50))
             [single-point-info
              box-height
              box-width
@@ -913,6 +928,10 @@
              legend-list
              units
              convert]
+
+            (or (< last-clicked-info -50)
+                (-> last-clicked-info (first) (:band) (< -50)))
+            no-info
 
             (not-empty last-clicked-info)
             [vega-information
@@ -925,11 +944,7 @@
              legend-list
              last-clicked-info]
 
-            :else
-            [loading-cover
-             box-height
-             box-width
-             "This point does not have any information."])))]]
+            :else no-info)))]]
     (finally
       (mb/remove-event! click-event))))
 
@@ -943,11 +958,11 @@
    :margin-right     ".5rem"
    :min-width        "1rem"})
 
-(defn $legend-location [show? mobile?]
-  {:left          (if show? "19rem" "1rem")
-   :max-height    (if mobile?
-                    "calc(100% - 100px)"
-                    "calc(100% - 32px)")
+(defn $legend-location [show? mobile? time-slider?]
+  {:left          (if (and show? (not mobile?)) "20rem" "2rem")
+   :max-height    (if (and mobile? time-slider?)
+                    "calc(100% - 106px)"
+                    "calc(100% - 52px)")
    :overflow-x    "hidden"
    :overflow-y    "auto"
    :padding-left  ".5rem"
@@ -956,11 +971,11 @@
    :top           "16px"
    :transition    "all 200ms ease-in"})
 
-(defn legend-box [legend-list reverse? mobile? units]
+(defn legend-box [legend-list reverse? mobile? time-slider? units]
   (reset! show-legend? (not mobile?))
-  (fn [legend-list reverse? mobile? units]
+  (fn [legend-list reverse? mobile? time-slider? units]
     (when (and @show-legend? (seq legend-list))
-      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile?))}
+      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile? time-slider?))}
        [:div {:style {:display        "flex"
                       :flex-direction "column"}}
         (map-indexed (fn [i leg]
@@ -976,10 +991,10 @@
 ;; Scale Control
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $scale-line [mobile?]
+(defn- $scale-line [mobile? time-slider?]
   {:background-color ($/color-picker :bg-color)
    :border           (str "1px solid " ($/color-picker :border-color))
-   :bottom           (if mobile? "90px" "36px")
+   :bottom           (if (and mobile? time-slider?) "90px" "36px")
    :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
    :left             "auto"
    :right            "64px"
@@ -998,11 +1013,11 @@
 
 (defn scale-bar
   "Scale bar control which resizes based on map zoom/location."
-  [mobile?]
+  [mobile? time-slider?]
   (r/with-let [max-width    100.0
                scale-params (r/atom {:distance 0 :ratio 1 :units "ft"})
                move-event   (mb/add-map-move! #(reset! scale-params (g/imperial-scale (mb/get-distance-meters))))]
-    [:div {:style ($/combine $/tool ($scale-line mobile?) {:width (* (:ratio @scale-params) max-width)})}
+    [:div#scale-bar {:style ($/combine $/tool ($scale-line mobile? time-slider?) {:width (* (:ratio @scale-params) max-width)})}
      [:div {:style ($scale-line-inner)}
       (str (:distance @scale-params) " " (:units @scale-params))]]
     (finally
