@@ -614,9 +614,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce ^:private geoserver-base-url (atom nil))
-(defn- wms-url [] (str (u/end-with @geoserver-base-url "/") "wms"))
-(defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
-(defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
+(defn- wms-url []  (str (u/end-with @geoserver-base-url "/") "wms"))
+(defn- wfs-url []  (str (u/end-with @geoserver-base-url "/") "wfs"))
+(defn- wmts-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
 
 (defn set-geoserver-base-url!
   "Sets the base URL of the Geoserver given the value from `config.edn`."
@@ -659,7 +659,7 @@
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
   ([layer]
-   (str (mvt-url)
+   (str (wmts-url)
         "?REQUEST=GetTile"
         "&SERVICE=WMTS"
         "&VERSION=1.0.0"
@@ -672,7 +672,7 @@
 
   ([layer layer-time]
    (if (feature-enabled? :image-mosaic-gwc)
-     (str (mvt-url)
+     (str (wmts-url)
           "?REQUEST=GetTile"
           "&SERVICE=WMTS"
           "&VERSION=1.0.0"
@@ -720,7 +720,7 @@
    embedded [GeoWebCache](https://www.geowebcache.org/) Web Map Tile Service (WMTS)
    supports EPSG:900913 by default, but does not support EPSG:3857 by default."
   [layer]
-  (str (mvt-url)
+  (str (wmts-url)
        "?REQUEST=GetTile"
        "&SERVICE=WMTS"
        "&VERSION=1.0.0"

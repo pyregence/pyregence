@@ -463,8 +463,9 @@
    `layer-time` can be a timestamp or range with UTC timezone
      (e.g. `'2009-11-01T00:00:00.000Z'`, `'2009-11-01T00:00:00.000Z/2009-12-01T00:00:00.000Z'`)."
   [id source opacity visibile? & [layer-time]]
-  (let [new-source {id (wms-source source layer-time)}
-        new-layer  (wms-layer id id opacity visibile?)]
+  (let [new-id     (str id layer-time)
+        new-source {new-id (wms-source source layer-time)}
+        new-layer  (wms-layer new-id new-id opacity visibile?)]
     [new-source [new-layer]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
