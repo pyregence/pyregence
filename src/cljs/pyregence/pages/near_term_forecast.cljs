@@ -647,7 +647,7 @@
       :reagent-render
       (fn [_]
         [:div {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
-         [toast-message]
+         [toast-message @mobile?]
          [message-box-modal]
          (when @loading? [loading-modal])
          [message-modal]
