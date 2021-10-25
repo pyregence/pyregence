@@ -20,28 +20,26 @@
             [pyregence.database   :refer [sql-handler]]
             [pyregence.logging    :refer [log-str]]
             [pyregence.remote-api :refer [clj-handler]]
-            [pyregence.views      :refer [data-response render-dynamic render-static]]))
+            [pyregence.views      :refer [data-response render-page]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing Handler
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; FIXME: Fill these in as you make static html pages.
-(def static-routes #{"/privacy-policy"
-                     "/terms-of-use"})
-
 ;; FIXME: Fill these in as you make app pages.
-(def dynamic-routes #{"/"
-                      "/admin"
-                      "/dashboard"
-                      "/help"
-                      "/login"
-                      "/forecast"
-                      "/long-term-forecast"
-                      "/near-term-forecast"
-                      "/register"
-                      "/reset-password"
-                      "/verify-email"})
+(def valid-routes #{"/"
+                    "/admin"
+                    "/dashboard"
+                    "/help"
+                    "/login"
+                    "/forecast"
+                    "/long-term-forecast"
+                    "/near-term-forecast"
+                    "/privacy-policy"
+                    "/register"
+                    "/reset-password"
+                    "/terms-of-use"
+                    "/verify-email"})
 
 (defn bad-uri? [uri] (str/includes? (str/lower-case uri) "php"))
 
@@ -53,11 +51,9 @@
 (defn routing-handler [{:keys [uri params] :as request}]
   (let [next-handler (cond
                        (bad-uri? uri)                 (constantly (data-response "Forbidden" {:status 403}))
-                       (contains? dynamic-routes uri) (render-dynamic)
-                       (contains? static-routes uri)  (render-static uri)
                        (str/starts-with? uri "/clj/") (token-resp params clj-handler)
                        (str/starts-with? uri "/sql/") (token-resp params sql-handler)
-                       :else                          (render-static "/not-found"))]
+                       :else                          (render-page (valid-routes uri)))]
     (next-handler request)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

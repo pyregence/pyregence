@@ -280,6 +280,7 @@
    :cursor                     "pointer"
    :fill                       ($/color-picker :font-color)
    :height                     "40px"
+   :padding                    "0"
    :width                      "28px"})
 
 (defn- collapsible-button []
@@ -424,7 +425,7 @@
     (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
                    (:body)
                    (js/JSON.parse))]
-      (if (not (some? data))
+      (if (empty? (.-features data))
         (do
           (toast-message! "There are no red flag warnings at this time.")
           (reset! show-red-flag? false))
@@ -442,7 +443,7 @@
   [show-fire-history?]
   (swap! show-fire-history? not)
   (when (and @show-fire-history? (not (mb/layer-exists? "fire-history")))
-    (mb/create-fire-history-layer! "fire-history" "fire-detections%3Afire-history"))
+    (mb/create-fire-history-layer! "fire-history" "fire-detections_fire-history%3Afire-history"))
   (mb/set-visible-by-title! "fire-history" @show-fire-history?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
