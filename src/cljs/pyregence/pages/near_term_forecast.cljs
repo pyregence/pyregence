@@ -97,21 +97,30 @@
                                                                              (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! param-layers layers)
-      (swap! *layer-idx #(max 0 (min % (- (count @param-layers) 1))))
+      (swap! *layer-idx #(max 0 (min % (- (count (or (:times (first @param-layers)) @param-layers)) 1))))
       (when-not (seq @param-layers)
         (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
 
 (defn current-layer []
-  (get @param-layers @*layer-idx))
+  (if (= (count @param-layers) 1)
+    (first @param-layers)
+    (get @param-layers @*layer-idx)))
 
 (defn get-current-layer-name []
   (:layer (current-layer) ""))
 
+(defn get-current-layer-time []
+  (when (:times (current-layer))
+    (nth (:times (current-layer)) @*layer-idx)))
+
 (defn get-current-layer-hour []
-  (:hour (current-layer) 0))
+  (if-let [current-layer-time (get-current-layer-time)]
+    (second (re-find #"[0-9]{4}-[0-9]{2}-[0-9]{2}T([0-9]{2})" current-layer-time))
+    (:hour (current-layer) 0)))
 
 (defn get-current-layer-full-time []
-  (if-let [sim-time (:sim-time (current-layer))]
+  (if-let [sim-time (or (get-current-layer-time)
+                        (:sim-time (current-layer)))]
     (u/time-zone-iso-date sim-time @show-utc?)
     ""))
 
@@ -255,7 +264,7 @@
 
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100))
+  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100) (get-current-layer-time))
   (reset-underlays!))
 
 (defn select-layer-by-hour! [hour]
@@ -300,7 +309,7 @@
     (<! (get-layers! get-model-times?))
     (let [source   (get-current-layer-name)
           style-fn (get-current-layer-key :style-fn)]
-      (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
+      (mb/reset-active-layer! source style-fn (/ @active-opacity 100) (get-current-layer-time))
       (mb/clear-popup!)
       (reset-underlays!)
       (when (some? style-fn)
