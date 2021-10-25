@@ -54,7 +54,7 @@
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $alert-box []
+(defn- $alert-box [& [mobile?]]
   {:align-items     "center"
    :background      "white"
    :border          "1.5px solid #009"
@@ -68,7 +68,7 @@
    :left            "1rem"
    :padding         ".5rem"
    :position        "fixed"
-   :width           "50%"
+   :width           (if mobile? "90%" "50%")
    :z-index         "10000"})
 
 (defn- $alert-transition [show-full?]
@@ -115,12 +115,12 @@
                                           "See console for complete list."))]))))
 (defn toast-message
   "Creates a toast message component."
-  []
+  [mobile?]
   (let [message (r/atom "")]
-    (fn []
+    (fn [mobile?]
       (let [message? (not (nil? @toast-message-text))]
         (when message? (reset! message @toast-message-text))
-        [:div#toast-message {:style ($/combine $alert-box [$alert-transition message?])}
+        [:div#toast-message {:style ($/combine ($alert-box mobile?) [$alert-transition message?])}
          [:span {:style ($/padding ".5rem")}
           (show-line-break @message)]
          [:span {:class    (<class $p-alert-close)

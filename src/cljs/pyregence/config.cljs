@@ -14,7 +14,7 @@
   (reset! features (:features config)))
 
 (defn feature-enabled?
-  "Checks whether or not a specific featue is enabled."
+  "Checks whether or not a specific feature is enabled."
   [feature-name]
   (get @features feature-name))
 
@@ -375,7 +375,7 @@
    Opacity change - All layers whose opacity should change. Excludes any underlays (fire-detections)."
   {:project-layers        #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast"
                             "fire-active" "fire-active-labels" "fire-weather-forecast"
-                            "fuels-and-topography" "fire-cameras" "red-flag"}
+                            "fuels-and-topography" "fire-cameras" "red-flag" "fire-history"}
    :forecast-layers       #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast"
                             "fire-active" "fire-active-labels" "fire-weather-forecast"
                             "fuels-and-topography"}
@@ -659,17 +659,45 @@
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
-  [layer]
-  (str (mvt-url)
-       "?REQUEST=GetTile"
-       "&SERVICE=WMTS"
-       "&VERSION=1.0.0"
-       "&LAYER=" layer
-       "&STYLE="
-       "&FORMAT=image/png"
-       "&TILEMATRIX=EPSG:900913:{z}"
-       "&TILEMATRIXSET=EPSG:900913"
-       "&TILECOL={x}&TILEROW={y}"))
+  ([layer]
+   (str (mvt-url)
+        "?REQUEST=GetTile"
+        "&SERVICE=WMTS"
+        "&VERSION=1.0.0"
+        "&LAYER=" layer
+        "&STYLE="
+        "&FORMAT=image/png"
+        "&TILEMATRIX=EPSG:900913:{z}"
+        "&TILEMATRIXSET=EPSG:900913"
+        "&TILECOL={x}&TILEROW={y}"))
+
+  ([layer layer-time]
+   (if (feature-enabled? :image-mosaic-gwc)
+     (str (mvt-url)
+          "?REQUEST=GetTile"
+          "&SERVICE=WMTS"
+          "&VERSION=1.0.0"
+          "&LAYER=" layer
+          "&STYLE="
+          "&FORMAT=image/png"
+          "&TILEMATRIX=EPSG:900913:{z}"
+          "&TILEMATRIXSET=EPSG:900913"
+          "&TILECOL={x}&TILEROW={y}"
+          "&TIME=" layer-time)
+     (str (wms-url)
+          "?SERVICE=WMS"
+          "&VERSION=1.3.0"
+          "&REQUEST=GetMap"
+          "&FORMAT=image/png"
+          "&TRANSPARENT=true"
+          "&WIDTH=256"
+          "&HEIGHT=256"
+          "&CRS=EPSG%3A3857"
+          "&STYLES="
+          "&FORMAT_OPTIONS=dpi%3A113"
+          "&BBOX={bbox-epsg-3857}"
+          "&LAYERS=" layer
+          "&TIME=" layer-time))))
 
 (defn wfs-layer-url
   "Generates a Web Feature Service (WFS) url to download an entire vector data

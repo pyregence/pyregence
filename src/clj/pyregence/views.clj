@@ -44,38 +44,38 @@
 
 (defn- announcement-banner []
   (let [announcement (slurp "announcement.txt")]
-    (when (pos? (count announcement))
-      [:div#banner {:style {:background-color "#f96841"
-                            :box-shadow       "3px 1px 4px 0 rgb(0, 0, 0, 0.25)"
-                            :color            "#ffffff"
-                            :margin           "0px"
-                            :padding          "5px"
-                            :position         "fixed"
-                            :text-align       "center"
-                            :top              "0"
-                            :width            "100vw"
-                            :z-index          100}}
-       [:p {:style {:font-size    "18px"
-                    :font-weight "bold"
-                    :margin      "0 30px 0 0"}}
-        announcement]
-       [:button {:style   {:background-color "transparent"
-                           :border-color     "#ffffff"
-                           :border-radius    "50%"
-                           :border-style     "solid"
-                           :border-width     "2px"
-                           :cursor           "pointer"
-                           :display          "flex"
-                           :height           "25px"
-                           :padding          "0"
-                           :position         "fixed"
-                           :right            "10px"
-                           :top              "5px"
-                           :width            "25px"}
-                 :onClick "document.getElementById('banner').style.display='none'"}
-        [:svg {:viewBox "0 0 48 48" :fill "#ffffff"}
-         [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
-                   11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]])))
+    [:div#banner {:style {:background-color "#f96841"
+                          :box-shadow       "3px 1px 4px 0 rgb(0, 0, 0, 0.25)"
+                          :color            "#ffffff"
+                          :display          (when (zero? (count announcement)) "none")
+                          :margin           "0px"
+                          :padding          "5px"
+                          :position         "fixed"
+                          :text-align       "center"
+                          :top              "0"
+                          :width            "100vw"
+                          :z-index          100}}
+     [:p {:style {:font-size    "18px"
+                  :font-weight "bold"
+                  :margin      "0 30px 0 0"}}
+      announcement]
+     [:button {:style   {:background-color "transparent"
+                         :border-color     "#ffffff"
+                         :border-radius    "50%"
+                         :border-style     "solid"
+                         :border-width     "2px"
+                         :cursor           "pointer"
+                         :display          "flex"
+                         :height           "25px"
+                         :padding          "0"
+                         :position         "fixed"
+                         :right            "10px"
+                         :top              "5px"
+                         :width            "25px"}
+               :onClick "document.getElementById('banner').style.display='none'"}
+      [:svg {:viewBox "0 0 48 48" :fill "#ffffff"}
+       [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
+                 11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]]))
 
 (defn- cljs-init
   "A JavaScript script that calls the `init` function in `client.cljs`.
