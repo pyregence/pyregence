@@ -1,9 +1,0 @@
-{:title "404 Not Found - Pyregence Wildfire Risk Models"
- :head [:meta {:name "description" :content "Page not found."}]
- :body [:div {:style {:margin-top "100px"}}
-        [:div {:style {:align-content   "center"
-                       :display         "flex"
-                       :justify-content "center"
-                       :margin-bottom   "6rem"}}
-         [:h1 {:style {:text-align "center"}}
-          "404 - Page Not Found"]]]}

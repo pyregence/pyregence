@@ -199,7 +199,6 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
-  (reset! legend-list [])
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all"))))) ; TODO make a more generic way to do this.
@@ -316,9 +315,10 @@
 
 (defn select-param! [val & keys]
   (swap! *params assoc-in (cons @*forecast keys) val)
+  (reset! legend-list [])
   (when-not ((set keys) :underlays)
     (let [main-key (first keys)]
-      (when (and (= main-key :fire-name))
+      (when (= main-key :fire-name)
         (select-layer! 0)
         (swap! *params assoc-in (cons @*forecast [:burn-pct]) :50)
         (reset! animate? false))
@@ -332,6 +332,7 @@
     (doseq [[_ {:keys [name]}] (get-in @*params [@*forecast :underlays])]
       (when (some? name)
         (mb/set-visible-by-title! name false)))
+    (reset! legend-list [])
     (reset! *forecast key)
     (reset! processed-params (get-forecast-opt :params))
     (reset-underlays!)
@@ -514,6 +515,7 @@
           @legend-list
           (get-any-level-key :reverse-legend?)
           @mobile?
+          (get-any-level-key :time-slider?)
           (get-current-layer-key :units)]
          [mc/tool-bar
           show-info?
@@ -524,9 +526,15 @@
           set-show-info!
           @mobile?
           user-id]
-         [mc/scale-bar @mobile?]
+         [mc/scale-bar @mobile? (get-any-level-key :time-slider?)]
          (when-not @mobile? [mc/mouse-lng-lat])
-         [mc/zoom-bar (get-current-layer-extent) (current-layer) @mobile? create-share-link terrain?]
+         [mc/zoom-bar
+          (get-current-layer-extent)
+          (current-layer)
+          @mobile?
+          create-share-link
+          terrain?
+          (get-any-level-key :time-slider?)]
          (when (get-any-level-key :time-slider?)
            [mc/time-slider
             param-layers
@@ -639,7 +647,7 @@
       :reagent-render
       (fn [_]
         [:div {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
-         [toast-message]
+         [toast-message @mobile?]
          [message-box-modal]
          (when @loading? [loading-modal])
          [message-modal]
