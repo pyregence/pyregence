@@ -369,19 +369,31 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}})
 
 (def near-term-forecast-layers
-  "All of the different layer sets for the near term forecast.
-   Project - All layers added in addition to the default Mapbox layers.
-   Forecast - All layers corresponding to a forecast. Excludes cameras and red-flag warnings.
-   Opacity change - All layers whose opacity should change. Excludes any underlays (fire-detections)."
-  {:project-layers        #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast"
-                            "fire-active" "fire-active-labels" "fire-weather-forecast"
-                            "fuels-and-topography" "fire-cameras" "red-flag" "fire-history"}
-   :forecast-layers       #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast"
-                            "fire-active" "fire-active-labels" "fire-weather-forecast"
-                            "fuels-and-topography"}
-   :opacity-change-layers #{"fire-spread-forecast" "fire-risk-forecast"
-                            "fire-active" "fire-active-labels" "fire-weather-forecast"
-                            "fuels-and-topography"}})
+  "All layers added in addition to the default Mapbox layers and their
+   associated metadata for the near term forecast.
+
+   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras.
+   change-opacity? - Layers whose opacity should change. Excludes any underlays (fire-detections)."
+  {:fire-spread-forecast  {:forecast-layer? true
+                           :change-opacity? true}
+   :fire-active           {:forecast-layer? true
+                           :change-opacity? true}
+   :fire-active-labels    {:forecast-layer? true
+                           :change-opacity? true}
+   :fire-detections       {:forecast-layer? true
+                           :change-opacity? false}
+   :fire-risk-forecast    {:forecast-layer? true
+                           :change-opacity? true}
+   :fire-weather-forecast {:forecast-layer? true
+                           :change-opacity? true}
+   :fuels-and-topography  {:forecast-layer? true
+                           :change-opacity? true}
+   :fire-cameras          {:forecast-layer? false
+                           :change-opacity? false}
+   :red-flag              {:forecast-layer? false
+                           :change-opacity? false}
+   :fire-history          {:forecast-layer? false
+                           :change-opacity? false}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WG4 Forecast
@@ -441,13 +453,17 @@
                                                    :options    {:loading {:opt-label "Loading..."}}}}}})
 
 (def long-term-forecast-layers
-  "All of the different layer sets for the long term forecast.
-   Project - All layers added in addition to the default Mapbox layers.
-   Forecast - All layers corresponding to a forecast. Excludes cameras and red-flag warnings.
-   Opacity change - All layers whose opacity should change."
-  {:project-layers        #{"wg4" "fire-cameras" "red-flag"}
-   :forecast-layers       #{"wg4"}
-   :opacity-change-layers #{"wg4"}})
+  "All layers added in addition to the default Mapbox layers and their
+   associated metadata for the loading term forecast.
+
+   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras.
+   change-opacity? - Layers whose opacity should change."
+  {:wg4          {:forecast-layer? true
+                  :change-opacity? true}
+   :fire-cameras {:forecast-layer? false
+                  :change-opacity? false}
+   :red-flag     {:forecast-layer? false
+                  :change-opacity? false}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Forecast Configuration

@@ -23,9 +23,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
-(defonce the-map    (r/atom nil))
-;; Layer sets for a forecast as defined in `config.cljs`
-(defonce layer-sets (r/atom nil))
+(defonce the-map        (r/atom nil))
+;; Project layers (and their associated metadata) for a forecast as defined in `config.cljs`
+(defonce project-layers (r/atom nil))
 
 (def ^:private the-marker    (r/atom nil))
 (def ^:private the-popup     (r/atom nil))
@@ -71,12 +71,10 @@
     (when (some? metadata)
       (u/try-js-aget metadata property))))
 
-(defn- is-layer-type-in-set?
-  "Checks whether or not a layer type is in a specified layer set."
-  [type layer-set]
-  (if ((layer-set @layer-sets) type)
-    true
-    false))
+(defn- get-layer-type-metadata-property
+  "Gets the specified metadata property based on a layer's type."
+  [type metadata-property]
+  (get-in @project-layers [(keyword type) metadata-property]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Information
@@ -419,7 +417,7 @@
   [id opacity] ;TODO, this function doesn't make sense as is because it sets the opacity of all layers currently active, not just one layer by id.
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
-        new-layers (map (u/call-when #(-> % (get-layer-metadata "type") (is-layer-type-in-set? :opacity-change-layers))
+        new-layers (map (u/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :change-opacity?))
                                      #(set-opacity % opacity))
                         (get style "layers"))]
     (update-style! style :layers new-layers)))
@@ -602,11 +600,9 @@
                            (u/filterm (fn [[k _]]
                                         (let [sname (name k)]
                                           (or (is-terrain? sname)
-                                              (is-layer-type-in-set? (get-layer-metadata-by-id sname "type")
-                                                                     :project-layers))))))
+                                              (some? (get-layer-metadata-by-id sname "type")))))))
           cur-layers  (->> (get cur-style "layers")
-                           (filter #(is-layer-type-in-set? (get-layer-metadata % "type")
-                                                           :project-layers)))
+                           (filter #(some? (get-layer-metadata % "type"))))
           new-style   (-> (<! style-chan)
                           (js->clj))]
       (update-style! cur-style
@@ -616,7 +612,7 @@
 (defn- hide-forecast-layers
   "Given layers, hides any layer that is in the forecast-layers set."
   [layers]
-  (map (u/call-when #(-> % (get-layer-metadata "type") (is-layer-type-in-set? :forecast-layers))
+  (map (u/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :forecast-layer?))
                     #(set-visible % false))
        layers))
 
@@ -658,8 +654,7 @@
             layers                  (get style "layers")
             zero-idx                (->> layers
                                          (keep-indexed (fn [idx layer]
-                                                         (when (is-layer-type-in-set? (get-layer-metadata layer "type")
-                                                                                      :project-layers)
+                                                         (when (some? (get-layer-metadata layer "type"))
                                                            idx)))
                                          (first))
             [before after]          (split-at zero-idx layers)
@@ -735,13 +730,13 @@
 
 (defn init-map!
   "Initializes the Mapbox map inside of `container` (e.g. \"map\").
-   Sets the proper layer sets based on the forecast type."
+   Specifies the proper project layers based on the forecast type."
   [container-id layers & [opts]]
   (set! (.-accessToken mapbox) @c/mapbox-access-token)
   (when-not (.supported mapbox)
     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
                    "Please use the latest version of Chrome, Safari, or Firefox.")))
-  (reset! layer-sets layers)
+  (reset! project-layers layers)
   (reset! the-map
           (Map.
            (clj->js (merge {:container   container-id
