@@ -375,7 +375,7 @@
    Opacity change - All layers whose opacity should change. Excludes any underlays (fire-detections)."
   {:project-layers        #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast"
                             "fire-active" "fire-active-labels" "fire-weather-forecast"
-                            "fuels-and-topography" "fire-cameras" "red-flag"}
+                            "fuels-and-topography" "fire-cameras" "red-flag" "fire-history"}
    :forecast-layers       #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast"
                             "fire-active" "fire-active-labels" "fire-weather-forecast"
                             "fuels-and-topography"}
