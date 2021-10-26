@@ -52,18 +52,13 @@
 ;; Page Layouts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn wrap-page-ha
-  "Specifies the content to go inside of the [:body [:div#app]] for a page with a header and announcement banner."
-  [root-component]
+(defn wrap-page
+  "Specifies the content to go inside of the [:body [:div#app]] for a page.
+   By default, a page does not include a footer unless specified."
+  [root-component & [footer?]]
   [:<>
    [header]
    ;[announcement-banner] ; TODO: move announcement-banner from views.clj to here.
-   [root-component]])
-
-(defn wrap-page-hf
-  "Specifies the content to go inside of the [:body [:div#app]] for a page with a header and footer."
-  [root-component]
-  [:<>
-   [header]
    [root-component]
-   [footer]])
+   (when footer?
+     [footer])])
