@@ -42,13 +42,16 @@
   (let [uri (-> js/window .-location .-pathname)]
     (render (cond
               (uri->root-component-ha uri)
-              (wrap-page #((uri->root-component-ha uri) params))
+              (wrap-page #((uri->root-component-ha uri) params)
+                         :announcement (:announcement params))
 
               (uri->root-component-hf uri)
-              (wrap-page #((uri->root-component-hf uri) params) true)
+              (wrap-page #((uri->root-component-hf uri) params)
+                         :footer? true)
 
               :else
-              (wrap-page not-found/root-component true))
+              (wrap-page not-found/root-component
+                         :footer? true))
             (dom/getElement "app"))))
 
 (defn- ^:export init
