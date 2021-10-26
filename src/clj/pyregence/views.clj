@@ -16,8 +16,13 @@
     (last app)
     (str "/cljs/" app)))
 
-(defn head-meta-css []
+(defn head-meta-css
+  "Specifies head tag elements."
+  []
   [:head
+   [:title "Wildfire Forecasts"]
+   [:meta {:name    "description"
+           :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
    [:meta {:name "robots" :content "index, follow"}]
    [:meta {:charset "utf-8"}]
    [:meta {:name    "viewport"
@@ -30,36 +35,12 @@
    [:meta {:property "twitter:title" :content "Pyrecast"}]
    [:meta {:property "twitter:image" :content "https://pyrecast.org/images/pyrecast-logo-social-media.png"}]
    [:meta {:property "twitter:card" :content "summary_large_image"}]
-   (include-css "/css/style.css")
    [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
    [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
    [:script "window.name = 'pyrecast'"]
-   [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]])
-
-(defn header [server-name]
-  (let [pyrecast? (str/ends-with? server-name "pyrecast.org")]
-    [:div {:id    "header"
-           :style {:align-items     "center"
-                   :display         "flex"
-                   :justify-content "space-between"}}
-     [:a {:rel   "home"
-          :href  (if pyrecast? "/" "https://pyregence.org")
-          :title "Pyregence"
-          :style {:margin-bottom "0.3125rem"
-                  :margin-left   "10%"
-                  :margin-top    "0.3125rem"}}
-      [:img {:src   (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
-             :alt   "Pyregence Logo"
-             :style {:height "40px"
-                     :width  "auto"}}]]
-     (when pyrecast?
-       [:a {:href   "https://pyregence.org"
-            :target "pyregence"
-            :style  {:margin-right "5%"}}
-        [:img {:src   "/images/powered-by-pyregence.svg"
-               :alt   "Powered by Pyregence Logo"
-               :style {:height "1.25rem"
-                       :width  "auto"}}]])]))
+   [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]
+   (include-css "/css/style.css" "/css/mapbox-gl-v2.3.1.css")
+   (include-js "/js/mapbox-gl-v2.3.1.js" (find-app-js))])
 
 (defn- announcement-banner []
   (let [announcement (slurp "announcement.txt")]
@@ -96,35 +77,33 @@
        [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
                  11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]]))
 
+(defn- cljs-init
+  "A JavaScript script that calls the `init` function in `client.cljs`.
+   Provides the entry point for rendering the content on a page."
+  [params]
+  [:script {:type "text/javascript"}
+   (str "window.onload = function () {
+         setTimeout(function () {document.getElementById('banner').style.display='none'}, 10000);
+         pyregence.client.init("
+        (json/write-str (assoc params
+                               :dev-mode  (get-config :dev-mode)
+                               :mapbox    (get-config :mapbox)
+                               :features  (get-config :features)
+                               :geoserver (get-config :geoserver)))
+        "); };")])
+
 (defn render-page [valid?]
   (fn [{:keys [params server-name]}]
     {:status  (if valid? 200 404)
      :headers {"Content-Type" "text/html"}
      :body    (html5
-               [:head
-                (head-meta-css)
-                [:title "Wildfire Forecasts"]
-                [:meta {:name    "description"
-                        :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
-                (include-css "/css/mapbox-gl-v2.3.1.css")
-                (include-js "/js/mapbox-gl-v2.3.1.js" (find-app-js))]
+               (head-meta-css)
                [:body
-                [:div#near-term-forecast
-                 (header server-name)
-                 ;; TODO announcement-banner will be moved to the front end for better UX.
-                 (when (.exists (io/as-file "announcement.txt"))
-                   (announcement-banner))
-                 [:div#app]]
-                [:script {:type "text/javascript"}
-                 (str "window.onload = function () {
-                       setTimeout(function () {document.getElementById('banner').style.display='none'}, 10000);
-                       pyregence.client.init("
-                      (json/write-str (assoc params
-                                             :dev-mode  (get-config :dev-mode)
-                                             :mapbox    (get-config :mapbox)
-                                             :features  (get-config :features)
-                                             :geoserver (get-config :geoserver)))
-                      "); };")]])}))
+                [:div#app]
+                ;; TODO announcement-banner will be moved to the wrap-page-ha function.
+                (when (.exists (io/as-file "announcement.txt"))
+                  (announcement-banner))
+                (cljs-init params)])}))
 
 (defn body->transit [body]
   (let [out    (ByteArrayOutputStream. 4096)
