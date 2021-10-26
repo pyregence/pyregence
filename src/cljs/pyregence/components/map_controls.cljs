@@ -308,6 +308,17 @@
       :left
       [collapsible-button]])])
 
+(defn- collapsible-panel-section
+  "A section component to differentiate content in the collapsible panel."
+  [id body]
+  [:section {:id    (str "section-" id)
+             :style {:padding "0.75rem 0.6rem"}}
+   [:div {:style {:background-color ($/color-picker :header-color 0.6)
+                  :border-radius "8px"
+                  :box-shadow    "0px 0px 3px #bbbbbb"
+                  :padding       "0.5rem"}}
+    body]])
+
 (defn- help-section []
   [:div {:style {:display         "flex"
                  :justify-content "center"}}
@@ -319,17 +330,6 @@
                  :margin      "0"
                  :text-align  "center"}}
     "Learn more about the data."]])
-
-(defn- collapsible-panel-section
-  "A section component to differentiate content in the collapsible panel."
-  [id body]
-  [:section {:id    (str "section-" id)
-             :style {:padding "0.75rem 0.6rem"}}
-   [:div {:style {:background-color ($/color-picker :header-color 0.6)
-                  :border-radius "8px"
-                  :box-shadow    "0px 0px 3px #bbbbbb"
-                  :padding       "0.5rem"}}
-    body]])
 
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [*base-map        (r/atom c/base-map-default)
@@ -378,16 +378,16 @@
                                        (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]
            [collapsible-panel-section
             "base-map"
-            (panel-dropdown
+            [panel-dropdown
              "Base Map"
              "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
              @*base-map
              (c/base-map-options)
              false
-             select-base-map!)]]
+             select-base-map!]]]
           [collapsible-panel-section
            "help"
-           (help-section)]]]))))
+           [help-section]]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Share Tool
