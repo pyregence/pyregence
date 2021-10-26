@@ -328,6 +328,17 @@
                    :text-align  "center"}}
       "Learn more about the data."]]]])
 
+(defn- opacity-input [active-opacity]
+  [:div {:style {:margin-top "0.25rem"}}
+   [:label (str "Opacity: " @active-opacity)]
+   [:input {:style     {:width "100%"}
+            :type      "range"
+            :min       "0"
+            :max       "100"
+            :value     @active-opacity
+            :on-change #(do (reset! active-opacity (u/input-int-value %))
+                            (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]])
+
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
@@ -346,30 +357,24 @@
                    :justify-content "space-between"
                    :overflow-y      "auto"}}
           [:div#layer-selection {:style {:padding "0.5rem 1rem 1rem"}}
-           (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
-                  (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                    ^{:key hover-text}
-                    [:<>
-                     [panel-dropdown
-                      opt-label
-                      hover-text
-                      (get *params key)
-                      sorted-options
-                      (= 1 (count sorted-options))
-                      #(select-param! % key)
-                      selected-param-set]
-                     (when underlays
-                       [optional-layers underlays *params select-param!])]))
-                param-options)
-           [:div {:style {:margin-top ".5rem"}}
-            [:label (str "Opacity: " @active-opacity)]
-            [:input {:style     {:width "100%"}
-                     :type      "range"
-                     :min       "0"
-                     :max       "100"
-                     :value     @active-opacity
-                     :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                     (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
+           (doall (map-indexed (fn [idx
+                                    [key {:keys [opt-label hover-text options underlays sort?]}]]
+                                 (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                                   ^{:key hover-text}
+                                   [:<>
+                                    [panel-dropdown
+                                     opt-label
+                                     hover-text
+                                     (get *params key)
+                                     sorted-options
+                                     (= 1 (count sorted-options))
+                                     #(select-param! % key)
+                                     selected-param-set]
+                                    (when (zero? idx)
+                                     [opacity-input active-opacity])
+                                    (when underlays
+                                      [optional-layers underlays *params select-param!])]))
+                       param-options))
            [panel-dropdown
             "Base Map"
             "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
