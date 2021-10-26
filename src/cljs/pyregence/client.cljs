@@ -19,7 +19,7 @@
 (defonce ^:private original-params (atom {}))
 
 (def ^:private uri->root-component-ha
-  "All root-componets for URIs that shold have a header and announcement-banner."
+  "All root-components for URIs that should have a header and announcement-banner."
   {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/admin"              admin/root-component
    "/dashboard"          dashboard/root-component
@@ -32,11 +32,10 @@
    "/verify-email"       verify-email/root-component})
 
 (def ^:private uri->root-component-hf
-  "All root-componets for URIs that shold have a header and a footer."
-  {"/help"               help/root-component
-   "/not-found"          not-found/root-component
-   "/privacy-policy"     privacy/root-component
-   "/terms-of-use"       terms/root-component})
+  "All root-components for URIs that should have a header and a footer."
+  {"/help"           help/root-component
+   "/privacy-policy" privacy/root-component
+   "/terms-of-use"   terms/root-component})
 
 (defn- render-root
   "Renders the root component for the current URI."
@@ -44,13 +43,13 @@
   (let [uri (-> js/window .-location .-pathname)]
     (render (cond
               (uri->root-component-ha uri)
-              (wrap-page-ha ((uri->root-component-ha uri) params))
+              (wrap-page-ha #((uri->root-component-ha uri) params))
 
               (uri->root-component-hf uri)
-              (wrap-page-hf ((uri->root-component-hf uri) params))
+              (wrap-page-hf #((uri->root-component-hf uri) params))
 
               :else
-              (wrap-page-hf ((uri->root-component-hf "/not-found") params)))
+              (wrap-page-hf not-found/root-component))
             (dom/getElement "app"))))
 
 (defn- ^:export init
@@ -61,7 +60,7 @@
                      (reset! original-params
                              (js->clj params :keywordize-keys true))
                      @original-params)]
-    (c/set-dev-mode! (get-in cur-params [:dev-mode]))
+    (c/set-dev-mode! (:dev-mode cur-params))
     (c/set-feature-flags! cur-params)
     (c/set-geoserver-base-url! (get-in cur-params [:geoserver :base-url]))
     (c/set-mapbox-access-token! (get-in cur-params [:mapbox :access-token]))
