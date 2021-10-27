@@ -101,7 +101,7 @@
 
 (defn wrap-page
   "Specifies the content to go inside of the [:body [:div#app]] for a page.
-   By default, a page does not include an announcement banner or footer unless specified."
+   By default, a page does not include a footer unless specified."
   [root-component & {:keys [footer?]}]
   [:<>
    [header]
