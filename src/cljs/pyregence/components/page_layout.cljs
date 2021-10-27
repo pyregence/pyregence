@@ -1,5 +1,7 @@
 (ns pyregence.components.page-layout
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [pyregence.components.messaging :refer [toast-message
+                                                    process-toast-messages!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
@@ -56,8 +58,10 @@
   "Specifies the content to go inside of the [:body [:div#app]] for a page.
    By default, a page does not include a footer unless specified."
   [root-component & [footer?]]
+  (process-toast-messages!)
   [:<>
    [header]
+   [toast-message]
    ;[announcement-banner] ; TODO: move announcement-banner from views.clj to here.
    [root-component]
    (when footer?
