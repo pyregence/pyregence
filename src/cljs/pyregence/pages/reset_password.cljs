@@ -4,9 +4,7 @@
             [pyregence.utils    :as u]
             [pyregence.styles   :as $]
             [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!
-                                                    toast-message
-                                                    process-toast-messages!]]))
+            [pyregence.components.messaging :refer [toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -59,10 +57,8 @@
   [params]
   (reset! email     (:email     params ""))
   (reset! reset-key (:reset-key params ""))
-  (process-toast-messages!)
   (fn [_]
     [:<>
-     [toast-message]
      [:div {:style ($/combine ($/disabled-group @pending?)
                               {:display "flex" :justify-content "center" :margin "5rem"})}
       [simple-form

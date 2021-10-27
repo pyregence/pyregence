@@ -6,9 +6,7 @@
             [pyregence.utils  :as u]
             [pyregence.styles :as $]
             [pyregence.components.common    :refer [check-box labeled-input]]
-            [pyregence.components.messaging :refer [toast-message!
-                                                    toast-message
-                                                    process-toast-messages!]]))
+            [pyregence.components.messaging :refer [toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -171,12 +169,10 @@
   "The root component for the /admin page.
    Displays the organization list, settings, and users."
   [{:keys [user-id]}]
-  (process-toast-messages!)
   (reset! _user-id user-id)
   (get-org-list)
   (fn [_]
     [:<>
-     [toast-message]
      [:div {:style {:display "flex" :justify-content "center" :padding "2rem 8rem"}}
       [:div {:style {:flex 1 :padding "1rem"}}
        [org-list]]
