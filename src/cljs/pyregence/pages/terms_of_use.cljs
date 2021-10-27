@@ -1,7 +1,8 @@
-(ns pyregence.pages.terms-of-use
-  (:require [pyregence.components.common :refer [footer]]))
+(ns pyregence.pages.terms-of-use)
 
-(defn- body []
+(defn root-component
+  "The root component for the /terms-of-use page."
+  [_]
   [:div {:style {:align-items    "center"
                  :display        "flex"
                  :flex-direction "column"
@@ -191,10 +192,3 @@
      [:p
       [:strong [:u "Changes to the Terms"]]
       " We may change these Terms at any time. We will provide reasonable notice, including by posting a revised version of these Terms, which are effective as of the date posted through the Site. Your use of our Site is subject to the Terms posted on our Site at the time of your use. Your continued use of our Site following the posting of revised Terms means that you accept to the changes. However, any changes to the Dispute Resolution Terms set forth in Section VII will not apply to any Dispute for which the parties have actual notice on or prior to the date the change is posted on our Site."]]]])
-
-(defn root-component
-  "The root component for the /terms-of-use page."
-  [_] 
-  [:<>
-   [body]
-   [footer]])

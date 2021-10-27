@@ -308,25 +308,28 @@
       :left
       [collapsible-button]])])
 
+(defn- collapsible-panel-section
+  "A section component to differentiate content in the collapsible panel."
+  [id body]
+  [:section {:id    (str "section-" id)
+             :style {:padding "0.75rem 0.6rem"}}
+   [:div {:style {:background-color ($/color-picker :header-color 0.6)
+                  :border-radius "8px"
+                  :box-shadow    "0px 0px 3px #bbbbbb"
+                  :padding       "0.5rem"}}
+    body]])
+
 (defn- help-section []
-  [:section#help-section {:style {:width "100%"}}
-   [:article {:style {:margin        "0.5rem 0"
-                      :padding-left  "1rem"
-                      :padding-right "1rem"}}
-    [:div {:style {:background      ($/color-picker :transparent)
-                   :border-radius   "8px"
-                   :box-shadow      "0px 0px 5px #bbbbbb"
-                   :display         "flex"
-                   :justify-content "center"
-                   :padding         "0.5em"}}
-     [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
-          :target "_blank"
-          :style  {:color       ($/color-picker :font-color)
-                   :font-family "Avenir"
-                   :font-style  "italic"
-                   :margin      "0"
-                   :text-align  "center"}}
-      "Learn more about the data."]]]])
+  [:div {:style {:display         "flex"
+                 :justify-content "center"}}
+   [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
+        :target "_blank"
+        :style  {:color       ($/color-picker :font-color)
+                 :font-family "Avenir"
+                 :font-style  "italic"
+                 :margin      "0"
+                 :text-align  "center"}}
+    "Learn more about the data."]])
 
 (defn- opacity-input [active-opacity]
   [:div {:style {:margin-top "0.25rem"}}
@@ -356,33 +359,40 @@
                    :height          "calc(100% - 3.25rem)"
                    :justify-content "space-between"
                    :overflow-y      "auto"}}
-          [:div#layer-selection {:style {:padding "0.5rem 1rem 1rem"}}
-           (doall (map-indexed (fn [idx
-                                    [key {:keys [opt-label hover-text options underlays sort?]}]]
-                                 (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                                   ^{:key hover-text}
-                                   [:<>
-                                    [panel-dropdown
-                                     opt-label
-                                     hover-text
-                                     (get *params key)
-                                     sorted-options
-                                     (= 1 (count sorted-options))
-                                     #(select-param! % key)
-                                     selected-param-set]
-                                    (when (zero? idx)
-                                     [opacity-input active-opacity])
-                                    (when underlays
-                                      [optional-layers underlays *params select-param!])]))
-                       param-options))
-           [panel-dropdown
-            "Base Map"
-            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
-            @*base-map
-            (c/base-map-options)
-            false
-            select-base-map!]]
-          [help-section]]]))))
+          [:div#section-wrapper
+           [collapsible-panel-section
+            "layer-selection"
+            [:<>
+             (doall (map-indexed (fn [idx
+                                      [key {:keys [opt-label hover-text options underlays sort?]}]]
+                                   (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                                     ^{:key hover-text}
+                                     [:<>
+                                      [panel-dropdown
+                                       opt-label
+                                       hover-text
+                                       (get *params key)
+                                       sorted-options
+                                       (= 1 (count sorted-options))
+                                       #(select-param! % key)
+                                       selected-param-set]
+                                      (when (zero? idx)
+                                       [opacity-input active-opacity])
+                                      (when underlays
+                                        [optional-layers underlays *params select-param!])]))
+                         param-options))]]
+           [collapsible-panel-section
+            "base-map"
+            [panel-dropdown
+             "Base Map"
+             "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
+             @*base-map
+             (c/base-map-options)
+             false
+             select-base-map!]]]
+          [collapsible-panel-section
+           "help"
+           [help-section]]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Share Tool

@@ -1,7 +1,8 @@
-(ns pyregence.pages.privacy-policy
-  (:require [pyregence.components.common :refer [footer]]))
+(ns pyregence.pages.privacy-policy)
 
-(defn- body []
+(defn root-component
+  "The root component for the /privacy-policy page."
+  [_]
   [:div {:style {:align-items    "center"
                  :display        "flex"
                  :flex-direction "column"
@@ -123,10 +124,3 @@
      "If you have any questions regarding this Privacy Policy, you can contact us at "
      [:a {:href "mailto:contact@pyregence.org"} "contact@pyregence.org"
       "."]]]])
-
-(defn root-component
-  "The root component for the /privacy-policy page."
-  [_] 
-  [:<>
-   [body]
-   [footer]])

@@ -43,8 +43,8 @@
                          (color-picker :white)
                          (color-picker :black))
      :header-color     (if @light?
-                         "rgb(235, 235, 235)"
-                         "rgb(24, 30, 36)")
+                         (str "rgb(235, 235, 235, " alpha ")")
+                         (str "rgb(24, 30, 36, "    alpha ")"))
      :black            (str "rgba(0, 0, 0, "       alpha ")")
      :blue             (str "rgba(0, 0, 175, "     alpha ")")
      :box-tan          (str "rgba(249, 248, 242, " alpha ")")
