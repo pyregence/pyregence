@@ -59,10 +59,11 @@
    By default, a page does not include a footer unless specified."
   [root-component & [footer?]]
   (process-toast-messages!)
-  [:<>
-   [header]
-   [toast-message]
-   ;[announcement-banner] ; TODO: move announcement-banner from views.clj to here.
-   [root-component]
-   (when footer?
-     [footer])])
+  (fn [_]
+    [:<>
+     [header]
+     [toast-message]
+     ;[announcement-banner] ; TODO: move announcement-banner from views.clj to here.
+     [root-component]
+     (when footer?
+       [footer])]))
