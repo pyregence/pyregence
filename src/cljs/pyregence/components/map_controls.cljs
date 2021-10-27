@@ -363,24 +363,22 @@
            [collapsible-panel-section
             "layer-selection"
             [:<>
-             (doall (map-indexed (fn [idx
-                                      [key {:keys [opt-label hover-text options underlays sort?]}]]
-                                   (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                                     ^{:key hover-text}
-                                     [:<>
-                                      [panel-dropdown
-                                       opt-label
-                                       hover-text
-                                       (get *params key)
-                                       sorted-options
-                                       (= 1 (count sorted-options))
-                                       #(select-param! % key)
-                                       selected-param-set]
-                                      (when (zero? idx)
-                                       [opacity-input active-opacity])
-                                      (when underlays
-                                        [optional-layers underlays *params select-param!])]))
-                         param-options))]]
+             (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
+                    (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                      ^{:key hover-text}
+                      [:<>
+                       [panel-dropdown
+                        opt-label
+                        hover-text
+                        (get *params key)
+                        sorted-options
+                        (= 1 (count sorted-options))
+                        #(select-param! % key)
+                        selected-param-set]
+                       (when underlays
+                         [optional-layers underlays *params select-param!])]))
+                  param-options)
+             [opacity-input active-opacity]]]
            [collapsible-panel-section
             "base-map"
             [panel-dropdown
