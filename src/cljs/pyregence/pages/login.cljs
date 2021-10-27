@@ -4,9 +4,7 @@
             [pyregence.utils    :as u]
             [pyregence.styles   :as $]
             [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!
-                                                    toast-message
-                                                    process-toast-messages!]]))
+            [pyregence.components.messaging :refer [toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -64,25 +62,22 @@
   "The root component for the /login page.
    Displays either the login form or request new password form and a link to the register page."
   [_]
-  (process-toast-messages!)
-  (fn [_]
-    [:<>
-     [toast-message]
-     [:div {:style ($/combine ($/disabled-group @pending?)
-                              {:display "flex" :justify-content "center" :margin "5rem"})}
-      (if @forgot?
-        [simple-form
-         "Request New Password"
-         "Submit"
-         [["Email" email "email" "email"]]
-         request-password!]
-        [simple-form
-         "Log in"
-         "Log in"
-         [["Email"    email    "email"    "email"]
-          ["Password" password "password" "current-password"]]
-         log-in!
-         reset-link])]
-     [:div {:style ($/align "flex" "center")}
-      "Don't have an account?  "
-      [:a {:href "/register" :style {:margin-left "0.2rem"}} "Register here."]]]))
+  [:<>
+   [:div {:style ($/combine ($/disabled-group @pending?)
+                            {:display "flex" :justify-content "center" :margin "5rem"})}
+    (if @forgot?
+      [simple-form
+       "Request New Password"
+       "Submit"
+       [["Email" email "email" "email"]]
+       request-password!]
+      [simple-form
+       "Log in"
+       "Log in"
+       [["Email"    email    "email"    "email"]
+        ["Password" password "password" "current-password"]]
+       log-in!
+       reset-link])]
+   [:div {:style ($/align "flex" "center")}
+    "Don't have an account?  "
+    [:a {:href "/register" :style {:margin-left "0.2rem"}} "Register here."]]])

@@ -4,9 +4,7 @@
             [pyregence.utils    :as u]
             [pyregence.styles   :as $]
             [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!
-                                                    toast-message
-                                                    process-toast-messages!]]))
+            [pyregence.components.messaging :refer [toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -64,21 +62,18 @@
   "The root component for the /register page.
    Displays the register form and a link to the login page."
   [_]
-  (process-toast-messages!)
-  (fn [_]
-    [:<>
-     [toast-message]
-     [:div {:style ($/combine ($/disabled-group @pending?)
-                              {:display "flex" :justify-content "center" :margin "5rem"})}
-      [simple-form
-       "Register"
-       "Register"
-       [["Email"            email       "email"    "email"]
-        ["Full Name"        full-name   "text"     "name"]
-        ["Password"         password    "password" "new-password"]
-        ["Confirm Password" re-password "password" "confirm-password"]]
-       register!]]
-     [:div {:style ($/align "flex" "center")}
-      "Already have an account?  "
-      [:a {:href "/login" :style {:margin-left "0.2rem"}} "Log in here"]
-      "."]]))
+  [:<>
+   [:div {:style ($/combine ($/disabled-group @pending?)
+                            {:display "flex" :justify-content "center" :margin "5rem"})}
+    [simple-form
+     "Register"
+     "Register"
+     [["Email"            email       "email"    "email"]
+      ["Full Name"        full-name   "text"     "name"]
+      ["Password"         password    "password" "new-password"]
+      ["Confirm Password" re-password "password" "confirm-password"]]
+     register!]]
+   [:div {:style ($/align "flex" "center")}
+    "Already have an account?  "
+    [:a {:href "/login" :style {:margin-left "0.2rem"}} "Log in here"]
+    "."]])

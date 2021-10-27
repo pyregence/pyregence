@@ -16,9 +16,7 @@
             [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
             [pyregence.components.messaging :refer [message-box-modal
-                                                    toast-message
-                                                    toast-message!
-                                                    process-toast-messages!]]
+                                                    toast-message!]]
             [pyregence.components.svg-icons :refer [pin]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -640,7 +638,6 @@
                           (js/setTimeout mb/resize-map! 50))]
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
-          (process-toast-messages!)
           (initialize! params)
           (update-fn)))
 
@@ -648,7 +645,6 @@
       (fn [_]
         [:div#near-term-forecast
          {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
-         [toast-message @mobile?]
          [message-box-modal]
          (when @loading? [loading-modal])
          [message-modal]

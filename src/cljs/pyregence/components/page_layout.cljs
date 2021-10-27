@@ -4,6 +4,8 @@
             [clojure.string     :as str]
             [clojure.core.async :refer [<! go timeout]]
             [pyregence.styles   :as $]
+            [pyregence.components.messaging :refer [toast-message
+                                                    process-toast-messages!]]
             [pyregence.components.svg-icons :refer [close]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,10 +106,13 @@
   "Specifies the content to go inside of the [:body [:div#app]] for a page.
    By default, a page does not include a footer unless specified."
   [root-component & {:keys [footer?]}]
-  [:<>
-   [header]
-   (when-not (empty? @announcement)
-     [announcement-banner])
-   [root-component]
-   (when footer?
-     [footer])])
+  (process-toast-messages!)
+  (fn [_]
+    [:<>
+     [header]
+     [toast-message]
+     (when-not (empty? @announcement)
+       [announcement-banner])
+     [root-component]
+     (when footer?
+       [footer])]))
