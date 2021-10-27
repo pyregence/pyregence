@@ -1,8 +1,21 @@
 (ns pyregence.components.page-layout
-  (:require [clojure.string   :as str]
-            [herb.core        :refer [<class]]
-            [pyregence.styles :as $]
+  (:require [reagent.core       :as r]
+            [herb.core          :refer [<class]]
+            [clojure.string     :as str]
+            [clojure.core.async :refer [<! go timeout]]
+            [pyregence.styles   :as $]
             [pyregence.components.svg-icons :refer [close]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce announcement (r/atom ""))
+
+(defn set-announcement-text!
+  "Sets the text for the announcement banner given the value from `config.edn`."
+  [text]
+  (reset! announcement text))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
@@ -33,35 +46,36 @@
                :style {:height "1.25rem"
                        :width  "auto"}}]])]))
 
-(defn- announcement-banner [announcement]
-  [:div#banner {:style {:background-color "#f96841"
-                        :box-shadow       "3px 1px 4px 0 rgb(0, 0, 0, 0.25)"
-                        :color            "#ffffff"
-                        :display          (when (zero? (count announcement)) "none")
-                        :margin           "0px"
-                        :padding          "5px"
-                        :position         "fixed"
-                        :text-align       "center"
-                        :top              "0"
-                        :width            "100vw"
-                        :z-index          100}}
-   [:p {:style {:font-size    "18px"
-                :font-weight "bold"
-                :margin      "0 30px 0 0"}}
-    announcement]
-   [:button {:class   (<class $/p-button :transparent :white :white :white :black)
-             :style   {:border-radius "50%"
-                       :padding       "0"
-                       :position      "fixed"
-                       :right         "10px"
-                       :top           "5px"}
-             :on-click #(-> js/document
-                            (.getElementById "banner")
-                            (.. -style -display)
-                            (set! "none"))}
-    [:div {:style {:height "23px"
-                   :width  "23px"}}
-     [close]]]])
+(defn- announcement-banner []
+  (r/with-let [show? (r/atom (pos? (count @announcement)))
+               _     (go
+                      (<! (timeout 7500))
+                      (reset! show? false))]
+    [:div#banner {:style {:background-color "#f96841"
+                          :box-shadow       "3px 1px 4px 0 rgb(0, 0, 0, 0.25)"
+                          :color            "#ffffff"
+                          :display          (if @show? "block" "none")
+                          :margin           "0px"
+                          :padding          "5px"
+                          :position         "fixed"
+                          :text-align       "center"
+                          :top              "0"
+                          :width            "100vw"
+                          :z-index          100}}
+     [:p {:style {:font-size   "18px"
+                  :font-weight "bold"
+                  :margin      "0 30px 0 0"}}
+      @announcement]
+     [:button {:class   (<class $/p-button :transparent :white :white :white :black)
+               :style   {:border-radius "50%"
+                         :padding       "0"
+                         :position      "fixed"
+                         :right         "10px"
+                         :top           "5px"}
+               :on-click #(reset! show? false)}
+      [:div {:style {:height "23px"
+                     :width  "23px"}}
+       [close]]]]))
 
 (defn- footer []
   [:footer {:style {:background    "#60411f"
@@ -88,11 +102,11 @@
 (defn wrap-page
   "Specifies the content to go inside of the [:body [:div#app]] for a page.
    By default, a page does not include an announcement banner or footer unless specified."
-  [root-component & {:keys [announcement footer?]}]
+  [root-component & {:keys [footer?]}]
   [:<>
    [header]
-   (when announcement
-     [announcement-banner announcement])
+   (when-not (empty? @announcement)
+     [announcement-banner])
    [root-component]
    (when footer?
      [footer])])

@@ -48,7 +48,6 @@
   [params]
   [:script {:type "text/javascript"}
    (str "window.onload = function () {
-         setTimeout(function () {document.getElementById('banner').style.display='none'}, 10000);
          pyregence.client.init("
         (json/write-str (assoc params
                                :dev-mode     (get-config :dev-mode)

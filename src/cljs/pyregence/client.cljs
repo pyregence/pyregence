@@ -13,7 +13,8 @@
             [pyregence.pages.reset-password     :as reset-password]
             [pyregence.pages.terms-of-use       :as terms]
             [pyregence.pages.verify-email       :as verify-email]
-            [pyregence.components.page-layout   :refer [wrap-page]]))
+            [pyregence.components.page-layout   :refer [set-announcement-text!
+                                                        wrap-page]]))
 
 (defonce ^:private original-params (atom {}))
 
@@ -42,8 +43,7 @@
   (let [uri (-> js/window .-location .-pathname)]
     (render (cond
               (uri->root-component-ha uri)
-              (wrap-page #((uri->root-component-ha uri) params)
-                         :announcement (:announcement params))
+              (wrap-page #((uri->root-component-ha uri) params))
 
               (uri->root-component-hf uri)
               (wrap-page #((uri->root-component-hf uri) params)
@@ -66,6 +66,7 @@
     (c/set-feature-flags! cur-params)
     (c/set-geoserver-base-url! (get-in cur-params [:geoserver :base-url]))
     (c/set-mapbox-access-token! (get-in cur-params [:mapbox :access-token]))
+    (set-announcement-text! (:announcement cur-params))
     (render-root cur-params)))
 
 (defn- ^:after-load mount-root!
