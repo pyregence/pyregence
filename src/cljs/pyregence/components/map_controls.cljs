@@ -331,6 +331,17 @@
                  :text-align  "center"}}
     "Learn more about the data."]])
 
+(defn- opacity-input [active-opacity]
+  [:div {:style {:margin-top "0.25rem"}}
+   [:label (str "Opacity: " @active-opacity)]
+   [:input {:style     {:width "100%"}
+            :type      "range"
+            :min       "0"
+            :max       "100"
+            :value     @active-opacity
+            :on-change #(do (reset! active-opacity (u/input-int-value %))
+                            (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]])
+
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
@@ -367,15 +378,7 @@
                        (when underlays
                          [optional-layers underlays *params select-param!])]))
                   param-options)
-             [:div {:style {:margin-top ".5rem"}}
-              [:label (str "Opacity: " @active-opacity)]
-              [:input {:style     {:width "100%"}
-                       :type      "range"
-                       :min       "0"
-                       :max       "100"
-                       :value     @active-opacity
-                       :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                       (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]]]
+             [opacity-input active-opacity]]]
            [collapsible-panel-section
             "base-map"
             [panel-dropdown
