@@ -13,8 +13,7 @@
             [pyregence.pages.reset-password     :as reset-password]
             [pyregence.pages.terms-of-use       :as terms]
             [pyregence.pages.verify-email       :as verify-email]
-            [pyregence.components.page-layout   :refer [wrap-page-ha
-                                                        wrap-page-hf]]))
+            [pyregence.components.page-layout   :refer [wrap-page]]))
 
 (defonce ^:private original-params (atom {}))
 
@@ -43,13 +42,13 @@
   (let [uri (-> js/window .-location .-pathname)]
     (render (cond
               (uri->root-component-ha uri)
-              (wrap-page-ha #((uri->root-component-ha uri) params))
+              (wrap-page #((uri->root-component-ha uri) params))
 
               (uri->root-component-hf uri)
-              (wrap-page-hf #((uri->root-component-hf uri) params))
+              (wrap-page #((uri->root-component-hf uri) params) true)
 
               :else
-              (wrap-page-hf not-found/root-component))
+              (wrap-page not-found/root-component true))
             (dom/getElement "app"))))
 
 (defn- ^:export init
