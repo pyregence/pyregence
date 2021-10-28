@@ -49,36 +49,35 @@
                        :width  "auto"}}]])]))
 
 (defn- announcement-banner []
-  (let [show? (r/atom (pos? (count @announcement)))]
-    (go
-      (<! (timeout 7500))
-      (reset! show? false))
-    (fn []
-      [:div#banner {:style {:background-color "#f96841"
-                            :box-shadow       "3px 1px 4px 0 rgb(0, 0, 0, 0.25)"
-                            :color            "#ffffff"
-                            :display          (if @show? "block" "none")
-                            :margin           "0px"
-                            :padding          "5px"
-                            :position         "fixed"
-                            :text-align       "center"
-                            :top              "0"
-                            :width            "100vw"
-                            :z-index          100}}
-       [:p {:style {:font-size   "18px"
-                    :font-weight "bold"
-                    :margin      "0 30px 0 0"}}
-        @announcement]
-       [:button {:class   (<class $/p-button :transparent :white :white :white :black)
-                 :style   {:border-radius "50%"
-                           :padding       "0"
-                           :position      "fixed"
-                           :right         "10px"
-                           :top           "5px"}
-                 :on-click #(reset! show? false)}
-        [:div {:style {:height "23px"
-                       :width  "23px"}}
-         [close]]]])))
+  (go
+    (<! (timeout 7500))
+    (reset! announcement ""))
+  (fn []
+    [:div#banner {:style {:background-color "#f96841"
+                          :box-shadow       "3px 1px 4px 0 rgb(0, 0, 0, 0.25)"
+                          :color            "#ffffff"
+                          :display          (if (pos? (count @announcement)) "block" "none")
+                          :margin           "0px"
+                          :padding          "5px"
+                          :position         "fixed"
+                          :text-align       "center"
+                          :top              "0"
+                          :width            "100vw"
+                          :z-index          100}}
+     [:p {:style {:font-size   "18px"
+                  :font-weight "bold"
+                  :margin      "0 30px 0 0"}}
+      @announcement]
+     [:button {:class   (<class $/p-button :transparent :white :white :white :black)
+               :style   {:border-radius "50%"
+                         :padding       "0"
+                         :position      "fixed"
+                         :right         "10px"
+                         :top           "5px"}
+               :on-click #(reset! announcement "")}
+      [:div {:style {:height "23px"
+                     :width  "23px"}}
+       [close]]]]))
 
 (defn- footer []
   [:footer {:style {:background    "#60411f"
