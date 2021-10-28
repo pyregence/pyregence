@@ -27,6 +27,7 @@
 
  :aliases {:build-db         {:main-opts ["-m" "pyregence.build-db"]}
            :https            {:main-opts ["-m" "pyregence.https"]}
+           :systemd          {:main-opts ["-m" "pyregence.systemd"]}
            :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
            :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}}}
            :figwheel         {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}
