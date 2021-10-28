@@ -375,28 +375,17 @@
   "All layers added in addition to the default Mapbox layers and their
    associated metadata for the near term forecast.
 
-   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras.
-   change-opacity? - Layers whose opacity should change. Excludes any underlays (fire-detections)."
-  {:fire-spread-forecast  {:forecast-layer? true
-                           :change-opacity? true}
-   :fire-active           {:forecast-layer? true
-                           :change-opacity? true}
-   :fire-active-labels    {:forecast-layer? true
-                           :change-opacity? true}
-   :fire-detections       {:forecast-layer? false
-                           :change-opacity? false}
-   :fire-risk-forecast    {:forecast-layer? true
-                           :change-opacity? true}
-   :fire-weather-forecast {:forecast-layer? true
-                           :change-opacity? true}
-   :fuels-and-topography  {:forecast-layer? true
-                           :change-opacity? true}
-   :fire-cameras          {:forecast-layer? false
-                           :change-opacity? false}
-   :red-flag              {:forecast-layer? false
-                           :change-opacity? false}
-   :fire-history          {:forecast-layer? false
-                           :change-opacity? false}})
+   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras and underlays."
+  {:fire-spread-forecast  {:forecast-layer? true}
+   :fire-active           {:forecast-layer? true}
+   :fire-active-labels    {:forecast-layer? true}
+   :fire-detections       {:forecast-layer? false}
+   :fire-risk-forecast    {:forecast-layer? true}
+   :fire-weather-forecast {:forecast-layer? true}
+   :fuels-and-topography  {:forecast-layer? true}
+   :fire-cameras          {:forecast-layer? false}
+   :red-flag              {:forecast-layer? false}
+   :fire-history          {:forecast-layer? false}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WG4 Forecast
@@ -459,14 +448,10 @@
   "All layers added in addition to the default Mapbox layers and their
    associated metadata for the loading term forecast.
 
-   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras.
-   change-opacity? - Layers whose opacity should change."
-  {:wg4          {:forecast-layer? true
-                  :change-opacity? true}
-   :fire-cameras {:forecast-layer? false
-                  :change-opacity? false}
-   :red-flag     {:forecast-layer? false
-                  :change-opacity? false}})
+   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras."
+  {:wg4          {:forecast-layer? true}
+   :fire-cameras {:forecast-layer? false}
+   :red-flag     {:forecast-layer? false}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Forecast Configuration

@@ -417,7 +417,7 @@
   [id opacity] ;TODO, this function doesn't make sense as is because it sets the opacity of all layers currently active, not just one layer by id.
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
-        new-layers (map (u/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :change-opacity?))
+        new-layers (map (u/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :forecast-layer?))
                                      #(set-opacity % opacity))
                         (get style "layers"))]
     (update-style! style :layers new-layers)))
