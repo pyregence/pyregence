@@ -28,7 +28,26 @@
 ;; WG3 Forecast
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def near-term-forecast-underlays
+  {:us-buildings    {:enabled?   #(feature-enabled? :structures)
+                     :opt-label  "Structures"
+                     :z-index    4
+                     :filter-set #{"fire-detections" "us-buildings"}}
+   :nifs-perimeters {:opt-label  "NIFS Perimeters"
+                     :z-index    3
+                     :filter-set #{"fire-detections" "nifs-perimeters"}}
+   :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
+                     :z-index    2
+                     :filter-set #{"fire-detections" "viirs-timestamped"}}
+   :modis-hotspots  {:opt-label  "MODIS Hotspots"
+                     :z-index    1
+                     :filter-set #{"fire-detections" "modis-timestamped"}}
+   :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
+                     :z-index    0
+                     :filter-set #{"fire-detections" "goes16-rgb"}}})
+
 (def near-term-forecast-default :active-fire)
+
 (def near-term-forecast-options
   {:fuels        {:opt-label    "Fuels"
                   :filter       "fuels"
@@ -286,22 +305,6 @@
                   :params          {:fire-name  {:opt-label      "Fire Name"
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
-                                                 :underlays      {:us-buildings    {:enabled?   #(feature-enabled? :structures)
-                                                                                    :opt-label  "Structures"
-                                                                                    :z-index    4
-                                                                                    :filter-set #{"fire-detections" "us-buildings"}}
-                                                                  :nifs-perimeters {:opt-label  "NIFS Perimeters"
-                                                                                    :z-index    3
-                                                                                    :filter-set #{"fire-detections" "nifs-perimeters"}}
-                                                                  :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
-                                                                                    :z-index    2
-                                                                                    :filter-set #{"fire-detections" "viirs-timestamped"}}
-                                                                  :modis-hotspots  {:opt-label  "MODIS Hotspots"
-                                                                                    :z-index    1
-                                                                                    :filter-set #{"fire-detections" "modis-timestamped"}}
-                                                                  :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
-                                                                                    :z-index    0
-                                                                                    :filter-set #{"fire-detections" "goes16-rgb"}}}
                                                  :default-option :active-fires
                                                  :options        {:active-fires    {:opt-label    "*All Active Fires"
                                                                                     :style-fn     :default
@@ -380,7 +383,7 @@
                            :change-opacity? true}
    :fire-active-labels    {:forecast-layer? true
                            :change-opacity? true}
-   :fire-detections       {:forecast-layer? true
+   :fire-detections       {:forecast-layer? false
                            :change-opacity? false}
    :fire-risk-forecast    {:forecast-layer? true
                            :change-opacity? true}

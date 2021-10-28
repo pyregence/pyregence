@@ -657,7 +657,7 @@
                                                          (when (some? (get-layer-metadata layer "type"))
                                                            idx)))
                                          (first))
-            [before after]          (split-at zero-idx layers)
+            [before after]          (split-at (or zero-idx (count layers)) layers)
             final-layers            (vec (concat before new-layers after))]
         (update-style! style
                        :new-sources new-source

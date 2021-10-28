@@ -219,23 +219,21 @@
       (update-layer! :name name)
       name)))
 
-(defn optional-layer [opt-label filter-set layer update-layer! id]
-  (let [show? (:show? layer)]
+(defn optional-layer [opt-label filter-set layer id]
+  (r/with-let [show? (r/atom false)]
     [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
      [:div {:style {:display "flex"}}
-      [:input {:style     {:margin ".25rem .5rem 0 0"}
+      [:input {:id        id
+               :style     {:margin ".25rem .5rem 0 0"}
                :type      "checkbox"
-               :id        id
-               :checked   show?
-               :on-change (fn []
-                            (go
-                              (let [layer-name (or (:name layer)
-                                                   (<! (get-layer-name filter-set update-layer!)))] ; Note, this redundancy is due to the way figwheel reloads.
-                                (update-layer! :show? (not show?))
-                                (mb/set-visible-by-title! layer-name (not show?)))))}]
+               :checked   @show?
+               :on-change #(go
+                             (swap! show? not)
+                             (mb/set-visible-by-title! (<! (get-layer-name filter-set identity))
+                                                       @show?))}]
       [:label {:for id} opt-label]]]))
 
-(defn optional-layers [underlays *params select-param!]
+(defn optional-layers [underlays]
   (r/create-class
    {:component-did-mount
     (fn []
@@ -247,27 +245,35 @@
               layer-name (<! (get-layer-name filter-set identity))]
           (mb/create-wms-layer! layer-name
                                 layer-name
-                                (get-in *params [:underlays id :show?]))
+                                false)
           (when-let [tail (seq (rest sorted-underlays))]
             (recur tail)))))
 
     :display-name "optional-layers"
 
     :reagent-render
-    (fn [underlays *params]
+    (fn [underlays]
       [:<>
-       (doall
-        (map (fn [[key {:keys [opt-label filter-set z-index enabled?]}]]
-               (let [underlays (:underlays *params)]
-                 (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
-                   ^{:key key}
-                   [optional-layer
-                    opt-label
-                    filter-set
-                    (get underlays key)
-                    (fn [k v] (select-param! v :underlays key k))
-                    key])))
-             underlays))])}))
+       [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
+        [:div {:style {:display "flex" :justify-content "space-between"}}
+         [:label "Optional Layers"]
+         [tool-tip-wrapper
+          "Check the boxes below to display additional layers."
+          :left
+          [:div {:style ($/combine ($/fixed-size "1rem")
+                                   {:margin "0 .25rem 4px 0"
+                                    :fill   ($/color-picker :font-color)})}
+           [svg/help]]]]
+        (doall
+         (map (fn [[key {:keys [opt-label filter-set z-index enabled?]}]]
+                (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
+                  ^{:key key}
+                  [optional-layer
+                   opt-label
+                   filter-set
+                   (get underlays key)
+                   key]))
+              underlays))]])}))
 
 (defn- $collapsible-button []
   {:background-color           ($/color-picker :bg-color)
@@ -363,7 +369,7 @@
            [collapsible-panel-section
             "layer-selection"
             [:<>
-             (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
+             (map (fn [[key {:keys [opt-label hover-text options sort?]}]]
                     (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
                       ^{:key hover-text}
                       [:<>
@@ -374,11 +380,13 @@
                         sorted-options
                         (= 1 (count sorted-options))
                         #(select-param! % key)
-                        selected-param-set]
-                       (when underlays
-                         [optional-layers underlays *params select-param!])]))
+                        selected-param-set]]))
                   param-options)
              [opacity-input active-opacity]]]
+           [collapsible-panel-section
+            "optional-layers"
+            [optional-layers
+             c/near-term-forecast-underlays]]
            [collapsible-panel-section
             "base-map"
             [panel-dropdown
