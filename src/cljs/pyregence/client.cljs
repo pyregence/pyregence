@@ -13,7 +13,8 @@
             [pyregence.pages.reset-password     :as reset-password]
             [pyregence.pages.terms-of-use       :as terms]
             [pyregence.pages.verify-email       :as verify-email]
-            [pyregence.components.page-layout   :refer [wrap-page]]))
+            [pyregence.components.page-layout   :refer [set-announcement-text!
+                                                        wrap-page]]))
 
 (defonce ^:private original-params (atom {}))
 
@@ -45,10 +46,12 @@
               (wrap-page #((uri->root-component-ha uri) params))
 
               (uri->root-component-hf uri)
-              (wrap-page #((uri->root-component-hf uri) params) true)
+              (wrap-page #((uri->root-component-hf uri) params)
+                         :footer? true)
 
               :else
-              (wrap-page not-found/root-component true))
+              (wrap-page not-found/root-component
+                         :footer? true))
             (dom/getElement "app"))))
 
 (defn- ^:export init
@@ -63,6 +66,7 @@
     (c/set-feature-flags! cur-params)
     (c/set-geoserver-base-url! (get-in cur-params [:geoserver :base-url]))
     (c/set-mapbox-access-token! (get-in cur-params [:mapbox :access-token]))
+    (set-announcement-text! (:announcement cur-params))
     (render-root cur-params)))
 
 (defn- ^:after-load mount-root!
