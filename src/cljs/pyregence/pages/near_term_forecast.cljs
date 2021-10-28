@@ -246,15 +246,9 @@
                                   (str/join "," point-info)
                                   (if single? 1 1000))))))
 
-(defn- reset-underlays! []
-  (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
-    (when (some? name)
-      (mb/set-visible-by-title! name show?))))
-
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100))
-  (reset-underlays!))
+  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100)))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -300,7 +294,6 @@
           style-fn (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
       (mb/clear-popup!)
-      (reset-underlays!)
       (when (some? style-fn)
         (mb/add-feature-highlight! "fire-active" "fire-active" @mobile? init-fire-popup!)
         (mb/add-feature-highlight! "red-flag" "red-flag" @mobile? init-red-flag-popup!))
@@ -314,26 +307,21 @@
 (defn select-param! [val & keys]
   (swap! *params assoc-in (cons @*forecast keys) val)
   (reset! legend-list [])
-  (when-not ((set keys) :underlays)
-    (let [main-key (first keys)]
-      (when (= main-key :fire-name)
-        (select-layer! 0)
-        (swap! *params assoc-in (cons @*forecast [:burn-pct]) :50)
-        (reset! animate? false))
-      (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
-                    (get-current-layer-key :clear-point?)
-                    (get-current-option-key main-key val :auto-zoom?)
-                    (get-any-level-key     :max-zoom)))))
+  (let [main-key (first keys)]
+    (when (= main-key :fire-name)
+      (select-layer! 0)
+      (swap! *params assoc-in (cons @*forecast [:burn-pct]) :50)
+      (reset! animate? false))
+    (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
+                  (get-current-layer-key :clear-point?)
+                  (get-current-option-key main-key val :auto-zoom?)
+                  (get-any-level-key     :max-zoom))))
 
 (defn select-forecast! [key]
   (go
-    (doseq [[_ {:keys [name]}] (get-in @*params [@*forecast :underlays])]
-      (when (some? name)
-        (mb/set-visible-by-title! name false)))
     (reset! legend-list [])
     (reset! *forecast key)
     (reset! processed-params (get-forecast-opt :params))
-    (reset-underlays!)
     (<! (change-type! true
                       true
                       (get-any-level-key :auto-zoom?)
@@ -384,11 +372,7 @@
                                                   [k (or (get-in selected-options [forecast k])
                                                          (:default-option v)
                                                          (ffirst (:options v)))])
-                                                params)
-                                        {:underlays (->> params
-                                                         (mapcat (fn [[_ v]] (:underlays v)))
-                                                         (u/mapm (fn [[k _]] [k {:show? false
-                                                                                 :name  nil}])))})]))
+                                                params))]))
                    @options)))
 
 (defn refresh-fire-names! [user-id]
