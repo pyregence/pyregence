@@ -219,7 +219,7 @@
       (update-layer! :name name)
       name)))
 
-(defn optional-layer [opt-label filter-set layer id]
+(defn optional-layer [opt-label filter-set id]
   (r/with-let [show? (r/atom false)]
     [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
      [:div {:style {:display "flex"}}
@@ -241,7 +241,7 @@
                                       (map (fn [[id v]] (assoc v :id id)))
                                       (sort-by :z-index)
                                       (reverse))]
-        (let [{:keys [id filter-set]} (first sorted-underlays)
+        (let [{:keys [filter-set]} (first sorted-underlays)
               layer-name (<! (get-layer-name filter-set identity))]
           (mb/create-wms-layer! layer-name
                                 layer-name
@@ -265,13 +265,12 @@
                                     :fill   ($/color-picker :font-color)})}
            [svg/help]]]]
         (doall
-         (map (fn [[key {:keys [opt-label filter-set z-index enabled?]}]]
+         (map (fn [[key {:keys [opt-label filter-set enabled?]}]]
                 (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
                   ^{:key key}
                   [optional-layer
                    opt-label
                    filter-set
-                   (get underlays key)
                    key]))
               underlays))]])}))
 
