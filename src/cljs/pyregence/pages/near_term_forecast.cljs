@@ -394,12 +394,13 @@
 
 (defn initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
-    (let [{:keys [options-config default layers]} (c/get-forecast forecast-type)
+    (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
           user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras     (u/call-clj-async! "get-cameras")]
       (reset! options options-config)
-      (reset! *forecast (or (keyword forecast) default))
+      (reset! *forecast (or (keyword forecast)
+                            (keyword (forecast-type @c/default-forecasts))))
       (reset! *layer-idx (if layer-idx (js/parseInt layer-idx) 0))
       (mb/init-map! "map" layers (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))

@@ -50,12 +50,13 @@
    (str "window.onload = function () {
          pyregence.client.init("
         (json/write-str (assoc params
-                               :dev-mode     (get-config :dev-mode)
-                               :mapbox       (get-config :mapbox)
-                               :features     (get-config :features)
-                               :geoserver    (get-config :geoserver)
-                               :announcement (when (.exists (io/as-file "announcement.txt"))
-                                               (slurp "announcement.txt"))))
+                               :default-forecasts (get-config :default-forecasts)
+                               :dev-mode          (get-config :dev-mode)
+                               :mapbox            (get-config :mapbox)
+                               :features          (get-config :features)
+                               :geoserver         (get-config :geoserver)
+                               :announcement      (when (.exists (io/as-file "announcement.txt"))
+                                                    (slurp "announcement.txt"))))
         "); };")])
 
 (defn render-page [valid?]
