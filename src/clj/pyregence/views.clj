@@ -122,10 +122,11 @@
                        setTimeout(function () {document.getElementById('banner').style.display='none'}, 10000);
                        pyregence.client.init("
                       (json/write-str (assoc params
-                                             :dev-mode  (get-config :dev-mode)
-                                             :mapbox    (get-config :mapbox)
-                                             :features  (get-config :features)
-                                             :geoserver (get-config :geoserver)))
+                                             :default-forecasts (get-config :default-forecasts)
+                                             :dev-mode          (get-config :dev-mode)
+                                             :mapbox            (get-config :mapbox)
+                                             :features          (get-config :features)
+                                             :geoserver         (get-config :geoserver)))
                       "); };")]])}))
 
 (defn render-static [uri]

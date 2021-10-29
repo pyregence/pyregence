@@ -28,7 +28,6 @@
 ;; WG3 Forecast
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def near-term-forecast-default :active-fire)
 (def near-term-forecast-options
   {:fuels        {:opt-label    "Fuels"
                   :filter       "fuels"
@@ -387,7 +386,6 @@
 ;; WG4 Forecast
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def long-term-forecast-default :fire-scenarios)
 (def long-term-forecast-options
   {:fire-scenarios {:opt-label       "Fire Scenarios"
                     :filter          "wg4_FireSim"
@@ -453,11 +451,16 @@
 ;; Forecast Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce default-forecasts (atom {}))
+
+(defn set-default-forecasts!
+  "Sets the default forecast tabs given the value from `config.edn`."
+  [defaults]
+  (reset! default-forecasts defaults))
+
 (def ^:private forecasts {:near-term {:options-config near-term-forecast-options
-                                      :default        near-term-forecast-default
                                       :layers         near-term-forecast-layers}
                           :long-term {:options-config long-term-forecast-options
-                                      :default        long-term-forecast-default
                                       :layers         long-term-forecast-layers}})
 
 (defn get-forecast
