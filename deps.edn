@@ -25,8 +25,9 @@
         sig-gis/triangulum         {:git/url "https://github.com/sig-gis/triangulum"
                                     :sha "2c4157fcc56b57d90575e42ae89c7e13bb56a7fc"}}
 
- :aliases {:build-db         {:main-opts ["-m" "pyregence.build-db"]}
-           :https            {:main-opts ["-m" "pyregence.https"]}
+ :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
+           :https            {:main-opts ["-m" "triangulum.https"]}
+           :systemd          {:main-opts ["-m" "triangulum.systemd"]}
            :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
            :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}}}
            :figwheel         {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}
