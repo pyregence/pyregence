@@ -373,17 +373,28 @@
   "All layers added in addition to the default Mapbox layers and their
    associated metadata for the near term forecast.
 
-   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras and underlays."
-  {:fire-spread-forecast  {:forecast-layer? true}
-   :fire-active           {:forecast-layer? true}
-   :fire-active-labels    {:forecast-layer? true}
-   :fire-detections       {:forecast-layer? false}
-   :fire-risk-forecast    {:forecast-layer? true}
-   :fire-weather-forecast {:forecast-layer? true}
-   :fuels-and-topography  {:forecast-layer? true}
-   :fire-cameras          {:forecast-layer? false}
-   :red-flag              {:forecast-layer? false}
-   :fire-history          {:forecast-layer? false}})
+   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras and underlays.
+   z-index         - The z-index of a specific layer type."
+  {:fire-spread-forecast  {:forecast-layer? true
+                           :z-index         0}
+   :fire-active           {:forecast-layer? true
+                           :z-index         1}
+   :fire-active-labels    {:forecast-layer? true
+                           :z-index         2}
+   :fire-detections       {:forecast-layer? false
+                           :z-index         3}
+   :fire-risk-forecast    {:forecast-layer? true
+                           :z-index         4}
+   :fire-weather-forecast {:forecast-layer? true
+                           :z-index         5}
+   :fuels-and-topography  {:forecast-layer? true
+                           :z-index         6}
+   :fire-history          {:forecast-layer? false
+                           :z-index         7}
+   :red-flag              {:forecast-layer? false
+                           :z-index         8}
+   :fire-cameras          {:forecast-layer? false
+                           :z-index         9}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WG4 Forecast
@@ -445,10 +456,18 @@
   "All layers added in addition to the default Mapbox layers and their
    associated metadata for the loading term forecast.
 
-   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras."
-  {:wg4          {:forecast-layer? true}
-   :fire-cameras {:forecast-layer? false}
-   :red-flag     {:forecast-layer? false}})
+   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras.
+   z-index         - The z-index of a specific layer type."
+  {:wg4             {:forecast-layer? true
+                     :z-index         0}
+   :fire-detections {:forecast-layer? false
+                     :z-index         1}
+   :fire-history    {:forecast-layer? false
+                     :z-index         2}
+   :red-flag        {:forecast-layer? false
+                     :z-index         3}
+   :fire-cameras    {:forecast-layer? false
+                     :z-index         4}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Forecast Configuration

@@ -58,9 +58,13 @@
   "Gets the value of a specified property of a layer's metadata."
   [layer property]
   (let [metadata (when (some? layer)
-                   (get layer "metadata"))]
+                   (or
+                     (get layer "metadata")
+                     (:metadata layer)))]
     (when (some? metadata)
-      (get metadata property))))
+      (or
+        (get metadata property)
+        ((keyword property) metadata)))))
 
 (defn- get-layer-metadata-by-id
   "Gets the value of a specified property of a layer's metadata by id."
@@ -200,10 +204,42 @@
 (defn- merge-layers [v new-layers]
   (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
 
+(defn- get-mapbox-layers
+  "Given the layers of the map, returns only the Mapbox layers."
+  [layers]
+  (keep-indexed (fn [_ layer]
+                  (when-not (some? (get-layer-metadata layer "type"))
+                    layer))
+                layers))
+
+(defn- get-project-layers
+  "Given the layers of the map, returns only the custom project layers."
+  [layers]
+  (keep-indexed (fn [_ layer]
+                  (when (some? (get-layer-metadata layer "type"))
+                    layer))
+                layers))
+
+(defn- compare-z-index
+  "A compare function for layers with a z-index."
+  [el1 el2]
+  (let [get-z-index #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :z-index))
+        z-index-el1 (get-z-index el1)
+        z-index-el2 (get-z-index el2)]
+    (< z-index-el1 z-index-el2)))
+
+(defn- process-layer-order!
+  "Takes in layers and arranges them in the proper order as
+   specified by the z-index. By default, all Mapbox layers are added first."
+  [layers]
+  (let [mapbox-layers  (get-mapbox-layers layers)
+        project-layers (sort compare-z-index (get-project-layers layers))]
+    (vec (concat mapbox-layers project-layers))))
+
 (defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
   (let [new-style (cond-> style
                     sources     (assoc "sources" sources)
-                    layers      (assoc "layers" layers)
+                    layers      (assoc "layers" (process-layer-order! layers))
                     new-sources (update "sources" merge new-sources)
                     new-layers  (update "layers" merge-layers new-layers)
                     :always     (clj->js))]
