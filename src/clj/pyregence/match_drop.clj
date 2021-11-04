@@ -4,13 +4,13 @@
   (:require [clojure.data.json :as json]
             [clojure.string    :as str]
             [clojure.set       :refer [rename-keys]]
+            [triangulum.config          :refer [get-config]]
+            [triangulum.database        :refer [call-sql sql-primitive]]
+            [triangulum.logging         :refer [log-str]]
+            [triangulum.sockets         :refer [send-to-server!]]
             [triangulum.type-conversion :refer [val->long json->clj clj->json]]
             [pyregence.capabilities :refer [set-capabilities!]]
-            [pyregence.config       :refer [get-config]]
-            [pyregence.logging      :refer [log-str]]
-            [pyregence.sockets      :refer [send-to-server!]]
-            [pyregence.views        :refer [data-response]]
-            [pyregence.database     :refer [call-sql sql-primitive]]))
+            [pyregence.views        :refer [data-response]]))
 
 ;;; Helper Functions
 ;; TODO these will be part of triangulum.utils

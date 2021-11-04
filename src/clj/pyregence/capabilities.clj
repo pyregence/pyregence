@@ -3,11 +3,11 @@
             [clojure.string     :as str]
             [clojure.set        :as set]
             [clj-http.client    :as client]
-            [triangulum.utils   :as u]
-            [pyregence.config   :refer [get-config]]
-            [pyregence.database :refer [call-sql]]
-            [pyregence.logging  :refer [log log-str]]
-            [pyregence.views    :refer [data-response]]))
+            [triangulum.config   :refer [get-config]]
+            [triangulum.database :refer [call-sql]]
+            [triangulum.logging  :refer [log log-str]]
+            [triangulum.utils    :as u]
+            [pyregence.views     :refer [data-response]]))
 
 ;;; State
 
