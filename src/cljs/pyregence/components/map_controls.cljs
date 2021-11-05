@@ -952,7 +952,7 @@
                 (-> last-clicked-info (first) (:band) (< -50)))
             no-info
 
-            (not-empty last-clicked-info)
+            (and (not-empty last-clicked-info) (not-empty legend-list))
             [vega-information
              box-height
              box-width
