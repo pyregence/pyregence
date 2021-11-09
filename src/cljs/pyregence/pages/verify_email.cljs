@@ -29,8 +29,9 @@
   "The root component for the /verify-email page.
    Displays the appropriate message depending on the email verification status."
   [params]
-  (verify-account! (or (:email params) "") (or (:reset-key params) ""))
-  [:div {:style {:display "flex" :justify-content "center" :margin "5rem"}}
-   [:h4 (if @pending?
-          "Thank you for verifying your email. You will be automatically redirected to the near term forecast tool."
-          "Email verification has failed. Please contact support@pyregence.org for help.")]])
+  (verify-account! (:email params "") (:reset-key params ""))
+  (fn [_]
+    [:div {:style {:display "flex" :justify-content "center" :margin "5rem"}}
+     [:h4 (if @pending?
+            "Thank you for verifying your email. You will be automatically redirected to the near term forecast tool."
+            "Email verification has failed. Please contact support@pyregence.org for help.")]]))

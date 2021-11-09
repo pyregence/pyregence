@@ -16,11 +16,13 @@
     (last app)
     (str "/cljs/" app)))
 
-(defn- parse-page [uri]
-  (edn/read-string (slurp (str "resources/pages/" uri ".edn"))))
-
-(defn head-meta-css []
+(defn head-meta-css
+  "Specifies head tag elements."
+  []
   [:head
+   [:title "Wildfire Forecasts"]
+   [:meta {:name    "description"
+           :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
    [:meta {:name "robots" :content "index, follow"}]
    [:meta {:charset "utf-8"}]
    [:meta {:name    "viewport"
@@ -33,130 +35,39 @@
    [:meta {:property "twitter:title" :content "Pyrecast"}]
    [:meta {:property "twitter:image" :content "https://pyrecast.org/images/pyrecast-logo-social-media.png"}]
    [:meta {:property "twitter:card" :content "summary_large_image"}]
-   (include-css "/css/style.css")
    [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
    [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
    [:script "window.name = 'pyrecast'"]
-   [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]])
+   [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]
+   (include-css "/css/style.css" "/css/mapbox-gl-v2.3.1.css")
+   (include-js "/js/mapbox-gl-v2.3.1.js" (find-app-js))])
 
-(defn header [server-name]
-  (let [pyrecast? (str/ends-with? server-name "pyrecast.org")]
-    [:div {:id    "header"
-           :style {:align-items     "center"
-                   :display         "flex"
-                   :justify-content "space-between"}}
-     [:a {:rel   "home"
-          :href  (if pyrecast? "/" "https://pyregence.org")
-          :title "Pyregence"
-          :style {:margin-bottom "0.3125rem"
-                  :margin-left   "10%"
-                  :margin-top    "0.3125rem"}}
-      [:img {:src   (str "/images/" (if pyrecast? "pyrecast" "pyregence") "-logo.svg")
-             :alt   "Pyregence Logo"
-             :style {:height "40px"
-                     :width  "auto"}}]]
-     (when pyrecast?
-       [:a {:href   "https://pyregence.org"
-            :target "pyregence"
-            :style  {:margin-right "5%"}}
-        [:img {:src   "/images/powered-by-pyregence.svg"
-               :alt   "Powered by Pyregence Logo"
-               :style {:height "1.25rem"
-                       :width  "auto"}}]])]))
+(defn- cljs-init
+  "A JavaScript script that calls the `init` function in `client.cljs`.
+   Provides the entry point for rendering the content on a page."
+  [params]
+  [:script {:type "text/javascript"}
+   (str "window.onload = function () {
+         pyregence.client.init("
+        (json/write-str (assoc params
+                               :default-forecasts (get-config :default-forecasts)
+                               :dev-mode          (get-config :dev-mode)
+                               :mapbox            (get-config :mapbox)
+                               :features          (get-config :features)
+                               :geoserver         (get-config :geoserver)
+                               :announcement      (when (.exists (io/as-file "announcement.txt"))
+                                                    (slurp "announcement.txt"))))
+        "); };")])
 
-(defn- announcement-banner []
-  (let [announcement (slurp "announcement.txt")]
-    (when (pos? (count announcement))
-      [:div#banner {:style {:background-color "#f96841"
-                            :box-shadow       "3px 1px 4px 0 rgb(0, 0, 0, 0.25)"
-                            :color            "#ffffff"
-                            :margin           "0px"
-                            :padding          "5px"
-                            :position         "fixed"
-                            :text-align       "center"
-                            :top              "0"
-                            :width            "100vw"
-                            :z-index          100}}
-       [:p {:style {:font-size   "18px"
-                    :font-weight "bold"
-                    :margin      "0 30px 0 0"}}
-        announcement]
-       [:button {:style   {:background-color "transparent"
-                           :border-color     "#ffffff"
-                           :border-radius    "50%"
-                           :border-style     "solid"
-                           :border-width     "2px"
-                           :cursor           "pointer"
-                           :display          "flex"
-                           :height           "25px"
-                           :position         "fixed"
-                           :right            "10px"
-                           :top              "5px"
-                           :width            "25px"}
-                 :onClick "document.getElementById('banner').style.display='none'"}
-        [:svg {:viewBox "0 0 48 48" :fill "#ffffff"}
-         [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
-                   11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]])))
-
-(defn render-dynamic []
+(defn render-page [valid?]
   (fn [{:keys [params server-name]}]
-    {:status  200
+    {:status  (if valid? 200 404)
      :headers {"Content-Type" "text/html"}
      :body    (html5
-               [:head
-                (head-meta-css)
-                [:title "Wildfire Forecasts"]
-                [:meta {:name    "description"
-                        :content "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}]
-                (include-css "/css/mapbox-gl-v2.3.1.css")
-                (include-js "/js/mapbox-gl-v2.3.1.js" (find-app-js))]
+               (head-meta-css)
                [:body
-                [:div#near-term-forecast
-                 (header server-name)
-                 ;; TODO announcement-banner will be moved to the front end for better UX.
-                 (when (.exists (io/as-file "announcement.txt"))
-                   (announcement-banner))
-                 [:div#app]]
-                [:script {:type "text/javascript"}
-                 (str "window.onload = function () {
-                       setTimeout(function () {document.getElementById('banner').style.display='none'}, 10000);
-                       pyregence.client.init("
-                      (json/write-str (assoc params
-                                             :default-forecasts (get-config :default-forecasts)
-                                             :dev-mode          (get-config :dev-mode)
-                                             :mapbox            (get-config :mapbox)
-                                             :features          (get-config :features)
-                                             :geoserver         (get-config :geoserver)))
-                      "); };")]])}))
-
-(defn render-static [uri]
-  (fn [{:keys [server-name]}]
-    (let [{:keys [title body]} (parse-page uri)]
-      {:status  (if (= uri "/not-found") 404 200)
-       :headers {"Content-Type" "text/html"}
-       :body    (html5
-                 [:head
-                  [:title title]
-                  (head-meta-css)]
-                 [:body
-                  (header server-name)
-                  body
-                  [:footer {:style {:background    "#60411f"
-                                    :margin-bottom "0"
-                                    :padding       "1rem"}}
-                   [:p {:style {:color          "white"
-                                :font-size      "0.9rem"
-                                :margin-bottom  "0"
-                                :text-align     "center"
-                                :text-transform "uppercase"}}
-                    (str "\u00A9 "
-                         (+ 1900 (.getYear (java.util.Date.)))
-                         " Pyregence - All Rights Reserved | ")
-                    [:a {:href  "/terms-of-use"
-                         :style {:border-bottom "none"
-                                 :color         "#ffffff"
-                                 :font-weight   "400"}}
-                     "Terms"]]]])})))
+                [:div#app]
+                (cljs-init params)])}))
 
 (defn body->transit [body]
   (let [out    (ByteArrayOutputStream. 4096)

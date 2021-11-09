@@ -158,9 +158,9 @@
 ;; Collapsible Panel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $collapsible-panel [show? mobile?]
+(defn- $collapsible-panel [show? mobile?]
   {:background-color ($/color-picker :bg-color)
-   :box-shadow       (str "2px 0 " ($/color-picker :bg-color))
+   :box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
    :color            ($/color-picker :font-color)
    :height           "100%"
    :left             (if show?
@@ -173,11 +173,21 @@
    :width            (if mobile? "100%" "18rem")
    :z-index          "101"})
 
-(defn $layer-selection []
-  {:border-bottom (str "2px solid " ($/color-picker :border-color))
-   :font-size     "1.5rem"
-   :margin-bottom ".5rem"
-   :width         "100%"})
+(defn- collapsible-panel-header []
+  [:div#collapsible-panel-header
+   {:style {:background-color ($/color-picker :header-color)
+            :display          "flex"
+            :justify-content  "space-between"
+            :padding          "0.5rem 1rem"}}
+   [:span {:style {:fill         ($/color-picker :font-color)
+                   :height       "2rem"
+                   :margin-right "0.5rem"
+                   :width        "2rem"}}
+    [svg/layers]]
+   [:label {:style {:font-size "1.5rem"}}
+    "Layer Selection"]
+   [:span {:style {:margin-right "-.5rem"}}
+    [tool-button :close #(reset! show-panel? false)]]])
 
 (defn panel-dropdown [title tool-tip-text val options disabled? call-back & [selected-param-set]]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
@@ -209,23 +219,21 @@
       (update-layer! :name name)
       name)))
 
-(defn optional-layer [opt-label filter-set layer update-layer! id]
-  (let [show? (:show? layer)]
+(defn optional-layer [opt-label filter-set id]
+  (r/with-let [show? (r/atom false)]
     [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
      [:div {:style {:display "flex"}}
-      [:input {:style     {:margin ".25rem .5rem 0 0"}
+      [:input {:id        id
+               :style     {:margin ".25rem .5rem 0 0"}
                :type      "checkbox"
-               :id        id
-               :checked   show?
-               :on-change (fn []
-                            (go
-                              (let [layer-name (or (:name layer)
-                                                   (<! (get-layer-name filter-set update-layer!)))] ; Note, this redundancy is due to the way figwheel reloads.
-                                (update-layer! :show? (not show?))
-                                (mb/set-visible-by-title! layer-name (not show?)))))}]
+               :checked   @show?
+               :on-change #(go
+                             (swap! show? not)
+                             (mb/set-visible-by-title! (<! (get-layer-name filter-set identity))
+                                                       @show?))}]
       [:label {:for id} opt-label]]]))
 
-(defn optional-layers [underlays *params select-param!]
+(defn optional-layers [underlays]
   (r/create-class
    {:component-did-mount
     (fn []
@@ -233,31 +241,38 @@
                                       (map (fn [[id v]] (assoc v :id id)))
                                       (sort-by :z-index)
                                       (reverse))]
-        (let [{:keys [id filter-set]} (first sorted-underlays)
+        (let [{:keys [filter-set]} (first sorted-underlays)
               layer-name (<! (get-layer-name filter-set identity))]
           (mb/create-wms-layer! layer-name
                                 layer-name
-                                (get-in *params [:underlays id :show?]))
+                                false)
           (when-let [tail (seq (rest sorted-underlays))]
             (recur tail)))))
 
     :display-name "optional-layers"
 
     :reagent-render
-    (fn [underlays *params]
+    (fn [underlays]
       [:<>
-       (doall
-        (map (fn [[key {:keys [opt-label filter-set z-index enabled?]}]]
-               (let [underlays (:underlays *params)]
-                 (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
-                   ^{:key key}
-                   [optional-layer
-                    opt-label
-                    filter-set
-                    (get underlays key)
-                    (fn [k v] (select-param! v :underlays key k))
-                    key])))
-             underlays))])}))
+       [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
+        [:div {:style {:display "flex" :justify-content "space-between"}}
+         [:label "Optional Layers"]
+         [tool-tip-wrapper
+          "Check the boxes below to display additional layers."
+          :left
+          [:div {:style ($/combine ($/fixed-size "1rem")
+                                   {:margin "0 .25rem 4px 0"
+                                    :fill   ($/color-picker :font-color)})}
+           [svg/help]]]]
+        (doall
+         (map (fn [[key {:keys [opt-label filter-set enabled?]}]]
+                (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
+                  ^{:key key}
+                  [optional-layer
+                   opt-label
+                   filter-set
+                   key]))
+              underlays))]])}))
 
 (defn- $collapsible-button []
   {:background-color           ($/color-picker :bg-color)
@@ -270,6 +285,7 @@
    :cursor                     "pointer"
    :fill                       ($/color-picker :font-color)
    :height                     "40px"
+   :padding                    "0"
    :width                      "28px"})
 
 (defn- collapsible-button []
@@ -284,8 +300,8 @@
                   :transform       (if @show-panel? "rotate(180deg)" "none")}}
     [svg/right-arrow]]])
 
-(defn- collapsible-toggle [mobile?]
-  [:div#collapsible-toggle
+(defn- collapsible-panel-toggle [mobile?]
+  [:div#collapsible-panel-toggle
    {:style {:display  (if (and @show-panel? mobile?) "none" "block")
             :left     "100%"
             :position "absolute"
@@ -297,25 +313,49 @@
       :left
       [collapsible-button]])])
 
+(defn- collapsible-panel-section
+  "A section component to differentiate content in the collapsible panel."
+  [id body]
+  [:section {:id    (str "section-" id)
+             :style {:padding "0.75rem 0.6rem 0 0.6rem"}}
+   [:div {:style {:background-color ($/color-picker :header-color 0.6)
+                  :border-radius "8px"
+                  :box-shadow    "0px 0px 3px #bbbbbb"
+                  :padding       "0.5rem"}}
+    body]])
+
 (defn- help-section []
-  [:section#help-section {:style {:width "100%"}}
-   [:article {:style {:margin        "0.5rem 0"
-                      :padding-left  "1rem"
-                      :padding-right "1rem"}}
-    [:div {:style {:background      ($/color-picker :transparent)
-                   :border-radius   "8px"
-                   :box-shadow      "0px 0px 5px #bbbbbb"
-                   :display         "flex"
-                   :justify-content "center"
-                   :padding         "0.5em"}}
-     [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
-          :target "_blank"
-          :style  {:color       ($/color-picker :font-color)
-                   :font-family "Avenir"
-                   :font-style  "italic"
-                   :margin      "0"
-                   :text-align  "center"}}
-      "Learn more about the data."]]]])
+  [:div {:style {:display         "flex"
+                 :justify-content "center"}}
+   [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
+        :target "_blank"
+        :style  {:color       ($/color-picker :font-color)
+                 :font-family "Avenir"
+                 :font-style  "italic"
+                 :margin      "0"
+                 :text-align  "center"}}
+    "Learn more about the data."]])
+
+(defn- opacity-input [active-opacity]
+  [:div {:style {:margin-top "0.25rem"}}
+   [:label (str "Opacity: " @active-opacity)]
+   [:input {:style     {:width "100%"}
+            :type      "range"
+            :min       "0"
+            :max       "100"
+            :value     @active-opacity
+            :on-change #(do (reset! active-opacity (u/input-int-value %))
+                            (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]])
+
+(defn- $collapsible-panel-body
+  []
+  (with-meta
+    {:display         "flex"
+     :flex-direction  "column"
+     :height          "calc(100% - 3.25rem)"
+     :justify-content "space-between"
+     :overflow-y      "auto"}
+    {:pseudo {:last-child {:padding-bottom "0.75rem"}}}))
 
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [*base-map        (r/atom c/base-map-default)
@@ -326,49 +366,43 @@
     (fn [*params select-param! active-opacity param-options mobile?]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
-         [:div {:style {:display         "flex"
-                        :flex-direction  "column"
-                        :height          "100%"
-                        :justify-content "space-between"
-                        :overflow-y      "auto"}}
-          [collapsible-toggle mobile?]
-          [:div#layer-selection {:style {:padding "1rem"}}
-           [:div {:style {:display "flex" :justify-content "center"}}
-            [:label {:style ($layer-selection)} "Layer Selection"]
-            [:span {:style {:margin-right "-.5rem"}}
-             [tool-button :close #(reset! show-panel? false)]]]
-           (map (fn [[key {:keys [opt-label hover-text options underlays sort?]}]]
-                  (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                    ^{:key hover-text}
-                    [:<>
-                     [panel-dropdown
-                      opt-label
-                      hover-text
-                      (get *params key)
-                      sorted-options
-                      (= 1 (count sorted-options))
-                      #(select-param! % key)
-                      selected-param-set]
-                     (when underlays
-                       [optional-layers underlays *params select-param!])]))
-                param-options)
-           [:div {:style {:margin-top ".5rem"}}
-            [:label (str "Opacity: " @active-opacity)]
-            [:input {:style     {:width "100%"}
-                     :type      "range"
-                     :min       "0"
-                     :max       "100"
-                     :value     @active-opacity
-                     :on-change #(do (reset! active-opacity (u/input-int-value %))
-                                     (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]]
-           [panel-dropdown
-            "Base Map"
-            "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
-            @*base-map
-            (c/base-map-options)
-            false
-            select-base-map!]]
-          [help-section]]]))))
+         [collapsible-panel-toggle mobile?]
+         [collapsible-panel-header]
+         [:div#collapsible-panel-body {:class (<class $collapsible-panel-body)}
+          [:div#section-wrapper
+           [collapsible-panel-section
+            "layer-selection"
+            [:<>
+             (map (fn [[key {:keys [opt-label hover-text options sort?]}]]
+                    (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                      ^{:key hover-text}
+                      [:<>
+                       [panel-dropdown
+                        opt-label
+                        hover-text
+                        (get *params key)
+                        sorted-options
+                        (= 1 (count sorted-options))
+                        #(select-param! % key)
+                        selected-param-set]]))
+                  param-options)
+             [opacity-input active-opacity]]]
+           [collapsible-panel-section
+            "optional-layers"
+            [optional-layers
+             c/near-term-forecast-underlays]]
+           [collapsible-panel-section
+            "base-map"
+            [panel-dropdown
+             "Base Map"
+             "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
+             @*base-map
+             (c/base-map-options)
+             false
+             select-base-map!]]]
+          [collapsible-panel-section
+           "help"
+           [help-section]]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Share Tool
@@ -416,7 +450,7 @@
     (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
                    (:body)
                    (js/JSON.parse))]
-      (if (not (some? data))
+      (if (empty? (.-features data))
         (do
           (toast-message! "There are no red flag warnings at this time.")
           (reset! show-red-flag? false))
@@ -490,7 +524,7 @@
                                   :right
                                   [tool-button icon on-click active?]])))])
 
-(defn zoom-bar [current-layer-extent current-layer mobile? create-share-link terrain?]
+(defn zoom-bar [current-layer-extent current-layer mobile? create-share-link terrain? time-slider?]
   (r/with-let [minZoom      (r/atom 0)
                maxZoom      (r/atom 28)
                *zoom        (r/atom 10)
@@ -504,7 +538,7 @@
       (reset! minZoom min)
       (reset! maxZoom max))
     (mb/add-map-zoom-end! #(reset! *zoom %))
-    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if mobile? "90px" "36px")})}
+    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if (and mobile? time-slider?) "90px" "36px")})}
      (map-indexed (fn [i [icon hover-text on-click]]
                     ^{:key i} [tool-tip-wrapper
                                hover-text
@@ -894,7 +928,11 @@
       "Point Information"
       close-fn!
       (fn [box-height box-width]
-        (let [has-point? (mb/get-overlay-center)]
+        (let [has-point? (mb/get-overlay-center)
+              no-info    [loading-cover
+                          box-height
+                          box-width
+                          "This point does not have any information."]]
           (cond
             (not has-point?)
             [loading-cover
@@ -905,7 +943,8 @@
             (nil? last-clicked-info)
             [loading-cover box-height box-width "Loading..."]
 
-            (number? last-clicked-info)
+            (and (number? last-clicked-info)
+                 (>= last-clicked-info -50))
             [single-point-info
              box-height
              box-width
@@ -914,7 +953,11 @@
              units
              convert]
 
-            (not-empty last-clicked-info)
+            (or (< last-clicked-info -50)
+                (-> last-clicked-info (first) (:band) (< -50)))
+            no-info
+
+            (and (not-empty last-clicked-info) (not-empty legend-list))
             [vega-information
              box-height
              box-width
@@ -925,11 +968,7 @@
              legend-list
              last-clicked-info]
 
-            :else
-            [loading-cover
-             box-height
-             box-width
-             "This point does not have any information."])))]]
+            :else no-info)))]]
     (finally
       (mb/remove-event! click-event))))
 
@@ -943,11 +982,11 @@
    :margin-right     ".5rem"
    :min-width        "1rem"})
 
-(defn $legend-location [show? mobile?]
-  {:left          (if show? "19rem" "1rem")
-   :max-height    (if mobile?
-                    "calc(100% - 100px)"
-                    "calc(100% - 32px)")
+(defn $legend-location [show? mobile? time-slider?]
+  {:left          (if (and show? (not mobile?)) "20rem" "2rem")
+   :max-height    (if (and mobile? time-slider?)
+                    "calc(100% - 106px)"
+                    "calc(100% - 52px)")
    :overflow-x    "hidden"
    :overflow-y    "auto"
    :padding-left  ".5rem"
@@ -956,11 +995,11 @@
    :top           "16px"
    :transition    "all 200ms ease-in"})
 
-(defn legend-box [legend-list reverse? mobile? units]
+(defn legend-box [legend-list reverse? mobile? time-slider? units]
   (reset! show-legend? (not mobile?))
-  (fn [legend-list reverse? mobile? units]
+  (fn [legend-list reverse? mobile? time-slider? units]
     (when (and @show-legend? (seq legend-list))
-      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile?))}
+      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile? time-slider?))}
        [:div {:style {:display        "flex"
                       :flex-direction "column"}}
         (map-indexed (fn [i leg]
@@ -976,10 +1015,10 @@
 ;; Scale Control
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $scale-line [mobile?]
+(defn- $scale-line [mobile? time-slider?]
   {:background-color ($/color-picker :bg-color)
    :border           (str "1px solid " ($/color-picker :border-color))
-   :bottom           (if mobile? "90px" "36px")
+   :bottom           (if (and mobile? time-slider?) "90px" "36px")
    :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
    :left             "auto"
    :right            "64px"
@@ -998,11 +1037,11 @@
 
 (defn scale-bar
   "Scale bar control which resizes based on map zoom/location."
-  [mobile?]
+  [mobile? time-slider?]
   (r/with-let [max-width    100.0
                scale-params (r/atom {:distance 0 :ratio 1 :units "ft"})
                move-event   (mb/add-map-move! #(reset! scale-params (g/imperial-scale (mb/get-distance-meters))))]
-    [:div {:style ($/combine $/tool ($scale-line mobile?) {:width (* (:ratio @scale-params) max-width)})}
+    [:div#scale-bar {:style ($/combine $/tool ($scale-line mobile? time-slider?) {:width (* (:ratio @scale-params) max-width)})}
      [:div {:style ($scale-line-inner)}
       (str (:distance @scale-params) " " (:units @scale-params))]]
     (finally

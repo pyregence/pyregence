@@ -55,21 +55,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $alert-box []
-  {:align-items     "center"
-   :background      "white"
-   :border          "1.5px solid #009"
-   :border-radius   "4px"
-   :display         "flex"
-   :flex-direction  "row"
-   :flex-wrap       "nowrap"
-   :font-size       ".9rem"
-   :font-style      "italic"
-   :justify-content "space-between"
-   :left            "1rem"
-   :padding         ".5rem"
-   :position        "fixed"
-   :width           "50%"
-   :z-index         "10000"})
+  (with-meta
+    {:align-items     "center"
+     :background      "white"
+     :border          "1.5px solid #009"
+     :border-radius   "4px"
+     :display         "flex"
+     :flex-direction  "row"
+     :flex-wrap       "nowrap"
+     :font-size       ".9rem"
+     :font-style      "italic"
+     :justify-content "space-between"
+     :left            "1rem"
+     :padding         ".5rem"
+     :position        "fixed"
+     :width           "50%"
+     :z-index         "10000"}
+    {:media {{:max-width "800px"}
+             {:width "90%"}}}))
 
 (defn- $alert-transition [show-full?]
   (if show-full?
@@ -115,12 +118,13 @@
                                           "See console for complete list."))]))))
 (defn toast-message
   "Creates a toast message component."
-  []
+  [mobile?]
   (let [message (r/atom "")]
-    (fn []
+    (fn [mobile?]
       (let [message? (not (nil? @toast-message-text))]
         (when message? (reset! message @toast-message-text))
-        [:div#toast-message {:style ($/combine $alert-box [$alert-transition message?])}
+        [:div#toast-message {:class (<class $alert-box)
+                             :style ($alert-transition message?)}
          [:span {:style ($/padding ".5rem")}
           (show-line-break @message)]
          [:span {:class    (<class $p-alert-close)

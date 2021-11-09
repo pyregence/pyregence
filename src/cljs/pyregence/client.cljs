@@ -7,18 +7,23 @@
             [pyregence.pages.help               :as help]
             [pyregence.pages.login              :as login]
             [pyregence.pages.near-term-forecast :as ntf]
+            [pyregence.pages.not-found          :as not-found]
+            [pyregence.pages.privacy-policy     :as privacy]
             [pyregence.pages.register           :as register]
             [pyregence.pages.reset-password     :as reset-password]
-            [pyregence.pages.verify-email       :as verify-email]))
+            [pyregence.pages.terms-of-use       :as terms]
+            [pyregence.pages.verify-email       :as verify-email]
+            [pyregence.components.page-layout   :refer [set-announcement-text!
+                                                        wrap-page]]))
 
 (defonce ^:private original-params (atom {}))
 
-(def ^:private uri->root-component
+(def ^:private uri->root-component-ha
+  "All root-components for URIs that should have a header and announcement-banner."
   {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/admin"              admin/root-component
    "/dashboard"          dashboard/root-component
    "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
-   "/help"               help/root-component
    "/login"              login/root-component
    "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
    "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
@@ -26,11 +31,28 @@
    "/reset-password"     reset-password/root-component
    "/verify-email"       verify-email/root-component})
 
+(def ^:private uri->root-component-hf
+  "All root-components for URIs that should have a header and a footer."
+  {"/help"           help/root-component
+   "/privacy-policy" privacy/root-component
+   "/terms-of-use"   terms/root-component})
+
 (defn- render-root
   "Renders the root component for the current URI."
   [params]
-  (let [root-component (-> js/window .-location .-pathname uri->root-component)]
-    (render [root-component params] (dom/getElement "app"))))
+  (let [uri (-> js/window .-location .-pathname)]
+    (render (cond
+              (uri->root-component-ha uri)
+              (wrap-page #((uri->root-component-ha uri) params))
+
+              (uri->root-component-hf uri)
+              (wrap-page #((uri->root-component-hf uri) params)
+                         :footer? true)
+
+              :else
+              (wrap-page not-found/root-component
+                         :footer? true))
+            (dom/getElement "app"))))
 
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."
@@ -40,11 +62,12 @@
                      (reset! original-params
                              (js->clj params :keywordize-keys true))
                      @original-params)]
-    (c/set-dev-mode! (get cur-params :dev-mode))
+    (c/set-dev-mode! (:dev-mode cur-params))
     (c/set-feature-flags! cur-params)
     (c/set-geoserver-base-url! (get-in cur-params [:geoserver :base-url]))
     (c/set-mapbox-access-token! (get-in cur-params [:mapbox :access-token]))
     (c/set-default-forecasts! (get cur-params :default-forecasts))
+    (set-announcement-text! (:announcement cur-params))
     (render-root cur-params)))
 
 (defn- ^:after-load mount-root!

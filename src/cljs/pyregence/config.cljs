@@ -14,7 +14,7 @@
   (reset! features (:features config)))
 
 (defn feature-enabled?
-  "Checks whether or not a specific featue is enabled."
+  "Checks whether or not a specific feature is enabled."
   [feature-name]
   (get @features feature-name))
 
@@ -27,6 +27,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WG3 Forecast
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def near-term-forecast-underlays
+  {:us-buildings    {:enabled?   #(feature-enabled? :structures)
+                     :opt-label  "Structures"
+                     :z-index    4
+                     :filter-set #{"fire-detections" "us-buildings"}}
+   :nifs-perimeters {:opt-label  "NIFS Perimeters"
+                     :z-index    3
+                     :filter-set #{"fire-detections" "nifs-perimeters"}}
+   :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
+                     :z-index    2
+                     :filter-set #{"fire-detections" "viirs-timestamped"}}
+   :modis-hotspots  {:opt-label  "MODIS Hotspots"
+                     :z-index    1
+                     :filter-set #{"fire-detections" "modis-timestamped"}}
+   :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
+                     :z-index    0
+                     :filter-set #{"fire-detections" "goes16-rgb"}}})
 
 (def near-term-forecast-options
   {:fuels        {:opt-label    "Fuels"
@@ -285,22 +303,6 @@
                   :params          {:fire-name  {:opt-label      "Fire Name"
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
-                                                 :underlays      {:us-buildings    {:enabled?   #(feature-enabled? :structures)
-                                                                                    :opt-label  "Structures"
-                                                                                    :z-index    4
-                                                                                    :filter-set #{"fire-detections" "us-buildings"}}
-                                                                  :nifs-perimeters {:opt-label  "NIFS Perimeters"
-                                                                                    :z-index    3
-                                                                                    :filter-set #{"fire-detections" "nifs-perimeters"}}
-                                                                  :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
-                                                                                    :z-index    2
-                                                                                    :filter-set #{"fire-detections" "viirs-timestamped"}}
-                                                                  :modis-hotspots  {:opt-label  "MODIS Hotspots"
-                                                                                    :z-index    1
-                                                                                    :filter-set #{"fire-detections" "modis-timestamped"}}
-                                                                  :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
-                                                                                    :z-index    0
-                                                                                    :filter-set #{"fire-detections" "goes16-rgb"}}}
                                                  :default-option :active-fires
                                                  :options        {:active-fires    {:opt-label    "*All Active Fires"
                                                                                     :style-fn     :default
@@ -368,19 +370,20 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}})
 
 (def near-term-forecast-layers
-  "All of the different layer sets for the near term forecast.
-   Project - All layers added in addition to the default Mapbox layers.
-   Forecast - All layers corresponding to a forecast. Excludes cameras and red-flag warnings.
-   Opacity change - All layers whose opacity should change. Excludes any underlays (fire-detections)."
-  {:project-layers        #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast"
-                            "fire-active" "fire-active-labels" "fire-weather-forecast"
-                            "fuels-and-topography" "fire-cameras" "red-flag" "fire-history"}
-   :forecast-layers       #{"fire-spread-forecast" "fire-detections" "fire-risk-forecast"
-                            "fire-active" "fire-active-labels" "fire-weather-forecast"
-                            "fuels-and-topography"}
-   :opacity-change-layers #{"fire-spread-forecast" "fire-risk-forecast"
-                            "fire-active" "fire-active-labels" "fire-weather-forecast"
-                            "fuels-and-topography"}})
+  "All layers added in addition to the default Mapbox layers and their
+   associated metadata for the near term forecast.
+
+   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras and underlays."
+  {:fire-spread-forecast  {:forecast-layer? true}
+   :fire-active           {:forecast-layer? true}
+   :fire-active-labels    {:forecast-layer? true}
+   :fire-detections       {:forecast-layer? false}
+   :fire-risk-forecast    {:forecast-layer? true}
+   :fire-weather-forecast {:forecast-layer? true}
+   :fuels-and-topography  {:forecast-layer? true}
+   :fire-cameras          {:forecast-layer? false}
+   :red-flag              {:forecast-layer? false}
+   :fire-history          {:forecast-layer? false}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WG4 Forecast
@@ -439,13 +442,13 @@
                                                    :options    {:loading {:opt-label "Loading..."}}}}}})
 
 (def long-term-forecast-layers
-  "All of the different layer sets for the long term forecast.
-   Project - All layers added in addition to the default Mapbox layers.
-   Forecast - All layers corresponding to a forecast. Excludes cameras and red-flag warnings.
-   Opacity change - All layers whose opacity should change."
-  {:project-layers        #{"wg4" "fire-cameras" "red-flag"}
-   :forecast-layers       #{"wg4"}
-   :opacity-change-layers #{"wg4"}})
+  "All layers added in addition to the default Mapbox layers and their
+   associated metadata for the loading term forecast.
+
+   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras."
+  {:wg4          {:forecast-layer? true}
+   :fire-cameras {:forecast-layer? false}
+   :red-flag     {:forecast-layer? false}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Forecast Configuration
@@ -662,17 +665,45 @@
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
-  [layer]
-  (str (mvt-url)
-       "?REQUEST=GetTile"
-       "&SERVICE=WMTS"
-       "&VERSION=1.0.0"
-       "&LAYER=" layer
-       "&STYLE="
-       "&FORMAT=image/png"
-       "&TILEMATRIX=EPSG:900913:{z}"
-       "&TILEMATRIXSET=EPSG:900913"
-       "&TILECOL={x}&TILEROW={y}"))
+  ([layer]
+   (str (mvt-url)
+        "?REQUEST=GetTile"
+        "&SERVICE=WMTS"
+        "&VERSION=1.0.0"
+        "&LAYER=" layer
+        "&STYLE="
+        "&FORMAT=image/png"
+        "&TILEMATRIX=EPSG:900913:{z}"
+        "&TILEMATRIXSET=EPSG:900913"
+        "&TILECOL={x}&TILEROW={y}"))
+
+  ([layer layer-time]
+   (if (feature-enabled? :image-mosaic-gwc)
+     (str (mvt-url)
+          "?REQUEST=GetTile"
+          "&SERVICE=WMTS"
+          "&VERSION=1.0.0"
+          "&LAYER=" layer
+          "&STYLE="
+          "&FORMAT=image/png"
+          "&TILEMATRIX=EPSG:900913:{z}"
+          "&TILEMATRIXSET=EPSG:900913"
+          "&TILECOL={x}&TILEROW={y}"
+          "&TIME=" layer-time)
+     (str (wms-url)
+          "?SERVICE=WMS"
+          "&VERSION=1.3.0"
+          "&REQUEST=GetMap"
+          "&FORMAT=image/png"
+          "&TRANSPARENT=true"
+          "&WIDTH=256"
+          "&HEIGHT=256"
+          "&CRS=EPSG%3A3857"
+          "&STYLES="
+          "&FORMAT_OPTIONS=dpi%3A113"
+          "&BBOX={bbox-epsg-3857}"
+          "&LAYERS=" layer
+          "&TIME=" layer-time))))
 
 (defn wfs-layer-url
   "Generates a Web Feature Service (WFS) url to download an entire vector data

@@ -16,9 +16,7 @@
             [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
             [pyregence.components.common    :refer [radio tool-tip-wrapper]]
             [pyregence.components.messaging :refer [message-box-modal
-                                                    toast-message
-                                                    toast-message!
-                                                    process-toast-messages!]]
+                                                    toast-message!]]
             [pyregence.components.svg-icons :refer [pin]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -199,7 +197,6 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-legend! [layer]
-  (reset! legend-list [])
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all"))))) ; TODO make a more generic way to do this.
@@ -249,15 +246,9 @@
                                   (str/join "," point-info)
                                   (if single? 1 1000))))))
 
-(defn- reset-underlays! []
-  (doseq [[_ {:keys [name show?]}] (get-in @*params [@*forecast :underlays])]
-    (when (some? name)
-      (mb/set-visible-by-title! name show?))))
-
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100))
-  (reset-underlays!))
+  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100)))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -303,7 +294,6 @@
           style-fn (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
       (mb/clear-popup!)
-      (reset-underlays!)
       (when (some? style-fn)
         (mb/add-feature-highlight! "fire-active" "fire-active" @mobile? init-fire-popup!)
         (mb/add-feature-highlight! "red-flag" "red-flag" @mobile? init-red-flag-popup!))
@@ -316,25 +306,22 @@
 
 (defn select-param! [val & keys]
   (swap! *params assoc-in (cons @*forecast keys) val)
-  (when-not ((set keys) :underlays)
-    (let [main-key (first keys)]
-      (when (and (= main-key :fire-name))
-        (select-layer! 0)
-        (swap! *params assoc-in (cons @*forecast [:burn-pct]) :50)
-        (reset! animate? false))
-      (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
-                    (get-current-layer-key :clear-point?)
-                    (get-current-option-key main-key val :auto-zoom?)
-                    (get-any-level-key     :max-zoom)))))
+  (reset! legend-list [])
+  (let [main-key (first keys)]
+    (when (= main-key :fire-name)
+      (select-layer! 0)
+      (swap! *params assoc-in (cons @*forecast [:burn-pct]) :50)
+      (reset! animate? false))
+    (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
+                  (get-current-layer-key :clear-point?)
+                  (get-current-option-key main-key val :auto-zoom?)
+                  (get-any-level-key     :max-zoom))))
 
 (defn select-forecast! [key]
   (go
-    (doseq [[_ {:keys [name]}] (get-in @*params [@*forecast :underlays])]
-      (when (some? name)
-        (mb/set-visible-by-title! name false)))
+    (reset! legend-list [])
     (reset! *forecast key)
     (reset! processed-params (get-forecast-opt :params))
-    (reset-underlays!)
     (<! (change-type! true
                       true
                       (get-any-level-key :auto-zoom?)
@@ -385,11 +372,7 @@
                                                   [k (or (get-in selected-options [forecast k])
                                                          (:default-option v)
                                                          (ffirst (:options v)))])
-                                                params)
-                                        {:underlays (->> params
-                                                         (mapcat (fn [[_ v]] (:underlays v)))
-                                                         (u/mapm (fn [[k _]] [k {:show? false
-                                                                                 :name  nil}])))})]))
+                                                params))]))
                    @options)))
 
 (defn refresh-fire-names! [user-id]
@@ -515,6 +498,7 @@
           @legend-list
           (get-any-level-key :reverse-legend?)
           @mobile?
+          (get-any-level-key :time-slider?)
           (get-current-layer-key :units)]
          [mc/tool-bar
           show-info?
@@ -525,9 +509,15 @@
           set-show-info!
           @mobile?
           user-id]
-         [mc/scale-bar @mobile?]
+         [mc/scale-bar @mobile? (get-any-level-key :time-slider?)]
          (when-not @mobile? [mc/mouse-lng-lat])
-         [mc/zoom-bar (get-current-layer-extent) (current-layer) @mobile? create-share-link terrain?]
+         [mc/zoom-bar
+          (get-current-layer-extent)
+          (current-layer)
+          @mobile?
+          create-share-link
+          terrain?
+          (get-any-level-key :time-slider?)]
          (when (get-any-level-key :time-slider?)
            [mc/time-slider
             param-layers
@@ -633,14 +623,13 @@
                           (js/setTimeout mb/resize-map! 50))]
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
-          (process-toast-messages!)
           (initialize! params)
           (update-fn)))
 
       :reagent-render
       (fn [_]
-        [:div {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
-         [toast-message]
+        [:div#near-term-forecast
+         {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
          [message-box-modal]
          (when @loading? [loading-modal])
          [message-modal]

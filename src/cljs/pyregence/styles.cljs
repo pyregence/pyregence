@@ -42,6 +42,9 @@
      :font-hover-color (if @light?
                          (color-picker :white)
                          (color-picker :black))
+     :header-color     (if @light?
+                         (str "rgb(235, 235, 235, " alpha ")")
+                         (str "rgb(24, 30, 36, "    alpha ")"))
      :black            (str "rgba(0, 0, 0, "       alpha ")")
      :blue             (str "rgba(0, 0, 175, "     alpha ")")
      :box-tan          (str "rgba(249, 248, 242, " alpha ")")
@@ -64,9 +67,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defglobal general
-  [:* {:box-sizing "border-box"
-       :margin     "0px"
-       :padding    "0px"}]
+  [:* {:box-sizing "border-box"}]
 
   [:label {:font-size     "1rem"
            :font-weight   "bold"
