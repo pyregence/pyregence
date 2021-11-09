@@ -317,7 +317,7 @@
   "A section component to differentiate content in the collapsible panel."
   [id body]
   [:section {:id    (str "section-" id)
-             :style {:padding "0.75rem 0.6rem"}}
+             :style {:padding "0.75rem 0.6rem 0 0.6rem"}}
    [:div {:style {:background-color ($/color-picker :header-color 0.6)
                   :border-radius "8px"
                   :box-shadow    "0px 0px 3px #bbbbbb"
@@ -347,6 +347,16 @@
             :on-change #(do (reset! active-opacity (u/input-int-value %))
                             (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]])
 
+(defn- $collapsible-panel-body
+  []
+  (with-meta
+    {:display         "flex"
+     :flex-direction  "column"
+     :height          "calc(100% - 3.25rem)"
+     :justify-content "space-between"
+     :overflow-y      "auto"}
+    {:pseudo {:last-child {:padding-bottom "0.75rem"}}}))
+
 (defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
@@ -358,12 +368,7 @@
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
          [collapsible-panel-toggle mobile?]
          [collapsible-panel-header]
-         [:div#collapsible-panel-body
-          {:style {:display         "flex"
-                   :flex-direction  "column"
-                   :height          "calc(100% - 3.25rem)"
-                   :justify-content "space-between"
-                   :overflow-y      "auto"}}
+         [:div#collapsible-panel-body {:class (<class $collapsible-panel-body)}
           [:div#section-wrapper
            [collapsible-panel-section
             "layer-selection"
