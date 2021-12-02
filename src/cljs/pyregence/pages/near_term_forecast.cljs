@@ -119,6 +119,9 @@
 (defn get-current-layer-group []
   (:layer-group (current-layer) ""))
 
+(defn get-current-layer-geoserver []
+  (:geoserver (current-layer) ""))
+
 (defn get-current-layer-key [key-name]
   (->> (get-forecast-opt :params)
        (map (fn [[key {:keys [options]}]]
@@ -199,7 +202,8 @@
 (defn get-legend! [layer]
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
-              (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all"))))) ; TODO make a more generic way to do this.
+              (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all")
+                            (get-current-layer-geoserver))))) ; TODO make a more generic way to do this.
 
 (defn- process-timeline-point-info! [json-res]
   (reset! last-clicked-info [])
@@ -244,11 +248,14 @@
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
                                   (str/join "," point-info)
-                                  (if single? 1 1000))))))
+                                  (if single? 1 1000)
+                                  (get-current-layer-geoserver))))))
 
 (defn select-layer! [new-layer]
   (reset! *layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name) (/ @active-opacity 100)))
+  (mb/swap-active-layer! (get-current-layer-name)
+                         (get-current-layer-geoserver)
+                         (/ @active-opacity 100)))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -292,7 +299,10 @@
     (<! (get-layers! get-model-times?))
     (let [source   (get-current-layer-name)
           style-fn (get-current-layer-key :style-fn)]
-      (mb/reset-active-layer! source style-fn (/ @active-opacity 100))
+      (mb/reset-active-layer! source
+                              style-fn
+                              (get-current-layer-geoserver)
+                              (/ @active-opacity 100))
       (mb/clear-popup!)
       (when (some? style-fn)
         (mb/add-feature-highlight! "fire-active" "fire-active" @mobile? init-fire-popup!)

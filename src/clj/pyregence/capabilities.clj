@@ -91,19 +91,19 @@
         [_ parameters]    (str/split layer #"_geoTiff_")
         [_ model prob measure year] (re-matches #"([^_]+)_([^_]+)_AA_all_([^_]+)_mean_(\d+)" parameters)]
     {:workspace   workspace
-     :layer-group ""
+     :layer-group (str workspace ":" model "_" prob "_AA_all_" measure "_mean")
      :forecast    model
      :filter-set  #{workspace model prob measure "20210407_000000"}
      :model-init  "20210407_000000"
      :sim-time    (str year "0101_000000")
      :hour        (- (Integer/parseInt year) 1954)}))
 
-(defn process-layers! [workspace-name]
-  (let [xml-response (:body (client/get (str (u/end-with (get-config :geoserver :base-url) "/")
+(defn process-layers! [geoserver-base-url workspace-name]
+  (let [xml-response (:body (client/get (str (u/end-with geoserver-base-url "/")
                                              "wms?SERVICE=WMS"
                                              "&VERSION=1.3.0"
                                              "&REQUEST=GetCapabilities"
-                                             (when (pos? (count workspace-name))
+                                             (when (some? workspace-name)
                                                (str "&NAMESPACE=" workspace-name)))))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
@@ -119,7 +119,7 @@
                                            (re-seq #"[\d|\.|-]+")
                                            (rest)
                                            (vec))
-                            merge-fn  #(merge % {:layer full-name :extent coords})]
+                            merge-fn  #(merge % {:layer full-name :extent coords :geoserver geoserver-base-url})]
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-layer-name full-name))
@@ -135,7 +135,7 @@
                           (str/starts-with? full-name "fuels")
                           (merge-fn (split-fuels full-name))
 
-                          (str/starts-with? full-name "wg4_FireSim")
+                          (re-matches #"climate_FireSim.*_\d{4}" full-name)
                           (merge-fn (split-wg4-scenarios full-name))))))
                    (vec)))
             xml)
@@ -153,20 +153,30 @@
 (defn get-all-layers []
   (data-response (map :filter-set @layers)))
 
-(defn set-capabilities! [& [workspace-name]]
+(defn set-capabilities! [geoserver-base-url & [workspace-name]]
   (try
     (let [stdout?    (= 0 (count @layers))
-          new-layers (process-layers! workspace-name)
+          new-layers (process-layers! geoserver-base-url workspace-name)
           message    (str (count new-layers) " layers added to capabilities.")]
       (if workspace-name
         (do
           (remove-workspace! workspace-name)
           (swap! layers #(into % new-layers)))
-        (reset! layers new-layers))
+        (swap! layers #(concat
+                        (filter (fn [layer]
+                                  (not= geoserver-base-url (:geoserver layer)))
+                                %)
+                        new-layers)))
       (log message :force-stdout? stdout?)
       (data-response message))
     (catch Exception _
       (log-str "Failed to load capabilities."))))
+
+(defn set-all-capabilities!
+  "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
+  []
+  (doall (map set-capabilities! (vals (get-config :geoserver))))
+  (data-response (str (count @layers) " layers added to capabilities.")))
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]
@@ -204,7 +214,7 @@
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
 (defn get-layers [selected-set-str]
-  (when-not (seq @layers) (set-capabilities!))
+  (when-not (seq @layers) (set-all-capabilities!)) ;(set-capabilities! (get-config :geoserver :pyrecast))) ;(set-all-capabilities!)
   (let [selected-set (edn/read-string selected-set-str)
         available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer))) @layers)
         model-times  (->> available

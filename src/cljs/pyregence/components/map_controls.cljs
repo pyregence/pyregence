@@ -245,6 +245,7 @@
               layer-name (<! (get-layer-name filter-set identity))]
           (mb/create-wms-layer! layer-name
                                 layer-name
+                                "https://data.pyregence.org/geoserver"
                                 false)
           (when-let [tail (seq (rest sorted-underlays))]
             (recur tail)))))
@@ -468,7 +469,9 @@
   [show-fire-history?]
   (swap! show-fire-history? not)
   (when (and @show-fire-history? (not (mb/layer-exists? "fire-history")))
-    (mb/create-fire-history-layer! "fire-history" "fire-detections_fire-history%3Afire-history"))
+    (mb/create-fire-history-layer! "fire-history"
+                                   "fire-detections_fire-history%3Afire-history"
+                                   "https://data.pyregence.org/geoserver"))
   (mb/set-visible-by-title! "fire-history" @show-fire-history?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

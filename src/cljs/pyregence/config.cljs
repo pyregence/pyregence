@@ -391,10 +391,11 @@
 
 (def long-term-forecast-options
   {:fire-scenarios {:opt-label       "Fire Scenarios"
-                    :filter          "wg4_FireSim"
+                    :filter          "climate_FireSim"
                     :hover-text      "Wildfire scenario projections for area burned with varied emissions and population scenarios."
                     :reverse-legend? true
-                    :block-info?     true
+                    :block-info?     false
+                    :time-slider?    true
                     :params          {:model      {:opt-label  "Global Climate Model"
                                                    :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
                                                                 Projected future climate from these four models can be described as producing:
@@ -446,7 +447,7 @@
    associated metadata for the loading term forecast.
 
    forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras."
-  {:wg4          {:forecast-layer? true}
+  {:climate      {:forecast-layer? true}
    :fire-cameras {:forecast-layer? false}
    :red-flag     {:forecast-layer? false}})
 
@@ -619,20 +620,19 @@
 ;; WFS/WMS Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private geoserver-base-url (atom nil))
-(defn- wms-url [] (str (u/end-with @geoserver-base-url "/") "wms"))
-(defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
-(defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
+(defn- wms-url [geoserver-base-url]
+  (str (u/end-with geoserver-base-url "/") "wms"))
 
-(defn set-geoserver-base-url!
-  "Sets the base URL of the Geoserver given the value from `config.edn`."
-  [url]
-  (reset! geoserver-base-url url))
+(defn- wfs-url [geoserver-base-url]
+  (str (u/end-with geoserver-base-url "/") "wfs"))
+
+(defn- mvt-url [geoserver-base-url]
+  (str (u/end-with geoserver-base-url "/") "gwc/service/wmts"))
 
 (defn legend-url
   "Generates a URL for the legend given a layer."
-  [layer]
-  (str (wms-url)
+  [layer geoserver-base-url]
+  (str (wms-url geoserver-base-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
@@ -642,8 +642,8 @@
 
 (defn point-info-url
   "Generates a URL for the point information."
-  [layer-group bbox feature-count]
-  (str (wms-url)
+  [layer-group bbox feature-count geoserver-base-url]
+  (str (wms-url geoserver-base-url)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
@@ -665,8 +665,8 @@
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
-  ([layer]
-   (str (mvt-url)
+  ([layer geoserver-base-url]
+   (str (mvt-url geoserver-base-url)
         "?REQUEST=GetTile"
         "&SERVICE=WMTS"
         "&VERSION=1.0.0"
@@ -677,9 +677,9 @@
         "&TILEMATRIXSET=EPSG:900913"
         "&TILECOL={x}&TILEROW={y}"))
 
-  ([layer layer-time]
+  ([layer geoserver-base-url layer-time]
    (if (feature-enabled? :image-mosaic-gwc)
-     (str (mvt-url)
+     (str (mvt-url geoserver-base-url)
           "?REQUEST=GetTile"
           "&SERVICE=WMTS"
           "&VERSION=1.0.0"
@@ -690,7 +690,7 @@
           "&TILEMATRIXSET=EPSG:900913"
           "&TILECOL={x}&TILEROW={y}"
           "&TIME=" layer-time)
-     (str (wms-url)
+     (str (wms-url geoserver-base-url)
           "?SERVICE=WMS"
           "&VERSION=1.3.0"
           "&REQUEST=GetMap"
@@ -710,8 +710,8 @@
    set as GeoJSON.
 
    Mapbox GL does support GeoJSON in EPSG:4326. However, it does not support WFS."
-  [layer]
-  (str (wfs-url)
+  [layer geoserver-base-url]
+  (str (wfs-url geoserver-base-url)
        "?SERVICE=WFS"
        "&VERSION=1.3.0"
        "&REQUEST=GetFeature"
@@ -726,8 +726,8 @@
    EPSG:900913 (Google Web Mercator). EPSG:900913 is used since GeoServer's
    embedded [GeoWebCache](https://www.geowebcache.org/) Web Map Tile Service (WMTS)
    supports EPSG:900913 by default, but does not support EPSG:3857 by default."
-  [layer]
-  (str (mvt-url)
+  [layer geoserver-base-url]
+  (str (mvt-url geoserver-base-url)
        "?REQUEST=GetTile"
        "&SERVICE=WMTS"
        "&VERSION=1.0.0"

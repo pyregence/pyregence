@@ -441,10 +441,10 @@
 ;; WMS Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wms-source [layer-name]
+(defn- wms-source [layer-name geoserver-base-url]
   {:type     "raster"
    :tileSize 256
-   :tiles    [(c/wms-layer-url layer-name)]})
+   :tiles    [(c/wms-layer-url layer-name geoserver-base-url)]})
 
 (defn- wms-layer [layer-name source-name opacity visible?]
   {:id       layer-name
@@ -458,8 +458,8 @@
   "Returns new WMS source and layer in the form `[source [layer]]`.
    `source` must be a valid WMS layer in the geoserver,
    `opacity` must be a float between 0.0 and 1.0."
-  [id source opacity visibile?]
-  (let [new-source {id (wms-source source)}
+  [id source geoserver-base-url opacity visibile?]
+  (let [new-source {id (wms-source source geoserver-base-url)}
         new-layer  (wms-layer id id opacity visibile?)]
     [new-source [new-layer]]))
 
@@ -467,9 +467,9 @@
 ;; WFS Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wfs-source [layer-name]
+(defn- wfs-source [layer-name geoserver-base-url]
   {:type       "geojson"
-   :data       (c/wfs-layer-url layer-name)
+   :data       (c/wfs-layer-url layer-name geoserver-base-url)
    :generateId true})
 
 (defn- zoom-interp
@@ -527,8 +527,8 @@
    `source` must be a valid WFS layer in the geoserver
    `z-index` allows layers to be rendered on-top (positive z-index) or below
    (negative z-index) Mapbox base map layers."
-  [id source opacity]
-  (let [new-source {id (wfs-source source)}
+  [id source geoserver-base-url opacity]
+  (let [new-source {id (wfs-source source geoserver-base-url)}
         labels-id  (str id "-labels")
         new-layers [(incident-layer id id opacity)
                     (incident-layer-label labels-id id opacity)]]
@@ -618,11 +618,11 @@
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
-  [geo-layer opacity]
+  [geo-layer geoserver-base-url opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
         layers (hide-forecast-layers (get style "layers"))
-        [new-sources new-layers] (build-wms geo-layer geo-layer opacity true)]
+        [new-sources new-layers] (build-wms geo-layer geo-layer geoserver-base-url opacity true)]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
@@ -631,13 +631,13 @@
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
-  [geo-layer style-fn opacity]
+  [geo-layer style-fn geoserver-base-url opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
         layers (hide-forecast-layers (get style "layers"))
         [new-sources new-layers] (if (some? style-fn)
-                                   (build-wfs fire-active geo-layer opacity)
-                                   (build-wms geo-layer geo-layer opacity true))]
+                                   (build-wfs fire-active geo-layer geoserver-base-url opacity)
+                                   (build-wms geo-layer geo-layer geoserver-base-url opacity true))]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
@@ -645,11 +645,11 @@
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
-  [id source visible?]
+  [id source geoserver-base-url visible?]
   (when id
     (if (layer-exists? id)
       (set-visible-by-title! id visible?)
-      (let [[new-source new-layers] (build-wms id source 1.0 visible?)
+      (let [[new-source new-layers] (build-wms id source geoserver-base-url 1.0 visible?)
             style                   (get-style)
             layers                  (get style "layers")
             zero-idx                (->> layers
@@ -693,14 +693,14 @@
                                 :fill-opacity       (on-hover 1 0.4)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
-(defn- mvt-source [layer-name]
+(defn- mvt-source [layer-name geoserver-base-url]
   {:type  "vector"
-   :tiles [(c/mvt-layer-url layer-name)]})
+   :tiles [(c/mvt-layer-url layer-name geoserver-base-url)]})
 
 (defn create-fire-history-layer!
   "Adds red flag warning layer to the map."
-  [id layer-name]
-  (let [new-source {id (mvt-source layer-name)}
+  [id layer-name geoserver-base-url]
+  (let [new-source {id (mvt-source layer-name geoserver-base-url)}
         new-layers [{:id           id
                      :source       id
                      :source-layer "fire-history"
