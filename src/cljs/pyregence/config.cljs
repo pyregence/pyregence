@@ -391,11 +391,10 @@
 
 (def long-term-forecast-options
   {:fire-scenarios {:opt-label       "Fire Scenarios"
-                    :filter          "climate_FireSim"
+                    :filter          "wg4_FireSim"
                     :hover-text      "Wildfire scenario projections for area burned with varied emissions and population scenarios."
                     :reverse-legend? true
-                    :block-info?     false
-                    :time-slider?    true
+                    :block-info?     true
                     :params          {:model      {:opt-label  "Global Climate Model"
                                                    :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
                                                                 Projected future climate from these four models can be described as producing:
@@ -447,7 +446,7 @@
    associated metadata for the loading term forecast.
 
    forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras."
-  {:climate      {:forecast-layer? true}
+  {:wg4          {:forecast-layer? true}
    :fire-cameras {:forecast-layer? false}
    :red-flag     {:forecast-layer? false}})
 

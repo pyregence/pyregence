@@ -91,7 +91,7 @@
         [_ parameters]    (str/split layer #"_geoTiff_")
         [_ model prob measure year] (re-matches #"([^_]+)_([^_]+)_AA_all_([^_]+)_mean_(\d+)" parameters)]
     {:workspace   workspace
-     :layer-group (str workspace ":" model "_" prob "_AA_all_" measure "_mean")
+     :layer-group ""
      :forecast    model
      :filter-set  #{workspace model prob measure "20210407_000000"}
      :model-init  "20210407_000000"
@@ -135,7 +135,7 @@
                           (str/starts-with? full-name "fuels")
                           (merge-fn (split-fuels full-name))
 
-                          (re-matches #"climate_FireSim.*_\d{4}" full-name)
+                          (str/starts-with? full-name "wg4_FireSim")
                           (merge-fn (split-wg4-scenarios full-name))))))
                    (vec)))
             xml)
