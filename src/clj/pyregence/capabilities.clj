@@ -154,23 +154,28 @@
   (data-response (map :filter-set @layers)))
 
 (defn set-capabilities! [geoserver-base-url & [workspace-name]]
-  (try
-    (let [stdout?    (= 0 (count @layers))
-          new-layers (process-layers! geoserver-base-url workspace-name)
-          message    (str (count new-layers) " layers added to capabilities.")]
-      (if workspace-name
-        (do
-          (remove-workspace! workspace-name)
-          (swap! layers #(into % new-layers)))
-        (swap! layers #(concat
-                        (filter (fn [layer]
-                                  (not= geoserver-base-url (:geoserver layer)))
-                                %)
-                        new-layers)))
-      (log message :force-stdout? stdout?)
-      (data-response message))
-    (catch Exception _
-      (log-str "Failed to load capabilities."))))
+  (if (-> (get-config :geoserver)
+          (vals)
+          (set)
+          (contains? geoserver-base-url))
+    (try
+      (let [stdout?    (= 0 (count @layers))
+            new-layers (process-layers! geoserver-base-url workspace-name)
+            message    (str (count new-layers) " layers added to capabilities.")]
+        (if workspace-name
+          (do
+            (remove-workspace! workspace-name)
+            (swap! layers #(into % new-layers)))
+          (swap! layers #(concat
+                          (filter (fn [layer]
+                                    (not= geoserver-base-url (:geoserver layer)))
+                                  %)
+                          new-layers)))
+        (log message :force-stdout? stdout?)
+        (data-response message))
+      (catch Exception _
+        (log-str "Failed to load capabilities.")))
+    (log-str "Failed to load capabilties. The GeoServer URL passed in was not found in config.edn.")))
 
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
