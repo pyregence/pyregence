@@ -214,7 +214,7 @@
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
 (defn get-layers [selected-set-str]
-  (when-not (seq @layers) (set-all-capabilities!)) ;(set-capabilities! (get-config :geoserver :pyrecast))) ;(set-all-capabilities!)
+  (when-not (seq @layers) (set-all-capabilities!))
   (let [selected-set (edn/read-string selected-set-str)
         available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer))) @layers)
         model-times  (->> available

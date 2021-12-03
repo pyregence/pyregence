@@ -202,8 +202,8 @@
 (defn get-legend! [layer]
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
-              (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all")
-                            (get-current-layer-geoserver))))) ; TODO make a more generic way to do this.
+              (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
+                            (get-current-layer-geoserver)))))
 
 (defn- process-timeline-point-info! [json-res]
   (reset! last-clicked-info [])
