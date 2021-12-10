@@ -35,7 +35,7 @@
                               :main-opts ["-m" "figwheel.main" "-b" "compile-dev" "-r"]}
            :rebel            {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
                               :main-opts  ["-m" "rebel-readline.main"]}
-           :production       {:jvm-opts ["-Xmx4096m" "-XX:+PrintFlagsFinal"]}
+           :production       {:jvm-opts ["-XX:MaxRAMPercentage=90" "-XX:+PrintFlagsFinal"]}
            :run-server       {:main-opts ["-m" "pyregence.server"]}
            :check-reflection {:main-opts ["-e" "(do,(set!,*warn-on-reflection*,true),nil)"
                                           "-e" "(require,'pyregence.server)"]}
