@@ -5,8 +5,8 @@
             [clojure.data.json :as json]
             [clojure.java.io   :as io]
             [cognitect.transit :as transit]
-            [hiccup.page      :refer [html5 include-css include-js]]
-            [pyregence.config :refer [get-config]]))
+            [hiccup.page       :refer [html5 include-css include-js]]
+            [triangulum.config :refer [get-config]]))
 
 (defn- find-app-js []
   (as-> (slurp "target/public/cljs/manifest.edn") app

@@ -2,6 +2,9 @@
   (:require [clojure.data.json :as json]
             [clojure.repl      :refer [demunge]]
             [clojure.string    :as str]
+            [triangulum.database :refer [call-sql]]
+            [triangulum.logging  :refer [log-str]]
+            [triangulum.utils    :refer [kebab->snake]]
             [pyregence.authentication :refer [add-new-user
                                               add-org-user
                                               get-org-list
@@ -29,7 +32,6 @@
             [pyregence.match-drop     :refer [initiate-md! get-md-status get-match-drops]]
             [pyregence.red-flag       :refer [get-red-flag-layer]]
             [pyregence.email          :refer [send-email]]
-            [pyregence.logging        :refer [log-str]]
             [pyregence.views          :refer [data-response]]))
 
 (def name->fn {"add-org-user"         add-org-user
@@ -62,12 +64,14 @@
                "update-user-info"     update-user-info
                "verify-user-email"    verify-user-email})
 
-(defn fn->sym [f]
+(defn- fn->sym [f]
   (-> (str f)
       (demunge)
       (str/split #"@")
       (first)
       (symbol)))
+
+;;; Handlers
 
 (defn clj-handler [{:keys [uri params content-type]}]
   (if-let [function (->> (str/split uri #"/")
@@ -83,3 +87,14 @@
         clj-result
         (data-response clj-result {:type (if (= content-type "application/edn") :edn :json)})))
     (data-response "There is no valid function with this name." {:status 400})))
+
+(defn sql-handler [{:keys [uri params content-type]}]
+  (let [[schema function] (->> (str/split uri #"/")
+                               (remove str/blank?)
+                               (map kebab->snake)
+                               (rest))
+        sql-args          (if (= content-type "application/edn")
+                            (:sql-args params [])
+                            (json/read-str (:sql-args params "[]")))
+        sql-result        (apply call-sql (str schema "." function) sql-args)]
+    (data-response sql-result {:type (if (= content-type "application/edn") :edn :json)})))
