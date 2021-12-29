@@ -3,10 +3,10 @@
             [clojure.string     :as str]
             [clojure.set        :as set]
             [clj-http.client    :as client]
+            [triangulum.utils    :as u]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql]]
             [triangulum.logging  :refer [log log-str]]
-            [triangulum.utils    :as u]
             [pyregence.views     :refer [data-response]]))
 
 ;;; State
