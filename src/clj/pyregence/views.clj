@@ -36,9 +36,9 @@
    [:meta {:property "twitter:image" :content "https://pyrecast.org/images/pyrecast-logo-social-media.png"}]
    [:meta {:property "twitter:card" :content "summary_large_image"}]
    [:link {:rel "icon" :type "image/png" :href "/images/favicon.png"}]
-   [:script {:async true :src "https://www.googletagmanager.com/gtag/js?id UA-168639214-1"}]
-   [:script "window.name = 'pyrecast'"]
-   [:script "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-168639214-1')"]
+   (when-let [ga-id (get-config :ga-id)]
+     (list [:script {:async true :src (str "https://www.googletagmanager.com/gtag/js?id=" ga-id)}]
+           [:script (str "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '" ga-id "');")]))
    (include-css "/css/style.css" "/css/mapbox-gl-v2.3.1.css")
    (include-js "/js/mapbox-gl-v2.3.1.js" (find-app-js))])
 
