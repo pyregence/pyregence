@@ -402,10 +402,11 @@
 
 (def long-term-forecast-options
   {:fire-scenarios {:opt-label       "Fire Scenarios"
-                    :filter          "wg4_FireSim"
+                    :filter          "climate_FireSim"
                     :hover-text      "Wildfire scenario projections for area burned with varied emissions and population scenarios."
                     :reverse-legend? true
-                    :block-info?     true
+                    :block-info?     false
+                    :time-slider?    true
                     :params          {:model      {:opt-label  "Global Climate Model"
                                                    :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
                                                                 Projected future climate from these four models can be described as producing:
@@ -456,18 +457,13 @@
   "All layers added in addition to the default Mapbox layers and their
    associated metadata for the loading term forecast.
 
-   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras.
-   z-index         - The z-index of a specific layer type."
-  {:wg4             {:forecast-layer? true
-                     :z-index         0}
-   :fire-detections {:forecast-layer? false
-                     :z-index         1}
-   :fire-history    {:forecast-layer? false
-                     :z-index         2}
-   :red-flag        {:forecast-layer? false
-                     :z-index         3}
-   :fire-cameras    {:forecast-layer? false
-                     :z-index         4}})
+   forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras."
+  {:climate      {:forecast-layer? true
+                  :z-index         0}
+   :fire-cameras {:forecast-layer? false
+                  :z-index         1}
+   :red-flag     {:forecast-layer? false
+                  :z-index         2}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Forecast Configuration

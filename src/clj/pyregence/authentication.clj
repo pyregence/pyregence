@@ -1,11 +1,9 @@
 (ns pyregence.authentication
-  (:require [pyregence.views    :refer [data-response]]
-            [pyregence.database :refer [call-sql sql-primitive]]))
-
-;;; TODO make a single authentication multimethod
+  (:require [triangulum.database :refer [call-sql sql-primitive]]
+            [pyregence.views     :refer [data-response]]))
 
 (defn log-in [email password]
-  (if-let [user (first (call-sql "verify_user_login" email password))]
+  (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
     (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
@@ -20,7 +18,7 @@
      (data-response "" {:status 403}))))
 
 (defn set-user-password [email password reset-key]
-  (if-let [user (first (call-sql "set_user_password" email password reset-key))]
+  (if-let [user (first (call-sql "set_user_password" {:log? false} email password reset-key))]
     (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
@@ -33,6 +31,7 @@
   (let [default-settings (pr-str {:theme    :dark
                                   :timezone :utc})
         new-user-id      (sql-primitive (call-sql "add_new_user"
+                                                  {:log? false}
                                                   email
                                                   name
                                                   password

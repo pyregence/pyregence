@@ -3,11 +3,11 @@
             [clojure.string     :as str]
             [clojure.set        :as set]
             [clj-http.client    :as client]
-            [triangulum.utils   :as u]
-            [pyregence.config   :refer [get-config]]
-            [pyregence.database :refer [call-sql]]
-            [pyregence.logging  :refer [log log-str]]
-            [pyregence.views    :refer [data-response]]))
+            [triangulum.utils    :as u]
+            [triangulum.config   :refer [get-config]]
+            [triangulum.database :refer [call-sql]]
+            [triangulum.logging  :refer [log log-str]]
+            [pyregence.views     :refer [data-response]]))
 
 ;;; State
 
@@ -91,7 +91,7 @@
         [_ parameters]    (str/split layer #"_geoTiff_")
         [_ model prob measure year] (re-matches #"([^_]+)_([^_]+)_AA_all_([^_]+)_mean_(\d+)" parameters)]
     {:workspace   workspace
-     :layer-group ""
+     :layer-group (str workspace ":" model "_" prob "_AA_all_" measure "_mean")
      :forecast    model
      :filter-set  #{workspace model prob measure "20210407_000000"}
      :model-init  "20210407_000000"
@@ -103,7 +103,7 @@
                                              "wms?SERVICE=WMS"
                                              "&VERSION=1.3.0"
                                              "&REQUEST=GetCapabilities"
-                                             (when (pos? (count workspace-name))
+                                             (when (some? workspace-name)
                                                (str "&NAMESPACE=" workspace-name)))))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
@@ -135,7 +135,7 @@
                           (str/starts-with? full-name "fuels")
                           (merge-fn (split-fuels full-name))
 
-                          (str/starts-with? full-name "wg4_FireSim")
+                          (re-matches #"climate_FireSim.*_\d{4}" full-name)
                           (merge-fn (split-wg4-scenarios full-name))))))
                    (vec)))
             xml)
