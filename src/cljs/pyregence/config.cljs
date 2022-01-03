@@ -381,9 +381,9 @@
    :fire-risk-forecast    {:forecast-layer? true}
    :fire-weather-forecast {:forecast-layer? true}
    :fuels-and-topography  {:forecast-layer? true}
-   :fire-cameras          {:forecast-layer? false}
+   :fire-history          {:forecast-layer? false}
    :red-flag              {:forecast-layer? false}
-   :fire-history          {:forecast-layer? false}})
+   :fire-cameras          {:forecast-layer? false}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WG4 Forecast
