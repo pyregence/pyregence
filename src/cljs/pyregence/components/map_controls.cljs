@@ -7,6 +7,7 @@
             [clojure.string      :as string]
             [clojure.core.async  :refer [<! go go-loop put! timeout chan]]
             [clojure.pprint      :refer [cl-format]]
+            [pyregence.state     :as !]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
             [pyregence.config    :as c]
@@ -98,7 +99,7 @@
 ;; Time Slider
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $time-slider [mobile?]
+(defn $time-slider []
   {:align-items  "center"
    :bottom       "1rem"
    :display      "flex"
@@ -107,27 +108,27 @@
    :margin-right "auto"
    :padding      ".5rem"
    :right        "0"
-   :width        (if mobile? "20rem" "min-content")})
+   :width        (if @!/mobile? "20rem" "min-content")})
 
-(defn time-slider [layers *layer-idx layer-full-time select-layer! show-utc? select-time-zone! animate? mobile?]
+(defn time-slider [layer-full-time select-layer! select-time-zone!]
   (r/with-let [*speed          (r/atom 1)
                cycle-layer!    (fn [change]
-                                 (select-layer! (mod (+ change @*layer-idx) (count @layers))))
+                                 (select-layer! (mod (+ change @!/*layer-idx) (count @!/param-layers))))
                loop-animation! (fn la []
-                                 (when @animate?
+                                 (when @!/animate?
                                    (cycle-layer! 1)
                                    (js/setTimeout la (get-in c/speeds [@*speed :delay]))))]
-    [:div#time-slider {:style ($/combine $/tool ($time-slider mobile?))}
-     (when-not mobile?
+    [:div#time-slider {:style ($/combine $/tool $time-slider)}
+     (when-not @!/mobile?
        [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
-        [radio "UTC"   show-utc? true  select-time-zone! true]
-        [radio "Local" show-utc? false select-time-zone! true]])
+        [radio "UTC"   @!/show-utc? true  select-time-zone! true]
+        [radio "Local" @!/show-utc? false select-time-zone! true]])
      [:div {:style ($/flex-col)}
       [:input {:style {:width "12rem"}
                :type      "range"
                :min       "0"
-               :max       (dec (count @layers))
-               :value     (min (dec (count @layers)) (or @*layer-idx 0))
+               :max       (dec (count @!/param-layers))
+               :value     (min (dec (count @!/param-layers)) (or @!/*layer-idx 0))
                :on-change #(select-layer! (u/input-int-value %))}]
       [:label layer-full-time]]
      [:span {:style {:display "flex" :margin "0 1rem"}}
@@ -136,17 +137,17 @@
        :bottom
        [tool-button :previous-button #(cycle-layer! -1)]]
       [tool-tip-wrapper
-       (str (if @animate? "Pause" "Play") " animation")
+       (str (if @!/animate? "Pause" "Play") " animation")
        :bottom
        [tool-button
-        (if @animate? :pause-button :play-button)
-        #(do (swap! animate? not)
+        (if @!/animate? :pause-button :play-button)
+        #(do (swap! !/animate? not)
              (loop-animation!))]]
       [tool-tip-wrapper
        "Next layer"
        :bottom
        [tool-button :next-button #(cycle-layer! 1)]]]
-     (when-not mobile?
+     (when-not @!/mobile?
        [:select {:style     ($/combine $dropdown {:padding "0 0.5rem" :width "5rem"})
                  :value     (or @*speed 1)
                  :on-change #(reset! *speed (u/input-int-value %))}
@@ -158,19 +159,19 @@
 ;; Collapsible Panel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $collapsible-panel [show? mobile?]
+(defn- $collapsible-panel [show?]
   {:background-color ($/color-picker :bg-color)
    :box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
    :color            ($/color-picker :font-color)
    :height           "100%"
    :left             (if show?
                        "0"
-                       (if mobile?
+                       (if @!/mobile?
                          "calc(-100% - 2px)"
                          "calc(-18rem - 2px)"))
    :position         "absolute"
    :transition       "all 200ms ease-in"
-   :width            (if mobile? "100%" "18rem")
+   :width            (if @!/mobile? "100%" "18rem")
    :z-index          "101"})
 
 (defn- collapsible-panel-header []
@@ -300,13 +301,13 @@
                   :transform       (if @show-panel? "rotate(180deg)" "none")}}
     [svg/right-arrow]]])
 
-(defn- collapsible-panel-toggle [mobile?]
+(defn- collapsible-panel-toggle []
   [:div#collapsible-panel-toggle
-   {:style {:display  (if (and @show-panel? mobile?) "none" "block")
+   {:style {:display  (if (and @show-panel? @!/mobile?) "none" "block")
             :left     "100%"
             :position "absolute"
             :top      "50%"}}
-   (if mobile?
+   (if @!/mobile?
      [collapsible-button]
      [tool-tip-wrapper
       (str (hs-str @show-panel?) " layer selection")
@@ -336,16 +337,16 @@
                  :text-align  "center"}}
     "Learn more about the data."]])
 
-(defn- opacity-input [active-opacity]
+(defn- opacity-input []
   [:div {:style {:margin-top "0.25rem"}}
-   [:label (str "Opacity: " @active-opacity)]
+   [:label (str "Opacity: " @!/active-opacity)]
    [:input {:style     {:width "100%"}
             :type      "range"
             :min       "0"
             :max       "100"
-            :value     @active-opacity
-            :on-change #(do (reset! active-opacity (u/input-int-value %))
-                            (mb/set-opacity-by-title! "active" (/ @active-opacity 100.0)))}]])
+            :value     @!/active-opacity
+            :on-change #(do (reset! !/active-opacity (u/input-int-value %))
+                            (mb/set-opacity-by-title! "active" (/ @!/active-opacity 100.0)))}]])
 
 (defn- $collapsible-panel-body
   []
@@ -357,16 +358,16 @@
      :overflow-y      "auto"}
     {:pseudo {:last-child {:padding-bottom "0.75rem"}}}))
 
-(defn collapsible-panel [*params select-param! active-opacity param-options mobile?]
+(defn collapsible-panel [*params select-param!]
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
                            (reset! *base-map id)
                            (mb/set-base-map-source! (get-in (c/base-map-options) [@*base-map :source])))]
-    (reset! show-panel? (not mobile?))
-    (fn [*params select-param! active-opacity param-options mobile?]
+    (reset! show-panel? (not @!/mobile?))
+    (fn [*params select-param!]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
-        [:div#collapsible-panel {:style ($collapsible-panel @show-panel? mobile?)}
-         [collapsible-panel-toggle mobile?]
+        [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
+         [collapsible-panel-toggle]
          [collapsible-panel-header]
          [:div#collapsible-panel-body {:class (<class $collapsible-panel-body)}
           [:div#section-wrapper
@@ -385,8 +386,8 @@
                         (= 1 (count sorted-options))
                         #(select-param! % key)
                         selected-param-set]]))
-                  param-options)
-             [opacity-input active-opacity]]]
+                  @!/processed-params)
+             [opacity-input]]]
            [collapsible-panel-section
             "optional-layers"
             [optional-layers
@@ -408,32 +409,32 @@
 ;; Share Tool
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $share-link [mobile?]
-  (if mobile?
+(defn $share-link []
+  (if @!/mobile?
     {:position "absolute"
      :width    "1rem"
      :z-index  "-1"}
     {:width "100%"}))
 
-(defn share-inner-modal [create-share-link mobile?]
+(defn share-inner-modal [create-share-link]
   (r/with-let [copied     (r/atom false)
                share-link (create-share-link)
                on-click   #(do
                              (u/copy-input-clipboard! "share-link")
                              (reset! copied true))]
-    [:div {:style (if mobile?
+    [:div {:style (if @!/mobile?
                     {:display         "flex"
                      :justify-content "center"}
                     ($/combine $/flex-row {:width "100%"}))}
      [:input {:id         "share-link"
-              :style      ($share-link mobile?)
+              :style      ($share-link)
               :auto-focus true
               :read-only  true
               :type       "text"
               :value      share-link
               :on-click   on-click}]
      [:input {:class    (<class $/p-form-button)
-              :style    (when-not mobile? {:margin-left "0.9rem"})
+              :style    (when-not @!/mobile? {:margin-left "0.9rem"})
               :type     "button"
               :value    (if @copied "Copied!" "Copy URL")
               :on-click on-click}]]))
@@ -444,8 +445,8 @@
 
 (defn toggle-red-flag-layer!
   "Toggle the red-flag warning layer"
-  [show-red-flag?]
-  (swap! show-red-flag? not)
+  []
+  (swap! !/show-red-flag? not)
   (go
     (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
                    (:body)
@@ -453,10 +454,10 @@
       (if (empty? (.-features data))
         (do
           (toast-message! "There are no red flag warnings at this time.")
-          (reset! show-red-flag? false))
-        (when (and @show-red-flag? (not (mb/layer-exists? "red-flag")))
+          (reset! !/show-red-flag? false))
+        (when (and @!/show-red-flag? (not (mb/layer-exists? "red-flag")))
           (mb/create-red-flag-layer! "red-flag" data)))))
-  (mb/set-visible-by-title! "red-flag" @show-red-flag?)
+  (mb/set-visible-by-title! "red-flag" @!/show-red-flag?)
   (mb/clear-popup! "red-flag"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -465,11 +466,11 @@
 
 (defn toggle-fire-history-layer!
   "Toggles the fire history layer."
-  [show-fire-history?]
-  (swap! show-fire-history? not)
-  (when (and @show-fire-history? (not (mb/layer-exists? "fire-history")))
+  []
+  (swap! !/show-fire-history? not)
+  (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
     (mb/create-fire-history-layer! "fire-history" "fire-detections_fire-history%3Afire-history"))
-  (mb/set-visible-by-title! "fire-history" @show-fire-history?))
+  (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toolbars
@@ -483,36 +484,36 @@
 (defn ed-str [enabled?]
   (if enabled? "Disable" "Enable"))
 
-(defn tool-bar [show-info? show-match-drop? show-camera? show-red-flag? show-fire-history? set-show-info! mobile? user-id]
+(defn tool-bar [set-show-info! user-id]
   [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
-   (->> [(when-not mobile?
+   (->> [(when-not @!/mobile?
            [:info
-            (str (hs-str @show-info?) " point information")
-            #(do (set-show-info! (not @show-info?))
-                 (reset! show-match-drop? false)
-                 (reset! show-camera? false))
-            @show-info?])
-         (when (and (c/feature-enabled? :match-drop) (number? user-id) (not mobile?))
+            (str (hs-str @!/show-info?) " point information")
+            #(do (set-show-info! (not @!/show-info?))
+                 (reset! !/show-match-drop? false)
+                 (reset! !/show-camera? false))
+            @!/show-info?])
+         (when (and (c/feature-enabled? :match-drop) (number? user-id) (not @!/mobile?))
            [:flame
-            (str (hs-str @show-match-drop?) " match drop tool")
-            #(do (swap! show-match-drop? not)
+            (str (hs-str @!/show-match-drop?) " match drop tool")
+            #(do (swap! !/show-match-drop? not)
                  (set-show-info! false)
-                 (reset! show-camera? false))
-            @show-match-drop?])
-         (when-not mobile?
+                 (reset! !/show-camera? false))
+            @!/show-match-drop?])
+         (when-not @!/mobile?
            [:camera
-            (str (hs-str @show-camera?) " cameras")
-            #(do (swap! show-camera? not)
+            (str (hs-str @!/show-camera?) " cameras")
+            #(do (swap! !/show-camera? not)
                  (set-show-info! false)
-                 (reset! show-match-drop? false))
-            @show-camera?])
+                 (reset! !/show-match-drop? false))
+            @!/show-camera?])
          [:flag
-          (str (hs-str @show-red-flag?) " red flag warnings")
-          #(toggle-red-flag-layer! show-red-flag?)]
-         (when (and (c/feature-enabled? :fire-history) (not mobile?))
+          (str (hs-str @!/show-red-flag?) " red flag warnings")
+          toggle-red-flag-layer!]
+         (when (and (c/feature-enabled? :fire-history) (not @!/mobile?))
            [:clock
-            (str (hs-str @show-fire-history?) " fire history")
-            #(toggle-fire-history-layer! show-fire-history?)])
+            (str (hs-str @!/show-fire-history?) " fire history")
+            toggle-fire-history-layer!])
          [:legend
           (str (hs-str @show-legend?) " legend")
           #(swap! show-legend? not)
@@ -524,7 +525,7 @@
                                   :right
                                   [tool-button icon on-click active?]])))])
 
-(defn zoom-bar [current-layer-extent current-layer mobile? create-share-link terrain? time-slider?]
+(defn zoom-bar [current-layer-extent current-layer create-share-link time-slider?]
   (r/with-let [minZoom      (r/atom 0)
                maxZoom      (r/atom 28)
                *zoom        (r/atom 10)
@@ -538,7 +539,7 @@
       (reset! minZoom min)
       (reset! maxZoom max))
     (mb/add-map-zoom-end! #(reset! *zoom %))
-    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if (and mobile? time-slider?) "90px" "36px")})}
+    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if (and @!/mobile? time-slider?) "90px" "36px")})}
      (map-indexed (fn [i [icon hover-text on-click]]
                     ^{:key i} [tool-tip-wrapper
                                hover-text
@@ -547,15 +548,15 @@
                   [[:share
                     "Share current map"
                     #(set-message-box-content! {:title "Share Current Map"
-                                                :body  [share-inner-modal create-share-link mobile?]
+                                                :body  [share-inner-modal create-share-link]
                                                 :mode  :close})]
                    [:terrain
-                    (str (ed-str @terrain?) " 3D terrain")
+                    (str (ed-str @!/terrain?) " 3D terrain")
                     #(do
-                       (swap! terrain? not)
-                       (when @terrain? (h/show-help! :terrain mobile?))
-                       (mb/toggle-dimensions! @terrain?)
-                       (mb/ease-to! {:pitch (if @terrain? 45 0) :bearing 0}))]
+                       (swap! !/terrain? not)
+                       (when @!/terrain? (h/show-help! :terrain))
+                       (mb/toggle-dimensions! @!/terrain?)
+                       (mb/ease-to! {:pitch (if @!/terrain? 45 0) :bearing 0}))]
                    [:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition mb/set-center-my-location!))]
@@ -725,15 +726,15 @@
          (u/get-time-difference)
          (u/ms->hr))))
 
-(defn camera-tool [cameras parent-box mobile? terrain? close-fn!]
+(defn camera-tool [parent-box close-fn!]
   (r/with-let [active-camera (r/atom nil)
                camera-age    (r/atom 0)
                image-src     (r/atom nil)
                exit-chan     (r/atom nil)
                zoom-camera   (fn []
                                (let [{:keys [longitude latitude tilt pan]} @active-camera]
-                                 (reset! terrain? true)
-                                 (h/show-help! :terrain mobile?)
+                                 (reset! !/terrain? true)
+                                 (h/show-help! :terrain)
                                  (mb/toggle-dimensions! true)
                                  (mb/fly-to! {:center  [longitude latitude]
                                               :zoom    15
@@ -741,7 +742,7 @@
                                               :pitch   (min (+ 90 tilt) 85)}) 400))
                reset-view    (fn []
                                (let [{:keys [longitude latitude]} @active-camera]
-                                 (reset! terrain? false)
+                                 (reset! !/terrain? false)
                                  (mb/toggle-dimensions! false)
                                  (mb/fly-to! {:center [longitude latitude]
                                               :zoom   6})))
@@ -760,8 +761,8 @@
                                                (u/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
                                                                        60000)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
-               _             (mb/create-camera-layer! "fire-cameras" (clj->js cameras))
-               _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" mobile? on-click)]
+               _             (mb/create-camera-layer! "fire-cameras")
+               _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
     [:div#wildfire-camera-tool
      [resizable-window
       parent-box
@@ -793,7 +794,7 @@
             [:label (str "Camera: " (:name @active-camera))]]
            [:img {:src   "images/awf_logo.png"
                   :style ($/combine $awf-logo-style)}]
-           (when @terrain?
+           (when @!/terrain?
              [tool-tip-wrapper
               "Zoom Out to 2D"
               :left
@@ -841,7 +842,7 @@
                                :z-index  "1"}}
    [:label message]])
 
-(defn information-div [last-clicked-info *layer-idx units info-height]
+(defn information-div [units info-height]
   (r/create-class
    {:component-did-mount
     (fn [this]
@@ -855,9 +856,9 @@
     (fn [_]
       [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
        [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
-        (str (:band (get last-clicked-info @*layer-idx)) (u/clean-units units))]])}))
+        (str (:band (get @!/last-clicked-info @!/*layer-idx)) (u/clean-units units))]])}))
 
-(defn- vega-information [box-height box-width *layer-idx select-layer! units cur-hour legend-list last-clicked-info]
+(defn- vega-information [box-height box-width select-layer! units cur-hour]
   (r/with-let [info-height (r/atom 0)]
     [:<>
      [vega-box
@@ -865,23 +866,21 @@
       box-width
       select-layer!
       units
-      cur-hour
-      legend-list
-      last-clicked-info]
-     [information-div last-clicked-info *layer-idx units info-height]]))
+      cur-hour]
+     [information-div units info-height]]))
 
-(defn- single-point-info [box-height _ band legend-list units convert]
-  (let [legend-map  (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) legend-list)
+(defn- single-point-info [box-height _ units convert]
+  (let [legend-map  (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) @!/legend-list)
         legend-keys (sort (keys legend-map))
-        color       (or (get-in legend-map [(-> band
+        color       (or (get-in legend-map [(-> @!/last-clicked-info
                                                 (max (first legend-keys))
                                                 (min (last legend-keys)))
                                             "color"])
-                        (let [[low high] (u/find-boundary-values band legend-keys)]
+                        (let [[low high] (u/find-boundary-values @!/last-clicked-info legend-keys)]
                           (when (and high low)
                             (u/interp-color (get-in legend-map [low "color"])
                                             (get-in legend-map [high "color"])
-                                            (/ (- band low) (- high low))))))]
+                                            (/ (- @!/last-clicked-info low) (- high low))))))]
     [:div {:style {:align-items     "center"
                    :display         "flex"
                    :flex-direction  "column"
@@ -896,28 +895,25 @@
                      :height           "1.5rem"
                      :margin-right     "0.5rem"
                      :width            "1.5rem"}}]
-      [:h4 (u/end-with (or (get-in legend-map [band "label"])
-                           (if (fn? convert) (convert band) band))
+      [:h4 (u/end-with (or (get-in legend-map [@!/last-clicked-info "label"])
+                           (if (fn? convert) (convert @!/last-clicked-info) @!/last-clicked-info))
                        (u/clean-units units))]]
-     (when (some #(= "TU1" (get % "label")) legend-list)
+     (when (some #(= "TU1" (get % "label")) @!/legend-list)
        [:div {:style {:margin "0.125rem 0.75rem"}}
         [:p {:style {:margin-bottom "0.125rem"
                      :text-align    "center"}}
          [:strong "Fuel Type: "]
-         (get-in c/fbfm40-lookup [band :fuel-type])]
+         (get-in c/fbfm40-lookup [@!/last-clicked-info :fuel-type])]
         [:p {:style {:margin-bottom "0"}}
          [:strong "Description: "]
-         (get-in c/fbfm40-lookup [band :description])]])]))
+         (get-in c/fbfm40-lookup [@!/last-clicked-info :description])]])]))
 
 (defn information-tool [get-point-info!
                         parent-box
-                        *layer-idx
                         select-layer!
                         units
                         convert
                         cur-hour
-                        legend-list
-                        last-clicked-info
                         close-fn!]
   (r/with-let [click-event (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
     [:div#info-tool
@@ -940,33 +936,28 @@
              box-width
              "Click on the map to view the value(s) of particular point."]
 
-            (nil? last-clicked-info)
+            (nil? @!/last-clicked-info)
             [loading-cover box-height box-width "Loading..."]
 
-            (and (number? last-clicked-info)
-                 (>= last-clicked-info -50))
+            (and (number? @!/last-clicked-info)
+                 (>= @!/last-clicked-info -50))
             [single-point-info
              box-height
              box-width
-             last-clicked-info
-             legend-list
              units
              convert]
 
-            (or (< last-clicked-info -50)
-                (-> last-clicked-info (first) (:band) (< -50)))
+            (or (< @!/last-clicked-info -50)
+                (-> @!/last-clicked-info (first) (:band) (< -50)))
             no-info
 
-            (and (not-empty last-clicked-info) (not-empty legend-list))
+            (and (not-empty @!/last-clicked-info) (not-empty @!/legend-list))
             [vega-information
              box-height
              box-width
-             *layer-idx
              select-layer!
              units
-             cur-hour
-             legend-list
-             last-clicked-info]
+             cur-hour]
 
             :else no-info)))]]
     (finally
@@ -982,9 +973,9 @@
    :margin-right     ".5rem"
    :min-width        "1rem"})
 
-(defn $legend-location [show? mobile? time-slider?]
-  {:left          (if (and show? (not mobile?)) "20rem" "2rem")
-   :max-height    (if (and mobile? time-slider?)
+(defn $legend-location [show? time-slider?]
+  {:left          (if (and show? (not @!/mobile?)) "20rem" "2rem")
+   :max-height    (if (and @!/mobile? time-slider?)
                     "calc(100% - 106px)"
                     "calc(100% - 52px)")
    :overflow-x    "hidden"
@@ -995,11 +986,11 @@
    :top           "16px"
    :transition    "all 200ms ease-in"})
 
-(defn legend-box [legend-list reverse? mobile? time-slider? units]
-  (reset! show-legend? (not mobile?))
-  (fn [legend-list reverse? mobile? time-slider? units]
-    (when (and @show-legend? (seq legend-list))
-      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? mobile? time-slider?))}
+(defn legend-box [reverse? time-slider? units]
+  (reset! show-legend? (not @!/mobile?))
+  (fn [reverse? time-slider? units]
+    (when (and @show-legend? (seq @!/legend-list))
+      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? time-slider?))}
        [:div {:style {:display        "flex"
                       :flex-direction "column"}}
         (map-indexed (fn [i leg]
@@ -1008,17 +999,17 @@
                         [:div {:style ($legend-color (get leg "color"))}]
                         [:label (str (get leg "label") (u/clean-units units))]])
                      (if reverse?
-                       (reverse legend-list)
-                       legend-list))]])))
+                       (reverse @!/legend-list)
+                       @!/legend-list))]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scale Control
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $scale-line [mobile? time-slider?]
+(defn- $scale-line [time-slider?]
   {:background-color ($/color-picker :bg-color)
    :border           (str "1px solid " ($/color-picker :border-color))
-   :bottom           (if (and mobile? time-slider?) "90px" "36px")
+   :bottom           (if (and @!/mobile? time-slider?) "90px" "36px")
    :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
    :left             "auto"
    :right            "64px"
@@ -1037,11 +1028,11 @@
 
 (defn scale-bar
   "Scale bar control which resizes based on map zoom/location."
-  [mobile? time-slider?]
+  [time-slider?]
   (r/with-let [max-width    100.0
                scale-params (r/atom {:distance 0 :ratio 1 :units "ft"})
                move-event   (mb/add-map-move! #(reset! scale-params (g/imperial-scale (mb/get-distance-meters))))]
-    [:div#scale-bar {:style ($/combine $/tool ($scale-line mobile? time-slider?) {:width (* (:ratio @scale-params) max-width)})}
+    [:div#scale-bar {:style ($/combine $/tool ($scale-line time-slider?) {:width (* (:ratio @scale-params) max-width)})}
      [:div {:style ($scale-line-inner)}
       (str (:distance @scale-params) " " (:units @scale-params))]]
     (finally
