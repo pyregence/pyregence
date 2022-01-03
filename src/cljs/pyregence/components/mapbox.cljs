@@ -220,28 +220,24 @@
                     layer))
                 layers))
 
-(defn- compare-z-index
-  "A compare function for layers with a z-index."
-  [el1 el2]
-  (let [get-z-index #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :z-index))
-        z-index-el1 (get-z-index el1)
-        z-index-el2 (get-z-index el2)]
-    (< z-index-el1 z-index-el2)))
-
 (defn- process-layer-order!
   "Takes in layers and arranges them in the proper order as
    specified by the z-index. By default, all Mapbox layers are added first."
   [layers]
-  (let [mapbox-layers  (get-mapbox-layers layers)
-        project-layers (sort compare-z-index (get-project-layers layers))]
-    (vec (concat mapbox-layers project-layers))))
+  (let [mapbox-layers (get-mapbox-layers layers)
+        proj-layers   (sort-by #(get-layer-metadata % "z-index")
+                               (get-project-layers layers))]
+    (vec (concat mapbox-layers proj-layers))))
 
-(defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
+(defn- update-style!
+  "Updates the Mapbox Style object. Takes in the current Mapbox Style object
+   and optionally updates the `sources` and `layers` keys."
+  [style & {:keys [sources layers new-sources new-layers]}]
   (let [new-style (cond-> style
                     sources     (assoc "sources" sources)
-                    layers      (assoc "layers" (process-layer-order! layers))
+                    layers      (assoc "layers" layers)
                     new-sources (update "sources" merge new-sources)
-                    new-layers  (update "layers" merge-layers new-layers)
+                    new-layers  (update "layers" merge-layers new-layers) ;TODO: For future z-index updates, we will want this update function to do something similar to `process-layer-order!`
                     :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
@@ -482,21 +478,22 @@
    :tileSize 256
    :tiles    [(c/wms-layer-url layer-name)]})
 
-(defn- wms-layer [layer-name source-name opacity visible?]
+(defn- wms-layer [layer-name source-name opacity visible? & [z-index]]
   {:id       layer-name
    :type     "raster"
    :source   source-name
    :layout   {:visibility (if visible? "visible" "none")}
-   :metadata {:type (get-layer-type layer-name)}
+   :metadata {:type    (get-layer-type layer-name)
+              :z-index (or z-index 5)} ; Note that the default z-index here is 5 because 4 is the largest underlay z-index
    :paint    {:raster-opacity opacity}})
 
 (defn- build-wms
   "Returns new WMS source and layer in the form `[source [layer]]`.
    `source` must be a valid WMS layer in the geoserver,
    `opacity` must be a float between 0.0 and 1.0."
-  [id source opacity visibile?]
+  [id source opacity visibile? & [z-index]]
   (let [new-source {id (wms-source source)}
-        new-layer  (wms-layer id id opacity visibile?)]
+        new-layer  (wms-layer id id opacity visibile? z-index)]
     [new-source [new-layer]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -681,20 +678,14 @@
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
-  [id source visible?]
+  [id source visible? & [z-index]]
   (when id
     (if (layer-exists? id)
       (set-visible-by-title! id visible?)
-      (let [[new-source new-layers] (build-wms id source 1.0 visible?)
+      (let [[new-source new-layer] (build-wms id source 1.0 visible? z-index)
             style                   (get-style)
-            layers                  (get style "layers")
-            zero-idx                (->> layers
-                                         (keep-indexed (fn [idx layer]
-                                                         (when (some? (get-layer-metadata layer "type"))
-                                                           idx)))
-                                         (first))
-            [before after]          (split-at (or zero-idx (count layers)) layers)
-            final-layers            (vec (concat before new-layers after))]
+            current-layers          (get style "layers")
+            final-layers            (process-layer-order! (concat current-layers new-layer))]
         (update-style! style
                        :new-sources new-source
                        :layers      final-layers)))))
