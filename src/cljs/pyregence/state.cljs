@@ -7,14 +7,15 @@
 ;; Forecast/Layer State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce *forecast        (r/atom nil))
-(defonce *layer-idx       (r/atom 0))
-(defonce *params          (r/atom {}))
-(defonce active-opacity   (r/atom 100.0))
-(defonce capabilities     (r/atom []))
-(defonce options          (r/atom {}))
-(defonce param-layers     (r/atom []))
-(defonce processed-params (r/atom []))
+(defonce *forecast              (r/atom nil))
+(defonce *layer-idx             (r/atom 0))
+(defonce *params                (r/atom {}))
+(defonce active-opacity         (r/atom 100.0))
+(defonce capabilities           (r/atom []))
+(defonce options                (r/atom {}))
+(defonce param-layers           (r/atom []))
+(defonce processed-params       (r/atom []))
+(defonce geoserver-base-url-key (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Show/Hide State

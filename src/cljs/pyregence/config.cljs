@@ -463,12 +463,14 @@
   (reset! default-forecasts defaults))
 
 (def ^:private forecasts {:near-term {:options-config near-term-forecast-options
-                                      :layers         near-term-forecast-layers}
+                                      :layers         near-term-forecast-layers
+                                      :geoserver-key  :pyrecast}
                           :long-term {:options-config long-term-forecast-options
-                                      :layers         long-term-forecast-layers}})
+                                      :layers         long-term-forecast-layers
+                                      :geoserver-key  :pyreclimate}})
 
 (defn get-forecast
-  "Retrieves the forecast options and default tab."
+  "Retrieves the forecast options, default tab, and GeoServer key."
   [forecast-type]
   {:pre [(contains? #{:long-term :near-term} forecast-type)]}
   (forecast-type forecasts))
@@ -619,6 +621,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WFS/WMS Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce ^:private geoserver-urls (atom nil))
+
+(defn set-geoserver-urls!
+  "Stores the Geoserver URL's passed in via `config.edn`."
+  [urls]
+  (reset! geoserver-urls urls))
+
+(defn get-geoserver-url
+  "Returns the URL for a particular GeoServer based on its key."
+  [geoserver-key]
+  (geoserver-key @geoserver-urls))
 
 (defn- wms-url [geoserver-base-url]
   (str (u/end-with geoserver-base-url "/") "wms"))

@@ -213,10 +213,11 @@
             opt-label])
          options)]])
 
-(defn get-layer-name [filter-set update-layer!]
+(defn get-layer-name [filter-set update-layer! geoserver-base-url-key]
   (go
     (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
-                                                              (pr-str filter-set)))))]
+                                                              (pr-str filter-set)
+                                                              geoserver-base-url-key))))]
       (update-layer! :name name)
       name)))
 
@@ -230,7 +231,7 @@
                :checked   @show?
                :on-change #(go
                              (swap! show? not)
-                             (mb/set-visible-by-title! (<! (get-layer-name filter-set identity))
+                             (mb/set-visible-by-title! (<! (get-layer-name filter-set identity :pyrecast))
                                                        @show?))}]
       [:label {:for id} opt-label]]]))
 
@@ -243,10 +244,10 @@
                                       (sort-by :z-index)
                                       (reverse))]
         (let [{:keys [filter-set]} (first sorted-underlays)
-              layer-name (<! (get-layer-name filter-set identity))]
+              layer-name (<! (get-layer-name filter-set identity :pyrecast))]
           (mb/create-wms-layer! layer-name
                                 layer-name
-                                "https://data.pyregence.org/geoserver"
+                                (c/get-geoserver-url :pyrecast)
                                 false)
           (when-let [tail (seq (rest sorted-underlays))]
             (recur tail)))))
@@ -472,7 +473,7 @@
   (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
     (mb/create-fire-history-layer! "fire-history"
                                    "fire-detections_fire-history%3Afire-history"
-                                   "https://data.pyregence.org/geoserver")) ;FIXME: Don't hard code this
+                                   (c/get-geoserver-url :pyrecast)))
   (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
