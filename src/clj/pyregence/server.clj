@@ -3,11 +3,11 @@
             [clojure.string         :as str]
             [clojure.tools.cli      :refer [parse-opts]]
             [ring.adapter.jetty     :refer [run-jetty]]
+            [triangulum.logging     :refer [log-str set-log-path!]]
+            [triangulum.sockets     :refer [start-socket-server! stop-socket-server!]]
             [pyregence.capabilities :refer [set-all-capabilities!]]
             [pyregence.handler      :refer [create-handler-stack]]
-            [pyregence.logging      :refer [log-str set-log-path!]]
-            [pyregence.match-drop   :refer [process-message]]
-            [pyregence.sockets      :refer [start-socket-server! stop-socket-server!]]))
+            [pyregence.match-drop   :refer [process-message]]))
 
 (defonce server           (atom nil))
 (defonce clean-up-service (atom nil))

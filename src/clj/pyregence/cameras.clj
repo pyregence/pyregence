@@ -1,7 +1,7 @@
 (ns pyregence.cameras
   (:require [clojure.data.json :as json]
             [clj-http.client   :as client]
-            [pyregence.config  :refer [get-config]]
+            [triangulum.config :refer [get-config]]
             [pyregence.views   :refer [data-response]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

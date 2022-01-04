@@ -28,4 +28,5 @@
                      :user     "<user>"
                      :pass     "<pass>"
                      :tls      <true/false>
-                     :site-url "<url>"}}
+                     :site-url "<url>"}
+ :ga-id             nil}

@@ -4,6 +4,7 @@
             [reagent.dom         :refer [render]]
             [clojure.core.async  :refer [go <!]]
             [clojure.string      :as str]
+            [pyregence.state     :as !]
             [pyregence.config    :as c]
             [pyregence.utils     :as u]
             [pyregence.geo-utils :as g]))
@@ -350,11 +351,11 @@
 (defn add-feature-highlight!
   "Adds events to highlight WFS features. Optionally can provide a function `click-fn`,
    which will be called on click as `(click-fn <feature-js-object> [lng lat])`"
-  [layer source mobile? & [click-fn]]
+  [layer source & [click-fn]]
   (remove-events! "mousemove" layer)
   (remove-events! "mouseleave" layer)
   (remove-events! "click" layer)
-  (when-not mobile?
+  (when-not @!/mobile?
     (add-event! "mouseenter"
                 (fn [e]
                   (when-let [feature (-> e (aget "features") (first))]
@@ -665,9 +666,11 @@
 
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
-  [id data]
+  [id]
   (add-icon! "video-icon" "./images/video.png")
-  (let [new-source {id {:type "geojson" :data data :generateId true}}
+  (let [new-source {id {:type       "geojson" 
+                        :data       (clj->js @!/the-cameras)
+                        :generateId true}}
         new-layers [{:id       id
                      :source   id
                      :type     "symbol"

@@ -1,12 +1,13 @@
 (ns pyregence.components.help
-  (:require [pyregence.utils :as u]
+  (:require [pyregence.state :as !]
+            [pyregence.utils :as u]
             [pyregence.components.messaging :refer [set-message-box-content!]]))
 
 ;;; Help Dialogs
 
-(defn- get-help-dialog [dialog mobile?]
+(defn- get-help-dialog [dialog]
   (-> {:terrain {:title "3D Terrain Enabled"
-                 :body  (if mobile?
+                 :body  (if @!/mobile?
                           "You have enabled 3D Terrain. Use two fingers to tilt or rotate the map."
                           "You have enabled 3D Terrain. Click and drag using your right mouse button to tilt or rotate the map.")}}
       (get dialog)))
@@ -25,9 +26,9 @@
 
 (defn show-help!
   "Shows the help modal popup for the given dialog and device."
-  [dialog & [mobile? always-show]]
-  {:pre [(get-help-dialog dialog mobile?)]}
+  [dialog & [always-show]]
+  {:pre [(get-help-dialog dialog)]}
   (when (or always-show (not (seen-help? dialog)))
     (set-help-seen! dialog)
-    (set-message-box-content! (-> (get-help-dialog dialog mobile?)
+    (set-message-box-content! (-> (get-help-dialog dialog)
                                   (assoc :mode :close)))))
