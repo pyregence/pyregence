@@ -58,14 +58,10 @@
 (defn- get-layer-metadata
   "Gets the value of a specified property of a layer's metadata."
   [layer property]
-  (let [metadata (when (some? layer)
-                   (or
-                     (get layer "metadata")
-                     (:metadata layer)))]
-    (when (some? metadata)
-      (or
-        (get metadata property)
-        ((keyword property) metadata)))))
+  (if-let [metadata (get layer "metadata")]
+    (get metadata property)
+    (->> (:metadata layer)
+         ((keyword property)))))
 
 (defn- get-layer-metadata-by-id
   "Gets the value of a specified property of a layer's metadata by id."
@@ -225,10 +221,7 @@
   "Takes in layers and arranges them in the proper order as
    specified by the z-index. By default, all Mapbox layers are added first."
   [layers]
-  (let [mapbox-layers (get-mapbox-layers layers)
-        proj-layers   (sort-by #(get-layer-metadata % "z-index")
-                               (get-project-layers layers))]
-    (vec (concat mapbox-layers proj-layers))))
+  (sort-by #(or (get-layer-metadata % "z-index") 0) layers))
 
 (defn- update-style!
   "Updates the Mapbox Style object. Takes in the current Mapbox Style object
@@ -238,7 +231,8 @@
                     sources     (assoc "sources" sources)
                     layers      (assoc "layers" layers)
                     new-sources (update "sources" merge new-sources)
-                    new-layers  (update "layers" merge-layers new-layers) ;TODO: For future z-index updates, we will want this update function to do something similar to `process-layer-order!`
+                    new-layers  (update "layers" merge-layers new-layers)
+                    :always     (update "layers" process-layer-order!)
                     :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
@@ -485,7 +479,7 @@
    :source   source-name
    :layout   {:visibility (if visible? "visible" "none")}
    :metadata {:type    (get-layer-type layer-name)
-              :z-index (or z-index 5)} ; Note that the default z-index here is 5 because 4 is the largest underlay z-index
+              :z-index (or z-index 100)} ; Note that the default z-index here is 5 because 4 is the largest underlay z-index
    :paint    {:raster-opacity opacity}})
 
 (defn- build-wms
@@ -683,19 +677,16 @@
   (when id
     (if (layer-exists? id)
       (set-visible-by-title! id visible?)
-      (let [[new-source new-layer] (build-wms id source 1.0 visible? z-index)
-            style                   (get-style)
-            current-layers          (get style "layers")
-            final-layers            (process-layer-order! (concat current-layers new-layer))]
-        (update-style! style
+      (let [[new-source new-layer] (build-wms id source 1.0 visible? z-index)]
+        (update-style! (get-style)
                        :new-sources new-source
-                       :layers      final-layers)))))
+                       :new-layers  new-layer)))))
 
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
   [id]
   (add-icon! "video-icon" "./images/video.png")
-  (let [new-source {id {:type       "geojson" 
+  (let [new-source {id {:type       "geojson"
                         :data       (clj->js @!/the-cameras)
                         :generateId true}}
         new-layers [{:id       id
