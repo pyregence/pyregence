@@ -99,12 +99,13 @@
      :hour        (- (Integer/parseInt year) 1954)}))
 
 (defn process-layers! [geoserver-key workspace-name]
-  (let [xml-response (:body (client/get (str (u/end-with (get-config :geoserver geoserver-key) "/")
-                                             "wms?SERVICE=WMS"
-                                             "&VERSION=1.3.0"
-                                             "&REQUEST=GetCapabilities"
-                                             (when (some? workspace-name)
-                                               (str "&NAMESPACE=" workspace-name)))))]
+  (let [xml-response (-> (get-config :geoserver geoserver-key)
+                         (u/end-with "/")
+                         (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
+                              (when (some? workspace-name)
+                                (str "&NAMESPACE=" workspace-name)))
+                         (client/get)
+                         (:body))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
       (re-find #"(?<=<Layer>).*(?=</Layer>)" xml)
@@ -213,7 +214,7 @@
   (data-response (call-sql "get_user_layers_list" user-id)))
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
-(defn get-layers [selected-set-str geoserver-key]
+(defn get-layers [geoserver-key selected-set-str]
   (when-not (seq @layers) (set-all-capabilities!))
   (let [selected-set (edn/read-string selected-set-str)
         available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer)))
@@ -235,7 +236,7 @@
                         :model-times (seq model-times)}))
                    {:type :transit})))
 
-(defn get-layer-name [selected-set-str geoserver-key]
+(defn get-layer-name [geoserver-key selected-set-str]
   (let [selected-set (edn/read-string selected-set-str)]
     (data-response (->> (geoserver-key @layers)
                         (filter (fn [layer] (set/subset? selected-set (:filter-set layer))))

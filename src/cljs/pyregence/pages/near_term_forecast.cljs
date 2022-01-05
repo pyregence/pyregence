@@ -67,8 +67,8 @@
                                       (remove nil?))))
           {:keys [layers model-times]} (t/read (t/reader :json)
                                                (:body (<! (u/call-clj-async! "get-layers"
-                                                                             (pr-str selected-set)
-                                                                             @!/geoserver-key))))]
+                                                                             @!/geoserver-key
+                                                                             (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count @!/param-layers) 1))))

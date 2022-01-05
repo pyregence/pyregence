@@ -213,11 +213,11 @@
             opt-label])
          options)]])
 
-(defn get-layer-name [filter-set update-layer! geoserver-key]
+(defn get-layer-name [geoserver-key filter-set update-layer!]
   (go
     (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
-                                                              (pr-str filter-set)
-                                                              geoserver-key))))]
+                                                              geoserver-key
+                                                              (pr-str filter-set)))))]
       (update-layer! :name name)
       name)))
 
@@ -231,7 +231,7 @@
                :checked   @show?
                :on-change #(go
                              (swap! show? not)
-                             (mb/set-visible-by-title! (<! (get-layer-name filter-set identity :pyrecast))
+                             (mb/set-visible-by-title! (<! (get-layer-name :pyrecast filter-set identity))
                                                        @show?))}]
       [:label {:for id} opt-label]]]))
 
@@ -244,7 +244,7 @@
                                       (sort-by :z-index)
                                       (reverse))]
         (let [{:keys [filter-set]} (first sorted-underlays)
-              layer-name (<! (get-layer-name filter-set identity :pyrecast))]
+              layer-name (<! (get-layer-name :pyrecast filter-set identity))]
           (mb/create-wms-layer! layer-name
                                 layer-name
                                 :pyrecast
