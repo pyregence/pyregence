@@ -31,19 +31,19 @@
 (def near-term-forecast-underlays
   {:us-buildings    {:enabled?   #(feature-enabled? :structures)
                      :opt-label  "Structures"
-                     :z-index    4
+                     :z-index    104
                      :filter-set #{"fire-detections" "us-buildings"}}
    :nifs-perimeters {:opt-label  "NIFS Perimeters"
-                     :z-index    3
+                     :z-index    103
                      :filter-set #{"fire-detections" "nifs-perimeters"}}
    :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
-                     :z-index    2
+                     :z-index    102
                      :filter-set #{"fire-detections" "viirs-timestamped"}}
    :modis-hotspots  {:opt-label  "MODIS Hotspots"
-                     :z-index    1
+                     :z-index    101
                      :filter-set #{"fire-detections" "modis-timestamped"}}
    :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
-                     :z-index    0
+                     :z-index    100
                      :filter-set #{"fire-detections" "goes16-rgb"}}})
 
 (def near-term-forecast-options

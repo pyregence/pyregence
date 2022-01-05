@@ -58,22 +58,12 @@
 (defn- get-layer-metadata
   "Gets the value of a specified property of a layer's metadata."
   [layer property]
-  (if-let [metadata (get layer "metadata")]
-    (get metadata property)
-    (->> (:metadata layer)
-         ((keyword property)))))
-
-(defn- get-layer-metadata-by-id
-  "Gets the value of a specified property of a layer's metadata by id."
-  [layer-id property]
-  (let [layer    (get-layer layer-id)
-        metadata (when (some? layer)
-                   (u/try-js-aget layer "metadata"))]
-    (when (some? metadata)
-      (u/try-js-aget metadata property))))
+  (or (get-in layer ["metadata" property])
+      (get-in layer [:metadata (keyword property)])
+      (u/try-js-aget layer "metadata" property)))
 
 (defn- get-layer-type-metadata-property
-  "Gets the specified metadata property based on a layer's type."
+  "Gets the specified metadata property (originally set in config.cljs) based on a layer's type."
   [type metadata-property]
   (get-in @project-layers [(keyword type) metadata-property]))
 
@@ -201,27 +191,11 @@
 (defn- merge-layers [v new-layers]
   (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
 
-(defn- get-mapbox-layers
-  "Given the layers of the map, returns only the Mapbox layers."
-  [layers]
-  (keep-indexed (fn [_ layer]
-                  (when-not (some? (get-layer-metadata layer "type"))
-                    layer))
-                layers))
-
-(defn- get-project-layers
-  "Given the layers of the map, returns only the custom project layers."
-  [layers]
-  (keep-indexed (fn [_ layer]
-                  (when (some? (get-layer-metadata layer "type"))
-                    layer))
-                layers))
-
 (defn- process-layer-order!
   "Takes in layers and arranges them in the proper order as
    specified by the z-index. By default, all Mapbox layers are added first."
   [layers]
-  (sort-by #(or (get-layer-metadata % "z-index") 0) layers))
+  (sort-by #(get-layer-metadata % "z-index") layers))
 
 (defn- update-style!
   "Updates the Mapbox Style object. Takes in the current Mapbox Style object
@@ -479,7 +453,7 @@
    :source   source-name
    :layout   {:visibility (if visible? "visible" "none")}
    :metadata {:type    (get-layer-type layer-name)
-              :z-index (or z-index 100)} ; Note that the default z-index here is 5 because 4 is the largest underlay z-index
+              :z-index (or z-index 1)}
    :paint    {:raster-opacity opacity}})
 
 (defn- build-wms
@@ -628,7 +602,7 @@
                            (u/filterm (fn [[k _]]
                                         (let [sname (name k)]
                                           (or (is-terrain? sname)
-                                              (some? (get-layer-metadata-by-id sname "type")))))))
+                                              (some? (get-layer-metadata (get-layer sname) "type")))))))
           cur-layers  (->> (get cur-style "layers")
                            (filter #(some? (get-layer-metadata % "type"))))
           new-style   (-> (<! style-chan)
@@ -696,7 +670,8 @@
                                 :icon-rotate             ["-" ["get" "pan"] 90]
                                 :icon-rotation-alignment "map"
                                 :icon-size               0.5}
-                     :metadata {:type (get-layer-type id)}
+                     :metadata {:type (get-layer-type id)
+                                :z-index 1001}
                      :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
@@ -708,7 +683,8 @@
         new-layers [{:id       id
                      :source   id
                      :type     "fill"
-                     :metadata {:type (get-layer-type id)}
+                     :metadata {:type (get-layer-type id)
+                                :z-index 1000}
                      :paint    {:fill-color         color
                                 :fill-outline-color (on-hover "#000000" color)
                                 :fill-opacity       (on-hover 1 0.4)}}]]
