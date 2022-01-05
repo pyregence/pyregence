@@ -98,14 +98,13 @@
      :sim-time    (str year "0101_000000")
      :hour        (- (Integer/parseInt year) 1954)}))
 
-(defn process-layers! [geoserver-base-url-key workspace-name]
-  (let [geoserver-base-url (get-config :geoserver geoserver-base-url-key)
-        xml-response       (:body (client/get (str (u/end-with geoserver-base-url "/")
-                                                   "wms?SERVICE=WMS"
-                                                   "&VERSION=1.3.0"
-                                                   "&REQUEST=GetCapabilities"
-                                                   (when (some? workspace-name)
-                                                     (str "&NAMESPACE=" workspace-name)))))]
+(defn process-layers! [geoserver-key workspace-name]
+  (let [xml-response (:body (client/get (str (u/end-with (get-config :geoserver geoserver-key) "/")
+                                             "wms?SERVICE=WMS"
+                                             "&VERSION=1.3.0"
+                                             "&REQUEST=GetCapabilities"
+                                             (when (some? workspace-name)
+                                               (str "&NAMESPACE=" workspace-name)))))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
       (re-find #"(?<=<Layer>).*(?=</Layer>)" xml)
@@ -145,27 +144,27 @@
 
 ;;; Routes
 
-(defn remove-workspace! [workspace-name geoserver-base-url-key]
+(defn remove-workspace! [geoserver-key workspace-name]
   (swap! layers
-         update-in [geoserver-base-url-key]
+         update-in [geoserver-key]
                    #(filterv (fn [{:keys [workspace]}]
                                (not= workspace workspace-name)) %))
   (data-response (str workspace-name " removed.")))
 
 (defn get-all-layers []
-  (data-response (mapv #(mapv :filter-set (val %)) @layers)))
+  (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
-(defn set-capabilities! [geoserver-base-url-key & [workspace-name]]
-  (if (contains? (get-config :geoserver) geoserver-base-url-key)
+(defn set-capabilities! [geoserver-key & [workspace-name]]
+  (if (contains? (get-config :geoserver) geoserver-key)
     (try
       (let [stdout?            (= 0 (count @layers))
-            new-layers         (process-layers! geoserver-base-url-key workspace-name)
+            new-layers         (process-layers! geoserver-key workspace-name)
             message            (str (count new-layers) " layers added to capabilities.")]
         (if workspace-name
           (do
-            (remove-workspace! workspace-name geoserver-base-url-key)
-            (swap! layers update-in [geoserver-base-url-key] concat new-layers))
-          (swap! layers assoc geoserver-base-url-key new-layers))
+            (remove-workspace! geoserver-key workspace-name)
+            (swap! layers update-in [geoserver-key] concat new-layers))
+          (swap! layers assoc geoserver-key new-layers))
         (log message :force-stdout? stdout?)
         (data-response message))
       (catch Exception _
@@ -214,11 +213,11 @@
   (data-response (call-sql "get_user_layers_list" user-id)))
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
-(defn get-layers [selected-set-str geoserver-base-url-key]
+(defn get-layers [selected-set-str geoserver-key]
   (when-not (seq @layers) (set-all-capabilities!))
   (let [selected-set (edn/read-string selected-set-str)
         available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer)))
-                              (geoserver-base-url-key @layers))
+                              (geoserver-key @layers))
         model-times  (->> available
                           (map :model-init)
                           (distinct)
@@ -236,9 +235,9 @@
                         :model-times (seq model-times)}))
                    {:type :transit})))
 
-(defn get-layer-name [selected-set-str geoserver-base-url-key]
+(defn get-layer-name [selected-set-str geoserver-key]
   (let [selected-set (edn/read-string selected-set-str)]
-    (data-response (->> (geoserver-base-url-key @layers)
+    (data-response (->> (geoserver-key @layers)
                         (filter (fn [layer] (set/subset? selected-set (:filter-set layer))))
                         (sort #(compare (:model-init %2) (:model-init %1)))
                         (first)

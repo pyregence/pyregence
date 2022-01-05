@@ -629,24 +629,19 @@
   [urls]
   (reset! geoserver-urls urls))
 
-(defn get-geoserver-url
-  "Returns the URL for a particular GeoServer based on its key."
-  [geoserver-key]
-  (geoserver-key @geoserver-urls))
+(defn- wms-url [geoserver-key]
+  (str (u/end-with (geoserver-key @geoserver-urls) "/") "wms"))
 
-(defn- wms-url [geoserver-base-url]
-  (str (u/end-with geoserver-base-url "/") "wms"))
+(defn- wfs-url [geoserver-key]
+  (str (u/end-with (geoserver-key @geoserver-urls) "/") "wfs"))
 
-(defn- wfs-url [geoserver-base-url]
-  (str (u/end-with geoserver-base-url "/") "wfs"))
-
-(defn- mvt-url [geoserver-base-url]
-  (str (u/end-with geoserver-base-url "/") "gwc/service/wmts"))
+(defn- mvt-url [geoserver-key]
+  (str (u/end-with ((keyword geoserver-key) @geoserver-urls) "/") "gwc/service/wmts"))
 
 (defn legend-url
   "Generates a URL for the legend given a layer."
-  [layer geoserver-base-url]
-  (str (wms-url geoserver-base-url)
+  [layer geoserver-key]
+  (str (wms-url geoserver-key)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
@@ -656,8 +651,8 @@
 
 (defn point-info-url
   "Generates a URL for the point information."
-  [layer-group bbox feature-count geoserver-base-url]
-  (str (wms-url geoserver-base-url)
+  [layer-group bbox feature-count geoserver-key]
+  (str (wms-url geoserver-key)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
@@ -679,8 +674,8 @@
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
-  ([layer geoserver-base-url]
-   (str (mvt-url geoserver-base-url)
+  ([layer geoserver-key]
+   (str (mvt-url geoserver-key)
         "?REQUEST=GetTile"
         "&SERVICE=WMTS"
         "&VERSION=1.0.0"
@@ -691,9 +686,9 @@
         "&TILEMATRIXSET=EPSG:900913"
         "&TILECOL={x}&TILEROW={y}"))
 
-  ([layer geoserver-base-url layer-time]
+  ([layer geoserver-key layer-time]
    (if (feature-enabled? :image-mosaic-gwc)
-     (str (mvt-url geoserver-base-url)
+     (str (mvt-url geoserver-key)
           "?REQUEST=GetTile"
           "&SERVICE=WMTS"
           "&VERSION=1.0.0"
@@ -704,7 +699,7 @@
           "&TILEMATRIXSET=EPSG:900913"
           "&TILECOL={x}&TILEROW={y}"
           "&TIME=" layer-time)
-     (str (wms-url geoserver-base-url)
+     (str (wms-url geoserver-key)
           "?SERVICE=WMS"
           "&VERSION=1.3.0"
           "&REQUEST=GetMap"
@@ -724,8 +719,8 @@
    set as GeoJSON.
 
    Mapbox GL does support GeoJSON in EPSG:4326. However, it does not support WFS."
-  [layer geoserver-base-url]
-  (str (wfs-url geoserver-base-url)
+  [layer geoserver-key]
+  (str (wfs-url geoserver-key)
        "?SERVICE=WFS"
        "&VERSION=1.3.0"
        "&REQUEST=GetFeature"
@@ -740,8 +735,8 @@
    EPSG:900913 (Google Web Mercator). EPSG:900913 is used since GeoServer's
    embedded [GeoWebCache](https://www.geowebcache.org/) Web Map Tile Service (WMTS)
    supports EPSG:900913 by default, but does not support EPSG:3857 by default."
-  [layer geoserver-base-url]
-  (str (mvt-url geoserver-base-url)
+  [layer geoserver-key]
+  (str (mvt-url geoserver-key)
        "?REQUEST=GetTile"
        "&SERVICE=WMTS"
        "&VERSION=1.0.0"

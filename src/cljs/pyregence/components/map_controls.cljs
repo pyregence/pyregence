@@ -213,11 +213,11 @@
             opt-label])
          options)]])
 
-(defn get-layer-name [filter-set update-layer! geoserver-base-url-key]
+(defn get-layer-name [filter-set update-layer! geoserver-key]
   (go
     (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
                                                               (pr-str filter-set)
-                                                              geoserver-base-url-key))))]
+                                                              geoserver-key))))]
       (update-layer! :name name)
       name)))
 
@@ -247,7 +247,7 @@
               layer-name (<! (get-layer-name filter-set identity :pyrecast))]
           (mb/create-wms-layer! layer-name
                                 layer-name
-                                (c/get-geoserver-url :pyrecast)
+                                :pyrecast
                                 false)
           (when-let [tail (seq (rest sorted-underlays))]
             (recur tail)))))
@@ -473,7 +473,7 @@
   (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
     (mb/create-fire-history-layer! "fire-history"
                                    "fire-detections_fire-history%3Afire-history"
-                                   (c/get-geoserver-url :pyrecast)))
+                                   :pyrecast))
   (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

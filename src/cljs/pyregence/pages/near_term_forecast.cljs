@@ -68,7 +68,7 @@
           {:keys [layers model-times]} (t/read (t/reader :json)
                                                (:body (<! (u/call-clj-async! "get-layers"
                                                                              (pr-str selected-set)
-                                                                             @!/geoserver-base-url-key))))]
+                                                                             @!/geoserver-key))))]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count @!/param-layers) 1))))
@@ -176,7 +176,7 @@
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
-                            (c/get-geoserver-url @!/geoserver-base-url-key)))))
+                            @!/geoserver-key))))
 
 (defn- process-timeline-point-info! [json-res]
   (reset! !/last-clicked-info [])
@@ -222,12 +222,12 @@
                 (c/point-info-url layer
                                   (str/join "," point-info)
                                   (if single? 1 1000)
-                                  (c/get-geoserver-url @!/geoserver-base-url-key))))))
+                                  @!/geoserver-key)))))
 
 (defn select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)
   (mb/swap-active-layer! (get-current-layer-name)
-                         (c/get-geoserver-url @!/geoserver-base-url-key)
+                         @!/geoserver-key
                          (/ @!/active-opacity 100)))
 
 (defn select-layer-by-hour! [hour]
@@ -274,7 +274,7 @@
           style-fn (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source
                               style-fn
-                              (c/get-geoserver-url @!/geoserver-base-url-key)
+                              @!/geoserver-key
                               (/ @!/active-opacity 100))
       (mb/clear-popup!)
       (when (some? style-fn)
@@ -381,7 +381,7 @@
           user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras     (u/call-clj-async! "get-cameras")]
-      (reset! !/geoserver-base-url-key geoserver-key)
+      (reset! !/geoserver-key geoserver-key)
       (reset! !/options options-config)
       (reset! !/*forecast (or (keyword forecast)
                             (keyword (forecast-type @c/default-forecasts))))
