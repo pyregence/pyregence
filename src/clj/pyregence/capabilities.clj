@@ -145,7 +145,7 @@
 
 ;;; Routes
 
-(defn remove-workspace! [geoserver-key workspace-name]
+(defn remove-workspace! [{:keys [geoserver-key workspace-name]}]
   (swap! layers
          update-in [geoserver-key]
                    #(filterv (fn [{:keys [workspace]}]
@@ -155,7 +155,7 @@
 (defn get-all-layers []
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
-(defn set-capabilities! [geoserver-key & [workspace-name]]
+(defn set-capabilities! [{:keys [geoserver-key workspace-name]}]
   (if (contains? (get-config :geoserver) geoserver-key)
     (try
       (let [stdout?            (= 0 (count @layers))
@@ -163,7 +163,8 @@
             message            (str (count new-layers) " layers added to capabilities.")]
         (if workspace-name
           (do
-            (remove-workspace! geoserver-key workspace-name)
+            (remove-workspace! {:geoserver-key  geoserver-key
+                                :workspace-name workspace-name})
             (swap! layers update-in [geoserver-key] concat new-layers))
           (swap! layers assoc geoserver-key new-layers))
         (log message :force-stdout? stdout?)
@@ -175,7 +176,8 @@
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
   []
-  (run! set-capabilities! (keys (get-config :geoserver)))
+  (run! set-capabilities! (mapv #(into {:geoserver-key %})
+                                (keys (get-config :geoserver))))
   (data-response (str (reduce + (map count (vals @layers)))
                       " layers added to capabilities.")))
 
