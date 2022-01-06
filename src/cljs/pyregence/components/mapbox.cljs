@@ -58,22 +58,12 @@
 (defn- get-layer-metadata
   "Gets the value of a specified property of a layer's metadata."
   [layer property]
-  (let [metadata (when (some? layer)
-                   (get layer "metadata"))]
-    (when (some? metadata)
-      (get metadata property))))
-
-(defn- get-layer-metadata-by-id
-  "Gets the value of a specified property of a layer's metadata by id."
-  [layer-id property]
-  (let [layer    (get-layer layer-id)
-        metadata (when (some? layer)
-                   (u/try-js-aget layer "metadata"))]
-    (when (some? metadata)
-      (u/try-js-aget metadata property))))
+  (or (get-in layer ["metadata" property])
+      (get-in layer [:metadata (keyword property)])
+      (u/try-js-aget layer "metadata" property)))
 
 (defn- get-layer-type-metadata-property
-  "Gets the specified metadata property based on a layer's type."
+  "Gets the specified metadata property (originally set in config.cljs) based on a layer's type."
   [type metadata-property]
   (get-in @project-layers [(keyword type) metadata-property]))
 
@@ -201,12 +191,22 @@
 (defn- merge-layers [v new-layers]
   (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
 
-(defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
+(defn- process-layer-order!
+  "Takes in layers and arranges them in the proper order as
+   specified by the z-index. By default, all Mapbox layers are added first."
+  [layers]
+  (sort-by #(get-layer-metadata % "z-index") layers))
+
+(defn- update-style!
+  "Updates the Mapbox Style object. Takes in the current Mapbox Style object
+   and optionally updates the `sources` and `layers` keys."
+  [style & {:keys [sources layers new-sources new-layers]}]
   (let [new-style (cond-> style
                     sources     (assoc "sources" sources)
                     layers      (assoc "layers" layers)
                     new-sources (update "sources" merge new-sources)
                     new-layers  (update "layers" merge-layers new-layers)
+                    :always     (update "layers" process-layer-order!)
                     :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
@@ -447,21 +447,22 @@
    :tileSize 256
    :tiles    [(c/wms-layer-url layer-name geoserver-key)]})
 
-(defn- wms-layer [layer-name source-name opacity visible?]
+(defn- wms-layer [layer-name source-name opacity visible? & [z-index]]
   {:id       layer-name
    :type     "raster"
    :source   source-name
    :layout   {:visibility (if visible? "visible" "none")}
-   :metadata {:type (get-layer-type layer-name)}
+   :metadata {:type    (get-layer-type layer-name)
+              :z-index (or z-index 1)}
    :paint    {:raster-opacity opacity}})
 
 (defn- build-wms
   "Returns new WMS source and layer in the form `[source [layer]]`.
    `source` must be a valid WMS layer in the geoserver,
    `opacity` must be a float between 0.0 and 1.0."
-  [id source geoserver-key opacity visibile?]
+  [id source geoserver-key opacity visibile? & [z-index]]
   (let [new-source {id (wms-source source geoserver-key)}
-        new-layer  (wms-layer id id opacity visibile?)]
+        new-layer  (wms-layer id id opacity visibile? z-index)]
     [new-source [new-layer]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -601,7 +602,7 @@
                            (u/filterm (fn [[k _]]
                                         (let [sname (name k)]
                                           (or (is-terrain? sname)
-                                              (some? (get-layer-metadata-by-id sname "type")))))))
+                                              (some? (get-layer-metadata (get-layer sname) "type")))))))
           cur-layers  (->> (get cur-style "layers")
                            (filter #(some? (get-layer-metadata % "type"))))
           new-style   (-> (<! style-chan)
@@ -646,29 +647,20 @@
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
-  [id source geoserver-key visible?]
+  [id source geoserver-key visible? & [z-index]]
   (when id
     (if (layer-exists? id)
       (set-visible-by-title! id visible?)
-      (let [[new-source new-layers] (build-wms id source geoserver-key 1.0 visible?)
-            style                   (get-style)
-            layers                  (get style "layers")
-            zero-idx                (->> layers
-                                         (keep-indexed (fn [idx layer]
-                                                         (when (some? (get-layer-metadata layer "type"))
-                                                           idx)))
-                                         (first))
-            [before after]          (split-at (or zero-idx (count layers)) layers)
-            final-layers            (vec (concat before new-layers after))]
-        (update-style! style
+      (let [[new-source new-layer] (build-wms id source geoserver-key 1.0 visible? z-index)]
+        (update-style! (get-style)
                        :new-sources new-source
-                       :layers      final-layers)))))
+                       :new-layers  new-layer)))))
 
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
   [id]
   (add-icon! "video-icon" "./images/video.png")
-  (let [new-source {id {:type       "geojson" 
+  (let [new-source {id {:type       "geojson"
                         :data       (clj->js @!/the-cameras)
                         :generateId true}}
         new-layers [{:id       id
@@ -678,7 +670,8 @@
                                 :icon-rotate             ["-" ["get" "pan"] 90]
                                 :icon-rotation-alignment "map"
                                 :icon-size               0.5}
-                     :metadata {:type (get-layer-type id)}
+                     :metadata {:type (get-layer-type id)
+                                :z-index 1001}
                      :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
@@ -690,7 +683,8 @@
         new-layers [{:id       id
                      :source   id
                      :type     "fill"
-                     :metadata {:type (get-layer-type id)}
+                     :metadata {:type (get-layer-type id)
+                                :z-index 1000}
                      :paint    {:fill-color         color
                                 :fill-outline-color (on-hover "#000000" color)
                                 :fill-opacity       (on-hover 1 0.4)}}]]
