@@ -463,12 +463,14 @@
   (reset! default-forecasts defaults))
 
 (def ^:private forecasts {:near-term {:options-config near-term-forecast-options
-                                      :layers         near-term-forecast-layers}
+                                      :layers         near-term-forecast-layers
+                                      :geoserver-key  :pyrecast}
                           :long-term {:options-config long-term-forecast-options
-                                      :layers         long-term-forecast-layers}})
+                                      :layers         long-term-forecast-layers
+                                      :geoserver-key  :pyreclimate}})
 
 (defn get-forecast
-  "Retrieves the forecast options and default tab."
+  "Retrieves the forecast options, default tab, and GeoServer key."
   [forecast-type]
   {:pre [(contains? #{:long-term :near-term} forecast-type)]}
   (forecast-type forecasts))
@@ -620,20 +622,26 @@
 ;; WFS/WMS Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private geoserver-base-url (atom nil))
-(defn- wms-url [] (str (u/end-with @geoserver-base-url "/") "wms"))
-(defn- wfs-url [] (str (u/end-with @geoserver-base-url "/") "wfs"))
-(defn- mvt-url [] (str (u/end-with @geoserver-base-url "/") "gwc/service/wmts"))
+(defonce ^:private geoserver-urls (atom nil))
 
-(defn set-geoserver-base-url!
-  "Sets the base URL of the Geoserver given the value from `config.edn`."
-  [url]
-  (reset! geoserver-base-url url))
+(defn set-geoserver-urls!
+  "Stores the Geoserver URL's passed in via `config.edn`."
+  [urls]
+  (reset! geoserver-urls urls))
+
+(defn- wms-url [geoserver-key]
+  (str (u/end-with (geoserver-key @geoserver-urls) "/") "wms"))
+
+(defn- wfs-url [geoserver-key]
+  (str (u/end-with (geoserver-key @geoserver-urls) "/") "wfs"))
+
+(defn- mvt-url [geoserver-key]
+  (str (u/end-with ((keyword geoserver-key) @geoserver-urls) "/") "gwc/service/wmts"))
 
 (defn legend-url
   "Generates a URL for the legend given a layer."
-  [layer]
-  (str (wms-url)
+  [layer geoserver-key]
+  (str (wms-url geoserver-key)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
@@ -643,8 +651,8 @@
 
 (defn point-info-url
   "Generates a URL for the point information."
-  [layer-group bbox feature-count]
-  (str (wms-url)
+  [layer-group bbox feature-count geoserver-key]
+  (str (wms-url geoserver-key)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
@@ -666,8 +674,8 @@
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
-  ([layer]
-   (str (mvt-url)
+  ([layer geoserver-key]
+   (str (mvt-url geoserver-key)
         "?REQUEST=GetTile"
         "&SERVICE=WMTS"
         "&VERSION=1.0.0"
@@ -678,9 +686,9 @@
         "&TILEMATRIXSET=EPSG:900913"
         "&TILECOL={x}&TILEROW={y}"))
 
-  ([layer layer-time]
+  ([layer geoserver-key layer-time]
    (if (feature-enabled? :image-mosaic-gwc)
-     (str (mvt-url)
+     (str (mvt-url geoserver-key)
           "?REQUEST=GetTile"
           "&SERVICE=WMTS"
           "&VERSION=1.0.0"
@@ -691,7 +699,7 @@
           "&TILEMATRIXSET=EPSG:900913"
           "&TILECOL={x}&TILEROW={y}"
           "&TIME=" layer-time)
-     (str (wms-url)
+     (str (wms-url geoserver-key)
           "?SERVICE=WMS"
           "&VERSION=1.3.0"
           "&REQUEST=GetMap"
@@ -711,8 +719,8 @@
    set as GeoJSON.
 
    Mapbox GL does support GeoJSON in EPSG:4326. However, it does not support WFS."
-  [layer]
-  (str (wfs-url)
+  [layer geoserver-key]
+  (str (wfs-url geoserver-key)
        "?SERVICE=WFS"
        "&VERSION=1.3.0"
        "&REQUEST=GetFeature"
@@ -727,8 +735,8 @@
    EPSG:900913 (Google Web Mercator). EPSG:900913 is used since GeoServer's
    embedded [GeoWebCache](https://www.geowebcache.org/) Web Map Tile Service (WMTS)
    supports EPSG:900913 by default, but does not support EPSG:3857 by default."
-  [layer]
-  (str (mvt-url)
+  [layer geoserver-key]
+  (str (mvt-url geoserver-key)
        "?REQUEST=GetTile"
        "&SERVICE=WMTS"
        "&VERSION=1.0.0"

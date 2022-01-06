@@ -213,9 +213,10 @@
             opt-label])
          options)]])
 
-(defn get-layer-name [filter-set update-layer!]
+(defn get-layer-name [geoserver-key filter-set update-layer!]
   (go
     (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
+                                                              geoserver-key
                                                               (pr-str filter-set)))))]
       (update-layer! :name name)
       name)))
@@ -230,7 +231,7 @@
                :checked   @show?
                :on-change #(go
                              (swap! show? not)
-                             (mb/set-visible-by-title! (<! (get-layer-name filter-set identity))
+                             (mb/set-visible-by-title! (<! (get-layer-name :pyrecast filter-set identity))
                                                        @show?))}]
       [:label {:for id} opt-label]]]))
 
@@ -243,9 +244,10 @@
                                       (sort-by :z-index)
                                       (reverse))]
         (let [{:keys [filter-set z-index]} (first sorted-underlays)
-              layer-name (<! (get-layer-name filter-set identity))]
+              layer-name (<! (get-layer-name :pyrecast filter-set identity))]
           (mb/create-wms-layer! layer-name
                                 layer-name
+                                :pyrecast
                                 false
                                 z-index)
           (when-let [tail (seq (rest sorted-underlays))]
@@ -470,7 +472,9 @@
   []
   (swap! !/show-fire-history? not)
   (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
-    (mb/create-fire-history-layer! "fire-history" "fire-detections_fire-history%3Afire-history"))
+    (mb/create-fire-history-layer! "fire-history"
+                                   "fire-detections_fire-history%3Afire-history"
+                                   :pyrecast))
   (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

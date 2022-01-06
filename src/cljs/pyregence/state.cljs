@@ -15,6 +15,7 @@
 (defonce options          (r/atom {}))
 (defonce param-layers     (r/atom []))
 (defonce processed-params (r/atom []))
+(defonce geoserver-key    (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Show/Hide State

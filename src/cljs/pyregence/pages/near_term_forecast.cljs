@@ -67,6 +67,7 @@
                                       (remove nil?))))
           {:keys [layers model-times]} (t/read (t/reader :json)
                                                (:body (<! (u/call-clj-async! "get-layers"
+                                                                             @!/geoserver-key
                                                                              (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
@@ -174,7 +175,8 @@
 (defn get-legend! [layer]
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
-              (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all"))))) ; TODO make a more generic way to do this.
+              (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
+                            @!/geoserver-key))))
 
 (defn- process-timeline-point-info! [json-res]
   (reset! !/last-clicked-info [])
@@ -219,11 +221,14 @@
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
                                   (str/join "," point-info)
-                                  (if single? 1 1000))))))
+                                  (if single? 1 1000)
+                                  @!/geoserver-key)))))
 
 (defn select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name) (/ @!/active-opacity 100)))
+  (mb/swap-active-layer! (get-current-layer-name)
+                         @!/geoserver-key
+                         (/ @!/active-opacity 100)))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -267,7 +272,10 @@
     (<! (get-layers! get-model-times?))
     (let [source   (get-current-layer-name)
           style-fn (get-current-layer-key :style-fn)]
-      (mb/reset-active-layer! source style-fn (/ @!/active-opacity 100))
+      (mb/reset-active-layer! source
+                              style-fn
+                              @!/geoserver-key
+                              (/ @!/active-opacity 100))
       (mb/clear-popup!)
       (when (some? style-fn)
         (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!)
@@ -367,12 +375,13 @@
               (select-keys params oc)
               (u/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
-(defn initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
+(defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
-    (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
+    (let [{:keys [options-config layers geoserver-key]} (c/get-forecast forecast-type)
           user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras     (u/call-clj-async! "get-cameras")]
+      (reset! !/geoserver-key geoserver-key)
       (reset! !/options options-config)
       (reset! !/*forecast (or (keyword forecast)
                             (keyword (forecast-type @c/default-forecasts))))

@@ -11,7 +11,7 @@
 
 ;;; State
 
-(defonce layers (atom []))
+(defonce layers (atom {}))
 
 ;;; Helper Functions
 
@@ -98,13 +98,14 @@
      :sim-time    (str year "0101_000000")
      :hour        (- (Integer/parseInt year) 1954)}))
 
-(defn process-layers! [workspace-name]
-  (let [xml-response (:body (client/get (str (u/end-with (get-config :geoserver :base-url) "/")
-                                             "wms?SERVICE=WMS"
-                                             "&VERSION=1.3.0"
-                                             "&REQUEST=GetCapabilities"
-                                             (when (some? workspace-name)
-                                               (str "&NAMESPACE=" workspace-name)))))]
+(defn process-layers! [geoserver-key workspace-name]
+  (let [xml-response (-> (get-config :geoserver geoserver-key)
+                         (u/end-with "/")
+                         (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
+                              (when (some? workspace-name)
+                                (str "&NAMESPACE=" workspace-name)))
+                         (client/get)
+                         (:body))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
       (re-find #"(?<=<Layer>).*(?=</Layer>)" xml)
@@ -144,29 +145,39 @@
 
 ;;; Routes
 
-(defn remove-workspace! [workspace-name]
-  (swap! layers #(filterv (fn [{:keys [workspace]}]
-                            (not= workspace workspace-name))
-                          %))
+(defn remove-workspace! [geoserver-key workspace-name]
+  (swap! layers
+         update-in [geoserver-key]
+                   #(filterv (fn [{:keys [workspace]}]
+                               (not= workspace workspace-name)) %))
   (data-response (str workspace-name " removed.")))
 
 (defn get-all-layers []
-  (data-response (map :filter-set @layers)))
+  (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
-(defn set-capabilities! [& [workspace-name]]
-  (try
-    (let [stdout?    (= 0 (count @layers))
-          new-layers (process-layers! workspace-name)
-          message    (str (count new-layers) " layers added to capabilities.")]
-      (if workspace-name
-        (do
-          (remove-workspace! workspace-name)
-          (swap! layers #(into % new-layers)))
-        (reset! layers new-layers))
-      (log message :force-stdout? stdout?)
-      (data-response message))
-    (catch Exception _
-      (log-str "Failed to load capabilities."))))
+(defn set-capabilities! [geoserver-key & [workspace-name]]
+  (if (contains? (get-config :geoserver) geoserver-key)
+    (try
+      (let [stdout?            (= 0 (count @layers))
+            new-layers         (process-layers! geoserver-key workspace-name)
+            message            (str (count new-layers) " layers added to capabilities.")]
+        (if workspace-name
+          (do
+            (remove-workspace! geoserver-key workspace-name)
+            (swap! layers update-in [geoserver-key] concat new-layers))
+          (swap! layers assoc geoserver-key new-layers))
+        (log message :force-stdout? stdout?)
+        (data-response message))
+      (catch Exception _
+        (log-str "Failed to load capabilities.")))
+    (log-str "Failed to load capabilties. The GeoServer URL passed in was not found in config.edn.")))
+
+(defn set-all-capabilities!
+  "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
+  []
+  (run! set-capabilities! (keys (get-config :geoserver)))
+  (data-response (str (reduce + (map count (vals @layers)))
+                      " layers added to capabilities.")))
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]
@@ -180,7 +191,7 @@
                               (reduce (fn [acc row]
                                         (assoc acc (:job_id row) (:display_name row)))
                                       {}))]
-    (->> @layers
+    (->> (:pyrecast @layers)
          (filter (fn [{:keys [forecast]}]
                    (= "fire-spread-forecast" forecast)))
          (map :fire-name)
@@ -203,10 +214,11 @@
   (data-response (call-sql "get_user_layers_list" user-id)))
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
-(defn get-layers [selected-set-str]
-  (when-not (seq @layers) (set-capabilities!))
+(defn get-layers [geoserver-key selected-set-str]
+  (when-not (seq @layers) (set-all-capabilities!))
   (let [selected-set (edn/read-string selected-set-str)
-        available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer))) @layers)
+        available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer)))
+                              (geoserver-key @layers))
         model-times  (->> available
                           (map :model-init)
                           (distinct)
@@ -224,9 +236,9 @@
                         :model-times (seq model-times)}))
                    {:type :transit})))
 
-(defn get-layer-name [selected-set-str]
+(defn get-layer-name [geoserver-key selected-set-str]
   (let [selected-set (edn/read-string selected-set-str)]
-    (data-response (->> @layers
+    (data-response (->> (geoserver-key @layers)
                         (filter (fn [layer] (set/subset? selected-set (:filter-set layer))))
                         (sort #(compare (:model-init %2) (:model-init %1)))
                         (first)

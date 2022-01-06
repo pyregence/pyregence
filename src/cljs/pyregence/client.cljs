@@ -64,8 +64,8 @@
                      @original-params)]
     (c/set-dev-mode! (:dev-mode cur-params))
     (c/set-feature-flags! cur-params)
-    (c/set-geoserver-base-url! (get-in cur-params [:geoserver :base-url]))
     (c/set-mapbox-access-token! (get-in cur-params [:mapbox :access-token]))
+    (c/set-geoserver-urls! (:geoserver cur-params))
     (c/set-default-forecasts! (get cur-params :default-forecasts))
     (set-announcement-text! (:announcement cur-params))
     (render-root cur-params)))
