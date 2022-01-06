@@ -176,8 +176,8 @@
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
   []
-  (run! set-capabilities! (mapv #(into {:geoserver-key %})
-                                (keys (get-config :geoserver))))
+  (doseq [geoserver-key (keys (get-config :geoserver))]
+    (set-capabilities! {:geoserver-key geoserver-key}))
   (data-response (str (reduce + (map count (vals @layers)))
                       " layers added to capabilities.")))
 
