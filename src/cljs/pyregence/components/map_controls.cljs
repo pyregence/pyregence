@@ -242,11 +242,12 @@
                                       (map (fn [[id v]] (assoc v :id id)))
                                       (sort-by :z-index)
                                       (reverse))]
-        (let [{:keys [filter-set]} (first sorted-underlays)
+        (let [{:keys [filter-set z-index]} (first sorted-underlays)
               layer-name (<! (get-layer-name filter-set identity))]
           (mb/create-wms-layer! layer-name
                                 layer-name
-                                false)
+                                false
+                                z-index)
           (when-let [tail (seq (rest sorted-underlays))]
             (recur tail)))))
 
