@@ -145,9 +145,9 @@
 
 ;;; Routes
 
-(defn remove-workspace! [{:keys [geoserver-key workspace-name]}]
+(defn remove-workspace! [{:strs [geoserver-key workspace-name]}]
   (swap! layers
-         update-in [geoserver-key]
+         update-in [(keyword geoserver-key)]
                    #(filterv (fn [{:keys [workspace]}]
                                (not= workspace workspace-name)) %))
   (data-response (str workspace-name " removed.")))
@@ -155,29 +155,31 @@
 (defn get-all-layers []
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
-(defn set-capabilities! [{:keys [geoserver-key workspace-name]}]
-  (if (contains? (get-config :geoserver) geoserver-key)
-    (try
-      (let [stdout?            (= 0 (count @layers))
-            new-layers         (process-layers! geoserver-key workspace-name)
-            message            (str (count new-layers) " layers added to capabilities.")]
-        (if workspace-name
-          (do
-            (remove-workspace! {:geoserver-key  geoserver-key
-                                :workspace-name workspace-name})
-            (swap! layers update-in [geoserver-key] concat new-layers))
-          (swap! layers assoc geoserver-key new-layers))
-        (log message :force-stdout? stdout?)
-        (data-response message))
-      (catch Exception _
-        (log-str "Failed to load capabilities.")))
-    (log-str "Failed to load capabilties. The GeoServer URL passed in was not found in config.edn.")))
+(defn set-capabilities! [{:strs [geoserver-key workspace-name]}]
+  (let [geoserver-key  (keyword geoserver-key)
+        workspace-name (keyword workspace-name)]
+    (if (contains? (get-config :geoserver) geoserver-key)
+      (try
+        (let [stdout?    (= 0 (count @layers))
+              new-layers (process-layers! geoserver-key workspace-name)
+              message    (str (count new-layers) " layers added to capabilities.")]
+          (if workspace-name
+            (do
+              (remove-workspace! {"geoserver-key"  geoserver-key
+                                  "workspace-name" workspace-name})
+              (swap! layers update-in [geoserver-key] concat new-layers))
+            (swap! layers assoc geoserver-key new-layers))
+          (log message :force-stdout? stdout?)
+          (data-response message))
+        (catch Exception _
+          (log-str "Failed to load capabilities.")))
+      (log-str "Failed to load capabilties. The GeoServer URL passed in was not found in config.edn."))))
 
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
   []
   (doseq [geoserver-key (keys (get-config :geoserver))]
-    (set-capabilities! {:geoserver-key geoserver-key}))
+    (set-capabilities! {"geoserver-key" (name geoserver-key)}))
   (data-response (str (reduce + (map count (vals @layers)))
                       " layers added to capabilities.")))
 
