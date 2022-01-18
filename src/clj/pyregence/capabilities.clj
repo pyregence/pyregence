@@ -147,9 +147,9 @@
 
 (defn remove-workspace! [{:strs [geoserver-key workspace-name]}]
   (swap! layers
-         update-in [(keyword geoserver-key)]
-                   #(filterv (fn [{:keys [workspace]}]
-                               (not= workspace workspace-name)) %))
+         update [(keyword geoserver-key)]
+                #(filterv (fn [{:keys [workspace]}]
+                            (not= workspace workspace-name)) %))
   (data-response (str workspace-name " removed.")))
 
 (defn get-all-layers []
@@ -167,7 +167,7 @@
             (do
               (remove-workspace! {"geoserver-key"  geoserver-key
                                   "workspace-name" workspace-name})
-              (swap! layers update-in [geoserver-key] concat new-layers))
+              (swap! layers update [geoserver-key] concat new-layers))
             (swap! layers assoc geoserver-key new-layers))
           (log message :force-stdout? stdout?)
           (data-response message))
