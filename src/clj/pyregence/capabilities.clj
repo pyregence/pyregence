@@ -147,7 +147,7 @@
 
 (defn remove-workspace! [{:strs [geoserver-key workspace-name]}]
   (swap! layers
-         update [(keyword geoserver-key)]
+         update (keyword geoserver-key)
                 #(filterv (fn [{:keys [workspace]}]
                             (not= workspace workspace-name)) %))
   (data-response (str workspace-name " removed.")))
@@ -156,8 +156,7 @@
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
 (defn set-capabilities! [{:strs [geoserver-key workspace-name]}]
-  (let [geoserver-key  (keyword geoserver-key)
-        workspace-name (keyword workspace-name)]
+  (let [geoserver-key  (keyword geoserver-key)]
     (if (contains? (get-config :geoserver) geoserver-key)
       (try
         (let [stdout?    (= 0 (count @layers))
@@ -165,9 +164,9 @@
               message    (str (count new-layers) " layers added to capabilities.")]
           (if workspace-name
             (do
-              (remove-workspace! {"geoserver-key"  geoserver-key
+              (remove-workspace! {"geoserver-key"  (name geoserver-key)
                                   "workspace-name" workspace-name})
-              (swap! layers update [geoserver-key] concat new-layers))
+              (swap! layers update geoserver-key concat new-layers))
             (swap! layers assoc geoserver-key new-layers))
           (log message :force-stdout? stdout?)
           (data-response message))
