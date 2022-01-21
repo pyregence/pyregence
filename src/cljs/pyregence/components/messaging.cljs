@@ -3,6 +3,7 @@
             [reagent.core       :as r]
             [clojure.core.async :refer [chan go >! <! timeout]]
             [clojure.string     :as str]
+            [pyregence.state    :as !]
             [pyregence.styles   :as $]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -69,7 +70,7 @@
      :left            "1rem"
      :padding         ".5rem"
      :position        "fixed"
-     :width           "50%"
+     :width           (if @!/mobile? "90%" "50%")
      :z-index         "10000"}
     {:media {{:max-width "800px"}
              {:width "90%"}}}))
@@ -118,9 +119,9 @@
                                           "See console for complete list."))]))))
 (defn toast-message
   "Creates a toast message component."
-  [mobile?]
+  []
   (let [message (r/atom "")]
-    (fn [mobile?]
+    (fn []
       (let [message? (not (nil? @toast-message-text))]
         (when message? (reset! message @toast-message-text))
         [:div#toast-message {:class (<class $alert-box)

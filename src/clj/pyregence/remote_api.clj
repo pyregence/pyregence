@@ -28,6 +28,7 @@
                                               get-layer-name
                                               get-user-layers
                                               set-capabilities!
+                                              set-all-capabilities!
                                               remove-workspace!]]
             [pyregence.match-drop     :refer [initiate-md! get-md-status get-match-drops]]
             [pyregence.red-flag       :refer [get-red-flag-layer]]
@@ -56,6 +57,7 @@
                "remove-org-user"      remove-org-user
                "send-email"           send-email
                "set-capabilities"     set-capabilities!
+               "set-all-capabilities" set-all-capabilities!
                "set-user-password"    set-user-password
                "remove-workspace"     remove-workspace!
                "user-email-taken"     user-email-taken

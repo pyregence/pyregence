@@ -2,6 +2,7 @@
   (:require [cljsjs.vega-embed]
             [reagent.core    :as r]
             [reagent.dom     :as rd]
+            [pyregence.state :as !]
             [pyregence.utils :as u]
             [clojure.core.async :refer [go]]
             [cljs.core.async.interop :refer-macros [<p!]]))
@@ -10,8 +11,8 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- create-stops [legend-list last-clicked-info]
-  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 last-clicked-info)]
+(defn- create-stops []
+  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 @!/last-clicked-info)]
     (reductions
      (fn [last cur] (let [last-q (get last :quantity  0.0)
                           cur-q  (get cur  "quantity" 0.0)]
@@ -24,20 +25,20 @@
                                                       (- cur-q last-q)))
                                    (get cur "color"))}))
      {:offset 0.0
-      :color  (get (first legend-list) "color")}
-     (rest legend-list))))
+      :color  (get (first @!/legend-list) "color")}
+     (rest @!/legend-list))))
 
-(defn- create-scale [legend-list]
+(defn- create-scale []
   {:type   "linear"
-   :domain (mapv #(get % "quantity") legend-list)
-   :range  (mapv #(get % "color")    legend-list)})
+   :domain (mapv #(get % "quantity") @!/legend-list)
+   :range  (mapv #(get % "color")    @!/legend-list)})
 
-(defn- layer-line-plot [units current-hour legend-list last-clicked-info]
+(defn- layer-line-plot [units current-hour]
   {:width    "container"
    :height   "container"
    :autosize {:type "fit" :resize true}
    :padding  {:left "16" :top "16" :right "16" :bottom "16"}
-   :data     {:values (or last-clicked-info [])}
+   :data     {:values (or @!/last-clicked-info [])}
    :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "Hour"}
                           :y {:field "band" :type "quantitative" :title units}
                           :tooltip [{:field "band" :title units  :type "nominal"}
@@ -48,7 +49,7 @@
                                :stroke      {:x2       0
                                              :y1       1
                                              :gradient "linear"
-                                             :stops    (create-stops legend-list last-clicked-info)}}}
+                                             :stops    (create-stops)}}}
                          ;; Layer with all points for selection
                        {:mark      {:type   "point"
                                     :opacity 0}
@@ -63,7 +64,7 @@
                                           :value     75}
                                    :color {:field  "band"
                                            :type   "quantitative"
-                                           :scale  (create-scale legend-list)
+                                           :scale  (create-scale)
                                            :legend false}}}
                        {:transform [{:filter {:field "hour" :equal current-hour}}]
                         :mark {:type   "point"
@@ -113,8 +114,8 @@
 
 (defn vega-box
   "A function to create a Vega line plot."
-  [box-height box-width layer-click! units current-hour legend-list last-clicked-info]
-  [vega-canvas {:spec         (layer-line-plot units current-hour legend-list last-clicked-info)
+  [box-height box-width layer-click! units current-hour]
+  [vega-canvas {:spec         (layer-line-plot units current-hour)
                 :box-height   box-height
                 :box-width    box-width
                 :layer-click! layer-click!}])

@@ -5,7 +5,7 @@
             [ring.adapter.jetty     :refer [run-jetty]]
             [triangulum.logging     :refer [log-str set-log-path!]]
             [triangulum.sockets     :refer [start-socket-server! stop-socket-server!]]
-            [pyregence.capabilities :refer [set-capabilities!]]
+            [pyregence.capabilities :refer [set-all-capabilities!]]
             [pyregence.handler      :refer [create-handler-stack]]
             [pyregence.match-drop   :refer [process-message]]))
 
@@ -81,7 +81,7 @@
             (reset! clean-up-service (start-clean-up-service!))
             (set-log-path! output-dir)
             (start-socket-server! 31337 process-message)
-            (set-capabilities!)))))))
+            (set-all-capabilities!)))))))
 
 (defn stop-server! []
   (set-log-path! "")

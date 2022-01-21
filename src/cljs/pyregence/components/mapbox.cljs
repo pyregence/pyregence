@@ -4,6 +4,7 @@
             [reagent.dom         :refer [render]]
             [clojure.core.async  :refer [go <!]]
             [clojure.string      :as str]
+            [pyregence.state     :as !]
             [pyregence.config    :as c]
             [pyregence.utils     :as u]
             [pyregence.geo-utils :as g]))
@@ -57,22 +58,12 @@
 (defn- get-layer-metadata
   "Gets the value of a specified property of a layer's metadata."
   [layer property]
-  (let [metadata (when (some? layer)
-                   (get layer "metadata"))]
-    (when (some? metadata)
-      (get metadata property))))
-
-(defn- get-layer-metadata-by-id
-  "Gets the value of a specified property of a layer's metadata by id."
-  [layer-id property]
-  (let [layer    (get-layer layer-id)
-        metadata (when (some? layer)
-                   (u/try-js-aget layer "metadata"))]
-    (when (some? metadata)
-      (u/try-js-aget metadata property))))
+  (or (get-in layer ["metadata" property])
+      (get-in layer [:metadata (keyword property)])
+      (u/try-js-aget layer "metadata" property)))
 
 (defn- get-layer-type-metadata-property
-  "Gets the specified metadata property based on a layer's type."
+  "Gets the specified metadata property (originally set in config.cljs) based on a layer's type."
   [type metadata-property]
   (get-in @project-layers [(keyword type) metadata-property]))
 
@@ -200,12 +191,22 @@
 (defn- merge-layers [v new-layers]
   (reduce (fn [acc cur] (upsert-layer acc cur)) (vec v) new-layers))
 
-(defn- update-style! [style & {:keys [sources layers new-sources new-layers]}]
+(defn- process-layer-order!
+  "Takes in layers and arranges them in the proper order as
+   specified by the z-index. By default, all Mapbox layers are added first."
+  [layers]
+  (sort-by #(get-layer-metadata % "z-index") layers))
+
+(defn- update-style!
+  "Updates the Mapbox Style object. Takes in the current Mapbox Style object
+   and optionally updates the `sources` and `layers` keys."
+  [style & {:keys [sources layers new-sources new-layers]}]
   (let [new-style (cond-> style
                     sources     (assoc "sources" sources)
                     layers      (assoc "layers" layers)
                     new-sources (update "sources" merge new-sources)
                     new-layers  (update "layers" merge-layers new-layers)
+                    :always     (update "layers" process-layer-order!)
                     :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
@@ -350,11 +351,11 @@
 (defn add-feature-highlight!
   "Adds events to highlight WFS features. Optionally can provide a function `click-fn`,
    which will be called on click as `(click-fn <feature-js-object> [lng lat])`"
-  [layer source mobile? & [click-fn]]
+  [layer source & [click-fn]]
   (remove-events! "mousemove" layer)
   (remove-events! "mouseleave" layer)
   (remove-events! "click" layer)
-  (when-not mobile?
+  (when-not @!/mobile?
     (add-event! "mouseenter"
                 (fn [e]
                   (when-let [feature (-> e (aget "features") (first))]
@@ -441,35 +442,36 @@
 ;; WMS Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wms-source [layer-name]
+(defn- wms-source [layer-name geoserver-key]
   {:type     "raster"
    :tileSize 256
-   :tiles    [(c/wms-layer-url layer-name)]})
+   :tiles    [(c/wms-layer-url layer-name geoserver-key)]})
 
-(defn- wms-layer [layer-name source-name opacity visible?]
+(defn- wms-layer [layer-name source-name opacity visible? & [z-index]]
   {:id       layer-name
    :type     "raster"
    :source   source-name
    :layout   {:visibility (if visible? "visible" "none")}
-   :metadata {:type (get-layer-type layer-name)}
+   :metadata {:type    (get-layer-type layer-name)
+              :z-index (or z-index 1)}
    :paint    {:raster-opacity opacity}})
 
 (defn- build-wms
   "Returns new WMS source and layer in the form `[source [layer]]`.
    `source` must be a valid WMS layer in the geoserver,
    `opacity` must be a float between 0.0 and 1.0."
-  [id source opacity visibile?]
-  (let [new-source {id (wms-source source)}
-        new-layer  (wms-layer id id opacity visibile?)]
+  [id source geoserver-key opacity visibile? & [z-index]]
+  (let [new-source {id (wms-source source geoserver-key)}
+        new-layer  (wms-layer id id opacity visibile? z-index)]
     [new-source [new-layer]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WFS Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wfs-source [layer-name]
+(defn- wfs-source [layer-name geoserver-key]
   {:type       "geojson"
-   :data       (c/wfs-layer-url layer-name)
+   :data       (c/wfs-layer-url layer-name geoserver-key)
    :generateId true})
 
 (defn- zoom-interp
@@ -527,8 +529,8 @@
    `source` must be a valid WFS layer in the geoserver
    `z-index` allows layers to be rendered on-top (positive z-index) or below
    (negative z-index) Mapbox base map layers."
-  [id source opacity]
-  (let [new-source {id (wfs-source source)}
+  [id source geoserver-key opacity]
+  (let [new-source {id (wfs-source source geoserver-key)}
         labels-id  (str id "-labels")
         new-layers [(incident-layer id id opacity)
                     (incident-layer-label labels-id id opacity)]]
@@ -600,7 +602,7 @@
                            (u/filterm (fn [[k _]]
                                         (let [sname (name k)]
                                           (or (is-terrain? sname)
-                                              (some? (get-layer-metadata-by-id sname "type")))))))
+                                              (some? (get-layer-metadata (get-layer sname) "type")))))))
           cur-layers  (->> (get cur-style "layers")
                            (filter #(some? (get-layer-metadata % "type"))))
           new-style   (-> (<! style-chan)
@@ -618,11 +620,11 @@
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
-  [geo-layer opacity]
+  [geo-layer geoserver-key opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
         layers (hide-forecast-layers (get style "layers"))
-        [new-sources new-layers] (build-wms geo-layer geo-layer opacity true)]
+        [new-sources new-layers] (build-wms geo-layer geo-layer geoserver-key opacity true)]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
@@ -631,13 +633,13 @@
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
-  [geo-layer style-fn opacity]
+  [geo-layer style-fn geoserver-key opacity]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
         layers (hide-forecast-layers (get style "layers"))
         [new-sources new-layers] (if (some? style-fn)
-                                   (build-wfs fire-active geo-layer opacity)
-                                   (build-wms geo-layer geo-layer opacity true))]
+                                   (build-wfs fire-active geo-layer geoserver-key opacity)
+                                   (build-wms geo-layer geo-layer geoserver-key opacity true))]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
@@ -645,29 +647,22 @@
 
 (defn create-wms-layer!
   "Adds WMS layer to the map."
-  [id source visible?]
+  [id source geoserver-key visible? & [z-index]]
   (when id
     (if (layer-exists? id)
       (set-visible-by-title! id visible?)
-      (let [[new-source new-layers] (build-wms id source 1.0 visible?)
-            style                   (get-style)
-            layers                  (get style "layers")
-            zero-idx                (->> layers
-                                         (keep-indexed (fn [idx layer]
-                                                         (when (some? (get-layer-metadata layer "type"))
-                                                           idx)))
-                                         (first))
-            [before after]          (split-at (or zero-idx (count layers)) layers)
-            final-layers            (vec (concat before new-layers after))]
-        (update-style! style
+      (let [[new-source new-layer] (build-wms id source geoserver-key 1.0 visible? z-index)]
+        (update-style! (get-style)
                        :new-sources new-source
-                       :layers      final-layers)))))
+                       :new-layers  new-layer)))))
 
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
-  [id data]
+  [id]
   (add-icon! "video-icon" "./images/video.png")
-  (let [new-source {id {:type "geojson" :data data :generateId true}}
+  (let [new-source {id {:type       "geojson"
+                        :data       (clj->js @!/the-cameras)
+                        :generateId true}}
         new-layers [{:id       id
                      :source   id
                      :type     "symbol"
@@ -675,7 +670,8 @@
                                 :icon-rotate             ["-" ["get" "pan"] 90]
                                 :icon-rotation-alignment "map"
                                 :icon-size               0.5}
-                     :metadata {:type (get-layer-type id)}
+                     :metadata {:type (get-layer-type id)
+                                :z-index 1001}
                      :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
@@ -687,20 +683,21 @@
         new-layers [{:id       id
                      :source   id
                      :type     "fill"
-                     :metadata {:type (get-layer-type id)}
+                     :metadata {:type (get-layer-type id)
+                                :z-index 1000}
                      :paint    {:fill-color         color
                                 :fill-outline-color (on-hover "#000000" color)
                                 :fill-opacity       (on-hover 1 0.4)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
-(defn- mvt-source [layer-name]
+(defn- mvt-source [layer-name geoserver-key]
   {:type  "vector"
-   :tiles [(c/mvt-layer-url layer-name)]})
+   :tiles [(c/mvt-layer-url layer-name geoserver-key)]})
 
 (defn create-fire-history-layer!
   "Adds red flag warning layer to the map."
-  [id layer-name]
-  (let [new-source {id (mvt-source layer-name)}
+  [id layer-name geoserver-key]
+  (let [new-source {id (mvt-source layer-name geoserver-key)}
         new-layers [{:id           id
                      :source       id
                      :source-layer "fire-history"
