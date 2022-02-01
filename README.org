@@ -280,7 +280,7 @@ sudo less +G /var/log/nginx/error.log
 
 ** License and Distribution
 
-Copyright © 2020-2021 Spatial Informatics Group, LLC.
+Copyright © 2020-2022 Spatial Informatics Group, LLC.
 
 Pyregence is distributed by Spatial Informatics Group, LLC. under the
 terms of the Eclipse Public License version 2.0 (EPLv2). See
