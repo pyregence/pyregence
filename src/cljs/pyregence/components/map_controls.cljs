@@ -1013,11 +1013,9 @@
 
 (defn- $scale-line [time-slider?]
   {:background-color ($/color-picker :bg-color)
-   :border           (str "1px solid " ($/color-picker :border-color))
    :bottom           (if (and @!/mobile? time-slider?) "90px" "36px")
-   :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
    :left             "auto"
-   :right            "64px"
+   :right            "70px"
    :user-select      "none"})
 
 (defn- $scale-line-inner []
@@ -1049,11 +1047,9 @@
 
 (defn- $mouse-lng-lat []
   {:background-color ($/color-picker :bg-color)
-   :border           (str "1px solid " ($/color-picker :border-color))
-   :bottom           "80px"
-   :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
+   :bottom           "94px"
    :left             "auto"
-   :right            "64px"})
+   :right            "70px"})
 
 (defn- $mouse-lng-lat-inner []
   {:font-size   "0.85rem"
