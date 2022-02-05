@@ -972,6 +972,12 @@
 ;; Legend Box
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn $legend-box []
+  {:padding ".2rem .2rem"
+   :border "4px solid rgba(50, 50, 50, 0.3)"
+   :border-bottom "none"
+   })
+
 (defn $legend-color [color]
   {:background-color color
    :height           "1rem"
@@ -995,7 +1001,7 @@
   (reset! show-legend? (not @!/mobile?))
   (fn [reverse? time-slider? units]
     (when (and @show-legend? (seq @!/legend-list))
-      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? time-slider?))}
+      [:div#legend-box {:style ($/combine $/tool $legend-box ($legend-location @show-panel? time-slider?))}
        [:div {:style {:display        "flex"
                       :flex-direction "column"}}
         (map-indexed (fn [i leg]
@@ -1013,6 +1019,7 @@
 
 (defn- $scale-line [time-slider?]
   {:background-color ($/color-picker :bg-color)
+   :padding          ".2rem 0"
    :bottom           (if (and @!/mobile? time-slider?) "90px" "36px")
    :left             "auto"
    :right            "70px"
@@ -1047,7 +1054,8 @@
 
 (defn- $mouse-lng-lat []
   {:background-color ($/color-picker :bg-color)
-   :bottom           "94px"
+   :bottom           "84px"
+   :padding         ".2rem"
    :left             "auto"
    :right            "70px"})
 

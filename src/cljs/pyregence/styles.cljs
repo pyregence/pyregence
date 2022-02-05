@@ -367,7 +367,7 @@
    :border "none"
    :border-radius    "5px"
    :box-shadow "rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px"
-   :padding ".4rem"
+   :padding ".2rem"
    :color            (color-picker :font-color)
    :position         "absolute"
    :z-index          "100"})
