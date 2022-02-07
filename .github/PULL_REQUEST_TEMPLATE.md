@@ -11,6 +11,7 @@ Closes PYR-###
 
 ## Module(s) Impacted
 <!-- List the Module > Submodule impacted by this PR (e.g. Fire Layers > Structures) -->
+<!-- The current list of all Modules is: Fire Layers, Toolbars, and Mobile. -->
 
 ## Testing
 <!-- Create a BDD style test script -->
