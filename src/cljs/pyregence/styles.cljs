@@ -365,7 +365,7 @@
   []
   {:background-color (color-picker :bg-color)
    :border-radius    "5px"
-   :box-shadow       "rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px"
+   :box-shadow       "rgba(50, 50, 93, .7) 0px 3px 20px -8px, rgba(0, 0, 0, 0.3) 0px 3px 16px -11px"
    :color            (color-picker :font-color)
    :position         "absolute"
    :z-index          "100"})
