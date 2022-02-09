@@ -973,7 +973,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn $legend-box []
-  {:padding       ".2rem .2rem"
+  {:padding       ".2rem"
    :border        "4px solid rgba(50, 50, 50, 0.3)"
    :border-bottom "none"})
 
