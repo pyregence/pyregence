@@ -978,7 +978,7 @@
    :margin-right     ".5rem"
    :min-width        "1rem"})
 
-(defn $legend-location [show? time-slider?]
+(defn $legend-box [show? time-slider?]
   {:left          (if (and show? (not @!/mobile?)) "20rem" "2rem")
    :max-height    (if (and @!/mobile? time-slider?)
                     "calc(100% - 106px)"
@@ -995,7 +995,7 @@
   (reset! show-legend? (not @!/mobile?))
   (fn [reverse? time-slider? units]
     (when (and @show-legend? (seq @!/legend-list))
-      [:div#legend-box {:style ($/combine $/tool ($legend-location @show-panel? time-slider?))}
+      [:div#legend-box {:style ($/combine $/tool ($legend-box @show-panel? time-slider?))}
        [:div {:style {:display        "flex"
                       :flex-direction "column"}}
         (map-indexed (fn [i leg]
@@ -1013,11 +1013,10 @@
 
 (defn- $scale-line [time-slider?]
   {:background-color ($/color-picker :bg-color)
-   :border           (str "1px solid " ($/color-picker :border-color))
+   :padding          ".2rem 0"
    :bottom           (if (and @!/mobile? time-slider?) "90px" "36px")
-   :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
    :left             "auto"
-   :right            "64px"
+   :right            "70px"
    :user-select      "none"})
 
 (defn- $scale-line-inner []
@@ -1049,11 +1048,10 @@
 
 (defn- $mouse-lng-lat []
   {:background-color ($/color-picker :bg-color)
-   :border           (str "1px solid " ($/color-picker :border-color))
-   :bottom           "80px"
-   :box-shadow       (str "0 0 0 2px " ($/color-picker :bg-color))
+   :bottom           "84px"
+   :padding         ".2rem"
    :left             "auto"
-   :right            "64px"})
+   :right            "70px"})
 
 (defn- $mouse-lng-lat-inner []
   {:font-size   "0.85rem"

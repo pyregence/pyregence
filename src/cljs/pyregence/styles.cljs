@@ -364,9 +364,8 @@
   "A shortcut for tool styling (eg. the legend or time slider)."
   []
   {:background-color (color-picker :bg-color)
-   :border           (str "1px solid " (color-picker :border-color))
    :border-radius    "5px"
-   :box-shadow       (str "0 0 0 2px " (color-picker :bg-color))
+   :box-shadow       "rgba(50, 50, 93, .7) 0px 3px 20px -8px, rgba(0, 0, 0, 0.3) 0px 3px 16px -11px"
    :color            (color-picker :font-color)
    :position         "absolute"
    :z-index          "100"})
