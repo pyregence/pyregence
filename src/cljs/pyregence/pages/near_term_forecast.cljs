@@ -217,12 +217,13 @@
         single?             (str/blank? layer-group)
         layer               (if single? layer-name layer-group)
         process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
-    (when-not (u/missing-data? layer point-info)
+    (if-not (u/missing-data? layer point-info)
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
                                   (str/join "," point-info)
                                   (if single? 1 1000)
-                                  @!/geoserver-key)))))
+                                  @!/geoserver-key))
+      (toast-message! "There was an issue getting point information for this layer."))))
 
 (defn select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)
