@@ -9,10 +9,13 @@ Closes PYR-###
 - [ ] Code passes linter rules (`clj-kondo --lint src`)
 - [ ] Feature(s) work when compiled (`clojure -M:compile-cljs`)
 
+## Module(s) Impacted
+<!-- List the Module > Submodule impacted by this PR (e.g. Fire Layers > Structures) -->
+<!-- The current list of all Modules is: Fire Layers, Toolbars, and Mobile. -->
+
 ## Testing
 <!-- Create a BDD style test script -->
 1. Given..., When ..., Then ....
 
 ## Screenshots
 <!-- Add a screen shot when UI changes are included -->
-
