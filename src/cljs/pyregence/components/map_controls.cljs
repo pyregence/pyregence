@@ -942,11 +942,9 @@
              "Click on the map to view the value(s) of particular point."]
 
             (and (nil? @!/last-clicked-info) (empty? @!/legend-list))
-            (do
-              (toast-message! "There was an issue getting point information for this layer.")
-              error-info)
+            error-info ;TODO This state is also satisified briefly when a point exists on the map and you are swtiching the layer.
 
-            (nil? @!/last-clicked-info)
+            (and (nil? @!/last-clicked-info) (not (empty? @!/legend-list)))
             [loading-cover box-height box-width "Loading..."]
 
             (and (number? @!/last-clicked-info)
