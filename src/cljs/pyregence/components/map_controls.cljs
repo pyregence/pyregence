@@ -930,16 +930,21 @@
       close-fn!
       (fn [box-height box-width]
         (let [has-point? (mb/get-overlay-center)
-              no-info    [loading-cover
+              error-info [loading-cover
                           box-height
                           box-width
-                          "This point does not have any information."]]
+                          "There was an issue getting point information for this layer."]]
           (cond
             (not has-point?)
             [loading-cover
              box-height
              box-width
              "Click on the map to view the value(s) of particular point."]
+
+            (and (nil? @!/last-clicked-info) (empty? @!/legend-list))
+            (do
+              (toast-message! "There was an issue getting point information for this layer.")
+              error-info)
 
             (nil? @!/last-clicked-info)
             [loading-cover box-height box-width "Loading..."]
@@ -954,7 +959,10 @@
 
             (or (< @!/last-clicked-info -50)
                 (-> @!/last-clicked-info (first) (:band) (< -50)))
-            no-info
+            [loading-cover
+             box-height
+             box-width
+             "This point does not have any information."]
 
             (and (not-empty @!/last-clicked-info) (not-empty @!/legend-list))
             [vega-information
@@ -964,7 +972,7 @@
              units
              cur-hour]
 
-            :else no-info)))]]
+            :else error-info)))]]
     (finally
       (mb/remove-event! click-event))))
 
