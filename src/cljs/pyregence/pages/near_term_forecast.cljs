@@ -215,7 +215,6 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
-  (reset! !/last-clicked-info nil)
   (let [layer-name          (get-current-layer-name)
         layer-group         (get-current-layer-group)
         single?             (str/blank? layer-group)
@@ -296,6 +295,7 @@
 (defn select-param! [val & keys]
   (swap! !/*params assoc-in (cons @!/*forecast keys) val)
   (reset! !/legend-list [])
+  (reset! !/last-clicked-info nil)
   (let [main-key (first keys)]
     (when (= main-key :fire-name)
       (select-layer! 0)
@@ -309,6 +309,7 @@
 (defn select-forecast! [key]
   (go
     (reset! !/legend-list [])
+    (reset! !/last-clicked-info nil)
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
     (<! (change-type! true
