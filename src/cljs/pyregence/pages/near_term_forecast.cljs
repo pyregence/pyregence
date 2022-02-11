@@ -146,13 +146,17 @@
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
    channel containing the result of calling process-fn on the response
-   or nil if an error occurred."
-  [process-fn url]
-  (u/fetch-and-process url
-                       {:method "get"
-                        :headers {"Accept" "application/json, text/xml"
-                                  "Content-Type" "application/json"}}
-                       process-fn))
+   or nil if an error occurred. Takes in a loading-atom which should be true when
+   passed in. The loading-atom is set to false after the resource has been fetched."
+  [process-fn url & [loading-atom]]
+  (go
+   (<! (u/fetch-and-process url
+                            {:method "get"
+                             :headers {"Accept" "application/json, text/xml"
+                                       "Content-Type" "application/json"}}
+                            process-fn))
+   (when (some? loading-atom)
+     (reset! loading-atom false))))
 
 (defn wrap-wms-errors [type response success-fn]
   (go
@@ -218,11 +222,13 @@
         layer               (if single? layer-name layer-group)
         process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
     (when-not (u/missing-data? layer point-info)
+      (reset! !/point-info-loading? true)
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
                                   (str/join "," point-info)
                                   (if single? 1 1000)
-                                  @!/geoserver-key)))))
+                                  @!/geoserver-key)
+                !/point-info-loading?))))
 
 (defn select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)

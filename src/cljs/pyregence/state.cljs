@@ -32,8 +32,9 @@
 ;; Point Information State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce last-clicked-info (r/atom []))
-(defonce legend-list       (r/atom []))
+(defonce last-clicked-info   (r/atom []))
+(defonce legend-list         (r/atom []))
+(defonce point-info-loading? (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Miscellaneous State

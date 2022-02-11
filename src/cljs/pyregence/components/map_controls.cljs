@@ -929,11 +929,11 @@
       "Point Information"
       close-fn!
       (fn [box-height box-width]
-        (let [has-point? (mb/get-overlay-center)
-              error-info [loading-cover
-                          box-height
-                          box-width
-                          "There was an issue getting point information for this layer."]]
+        (let [has-point?   (mb/get-overlay-center)
+              loading-info [loading-cover
+                            box-height
+                            box-width
+                            "Loading..."]]
           (cond
             (not has-point?)
             [loading-cover
@@ -941,11 +941,20 @@
              box-width
              "Click on the map to view the value(s) of particular point."]
 
-            (and (nil? @!/last-clicked-info) (empty? @!/legend-list))
-            error-info ;TODO This state is also satisified briefly when a point exists on the map and you are swtiching the layer.
+            @!/point-info-loading?
+            loading-info
 
-            (and (nil? @!/last-clicked-info) (not (empty? @!/legend-list)))
-            [loading-cover box-height box-width "Loading..."]
+            (and (nil? @!/last-clicked-info) (empty? @!/legend-list))
+            [loading-cover
+             box-height
+             box-width
+             "There was an issue getting point information for this layer."]
+
+            (and (some? @!/last-clicked-info) (empty? @!/legend-list))
+            [loading-cover
+             box-height
+             box-width
+             "There was an issue getting the legend for this layer."]
 
             (and (number? @!/last-clicked-info)
                  (>= @!/last-clicked-info -50))
@@ -970,7 +979,7 @@
              units
              cur-hour]
 
-            :else error-info)))]]
+            :else loading-info)))]]
     (finally
       (mb/remove-event! click-event))))
 
