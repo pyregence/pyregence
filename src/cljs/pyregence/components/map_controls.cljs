@@ -99,16 +99,17 @@
 ;; Time Slider
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $time-slider []
-  {:align-items  "center"
-   :bottom       "1rem"
-   :display      "flex"
-   :left         "0"
-   :margin-left  "auto"
-   :margin-right "auto"
-   :padding      ".5rem"
-   :right        "0"
-   :width        (if @!/mobile? "20rem" "min-content")})
+(defn- $time-slider []
+  {:align-items   "center"
+   :border-radius "5px 5px 0 0"
+   :bottom        "0"
+   :display       "flex"
+   :left          "0"
+   :margin-left   "auto"
+   :margin-right  "auto"
+   :padding       ".5rem"
+   :right         "0"
+   :width         (if @!/mobile? "20rem" "min-content")})
 
 (defn time-slider [layer-full-time select-layer! select-time-zone!]
   (r/with-let [*speed          (r/atom 1)
