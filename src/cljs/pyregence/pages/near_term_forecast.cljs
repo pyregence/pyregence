@@ -146,13 +146,17 @@
 (defn get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
    channel containing the result of calling process-fn on the response
-   or nil if an error occurred."
-  [process-fn url]
-  (u/fetch-and-process url
-                       {:method "get"
-                        :headers {"Accept" "application/json, text/xml"
-                                  "Content-Type" "application/json"}}
-                       process-fn))
+   or nil if an error occurred. Takes in a loading-atom which should be true when
+   passed in. The loading-atom is set to false after the resource has been fetched."
+  [process-fn url & [loading-atom]]
+  (go
+   (<! (u/fetch-and-process url
+                            {:method "get"
+                             :headers {"Accept" "application/json, text/xml"
+                                       "Content-Type" "application/json"}}
+                            process-fn))
+   (when (some? loading-atom)
+     (reset! loading-atom false))))
 
 (defn wrap-wms-errors [type response success-fn]
   (go
@@ -211,18 +215,19 @@
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info! [point-info]
-  (reset! !/last-clicked-info nil)
   (let [layer-name          (get-current-layer-name)
         layer-group         (get-current-layer-group)
         single?             (str/blank? layer-group)
         layer               (if single? layer-name layer-group)
         process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
     (when-not (u/missing-data? layer point-info)
+      (reset! !/point-info-loading? true)
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
                                   (str/join "," point-info)
                                   (if single? 1 1000)
-                                  @!/geoserver-key)))))
+                                  @!/geoserver-key)
+                !/point-info-loading?))))
 
 (defn select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)
@@ -290,6 +295,7 @@
 (defn select-param! [val & keys]
   (swap! !/*params assoc-in (cons @!/*forecast keys) val)
   (reset! !/legend-list [])
+  (reset! !/last-clicked-info nil)
   (let [main-key (first keys)]
     (when (= main-key :fire-name)
       (select-layer! 0)
@@ -303,6 +309,7 @@
 (defn select-forecast! [key]
   (go
     (reset! !/legend-list [])
+    (reset! !/last-clicked-info nil)
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
     (<! (change-type! true

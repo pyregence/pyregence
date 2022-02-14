@@ -930,11 +930,11 @@
       "Point Information"
       close-fn!
       (fn [box-height box-width]
-        (let [has-point? (mb/get-overlay-center)
-              no-info    [loading-cover
-                          box-height
-                          box-width
-                          "This point does not have any information."]]
+        (let [has-point?   (mb/get-overlay-center)
+              loading-info [loading-cover
+                            box-height
+                            box-width
+                            "Loading..."]]
           (cond
             (not has-point?)
             [loading-cover
@@ -942,8 +942,20 @@
              box-width
              "Click on the map to view the value(s) of particular point."]
 
-            (nil? @!/last-clicked-info)
-            [loading-cover box-height box-width "Loading..."]
+            @!/point-info-loading?
+            loading-info
+
+            (and (nil? @!/last-clicked-info) (empty? @!/legend-list))
+            [loading-cover
+             box-height
+             box-width
+             "There was an issue getting point information for this layer."]
+
+            (and (some? @!/last-clicked-info) (empty? @!/legend-list))
+            [loading-cover
+             box-height
+             box-width
+             "There was an issue getting the legend for this layer."]
 
             (and (number? @!/last-clicked-info)
                  (>= @!/last-clicked-info -50))
@@ -955,7 +967,10 @@
 
             (or (< @!/last-clicked-info -50)
                 (-> @!/last-clicked-info (first) (:band) (< -50)))
-            no-info
+            [loading-cover
+             box-height
+             box-width
+             "This point does not have any information."]
 
             (and (not-empty @!/last-clicked-info) (not-empty @!/legend-list))
             [vega-information
@@ -965,7 +980,7 @@
              units
              cur-hour]
 
-            :else no-info)))]]
+            :else loading-info)))]]
     (finally
       (mb/remove-event! click-event))))
 
