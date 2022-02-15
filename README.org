@@ -49,7 +49,7 @@ and then add the pgcrypto and postgis extensions to it. Next, the
 script will populate the database with the schemas, tables, and
 functions that are necessary for storing and processing Pyregence's
 data. Finally, it will load some default data into these tables that
-is necessary for the website to function properly.  You can optionally load
+is necessary for the website to function properly. You can optionally load
 dev data with ~--dev-data~. This will initialize the DB with 2 users and a
 "Development" organization.
 
