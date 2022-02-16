@@ -29,7 +29,7 @@
    (case color
      :bg-color         (if @light?
                          (color-picker :white)
-                         (color-picker :dark-gray 0.9))
+                         (color-picker :dark-gray alpha))
      :bg-hover-color   (if @light?
                          (color-picker :brown)
                          (color-picker :white))
@@ -363,8 +363,8 @@
 (defn tool-background
   "A shortcut for applying common background attributes for tool styling."
   []
-  {:backdrop-filter "blur(3px)"
-   :background-color (color-picker :bg-color)})
+  {:backdrop-filter  "blur(3px)"
+   :background-color (color-picker :bg-color 0.85)})
 
 (defn tool
   "A shortcut for tool styling (eg. the legend or time slider)."

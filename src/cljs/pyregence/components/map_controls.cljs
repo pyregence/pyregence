@@ -278,8 +278,7 @@
               underlays))]])}))
 
 (defn- $collapsible-button []
-  {:background-color           ($/color-picker :bg-color)
-   :border-bottom-right-radius "5px"
+  {:border-bottom-right-radius "5px"
    :border-color               ($/color-picker :transparent)
    :border-style               "solid"
    :border-top-right-radius    "5px"
@@ -293,7 +292,7 @@
 
 (defn- collapsible-button []
   [:button
-   {:style    ($collapsible-button)
+   {:style    ($/combine $/tool-background $collapsible-button)
     :on-click #(swap! show-panel? not)}
    [:div {:style {:align-items     "center"
                   :display         "flex"
