@@ -360,15 +360,21 @@
    :min-width  size
    :width      size})
 
+(defn tool-background
+  "A shortcut for applying common background attributes for tool styling."
+  []
+  {:backdrop-filter "blur(3px)"
+   :background-color (color-picker :bg-color)})
+
 (defn tool
   "A shortcut for tool styling (eg. the legend or time slider)."
   []
-  {:background-color (color-picker :bg-color)
-   :border-radius    "5px"
-   :box-shadow       "rgba(50, 50, 93, .7) 0px 3px 20px -8px, rgba(0, 0, 0, 0.3) 0px 3px 16px -11px"
-   :color            (color-picker :font-color)
-   :position         "absolute"
-   :z-index          "100"})
+  (combine tool-background
+           {:border-radius "5px"
+            :box-shadow    "rgba(50, 50, 93, .7) 0px 3px 20px -8px, rgba(0, 0, 0, 0.3) 0px 3px 16px -11px"
+            :color         (color-picker :font-color)
+            :position      "absolute"
+            :z-index       "100"}))
 
 (def light-border (str "1.2px solid " (color-picker :brown)))
 

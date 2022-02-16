@@ -160,8 +160,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $collapsible-panel [show?]
-  {:background-color ($/color-picker :bg-color)
-   :box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
+  {:box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
    :color            ($/color-picker :font-color)
    :height           "100%"
    :left             (if show?
@@ -369,7 +368,7 @@
     (reset! show-panel? (not @!/mobile?))
     (fn [*params select-param!]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
-        [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
+        [:div#collapsible-panel {:style ($/combine $/tool-background ($collapsible-panel @show-panel?))}
          [collapsible-panel-toggle]
          [collapsible-panel-header]
          [:div#collapsible-panel-body {:class (<class $collapsible-panel-body)}
@@ -1012,8 +1011,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $scale-line [time-slider?]
-  {:background-color ($/color-picker :bg-color)
-   :padding          ".2rem 0"
+  {:padding          ".2rem 0"
    :bottom           (if (and @!/mobile? time-slider?) "90px" "36px")
    :left             "auto"
    :right            "70px"
@@ -1047,10 +1045,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $mouse-lng-lat []
-  {:background-color ($/color-picker :bg-color)
-   :bottom           "84px"
-   :padding         ".2rem"
+  {:bottom           "84px"
    :left             "auto"
+   :padding         ".2rem"
    :right            "70px"})
 
 (defn- $mouse-lng-lat-inner []
