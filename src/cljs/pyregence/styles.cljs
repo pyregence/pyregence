@@ -9,8 +9,6 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce light? (r/atom false))
-
 (defn combine
   "Combines all provided styles into one map."
   [& styles]
@@ -27,24 +25,12 @@
    (color-picker color 1))
   ([color alpha]
    (case color
-     :bg-color         (if @light?
-                         (color-picker :white)
-                         (color-picker :dark-gray alpha))
-     :bg-hover-color   (if @light?
-                         (color-picker :brown)
-                         (color-picker :white))
-     :border-color     (if @light?
-                         (color-picker :brown alpha)
-                         (color-picker :white alpha))
-     :font-color       (if @light?
-                         (color-picker :brown)
-                         "rgb(235, 235, 235)")
-     :font-hover-color (if @light?
-                         (color-picker :white)
-                         (color-picker :black))
-     :header-color     (if @light?
-                         (str "rgb(235, 235, 235, " alpha ")")
-                         (str "rgb(24, 30, 36, "    alpha ")"))
+     :bg-color         (color-picker :dark-gray alpha)
+     :bg-hover-color   (color-picker :white)
+     :border-color     (color-picker :white alpha)
+     :font-color       "rgb(235, 235, 235)"
+     :font-hover-color (color-picker :black)
+     :header-color     (str "rgb(24, 30, 36, "     alpha ")")
      :black            (str "rgba(0, 0, 0, "       alpha ")")
      :blue             (str "rgba(0, 0, 175, "     alpha ")")
      :box-tan          (str "rgba(249, 248, 242, " alpha ")")
