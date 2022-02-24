@@ -122,6 +122,13 @@
                   (get-options-key       key-name)
                   (get-forecast-opt      key-name)])))
 
+(defn- get-psps-layer-style
+  "Returns the name of the CSS style for a PSPS layer and an empty string."
+  []
+  (if (= @!/*forecast :psps-zonal)
+      (str (name (get-in @!/*params [:psps-zonal :stat])) "-css")
+      ""))
+
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
   []
@@ -233,7 +240,8 @@
   (reset! !/*layer-idx new-layer)
   (mb/swap-active-layer! (get-current-layer-name)
                          @!/geoserver-key
-                         (/ @!/active-opacity 100)))
+                         (/ @!/active-opacity 100)
+                         (get-psps-layer-style)))
 
 (defn select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -280,7 +288,8 @@
       (mb/reset-active-layer! source
                               style-fn
                               @!/geoserver-key
-                              (/ @!/active-opacity 100))
+                              (/ @!/active-opacity 100)
+                              (get-psps-layer-style))
       (mb/clear-popup!)
       (when (some? style-fn)
         (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!)
@@ -506,13 +515,13 @@
 (defn map-layer []
   (r/with-let [mouse-down? (r/atom false)
                cursor-fn   #(cond
-                              @mouse-down?                       "grabbing"
+                              @mouse-down?                           "grabbing"
                               (or @!/show-info? @!/show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
-                              :else                              "grab")]
-    [:div#map {:class (<class $p-mb-cursor)
-               :style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
+                              :else                                  "grab")]
+    [:div#map {:class         (<class $p-mb-cursor)
+               :style         {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
                :on-mouse-down #(reset! mouse-down? true)
-               :on-mouse-up #(reset! mouse-down? false)}]))
+               :on-mouse-up   #(reset! mouse-down? false)}]))
 
 (defn theme-select []
   [:div {:style {:position "absolute" :left "3rem" :display "flex"}}
@@ -611,7 +620,7 @@
                          [tool-tip-wrapper
                           hover-text
                           :top
-                          [:label {:style ($forecast-label (= @!/*forecast key))
+                          [:label {:style    ($forecast-label (= @!/*forecast key))
                                    :on-click #(select-forecast! key)}
                            opt-label]])
                        @!/capabilities))]
