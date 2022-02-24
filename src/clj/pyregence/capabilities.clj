@@ -36,7 +36,9 @@
 
 ;;; Layers
 
-(defn split-risk-layer-name [name-string]
+(defn- split-risk-layer-name
+  "Gets information about a risk, weather, or PSPS layer based on the layer's name."
+  [name-string]
   (let [[workspace layer]           (str/split name-string #":")
         [forecast init-timestamp]   (str/split workspace   #"_(?=\d{8}_)")
         [layer-group sim-timestamp] (str/split layer       #"_(?=\d{8}_)")]
@@ -50,7 +52,9 @@
                         (.getTime (java-date-from-string (str init-timestamp "0000"))))
                      1000 60 60)}))
 
-(defn split-active-layer-name [name-string]
+(defn- split-active-layer-name
+  "Gets information about an active fire layer based on its name."
+  [name-string]
   (let [[workspace layer]                      (str/split name-string #":")
         [forecast fire-name init-ts1 init-ts2] (str/split workspace   #"_")
         [layer-group sim-timestamp]            (str/split layer       #"_(?=\d{8}_)")
@@ -64,7 +68,9 @@
      :sim-time    sim-timestamp
      :hour        0}))
 
-(defn split-fire-detections [name-string]
+(defn- split-fire-detections
+  "Gets information about a fire risk layer based on its name."
+  [name-string]
   (let [[workspace layer]   (str/split name-string #":")
         [forecast type]     (str/split workspace #"_")
         [filter model-init] (str/split layer #"_(?=\d{8}_)")]
@@ -76,7 +82,9 @@
      :model-init  model-init
      :hour        0}))
 
-(defn- split-fuels [name-string]
+(defn- split-fuels
+  "Gets information about a fuels layer based on its name."
+  [name-string]
   (let [[workspace layer] (str/split name-string #":")
         [forecast model]  (str/split workspace #"_")]
     {:workspace   workspace
@@ -86,7 +94,9 @@
      :model-init  "20210407_000000"
      :hour        0}))
 
-(defn- split-wg4-scenarios [name-string]
+(defn- split-wg4-scenarios
+  "Gets information about a WG4 (climate) layer based on its name."
+  [name-string]
   (let [[workspace layer] (str/split name-string #":")
         [_ parameters]    (str/split layer #"_geoTiff_")
         [_ model prob measure year] (re-matches #"([^_]+)_([^_]+)_AA_all_([^_]+)_mean_(\d+)" parameters)]
@@ -98,7 +108,13 @@
      :sim-time    (str year "0101_000000")
      :hour        (- (Integer/parseInt year) 1954)}))
 
-(defn process-layers! [geoserver-key workspace-name]
+(defn process-layers!
+  "Makes a call to GetCapabilities and uses regex on the resulting XML response
+   to generate a vector of layer entries where each entry is a map. The info
+   in each entry map is generated based on the title of the layer. Different layer
+   types have their information generated in different ways using the split-
+   functions above."
+  [geoserver-key workspace-name]
   (let [xml-response (-> (get-config :geoserver geoserver-key)
                          (u/end-with "/")
                          (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
@@ -145,7 +161,11 @@
 
 ;;; Routes
 
-(defn remove-workspace! [{:strs [geoserver-key workspace-name]}]
+(defn remove-workspace!
+  "Given a specific geoserver-key and a specific workspace-name, removes any
+   layers from that workspace from the layers atom."
+  [{:strs [geoserver-key workspace-name]}]
+  (println workspace-name)
   (swap! layers
          update (keyword geoserver-key)
                 #(filterv (fn [{:keys [workspace]}]
@@ -155,7 +175,13 @@
 (defn get-all-layers []
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
-(defn set-capabilities! [{:strs [geoserver-key workspace-name]}]
+(defn set-capabilities!
+  "Populates the layers atom with all of the layers that are returned
+   from a call to GetCapabilities on a specific GeoServer. Passing in a
+   geoserver-key specifies which GeoServer to call GetCapabilities on and
+   passing in an optional workspace-name allows you to call GetCapabilities
+   on just that workspace."
+  [{:strs [geoserver-key workspace-name]}]
   (let [geoserver-key  (keyword geoserver-key)]
     (if (contains? (get-config :geoserver) geoserver-key)
       (try
