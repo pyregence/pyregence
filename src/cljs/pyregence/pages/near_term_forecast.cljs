@@ -150,7 +150,7 @@
          (str/join "&")
          (str js/location.origin js/location.pathname "?"))))
 
-(defn get-data
+(defn- get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
    channel containing the result of calling process-fn on the response
    or nil if an error occurred. Takes in a loading-atom which should be true when
@@ -174,16 +174,42 @@
           (toast-message! (str "Error retrieving " type ". See console for more details.")))
         (success-fn json-res)))))
 
-(defn process-legend! [json-res]
+(defn- process-psps-legend
+  "Parses the PSPS JSON data from GetLegendGraphic properly for use on Pyrecast."
+  [data]
+  (as-> data legend
+    (u/try-js-aget legend "Legend" 0 "rules")
+    (js->clj legend)
+    (map (fn [leg]
+           {"label"    (get leg "title")
+            "quantity" (get leg "title")
+            "color"    (get-in leg ["symbolizers" 0 "Polygon" "fill"])
+            "opacity"  "1.0"})
+         legend)
+    (remove (fn [leg] (nil? (get leg "label"))) legend)))
+
+(defn- process-raster-colormap-legend
+  "Parses the non-PSPS (raster colormap) JSON data from GetLegendGraphic properly for use on Pyrecast."
+  [data]
+  (as-> data legend
+      (u/try-js-aget legend "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
+      (js->clj legend)
+      (remove (fn [leg] (= "nodata" (get leg "label"))) legend)))
+
+(defn- process-legend!
+  "Populates the legend-list atom with the result of the request from GetLegendGraphic."
+  [json-res]
   (reset! !/legend-list
           (as-> json-res data
-            (u/try-js-aget data "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
-            (js->clj data)
-            (remove (fn [leg] (= "nodata" (get leg "label"))) data)
+            (if (= @!/*forecast :psps-zonal)
+              (process-psps-legend data)
+              (process-raster-colormap-legend data))
             (doall data))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
-(defn get-legend! [layer]
+(defn- get-legend!
+  "Makes a call to GetLegendGraphic and passes the resulting JSON to process-legend!"
+  [layer]
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
