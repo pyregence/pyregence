@@ -174,37 +174,39 @@
           (toast-message! (str "Error retrieving " type ". See console for more details.")))
         (success-fn json-res)))))
 
-(defn- process-psps-legend
-  "Parses the PSPS JSON data from GetLegendGraphic properly for use on Pyrecast."
+(defn- process-multiparam-layer-legend
+  "Parses the JSON data from GetLegendGraphic from a layer with multiple params."
   [data]
-  (as-> data legend
-    (u/try-js-aget legend "Legend" 0 "rules")
-    (js->clj legend)
-    (map (fn [leg]
-           {"label"    (get leg "title")
-            "quantity" (get leg "title")
-            "color"    (get-in leg ["symbolizers" 0 "Polygon" "fill"])
+  (as-> data %
+    (u/try-js-aget % "Legend" 0 "rules")
+    (js->clj %)
+    (map (fn [rule]
+           {"label"    (get rule "title")
+            "quantity" (get rule "title")
+            "color"    (get-in rule ["symbolizers" 0 "Polygon" "fill"])
             "opacity"  "1.0"})
-         legend)
-    (remove (fn [leg] (nil? (get leg "label"))) legend)))
+         %)))
 
 (defn- process-raster-colormap-legend
-  "Parses the non-PSPS (raster colormap) JSON data from GetLegendGraphic properly for use on Pyrecast."
+  "Parses the JSON data from GetLegendGraphic from a layer using raster colormap styling."
   [data]
-  (as-> data legend
-      (u/try-js-aget legend "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
-      (js->clj legend)
-      (remove (fn [leg] (= "nodata" (get leg "label"))) legend)))
+  (as-> data %
+      (u/try-js-aget % "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
+      (js->clj %)))
 
 (defn- process-legend!
   "Populates the legend-list atom with the result of the request from GetLegendGraphic."
   [json-res]
   (reset! !/legend-list
-          (as-> json-res data
-            (if (= @!/*forecast :psps-zonal)
-              (process-psps-legend data)
-              (process-raster-colormap-legend data))
-            (doall data))))
+          (as-> json-res %
+            (if (get-any-level-key :multi-param-layers?)
+              (process-multiparam-layer-legend %)
+              (process-raster-colormap-legend %))
+            (remove (fn [leg]
+                      (or (nil? (get leg "label"))
+                          (= "nodata" (get leg "label"))))
+                    %)
+            (doall %))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn- get-legend!
