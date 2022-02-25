@@ -114,7 +114,7 @@
   "A component for radio button."
   [label state condition on-click]
   [:div {:style    ($/flex-row)
-        :on-click #(on-click condition)}
+         :on-click #(on-click condition)}
    [:div {:style ($radio (= state condition))}]
    [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]])
 
