@@ -125,9 +125,8 @@
 (defn- get-psps-layer-style
   "Returns the name of the CSS style for a PSPS layer and an empty string."
   []
-  (if (= @!/*forecast :psps-zonal)
-      (str (name (get-in @!/*params [:psps-zonal :stat])) "-css")
-      ""))
+  (when (= @!/*forecast :psps-zonal)
+      (str (name (get-in @!/*params [:psps-zonal :stat])) "-poly-css")))
 
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"

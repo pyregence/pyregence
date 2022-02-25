@@ -445,7 +445,7 @@
 (defn- wms-source [layer-name geoserver-key style]
   {:type     "raster"
    :tileSize 256
-   :tiles    [(c/wms-layer-url layer-name geoserver-key (or style ""))]})
+   :tiles    [(c/wms-layer-url layer-name geoserver-key style)]})
 
 (defn- wms-layer [layer-name source-name opacity visible? & [z-index]]
   {:id       layer-name

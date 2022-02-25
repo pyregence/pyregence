@@ -747,7 +747,7 @@
         "&SERVICE=WMTS"
         "&VERSION=1.0.0"
         "&LAYER=" layer
-        "&STYLE=" style
+        "&STYLE=" (or style "")
         "&FORMAT=image/png"
         "&TILEMATRIX=EPSG:900913:{z}"
         "&TILEMATRIXSET=EPSG:900913"
@@ -760,7 +760,7 @@
           "&SERVICE=WMTS"
           "&VERSION=1.0.0"
           "&LAYER=" layer
-          "&STYLE=" style
+          "&STYLE=" (or style "")
           "&FORMAT=image/png"
           "&TILEMATRIX=EPSG:900913:{z}"
           "&TILEMATRIXSET=EPSG:900913"
@@ -775,7 +775,7 @@
           "&WIDTH=256"
           "&HEIGHT=256"
           "&CRS=EPSG%3A3857"
-          "&STYLES=" style
+          "&STYLES=" (or style "")
           "&FORMAT_OPTIONS=dpi%3A113"
           "&BBOX={bbox-epsg-3857}"
           "&LAYERS=" layer
