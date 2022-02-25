@@ -514,12 +514,6 @@
                :on-mouse-down #(reset! mouse-down? true)
                :on-mouse-up #(reset! mouse-down? false)}]))
 
-(defn theme-select []
-  [:div {:style {:position "absolute" :left "3rem" :display "flex"}}
-   [:label {:style {:margin "4px .5rem 0"}} "Theme:"]
-   [radio "Light" @$/light? true  #(reset! $/light? %)]
-   [radio "Dark"  @$/light? false #(reset! $/light? %)]])
-
 (defn message-modal []
   (r/with-let [show-me? (r/atom (not @c/dev-mode?))]
     (when @show-me?
@@ -604,7 +598,6 @@
          (when @!/loading? [loading-modal])
          [message-modal]
          [:div {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
-          (when-not @!/mobile? [theme-select])
           [:span {:style {:display "flex" :padding ".25rem 0"}}
            (doall (map (fn [[key {:keys [opt-label hover-text]}]]
                          ^{:key key}
