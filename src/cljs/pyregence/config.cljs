@@ -368,12 +368,12 @@
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
-   :psps-zone    {:opt-label       "PSPS Zones"
-                  :filter          "psps-zone"
+   :psps-zonal   {:opt-label       "PSPS Zones"
+                  :filter          "psps-zonal"
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "PSPS Zone test"
-                  :params          {:band       {:opt-label  "Zonal Statistic"
+                  :params          {:stat       {:opt-label  "Zonal Statistic"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Public Safety Power Shutoffs (PSPS) Zonal Statistic. Options include:"
                                                               [:br]
@@ -401,30 +401,36 @@
                                                               [:strong "Fire Volume"]
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
                                                  :options    (array-map
-                                                              :ws           {:opt-label "Sustained wind speed (mph)"
-                                                                             :filter    "ws"
+                                                              :ws-max       {:opt-label "Max sustained wind speed"
+                                                                             :filter    "nve"
                                                                              :units     "mph"}
-                                                              :wg           {:opt-label "Wind gust (mph)"
-                                                                             :filter    "wg"
+                                                              :ws-avg       {:opt-label "Avg sustained wind speed"
+                                                                             :filter    "nve"
                                                                              :units     "mph"}
-                                                              :hdw          {:opt-label "Hot-Dry-Windy Index (hPa*m/s)"
-                                                                             :filter    "hdw"
-                                                                             :units     "hPa*m/s"}
-                                                              :ffwi         {:opt-label "Fosberg Fire Weather Index"
-                                                                             :filter    "ffwi"
-                                                                             :units     ""}
-                                                              :times-burned {:opt-label "Relative burn probability"
-                                                                             :filter    "times-burned"
-                                                                             :units     "Times"}
-                                                              :impacted     {:opt-label "Impacted structures"
-                                                                             :filter    "impacted-structures"
-                                                                             :units     "Structures"}
-                                                              :fire-area    {:opt-label "Fire area"
-                                                                             :filter    "fire-area"
-                                                                             :units     "Acres"}
-                                                              :fire-volume  {:opt-label "Fire volume"
-                                                                             :filter    "fire-volume"
-                                                                             :units     "Acre-ft"})}
+                                                              :wg-max       {:opt-label "Max wind gust"
+                                                                             :filter    "nve"
+                                                                             :units     "mph"}
+                                                              :wg-avg       {:opt-label "Avg wind gust"
+                                                                             :filter    "nve"
+                                                                             :units     "mph"})}
+                                                              ; :hdw          {:opt-label "Hot-Dry-Windy Index (hPa*m/s)"
+                                                              ;                :filter    "nve"
+                                                              ;                :units     "hPa*m/s"}
+                                                              ; :ffwi         {:opt-label "Fosberg Fire Weather Index"
+                                                              ;                :filter    "nve"
+                                                              ;                :units     ""}
+                                                              ; :times-burned {:opt-label "Relative burn probability"
+                                                              ;                :filter    "nve"
+                                                              ;                :units     "Times"}
+                                                              ; :impacted     {:opt-label "Impacted structures"
+                                                              ;                :filter    "nve"
+                                                              ;                :units     "Structures"}
+                                                              ; :fire-area    {:opt-label "Fire area"
+                                                              ;                :filter    "nve"
+                                                              ;                :units     "Acres"}
+                                                              ; :fire-volume  {:opt-label "Fire volume"
+                                                              ;                :filter    "nve"
+                                                              ;                :units     "Acre-ft"})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}})
@@ -442,6 +448,7 @@
    :fire-weather-forecast {:forecast-layer? true}
    :fuels-and-topography  {:forecast-layer? true}
    :fire-history          {:forecast-layer? false}
+   :psps-zonal            {:forecast-layer? true}
    :red-flag              {:forecast-layer? false}
    :fire-cameras          {:forecast-layer? false}})
 
@@ -734,26 +741,26 @@
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
-  ([layer geoserver-key]
+  ([layer geoserver-key style]
    (str (mvt-url geoserver-key)
         "?REQUEST=GetTile"
         "&SERVICE=WMTS"
         "&VERSION=1.0.0"
         "&LAYER=" layer
-        "&STYLE="
+        "&STYLE=" (or style "")
         "&FORMAT=image/png"
         "&TILEMATRIX=EPSG:900913:{z}"
         "&TILEMATRIXSET=EPSG:900913"
         "&TILECOL={x}&TILEROW={y}"))
 
-  ([layer geoserver-key layer-time]
+  ([layer geoserver-key style layer-time]
    (if (feature-enabled? :image-mosaic-gwc)
      (str (mvt-url geoserver-key)
           "?REQUEST=GetTile"
           "&SERVICE=WMTS"
           "&VERSION=1.0.0"
           "&LAYER=" layer
-          "&STYLE="
+          "&STYLE=" (or style "")
           "&FORMAT=image/png"
           "&TILEMATRIX=EPSG:900913:{z}"
           "&TILEMATRIXSET=EPSG:900913"
@@ -768,7 +775,7 @@
           "&WIDTH=256"
           "&HEIGHT=256"
           "&CRS=EPSG%3A3857"
-          "&STYLES="
+          "&STYLES=" (or style "")
           "&FORMAT_OPTIONS=dpi%3A113"
           "&BBOX={bbox-epsg-3857}"
           "&LAYERS=" layer
