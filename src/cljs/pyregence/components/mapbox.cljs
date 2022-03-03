@@ -506,7 +506,7 @@
    :layout   {:icon-image         ["step" ["get" "containper"]
                                    "fire-icon-0"
                                    50  "fire-icon-50"
-                                   90  "fire-icon-100"
+                                   90  "fire-icon-90"
                                    100 "fire-icon-100"]
               :icon-size          ["interpolate" ["linear"] ["get" "acres"]
                                    10000 0.2
