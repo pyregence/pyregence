@@ -280,7 +280,8 @@
               underlays))]])}))
 
 (defn- $collapsible-button []
-  {:border-bottom-right-radius "5px"
+  {:background-color           ($/color-picker :bg-color)
+   :border-bottom-right-radius "5px"
    :border-color               ($/color-picker :transparent)
    :border-style               "solid"
    :border-top-right-radius    "5px"
@@ -294,7 +295,7 @@
 
 (defn- collapsible-button []
   [:button
-   {:style    ($/combine $/tool-background $collapsible-button)
+   {:style    ($collapsible-button)
     :on-click #(swap! show-panel? not)}
    [:div {:style {:align-items     "center"
                   :display         "flex"
@@ -1064,8 +1065,8 @@
 (defn- $mouse-lng-lat []
   {:background-color ($/color-picker :bg-color)
    :bottom           "84px"
-   :padding         ".2rem"
    :left             "auto"
+   :padding          ".2rem"
    :right            "70px"})
 
 (defn- $mouse-lng-lat-inner []

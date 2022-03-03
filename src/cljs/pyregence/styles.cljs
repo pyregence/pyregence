@@ -25,7 +25,7 @@
    (color-picker color 1))
   ([color alpha]
    (case color
-     :bg-color         (color-picker :dark-gray alpha)
+     :bg-color         (color-picker :dark-gray 0.9)
      :bg-hover-color   (color-picker :white)
      :border-color     (color-picker :white alpha)
      :font-color       "rgb(235, 235, 235)"
