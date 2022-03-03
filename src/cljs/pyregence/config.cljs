@@ -404,16 +404,20 @@
                                                      :options    (array-map
                                                                   :ws-max       {:opt-label "Max sustained wind speed"
                                                                                  :filter    "nve"
-                                                                                 :units     "mph"}
+                                                                                 :units     "mph"
+                                                                                 :info-key  "WS_MAX"}
                                                                   :ws-avg       {:opt-label "Avg sustained wind speed"
                                                                                  :filter    "nve"
-                                                                                 :units     "mph"}
+                                                                                 :units     "mph"
+                                                                                 :info-key  "WS_AVG"}
                                                                   :wg-max       {:opt-label "Max wind gust"
                                                                                  :filter    "nve"
-                                                                                 :units     "mph"}
+                                                                                 :units     "mph"
+                                                                                 :info-key  "WG_MAX"}
                                                                   :wg-avg       {:opt-label "Avg wind gust"
                                                                                  :filter    "nve"
-                                                                                 :units     "mph"})}
+                                                                                 :units     "mph"
+                                                                                 :info-key  "WG_AVG"})}
                                                                   ; :hdw          {:opt-label "Hot-Dry-Windy Index (hPa*m/s)"
                                                                   ;                :filter    "nve"
                                                                   ;                :units     "hPa*m/s"}
