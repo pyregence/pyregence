@@ -214,7 +214,8 @@
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
-                            @!/geoserver-key))))
+                            @!/geoserver-key
+                            (get-psps-layer-style)))))
 
 (defn- process-timeline-point-info!
   "Resets the !/last-clicked-info atom according the the JSON resulting from a
