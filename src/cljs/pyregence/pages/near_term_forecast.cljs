@@ -123,10 +123,22 @@
                   (get-forecast-opt      key-name)])))
 
 (defn- get-psps-layer-style
-  "Returns the name of the CSS style for a PSPS layer and an empty string."
+  "Returns the name of the CSS style for a PSPS layer."
   []
   (when (= @!/*forecast :psps-zonal)
-      (str (name (get-in @!/*params [:psps-zonal :stat])) "-poly-css")))
+      (str (name (get-in @!/*params [:psps-zonal :quantity]))
+           "-"
+           (name (get-in @!/*params [:psps-zonal :statistic]))
+           "-poly-css")))
+
+(defn- get-psps-column-name
+  "Returns the name of the point info column for a PSPS layer."
+  []
+  (when (= @!/*forecast :psps-zonal)
+      (str (str/replace
+            (name (get-in @!/*params [:psps-zonal :quantity])) #"-" "_")
+           "_"
+           (name (get-in @!/*params [:psps-zonal :statistic])))))
 
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
@@ -235,7 +247,7 @@
               (map (fn [pi-layer]
                      {:band   (if multi-column-info?
                                 (as-> pi-layer %
-                                  (u/try-js-aget % "properties" (get-any-level-key :info-key))
+                                  (u/try-js-aget % "properties" (get-psps-column-name))
                                   (u/to-precision 1 %))
                                 (as-> pi-layer %
                                   (u/try-js-aget % "properties")
