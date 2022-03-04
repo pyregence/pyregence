@@ -37,10 +37,13 @@
 ;; Data Processing Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-forecast-opt [key-name]
+(defn- get-forecast-opt [key-name]
   (get-in @!/capabilities [@!/*forecast key-name]))
 
-(defn process-model-times! [model-times]
+(defn- process-model-times!
+  "Updates the necessary atoms based on the given model-times. This updates the
+   :model-init values for each tab in config.cljs that are initially set to 'Loading...'"
+  [model-times]
   (let [processed-times (into (u/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
@@ -112,7 +115,7 @@
         (vals (get-forecast-opt :params))))
 
 ;; TODO, can we make this the default everywhere?
-(defn get-any-level-key
+(defn- get-any-level-key
   "Gets the first non-nil value of a given key starting from the bottom level in
    a forecast in `config.cljs` and going to the top. Allows for bottom level keys
    to override a default top level key (such as for `:time-slider?`)."
@@ -265,6 +268,7 @@
 
 (defn select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)
+  (reset! !/geoserver-key (get-any-level-key :geoserver-key))
   (mb/swap-active-layer! (get-current-layer-name)
                          @!/geoserver-key
                          (/ @!/active-opacity 100)
@@ -347,6 +351,7 @@
     (reset! !/legend-list [])
     (reset! !/last-clicked-info nil)
     (reset! !/*forecast key)
+    (reset! !/geoserver-key (get-forecast-opt :geoserver-key))
     (reset! !/processed-params (get-forecast-opt :params))
     (<! (change-type! true
                       true
@@ -420,11 +425,10 @@
 
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
-    (let [{:keys [options-config layers geoserver-key]} (c/get-forecast forecast-type)
+    (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
           user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras     (u/call-clj-async! "get-cameras")]
-      (reset! !/geoserver-key geoserver-key)
       (reset! !/options options-config)
       (reset! !/*forecast (or (keyword forecast)
                             (keyword (forecast-type @c/default-forecasts))))

@@ -243,7 +243,12 @@
   (data-response (call-sql "get_user_layers_list" user-id)))
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
-(defn get-layers [geoserver-key selected-set-str]
+(defn get-layers
+  "Based on the given geoserver-key and set of strings to filter the layers by,
+   returns all of the matching layers from the layers atom and their associated
+   model-times. The selected-set-str is compared against the :filter-set property
+   of each layer in the layers atom. Any subsets lead to that layer being returned."
+  [geoserver-key selected-set-str]
   (when-not (seq @layers) (set-all-capabilities!))
   (let [selected-set (edn/read-string selected-set-str)
         available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer)))
