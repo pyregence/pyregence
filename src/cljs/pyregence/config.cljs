@@ -407,36 +407,66 @@
                                                                   [:strong "Fire Volume"]
                                                                   " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
                                                      :options    (array-map
-                                                                  :ws-max       {:opt-label "Max sustained wind speed"
-                                                                                 :filter    "nve"
-                                                                                 :units     "mph"}
-                                                                  :ws-avg       {:opt-label "Avg sustained wind speed"
-                                                                                 :filter    "nve"
-                                                                                 :units     "mph"}
-                                                                  :wg-max       {:opt-label "Max wind gust"
-                                                                                 :filter    "nve"
-                                                                                 :units     "mph"}
-                                                                  :wg-avg       {:opt-label "Avg wind gust"
-                                                                                 :filter    "nve"
-                                                                                 :units     "mph"})}
-                                                                  ; :hdw          {:opt-label "Hot-Dry-Windy Index (hPa*m/s)"
-                                                                  ;                :filter    "nve"
-                                                                  ;                :units     "hPa*m/s"}
-                                                                  ; :ffwi         {:opt-label "Fosberg Fire Weather Index"
-                                                                  ;                :filter    "nve"
-                                                                  ;                :units     ""}
-                                                                  ; :times-burned {:opt-label "Relative burn probability"
-                                                                  ;                :filter    "nve"
-                                                                  ;                :units     "Times"}
-                                                                  ; :impacted     {:opt-label "Impacted structures"
-                                                                  ;                :filter    "nve"
-                                                                  ;                :units     "Structures"}
-                                                                  ; :fire-area    {:opt-label "Fire area"
-                                                                  ;                :filter    "nve"
-                                                                  ;                :units     "Acres"}
-                                                                  ; :fire-volume  {:opt-label "Fire volume"
-                                                                  ;                :filter    "nve"
-                                                                  ;                :units     "Acre-ft"})}
+                                                                  :h-ws-l       {:opt-label "Min sustained wind speed"
+                                                                                 :filter    "deenergization-zones"
+                                                                                 :units     "mph"
+                                                                                 :info-key  "h_ws_l"}
+                                                                  :h-ws-a       {:opt-label "Avg sustained wind speed"
+                                                                                 :filter    "deenergization-zones"
+                                                                                 :units     "mph"
+                                                                                 :info-key  "h_ws_a"}
+                                                                  :h-ws-h       {:opt-label "Max sustained wind speed"
+                                                                                 :filter    "deenergization-zones"
+                                                                                 :units     "mph"
+                                                                                 :info-key  "h_ws_h"}
+                                                                  :h-wg-l       {:opt-label "Min wind gust"
+                                                                                 :filter    "deenergization-zones"
+                                                                                 :units     "mph"
+                                                                                 :info-key  "h_wg_l"}
+                                                                  :h-wg-a       {:opt-label "Avg wind gust"
+                                                                                 :filter    "deenergization-zones"
+                                                                                 :units     "mph"
+                                                                                 :info-key  "h_wg_a"}
+                                                                  :h-wg-h       {:opt-label "Max wind gust"
+                                                                                 :filter    "deenergization-zones"
+                                                                                 :units     "mph"
+                                                                                 :info-key  "h_wg_h"}
+                                                                  :l-area-l     {:opt-label "Min fire area"
+                                                                                 :filter    "deenergization-zones"
+                                                                                 :units     "Acres"
+                                                                                 :info-key  "l_area_l"}
+                                                                  :l-area-a     {:opt-label "Avg firea area"
+                                                                                 :filter    "deenergization-zones"
+                                                                                 :units     "Acres"
+                                                                                 :info-key  "l_area_a"}
+                                                                  :l-area-h     {:opt-label "Max fire area"
+                                                                                 :filter    "deenergization-zones"
+                                                                                 :units     "Acres"
+                                                                                 :info-key  "l_area_h"}
+                                                                  :l-str-l     {:opt-label "Min impacted structures"
+                                                                                :filter    "deenergization-zones"
+                                                                                :units     "Structures"
+                                                                                :info-key  "l_str_l"}
+                                                                  :l-str-a     {:opt-label "Avg impacted structures"
+                                                                                :filter    "deenergization-zones"
+                                                                                :units     "Structures"
+                                                                                :info-key  "l_str_a"}
+                                                                  :l-str-h     {:opt-label "Max impacted structures"
+                                                                                :filter    "deenergization-zones"
+                                                                                :units     "Structures"
+                                                                                :info-key  "l_str_h"}
+                                                                  :l-vol-l     {:opt-label "Min fire volume"
+                                                                                :filter    "deenergization-zones"
+                                                                                :units     "Acre-ft"
+                                                                                :info-key  "l_vol_l"}
+                                                                  :l-vol-a     {:opt-label "Avg fire volume"
+                                                                                :filter    "deenergization-zones"
+                                                                                :units     "Acre-ft"
+                                                                                :info-key  "l_vol_a"}
+                                                                  :l-vol-h     {:opt-label "Max fire volume"
+                                                                                :filter    "deenergization-zones"
+                                                                                :units     "Acre-ft"
+                                                                                :info-key  "l_vol_h"})}
                                         :model-init {:opt-label  "Forecast Start Time"
                                                      :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                      :options    {:loading {:opt-label "Loading..."}}}}}})
@@ -712,14 +742,15 @@
 
 (defn legend-url
   "Generates a URL for the legend given a layer."
-  [layer geoserver-key]
+  [layer geoserver-key style]
   (str (wms-url geoserver-key)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
        "&REQUEST=GetLegendGraphic"
        "&FORMAT=application/json"
-       "&LAYER=" layer))
+       "&LAYER=" layer
+       "&STYLE=" (or style "")))
 
 (defn point-info-url
   "Generates a URL for the point information."

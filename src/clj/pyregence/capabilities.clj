@@ -180,7 +180,7 @@
    from a call to GetCapabilities on a specific GeoServer. Passing in a
    geoserver-key specifies which GeoServer to call GetCapabilities on and
    passing in an optional workspace-name allows you to call GetCapabilities
-   on just that workspace."
+   on just that workspace by passing it into process-layers!."
   [{:strs [geoserver-key workspace-name]}]
   (let [geoserver-key  (keyword geoserver-key)]
     (if (contains? (get-config :geoserver) geoserver-key)
