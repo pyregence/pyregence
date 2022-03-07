@@ -21,9 +21,9 @@
 
 (defn- $radio [checked?]
   (merge
-   (when checked? {:background-color ($/color-picker :black 0.6)})
+   (when checked? {:background-color ($/color-picker :border-color 0.6)})
    {:border        "2px solid"
-    :border-color  ($/color-picker :black)
+    :border-color  ($/color-picker :border-color)
     :border-radius "100%"
     :height        "1rem"
     :margin-right  ".4rem"
