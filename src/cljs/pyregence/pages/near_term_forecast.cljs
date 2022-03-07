@@ -225,27 +225,27 @@
   [json-res]
   (reset! !/last-clicked-info [])
   (let [features           (u/try-js-aget json-res "features")
-        multi-column-info? (-> features
-                             (u/try-js-aget 0 "properties")
-                             (js->clj)
-                             (count)
-                             (> 1))]
+        multi-column-info? (as-> features %
+                             (u/try-js-aget % 0 "properties")
+                             (.keys js/Object %)
+                             (.-length %)
+                             (> % 1))]
     (reset! !/last-clicked-info
-            (as-> features %
+            (as-> features %1
               (map (fn [pi-layer]
                      {:band   (if multi-column-info?
-                                (as-> pi-layer %
-                                  (u/try-js-aget % "properties" (get-any-level-key :info-key))
-                                  (u/to-precision 1 %))
-                                (as-> pi-layer %
-                                  (u/try-js-aget % "properties")
-                                  (js/Object.values %)
-                                  (first %)
-                                  (u/to-precision 1 %)))
+                                (as-> pi-layer %2
+                                  (u/try-js-aget %2 "properties" (get-any-level-key :info-key))
+                                  (u/to-precision 1 %2))
+                                (as-> pi-layer %2
+                                  (u/try-js-aget %2 "properties")
+                                  (js/Object.values %2)
+                                  (first %2)
+                                  (u/to-precision 1 %2)))
                       :vec-id (peek (str/split (u/try-js-aget pi-layer "id") #"\."))})
-                   %)
-              (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first %))))
-                      %)
+                   %1)
+              (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first %1))))
+                      %1)
               (mapv (fn [pi-layer {:keys [sim-time hour]}]
                       (let [js-time (u/js-date-from-string sim-time)]
                         (merge {:js-time js-time
@@ -253,7 +253,7 @@
                                 :time    (u/get-time-from-js js-time @!/show-utc?)
                                 :hour    hour}
                                pi-layer)))
-                    %
+                    %1
                     @!/param-layers)))))
 
 (defn- process-single-point-info!
