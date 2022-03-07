@@ -37,10 +37,13 @@
 ;; Data Processing Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-forecast-opt [key-name]
+(defn- get-forecast-opt [key-name]
   (get-in @!/capabilities [@!/*forecast key-name]))
 
-(defn process-model-times! [model-times]
+(defn- process-model-times!
+  "Updates the necessary atoms based on the given model-times. This updates the
+   :model-init values for each tab in config.cljs that are initially set to 'Loading...'"
+  [model-times]
   (let [processed-times (into (u/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
@@ -67,7 +70,7 @@
                                       (remove nil?))))
           {:keys [layers model-times]} (t/read (t/reader :json)
                                                (:body (<! (u/call-clj-async! "get-layers"
-                                                                             @!/geoserver-key
+                                                                             (get-any-level-key :geoserver-key)
                                                                              (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
@@ -214,7 +217,7 @@
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
-                            @!/geoserver-key
+                            (get-any-level-key :geoserver-key)
                             (get-psps-layer-style)))))
 
 (defn- process-timeline-point-info!
@@ -287,13 +290,13 @@
                 (c/point-info-url layer
                                   (str/join "," point-info)
                                   (if single? 1 1000)
-                                  @!/geoserver-key)
+                                  (get-any-level-key :geoserver-key))
                 !/point-info-loading?))))
 
 (defn select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)
   (mb/swap-active-layer! (get-current-layer-name)
-                         @!/geoserver-key
+                         (get-any-level-key :geoserver-key)
                          (/ @!/active-opacity 100)
                          (get-psps-layer-style)))
 
@@ -341,7 +344,7 @@
           style-fn (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source
                               style-fn
-                              @!/geoserver-key
+                              (get-any-level-key :geoserver-key)
                               (/ @!/active-opacity 100)
                               (get-psps-layer-style))
       (mb/clear-popup!)
@@ -447,11 +450,10 @@
 
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
-    (let [{:keys [options-config layers geoserver-key]} (c/get-forecast forecast-type)
+    (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
           user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras     (u/call-clj-async! "get-cameras")]
-      (reset! !/geoserver-key geoserver-key)
       (reset! !/options options-config)
       (reset! !/*forecast (or (keyword forecast)
                             (keyword (forecast-type @c/default-forecasts))))
