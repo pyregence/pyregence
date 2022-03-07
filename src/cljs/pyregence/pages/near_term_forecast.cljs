@@ -112,7 +112,7 @@
         (vals (get-forecast-opt :params))))
 
 ;; TODO, can we make this the default everywhere?
-(defn get-any-level-key
+(defn- get-any-level-key
   "Gets the first non-nil value of a given key starting from the bottom level in
    a forecast in `config.cljs` and going to the top. Allows for bottom level keys
    to override a default top level key (such as for `:time-slider?`)."
@@ -214,30 +214,52 @@
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
-                            @!/geoserver-key))))
+                            @!/geoserver-key
+                            (get-psps-layer-style)))))
 
-(defn- process-timeline-point-info! [json-res]
+(defn- process-timeline-point-info!
+  "Resets the !/last-clicked-info atom according the the JSON resulting from a
+   call to GetFeatureInfo. Note that layers with multiple columns per layer
+   have multiple values that you can use for point information, thus they need
+   to be parsed differently."
+  [json-res]
   (reset! !/last-clicked-info [])
-  (reset! !/last-clicked-info
-          (as-> json-res pi
-            (u/try-js-aget pi "features")
-            (map (fn [pi-layer]
-                   {:band   (u/to-precision 1 (first (.values js/Object (u/try-js-aget pi-layer "properties"))))
-                    :vec-id (peek  (str/split (u/try-js-aget pi-layer "id") #"\."))})
-                 pi)
-            (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first pi))))
-                    pi)
-            (mapv (fn [pi-layer {:keys [sim-time hour]}]
-                    (let [js-time (u/js-date-from-string sim-time)]
-                      (merge {:js-time js-time
-                              :date    (u/get-date-from-js js-time @!/show-utc?)
-                              :time    (u/get-time-from-js js-time @!/show-utc?)
-                              :hour    hour}
-                             pi-layer)))
-                  pi
-                  @!/param-layers))))
+  (let [features           (u/try-js-aget json-res "features")
+        multi-column-info? (as-> features %
+                             (u/try-js-aget % 0 "properties")
+                             (.keys js/Object %)
+                             (.-length %)
+                             (> % 1))]
+    (reset! !/last-clicked-info
+            (as-> features %1
+              (map (fn [pi-layer]
+                     {:band   (if multi-column-info?
+                                (as-> pi-layer %2
+                                  (u/try-js-aget %2 "properties" (get-any-level-key :info-key))
+                                  (u/to-precision 1 %2))
+                                (as-> pi-layer %2
+                                  (u/try-js-aget %2 "properties")
+                                  (js/Object.values %2)
+                                  (first %2)
+                                  (u/to-precision 1 %2)))
+                      :vec-id (peek (str/split (u/try-js-aget pi-layer "id") #"\."))})
+                   %1)
+              (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first %1))))
+                      %1)
+              (mapv (fn [pi-layer {:keys [sim-time hour]}]
+                      (let [js-time (u/js-date-from-string sim-time)]
+                        (merge {:js-time js-time
+                                :date    (u/get-date-from-js js-time @!/show-utc?)
+                                :time    (u/get-time-from-js js-time @!/show-utc?)
+                                :hour    hour}
+                               pi-layer)))
+                    %1
+                    @!/param-layers)))))
 
-(defn- process-single-point-info! [json-res]
+(defn- process-single-point-info!
+  "Resets the !/last-clicked-info atom according the the JSON resulting from a
+   call to GetFeatureInfo for single-point-info layers."
+  [json-res]
   (reset! !/last-clicked-info [])
   (reset! !/last-clicked-info
           (-> json-res
@@ -248,7 +270,12 @@
               (first))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
-(defn get-point-info! [point-info]
+(defn get-point-info!
+  "Called when you use the point information tool and click a point on the map.
+   Processes the JSON result from GetFeatureInfo differently depending on whether or not
+   the layer has single-point-info or timeline-point-info. This processing is used
+   to reset! the !/last-clicked-info atom for use in rendering the information-tool."
+  [point-info]
   (let [layer-name          (get-current-layer-name)
         layer-group         (get-current-layer-group)
         single?             (str/blank? layer-group)
