@@ -70,7 +70,7 @@
                                       (remove nil?))))
           {:keys [layers model-times]} (t/read (t/reader :json)
                                                (:body (<! (u/call-clj-async! "get-layers"
-                                                                             @!/geoserver-key
+                                                                             (get-any-level-key :geoserver-key)
                                                                              (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
@@ -217,7 +217,7 @@
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
-                            @!/geoserver-key))))
+                            (get-any-level-key :geoserver-key)))))
 
 (defn- process-timeline-point-info! [json-res]
   (reset! !/last-clicked-info [])
@@ -263,14 +263,13 @@
                 (c/point-info-url layer
                                   (str/join "," point-info)
                                   (if single? 1 1000)
-                                  @!/geoserver-key)
+                                  (get-any-level-key :geoserver-key))
                 !/point-info-loading?))))
 
 (defn select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)
-  (reset! !/geoserver-key (get-any-level-key :geoserver-key))
   (mb/swap-active-layer! (get-current-layer-name)
-                         @!/geoserver-key
+                         (get-any-level-key :geoserver-key)
                          (/ @!/active-opacity 100)
                          (get-psps-layer-style)))
 
@@ -318,7 +317,7 @@
           style-fn (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source
                               style-fn
-                              @!/geoserver-key
+                              (get-any-level-key :geoserver-key)
                               (/ @!/active-opacity 100)
                               (get-psps-layer-style))
       (mb/clear-popup!)
@@ -351,7 +350,6 @@
     (reset! !/legend-list [])
     (reset! !/last-clicked-info nil)
     (reset! !/*forecast key)
-    (reset! !/geoserver-key (get-forecast-opt :geoserver-key))
     (reset! !/processed-params (get-forecast-opt :params))
     (<! (change-type! true
                       true
