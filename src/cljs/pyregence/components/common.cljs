@@ -19,11 +19,11 @@
    :padding-bottom ".5rem"
    :width          "100%"})
 
-(defn- $radio [checked? themed?]
+(defn- $radio [checked?]
   (merge
-   (when checked? {:background-color ($/color-picker (if themed? :border-color :black) 0.6)})
+   (when checked? {:background-color ($/color-picker :border-color 0.6)})
    {:border        "2px solid"
-    :border-color  ($/color-picker (if themed? :border-color :black))
+    :border-color  ($/color-picker :border-color)
     :border-radius "100%"
     :height        "1rem"
     :margin-right  ".4rem"
@@ -112,13 +112,11 @@
 
 (defn radio
   "A component for radio button."
-  ([label state condition on-click]
-   (radio label state condition on-click false))
-  ([label state condition on-click themed?]
-   [:div {:style    ($/flex-row)
-          :on-click #(on-click condition)}
-    [:div {:style ($radio (= state condition) themed?)}]
-    [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]]))
+  [label state condition on-click]
+  [:div {:style    ($/flex-row)
+         :on-click #(on-click condition)}
+   [:div {:style ($radio (= state condition))}]
+   [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]])
 
 (defn check-box
   "A component for check boxes."
