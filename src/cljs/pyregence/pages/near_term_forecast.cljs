@@ -37,10 +37,13 @@
 ;; Data Processing Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-forecast-opt [key-name]
+(defn- get-forecast-opt [key-name]
   (get-in @!/capabilities [@!/*forecast key-name]))
 
-(defn process-model-times! [model-times]
+(defn- process-model-times!
+  "Updates the necessary atoms based on the given model-times. This updates the
+   :model-init values for each tab in config.cljs that are initially set to 'Loading...'"
+  [model-times]
   (let [processed-times (into (u/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
@@ -67,7 +70,7 @@
                                       (remove nil?))))
           {:keys [layers model-times]} (t/read (t/reader :json)
                                                (:body (<! (u/call-clj-async! "get-layers"
-                                                                             @!/geoserver-key
+                                                                             (get-any-level-key :geoserver-key)
                                                                              (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
@@ -226,7 +229,7 @@
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
-                            @!/geoserver-key
+                            (get-any-level-key :geoserver-key)
                             (get-psps-layer-style)))))
 
 (defn- process-timeline-point-info!
@@ -237,27 +240,27 @@
   [json-res]
   (reset! !/last-clicked-info [])
   (let [features           (u/try-js-aget json-res "features")
-        multi-column-info? (-> features
-                             (u/try-js-aget 0 "properties")
-                             (js->clj)
-                             (count)
-                             (> 1))]
+        multi-column-info? (as-> features %
+                             (u/try-js-aget % 0 "properties")
+                             (.keys js/Object %)
+                             (.-length %)
+                             (> % 1))]
     (reset! !/last-clicked-info
-            (as-> features %
+            (as-> features %1
               (map (fn [pi-layer]
                      {:band   (if multi-column-info?
-                                (as-> pi-layer %
-                                  (u/try-js-aget % "properties" (get-psps-column-name))
-                                  (u/to-precision 1 %))
-                                (as-> pi-layer %
-                                  (u/try-js-aget % "properties")
-                                  (js/Object.values %)
-                                  (first %)
-                                  (u/to-precision 1 %)))
+                                (as-> pi-layer %2
+                                  (u/try-js-aget %2 "properties" (get-psps-column-name))
+                                  (u/to-precision 1 %2))
+                                (as-> pi-layer %2
+                                  (u/try-js-aget %2 "properties")
+                                  (js/Object.values %2)
+                                  (first %2)
+                                  (u/to-precision 1 %2)))
                       :vec-id (peek (str/split (u/try-js-aget pi-layer "id") #"\."))})
-                   %)
-              (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first %))))
-                      %)
+                   %1)
+              (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first %1))))
+                      %1)
               (mapv (fn [pi-layer {:keys [sim-time hour]}]
                       (let [js-time (u/js-date-from-string sim-time)]
                         (merge {:js-time js-time
@@ -265,7 +268,7 @@
                                 :time    (u/get-time-from-js js-time @!/show-utc?)
                                 :hour    hour}
                                pi-layer)))
-                    %
+                    %1
                     @!/param-layers)))))
 
 (defn- process-single-point-info!
@@ -299,13 +302,13 @@
                 (c/point-info-url layer
                                   (str/join "," point-info)
                                   (if single? 1 1000)
-                                  @!/geoserver-key)
+                                  (get-any-level-key :geoserver-key))
                 !/point-info-loading?))))
 
 (defn select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)
   (mb/swap-active-layer! (get-current-layer-name)
-                         @!/geoserver-key
+                         (get-any-level-key :geoserver-key)
                          (/ @!/active-opacity 100)
                          (get-psps-layer-style)))
 
@@ -353,7 +356,7 @@
           style-fn (get-current-layer-key :style-fn)]
       (mb/reset-active-layer! source
                               style-fn
-                              @!/geoserver-key
+                              (get-any-level-key :geoserver-key)
                               (/ @!/active-opacity 100)
                               (get-psps-layer-style))
       (mb/clear-popup!)
@@ -459,11 +462,10 @@
 
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
-    (let [{:keys [options-config layers geoserver-key]} (c/get-forecast forecast-type)
+    (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
           user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan  (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras     (u/call-clj-async! "get-cameras")]
-      (reset! !/geoserver-key geoserver-key)
       (reset! !/options options-config)
       (reset! !/*forecast (or (keyword forecast)
                             (keyword (forecast-type @c/default-forecasts))))
