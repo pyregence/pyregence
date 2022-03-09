@@ -37,6 +37,8 @@
 ;; Data Processing Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare get-any-level-key) ;; FIXME: Look at ways to decouple callbacks
+
 (defn- get-forecast-opt [key-name]
   (get-in @!/capabilities [@!/*forecast key-name]))
 
@@ -217,8 +219,7 @@
               (process-multiparam-layer-legend %)
               (process-raster-colormap-legend %))
             (remove (fn [leg]
-                      (or (nil? (get leg "label"))
-                          (= "nodata" (get leg "label"))))
+                      (nil? (get leg "label")))
                     %)
             (doall %))))
 

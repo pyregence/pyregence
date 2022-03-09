@@ -928,11 +928,22 @@
       "Point Information"
       close-fn!
       (fn [box-height box-width]
-        (let [has-point?   (mb/get-overlay-center)
-              loading-info [loading-cover
-                            box-height
-                            box-width
-                            "Loading..."]]
+        (let [has-point?    (mb/get-overlay-center)
+              no-info       [loading-cover
+                             box-height
+                             box-width
+                             "This point does not have any information."]
+              single-point? (number? @!/last-clicked-info)
+              no-info?      (if single-point?
+                              (->> @!/legend-list
+                                (map (fn [legend-entry]
+                                       (and
+                                        (= (legend-entry "quantity") (str @!/last-clicked-info))
+                                        (= (legend-entry "label") "nodata"))))
+                                (filter true?)
+                                (count)
+                                (pos?))
+                              (empty? @!/last-clicked-info))]
           (cond
             (not has-point?)
             [loading-cover
@@ -941,7 +952,10 @@
              "Click on the map to view the value(s) of particular point."]
 
             @!/point-info-loading?
-            loading-info
+            [loading-cover
+             box-height
+             box-width
+             "Loading..."]
 
             (and (nil? @!/last-clicked-info) (empty? @!/legend-list))
             [loading-cover
@@ -955,22 +969,17 @@
              box-width
              "There was an issue getting the legend for this layer."]
 
-            (and (number? @!/last-clicked-info)
-                 (>= @!/last-clicked-info -50))
+            no-info?
+            no-info
+
+            single-point?
             [single-point-info
              box-height
              box-width
              units
              convert]
 
-            (or (< @!/last-clicked-info -50)
-                (-> @!/last-clicked-info (first) (:band) (< -50)))
-            [loading-cover
-             box-height
-             box-width
-             "This point does not have any information."]
-
-            (and (not-empty @!/last-clicked-info) (not-empty @!/legend-list))
+            (not single-point?)
             [vega-information
              box-height
              box-width
@@ -978,7 +987,7 @@
              units
              cur-hour]
 
-            :else loading-info)))]]
+            :else no-info)))]]
     (finally
       (mb/remove-event! click-event))))
 
@@ -1005,21 +1014,28 @@
    :top           "16px"
    :transition    "all 200ms ease-in"})
 
-(defn legend-box [reverse? time-slider? units]
+(defn legend-box
+  "A component for the legend box. The `nodata` entries are removed before the
+   legend is displayed. The legend is displayed with the provided units and can
+   optionally be reversed in order."
+  [reverse? time-slider? units]
   (reset! show-legend? (not @!/mobile?))
   (fn [reverse? time-slider? units]
     (when (and @show-legend? (seq @!/legend-list))
-      [:div#legend-box {:style ($/combine $/tool ($legend-box @show-panel? time-slider?))}
-       [:div {:style {:display        "flex"
-                      :flex-direction "column"}}
-        (map-indexed (fn [i leg]
-                       ^{:key i}
-                       [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
-                        [:div {:style ($legend-color (get leg "color"))}]
-                        [:label (str (get leg "label") (u/clean-units units))]])
-                     (if reverse?
-                       (reverse @!/legend-list)
-                       @!/legend-list))]])))
+      (let [processed-legend (remove (fn [leg]
+                                       (= "nodata" (get leg "label")))
+                                     @!/legend-list)]
+        [:div#legend-box {:style ($/combine $/tool ($legend-box @show-panel? time-slider?))}
+         [:div {:style {:display        "flex"
+                        :flex-direction "column"}}
+          (map-indexed (fn [i leg]
+                         ^{:key i}
+                         [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
+                          [:div {:style ($legend-color (get leg "color"))}]
+                          [:label (str (get leg "label") (u/clean-units units))]])
+                       (if reverse?
+                         (reverse processed-legend)
+                         processed-legend))]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scale Control

@@ -12,7 +12,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- create-stops []
-  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 @!/last-clicked-info)]
+  (let [max-band         (reduce (fn [acc cur] (max acc (:band cur))) 1.0 @!/last-clicked-info)
+        processed-legend (remove (fn [leg]
+                                   (= "nodata" (get leg "label")))
+                                 @!/legend-list)]
     (reductions
      (fn [last cur] (let [last-q (get last :quantity  0.0)
                           cur-q  (get cur  "quantity" 0.0)]
@@ -25,13 +28,16 @@
                                                       (- cur-q last-q)))
                                    (get cur "color"))}))
      {:offset 0.0
-      :color  (get (first @!/legend-list) "color")}
-     (rest @!/legend-list))))
+      :color  (get (first processed-legend) "color")}
+     (rest processed-legend))))
 
 (defn- create-scale []
-  {:type   "linear"
-   :domain (mapv #(get % "quantity") @!/legend-list)
-   :range  (mapv #(get % "color")    @!/legend-list)})
+  (let [processed-legend (remove (fn [leg]
+                                  (= "nodata" (get leg "label")))
+                                @!/legend-list)]
+    {:type   "linear"
+     :domain (mapv #(get % "quantity") processed-legend)
+     :range  (mapv #(get % "color")    processed-legend)}))
 
 (defn- layer-line-plot [units current-hour]
   {:width    "container"
