@@ -39,6 +39,7 @@
 ;; Miscellaneous State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce *org-list (r/atom []))
 (defonce animate?    (r/atom false))
 (defonce loading?    (r/atom true))
 (defonce mobile?     (r/atom false))

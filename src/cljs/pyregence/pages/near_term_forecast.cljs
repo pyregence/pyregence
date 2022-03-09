@@ -32,7 +32,6 @@
                              (s/cat :forecast #{:fire-risk :active-fire :fire-weather}
                                     :params   #(= % :params)
                                     :etc      (s/+ keyword?))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -476,20 +475,22 @@
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
-          user-layers-chan (u/call-clj-async! "get-user-layers" user-id)
-          fire-names-chan  (u/call-clj-async! "get-fire-names" user-id)
-          fire-cameras     (u/call-clj-async! "get-cameras")]
+          user-layers-chan                (u/call-clj-async! "get-user-layers" user-id)
+          fire-names-chan                 (u/call-clj-async! "get-fire-names" user-id)
+          fire-cameras                    (u/call-clj-async! "get-cameras")]
       (reset! !/options options-config)
       (reset! !/*forecast (or (keyword forecast)
-                            (keyword (forecast-type @c/default-forecasts))))
+                              (keyword (forecast-type @c/default-forecasts))))
       (reset! !/*layer-idx (if layer-idx (js/parseInt layer-idx) 0))
       (mb/init-map! "map" layers (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
                              (params->selected-options @!/options @!/*forecast params))
+
       (<! (select-forecast! @!/*forecast))
-      (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))
-      (reset! !/loading? false))))
+      (reset! !/*org-list (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" user-id)))))
+      (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras)))))
+    (reset! !/loading? false)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -689,14 +690,20 @@
          [message-modal]
          [:div {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
           [:span {:style {:display "flex" :padding ".25rem 0"}}
-           (doall (map (fn [[key {:keys [opt-label hover-text]}]]
+           (doall (map (fn [[key {:keys [tab-restriction? opt-label hover-text]}]]
                          ^{:key key}
-                         [tool-tip-wrapper
-                          hover-text
-                          :top
-                          [:label {:style    ($forecast-label (= @!/*forecast key))
-                                   :on-click #(select-forecast! key)}
-                           opt-label]])
+                         (if (and (not (nil? tab-restriction?))
+                                  (not-any? (fn [{org-id :opt-id}]
+                                              (= org-id tab-restriction?))
+                                            @!/*org-list))
+                           nil
+
+                           [tool-tip-wrapper
+                            hover-text
+                            :top
+                            [:label {:style    ($forecast-label (= @!/*forecast key))
+                                     :on-click #(select-forecast! key)}
+                             opt-label]]))
                        @!/capabilities))]
           (when-not @!/mobile?
             (if user-id
