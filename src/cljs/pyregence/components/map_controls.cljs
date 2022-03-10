@@ -929,10 +929,6 @@
       close-fn!
       (fn [box-height box-width]
         (let [has-point?    (mb/get-overlay-center)
-              no-info       [loading-cover
-                             box-height
-                             box-width
-                             "This point does not have any information."]
               single-point? (number? @!/last-clicked-info)
               no-info?      (if single-point?
                               (->> @!/legend-list
@@ -940,9 +936,7 @@
                                        (and
                                         (= (legend-entry "quantity") (str @!/last-clicked-info))
                                         (= (legend-entry "label") "nodata"))))
-                                (filter true?)
-                                (count)
-                                (pos?))
+                                (some true?))
                               (empty? @!/last-clicked-info))]
           (cond
             (not has-point?)
@@ -970,7 +964,10 @@
              "There was an issue getting the legend for this layer."]
 
             no-info?
-            no-info
+            [loading-cover
+             box-height
+             box-width
+             "This point does not have any information."]
 
             single-point?
             [single-point-info
@@ -979,15 +976,13 @@
              units
              convert]
 
-            (not single-point?)
+            :else
             [vega-information
              box-height
              box-width
              select-layer!
              units
-             cur-hour]
-
-            :else no-info)))]]
+             cur-hour])))]]
     (finally
       (mb/remove-event! click-event))))
 

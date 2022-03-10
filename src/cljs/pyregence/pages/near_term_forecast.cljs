@@ -218,9 +218,7 @@
             (if (get-any-level-key :multi-param-layers?)
               (process-multiparam-layer-legend %)
               (process-raster-colormap-legend %))
-            (remove (fn [leg]
-                      (nil? (get leg "label")))
-                    %)
+            (remove (fn [leg] (nil? (get leg "label"))) %)
             (doall %))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
