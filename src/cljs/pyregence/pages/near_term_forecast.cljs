@@ -34,13 +34,80 @@
                                     :etc      (s/+ keyword?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Data Processing Functions
+;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(declare get-any-level-key) ;; FIXME: Look at ways to decouple callbacks
 
 (defn- get-forecast-opt [key-name]
   (get-in @!/capabilities [@!/*forecast key-name]))
+
+(defn current-layer []
+  (get @!/param-layers @!/*layer-idx))
+
+(defn get-current-layer-name []
+  (:layer (current-layer) ""))
+
+(defn get-current-layer-hour []
+  (:hour (current-layer) 0))
+
+(defn get-current-layer-full-time []
+  (if-let [sim-time (:sim-time (current-layer))]
+    (u/time-zone-iso-date sim-time @!/show-utc?)
+    ""))
+
+(defn get-current-layer-extent []
+  (:extent (current-layer) c/california-extent))
+
+(defn get-current-layer-group []
+  (:layer-group (current-layer) ""))
+
+(defn get-current-layer-key [key-name]
+  (->> (get-forecast-opt :params)
+       (map (fn [[key {:keys [options]}]]
+              (get-in options [(get-in @!/*params [@!/*forecast key]) key-name])))
+       (remove nil?)
+       (first)))
+
+(defn get-current-option-key
+  "Retreive the value for a particular parameter's option."
+  [param-key option-key key-name]
+  (get-in (get-forecast-opt :params) [param-key :options option-key key-name]))
+
+(defn- get-options-key [key-name]
+  (some #(get % key-name)
+        (vals (get-forecast-opt :params))))
+
+;; TODO, can we make this the default everywhere?
+(defn- get-any-level-key
+  "Gets the first non-nil value of a given key starting from the bottom level in
+   a forecast in `config.cljs` and going to the top. Allows for bottom level keys
+   to override a default top level key (such as for `:time-slider?`)."
+  [key-name]
+  (first (filter some?
+                 [(get-current-layer-key key-name)
+                  (get-options-key       key-name)
+                  (get-forecast-opt      key-name)])))
+
+(defn- get-psps-layer-style
+  "Returns the name of the CSS style for a PSPS layer."
+  []
+  (when (= @!/*forecast :psps-zonal)
+      (str (name (get-in @!/*params [:psps-zonal :quantity]))
+           "-"
+           (name (get-in @!/*params [:psps-zonal :statistic]))
+           "-poly-css")))
+
+(defn- get-psps-column-name
+  "Returns the name of the point info column for a PSPS layer."
+  []
+  (when (= @!/*forecast :psps-zonal)
+      (str (str/replace
+            (name (get-in @!/*params [:psps-zonal :quantity])) #"-" "_")
+           "_"
+           (name (get-in @!/*params [:psps-zonal :statistic])))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Processing Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- process-model-times!
   "Updates the necessary atoms based on the given model-times. This updates the
@@ -79,71 +146,6 @@
       (swap! !/*layer-idx #(max 0 (min % (- (count @!/param-layers) 1))))
       (when-not (seq @!/param-layers)
         (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
-
-(defn current-layer []
-  (get @!/param-layers @!/*layer-idx))
-
-(defn get-current-layer-name []
-  (:layer (current-layer) ""))
-
-(defn get-current-layer-hour []
-  (:hour (current-layer) 0))
-
-(defn get-current-layer-full-time []
-  (if-let [sim-time (:sim-time (current-layer))]
-    (u/time-zone-iso-date sim-time @!/show-utc?)
-    ""))
-
-(defn get-current-layer-extent []
-  (:extent (current-layer) c/california-extent))
-
-(defn get-current-layer-group []
-  (:layer-group (current-layer) ""))
-
-(defn get-current-layer-key [key-name]
-  (->> (get-forecast-opt :params)
-       (map (fn [[key {:keys [options]}]]
-              (get-in options [(get-in @!/*params [@!/*forecast key]) key-name])))
-       (remove nil?)
-       (first)))
-
-(defn get-current-option-key
-  "Retreive the value for a particular parameter's option."
-  [param-key option-key key-name]
-  (get-in (get-forecast-opt :params) [param-key :options option-key key-name]))
-
-(defn get-options-key [key-name]
-  (some #(get % key-name)
-        (vals (get-forecast-opt :params))))
-
-;; TODO, can we make this the default everywhere?
-(defn- get-any-level-key
-  "Gets the first non-nil value of a given key starting from the bottom level in
-   a forecast in `config.cljs` and going to the top. Allows for bottom level keys
-   to override a default top level key (such as for `:time-slider?`)."
-  [key-name]
-  (first (filter some?
-                 [(get-current-layer-key key-name)
-                  (get-options-key       key-name)
-                  (get-forecast-opt      key-name)])))
-
-(defn- get-psps-layer-style
-  "Returns the name of the CSS style for a PSPS layer."
-  []
-  (when (= @!/*forecast :psps-zonal)
-      (str (name (get-in @!/*params [:psps-zonal :quantity]))
-           "-"
-           (name (get-in @!/*params [:psps-zonal :statistic]))
-           "-poly-css")))
-
-(defn- get-psps-column-name
-  "Returns the name of the point info column for a PSPS layer."
-  []
-  (when (= @!/*forecast :psps-zonal)
-      (str (str/replace
-            (name (get-in @!/*params [:psps-zonal :quantity])) #"-" "_")
-           "_"
-           (name (get-in @!/*params [:psps-zonal :statistic])))))
 
 (defn create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
@@ -190,6 +192,10 @@
           (toast-message! (str "Error retrieving " type ". See console for more details.")))
         (success-fn json-res)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Legend Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn- process-multiparam-layer-legend
   "Parses the JSON data from GetLegendGraphic from a layer with multiple params."
   [data]
@@ -230,6 +236,10 @@
               (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
                             (get-any-level-key :geoserver-key)
                             (get-psps-layer-style)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Point Information Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- process-timeline-point-info!
   "Resets the !/last-clicked-info atom according the the JSON resulting from a
@@ -303,6 +313,10 @@
                                   (if single? 1 1000)
                                   (get-any-level-key :geoserver-key))
                 !/point-info-loading?))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; More Data Processing Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)
