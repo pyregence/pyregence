@@ -931,13 +931,13 @@
         (let [has-point?    (mb/get-overlay-center)
               single-point? (number? @!/last-clicked-info)
               no-info?      (if single-point?
-                              (->> @!/legend-list
-                                (map (fn [legend-entry]
-                                       (and
-                                        (= (legend-entry "quantity") (str @!/last-clicked-info))
-                                        (= (legend-entry "label") "nodata"))))
-                                (some true?))
-                              (empty? @!/last-clicked-info))]
+                              (contains? @!/no-data-quantities (str @!/last-clicked-info))
+                              (or (empty? @!/last-clicked-info)
+                                  (as-> @!/last-clicked-info %
+                                    (map (fn [entry]
+                                           (contains? @!/no-data-quantities (str (:band entry))))
+                                         %)
+                                    (nth % @!/*layer-idx))))]
           (cond
             (not has-point?)
             [loading-cover

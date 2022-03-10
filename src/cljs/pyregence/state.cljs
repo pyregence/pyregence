@@ -32,6 +32,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce last-clicked-info   (r/atom []))
+(defonce no-data-quantities 
+  ^{:doc "A set containing all of the quantities associated with `nodata` points."}
+  (r/atom #{}))
 (defonce legend-list         (r/atom []))
 (defonce point-info-loading? (r/atom false))
 
