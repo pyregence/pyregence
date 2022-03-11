@@ -1016,9 +1016,7 @@
   (reset! show-legend? (not @!/mobile?))
   (fn [reverse? time-slider? units]
     (when (and @show-legend? (seq @!/legend-list))
-      (let [processed-legend (remove (fn [leg]
-                                       (= "nodata" (get leg "label")))
-                                     @!/legend-list)]
+      (let [processed-legend (u/filter-legend-list)]
         [:div#legend-box {:style ($/combine $/tool ($legend-box @show-panel? time-slider?))}
          [:div {:style {:display        "flex"
                         :flex-direction "column"}}

@@ -2,6 +2,7 @@
   (:require [cljs.reader        :as edn]
             [clojure.string     :as str]
             [clojure.set        :as sets]
+            [pyregence.state    :as !]
             [clojure.core.async :refer [alts! go <! timeout go-loop chan put!]]
             [cljs.core.async.interop :refer-macros [<p!]]))
 
@@ -578,3 +579,10 @@
   (if (#{"%" "\u00B0F" "\u00B0"} units)
     units
     (str " " units)))
+
+(defn filter-legend-list
+  "Returns the value of the !/legend-list atom with the nodata entries removed."
+  []
+  (remove (fn [leg]
+            (= "nodata" (get leg "label")))
+          @!/legend-list))

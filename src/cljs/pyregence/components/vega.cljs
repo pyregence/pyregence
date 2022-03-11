@@ -34,9 +34,7 @@
    :range  (mapv #(get % "color")    processed-legend)})
 
 (defn- layer-line-plot [units current-hour]
-  (let [processed-legend (remove (fn [leg]
-                                   (= "nodata" (get leg "label")))
-                                 @!/legend-list)]
+  (let [processed-legend (u/filter-legend-list)]
     {:width    "container"
      :height   "container"
      :autosize {:type "fit" :resize true}
