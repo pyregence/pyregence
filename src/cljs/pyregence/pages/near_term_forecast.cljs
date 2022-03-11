@@ -553,7 +553,8 @@
         [:div {:style ($control-layer)}
          [mc/collapsible-panel
           (get @!/*params @!/*forecast)
-          select-param!]
+          select-param!
+          (get-any-level-key :underlays)]
          (when (aget @my-box "height")
            [:<>
             (when @!/show-info?
@@ -720,6 +721,9 @@
                [:label {:style {:cursor "pointer"}
                         :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
-          (when @mb/the-map [control-layer user-id])
+          (when (and @mb/the-map
+                     (not-empty @!/capabilities)
+                     (not-empty @!/*params))
+            [control-layer user-id])
           [map-layer]
           [pop-up]]])})))

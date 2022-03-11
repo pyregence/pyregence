@@ -235,7 +235,7 @@
                                                        @show?))}]
       [:label {:for id} opt-label]]]))
 
-(defn optional-layers [underlays]
+(defn- optional-layers [underlays]
   (r/create-class
    {:component-did-mount
     (fn []
@@ -360,13 +360,13 @@
      :overflow-y      "auto"}
     {:pseudo {:last-child {:padding-bottom "0.75rem"}}}))
 
-(defn collapsible-panel [*params select-param!]
+(defn collapsible-panel [*params select-param! underlays]
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
                            (reset! *base-map id)
                            (mb/set-base-map-source! (get-in (c/base-map-options) [@*base-map :source])))]
     (reset! show-panel? (not @!/mobile?))
-    (fn [*params select-param!]
+    (fn [*params select-param! underlays]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($/combine $/tool-background ($collapsible-panel @show-panel?))}
          [collapsible-panel-toggle]
@@ -393,7 +393,7 @@
            [collapsible-panel-section
             "optional-layers"
             [optional-layers
-             c/near-term-forecast-underlays]]
+             underlays]]
            [collapsible-panel-section
             "base-map"
             [panel-dropdown
