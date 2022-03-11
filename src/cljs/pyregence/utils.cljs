@@ -578,3 +578,10 @@
   (if (#{"%" "\u00B0F" "\u00B0"} units)
     units
     (str " " units)))
+
+(defn filter-no-data
+  "Removes any nodata 'label' entries from the provided legend-list."
+  [legend-list]
+  (remove (fn [leg]
+            (= "nodata" (get leg "label")))
+          legend-list))
