@@ -931,12 +931,11 @@
         (let [has-point?    (mb/get-overlay-center)
               single-point? (number? @!/last-clicked-info)
               no-info?      (if single-point?
-                              (->> @!/legend-list
-                                (map (fn [legend-entry]
-                                       (and
-                                        (= (legend-entry "quantity") (str @!/last-clicked-info))
-                                        (= (legend-entry "label") "nodata"))))
-                                (some true?))
+                              (some (fn [legend-entry]
+                                      (and
+                                       (= (legend-entry "quantity") (str @!/last-clicked-info))
+                                       (= (legend-entry "label") "nodata")))
+                                    @!/legend-list)
                               (empty? @!/last-clicked-info))]
           (cond
             (not has-point?)
