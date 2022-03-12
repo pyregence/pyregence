@@ -92,8 +92,9 @@
                                                                        :filter    "cfo-2020"}
                                                        :ca-fuelscapes {:opt-label "2021 CA fuelscape"
                                                                        :filter    "ca-fuelscapes"}
-                                                       :cec           {:opt-label "CA Ecosystem Climate Solutions"
-                                                                       :filter    "cec"}}}
+                                                       :cec           {:opt-label    "CA Ecosystem Climate Solutions"
+                                                                       :filter       "cec"
+                                                                       :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
                                   :layer {:opt-label  "Layer"
                                           :hover-text [:p {:style {:margin-bottom "0"}}
                                                        "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
