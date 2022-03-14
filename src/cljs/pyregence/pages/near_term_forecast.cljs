@@ -224,18 +224,12 @@
    Also populates the no-data-quantities atom with all quantities associated
    with `nodata` points."
   [json-res]
-  (reset! !/legend-list
-          (as-> json-res %
-            (if (get-any-level-key :multi-param-layers?)
-              (process-multiparam-layer-legend %)
-              (process-raster-colormap-legend %))
-            (remove (fn [leg] (nil? (get leg "label"))) %)
-            (doall %)))
-  (reset! !/no-data-quantities
-          (into #{}
-                (for [entry @pyregence.state/legend-list
-                      :when (= (get entry "label") "nodata")]
-                  (get entry "quantity")))))
+  (!/set-state-legend-list! (as-> json-res %
+                              (if (get-any-level-key :multi-param-layers?)
+                                (process-multiparam-layer-legend %)
+                                (process-raster-colormap-legend %))
+                              (remove (fn [leg] (nil? (get leg "label"))) %)
+                              (doall %))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn- get-legend!
@@ -395,7 +389,7 @@
 
 (defn select-param! [val & keys]
   (swap! !/*params assoc-in (cons @!/*forecast keys) val)
-  (reset! !/legend-list [])
+  (!/set-state-legend-list! [])
   (reset! !/last-clicked-info nil)
   (let [main-key (first keys)]
     (when (= main-key :fire-name)
@@ -409,7 +403,7 @@
 
 (defn select-forecast! [key]
   (go
-    (reset! !/legend-list [])
+    (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))

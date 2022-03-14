@@ -39,13 +39,7 @@
      :height   "container"
      :autosize {:type "fit" :resize true}
      :padding  {:left "16" :top "16" :right "16" :bottom "16"}
-     :data     {:values (or (map (fn [entry]
-                                   (let [band-val (:band entry)]
-                                     (assoc entry :band (if (contains? @!/no-data-quantities (str band-val))
-                                                          nil ; this removes any nodata point from the graph
-                                                          band-val))))
-                                @!/last-clicked-info)
-                            [])}
+     :data     {:values (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)}
      :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "Hour"}
                             :y {:field "band" :type "quantitative" :title units}
                             :tooltip [{:field "band" :title units  :type "nominal"}
