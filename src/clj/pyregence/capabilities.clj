@@ -36,6 +36,7 @@
 
 ;;; Layers
 
+; FIXME: Think of a better name for this function since it's not only used for risk layers.
 (defn- split-risk-layer-name
   "Gets information about a risk, weather, or PSPS layer based on the layer's name."
   [name-string]
@@ -108,6 +109,19 @@
      :sim-time    (str year "0101_000000")
      :hour        (- (Integer/parseInt year) 1954)}))
 
+(defn- split-psps-underlays
+  "Gets information about a PSPS static layer based on its name."
+  [name-string]
+  (let [[workspace layer] (str/split name-string #":")
+        [forecast type]   (str/split workspace #"_")]
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    forecast
+     :type        type
+     :filter-set  #{forecast type}
+     :model-init  ""
+     :hour        0}))
+
 (defn process-layers!
   "Makes a call to GetCapabilities and uses regex on the resulting XML response
    to generate a vector of layer entries where each entry is a map. The info
@@ -153,7 +167,10 @@
                           (merge-fn (split-fuels full-name))
 
                           (re-matches #"climate_FireSim.*_\d{4}" full-name)
-                          (merge-fn (split-wg4-scenarios full-name))))))
+                          (merge-fn (split-wg4-scenarios full-name))
+
+                          (str/starts-with? full-name "psps-static")
+                          (merge-fn (split-psps-underlays full-name))))))
                    (vec)))
             xml)
       (apply concat xml)
