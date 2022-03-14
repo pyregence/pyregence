@@ -161,7 +161,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $collapsible-panel [show?]
-  {:box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
+  {:background-color ($/color-picker :bg-color)
+   :box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
    :color            ($/color-picker :font-color)
    :height           "100%"
    :left             (if show?
@@ -280,7 +281,8 @@
               underlays))]])}))
 
 (defn- $collapsible-button []
-  {:border-bottom-right-radius "5px"
+  {:background-color           ($/color-picker :bg-color)
+   :border-bottom-right-radius "5px"
    :border-color               ($/color-picker :transparent)
    :border-style               "solid"
    :border-top-right-radius    "5px"
@@ -294,7 +296,7 @@
 
 (defn- collapsible-button []
   [:button
-   {:style    ($/combine $/tool-background $collapsible-button)
+   {:style    ($collapsible-button)
     :on-click #(swap! show-panel? not)}
    [:div {:style {:align-items     "center"
                   :display         "flex"
@@ -369,7 +371,7 @@
     (reset! show-panel? (not @!/mobile?))
     (fn [*params select-param! underlays]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
-        [:div#collapsible-panel {:style ($/combine $/tool-background ($collapsible-panel @show-panel?))}
+        [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
          [collapsible-panel-toggle]
          [collapsible-panel-header]
          [:div#collapsible-panel-body {:class (<class $collapsible-panel-body)}
@@ -859,9 +861,14 @@
 
     :render
     (fn [_]
-      [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
-       [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
-        (str (:band (get @!/last-clicked-info @!/*layer-idx)) (u/clean-units units))]])}))
+      (let [cleaned-last-clicked-info (u/replace-no-data-nil @!/last-clicked-info
+                                                             @!/no-data-quantities)
+            current-point             (nth cleaned-last-clicked-info @!/*layer-idx)]
+        [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
+         [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
+          (if (some? (:band current-point))
+            (str (:band current-point) (u/clean-units units))
+            "No info available for this timestep.")]]))}))
 
 (defn- vega-information [box-height box-width select-layer! units cur-hour]
   (r/with-let [info-height (r/atom 0)]
@@ -932,13 +939,12 @@
         (let [has-point?    (mb/get-overlay-center)
               single-point? (number? @!/last-clicked-info)
               no-info?      (if single-point?
-                              (->> @!/legend-list
-                                (map (fn [legend-entry]
-                                       (and
-                                        (= (legend-entry "quantity") (str @!/last-clicked-info))
-                                        (= (legend-entry "label") "nodata"))))
-                                (some true?))
-                              (empty? @!/last-clicked-info))]
+                              (contains? @!/no-data-quantities (str @!/last-clicked-info))
+                              (or (empty? @!/last-clicked-info)
+                                  (->> @!/last-clicked-info
+                                    (map (fn [entry]
+                                           (contains? @!/no-data-quantities (str (:band entry)))))
+                                    (every? true?))))]
           (cond
             (not has-point?)
             [loading-cover
@@ -1018,9 +1024,7 @@
   (reset! show-legend? (not @!/mobile?))
   (fn [reverse? time-slider? units]
     (when (and @show-legend? (seq @!/legend-list))
-      (let [processed-legend (remove (fn [leg]
-                                       (= "nodata" (get leg "label")))
-                                     @!/legend-list)]
+      (let [processed-legend (u/filter-no-data @!/legend-list)]
         [:div#legend-box {:style ($/combine $/tool ($legend-box @show-panel? time-slider?))}
          [:div {:style {:display        "flex"
                         :flex-direction "column"}}
@@ -1038,7 +1042,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $scale-line [time-slider?]
-  {:padding          ".2rem 0"
+  {:background-color ($/color-picker :bg-color)
+   :padding          ".2rem 0"
    :bottom           (if (and @!/mobile? time-slider?) "90px" "36px")
    :left             "auto"
    :right            "70px"
@@ -1072,9 +1077,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $mouse-lng-lat []
-  {:bottom           "84px"
+  {:background-color ($/color-picker :bg-color)
+   :bottom           "84px"
    :left             "auto"
-   :padding         ".2rem"
+   :padding          ".2rem"
    :right            "70px"})
 
 (defn- $mouse-lng-lat-inner []

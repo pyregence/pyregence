@@ -28,12 +28,11 @@
 ;; WG3 Forecast
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def all-underlays
-  {:us-buildings    {:enabled?      #(feature-enabled? :structures)
-                     :opt-label     "Structures"
-                     :z-index       104
-                     :filter-set    #{"fire-detections" "us-buildings"}
-                     :geoserver-key :pyrecast}})
+(def common-underlays
+  {:us-buildings    {:enabled?   #(feature-enabled? :structures)
+                     :opt-label  "Structures"
+                     :z-index    104
+                     :filter-set #{"fire-detections" "us-buildings"}}})
 
 (def near-term-forecast-underlays
   {:nifs-perimeters {:opt-label     "NIFS Perimeters"
@@ -65,7 +64,7 @@
   {:fuels        {:opt-label     "Fuels"
                   :filter        "fuels"
                   :geoserver-key :pyrecast
-                  :underlays     (merge all-underlays near-term-forecast-underlays)
+                  :underlays     (merge common-underlays near-term-forecast-underlays)
                   :time-slider?  false
                   :hover-text    "Layers related to fuel and potential fire behavior."
                   :params        {:model {:opt-label  "Source"
@@ -108,8 +107,9 @@
                                                                        :filter    "cfo-2020"}
                                                        :ca-fuelscapes {:opt-label "2021 CA fuelscape"
                                                                        :filter    "ca-fuelscapes"}
-                                                       :cec           {:opt-label "CA Ecosystem Climate Solutions"
-                                                                       :filter    "cec"}}}
+                                                       :cec           {:opt-label    "CA Ecosystem Climate Solutions"
+                                                                       :filter       "cec"
+                                                                       :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
                                   :layer {:opt-label  "Layer"
                                           :hover-text [:p {:style {:margin-bottom "0"}}
                                                        "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
@@ -169,7 +169,7 @@
    :fire-weather {:opt-label       "Weather"
                   :filter          "fire-weather-forecast"
                   :geoserver-key   :pyrecast
-                  :underlays       (merge all-underlays near-term-forecast-underlays)
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "8-day forecast of key parameters affecting wildfire behavior obtained from operational National Weather Service forecast models."
@@ -225,7 +225,7 @@
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
                   :geoserver-key   :pyrecast
-                  :underlays       (merge all-underlays near-term-forecast-underlays)
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "5-day forecast of fire consequence maps. Every day over 500 million hypothetical fires are ignited across California to evaluate potential fire risk.\n"
@@ -318,7 +318,7 @@
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
                   :geoserver-key   :pyrecast
-                  :underlays       (merge all-underlays near-term-forecast-underlays)
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true
@@ -394,7 +394,7 @@
    :psps-zonal   {:opt-label           "PSPS Zones"
                   :filter              "psps-zonal"
                   :geoserver-key       :psps
-                  :underlays           (merge all-underlays near-term-forecast-underlays)
+                  :underlays           (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend?     true
                   :time-slider?        true
                   :multi-param-layers? true
@@ -476,7 +476,7 @@
   {:fire-scenarios {:opt-label       "Fire Scenarios"
                     :filter          "climate_FireSim"
                     :geoserver-key   :pyreclimate
-                    :underlays       all-underlays
+                    :underlays       common-underlays
                     :hover-text      "Wildfire scenario projections for area burned with varied emissions and population scenarios."
                     :reverse-legend? true
                     :block-info?     false
