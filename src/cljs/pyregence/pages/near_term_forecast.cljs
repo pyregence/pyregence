@@ -203,10 +203,13 @@
     (u/try-js-aget % "Legend" 0 "rules")
     (js->clj %)
     (map (fn [rule]
-           {"label"    (get rule "title")
-            "quantity" (get rule "title")
-            "color"    (get-in rule ["symbolizers" 0 "Polygon" "fill"])
-            "opacity"  "1.0"})
+           (let [label (get rule "title")]
+             {"label"    label
+              "quantity" (if (= label "nodata")
+                           "-9999" ; FIXME: if we end up having different nodata values later on, we will need to do regex on the "filter" key from the returned JSON
+                           label)
+              "color"    (get-in rule ["symbolizers" 0 "Polygon" "fill"])
+              "opacity"  "1.0"}))
          %)))
 
 (defn- process-raster-colormap-legend
@@ -217,15 +220,16 @@
       (js->clj %)))
 
 (defn- process-legend!
-  "Populates the legend-list atom with the result of the request from GetLegendGraphic."
+  "Populates the legend-list atom with the result of the request from GetLegendGraphic.
+   Also populates the no-data-quantities atom with all quantities associated
+   with `nodata` points."
   [json-res]
-  (reset! !/legend-list
-          (as-> json-res %
-            (if (get-any-level-key :multi-param-layers?)
-              (process-multiparam-layer-legend %)
-              (process-raster-colormap-legend %))
-            (remove (fn [leg] (nil? (get leg "label"))) %)
-            (doall %))))
+  (!/set-state-legend-list! (as-> json-res %
+                              (if (get-any-level-key :multi-param-layers?)
+                                (process-multiparam-layer-legend %)
+                                (process-raster-colormap-legend %))
+                              (remove (fn [leg] (nil? (get leg "label"))) %)
+                              (doall %))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn- get-legend!
@@ -385,7 +389,7 @@
 
 (defn select-param! [val & keys]
   (swap! !/*params assoc-in (cons @!/*forecast keys) val)
-  (reset! !/legend-list [])
+  (!/set-state-legend-list! [])
   (reset! !/last-clicked-info nil)
   (let [main-key (first keys)]
     (when (= main-key :fire-name)
@@ -399,7 +403,7 @@
 
 (defn select-forecast! [key]
   (go
-    (reset! !/legend-list [])
+    (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))

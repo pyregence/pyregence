@@ -860,9 +860,14 @@
 
     :render
     (fn [_]
-      [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
-       [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
-        (str (:band (get @!/last-clicked-info @!/*layer-idx)) (u/clean-units units))]])}))
+      (let [cleaned-last-clicked-info (u/replace-no-data-nil @!/last-clicked-info
+                                                             @!/no-data-quantities)
+            current-point             (nth cleaned-last-clicked-info @!/*layer-idx)]
+        [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
+         [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
+          (if (some? (:band current-point))
+            (str (:band current-point) (u/clean-units units))
+            "No info available for this timestep.")]]))}))
 
 (defn- vega-information [box-height box-width select-layer! units cur-hour]
   (r/with-let [info-height (r/atom 0)]
@@ -933,12 +938,12 @@
         (let [has-point?    (mb/get-overlay-center)
               single-point? (number? @!/last-clicked-info)
               no-info?      (if single-point?
-                              (some (fn [legend-entry]
-                                      (and
-                                       (= (legend-entry "quantity") (str @!/last-clicked-info))
-                                       (= (legend-entry "label") "nodata")))
-                                    @!/legend-list)
-                              (empty? @!/last-clicked-info))]
+                              (contains? @!/no-data-quantities (str @!/last-clicked-info))
+                              (or (empty? @!/last-clicked-info)
+                                  (->> @!/last-clicked-info
+                                    (map (fn [entry]
+                                           (contains? @!/no-data-quantities (str (:band entry)))))
+                                    (every? true?))))]
           (cond
             (not has-point?)
             [loading-cover
