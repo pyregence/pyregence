@@ -29,10 +29,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def common-underlays
-  {:us-buildings    {:enabled?   #(feature-enabled? :structures)
-                     :opt-label  "Structures"
-                     :z-index    104
-                     :filter-set #{"fire-detections" "us-buildings"}}})
+  {:us-buildings    {:enabled?      #(feature-enabled? :structures)
+                     :opt-label     "Structures"
+                     :z-index       104
+                     :filter-set    #{"fire-detections" "us-buildings"}
+                     :geoserver-key :pyrecast}})
 
 (def near-term-forecast-underlays
   {:nifs-perimeters {:opt-label     "NIFS Perimeters"
@@ -51,11 +52,11 @@
                      :z-index       100
                      :filter-set    #{"fire-detections" "goes16-rgb"}
                      :geoserver-key :pyrecast}
-   :trans-nve       {:opt-label     "Trans NVE"
+   :trans-nve       {:opt-label     "Transmission Lines (NVE)"
                      :z-index       106
                      :filter-set    #{"nve-trans" "psps-static"}
                      :geoserver-key :psps}
-   :dist-nve        {:opt-label     "Dist NVE"
+   :dist-nve        {:opt-label     "Distribution Lines (NVE)"
                      :z-index       105
                      :filter-set    #{"nve-dist" "psps-static"}
                      :geoserver-key :psps}})
@@ -391,14 +392,14 @@
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
-   :psps-zonal   {:opt-label           "PSPS Zones"
+   :psps-zonal   {:opt-label           "PSPS"
                   :filter              "psps-zonal"
                   :geoserver-key       :psps
                   :underlays           (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend?     true
                   :time-slider?        true
                   :multi-param-layers? true
-                  :hover-text          "PSPS Zone test"
+                  :hover-text          "Public Safety Power Shutoffs (PSPS) zonal statistics."
                   :params              {:quantity   {:opt-label  "Zonal Quantity"
                                                      :hover-text [:p {:style {:margin-bottom "0"}}
                                                                   "Public Safety Power Shutoffs (PSPS) Zonal Quantity. Options include:"

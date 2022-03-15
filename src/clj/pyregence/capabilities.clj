@@ -36,8 +36,7 @@
 
 ;;; Layers
 
-; FIXME: Think of a better name for this function since it's not only used for risk layers.
-(defn- split-risk-layer-name
+(defn- split-risk-weather-psps-layer-name
   "Gets information about a risk, weather, or PSPS layer based on the layer's name."
   [name-string]
   (let [[workspace layer]           (str/split name-string #":")
@@ -153,7 +152,7 @@
                             merge-fn  #(merge % {:layer full-name :extent coords})]
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
-                          (merge-fn (split-risk-layer-name full-name))
+                          (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
