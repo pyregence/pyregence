@@ -222,7 +222,7 @@
       (update-layer! :name name)
       name)))
 
-(defn optional-layer [opt-label filter-set id]
+(defn optional-layer [opt-label filter-set id geoserver-key]
   (r/with-let [show? (r/atom false)]
     [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
      [:div {:style {:display "flex"}}
@@ -232,11 +232,11 @@
                :checked   @show?
                :on-change #(go
                              (swap! show? not)
-                             (mb/set-visible-by-title! (<! (get-layer-name :pyrecast filter-set identity))
+                             (mb/set-visible-by-title! (<! (get-layer-name geoserver-key filter-set identity))
                                                        @show?))}]
       [:label {:for id} opt-label]]]))
 
-(defn optional-layers [underlays]
+(defn- optional-layers [underlays]
   (r/create-class
    {:component-did-mount
     (fn []
@@ -244,11 +244,11 @@
                                       (map (fn [[id v]] (assoc v :id id)))
                                       (sort-by :z-index)
                                       (reverse))]
-        (let [{:keys [filter-set z-index]} (first sorted-underlays)
-              layer-name (<! (get-layer-name :pyrecast filter-set identity))]
+        (let [{:keys [filter-set z-index geoserver-key]} (first sorted-underlays)
+              layer-name (<! (get-layer-name geoserver-key filter-set identity))]
           (mb/create-wms-layer! layer-name
                                 layer-name
-                                :pyrecast
+                                geoserver-key
                                 false
                                 z-index)
           (when-let [tail (seq (rest sorted-underlays))]
@@ -270,13 +270,14 @@
                                     :fill   ($/color-picker :font-color)})}
            [svg/help]]]]
         (doall
-         (map (fn [[key {:keys [opt-label filter-set enabled?]}]]
+         (map (fn [[key {:keys [opt-label filter-set enabled? geoserver-key]}]]
                 (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
                   ^{:key key}
                   [optional-layer
                    opt-label
                    filter-set
-                   key]))
+                   key
+                   geoserver-key]))
               underlays))]])}))
 
 (defn- $collapsible-button []
@@ -362,13 +363,13 @@
      :overflow-y      "auto"}
     {:pseudo {:last-child {:padding-bottom "0.75rem"}}}))
 
-(defn collapsible-panel [*params select-param!]
+(defn collapsible-panel [*params select-param! underlays]
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
                            (reset! *base-map id)
                            (mb/set-base-map-source! (get-in (c/base-map-options) [@*base-map :source])))]
     (reset! show-panel? (not @!/mobile?))
-    (fn [*params select-param!]
+    (fn [*params select-param! underlays]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @show-panel?)}
          [collapsible-panel-toggle]
@@ -395,7 +396,7 @@
            [collapsible-panel-section
             "optional-layers"
             [optional-layers
-             c/near-term-forecast-underlays]]
+             underlays]]
            [collapsible-panel-section
             "base-map"
             [panel-dropdown
@@ -860,9 +861,14 @@
 
     :render
     (fn [_]
-      [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
-       [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
-        (str (:band (get @!/last-clicked-info @!/*layer-idx)) (u/clean-units units))]])}))
+      (let [cleaned-last-clicked-info (u/replace-no-data-nil @!/last-clicked-info
+                                                             @!/no-data-quantities)
+            current-point             (nth cleaned-last-clicked-info @!/*layer-idx)]
+        [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
+         [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
+          (if (some? (:band current-point))
+            (str (:band current-point) (u/clean-units units))
+            "No info available for this timestep.")]]))}))
 
 (defn- vega-information [box-height box-width select-layer! units cur-hour]
   (r/with-let [info-height (r/atom 0)]
@@ -933,12 +939,12 @@
         (let [has-point?    (mb/get-overlay-center)
               single-point? (number? @!/last-clicked-info)
               no-info?      (if single-point?
-                              (some (fn [legend-entry]
-                                      (and
-                                       (= (legend-entry "quantity") (str @!/last-clicked-info))
-                                       (= (legend-entry "label") "nodata")))
-                                    @!/legend-list)
-                              (empty? @!/last-clicked-info))]
+                              (contains? @!/no-data-quantities (str @!/last-clicked-info))
+                              (or (empty? @!/last-clicked-info)
+                                  (->> @!/last-clicked-info
+                                    (map (fn [entry]
+                                           (contains? @!/no-data-quantities (str (:band entry)))))
+                                    (every? true?))))]
           (cond
             (not has-point?)
             [loading-cover

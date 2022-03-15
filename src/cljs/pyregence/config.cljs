@@ -28,28 +28,44 @@
 ;; WG3 Forecast
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def common-underlays
+  {:us-buildings    {:enabled?      #(feature-enabled? :structures)
+                     :opt-label     "Structures"
+                     :z-index       104
+                     :filter-set    #{"fire-detections" "us-buildings"}
+                     :geoserver-key :pyrecast}})
+
 (def near-term-forecast-underlays
-  {:us-buildings    {:enabled?   #(feature-enabled? :structures)
-                     :opt-label  "Structures"
-                     :z-index    104
-                     :filter-set #{"fire-detections" "us-buildings"}}
-   :nifs-perimeters {:opt-label  "NIFS Perimeters"
-                     :z-index    103
-                     :filter-set #{"fire-detections" "nifs-perimeters"}}
-   :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
-                     :z-index    102
-                     :filter-set #{"fire-detections" "viirs-timestamped"}}
-   :modis-hotspots  {:opt-label  "MODIS Hotspots"
-                     :z-index    101
-                     :filter-set #{"fire-detections" "modis-timestamped"}}
-   :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
-                     :z-index    100
-                     :filter-set #{"fire-detections" "goes16-rgb"}}})
+  {:nifs-perimeters {:opt-label     "NIFS Perimeters"
+                     :z-index       103
+                     :filter-set    #{"fire-detections" "nifs-perimeters"}
+                     :geoserver-key :pyrecast}
+   :viirs-hotspots  {:opt-label     "VIIRS Hotspots"
+                     :z-index       102
+                     :filter-set    #{"fire-detections" "viirs-timestamped"}
+                     :geoserver-key :pyrecast}
+   :modis-hotspots  {:opt-label     "MODIS Hotspots"
+                     :z-index       101
+                     :filter-set    #{"fire-detections" "modis-timestamped"}
+                     :geoserver-key :pyrecast}
+   :goes-imagery    {:opt-label     "Live satellite (GOES-16)"
+                     :z-index       100
+                     :filter-set    #{"fire-detections" "goes16-rgb"}
+                     :geoserver-key :pyrecast}
+   :trans-nve       {:opt-label     "Transmission Lines (NVE)"
+                     :z-index       106
+                     :filter-set    #{"nve-trans" "psps-static"}
+                     :geoserver-key :psps}
+   :dist-nve        {:opt-label     "Distribution Lines (NVE)"
+                     :z-index       105
+                     :filter-set    #{"nve-dist" "psps-static"}
+                     :geoserver-key :psps}})
 
 (def near-term-forecast-options
   {:fuels        {:opt-label     "Fuels"
                   :filter        "fuels"
                   :geoserver-key :pyrecast
+                  :underlays     (merge common-underlays near-term-forecast-underlays)
                   :time-slider?  false
                   :hover-text    "Layers related to fuel and potential fire behavior."
                   :params        {:model {:opt-label  "Source"
@@ -154,6 +170,7 @@
    :fire-weather {:opt-label       "Weather"
                   :filter          "fire-weather-forecast"
                   :geoserver-key   :pyrecast
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "8-day forecast of key parameters affecting wildfire behavior obtained from operational National Weather Service forecast models."
@@ -209,6 +226,7 @@
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
                   :geoserver-key   :pyrecast
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "5-day forecast of fire consequence maps. Every day over 500 million hypothetical fires are ignited across California to evaluate potential fire risk.\n"
@@ -301,6 +319,7 @@
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
                   :geoserver-key   :pyrecast
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true
@@ -373,14 +392,15 @@
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
-   :psps-zonal   {:opt-label           "PSPS Zones"
+   :psps-zonal   {:opt-label           "PSPS"
                   :filter              "psps-zonal"
                   :geoserver-key       :psps
+                  :underlays           (merge common-underlays near-term-forecast-underlays)
                   :allowed-orgs        5
                   :reverse-legend?     true
                   :time-slider?        true
                   :multi-param-layers? true
-                  :hover-text          "PSPS Zone test"
+                  :hover-text          "Public Safety Power Shutoffs (PSPS) zonal statistics."
                   :params              {:quantity   {:opt-label  "Zonal Quantity"
                                                      :hover-text [:p {:style {:margin-bottom "0"}}
                                                                   "Public Safety Power Shutoffs (PSPS) Zonal Quantity. Options include:"
@@ -458,6 +478,7 @@
   {:fire-scenarios {:opt-label       "Fire Scenarios"
                     :filter          "climate_FireSim"
                     :geoserver-key   :pyreclimate
+                    :underlays       common-underlays
                     :hover-text      "Wildfire scenario projections for area burned with varied emissions and population scenarios."
                     :reverse-legend? true
                     :block-info?     false
