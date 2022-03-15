@@ -376,7 +376,7 @@
    :psps-zonal   {:opt-label           "PSPS Zones"
                   :filter              "psps-zonal"
                   :geoserver-key       :psps
-                  :tab-restriction?    5
+                  :allowed-orgs        5
                   :reverse-legend?     true
                   :time-slider?        true
                   :multi-param-layers? true

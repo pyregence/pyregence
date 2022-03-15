@@ -488,9 +488,9 @@
                              (params->selected-options @!/options @!/*forecast params))
 
       (<! (select-forecast! @!/*forecast))
-      (reset! !/*org-list (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" user-id)))))
-      (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras)))))
-    (reset! !/loading? false)))
+      (reset! !/*user-org-list (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" user-id)))))
+      (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))
+      (reset! !/loading? false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -690,14 +690,13 @@
          [message-modal]
          [:div {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
           [:span {:style {:display "flex" :padding ".25rem 0"}}
-           (doall (map (fn [[key {:keys [tab-restriction? opt-label hover-text]}]]
-                         ^{:key key}
-                         (if (and (not (nil? tab-restriction?))
-                                  (not-any? (fn [{org-id :opt-id}]
-                                              (= org-id tab-restriction?))
-                                            @!/*org-list))
-                           nil
-
+           (doall (map (fn [[key {:keys [opt-label hover-text allowed-orgs]}]]
+                         (when (or (nil? allowed-orgs)
+                                   (and (some? allowed-orgs)
+                                        (some (fn [{org-id :opt-id}]
+                                                (= org-id allowed-orgs))
+                                              @!/*user-org-list)))
+                           ^{:key key}
                            [tool-tip-wrapper
                             hover-text
                             :top
