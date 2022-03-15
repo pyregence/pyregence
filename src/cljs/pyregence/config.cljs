@@ -396,7 +396,7 @@
                   :filter              "psps-zonal"
                   :geoserver-key       :psps
                   :underlays           (merge common-underlays near-term-forecast-underlays)
-                  :allowed-orgs        5
+                  :allowed-org         5
                   :reverse-legend?     true
                   :time-slider?        true
                   :multi-param-layers? true

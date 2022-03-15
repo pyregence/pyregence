@@ -32,6 +32,7 @@
                              (s/cat :forecast #{:fire-risk :active-fire :fire-weather}
                                     :params   #(= % :params)
                                     :etc      (s/+ keyword?))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -490,9 +491,8 @@
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
                              (params->selected-options @!/options @!/*forecast params))
-
       (<! (select-forecast! @!/*forecast))
-      (reset! !/*user-org-list (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" user-id)))))
+      (reset! !/user-org-list (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" user-id)))))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))
       (reset! !/loading? false))))
 
@@ -695,12 +695,11 @@
          [message-modal]
          [:div {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
           [:span {:style {:display "flex" :padding ".25rem 0"}}
-           (doall (map (fn [[key {:keys [opt-label hover-text allowed-orgs]}]]
-                         (when (or (nil? allowed-orgs)
-                                   (and (some? allowed-orgs)
-                                        (some (fn [{org-id :opt-id}]
-                                                (= org-id allowed-orgs))
-                                              @!/*user-org-list)))
+           (doall (map (fn [[key {:keys [opt-label hover-text allowed-org]}]]
+                         (when (or (nil? allowed-org)
+                                   (some (fn [{org-id :opt-id}]
+                                           (= org-id allowed-org))
+                                         @!/user-org-list))
                            ^{:key key}
                            [tool-tip-wrapper
                             hover-text
