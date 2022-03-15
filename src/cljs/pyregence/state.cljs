@@ -42,6 +42,10 @@
 ;; Miscellaneous State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce user-org-list
+  ^{:doc "For the currently logged in user, stores a list of all of the
+          organizations that they belong to."}
+  (r/atom []))
 (defonce animate?    (r/atom false))
 (defonce loading?    (r/atom true))
 (defonce mobile?     (r/atom false))
