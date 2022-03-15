@@ -36,7 +36,7 @@
 
 ;;; Layers
 
-(defn- split-risk-layer-name
+(defn- split-risk-weather-psps-layer-name
   "Gets information about a risk, weather, or PSPS layer based on the layer's name."
   [name-string]
   (let [[workspace layer]           (str/split name-string #":")
@@ -108,6 +108,19 @@
      :sim-time    (str year "0101_000000")
      :hour        (- (Integer/parseInt year) 1954)}))
 
+(defn- split-psps-underlays
+  "Gets information about a PSPS static layer based on its name."
+  [name-string]
+  (let [[workspace layer] (str/split name-string #":")
+        [forecast type]   (str/split workspace #"_")]
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    forecast
+     :type        type
+     :filter-set  #{forecast type}
+     :model-init  ""
+     :hour        0}))
+
 (defn process-layers!
   "Makes a call to GetCapabilities and uses regex on the resulting XML response
    to generate a vector of layer entries where each entry is a map. The info
@@ -139,7 +152,7 @@
                             merge-fn  #(merge % {:layer full-name :extent coords})]
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
-                          (merge-fn (split-risk-layer-name full-name))
+                          (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
@@ -153,7 +166,10 @@
                           (merge-fn (split-fuels full-name))
 
                           (re-matches #"climate_FireSim.*_\d{4}" full-name)
-                          (merge-fn (split-wg4-scenarios full-name))))))
+                          (merge-fn (split-wg4-scenarios full-name))
+
+                          (str/starts-with? full-name "psps-static")
+                          (merge-fn (split-psps-underlays full-name))))))
                    (vec)))
             xml)
       (apply concat xml)

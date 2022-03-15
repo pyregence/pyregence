@@ -222,7 +222,7 @@
       (update-layer! :name name)
       name)))
 
-(defn optional-layer [opt-label filter-set id]
+(defn optional-layer [opt-label filter-set id geoserver-key]
   (r/with-let [show? (r/atom false)]
     [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
      [:div {:style {:display "flex"}}
@@ -232,7 +232,7 @@
                :checked   @show?
                :on-change #(go
                              (swap! show? not)
-                             (mb/set-visible-by-title! (<! (get-layer-name :pyrecast filter-set identity))
+                             (mb/set-visible-by-title! (<! (get-layer-name geoserver-key filter-set identity))
                                                        @show?))}]
       [:label {:for id} opt-label]]]))
 
@@ -244,11 +244,11 @@
                                       (map (fn [[id v]] (assoc v :id id)))
                                       (sort-by :z-index)
                                       (reverse))]
-        (let [{:keys [filter-set z-index]} (first sorted-underlays)
-              layer-name (<! (get-layer-name :pyrecast filter-set identity))]
+        (let [{:keys [filter-set z-index geoserver-key]} (first sorted-underlays)
+              layer-name (<! (get-layer-name geoserver-key filter-set identity))]
           (mb/create-wms-layer! layer-name
                                 layer-name
-                                :pyrecast
+                                geoserver-key
                                 false
                                 z-index)
           (when-let [tail (seq (rest sorted-underlays))]
@@ -270,13 +270,14 @@
                                     :fill   ($/color-picker :font-color)})}
            [svg/help]]]]
         (doall
-         (map (fn [[key {:keys [opt-label filter-set enabled?]}]]
+         (map (fn [[key {:keys [opt-label filter-set enabled? geoserver-key]}]]
                 (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
                   ^{:key key}
                   [optional-layer
                    opt-label
                    filter-set
-                   key]))
+                   key
+                   geoserver-key]))
               underlays))]])}))
 
 (defn- $collapsible-button []
