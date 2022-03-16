@@ -272,11 +272,14 @@
                                                               [:br]
                                                               [:strong "Transmission Lines"]
                                                               " - Fires ignited in close proximity to overhead electrical transmission lines."]
-                                                 :options    {:all        {:opt-label    "Human-caused ignitions"
-                                                                           :filter       "all"}
-                                                              :tlines     {:opt-label    "Transmission lines"
-                                                                           :filter       "tlines"
-                                                                           :clear-point? true}}}
+                                                 :options    {:all    {:opt-label "Human-caused ignitions"
+                                                                       :filter    "all"}
+                                                              :tlines {:opt-label "Transmission lines"
+                                                                       :filter    "tlines"
+                                                                       :clear-point? true}
+                                                              :nve    {:opt-label     "NV Energy overhead lines"
+                                                                       :filter        "nve"
+                                                                       :geoserver-key :psps}}}
                                     :fuel       {:opt-label  "Fuel"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
