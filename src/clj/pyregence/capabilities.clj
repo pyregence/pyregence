@@ -159,7 +159,7 @@
                           (merge-fn (split-active-layer-name full-name))
 
                           (or (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
-                              (re-matches #"fire-detections.*:(fire_history|us-buildings).*" full-name))
+                              (re-matches #"fire-detections.*:(fire_history|us-buildings|us-transmission-lines).*" full-name))
                           (merge-fn (split-fire-detections full-name))
 
                           (str/starts-with? full-name "fuels")
