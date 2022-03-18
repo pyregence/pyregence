@@ -12,10 +12,19 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.map-controls :as mc]
+            [pyregence.components.collapsible-panel :refer [collapsible-panel]]
+            [pyregence.components.information-tool :refer [information-tool]]
+            [pyregence.components.legend-box :refer [legend-box]]
+            [pyregence.components.mouse-lng-lat :refer [mouse-lng-lat]]
+            [pyregence.components.match-drop-tool :refer [match-drop-tool]]
+            [pyregence.components.scale-bar :refer [scale-bar]]
+            [pyregence.components.time-slider :refer [time-slider]]
+            [pyregence.components.tool-bar :refer [tool-bar]]
+            [pyregence.components.camera-tool :refer [camera-tool]]
+            [pyregence.components.zoom-bar :refer [zoom-bar]]
             [pyregence.components.mapbox       :as mb]
             [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
-            [pyregence.components.common    :refer [radio tool-tip-wrapper]]
+            [pyregence.components.common    :refer [tool-tip-wrapper]]
             [pyregence.components.messaging :refer [message-box-modal
                                                     toast-message!]]
             [pyregence.components.svg-icons :refer [pin]]))
@@ -461,13 +470,13 @@
       :render
       (fn []
         [:div {:style ($control-layer)}
-         [mc/collapsible-panel
+         [collapsible-panel
           (get @!/*params @!/*forecast)
           select-param!]
          (when (aget @my-box "height")
            [:<>
             (when @!/show-info?
-              [mc/information-tool
+              [information-tool
                get-point-info!
                @my-box
                select-layer-by-hour!
@@ -476,25 +485,25 @@
                (get-current-layer-hour)
                #(set-show-info! false)])
             (when @!/show-match-drop?
-              [mc/match-drop-tool @my-box #(reset! !/show-match-drop? false) refresh-fire-names! user-id])
+              [match-drop-tool @my-box #(reset! !/show-match-drop? false) refresh-fire-names! user-id])
             (when @!/show-camera?
-              [mc/camera-tool @my-box #(reset! !/show-camera? false)])])
-         [mc/legend-box
+              [camera-tool @my-box #(reset! !/show-camera? false)])])
+         [legend-box
           (get-any-level-key :reverse-legend?)
           (get-any-level-key :time-slider?)
           (get-current-layer-key :units)]
-         [mc/tool-bar
+         [tool-bar
           set-show-info!
           user-id]
-         [mc/scale-bar (get-any-level-key :time-slider?)]
-         (when-not @!/mobile? [mc/mouse-lng-lat])
-         [mc/zoom-bar
+         [scale-bar (get-any-level-key :time-slider?)]
+         (when-not @!/mobile? [mouse-lng-lat])
+         [zoom-bar
           (get-current-layer-extent)
           (current-layer)
           create-share-link
           (get-any-level-key :time-slider?)]
          (when (get-any-level-key :time-slider?)
-           [mc/time-slider
+           [time-slider
             (get-current-layer-full-time)
             select-layer!
             select-time-zone!])])})))

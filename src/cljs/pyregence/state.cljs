@@ -24,7 +24,9 @@
 (defonce show-camera?       (r/atom false))
 (defonce show-fire-history? (r/atom false))
 (defonce show-info?         (r/atom false))
+(defonce show-legend?       (r/atom true))
 (defonce show-match-drop?   (r/atom false))
+(defonce show-panel?        (r/atom true))
 (defonce show-red-flag?     (r/atom false))
 (defonce show-utc?          (r/atom true))
 

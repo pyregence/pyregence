@@ -210,11 +210,16 @@
                     :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
-(defn- add-icon! [icon-id url]
+(defn- add-icon! [icon-id url & [colorize?]]
   (when-not (.hasImage @the-map icon-id)
     (.loadImage @the-map
                 url
-                (fn [_ img] (.addImage @the-map icon-id img #js {:sdf true})))))
+                (fn [_ img] (.addImage @the-map
+                                       icon-id
+                                       img
+                                       (if colorize?
+                                         #js {:sdf true}
+                                         #js {}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
