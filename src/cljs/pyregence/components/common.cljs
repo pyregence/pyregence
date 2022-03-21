@@ -11,7 +11,82 @@
             [pyregence.components.messaging :refer [toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI Styles
+;; Help
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn hs-str [hide?]
+  (if hide? "Hide" "Show"))
+
+(defn toggle-red-flag-layer!
+  "Toggle the red-flag warning layer"
+  []
+  (swap! !/show-red-flag? not)
+  (go
+    (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
+                   (:body)
+                   (js/JSON.parse))]
+      (if (empty? (.-features data))
+        (do
+          (toast-message! "There are no red flag warnings at this time.")
+          (reset! !/show-red-flag? false))
+        (when (and @!/show-red-flag? (not (mb/layer-exists? "red-flag")))
+          (mb/create-red-flag-layer! "red-flag" data)))))
+  (mb/set-visible-by-title! "red-flag" @!/show-red-flag?)
+  (mb/clear-popup! "red-flag"))
+
+(defn toggle-fire-history-layer!
+  "Toggles the fire history layer."
+  []
+  (swap! !/show-fire-history? not)
+  (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
+    (mb/create-fire-history-layer! "fire-history"
+                                   "fire-detections_fire-history%3Afire-history"
+                                   :pyrecast))
+  (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
+
+(defn- calc-tool-position [sibling-ref tool-ref arrow-position show?]
+  (if (and tool-ref show?)
+    (let [sibling-box     (.getBoundingClientRect sibling-ref)
+          tool-box        (.getBoundingClientRect tool-ref)
+          tool-width      (aget tool-box "width")
+          tool-height     (aget tool-box "height")
+          max-x           (- (.-innerWidth js/window) tool-width 6)
+          max-y           (- (.-innerHeight js/window) tool-height 6)
+          [arrow-x tip-x] (condp #(%1 %2) arrow-position
+                            #{:top :bottom}
+                            (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
+                              [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
+
+                            #{:left}
+                            (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
+                              [(+ sibling-x 4.7) (+ sibling-x 13)])
+
+                            (let [sibling-x (aget sibling-box "x")]
+                              [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
+          [arrow-y tip-y] (condp #(%1 %2) arrow-position
+                            #{:left :right}
+                            (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
+                              [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
+
+                            #{:top}
+                            (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
+                              [(+ sibling-y 3) (+ sibling-y 11)])
+
+                            (let [sibling-y (aget sibling-box "y")]
+                              [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
+      [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y]) ; There is a 56px y offset for the header
+    [-1000 -1000 -1000 -1000]))
+
+(defn- sibling-wrapper [sibling sibling-ref]
+  (r/create-class
+   {:component-did-mount
+    (fn [this] (reset! sibling-ref (rd/dom-node this)))
+
+    :reagent-render
+    (fn [sibling _] sibling)}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $labeled-input []
@@ -63,90 +138,8 @@
                        "opacity 300ms ease-out, left 0s ease-out 300ms, top 0s ease-out 300ms")
    :z-index          200})
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Help
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn hs-str [hide?]
-  (if hide? "Hide" "Show"))
-
-(defn toggle-red-flag-layer!
-  "Toggle the red-flag warning layer"
-  []
-  (swap! !/show-red-flag? not)
-  (go
-    (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
-                   (:body)
-                   (js/JSON.parse))]
-      (if (empty? (.-features data))
-        (do
-          (toast-message! "There are no red flag warnings at this time.")
-          (reset! !/show-red-flag? false))
-        (when (and @!/show-red-flag? (not (mb/layer-exists? "red-flag")))
-          (mb/create-red-flag-layer! "red-flag" data)))))
-  (mb/set-visible-by-title! "red-flag" @!/show-red-flag?)
-  (mb/clear-popup! "red-flag"))
-
-(defn toggle-fire-history-layer!
-  "Toggles the fire history layer."
-  []
-  (swap! !/show-fire-history? not)
-  (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
-    (mb/create-fire-history-layer! "fire-history"
-                                   "fire-detections_fire-history%3Afire-history"
-                                   :pyrecast))
-  (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Private Functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- calc-tool-position [sibling-ref tool-ref arrow-position show?]
-  (if (and tool-ref show?)
-    (let [sibling-box     (.getBoundingClientRect sibling-ref)
-          tool-box        (.getBoundingClientRect tool-ref)
-          tool-width      (aget tool-box "width")
-          tool-height     (aget tool-box "height")
-          max-x           (- (.-innerWidth js/window) tool-width 6)
-          max-y           (- (.-innerHeight js/window) tool-height 6)
-          [arrow-x tip-x] (condp #(%1 %2) arrow-position
-                            #{:top :bottom}
-                            (let [sibling-x (+ (aget sibling-box "x") (/ (aget sibling-box "width") 2))]
-                              [(- sibling-x 8) (- sibling-x (/ tool-width 2))])
-
-                            #{:left}
-                            (let [sibling-x (+ (aget sibling-box "x") (aget sibling-box "width"))]
-                              [(+ sibling-x 4.7) (+ sibling-x 13)])
-
-                            (let [sibling-x (aget sibling-box "x")]
-                              [(- sibling-x 22.6) (- sibling-x tool-width 14)]))
-          [arrow-y tip-y] (condp #(%1 %2) arrow-position
-                            #{:left :right}
-                            (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
-                              [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
-
-                            #{:top}
-                            (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
-                              [(+ sibling-y 3) (+ sibling-y 11)])
-
-                            (let [sibling-y (aget sibling-box "y")]
-                              [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
-      [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y]) ; There is a 56px y offset for the header
-    [-1000 -1000 -1000 -1000]))
-
-(defn- sibling-wrapper [sibling sibling-ref]
-  (r/create-class
-   {:component-did-mount
-    (fn [this] (reset! sibling-ref (rd/dom-node this)))
-
-    :reagent-render
-    (fn [sibling _] sibling)}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI Components
+;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn radio

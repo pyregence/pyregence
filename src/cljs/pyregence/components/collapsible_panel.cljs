@@ -14,6 +14,18 @@
             [pyregence.components.common         :refer [hs-str tool-tip-wrapper]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Help
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-layer-name [geoserver-key filter-set update-layer!]
+  (go
+    (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
+                                                              geoserver-key
+                                                              (pr-str filter-set)))))]
+      (update-layer! :name name)
+      name)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -54,18 +66,6 @@
      :justify-content "space-between"
      :overflow-y      "auto"}
     {:pseudo {:last-child {:padding-bottom "0.75rem"}}}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Help
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn get-layer-name [geoserver-key filter-set update-layer!]
-  (go
-    (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
-                                                              geoserver-key
-                                                              (pr-str filter-set)))))]
-      (update-layer! :name name)
-      name)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
@@ -143,7 +143,6 @@
                    filter-set
                    key]))
               underlays))]])}))
-
 
 (defn- collapsible-button []
   [:button

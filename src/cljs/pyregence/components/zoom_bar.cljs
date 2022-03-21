@@ -1,7 +1,6 @@
 (ns pyregence.components.zoom-bar
   (:require [reagent.core        :as r]
             [herb.core           :refer [<class]]
-            ;; [clojure.core.async  :refer [<! go go-loop put! timeout chan]]
             [pyregence.state     :as !]
             [pyregence.styles    :as $]
             [pyregence.utils     :as u]
