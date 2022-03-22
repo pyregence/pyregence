@@ -51,15 +51,7 @@
    :goes-imagery    {:opt-label     "Live satellite (GOES-16)"
                      :z-index       100
                      :filter-set    #{"fire-detections" "goes16-rgb"}
-                     :geoserver-key :pyrecast}
-   :trans-nve       {:opt-label     "Transmission Lines (NVE)"
-                     :z-index       106
-                     :filter-set    #{"nve-trans" "psps-static"}
-                     :geoserver-key :psps}
-   :dist-nve        {:opt-label     "Distribution Lines (NVE)"
-                     :z-index       105
-                     :filter-set    #{"nve-dist" "psps-static"}
-                     :geoserver-key :psps}})
+                     :geoserver-key :pyrecast}})
 
 (def near-term-forecast-options
   {:fuels        {:opt-label     "Fuels"
