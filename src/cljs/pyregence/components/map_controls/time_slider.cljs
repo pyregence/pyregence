@@ -28,7 +28,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn time-slider [layer-full-time select-layer! select-time-zone!]
-  (r/with-let [*speed          (r/atom 1)
+  (r/with-let [*speed          (r/atom 2)
                cycle-layer!    (fn [change]
                                  (select-layer! (mod (+ change @!/*layer-idx) (count @!/param-layers))))
                loop-animation! (fn la []
