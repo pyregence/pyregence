@@ -31,8 +31,8 @@
 (s/def ::opt-label     string?)
 (s/def ::units         string?)
 (s/def ::z-index       int?)
-(s/def ::layer-config  (s/keys :req-un [::opt-label]
-                               :opt-un [::clear-point? ::filter ::filter-set ::geoserver-key ::units ::z-index]))
+(s/def ::layer-config  (s/keys :req-un [::opt-label (or ::filter ::filter-set)]
+                               :opt-un [::clear-point? ::geoserver-key ::units ::z-index]))
 (s/def ::layer-path    (s/and (s/coll-of keyword? :kind vector? :min-count 2)
                               (s/cat :forecast #{:fuels :fire-weather :fire-risk :active-fire :psps-zonal}
                                      :second   #(or (= % :params)
