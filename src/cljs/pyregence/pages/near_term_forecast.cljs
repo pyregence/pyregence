@@ -33,9 +33,9 @@
 (s/def ::polygon-layer? boolean?)
 (s/def ::units          string?)
 (s/def ::z-index        int?)
-(s/def ::layer-config  (s/keys :req-un [::opt-label]
-                               :opt-un [::clear-point? ::filter ::filter-set ::geoserver-key
-                                        ::line-layer? ::polygon-layer? ::units ::z-index]))
+(s/def ::layer-config  (s/keys :req-un [::opt-label (or ::filter ::filter-set)]
+                               :opt-un [::clear-point? ::geoserver-key ::line-layer?
+                                        ::polygon-layer? ::units ::z-index]))
 (s/def ::layer-path    (s/and (s/coll-of keyword? :kind vector? :min-count 2)
                               (s/cat :forecast #{:fuels :fire-weather :fire-risk :active-fire :psps-zonal}
                                      :second   #(or (= % :params)
@@ -100,7 +100,9 @@
   "Returns the name of the CSS style for a PSPS layer."
   []
   (when (= @!/*forecast :psps-zonal)
-      (str (name (get-in @!/*params [:psps-zonal :quantity]))
+      (str (name (get-in @!/*params [:psps-zonal :model]))
+           "-"
+           (name (get-in @!/*params [:psps-zonal :quantity]))
            "-"
            (name (get-in @!/*params [:psps-zonal :statistic]))
            "-poly-css")))
@@ -109,8 +111,9 @@
   "Returns the name of the point info column for a PSPS layer."
   []
   (when (= @!/*forecast :psps-zonal)
-      (str (str/replace
-            (name (get-in @!/*params [:psps-zonal :quantity])) #"-" "_")
+      (str (name (get-in @!/*params [:psps-zonal :model]))
+           "_"
+           (name (get-in @!/*params [:psps-zonal :quantity]))
            "_"
            (name (get-in @!/*params [:psps-zonal :statistic])))))
 
