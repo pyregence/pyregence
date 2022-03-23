@@ -7,11 +7,11 @@
             [pyregence.utils    :as u]
             [pyregence.styles   :as $]
             [pyregence.config   :as c]
-            [pyregence.components.mapbox      :as mb]
-            [pyregence.components.svg-icons   :as svg]
-            [pyregence.components.panel-dropdown :refer [panel-dropdown]]
-            [pyregence.components.tool-button    :refer [tool-button]]
-            [pyregence.components.common         :refer [hs-str tool-tip-wrapper]]))
+            [pyregence.components.mapbox    :as mb]
+            [pyregence.components.svg-icons :as svg]
+            [pyregence.components.common    :refer [hs-str tool-tip-wrapper]]
+            [pyregence.components.map-controls.panel-dropdown :refer [panel-dropdown]]
+            [pyregence.components.map-controls.tool-button    :refer [tool-button]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Help

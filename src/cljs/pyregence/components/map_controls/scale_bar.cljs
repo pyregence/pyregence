@@ -3,7 +3,7 @@
             [pyregence.state     :as !]
             [pyregence.styles    :as $]
             [pyregence.geo-utils :as g]
-            [pyregence.components.mapbox    :as mb]))
+            [pyregence.components.mapbox :as mb]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles

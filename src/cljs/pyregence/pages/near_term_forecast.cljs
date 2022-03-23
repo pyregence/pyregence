@@ -12,22 +12,21 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.collapsible-panel :refer [collapsible-panel]]
-            [pyregence.components.information-tool :refer [information-tool]]
-            [pyregence.components.legend-box :refer [legend-box]]
-            [pyregence.components.mouse-lng-lat :refer [mouse-lng-lat]]
-            [pyregence.components.match-drop-tool :refer [match-drop-tool]]
-            [pyregence.components.scale-bar :refer [scale-bar]]
-            [pyregence.components.time-slider :refer [time-slider]]
-            [pyregence.components.tool-bar :refer [tool-bar]]
-            [pyregence.components.camera-tool :refer [camera-tool]]
-            [pyregence.components.zoom-bar :refer [zoom-bar]]
-            [pyregence.components.mapbox       :as mb]
+            [pyregence.components.mapbox    :as mb]
             [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
             [pyregence.components.common    :refer [tool-tip-wrapper]]
-            [pyregence.components.messaging :refer [message-box-modal
-                                                    toast-message!]]
-            [pyregence.components.svg-icons :refer [pin]]))
+            [pyregence.components.messaging :refer [message-box-modal toast-message!]]
+            [pyregence.components.svg-icons :refer [pin]]
+            [pyregence.components.map-controls.camera-tool       :refer [camera-tool]]
+            [pyregence.components.map-controls.collapsible-panel :refer [collapsible-panel]]
+            [pyregence.components.map-controls.information-tool  :refer [information-tool]]
+            [pyregence.components.map-controls.legend-box        :refer [legend-box]]
+            [pyregence.components.map-controls.match-drop-tool   :refer [match-drop-tool]]
+            [pyregence.components.map-controls.mouse-lng-lat     :refer [mouse-lng-lat]]
+            [pyregence.components.map-controls.scale-bar         :refer [scale-bar]]
+            [pyregence.components.map-controls.time-slider       :refer [time-slider]]
+            [pyregence.components.map-controls.tool-bar          :refer [tool-bar]]
+            [pyregence.components.map-controls.zoom-bar          :refer [zoom-bar]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec

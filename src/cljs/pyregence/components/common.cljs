@@ -4,11 +4,8 @@
             [reagent.core       :as r]
             [reagent.dom        :as rd]
             [clojure.core.async :refer [go <! timeout]]
-            [pyregence.state    :as !]
             [pyregence.styles   :as $]
-            [pyregence.utils    :as u]
-            [pyregence.components.mapbox    :as mb]
-            [pyregence.components.messaging :refer [toast-message!]]))
+            [pyregence.utils    :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Help
@@ -16,33 +13,6 @@
 
 (defn hs-str [hide?]
   (if hide? "Hide" "Show"))
-
-(defn toggle-red-flag-layer!
-  "Toggle the red-flag warning layer"
-  []
-  (swap! !/show-red-flag? not)
-  (go
-    (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
-                   (:body)
-                   (js/JSON.parse))]
-      (if (empty? (.-features data))
-        (do
-          (toast-message! "There are no red flag warnings at this time.")
-          (reset! !/show-red-flag? false))
-        (when (and @!/show-red-flag? (not (mb/layer-exists? "red-flag")))
-          (mb/create-red-flag-layer! "red-flag" data)))))
-  (mb/set-visible-by-title! "red-flag" @!/show-red-flag?)
-  (mb/clear-popup! "red-flag"))
-
-(defn toggle-fire-history-layer!
-  "Toggles the fire history layer."
-  []
-  (swap! !/show-fire-history? not)
-  (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
-    (mb/create-fire-history-layer! "fire-history"
-                                   "fire-detections_fire-history%3Afire-history"
-                                   :pyrecast))
-  (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
 
 (defn- calc-tool-position [sibling-ref tool-ref arrow-position show?]
   (if (and tool-ref show?)

@@ -1,7 +1,7 @@
 (ns pyregence.components.map-controls.legend-box
-  (:require [pyregence.state     :as !]
-            [pyregence.styles    :as $]
-            [pyregence.utils     :as u]))
+  (:require [pyregence.state  :as !]
+            [pyregence.styles :as $]
+            [pyregence.utils  :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles

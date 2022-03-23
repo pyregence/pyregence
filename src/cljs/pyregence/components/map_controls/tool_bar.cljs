@@ -1,25 +1,51 @@
 (ns pyregence.components.map-controls.tool-bar
-  (:require [pyregence.state     :as !]
-            [pyregence.styles    :as $]
-            [pyregence.config    :as c]
-            [pyregence.components.common      :refer [tool-tip-wrapper hs-str toggle-red-flag-layer! toggle-fire-history-layer!]]
-            [pyregence.components.tool-button :refer [tool-button]]))
+  (:require [clojure.core.async :refer [<! go]]
+            [pyregence.state    :as !]
+            [pyregence.styles   :as $]
+            [pyregence.utils    :as u]
+            [pyregence.config   :as c]
+            [pyregence.components.mapbox    :as mb]
+            [pyregence.components.messaging :refer [toast-message!]]
+            [pyregence.components.common    :refer [tool-tip-wrapper hs-str]]
+            [pyregence.components.map-controls.tool-button :refer [tool-button]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Styles
+;; Help
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $tool-bar []
-  {:display        "flex"
-   :flex-direction "column"
-   :right          "16px"})
+(defn toggle-red-flag-layer!
+  "Toggle the red-flag warning layer"
+  []
+  (swap! !/show-red-flag? not)
+  (go
+    (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
+                   (:body)
+                   (js/JSON.parse))]
+      (if (empty? (.-features data))
+        (do
+          (toast-message! "There are no red flag warnings at this time.")
+          (reset! !/show-red-flag? false))
+        (when (and @!/show-red-flag? (not (mb/layer-exists? "red-flag")))
+          (mb/create-red-flag-layer! "red-flag" data)))))
+  (mb/set-visible-by-title! "red-flag" @!/show-red-flag?)
+  (mb/clear-popup! "red-flag"))
+
+(defn toggle-fire-history-layer!
+  "Toggles the fire history layer."
+  []
+  (swap! !/show-fire-history? not)
+  (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
+    (mb/create-fire-history-layer! "fire-history"
+                                   "fire-detections_fire-history%3Afire-history"
+                                   :pyrecast))
+  (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn tool-bar [set-show-info! user-id]
-  [:div#tool-bar {:style ($/combine $/tool $tool-bar {:top "16px"})}
+  [:div#tool-bar {:style ($/combine $/tool $/tool-bar {:top "16px"})}
    (->> [(when-not @!/mobile?
            [:info
             (str (hs-str @!/show-info?) " point information")

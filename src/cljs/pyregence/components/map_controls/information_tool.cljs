@@ -1,4 +1,4 @@
-(ns pyregence.components.information-tool
+(ns pyregence.components.map-controls.information-tool
   (:require  [reagent.core     :as r]
              [reagent.dom      :as rd]
              [pyregence.state  :as !]

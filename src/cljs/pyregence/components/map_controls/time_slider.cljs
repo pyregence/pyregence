@@ -4,9 +4,8 @@
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
             [pyregence.config :as c]
-            [pyregence.components.common         :refer [radio tool-tip-wrapper]]
-            [pyregence.components.panel-dropdown :refer [$dropdown]]
-            [pyregence.components.tool-button    :refer [tool-button]]))
+            [pyregence.components.common :refer [radio tool-tip-wrapper]]
+            [pyregence.components.map-controls.tool-button :refer [tool-button]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -66,7 +65,7 @@
        :bottom
        [tool-button :next-button #(cycle-layer! 1)]]]
      (when-not @!/mobile?
-       [:select {:style     ($/combine $dropdown {:padding "0 0.5rem" :width "5rem"})
+       [:select {:style     ($/combine $/dropdown {:padding "0 0.5rem" :width "5rem"})
                  :value     (or @*speed 1)
                  :on-change #(reset! *speed (u/input-int-value %))}
         (map-indexed (fn [id {:keys [opt-label]}]

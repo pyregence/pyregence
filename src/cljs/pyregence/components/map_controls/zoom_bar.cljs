@@ -1,15 +1,14 @@
 (ns pyregence.components.map-controls.zoom-bar
-  (:require [reagent.core        :as r]
-            [herb.core           :refer [<class]]
-            [pyregence.state     :as !]
-            [pyregence.styles    :as $]
-            [pyregence.utils     :as u]
-            [pyregence.components.mapbox    :as mb]
-            [pyregence.components.help      :as h]
-            [pyregence.components.common           :refer [tool-tip-wrapper]]
-            [pyregence.components.tool-button      :refer [tool-button]]
-            [pyregence.components.tool-bar         :refer [$tool-bar]]
-            [pyregence.components.messaging        :refer [set-message-box-content!]]))
+  (:require [reagent.core     :as r]
+            [herb.core        :refer [<class]]
+            [pyregence.state  :as !]
+            [pyregence.styles :as $]
+            [pyregence.utils  :as u]
+            [pyregence.components.mapbox :as mb]
+            [pyregence.components.help   :as h]
+            [pyregence.components.common    :refer [tool-tip-wrapper]]
+            [pyregence.components.messaging :refer [set-message-box-content!]]
+            [pyregence.components.map-controls.tool-button :refer [tool-button]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Help
@@ -17,7 +16,6 @@
 
 (defn ed-str [enabled?]
   (if enabled? "Disable" "Enable"))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Share Tool
@@ -71,7 +69,7 @@
       (reset! minZoom min)
       (reset! maxZoom max))
     (mb/add-map-zoom-end! #(reset! *zoom %))
-    [:div#zoom-bar {:style ($/combine $/tool $tool-bar {:bottom (if (and @!/mobile? time-slider?) "90px" "36px")})}
+    [:div#zoom-bar {:style ($/combine $/tool $/tool-bar {:bottom (if (and @!/mobile? time-slider?) "90px" "36px")})}
      (map-indexed (fn [i [icon hover-text on-click]]
                     ^{:key i} [tool-tip-wrapper
                                hover-text

@@ -7,8 +7,8 @@
             [pyregence.utils    :as u]
             [pyregence.styles   :as $]
             [pyregence.config   :as c]
+            [pyregence.components.mapbox           :as mb]
             [pyregence.components.common           :refer [labeled-input input-hour limited-date-picker]]
-            [pyregence.components.mapbox            :as mb]
             [pyregence.components.messaging        :refer [set-message-box-content!]]
             [pyregence.components.resizable-window :refer [resizable-window]]))
 
