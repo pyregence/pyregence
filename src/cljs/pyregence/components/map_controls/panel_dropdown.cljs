@@ -1,4 +1,4 @@
-(ns pyregence.components.panel-dropdown
+(ns pyregence.components.map-controls.panel-dropdown
   (:require  [clojure.string     :as str]
              [reagent.dom.server :as rs]
              [pyregence.utils    :as u]

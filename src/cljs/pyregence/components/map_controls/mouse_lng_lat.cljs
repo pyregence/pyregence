@@ -1,4 +1,4 @@
-(ns pyregence.components.mouse-lng-lat
+(ns pyregence.components.map-controls.mouse-lng-lat
   (:require [reagent.core        :as r]
             [clojure.pprint      :refer [cl-format]]
             [pyregence.styles    :as $]

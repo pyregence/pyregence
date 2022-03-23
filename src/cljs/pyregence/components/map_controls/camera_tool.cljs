@@ -1,4 +1,4 @@
-(ns pyregence.components.camera-tool
+(ns pyregence.components.map-controls.camera-tool
   (:require [reagent.core       :as r]
             [herb.core          :refer [<class]]
             [clojure.edn        :as edn]

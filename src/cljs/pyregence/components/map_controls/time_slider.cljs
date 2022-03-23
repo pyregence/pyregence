@@ -1,4 +1,4 @@
-(ns pyregence.components.time-slider
+(ns pyregence.components.map-controls.time-slider
   (:require [reagent.core     :as r]
             [pyregence.state  :as !]
             [pyregence.styles :as $]

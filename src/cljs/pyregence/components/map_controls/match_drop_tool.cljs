@@ -1,4 +1,4 @@
-(ns pyregence.components.match-drop-tool
+(ns pyregence.components.map-controls.match-drop-tool
   (:require [reagent.core :as r]
             [herb.core          :refer [<class]]
             [clojure.edn        :as edn]

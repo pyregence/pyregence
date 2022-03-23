@@ -1,4 +1,4 @@
-(ns pyregence.components.scale-bar
+(ns pyregence.components.map-controls.scale-bar
   (:require [reagent.core        :as r]
             [pyregence.state     :as !]
             [pyregence.styles    :as $]

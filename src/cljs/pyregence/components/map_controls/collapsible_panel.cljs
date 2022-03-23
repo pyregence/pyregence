@@ -1,4 +1,4 @@
-(ns pyregence.components.collapsible-panel
+(ns pyregence.components.map-controls.collapsible-panel
   (:require [reagent.core       :as r]
             [herb.core          :refer [<class]]
             [clojure.edn        :as edn]

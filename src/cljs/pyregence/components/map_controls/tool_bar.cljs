@@ -1,4 +1,4 @@
-(ns pyregence.components.tool-bar
+(ns pyregence.components.map-controls.tool-bar
   (:require [pyregence.state     :as !]
             [pyregence.styles    :as $]
             [pyregence.config    :as c]

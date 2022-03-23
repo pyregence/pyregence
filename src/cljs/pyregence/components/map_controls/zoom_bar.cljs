@@ -1,4 +1,4 @@
-(ns pyregence.components.zoom-bar
+(ns pyregence.components.map-controls.zoom-bar
   (:require [reagent.core        :as r]
             [herb.core           :refer [<class]]
             [pyregence.state     :as !]
