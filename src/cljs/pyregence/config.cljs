@@ -751,10 +751,11 @@
 ;; Scroll speeds for time slider
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def speeds [{:opt-label ".5x" :delay 2000}
-             {:opt-label "1x"  :delay 1000}
-             {:opt-label "2x"  :delay 500}
-             {:opt-label "5x"  :delay 200}])
+(def speeds [{:opt-label ".25x" :delay 4000}
+             {:opt-label ".5x"  :delay 2000}
+             {:opt-label "1x"   :delay 1000}
+             {:opt-label "2x"   :delay 500}
+             {:opt-label "5x"   :delay 200}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Match Drop Configuration

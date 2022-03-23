@@ -2,8 +2,9 @@
   (:require-macros [herb.core :refer [defglobal]]
                    pyregence.herb-patch)
   (:require herb.runtime
-            [reagent.core   :as r]
-            [clojure.string :as str]))
+            [reagent.dom.server :as rs]
+            [clojure.string     :as str]
+            [pyregence.components.svg-icons :as svg]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -384,3 +385,34 @@
    :justify-content  "space-between"
    :padding          ".25rem .7rem"
    :width            "100%"})
+
+(defn dropdown
+  "A shortcut for styling a dropdown."
+  []
+  (let [arrow (-> (color-picker :font-color)
+                  (svg/dropdown-arrow)
+                  (rs/render-to-string)
+                  (str/replace "\"" "'"))]
+    {:-moz-appearance     "none"
+     :-webkit-appearance  "none"
+     :appearance          "none"
+     :background-color    (color-picker :bg-color)
+     :background-image    (str "url(\"data:image/svg+xml;utf8," arrow "\")")
+     :background-position "right .75rem center"
+     :background-repeat   "no-repeat"
+     :background-size     "1rem 0.75rem"
+     :border-color        (color-picker :border-color)
+     :border-radius       "2px"
+     :border-size         "1px"
+     :border-width        "dashed"
+     :color               (color-picker :font-color)
+     :font-family         "inherit"
+     :height              "1.9rem"
+     :padding             ".2rem .3rem"}))
+
+(defn tool-bar
+  "A shortcut for defining a common tool-bar style"
+  []
+  {:display        "flex"
+   :flex-direction "column"
+   :right          "16px"})
