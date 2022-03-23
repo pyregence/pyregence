@@ -646,7 +646,7 @@
                    :new-layers  new-layers)))
 
 (defn create-wms-layer!
-  "Adds WMS layer to the map."
+  "Adds WMS layer to the map. This is currently only used to add optional layers to the map."
   [id source geoserver-key visible? & [z-index]]
   (when id
     (if (layer-exists? id)

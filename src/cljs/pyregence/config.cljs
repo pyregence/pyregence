@@ -41,14 +41,6 @@
                      :z-index       107
                      :filter-set    #{"fire-detections" "us-transmission-lines"}
                      :geoserver-key :pyrecast}
-   :trans-nve       {:opt-label     "Transmission Lines (NVE)"
-                     :z-index       106
-                     :filter-set    #{"nve-trans" "psps-static"}
-                     :geoserver-key :psps}
-   :dist-nve        {:opt-label     "Distribution Lines (NVE)"
-                     :z-index       105
-                     :filter-set    #{"nve-dist" "psps-static"}
-                     :geoserver-key :psps}
    :nifs-perimeters {:opt-label     "NIFS Perimeters"
                      :z-index       103
                      :filter-set    #{"fire-detections" "nifs-perimeters"}
