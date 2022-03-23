@@ -241,9 +241,10 @@
                                                               [:br]
                                                               [:strong "Fire Volume"]
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
-                                                 :options    {:times-burned {:opt-label "Relative burn probability"
-                                                                             :filter    "times-burned"
-                                                                             :units     "Times"}
+                                                 :options    {:times-burned {:opt-label     "Relative burn probability"
+                                                                             :filter        "times-burned"
+                                                                             :units         "Times"
+                                                                             :raster-layer? true}
                                                               :impacted     {:opt-label "Impacted structures"
                                                                              :filter    "impacted-structures"
                                                                              :units     "Structures"}
@@ -268,7 +269,8 @@
                                                                            :filter       "all"}
                                                               :tlines     {:opt-label    "Transmission lines"
                                                                            :filter       "tlines"
-                                                                           :clear-point? true}}}
+                                                                           :clear-point? true
+                                                                           :line-layer?  true}}}
                                     :fuel       {:opt-label  "Fuel"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
@@ -384,66 +386,66 @@
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
-   :psps-zonal   {:opt-label           "PSPS"
-                  :filter              "psps-zonal"
-                  :geoserver-key       :psps
-                  :underlays           (merge common-underlays near-term-forecast-underlays)
-                  :allowed-org         5
-                  :reverse-legend?     true
-                  :time-slider?        true
-                  :multi-param-layers? true
-                  :hover-text          "Public Safety Power Shutoffs (PSPS) zonal statistics."
-                  :params              {:quantity   {:opt-label  "Zonal Quantity"
-                                                     :hover-text [:p {:style {:margin-bottom "0"}}
-                                                                  "Public Safety Power Shutoffs (PSPS) Zonal Quantity. Options include:"
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Fosberg Fire Weather Index (FFWI)"]
-                                                                  " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Hot Dry Windy Index"]
-                                                                  " - Similar to FFWI, but based on Vapor Pressure Deficit (VPD)."
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Relative Burn Probability"]
-                                                                  " - Relative likelihood that an area is burned by fires that have not yet ignited within the next six hours of time shown in time slider."
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Impacted Structures"]
-                                                                  " - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future."
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Fire Area"]
-                                                                  " - Modeled fire size in acres by ignition location and time of ignition."
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Fire Volume"]
-                                                                  " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
-                                                     :options    (array-map
-                                                                  :h-ws   {:opt-label "Sustained wind speed (mph)"
-                                                                           :filter    "deenergization-zones"
-                                                                           :units     "mph"}
-                                                                  :h-wg   {:opt-label "Wind gust (mph)"
-                                                                           :filter    "deenergization-zones"
-                                                                           :units     "mph"}
-                                                                  :l-area {:opt-label "Fire area (acres)"
-                                                                           :filter    "deenergization-zones"
-                                                                           :units     "Acres"}
-                                                                  :l-str  {:opt-label "Impacted structures"
-                                                                           :filter    "deenergization-zones"
-                                                                           :units     "Structures"}
-                                                                  :l-vol  {:opt-label "Fire volume (acre-ft)"
-                                                                           :filter    "deenergization-zones"
-                                                                           :units     "Acre-ft"})}
-                                        :statistic  {:opt-label  "Statistic"
-                                                     :hover-text "Options are minimum, mean, or maximum."
-                                                     :options    {:l {:opt-label "Minimum"}
-                                                                  :a {:opt-label "Mean"}
-                                                                  :h {:opt-label "Maximum"}}}
-                                        :model-init {:opt-label  "Forecast Start Time"
-                                                     :hover-text "Start time for forecast cycle, new data comes every 6 hours."
-                                                     :options    {:loading {:opt-label "Loading..."}}}}}})
+   :psps-zonal   {:opt-label       "PSPS"
+                  :filter          "psps-zonal"
+                  :geoserver-key   :psps
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :allowed-org     5
+                  :reverse-legend? true
+                  :time-slider?    true
+                  :polygon-layer?  true
+                  :hover-text      "Public Safety Power Shutoffs (PSPS) zonal statistics."
+                  :params          {:quantity   {:opt-label  "Zonal Quantity"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              "Public Safety Power Shutoffs (PSPS) Zonal Quantity. Options include:"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fosberg Fire Weather Index (FFWI)"]
+                                                              " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Hot Dry Windy Index"]
+                                                              " - Similar to FFWI, but based on Vapor Pressure Deficit (VPD)."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Relative Burn Probability"]
+                                                              " - Relative likelihood that an area is burned by fires that have not yet ignited within the next six hours of time shown in time slider."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Impacted Structures"]
+                                                              " - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fire Area"]
+                                                              " - Modeled fire size in acres by ignition location and time of ignition."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fire Volume"]
+                                                              " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
+                                                 :options    (array-map
+                                                              :h-ws   {:opt-label "Sustained wind speed (mph)"
+                                                                       :filter    "deenergization-zones"
+                                                                       :units     "mph"}
+                                                              :h-wg   {:opt-label "Wind gust (mph)"
+                                                                       :filter    "deenergization-zones"
+                                                                       :units     "mph"}
+                                                              :l-area {:opt-label "Fire area (acres)"
+                                                                       :filter    "deenergization-zones"
+                                                                       :units     "Acres"}
+                                                              :l-str  {:opt-label "Impacted structures"
+                                                                       :filter    "deenergization-zones"
+                                                                       :units     "Structures"}
+                                                              :l-vol  {:opt-label "Fire volume (acre-ft)"
+                                                                       :filter    "deenergization-zones"
+                                                                       :units     "Acre-ft"})}
+                                    :statistic  {:opt-label  "Statistic"
+                                                 :hover-text "Options are minimum, mean, or maximum."
+                                                 :options    {:l {:opt-label "Minimum"}
+                                                              :a {:opt-label "Mean"}
+                                                              :h {:opt-label "Maximum"}}}
+                                    :model-init {:opt-label  "Forecast Start Time"
+                                                 :hover-text "Start time for forecast cycle, new data comes every 6 hours."
+                                                 :options    {:loading {:opt-label "Loading..."}}}}}})
 
 (def near-term-forecast-layers
   "All layers added in addition to the default Mapbox layers and their

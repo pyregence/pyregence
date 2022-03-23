@@ -24,15 +24,18 @@
 ;; Spec
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::clear-point?  boolean?)
-(s/def ::filter        string?)
-(s/def ::filter-set    set?)
-(s/def ::geoserver-key keyword?)
-(s/def ::opt-label     string?)
-(s/def ::units         string?)
-(s/def ::z-index       int?)
+(s/def ::clear-point?   boolean?)
+(s/def ::filter         string?)
+(s/def ::filter-set     set?)
+(s/def ::geoserver-key  keyword?)
+(s/def ::line-layer?    boolean?)
+(s/def ::opt-label      string?)
+(s/def ::polygon-layer? boolean?)
+(s/def ::units          string?)
+(s/def ::z-index        int?)
 (s/def ::layer-config  (s/keys :req-un [::opt-label]
-                               :opt-un [::clear-point? ::filter ::filter-set ::geoserver-key ::units ::z-index]))
+                               :opt-un [::clear-point? ::filter ::filter-set ::geoserver-key
+                                        ::line-layer? ::polygon-layer? ::units ::z-index]))
 (s/def ::layer-path    (s/and (s/coll-of keyword? :kind vector? :min-count 2)
                               (s/cat :forecast #{:fuels :fire-weather :fire-risk :active-fire :psps-zonal}
                                      :second   #(or (= % :params)
@@ -202,9 +205,9 @@
 ;; Legend Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- process-multiparam-layer-legend
-  "Parses the JSON data from GetLegendGraphic from a layer with multiple params."
-  [data]
+(defn- process-vector-layer-legend
+  "Parses the JSON data from GetLegendGraphic from a vector layer."
+  [data polygon-layer?]
   (as-> data %
     (u/try-js-aget % "Legend" 0 "rules")
     (js->clj %)
@@ -214,7 +217,9 @@
               "quantity" (if (= label "nodata")
                            "-9999" ; FIXME: if we end up having different nodata values later on, we will need to do regex on the "filter" key from the returned JSON
                            label)
-              "color"    (get-in rule ["symbolizers" 0 "Polygon" "fill"])
+              "color"    (if polygon-layer?
+                           (get-in rule ["symbolizers" 0 "Polygon" "fill"])
+                           (get-in rule ["symbolizers" 0 "Line" "stroke"]))
               "opacity"  "1.0"}))
          %)))
 
@@ -231,9 +236,11 @@
    with `nodata` points."
   [json-res]
   (!/set-state-legend-list! (as-> json-res %
-                              (if (get-any-level-key :multi-param-layers?)
-                                (process-multiparam-layer-legend %)
-                                (process-raster-colormap-legend %))
+                              (cond
+                                (get-any-level-key :raster-layer?) (process-raster-colormap-legend %)
+                                (get-any-level-key :polygon-layer?) (process-vector-layer-legend % true)
+                                (get-any-level-key :line-layer?) (process-vector-layer-legend % false)
+                                :else (process-raster-colormap-legend %))
                               (remove (fn [leg] (nil? (get leg "label"))) %)
                               (doall %))))
 
@@ -243,7 +250,7 @@
   [layer]
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
-              (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
+              (c/legend-url layer
                             (get-any-level-key :geoserver-key)
                             (get-psps-layer-style)))))
 
