@@ -36,7 +36,12 @@
                      :geoserver-key :pyrecast}})
 
 (def near-term-forecast-underlays
-  {:nifs-perimeters {:opt-label     "NIFS Perimeters"
+  (array-map
+   :us-trans-lines  {:opt-label     "US Transmission Lines"
+                     :z-index       107
+                     :filter-set    #{"fire-detections" "us-transmission-lines"}
+                     :geoserver-key :pyrecast}
+   :nifs-perimeters {:opt-label     "NIFS Perimeters"
                      :z-index       103
                      :filter-set    #{"fire-detections" "nifs-perimeters"}
                      :geoserver-key :pyrecast}
@@ -51,7 +56,7 @@
    :goes-imagery    {:opt-label     "Live satellite (GOES-16)"
                      :z-index       100
                      :filter-set    #{"fire-detections" "goes16-rgb"}
-                     :geoserver-key :pyrecast}})
+                     :geoserver-key :pyrecast}))
 
 (def near-term-forecast-options
   {:fuels        {:opt-label     "Fuels"
@@ -421,26 +426,38 @@
                                                                   [:strong "Fire Volume"]
                                                                   " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
                                                      :options    (array-map
-                                                                  :h-ws   {:opt-label "Sustained wind speed (mph)"
-                                                                           :filter    "deenergization-zones"
-                                                                           :units     "mph"}
-                                                                  :h-wg   {:opt-label "Wind gust (mph)"
-                                                                           :filter    "deenergization-zones"
-                                                                           :units     "mph"}
-                                                                  :l-area {:opt-label "Fire area (acres)"
-                                                                           :filter    "deenergization-zones"
-                                                                           :units     "Acres"}
-                                                                  :l-str  {:opt-label "Impacted structures"
-                                                                           :filter    "deenergization-zones"
-                                                                           :units     "Structures"}
-                                                                  :l-vol  {:opt-label "Fire volume (acre-ft)"
-                                                                           :filter    "deenergization-zones"
-                                                                           :units     "Acre-ft"})}
+                                                                  :ws   {:opt-label "Sustained wind speed (mph)"
+                                                                         :filter    "deenergization-zones"
+                                                                         :units     "mph"}
+                                                                  :wg   {:opt-label "Wind gust (mph)"
+                                                                         :filter    "deenergization-zones"
+                                                                         :units     "mph"}
+                                                                  :area {:opt-label "Fire area (acres)"
+                                                                         :filter    "deenergization-zones"
+                                                                         :units     "Acres"}
+                                                                  :str  {:opt-label "Impacted structures"
+                                                                         :filter    "deenergization-zones"
+                                                                         :units     "Structures"}
+                                                                  :vol  {:opt-label "Fire volume (acre-ft)"
+                                                                         :filter    "deenergization-zones"
+                                                                         :units     "Acre-ft"})}
                                         :statistic  {:opt-label  "Statistic"
                                                      :hover-text "Options are minimum, mean, or maximum."
                                                      :options    {:l {:opt-label "Minimum"}
                                                                   :a {:opt-label "Mean"}
                                                                   :h {:opt-label "Maximum"}}}
+                                        :model      {:opt-label  "Model"
+                                                     :hover-text [:p {:style {:margin-bottom "0"}}
+                                                                  [:strong "ELMFIRE"]
+                                                                  " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
+                                                                  [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
+                                                                       :target "_blank"}
+                                                                   "https://doi.org/10.1016/j.firesaf.2013.08.014"]
+                                                                  ")."]
+                                                     :options   {:h {:opt-label    "HRRR"
+                                                                     :disabled-for #{:area :str :vol}}
+                                                                 :l {:opt-label    "ELMFIRE"
+                                                                     :disabled-for #{:wg :ws}}}}
                                         :model-init {:opt-label  "Forecast Start Time"
                                                      :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                      :options    {:loading {:opt-label "Loading..."}}}}}})

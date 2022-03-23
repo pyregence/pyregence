@@ -97,7 +97,9 @@
   "Returns the name of the CSS style for a PSPS layer."
   []
   (when (= @!/*forecast :psps-zonal)
-      (str (name (get-in @!/*params [:psps-zonal :quantity]))
+      (str (name (get-in @!/*params [:psps-zonal :model]))
+           "-"
+           (name (get-in @!/*params [:psps-zonal :quantity]))
            "-"
            (name (get-in @!/*params [:psps-zonal :statistic]))
            "-poly-css")))
@@ -106,8 +108,9 @@
   "Returns the name of the point info column for a PSPS layer."
   []
   (when (= @!/*forecast :psps-zonal)
-      (str (str/replace
-            (name (get-in @!/*params [:psps-zonal :quantity])) #"-" "_")
+      (str (name (get-in @!/*params [:psps-zonal :model]))
+           "_"
+           (name (get-in @!/*params [:psps-zonal :quantity]))
            "_"
            (name (get-in @!/*params [:psps-zonal :statistic])))))
 
