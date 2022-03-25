@@ -246,10 +246,9 @@
                                                               [:br]
                                                               [:strong "Fire Volume"]
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
-                                                 :options    {:times-burned {:opt-label     "Relative burn probability"
-                                                                             :filter        "times-burned"
-                                                                             :units         "Times"
-                                                                             :raster-layer? true}
+                                                 :options    {:times-burned {:opt-label "Relative burn probability"
+                                                                             :filter    "times-burned"
+                                                                             :units     "Times"}
                                                               :impacted     {:opt-label "Impacted structures"
                                                                              :filter    "impacted-structures"
                                                                              :units     "Structures"}
@@ -274,8 +273,7 @@
                                                                            :filter       "all"}
                                                               :tlines     {:opt-label    "Transmission lines"
                                                                            :filter       "tlines"
-                                                                           :clear-point? true
-                                                                           :line-layer?  true}}}
+                                                                           :clear-point? true}}}
                                     :fuel       {:opt-label  "Fuel"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
@@ -398,7 +396,6 @@
                   :allowed-org     5
                   :reverse-legend? true
                   :time-slider?    true
-                  :polygon-layer?  true
                   :hover-text      "Public Safety Power Shutoffs (PSPS) zonal statistics."
                   :params          {:quantity   {:opt-label  "Zonal Quantity"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}

@@ -24,18 +24,15 @@
 ;; Spec
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::clear-point?   boolean?)
-(s/def ::filter         string?)
-(s/def ::filter-set     set?)
-(s/def ::geoserver-key  keyword?)
-(s/def ::line-layer?    boolean?)
-(s/def ::opt-label      string?)
-(s/def ::polygon-layer? boolean?)
-(s/def ::units          string?)
-(s/def ::z-index        int?)
+(s/def ::clear-point?  boolean?)
+(s/def ::filter        string?)
+(s/def ::filter-set    set?)
+(s/def ::geoserver-key keyword?)
+(s/def ::opt-label     string?)
+(s/def ::units         string?)
+(s/def ::z-index       int?)
 (s/def ::layer-config  (s/keys :req-un [::opt-label (or ::filter ::filter-set)]
-                               :opt-un [::clear-point? ::geoserver-key ::line-layer?
-                                        ::polygon-layer? ::units ::z-index]))
+                               :opt-un [::clear-point? ::geoserver-key ::units ::z-index]))
 (s/def ::layer-path    (s/and (s/coll-of keyword? :kind vector? :min-count 2)
                               (s/cat :forecast #{:fuels :fire-weather :fire-risk :active-fire :psps-zonal}
                                      :second   #(or (= % :params)
@@ -100,12 +97,13 @@
   "Returns the name of the CSS style for a PSPS layer."
   []
   (when (= @!/*forecast :psps-zonal)
-      (str (name (get-in @!/*params [:psps-zonal :model]))
+      (str "poly-"
+           (name (get-in @!/*params [:psps-zonal :model]))
            "-"
            (name (get-in @!/*params [:psps-zonal :quantity]))
            "-"
            (name (get-in @!/*params [:psps-zonal :statistic]))
-           "-poly-css")))
+           "-css")))
 
 (defn- get-psps-column-name
   "Returns the name of the point info column for a PSPS layer."
@@ -210,9 +208,8 @@
 
 (defn- process-vector-layer-legend
   "Parses the JSON data from GetLegendGraphic from a vector layer."
-  [data polygon-layer?]
-  (as-> data %
-    (u/try-js-aget % "Legend" 0 "rules")
+  [rules polygon-layer?]
+  (as-> rules %
     (js->clj %)
     (map (fn [rule]
            (let [label (get rule "title")]
@@ -228,9 +225,9 @@
 
 (defn- process-raster-colormap-legend
   "Parses the JSON data from GetLegendGraphic from a layer using raster colormap styling."
-  [data]
-  (as-> data %
-      (u/try-js-aget % "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
+  [rules]
+  (as-> rules %
+      (u/try-js-aget % 0 "symbolizers" 0 "Raster" "colormap" "entries")
       (js->clj %)))
 
 (defn- process-legend!
@@ -238,14 +235,21 @@
    Also populates the no-data-quantities atom with all quantities associated
    with `nodata` points."
   [json-res]
-  (!/set-state-legend-list! (as-> json-res %
-                              (cond
-                                (get-any-level-key :raster-layer?) (process-raster-colormap-legend %)
-                                (get-any-level-key :polygon-layer?) (process-vector-layer-legend % true)
-                                (get-any-level-key :line-layer?) (process-vector-layer-legend % false)
-                                :else (process-raster-colormap-legend %))
-                              (remove (fn [leg] (nil? (get leg "label"))) %)
-                              (doall %))))
+  (let [rules (u/try-js-aget json-res "Legend" 0 "rules")]
+    (!/set-state-legend-list! (as-> rules %
+                                (cond
+                                  (u/try-js-aget % 0 "symbolizers" 0 "Raster")
+                                  (process-raster-colormap-legend %)
+
+                                  (u/try-js-aget % 0 "symbolizers" 0 "Polygon")
+                                  (process-vector-layer-legend % true)
+
+                                  (u/try-js-aget % 0 "symbolizers" 0 "Line")
+                                  (process-vector-layer-legend % false)
+
+                                  :else (process-raster-colormap-legend %))
+                                (remove (fn [leg] (nil? (get leg "label"))) %)
+                                (doall %)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn- get-legend!
