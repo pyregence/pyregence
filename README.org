@@ -203,7 +203,7 @@ project directory and run:
 
 #+begin_src sh
 clojure -M:build-db functions
-clojure -M:run-server -m [dev|prod] [-p 8080] [-P 8443]
+clojure -M:server start -m [dev|prod] [-p 8080] [-P 8443] [-r/--repl]
 #+end_src
 
 The website will then be available at http://localhost:8080 unless a
@@ -212,6 +212,19 @@ port can be specified with -P. In dev mode, server-side exceptions
 will be displayed in the browser and Clojure source files will be
 reloaded whenever you refresh the page. These features are disabled in
 prod mode. If -m is unspecified, it will default to prod mode.
+
+If the ~-r/--repl~ flag is provided, then a repl server will start on port 5555.
+This can be connected to for debugging or managing the server.
+
+The server is also configurable using the ~config.edn~ file:
+#+begin_src clojure
+;; config.edn
+{:server {:http-port  8080
+          :https-port 8443
+          :mode       "<prod/dev>"
+          :log-dir    "logs"
+          :repl       <true/false>}}
+#+end_src
 
 If you don't already have an SSL certificate, you cannot specify an
 https port.
