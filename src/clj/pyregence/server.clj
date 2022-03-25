@@ -61,18 +61,34 @@
    :stop   {:description "Stops the server."}
    :reload {:description "Reloads a running server."}})
 
-(defn start-server! [{:keys [http-port mode log-dir repl]}]
-  (let [handler    (create-handler-stack (= mode "dev"))
-        config     {:port  http-port :join? false}]
-    (when repl
-      (println "Starting REPL server on port 5555")
-      (reset! repl-server (start-server {:name :pyr-repl :port 5555 :accept 'clojure.core.server/repl})))
-    (reset! server (run-jetty handler config))
-    (reset! clean-up-service (start-clean-up-service!))
-    (set-log-path! log-dir)
-    (start-socket-server! 31337 process-message)
-    (when (notify/available?) (notify/ready!))
-    (set-all-capabilities!)))
+(defn start-server! [{:keys [https-port http-port mode log-dir repl]}]
+  (let [has-key?   (.exists (io/file "./.key/keystore.pkcs12"))
+        ssl?       (and has-key? https-port)
+        handler    (create-handler-stack ssl? (= mode "dev"))
+        config     (merge
+                     {:port  http-port
+                      :join? false}
+                     (when ssl?
+                       {:ssl?          true
+                        :ssl-port      https-port
+                        :keystore      "./.key/keystore.pkcs12"
+                        :keystore-type "pkcs12"
+                        :keystore-scan-interval keystore-scan-interval
+                        :key-password  "foobar"}))]
+    (if (and (not has-key?) https-port)
+      (println "ERROR:\n"
+               "  An SSL key is required if an HTTPS port is specified.\n"
+               "  Create an SSL key for HTTPS or run without the --https-port (-P) option.")
+      (do
+        (when repl
+          (println "Starting REPL server on port 5555")
+          (reset! repl-server (start-server {:name :pyr-repl :port 5555 :accept 'clojure.core.server/repl})))
+        (reset! server (run-jetty handler config))
+        (reset! clean-up-service (start-clean-up-service!))
+        (set-log-path! log-dir)
+        (start-socket-server! 31337 process-message)
+        (when (notify/available?) (notify/ready!))
+        (set-all-capabilities!)))))
 
 (defn stop-server! []
   (set-log-path! "")

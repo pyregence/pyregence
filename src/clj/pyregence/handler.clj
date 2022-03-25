@@ -14,6 +14,7 @@
             [ring.middleware.resource           :refer [wrap-resource]]
             [ring.middleware.reload             :refer [wrap-reload]]
             [ring.middleware.session            :refer [wrap-session]]
+            [ring.middleware.ssl                :refer [wrap-ssl-redirect]]
             [ring.middleware.x-headers          :refer [wrap-frame-options wrap-content-type-options wrap-xss-protection]]
             [ring.util.codec                    :refer [url-decode]]
             [triangulum.logging                 :refer [log-str]]
@@ -129,8 +130,9 @@
     (mw handler)
     handler))
 
-(defn create-handler-stack [reload?]
+(defn create-handler-stack [ssl? reload?]
   (-> routing-handler
+      (optional-middleware wrap-ssl-redirect ssl?)
       wrap-request-logging
       wrap-keyword-params
       wrap-edn-params
