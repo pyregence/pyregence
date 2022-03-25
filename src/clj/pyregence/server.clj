@@ -1,15 +1,19 @@
 (ns pyregence.server
   (:require [clojure.java.io        :as io]
             [clojure.string         :as str]
-            [clojure.tools.cli      :refer [parse-opts]]
+            [clojure.core.server    :refer [start-server]]
             [ring.adapter.jetty     :refer [run-jetty]]
+            [triangulum.cli         :refer [get-cli-options]]
+            [triangulum.config      :refer [get-config]]
+            [triangulum.notify      :as notify]
             [triangulum.logging     :refer [log-str set-log-path!]]
-            [triangulum.sockets     :refer [start-socket-server! stop-socket-server!]]
+            [triangulum.sockets     :refer [start-socket-server! stop-socket-server! socket-open? send-to-server!]]
             [pyregence.capabilities :refer [set-all-capabilities!]]
             [pyregence.handler      :refer [create-handler-stack]]
             [pyregence.match-drop   :refer [process-message]]))
 
 (defonce server           (atom nil))
+(defonce repl-server      (atom nil))
 (defonce clean-up-service (atom nil))
 
 (def ^:private expiration-time "1 hour in msecs" (* 1000 60 60))
@@ -38,50 +42,37 @@
       (try (delete-tmp)
            (catch Exception _)))))
 
-(def cli-options
-  [["-p" "--http-port PORT" "Port for http, default 8080"
-    :default  8080
-    :parse-fn #(if (int? %) % (Integer/parseInt %))
-    :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
-   ["-P" "--https-port PORT" "Port for https (e.g. 8443)"
-    :parse-fn #(if (int? %) % (Integer/parseInt %))
-    :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
-   ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
-    :default  "prod"
-    :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
-   ["-o" "--output-dir DIR" "Output directory for log files. When a directory is not provided, output will be to stdout."
-    :default ""]])
+(def ^:private cli-options
+  {:http-port  ["-p" "--http-port PORT"  "Port for http, default 8080"
+                :parse-fn #(if (int? %) % (Integer/parseInt %))]
+   :https-port ["-P" "--https-port PORT" "Port for https (e.g. 8443)"
+                :parse-fn #(if (int? %) % (Integer/parseInt %))]
+   :repl       ["-r" "--repl" "Starts a REPL server on port 5555"
+                :default false]
+   :mode       ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
+                :default "prod"
+                :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
+   :log-dir    ["-l" "--log-dir DIR" "Directory for log files. When a directory is not provided, output will be to stdout."
+                :default ""]})
 
-(defn start-server! [& args]
-  (let [{:keys [options summary errors]} (parse-opts args cli-options)
-        {:keys [http-port https-port mode output-dir]} options]
-    (if (seq errors)
-      (do
-        (run! println errors)
-        (println (str "Usage:\n" summary)))
-      (let [has-key?   (.exists (io/file "./.key/keystore.pkcs12"))
-            ssl?       (and has-key? https-port)
-            handler    (create-handler-stack ssl? (= mode "dev"))
-            config     (merge
-                        {:port  http-port
-                         :join? false}
-                        (when ssl?
-                          {:ssl?          true
-                           :ssl-port      https-port
-                           :keystore      "./.key/keystore.pkcs12"
-                           :keystore-type "pkcs12"
-                           :keystore-scan-interval keystore-scan-interval
-                           :key-password  "foobar"}))]
-        (if (and (not has-key?) https-port)
-          (println "ERROR:\n"
-                   "  An SSL key is required if an HTTPS port is specified.\n"
-                   "  Create an SSL key for HTTPS or run without the --https-port (-P) option.")
-          (do
-            (reset! server (run-jetty handler config))
-            (reset! clean-up-service (start-clean-up-service!))
-            (set-log-path! output-dir)
-            (start-socket-server! 31337 process-message)
-            (set-all-capabilities!)))))))
+(def ^:private cli-actions
+  {:start  {:description "Starts the server."
+            :requires    [:http-port]}
+   :stop   {:description "Stops the server."}
+   :reload {:description "Reloads a running server."}})
+
+(defn start-server! [{:keys [http-port mode log-dir repl]}]
+  (let [handler    (create-handler-stack (= mode "dev"))
+        config     {:port  http-port :join? false}]
+    (when repl
+      (println "Starting REPL server on port 5555")
+      (reset! repl-server (start-server {:name :pyr-repl :port 5555 :accept 'clojure.core.server/repl})))
+    (reset! server (run-jetty handler config))
+    (reset! clean-up-service (start-clean-up-service!))
+    (set-log-path! log-dir)
+    (start-socket-server! 31337 process-message)
+    (when (notify/available?) (notify/ready!))
+    (set-all-capabilities!)))
 
 (defn stop-server! []
   (set-log-path! "")
@@ -93,4 +84,27 @@
     (.stop @server)
     (reset! server nil)))
 
-(def -main start-server!)
+(defn send-to-repl-server! [msg & {:keys [host port] :or {host "127.0.0.1" port 5555}}]
+  (if (socket-open? host port)
+    (do (send-to-server! host port msg)
+        (System/exit 0))
+    (do (println (format "Unable to connect to REPL server at %s:%s. Restart the server with the '-r/--repl' flag." host port))
+        (System/exit 1))))
+
+(defn stop-running-server! []
+  (send-to-repl-server! "(do (require '[pyregence.server :as server]) (server/stop-server!))"))
+
+(defn reload-running-server! []
+  (send-to-repl-server! "(require 'pyregence.server :reload-all)"))
+
+(defn -main [& args]
+  (let [{:keys [action options]} (get-cli-options args
+                                                  cli-options
+                                                  cli-actions
+                                                  "server"
+                                                  (get-config :server))]
+    (case action
+      :start  (start-server! options)
+      :stop   (stop-running-server!)
+      :reload (reload-running-server!)
+      nil)))
