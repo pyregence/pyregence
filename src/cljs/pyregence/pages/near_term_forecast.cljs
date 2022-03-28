@@ -97,12 +97,13 @@
   "Returns the name of the CSS style for a PSPS layer."
   []
   (when (= @!/*forecast :psps-zonal)
-      (str (name (get-in @!/*params [:psps-zonal :model]))
+      (str "poly-"
+           (name (get-in @!/*params [:psps-zonal :model]))
            "-"
            (name (get-in @!/*params [:psps-zonal :quantity]))
            "-"
            (name (get-in @!/*params [:psps-zonal :statistic]))
-           "-poly-css")))
+           "-css")))
 
 (defn- get-psps-column-name
   "Returns the name of the point info column for a PSPS layer."
@@ -205,11 +206,10 @@
 ;; Legend Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- process-multiparam-layer-legend
-  "Parses the JSON data from GetLegendGraphic from a layer with multiple params."
-  [data]
-  (as-> data %
-    (u/try-js-aget % "Legend" 0 "rules")
+(defn- process-vector-layer-legend
+  "Parses the JSON data from GetLegendGraphic from a vector layer."
+  [rules polygon-layer?]
+  (as-> rules %
     (js->clj %)
     (map (fn [rule]
            (let [label (get rule "title")]
@@ -217,15 +217,17 @@
               "quantity" (if (= label "nodata")
                            "-9999" ; FIXME: if we end up having different nodata values later on, we will need to do regex on the "filter" key from the returned JSON
                            label)
-              "color"    (get-in rule ["symbolizers" 0 "Polygon" "fill"])
+              "color"    (if polygon-layer?
+                           (get-in rule ["symbolizers" 0 "Polygon" "fill"])
+                           (get-in rule ["symbolizers" 0 "Line" "stroke"]))
               "opacity"  "1.0"}))
          %)))
 
 (defn- process-raster-colormap-legend
   "Parses the JSON data from GetLegendGraphic from a layer using raster colormap styling."
-  [data]
-  (as-> data %
-      (u/try-js-aget % "Legend" 0 "rules" 0 "symbolizers" 0 "Raster" "colormap" "entries")
+  [rules]
+  (as-> rules %
+      (u/try-js-aget % 0 "symbolizers" 0 "Raster" "colormap" "entries")
       (js->clj %)))
 
 (defn- process-legend!
@@ -233,12 +235,21 @@
    Also populates the no-data-quantities atom with all quantities associated
    with `nodata` points."
   [json-res]
-  (!/set-state-legend-list! (as-> json-res %
-                              (if (get-any-level-key :multi-param-layers?)
-                                (process-multiparam-layer-legend %)
-                                (process-raster-colormap-legend %))
-                              (remove (fn [leg] (nil? (get leg "label"))) %)
-                              (doall %))))
+  (let [rules (u/try-js-aget json-res "Legend" 0 "rules")]
+    (!/set-state-legend-list! (as-> rules %
+                                (cond
+                                  (u/try-js-aget % 0 "symbolizers" 0 "Raster")
+                                  (process-raster-colormap-legend %)
+
+                                  (u/try-js-aget % 0 "symbolizers" 0 "Polygon")
+                                  (process-vector-layer-legend % true)
+
+                                  (u/try-js-aget % 0 "symbolizers" 0 "Line")
+                                  (process-vector-layer-legend % false)
+
+                                  :else (process-raster-colormap-legend %))
+                                (remove (fn [leg] (nil? (get leg "label"))) %)
+                                (doall %)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn- get-legend!
@@ -246,7 +257,7 @@
   [layer]
   (when (u/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
-              (c/legend-url (str/replace layer #"tlines|liberty|pacificorp" "all") ; TODO make a more generic way to do this.
+              (c/legend-url layer
                             (get-any-level-key :geoserver-key)
                             (get-psps-layer-style)))))
 

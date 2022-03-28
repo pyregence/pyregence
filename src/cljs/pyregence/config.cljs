@@ -389,78 +389,77 @@
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
-   :psps-zonal   {:opt-label           "PSPS"
-                  :filter              "psps-zonal"
-                  :geoserver-key       :psps
-                  :underlays           (merge common-underlays near-term-forecast-underlays)
-                  :allowed-org         5
-                  :reverse-legend?     true
-                  :time-slider?        true
-                  :multi-param-layers? true
-                  :hover-text          "Public Safety Power Shutoffs (PSPS) zonal statistics."
-                  :params              {:quantity   {:opt-label  "Zonal Quantity"
-                                                     :hover-text [:p {:style {:margin-bottom "0"}}
-                                                                  "Public Safety Power Shutoffs (PSPS) Zonal Quantity. Options include:"
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Fosberg Fire Weather Index (FFWI)"]
-                                                                  " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Hot Dry Windy Index"]
-                                                                  " - Similar to FFWI, but based on Vapor Pressure Deficit (VPD)."
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Relative Burn Probability"]
-                                                                  " - Relative likelihood that an area is burned by fires that have not yet ignited within the next six hours of time shown in time slider."
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Impacted Structures"]
-                                                                  " - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future."
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Fire Area"]
-                                                                  " - Modeled fire size in acres by ignition location and time of ignition."
-                                                                  [:br]
-                                                                  [:br]
-                                                                  [:strong "Fire Volume"]
-                                                                  " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
-                                                     :options    (array-map
-                                                                  :ws   {:opt-label "Sustained wind speed (mph)"
-                                                                         :filter    "deenergization-zones"
-                                                                         :units     "mph"}
-                                                                  :wg   {:opt-label "Wind gust (mph)"
-                                                                         :filter    "deenergization-zones"
-                                                                         :units     "mph"}
-                                                                  :area {:opt-label "Fire area (acres)"
-                                                                         :filter    "deenergization-zones"
-                                                                         :units     "Acres"}
-                                                                  :str  {:opt-label "Impacted structures"
-                                                                         :filter    "deenergization-zones"
-                                                                         :units     "Structures"}
-                                                                  :vol  {:opt-label "Fire volume (acre-ft)"
-                                                                         :filter    "deenergization-zones"
-                                                                         :units     "Acre-ft"})}
-                                        :statistic  {:opt-label  "Statistic"
-                                                     :hover-text "Options are minimum, mean, or maximum."
-                                                     :options    {:l {:opt-label "Minimum"}
-                                                                  :a {:opt-label "Mean"}
-                                                                  :h {:opt-label "Maximum"}}}
-                                        :model      {:opt-label  "Model"
-                                                     :hover-text [:p {:style {:margin-bottom "0"}}
-                                                                  [:strong "ELMFIRE"]
-                                                                  " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
-                                                                  [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
-                                                                       :target "_blank"}
-                                                                   "https://doi.org/10.1016/j.firesaf.2013.08.014"]
-                                                                  ")."]
-                                                     :options   {:h {:opt-label    "HRRR"
-                                                                     :disabled-for #{:area :str :vol}}
-                                                                 :l {:opt-label    "ELMFIRE"
-                                                                     :disabled-for #{:wg :ws}}}}
-                                        :model-init {:opt-label  "Forecast Start Time"
-                                                     :hover-text "Start time for forecast cycle, new data comes every 6 hours."
-                                                     :options    {:loading {:opt-label "Loading..."}}}}}})
+   :psps-zonal   {:opt-label       "PSPS"
+                  :filter          "psps-zonal"
+                  :geoserver-key   :psps
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :allowed-org     5
+                  :reverse-legend? true
+                  :time-slider?    true
+                  :hover-text      "Public Safety Power Shutoffs (PSPS) zonal statistics."
+                  :params          {:quantity   {:opt-label  "Zonal Quantity"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              "Public Safety Power Shutoffs (PSPS) Zonal Quantity. Options include:"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fosberg Fire Weather Index (FFWI)"]
+                                                              " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Hot Dry Windy Index"]
+                                                              " - Similar to FFWI, but based on Vapor Pressure Deficit (VPD)."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Relative Burn Probability"]
+                                                              " - Relative likelihood that an area is burned by fires that have not yet ignited within the next six hours of time shown in time slider."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Impacted Structures"]
+                                                              " - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fire Area"]
+                                                              " - Modeled fire size in acres by ignition location and time of ignition."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fire Volume"]
+                                                              " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
+                                                 :options    (array-map
+                                                              :ws   {:opt-label "Sustained wind speed (mph)"
+                                                                     :filter    "deenergization-zones"
+                                                                     :units     "mph"}
+                                                              :wg   {:opt-label "Wind gust (mph)"
+                                                                     :filter    "deenergization-zones"
+                                                                     :units     "mph"}
+                                                              :area {:opt-label "Fire area (acres)"
+                                                                     :filter    "deenergization-zones"
+                                                                     :units     "Acres"}
+                                                              :str  {:opt-label "Impacted structures"
+                                                                     :filter    "deenergization-zones"
+                                                                     :units     "Structures"}
+                                                              :vol  {:opt-label "Fire volume (acre-ft)"
+                                                                     :filter    "deenergization-zones"
+                                                                     :units     "Acre-ft"})}
+                                    :statistic  {:opt-label  "Statistic"
+                                                 :hover-text "Options are minimum, mean, or maximum."
+                                                 :options    {:l {:opt-label "Minimum"}
+                                                              :a {:opt-label "Mean"}
+                                                              :h {:opt-label "Maximum"}}}
+                                    :model      {:opt-label  "Model"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "ELMFIRE"]
+                                                              " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
+                                                              [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
+                                                                   :target "_blank"}
+                                                               "https://doi.org/10.1016/j.firesaf.2013.08.014"]
+                                                              ")."]
+                                                 :options    {:h {:opt-label    "HRRR"
+                                                                  :disabled-for #{:area :str :vol}}
+                                                              :l {:opt-label    "ELMFIRE"
+                                                                  :disabled-for #{:wg :ws}}}}
+                                    :model-init {:opt-label  "Forecast Start Time"
+                                                 :hover-text "Start time for forecast cycle, new data comes every 6 hours."
+                                                 :options    {:loading {:opt-label "Loading..."}}}}}})
 
 (def near-term-forecast-layers
   "All layers added in addition to the default Mapbox layers and their
