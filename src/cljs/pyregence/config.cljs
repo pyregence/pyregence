@@ -390,7 +390,6 @@
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :psps-zonal   {:opt-label       "PSPS"
-                  :filter          "psps-zonal"
                   :geoserver-key   :psps
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :allowed-org     5
@@ -425,21 +424,21 @@
                                                               [:strong "Fire Volume"]
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
                                                  :options    (array-map
-                                                              :ws   {:opt-label "Sustained wind speed (mph)"
-                                                                     :filter    "deenergization-zones"
-                                                                     :units     "mph"}
-                                                              :wg   {:opt-label "Wind gust (mph)"
-                                                                     :filter    "deenergization-zones"
-                                                                     :units     "mph"}
-                                                              :area {:opt-label "Fire area (acres)"
-                                                                     :filter    "deenergization-zones"
-                                                                     :units     "Acres"}
-                                                              :str  {:opt-label "Impacted structures"
-                                                                     :filter    "deenergization-zones"
-                                                                     :units     "Structures"}
-                                                              :vol  {:opt-label "Fire volume (acre-ft)"
-                                                                     :filter    "deenergization-zones"
-                                                                     :units     "Acre-ft"})}
+                                                              :ws   {:opt-label  "Sustained wind speed (mph)"
+                                                                     :filter-set #{"psps-zonal" "nve" "deenergization-zones"}
+                                                                     :units      "mph"}
+                                                              :wg   {:opt-label  "Wind gust (mph)"
+                                                                     :filter-set #{"psps-zonal" "nve" "deenergization-zones"}
+                                                                     :units      "mph"}
+                                                              :area {:opt-label  "Fire area (acres)"
+                                                                     :filter-set #{"psps-zonal" "nve" "deenergization-zones"}
+                                                                     :units      "Acres"}
+                                                              :str  {:opt-label  "Impacted structures"
+                                                                     :filter-set #{"psps-zonal" "nve" "deenergization-zones"}
+                                                                     :units      "Structures"}
+                                                              :vol  {:opt-label  "Fire volume (acre-ft)"
+                                                                     :filter-set #{"psps-zonal" "nve" "deenergization-zones"}
+                                                                     :units      "Acre-ft"})}
                                     :statistic  {:opt-label  "Statistic"
                                                  :hover-text "Options are minimum, mean, or maximum."
                                                  :options    {:l {:opt-label "Minimum"}
