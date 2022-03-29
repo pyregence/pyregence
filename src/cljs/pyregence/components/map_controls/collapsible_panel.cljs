@@ -84,7 +84,8 @@
     [svg/layers]]
    [:label {:style {:font-size "1.5rem"}}
     "Layer Selection"]
-   [:span {:style {:margin-right "-.5rem"}}
+   [:span {:style {:margin-right "-.5rem"
+                   :visibility (if (and @!/show-panel? @!/mobile?) "visible" "hidden")}}
     [tool-button :close #(reset! !/show-panel? false)]]])
 
 (defn- optional-layer [opt-label filter-set id]
