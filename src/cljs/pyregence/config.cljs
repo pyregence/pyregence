@@ -391,6 +391,7 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :psps-zonal   {:opt-label       "PSPS"
                   :geoserver-key   :psps
+                  :filter          "psps-zonal"
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :allowed-org     5
                   :reverse-legend? true
@@ -424,26 +425,29 @@
                                                               [:strong "Fire Volume"]
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
                                                  :options    (array-map
-                                                              :ws   {:opt-label  "Sustained wind speed (mph)"
-                                                                     :filter-set #{"psps-zonal" "nve" "deenergization-zones"}
-                                                                     :units      "mph"}
-                                                              :wg   {:opt-label  "Wind gust (mph)"
-                                                                     :filter-set #{"psps-zonal" "nve" "deenergization-zones"}
-                                                                     :units      "mph"}
-                                                              :area {:opt-label  "Fire area (acres)"
-                                                                     :filter-set #{"psps-zonal" "nve" "deenergization-zones"}
-                                                                     :units      "Acres"}
-                                                              :str  {:opt-label  "Impacted structures"
-                                                                     :filter-set #{"psps-zonal" "nve" "deenergization-zones"}
-                                                                     :units      "Structures"}
-                                                              :vol  {:opt-label  "Fire volume (acre-ft)"
-                                                                     :filter-set #{"psps-zonal" "nve" "deenergization-zones"}
-                                                                     :units      "Acre-ft"})}
+                                                              :ws   {:opt-label "Sustained wind speed (mph)"
+                                                                     :filter    "nve"
+                                                                     :units     "mph"}
+                                                              :wg   {:opt-label "Wind gust (mph)"
+                                                                     :filter    "nve"
+                                                                     :units     "mph"}
+                                                              :area {:opt-label "Fire area (acres)"
+                                                                     :filter    "nve"
+                                                                     :units     "Acres"}
+                                                              :str  {:opt-label "Impacted structures"
+                                                                     :filter    "nve"
+                                                                     :units     "Structures"}
+                                                              :vol  {:opt-label "Fire volume (acre-ft)"
+                                                                     :filter    "nve"
+                                                                     :units     "Acre-ft"})}
                                     :statistic  {:opt-label  "Statistic"
                                                  :hover-text "Options are minimum, mean, or maximum."
-                                                 :options    {:l {:opt-label "Minimum"}
-                                                              :a {:opt-label "Mean"}
-                                                              :h {:opt-label "Maximum"}}}
+                                                 :options    {:l {:opt-label "Minimum"
+                                                                  :filter    "deenergization-zones"}
+                                                              :a {:opt-label "Mean"
+                                                                  :filter    "deenergization-zones"}
+                                                              :h {:opt-label "Maximum"
+                                                                  :filter    "deenergization-zones"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "ELMFIRE"]
