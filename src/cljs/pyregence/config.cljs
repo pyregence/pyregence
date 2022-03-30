@@ -390,8 +390,8 @@
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :psps-zonal   {:opt-label       "PSPS"
-                  :filter          "psps-zonal"
                   :geoserver-key   :psps
+                  :filter          "psps-zonal"
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :allowed-org     5
                   :reverse-legend? true
@@ -426,25 +426,28 @@
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
                                                  :options    (array-map
                                                               :ws   {:opt-label "Sustained wind speed (mph)"
-                                                                     :filter    "deenergization-zones"
+                                                                     :filter    "nve"
                                                                      :units     "mph"}
                                                               :wg   {:opt-label "Wind gust (mph)"
-                                                                     :filter    "deenergization-zones"
+                                                                     :filter    "nve"
                                                                      :units     "mph"}
                                                               :area {:opt-label "Fire area (acres)"
-                                                                     :filter    "deenergization-zones"
+                                                                     :filter    "nve"
                                                                      :units     "Acres"}
                                                               :str  {:opt-label "Impacted structures"
-                                                                     :filter    "deenergization-zones"
+                                                                     :filter    "nve"
                                                                      :units     "Structures"}
                                                               :vol  {:opt-label "Fire volume (acre-ft)"
-                                                                     :filter    "deenergization-zones"
+                                                                     :filter    "nve"
                                                                      :units     "Acre-ft"})}
                                     :statistic  {:opt-label  "Statistic"
                                                  :hover-text "Options are minimum, mean, or maximum."
-                                                 :options    {:l {:opt-label "Minimum"}
-                                                              :a {:opt-label "Mean"}
-                                                              :h {:opt-label "Maximum"}}}
+                                                 :options    {:l {:opt-label "Minimum"
+                                                                  :filter    "deenergization-zones"}
+                                                              :a {:opt-label "Mean"
+                                                                  :filter    "deenergization-zones"}
+                                                              :h {:opt-label "Maximum"
+                                                                  :filter    "deenergization-zones"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "ELMFIRE"]
