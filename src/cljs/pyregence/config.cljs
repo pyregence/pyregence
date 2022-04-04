@@ -28,6 +28,11 @@
 ;; WG3 Forecast
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn merge-sort-underlays
+  "Merge and sort the given underlays by z-index in descending order"
+  [& underlays]
+  (sort-by (comp :z-index second) > (apply merge underlays)))
+
 (def common-underlays
   {:us-buildings    {:enabled?      #(feature-enabled? :structures)
                      :opt-label     "Structures"
@@ -62,7 +67,7 @@
   {:fuels        {:opt-label     "Fuels"
                   :filter        "fuels"
                   :geoserver-key :pyrecast
-                  :underlays     (merge common-underlays near-term-forecast-underlays)
+                  :underlays     (merge-sort-underlays common-underlays near-term-forecast-underlays)
                   :time-slider?  false
                   :hover-text    "Layers related to fuel and potential fire behavior."
                   :params        {:model {:opt-label  "Source"
@@ -167,7 +172,7 @@
    :fire-weather {:opt-label       "Weather"
                   :filter          "fire-weather-forecast"
                   :geoserver-key   :pyrecast
-                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :underlays       (merge-sort-underlays common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "8-day forecast of key parameters affecting wildfire behavior obtained from operational National Weather Service forecast models."
@@ -223,7 +228,7 @@
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
                   :geoserver-key   :pyrecast
-                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :underlays       (merge-sort-underlays common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "5-day forecast of fire consequence maps. Every day over 500 million hypothetical fires are ignited across California to evaluate potential fire risk.\n"
@@ -316,7 +321,7 @@
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
                   :geoserver-key   :pyrecast
-                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :underlays       (merge-sort-underlays common-underlays near-term-forecast-underlays)
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true
@@ -392,7 +397,7 @@
    :psps-zonal   {:opt-label       "PSPS"
                   :geoserver-key   :psps
                   :filter          "psps-zonal"
-                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :underlays       (merge-sort-underlays common-underlays near-term-forecast-underlays)
                   :allowed-org     5
                   :reverse-legend? true
                   :time-slider?    true
