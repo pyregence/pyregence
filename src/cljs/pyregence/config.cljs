@@ -504,16 +504,16 @@
                                                    :auto-zoom? true
                                                    :options    {:can-esm2   {:opt-label "CanESM2"
                                                                              :filter    "CanESM2"
-                                                                             :units     ""}
+                                                                             :units     "ha"}
                                                                 :hadgem2-es {:opt-label "HadGEM2-ES"
                                                                              :filter    "HadGEM2-ES"
-                                                                             :units     ""}
+                                                                             :units     "ha"}
                                                                 :cnrm-cm5   {:opt-label "CNRM-CM5"
                                                                              :filter    "CNRM-CM5"
-                                                                             :units     ""}
+                                                                             :units     "ha"}
                                                                 :miroc5     {:opt-label "MIROC5"
                                                                              :filter    "MIROC5"
-                                                                             :units     ""}}}
+                                                                             :units     "ha"}}}
                                       :prob       {:opt-label  "RCP Scenario"
                                                    :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
                                                                 Options include:
