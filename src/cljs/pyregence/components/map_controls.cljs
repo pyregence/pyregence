@@ -863,7 +863,7 @@
     (fn [_]
       (let [cleaned-last-clicked-info (u/replace-no-data-nil @!/last-clicked-info
                                                              @!/no-data-quantities)
-            current-point             (nth cleaned-last-clicked-info @!/*layer-idx)]
+            current-point             (get cleaned-last-clicked-info @!/*layer-idx)]
         [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
          [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
           (if (some? (:band current-point))
