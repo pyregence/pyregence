@@ -277,22 +277,33 @@
                              (u/try-js-aget % 0 "properties")
                              (.keys js/Object %)
                              (.-length %)
-                             (> % 1))]
+                             (> % 1))
+        band-vec-id-info   (map (fn [pi-layer]
+                                  {:band   (if multi-column-info?
+                                             (as-> pi-layer %2
+                                               (u/try-js-aget %2 "properties" (get-psps-column-name))
+                                               (u/to-precision 1 %2))
+                                             (as-> pi-layer %2
+                                               (u/try-js-aget %2 "properties")
+                                               (js/Object.values %2)
+                                               (first %2)
+                                               (u/to-precision 1 %2)))
+                                   :vec-id (peek (str/split (u/try-js-aget pi-layer "id") #"\."))})
+                                features)
+        vec-id-counts      (loop [current-row    (first band-vec-id-info)
+                                  remaining-rows (rest band-vec-id-info)
+                                  final-counts   {}]
+                             (if (empty? remaining-rows)
+                               final-counts
+                               (recur (first remaining-rows)
+                                      (rest remaining-rows)
+                                      (if (contains? final-counts (:vec-id current-row))
+                                       (update final-counts (:vec-id current-row) inc)
+                                       (assoc final-counts (:vec-id current-row) 1)))))
+        vec-id-max         (key (apply max-key val vec-id-counts))]
     (reset! !/last-clicked-info
-            (as-> features %1
-              (map (fn [pi-layer]
-                     {:band   (if multi-column-info?
-                                (as-> pi-layer %2
-                                  (u/try-js-aget %2 "properties" (get-psps-column-name))
-                                  (u/to-precision 1 %2))
-                                (as-> pi-layer %2
-                                  (u/try-js-aget %2 "properties")
-                                  (js/Object.values %2)
-                                  (first %2)
-                                  (u/to-precision 1 %2)))
-                      :vec-id (peek (str/split (u/try-js-aget pi-layer "id") #"\."))})
-                   %1)
-              (filter (fn [pi-layer] (= (:vec-id pi-layer) (:vec-id (first %1))))
+            (as-> band-vec-id-info %1
+              (filter (fn [pi-layer] (= (:vec-id pi-layer) vec-id-max))
                       %1)
               (mapv (fn [pi-layer {:keys [sim-time hour]}]
                       (let [js-time (u/js-date-from-string sim-time)]
@@ -334,7 +345,7 @@
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
                                   (str/join "," point-info)
-                                  (if single? 1 1000)
+                                  (if single? 1 50000)
                                   (get-any-level-key :geoserver-key))
                 !/point-info-loading?))))
 
