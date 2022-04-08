@@ -244,15 +244,15 @@
     (r/create-class
      {:component-did-mount
       (fn []
-        (go-loop [optlayers sorted-underlays]
-          (let [{:keys [filter-set z-index geoserver-key]} (first optlayers)
+        (go-loop [opt-layers sorted-underlays]
+          (let [{:keys [filter-set z-index geoserver-key]} (first opt-layers)
                 layer-name                                 (<! (get-layer-name geoserver-key filter-set identity))]
             (mb/create-wms-layer! layer-name
                                   layer-name
                                   geoserver-key
                                   false
                                   z-index)
-            (when-let [tail (seq (rest optlayers))]
+            (when-let [tail (seq (rest opt-layers))]
               (recur tail)))))
 
       :display-name "optional-layers"
