@@ -237,48 +237,50 @@
       [:label {:for id} opt-label]]]))
 
 (defn- optional-layers [underlays]
-  (r/create-class
-   {:component-did-mount
-    (fn []
-      (go-loop [sorted-underlays (->> underlays
-                                      (map (fn [[id v]] (assoc v :id id)))
-                                      (sort-by :z-index)
-                                      (reverse))]
-        (let [{:keys [filter-set z-index geoserver-key]} (first sorted-underlays)
-              layer-name (<! (get-layer-name geoserver-key filter-set identity))]
-          (mb/create-wms-layer! layer-name
-                                layer-name
-                                geoserver-key
-                                false
-                                z-index)
-          (when-let [tail (seq (rest sorted-underlays))]
-            (recur tail)))))
+  (let [sorted-underlays (->> underlays
+                              (map (fn [[id v]] (assoc v :id id)))
+                              (sort-by :z-index)
+                              (reverse))]
+    (r/create-class
+     {:component-did-mount
+      (fn []
+        (go-loop [opt-layers sorted-underlays]
+          (let [{:keys [filter-set z-index geoserver-key]} (first opt-layers)
+                layer-name                                 (<! (get-layer-name geoserver-key filter-set identity))]
+            (mb/create-wms-layer! layer-name
+                                  layer-name
+                                  geoserver-key
+                                  false
+                                  z-index)
+            (when-let [tail (seq (rest opt-layers))]
+              (recur tail)))))
 
-    :display-name "optional-layers"
+      :display-name "optional-layers"
 
-    :reagent-render
-    (fn [underlays]
-      [:<>
-       [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
-        [:div {:style {:display "flex" :justify-content "space-between"}}
-         [:label "Optional Layers"]
-         [tool-tip-wrapper
-          "Check the boxes below to display additional layers."
-          :left
-          [:div {:style ($/combine ($/fixed-size "1rem")
-                                   {:margin "0 .25rem 4px 0"
-                                    :fill   ($/color-picker :font-color)})}
-           [svg/help]]]]
-        (doall
-         (map (fn [[key {:keys [opt-label filter-set enabled? geoserver-key]}]]
-                (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
-                  ^{:key key}
-                  [optional-layer
-                   opt-label
-                   filter-set
-                   key
-                   geoserver-key]))
-              underlays))]])}))
+      :reagent-render
+      (fn []
+        [:<>
+         [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
+          [:div {:style {:display "flex" :justify-content "space-between"}}
+           [:label "Optional Layers"]
+           [tool-tip-wrapper
+            "Check the boxes below to display additional layers."
+            :left
+            [:div {:style ($/combine ($/fixed-size "1rem")
+                                     {:margin "0 .25rem 4px 0"
+                                      :fill   ($/color-picker :font-color)})}
+             [svg/help]]]]
+
+          (doall
+           (map (fn [{:keys [id opt-label filter-set enabled? geoserver-key]}]
+                  (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
+                    ^{:key id}
+                    [optional-layer
+                     opt-label
+                     filter-set
+                     id
+                     geoserver-key]))
+                sorted-underlays))]])})))
 
 (defn- $collapsible-button []
   {:background-color           ($/color-picker :bg-color)
