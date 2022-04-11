@@ -271,56 +271,58 @@
    have multiple values that you can use for point information, thus they need
    to be parsed differently."
   [json-res]
-  (reset! !/last-clicked-info [])
-  (let [features           (u/try-js-aget json-res "features")
-        multi-column-info? (some-> features
-                                   (u/try-js-aget  0 "properties")
-                                   (js/Object.keys)
-                                   (.-length)
-                                   (> 1))
-        band-extraction-fn (if multi-column-info?
-                               (fn [pi-layer]
-                                 (some->> (get-psps-column-name)
-                                          (u/try-js-aget pi-layer "properties")
-                                          (u/to-precision 1)))
-                               (fn [pi-layer]
-                                 (some->> (u/try-js-aget pi-layer "properties")
-                                          (js/Object.values)
-                                          (first)
-                                          (u/to-precision 1))))
-        feature-info       (map (fn [pi-layer]
-                                  {:band   (band-extraction-fn pi-layer)
-                                   :vec-id (some-> pi-layer
-                                                   (u/try-js-aget "id")
-                                                   (str/split #"\.")
-                                                   (peek))})
-                                features)
-        vec-id-counts      (frequencies (map :vec-id feature-info))
-        vec-id-max         (key (apply max-key val vec-id-counts))]
-    (reset! !/last-clicked-info
-            (->> feature-info
-              (filter (fn [pi-layer] (= (:vec-id pi-layer) vec-id-max)))
-              (mapv (fn [{:keys [sim-time hour]} pi-layer]
-                      (let [js-time (u/js-date-from-string sim-time)]
-                        (assoc pi-layer
-                               :js-time js-time
-                               :date    (u/get-date-from-js js-time @!/show-utc?)
-                               :time    (u/get-time-from-js js-time @!/show-utc?)
-                               :hour    hour)))
-                    @!/param-layers)))))
+  (let [features (u/try-js-aget json-res "features")]
+    (if (empty? features)
+      (reset! !/last-clicked-info [])
+      (let [multi-column-info? (some-> features
+                                       (u/try-js-aget  0 "properties")
+                                       (js/Object.keys)
+                                       (.-length)
+                                       (> 1))
+            band-extraction-fn (if multi-column-info?
+                                   (fn [pi-layer]
+                                     (some->> (get-psps-column-name)
+                                              (u/try-js-aget pi-layer "properties")
+                                              (u/to-precision 1)))
+                                   (fn [pi-layer]
+                                     (some->> (u/try-js-aget pi-layer "properties")
+                                              (js/Object.values)
+                                              (first)
+                                              (u/to-precision 1))))
+            feature-info       (map (fn [pi-layer]
+                                      {:band   (band-extraction-fn pi-layer)
+                                       :vec-id (some-> pi-layer
+                                                       (u/try-js-aget "id")
+                                                       (str/split #"\.")
+                                                       (peek))})
+                                    features)
+            vec-id-counts      (frequencies (map :vec-id feature-info))
+            vec-id-max         (key (apply max-key val vec-id-counts))]
+        (reset! !/last-clicked-info
+                (->> feature-info
+                  (filter (fn [pi-layer] (= (:vec-id pi-layer) vec-id-max)))
+                  (mapv (fn [{:keys [sim-time hour]} pi-layer]
+                          (let [js-time (u/js-date-from-string sim-time)]
+                              (assoc pi-layer
+                                   :js-time js-time
+                                     :date    (u/get-date-from-js js-time @!/show-utc?)
+                                     :time    (u/get-time-from-js js-time @!/show-utc?)
+                                     :hour    hour)))
+                        @!/param-layers)))))))
 
 (defn- process-single-point-info!
   "Resets the !/last-clicked-info atom according the the JSON resulting from a
    call to GetFeatureInfo for single-point-info layers."
   [json-res]
-  (reset! !/last-clicked-info [])
-  (reset! !/last-clicked-info
-          (-> json-res
-              (u/try-js-aget "features")
-              (first)
-              (u/try-js-aget "properties")
-              (js/Object.values)
-              (first))))
+  (let [features (u/try-js-aget json-res "features")]
+    (if (empty? features)
+      (reset! !/last-clicked-info [])
+      (reset! !/last-clicked-info
+              (-> features
+                  (first)
+                  (u/try-js-aget "properties")
+                  (js/Object.values)
+                  (first))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info!
