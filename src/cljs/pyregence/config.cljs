@@ -477,6 +477,7 @@
    :fire-weather-forecast {:forecast-layer? true}
    :fuels-and-topography  {:forecast-layer? true}
    :fire-history          {:forecast-layer? false}
+   :psps-static           {:forecast-layer? false}
    :psps-zonal            {:forecast-layer? true}
    :red-flag              {:forecast-layer? false}
    :fire-cameras          {:forecast-layer? false}})
@@ -504,16 +505,16 @@
                                                    :auto-zoom? true
                                                    :options    {:can-esm2   {:opt-label "CanESM2"
                                                                              :filter    "CanESM2"
-                                                                             :units     ""}
+                                                                             :units     "ha"}
                                                                 :hadgem2-es {:opt-label "HadGEM2-ES"
                                                                              :filter    "HadGEM2-ES"
-                                                                             :units     ""}
+                                                                             :units     "ha"}
                                                                 :cnrm-cm5   {:opt-label "CNRM-CM5"
                                                                              :filter    "CNRM-CM5"
-                                                                             :units     ""}
+                                                                             :units     "ha"}
                                                                 :miroc5     {:opt-label "MIROC5"
                                                                              :filter    "MIROC5"
-                                                                             :units     ""}}}
+                                                                             :units     "ha"}}}
                                       :prob       {:opt-label  "RCP Scenario"
                                                    :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
                                                                 Options include:
@@ -743,9 +744,29 @@
        "&LAYER=" layer
        "&STYLE=" (or style "")))
 
+(def all-psps-columns
+  "A list of all PSPS column names. To be used as the input to the propertyName
+   parameter for GetFeatureInfo in order to filter out extra info."
+  (str/join ","
+            ["h_wg_a"
+             "h_wg_h"
+             "h_wg_l"
+             "h_ws_a"
+             "h_ws_h"
+             "h_ws_l"
+             "l_area_a"
+             "l_area_h"
+             "l_area_l"
+             "l_str_a"
+             "l_str_h"
+             "l_str_l"
+             "l_vol_a"
+             "l_vol_h"
+             "l_vol_l"]))
+
 (defn point-info-url
   "Generates a URL for the point information."
-  [layer-group bbox feature-count geoserver-key]
+  [layer-group bbox feature-count geoserver-key & [properties]]
   (str (wms-url geoserver-key)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
@@ -762,7 +783,9 @@
        "&HEIGHT=1"
        "&CRS=EPSG:3857"
        "&STYLES="
-       "&BBOX=" bbox))
+       "&BBOX=" bbox
+       (when properties
+         (str "&propertyName=" properties))))
 
 (defn wms-layer-url
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.

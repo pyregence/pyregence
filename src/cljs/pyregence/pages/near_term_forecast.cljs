@@ -342,7 +342,9 @@
                 (c/point-info-url layer
                                   (str/join "," point-info)
                                   (if single? 1 50000)
-                                  (get-any-level-key :geoserver-key))
+                                  (get-any-level-key :geoserver-key)
+                                  (when (= @!/*forecast :psps-zonal)
+                                    c/all-psps-columns))
                 !/point-info-loading?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
