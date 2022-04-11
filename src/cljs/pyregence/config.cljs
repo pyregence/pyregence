@@ -747,9 +747,22 @@
 (def all-psps-columns
   "A list of all PSPS column names. To be used as the input to the propertyName
    parameter for GetFeatureInfo in order to filter out extra info."
-  (str
-   "h_wg_a,h_wg_h,h_wg_l,h_ws_a,h_ws_h,h_ws_l,l_area_a,l_area_h,l_area_l,"
-   "l_str_a,l_str_h,l_str_l,l_vol_a,l_vol_h,l_vol_l"))
+  (str/join ","
+            ["h_wg_a"
+             "h_wg_h"
+             "h_wg_l"
+             "h_ws_a"
+             "h_ws_h"
+             "h_ws_l"
+             "l_area_a"
+             "l_area_h"
+             "l_area_l"
+             "l_str_a"
+             "l_str_h"
+             "l_str_l"
+             "l_vol_a"
+             "l_vol_h"
+             "l_vol_l"]))
 
 (defn point-info-url
   "Generates a URL for the point information."
