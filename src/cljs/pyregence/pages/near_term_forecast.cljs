@@ -273,46 +273,40 @@
   [json-res]
   (reset! !/last-clicked-info [])
   (let [features           (u/try-js-aget json-res "features")
-        multi-column-info? (as-> features %
-                             (u/try-js-aget % 0 "properties")
-                             (.keys js/Object %)
-                             (.-length %)
-                             (> % 1))
-        band-vec-id-info   (map (fn [pi-layer]
-                                  {:band   (if multi-column-info?
-                                             (as-> pi-layer %2
-                                               (u/try-js-aget %2 "properties" (get-psps-column-name))
-                                               (u/to-precision 1 %2))
-                                             (as-> pi-layer %2
-                                               (u/try-js-aget %2 "properties")
-                                               (js/Object.values %2)
-                                               (first %2)
-                                               (u/to-precision 1 %2)))
-                                   :vec-id (peek (str/split (u/try-js-aget pi-layer "id") #"\."))})
+        multi-column-info? (some-> features
+                                   (u/try-js-aget  0 "properties")
+                                   (js/Object.keys)
+                                   (.-length)
+                                   (> 1))
+        band-extraction-fn (if multi-column-info?
+                               (fn [pi-layer]
+                                 (some->> (get-psps-column-name)
+                                          (u/try-js-aget pi-layer "properties")
+                                          (u/to-precision 1)))
+                               (fn [pi-layer]
+                                 (some->> (u/try-js-aget pi-layer "properties")
+                                          (js/Object.values)
+                                          (first)
+                                          (u/to-precision 1))))
+        feature-info       (map (fn [pi-layer]
+                                  {:band   (band-extraction-fn pi-layer)
+                                   :vec-id (some-> pi-layer
+                                                   (u/try-js-aget "id")
+                                                   (str/split #"\.")
+                                                   (peek))})
                                 features)
-        vec-id-counts      (loop [current-row    (first band-vec-id-info)
-                                  remaining-rows (rest band-vec-id-info)
-                                  final-counts   {}]
-                             (if (empty? remaining-rows)
-                               final-counts
-                               (recur (first remaining-rows)
-                                      (rest remaining-rows)
-                                      (if (contains? final-counts (:vec-id current-row))
-                                       (update final-counts (:vec-id current-row) inc)
-                                       (assoc final-counts (:vec-id current-row) 1)))))
+        vec-id-counts      (frequencies (map :vec-id feature-info))
         vec-id-max         (key (apply max-key val vec-id-counts))]
     (reset! !/last-clicked-info
-            (as-> band-vec-id-info %1
-              (filter (fn [pi-layer] (= (:vec-id pi-layer) vec-id-max))
-                      %1)
-              (mapv (fn [pi-layer {:keys [sim-time hour]}]
+            (->> feature-info
+              (filter (fn [pi-layer] (= (:vec-id pi-layer) vec-id-max)))
+              (mapv (fn [{:keys [sim-time hour]} pi-layer]
                       (let [js-time (u/js-date-from-string sim-time)]
-                        (merge {:js-time js-time
-                                :date    (u/get-date-from-js js-time @!/show-utc?)
-                                :time    (u/get-time-from-js js-time @!/show-utc?)
-                                :hour    hour}
-                               pi-layer)))
-                    %1
+                        (assoc pi-layer
+                               :js-time js-time
+                               :date    (u/get-date-from-js js-time @!/show-utc?)
+                               :time    (u/get-time-from-js js-time @!/show-utc?)
+                               :hour    hour)))
                     @!/param-layers)))))
 
 (defn- process-single-point-info!
