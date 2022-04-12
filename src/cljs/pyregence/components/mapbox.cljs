@@ -509,14 +509,14 @@
                                    90  "fire-icon-90"
                                    100 "fire-icon-100"]
               :icon-size          ["interpolate" ["linear"] ["get" "acres"]
-                                   1000   0.6
-                                   10000  0.8
+                                   1000   0.5
+                                   10000  0.75
                                    300000 1.0]
               :text-anchor        "top"
               :text-allow-overlap true
               :text-field         ["to-string" ["get" "prettyname"]]
               :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
-              :text-offset        [0 1.0]
+              :text-offset        [0 0.9]
               :text-size          16
               :visibility         "visible"}
    :metadata {:type (get-layer-type layer-name)}
