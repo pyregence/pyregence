@@ -258,9 +258,9 @@
                                                               :fire-volume  {:opt-label "Fire volume"
                                                                              :filter    "fire-volume"
                                                                              :units     "Acre-ft"}
-                                                              :plignrate    {:opt-label "Power line ignition rate"
-                                                                             :filter    "plignrate"
-                                                                             :units     "Times"
+                                                              :plignrate    {:opt-label    "Estimated powerline ignition rate"
+                                                                             :filter       "plignrate"
+                                                                             :units        "Ignitions / line-mi / hr"
                                                                              :disabled-for #{:all :tlines}}}}
                                     :pattern    {:opt-label  "Ignition Pattern"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
