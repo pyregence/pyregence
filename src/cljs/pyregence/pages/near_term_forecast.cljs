@@ -304,7 +304,7 @@
                      (mapv (fn [{:keys [sim-time hour]} pi-layer]
                              (let [js-time (u/js-date-from-string sim-time)]
                                  (assoc pi-layer
-                                      :js-time js-time
+                                        :js-time js-time
                                         :date    (u/get-date-from-js js-time @!/show-utc?)
                                         :time    (u/get-time-from-js js-time @!/show-utc?)
                                         :hour    hour)))
