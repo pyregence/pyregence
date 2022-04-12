@@ -275,7 +275,7 @@
     (if (empty? features)
       (reset! !/last-clicked-info [])
       (let [multi-column-info? (some-> features
-                                       (u/try-js-aget  0 "properties")
+                                       (u/try-js-aget 0 "properties")
                                        (js/Object.keys)
                                        (.-length)
                                        (> 1))
@@ -300,15 +300,15 @@
             vec-id-max         (key (apply max-key val vec-id-counts))]
         (reset! !/last-clicked-info
                 (->> feature-info
-                  (filter (fn [pi-layer] (= (:vec-id pi-layer) vec-id-max)))
-                  (mapv (fn [{:keys [sim-time hour]} pi-layer]
-                          (let [js-time (u/js-date-from-string sim-time)]
-                              (assoc pi-layer
-                                   :js-time js-time
-                                     :date    (u/get-date-from-js js-time @!/show-utc?)
-                                     :time    (u/get-time-from-js js-time @!/show-utc?)
-                                     :hour    hour)))
-                        @!/param-layers)))))))
+                     (filter (fn [pi-layer] (= (:vec-id pi-layer) vec-id-max)))
+                     (mapv (fn [{:keys [sim-time hour]} pi-layer]
+                             (let [js-time (u/js-date-from-string sim-time)]
+                                 (assoc pi-layer
+                                      :js-time js-time
+                                        :date    (u/get-date-from-js js-time @!/show-utc?)
+                                        :time    (u/get-time-from-js js-time @!/show-utc?)
+                                        :hour    hour)))
+                           @!/param-layers)))))))
 
 (defn- process-single-point-info!
   "Resets the !/last-clicked-info atom according the the JSON resulting from a
@@ -318,11 +318,11 @@
     (if (empty? features)
       (reset! !/last-clicked-info [])
       (reset! !/last-clicked-info
-              (-> features
-                  (first)
-                  (u/try-js-aget "properties")
-                  (js/Object.values)
-                  (first))))))
+              (some-> features
+                      (first)
+                      (u/try-js-aget "properties")
+                      (js/Object.values)
+                      (first))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info!
