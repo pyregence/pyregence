@@ -257,7 +257,11 @@
                                                                              :units     "Acres"}
                                                               :fire-volume  {:opt-label "Fire volume"
                                                                              :filter    "fire-volume"
-                                                                             :units     "Acre-ft"}}}
+                                                                             :units     "Acre-ft"}
+                                                              :plignrate    {:opt-label "Power line ignition rate"
+                                                                             :filter    "plignrate"
+                                                                             :units     "Times"
+                                                                             :disabled-for #{:all :tlines}}}}
                                     :pattern    {:opt-label  "Ignition Pattern"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Fires are ignited randomly across California at various times in the future so their impacts can be modeled. Patterns include:"
@@ -270,10 +274,12 @@
                                                               [:strong "Transmission Lines"]
                                                               " - Fires ignited in close proximity to overhead electrical transmission lines."]
                                                  :options    {:all        {:opt-label    "Human-caused ignitions"
-                                                                           :filter       "all"}
+                                                                           :filter       "all"
+                                                                           :disabled-for #{:plignrate}}
                                                               :tlines     {:opt-label    "Transmission lines"
                                                                            :filter       "tlines"
-                                                                           :clear-point? true}}}
+                                                                           :clear-point? true
+                                                                           :disabled-for #{:plignrate}}}}
                                     :fuel       {:opt-label  "Fuel"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
