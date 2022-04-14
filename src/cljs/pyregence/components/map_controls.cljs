@@ -4,8 +4,9 @@
             [reagent.dom.server  :as rs]
             [herb.core           :refer [<class]]
             [clojure.edn         :as edn]
+            [clojure.set         :as set]
             [clojure.string      :as string]
-            [clojure.core.async  :refer [<! go go-loop put! timeout chan]]
+            [clojure.core.async  :refer [<! go go-loop timeout]]
             [clojure.pprint      :refer [cl-format]]
             [pyregence.state     :as !]
             [pyregence.styles    :as $]
@@ -883,7 +884,17 @@
       cur-hour]
      [information-div units info-height]]))
 
-(defn- single-point-info [box-height _ units convert]
+(defn- fbfm40-info []
+  [:div {:style {:margin "0.125rem 0.75rem"}}
+   [:p {:style {:margin-bottom "0.125rem"
+                :text-align    "center"}}
+    [:strong "Fuel Type: "]
+    (get-in c/fbfm40-lookup [@!/last-clicked-info :fuel-type])]
+   [:p {:style {:margin-bottom "0"}}
+    [:strong "Description: "]
+    (get-in c/fbfm40-lookup [@!/last-clicked-info :description])]])
+
+(defn- single-point-info [box-height _ units convert no-convert]
   (let [legend-map  (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) @!/legend-list)
         legend-keys (sort (keys legend-map))
         color       (or (get-in legend-map [(-> @!/last-clicked-info
@@ -894,7 +905,28 @@
                           (when (and high low)
                             (u/interp-color (get-in legend-map [low "color"])
                                             (get-in legend-map [high "color"])
-                                            (/ (- @!/last-clicked-info low) (- high low))))))]
+                                            (/ (- @!/last-clicked-info low) (- high low))))))
+        *inputs     (->> @!/*params
+                         (@!/*forecast)
+                         (vals)
+                         (into #{}))
+        add-units   #(u/end-with % (u/clean-units units))
+        fbfm40?     (contains? *inputs :fbfm40)
+        display-val (cond
+                      fbfm40? ; for all fbfm40 layers we just need a simple lookup
+                      (get-in legend-map [@!/last-clicked-info "label"])
+
+                      (not (fn? convert)) ; never convert the value
+                      (add-units @!/last-clicked-info)
+
+                      (empty? no-convert) ; we always want to convert the value
+                      (add-units (convert @!/last-clicked-info))
+
+                      (seq (set/intersection no-convert *inputs)) ; we don't want to convert for this set of *inputs
+                      (add-units @!/last-clicked-info)
+
+                      :else ; we do want to convert for this set of *inputs
+                      (add-units (convert @!/last-clicked-info)))]
     [:div {:style {:align-items     "center"
                    :display         "flex"
                    :flex-direction  "column"
@@ -909,24 +941,16 @@
                      :height           "1.5rem"
                      :margin-right     "0.5rem"
                      :width            "1.5rem"}}]
-      [:h4 (u/end-with (or (get-in legend-map [@!/last-clicked-info "label"])
-                           (if (fn? convert) (convert @!/last-clicked-info) @!/last-clicked-info))
-                       (u/clean-units units))]]
-     (when (some #(= "TU1" (get % "label")) @!/legend-list)
-       [:div {:style {:margin "0.125rem 0.75rem"}}
-        [:p {:style {:margin-bottom "0.125rem"
-                     :text-align    "center"}}
-         [:strong "Fuel Type: "]
-         (get-in c/fbfm40-lookup [@!/last-clicked-info :fuel-type])]
-        [:p {:style {:margin-bottom "0"}}
-         [:strong "Description: "]
-         (get-in c/fbfm40-lookup [@!/last-clicked-info :description])]])]))
+      [:h4 display-val]]
+     (when fbfm40?
+       (fbfm40-info))]))
 
 (defn information-tool [get-point-info!
                         parent-box
                         select-layer!
                         units
                         convert
+                        no-convert
                         cur-hour
                         close-fn!]
   (r/with-let [click-event (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
@@ -983,7 +1007,8 @@
              box-height
              box-width
              units
-             convert]
+             convert
+             no-convert]
 
             :else
             [vega-information

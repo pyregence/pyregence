@@ -318,11 +318,11 @@
     (if (empty? features)
       (reset! !/last-clicked-info [])
       (reset! !/last-clicked-info
-              (some-> features
-                      (first)
-                      (u/try-js-aget "properties")
-                      (js/Object.values)
-                      (first))))))
+              (u/to-precision 2 (some-> features
+                                        (first)
+                                        (u/try-js-aget "properties")
+                                        (js/Object.values)
+                                        (first)))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info!
@@ -598,6 +598,7 @@
                select-layer-by-hour!
                (get-current-layer-key :units)
                (get-current-layer-key :convert)
+               (or (get-current-layer-key :no-convert) #{})
                (get-current-layer-hour)
                #(set-show-info! false)])
             (when @!/show-match-drop?
