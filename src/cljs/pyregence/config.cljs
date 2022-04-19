@@ -146,19 +146,22 @@
                                                        :ch     {:opt-label       "Canopy Height (m)"
                                                                 :filter          "ch"
                                                                 :units           "m"
+                                                                :no-convert      #{:cfo}
                                                                 :convert         #(u/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cec}}
                                                        :cbh    {:opt-label       "Canopy Base Height (m)"
                                                                 :filter          "cbh"
                                                                 :units           "m"
+                                                                :no-convert      #{:cfo}
                                                                 :convert         #(u/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cec}}
                                                        :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
                                                                 :filter          "cbd"
                                                                 :units           "kg/m\u00b3"
-                                                                :convert         #(u/to-precision 2 %)
+                                                                :convert         #(u/to-precision 2 (/ % 100))
+                                                                :no-convert      #{:cfo}
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cec}})}
                                   :model-init {:opt-label  "Model Creation Time"
