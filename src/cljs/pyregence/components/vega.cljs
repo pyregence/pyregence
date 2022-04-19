@@ -29,9 +29,9 @@
      (rest processed-legend))))
 
 (defn- create-data-scale []
-  (let [all-hours (mapv #(:hour %) @!/last-clicked-info)]
+  (let [all-hours (mapv :hour @!/last-clicked-info)]
     {:type   "linear"
-     :domain [(apply min all-hours) (apply max all-hours)]
+     :domain [(reduce min all-hours) (reduce max all-hours)]
      :nice   false}))
 
 (defn- create-color-scale [processed-legend]
@@ -71,14 +71,14 @@
                                                     :empty "none"}}}
                          {:transform [{:filter {:or [{:field "hour" :lt current-hour}
                                                      {:field "hour" :gt current-hour}]}}]
-                          :mark     {:type   "point"
-                                     :filled true}
-                          :encoding {:size  {:condition {:selection :point-hover :value 150}
-                                             :value     75}
-                                     :color {:field  "band"
-                                             :type   "quantitative"
-                                             :scale  (create-color-scale processed-legend)
-                                             :legend false}}}
+                          :mark      {:type   "point"
+                                      :filled true}
+                          :encoding  {:size  {:condition {:selection :point-hover :value 150}
+                                              :value     75}
+                                      :color {:field  "band"
+                                              :type   "quantitative"
+                                              :scale  (create-color-scale processed-legend)
+                                              :legend false}}}
                          {:transform [{:filter {:field "hour" :equal current-hour}}]
                           :mark      {:type   "point"
                                       :filled false
