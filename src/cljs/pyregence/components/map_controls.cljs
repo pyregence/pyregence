@@ -916,17 +916,11 @@
                       fbfm40? ; for all fbfm40 layers we just need a simple lookup
                       (get-in legend-map [@!/last-clicked-info "label"])
 
-                      (not (fn? convert)) ; never convert the value
-                      (add-units @!/last-clicked-info)
-
-                      (empty? no-convert) ; we always want to convert the value
+                      (and (fn? convert) (empty? (set/intersection no-convert *inputs))) ; convert the value
                       (add-units (convert @!/last-clicked-info))
 
-                      (seq (set/intersection no-convert *inputs)) ; we don't want to convert for this set of *inputs
-                      (add-units @!/last-clicked-info)
-
-                      :else ; we do want to convert for this set of *inputs
-                      (add-units (convert @!/last-clicked-info)))]
+                      :else ; otherwise, do not convert
+                      (add-units @!/last-clicked-info))]
     [:div {:style {:align-items     "center"
                    :display         "flex"
                    :flex-direction  "column"
@@ -943,16 +937,24 @@
                      :width            "1.5rem"}}]
       [:h4 display-val]]
      (when fbfm40?
-       (fbfm40-info))]))
+       [fbfm40-info])]))
 
-(defn information-tool [get-point-info!
-                        parent-box
-                        select-layer!
-                        units
-                        convert
-                        no-convert
-                        cur-hour
-                        close-fn!]
+(defn information-tool
+  "The point information tool component. Supports both single point info and
+   multiple point info. The units, convert, and no-convert arguments
+   are set in the :options key of a forecasts options map in config.cljs.
+   For example, the :ch options key on the near term forecast fuels tab specifes
+   that the units are meters, the value returned from get-point-info! should be
+   converted using the provided function, and the value from get-point-info!
+   should not be converted when using the :cfo Source."
+  [get-point-info!
+   parent-box
+   select-layer!
+   units
+   convert
+   no-convert
+   cur-hour
+   close-fn!]
   (r/with-let [click-event (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
     [:div#info-tool
      [resizable-window
