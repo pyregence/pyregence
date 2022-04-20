@@ -207,7 +207,8 @@
                                                                        :units     "mph"}
                                                               :apcp01 {:opt-label "1-hour precipitation (in)"
                                                                        :filter    "apcp01"
-                                                                       :units     "inches"}
+                                                                       :units     "inches"
+                                                                       :convert   #(u/to-precision 2 (* % 0.03937007874))}
                                                               :meq    {:opt-label "Fine dead fuel moisture (%)"
                                                                        :filter    "meq"
                                                                        :units     "%"}
@@ -443,14 +444,15 @@
                                                               :vol  {:opt-label "Fire volume (acre-ft)"
                                                                      :filter    "nve"
                                                                      :units     "Acre-ft"})}
-                                    :statistic  {:opt-label  "Statistic"
-                                                 :hover-text "Options are minimum, mean, or maximum."
-                                                 :options    {:l {:opt-label "Minimum"
-                                                                  :filter    "deenergization-zones"}
-                                                              :a {:opt-label "Mean"
-                                                                  :filter    "deenergization-zones"}
-                                                              :h {:opt-label "Maximum"
-                                                                  :filter    "deenergization-zones"}}}
+                                    :statistic  {:opt-label      "Statistic"
+                                                 :hover-text     "Options are minimum, mean, or maximum."
+                                                 :default-option :a
+                                                 :options        {:l {:opt-label "Minimum"
+                                                                      :filter    "deenergization-zones"}
+                                                                  :a {:opt-label "Mean"
+                                                                      :filter    "deenergization-zones"}
+                                                                  :h {:opt-label "Maximum"
+                                                                      :filter    "deenergization-zones"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "ELMFIRE"]

@@ -11,8 +11,8 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- create-stops [processed-legend]
-  (let [max-band         (reduce (fn [acc cur] (max acc (:band cur))) 1.0 @!/last-clicked-info)]
+(defn- create-stops [processed-legend processed-point-info]
+  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 processed-point-info)]
     (reductions
      (fn [last cur] (let [last-q (get last :quantity  0.0)
                           cur-q  (get cur  "quantity" 0.0)]
@@ -39,13 +39,22 @@
    :domain (mapv #(get % "quantity") processed-legend)
    :range  (mapv #(get % "color")    processed-legend)})
 
-(defn- layer-line-plot [units current-hour]
-  (let [processed-legend (u/filter-no-data @!/legend-list)]
+(defn- layer-line-plot [units current-hour convert]
+  (let [processed-legend     (if (fn? convert)
+                               (mapv (fn [entry]
+                                       (assoc entry "quantity" (str (convert (get entry "quantity")))))
+                                     (u/filter-no-data @!/legend-list))
+                               (u/filter-no-data @!/legend-list))
+        processed-point-info (if (fn? convert)
+                               (mapv (fn [entry]
+                                       (assoc entry :band (convert (:band entry))))
+                                     (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities))
+                               (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities))]
     {:width    "container"
      :height   "container"
      :autosize {:type "fit" :resize true}
      :padding  {:left "16" :top "16" :right "16" :bottom "16"}
-     :data     {:values (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)}
+     :data     {:values processed-point-info}
      :layer    [{:encoding {:x {:field "hour"
                                 :type  "quantitative"
                                 :title "Hour"
@@ -62,7 +71,8 @@
                                  :stroke      {:x2       0
                                                :y1       1
                                                :gradient "linear"
-                                               :stops    (create-stops processed-legend)}}}
+                                               :stops    (create-stops processed-legend
+                                                                       processed-point-info)}}}
                          ;; This defines all of the points for selection
                          {:mark      {:type   "point"
                                       :opacity 0}
@@ -127,8 +137,8 @@
 
 (defn vega-box
   "A function to create a Vega line plot."
-  [box-height box-width layer-click! units current-hour]
-  [vega-canvas {:spec         (layer-line-plot units current-hour)
+  [box-height box-width layer-click! units current-hour convert]
+  [vega-canvas {:spec         (layer-line-plot units current-hour convert)
                 :box-height   box-height
                 :box-width    box-width
                 :layer-click! layer-click!}])

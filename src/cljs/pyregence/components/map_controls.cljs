@@ -852,7 +852,7 @@
                                :z-index  "1"}}
    [:label message]])
 
-(defn information-div [units info-height]
+(defn information-div [units info-height convert]
   (r/create-class
    {:component-did-mount
     (fn [this]
@@ -869,11 +869,12 @@
             current-point             (get cleaned-last-clicked-info @!/*layer-idx)]
         [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
          [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
-          (if (some? (:band current-point))
-            (str (:band current-point) (u/clean-units units))
+          (if-let [value (:band current-point)]
+            (str (if (fn? convert) (convert value) value)
+                 (u/clean-units units))
             "No info available for this timestep.")]]))}))
 
-(defn- vega-information [box-height box-width select-layer! units cur-hour]
+(defn- vega-information [box-height box-width select-layer! units cur-hour convert]
   (r/with-let [info-height (r/atom 0)]
     [:<>
      [vega-box
@@ -881,8 +882,9 @@
       box-width
       select-layer!
       units
-      cur-hour]
-     [information-div units info-height]]))
+      cur-hour
+      convert]
+     [information-div units info-height convert]]))
 
 (defn- fbfm40-info []
   [:div {:style {:margin "0.125rem 0.75rem"}}
@@ -1018,7 +1020,8 @@
              box-width
              select-layer!
              units
-             cur-hour])))]]
+             cur-hour
+             convert])))]]
     (finally
       (mb/remove-event! click-event))))
 
