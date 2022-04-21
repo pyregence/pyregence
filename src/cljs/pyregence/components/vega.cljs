@@ -40,16 +40,10 @@
    :range  (mapv #(get % "color")    processed-legend)})
 
 (defn- layer-line-plot [units current-hour convert]
-  (let [processed-legend     (if (fn? convert)
-                               (mapv (fn [entry]
-                                       (assoc entry "quantity" (str (convert (get entry "quantity")))))
-                                     (u/filter-no-data @!/legend-list))
-                               (u/filter-no-data @!/legend-list))
-        processed-point-info (if (fn? convert)
-                               (mapv (fn [entry]
-                                       (assoc entry :band (convert (:band entry))))
-                                     (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities))
-                               (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities))]
+  (let [processed-legend     (cond->> (u/filter-no-data @!/legend-list)
+                               (fn? convert) (mapv #(update % "quantity" (comp str convert))))
+        processed-point-info (cond->> (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)
+                               (fn? convert) (mapv #(update % :band convert)))]
     {:width    "container"
      :height   "container"
      :autosize {:type "fit" :resize true}
