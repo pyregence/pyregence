@@ -10,12 +10,18 @@ Closes PYR-###
 - [ ] Feature(s) work when compiled (`clojure -M:compile-cljs`)
 
 ## Module(s) Impacted
-<!-- List the Module > Submodule impacted by this PR (e.g. Fire Layers > Structures) -->
-<!-- The current list of all Modules is: Fire Layers, Toolbars, and Mobile. -->
+<!-- List the Module > Submodule impacted by this PR (e.g. Underlays > Structures Layer) -->
+<!-- The current list of all Modules is: Fuels Tab, Weather Tab, Risk Tab, Active Fires Tab, PSPS Tab, Underlays, Point Info, Toolbars, and Mobile. -->
 
 ## Testing
-<!-- Create a BDD style test script -->
-1. Given..., When ..., Then ....
+<!-- Admin, User, or Vistor -->
+#### Role
+
+<!-- All steps needed to test this PR -->
+#### Steps
+1.
+
+#### Desired Outcome
 
 ## Screenshots
 <!-- Add a screen shot when UI changes are included -->
