@@ -292,7 +292,7 @@
   (reset! !/legend-list [])
   (let [main-key (first keys)]
     (when (= main-key :fire-name)
-      (select-layer! 0)
+      (reset! !/*layer-idx 0)
       (swap! !/*params assoc-in (cons @!/*forecast [:burn-pct]) :50)
       (reset! !/animate? false))
     (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
