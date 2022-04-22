@@ -503,7 +503,8 @@
   {:id       layer-name
    :type     "symbol"
    :source   source-name
-   :layout   {:icon-image         ["step" ["get" "containper"]
+   :layout   {:icon-allow-overlap true
+              :icon-image         ["step" ["get" "containper"]
                                    "fire-icon-0"
                                    50  "fire-icon-50"
                                    90  "fire-icon-90"
@@ -516,7 +517,7 @@
               :text-allow-overlap true
               :text-field         ["to-string" ["get" "prettyname"]]
               :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
-              :text-offset        [0 0.9]
+              :text-offset        [0 0.8]
               :text-size          16
               :visibility         "visible"}
    :metadata {:type (get-layer-type layer-name)}
