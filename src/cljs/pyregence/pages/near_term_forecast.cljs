@@ -388,10 +388,10 @@
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
         {:strs [name prettyname containper acres]} properties
         body       (fire-popup prettyname
-                                  containper
-                                  acres
-                                  #(select-param! (keyword name) :fire-name)
-                                  (forecast-exists? name))]
+                               containper
+                               acres
+                               #(select-param! (keyword name) :fire-name)
+                               (forecast-exists? name))]
     (mb/init-popup! "fire" lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 
@@ -430,7 +430,7 @@
   (reset! !/last-clicked-info nil)
   (let [main-key (first keys)]
     (when (= main-key :fire-name)
-      (select-layer! 0)
+      (reset! !/*layer-idx 0)
       (swap! !/*params assoc-in (cons @!/*forecast [:burn-pct]) :50)
       (reset! !/animate? false))
     (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
@@ -643,8 +643,8 @@
                               @mouse-down?                           "grabbing"
                               (or @!/show-info? @!/show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
                               :else                                  "grab")]
-    [:div#map {:class         (<class $p-mb-cursor)
-               :style         {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
+    [:div#map {:class (<class $p-mb-cursor)
+               :style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
                :on-mouse-down #(reset! mouse-down? true)
                :on-mouse-up   #(reset! mouse-down? false)}]))
 
