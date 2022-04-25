@@ -11,8 +11,8 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- create-stops []
-  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 @!/last-clicked-info)]
+(defn- create-stops [processed-legend processed-point-info]
+  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 processed-point-info)]
     (reductions
      (fn [last cur] (let [last-q (get last :quantity  0.0)
                           cur-q  (get cur  "quantity" 0.0)]
@@ -25,54 +25,71 @@
                                                       (- cur-q last-q)))
                                    (get cur "color"))}))
      {:offset 0.0
-      :color  (get (first @!/legend-list) "color")}
-     (rest @!/legend-list))))
+      :color  (get (first processed-legend) "color")}
+     (rest processed-legend))))
 
-(defn- create-scale []
+(defn- create-data-scale []
+  (let [all-hours (mapv :hour @!/last-clicked-info)]
+    {:type   "linear"
+     :domain [(reduce min all-hours) (reduce max all-hours)]
+     :nice   false}))
+
+(defn- create-color-scale [processed-legend]
   {:type   "linear"
-   :domain (mapv #(get % "quantity") @!/legend-list)
-   :range  (mapv #(get % "color")    @!/legend-list)})
+   :domain (mapv #(get % "quantity") processed-legend)
+   :range  (mapv #(get % "color")    processed-legend)})
 
-(defn- layer-line-plot [units current-hour]
-  {:width    "container"
-   :height   "container"
-   :autosize {:type "fit" :resize true}
-   :padding  {:left "16" :top "16" :right "16" :bottom "16"}
-   :data     {:values (or @!/last-clicked-info [])}
-   :layer    [{:encoding {:x {:field "hour" :type "quantitative" :title "Hour"}
-                          :y {:field "band" :type "quantitative" :title units}
-                          :tooltip [{:field "band" :title units  :type "nominal"}
-                                    {:field "date" :title "Date" :type "nominal"}
-                                    {:field "time" :title "Time" :type "nominal"}]}
-               :layer [{:mark {:type        "line"
-                               :interpolate "monotone"
-                               :stroke      {:x2       0
-                                             :y1       1
-                                             :gradient "linear"
-                                             :stops    (create-stops)}}}
-                         ;; Layer with all points for selection
-                       {:mark      {:type   "point"
-                                    :opacity 0}
-                        :selection {:point-hover {:type  "single"
-                                                  :on    "mouseover"
-                                                  :empty "none"}}}
-                       {:transform [{:filter {:or [{:field "hour" :lt current-hour}
-                                                   {:field "hour" :gt current-hour}]}}]
-                        :mark     {:type   "point"
-                                   :filled true}
-                        :encoding {:size {:condition {:selection :point-hover :value 150}
-                                          :value     75}
-                                   :color {:field  "band"
-                                           :type   "quantitative"
-                                           :scale  (create-scale)
-                                           :legend false}}}
-                       {:transform [{:filter {:field "hour" :equal current-hour}}]
-                        :mark {:type   "point"
-                               :filled false
-                               :fill   "black"
-                               :stroke "black"}
-                        :encoding {:size {:condition {:selection :point-hover :value 150}
-                                          :value     75}}}]}]})
+(defn- layer-line-plot [units current-hour convert]
+  (let [processed-legend     (cond->> (u/filter-no-data @!/legend-list)
+                               (fn? convert) (mapv #(update % "quantity" (comp str convert))))
+        processed-point-info (cond->> (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)
+                               (fn? convert) (mapv #(update % :band convert)))]
+    {:width    "container"
+     :height   "container"
+     :autosize {:type "fit" :resize true}
+     :padding  {:left "16" :top "16" :right "16" :bottom "16"}
+     :data     {:values processed-point-info}
+     :layer    [{:encoding {:x {:field "hour"
+                                :type  "quantitative"
+                                :title "Hour"
+                                :scale (create-data-scale)}
+                            :y {:field "band"
+                                :type  "quantitative"
+                                :title units}
+                            :tooltip [{:field "band" :title units  :type "nominal"}
+                                      {:field "date" :title "Date" :type "nominal"}
+                                      {:field "time" :title "Time" :type "nominal"}
+                                      {:field "hour" :title "Hour" :type "nominal"}]}
+                 :layer [{:mark {:type        "line"
+                                 :interpolate "monotone"
+                                 :stroke      {:x2       0
+                                               :y1       1
+                                               :gradient "linear"
+                                               :stops    (create-stops processed-legend
+                                                                       processed-point-info)}}}
+                         ;; This defines all of the points for selection
+                         {:mark      {:type   "point"
+                                      :opacity 0}
+                          :selection {:point-hover {:type  "single"
+                                                    :on    "mouseover"
+                                                    :empty "none"}}}
+                         {:transform [{:filter {:or [{:field "hour" :lt current-hour}
+                                                     {:field "hour" :gt current-hour}]}}]
+                          :mark      {:type   "point"
+                                      :filled true}
+                          :encoding  {:size  {:condition {:selection :point-hover :value 150}
+                                              :value     75}
+                                      :color {:field  "band"
+                                              :type   "quantitative"
+                                              :scale  (create-color-scale processed-legend)
+                                              :legend false}}}
+                         {:transform [{:filter {:field "hour" :equal current-hour}}]
+                          :mark      {:type   "point"
+                                      :filled false
+                                      :fill   "black"
+                                      :stroke "black"}
+                          :encoding  {:size {:condition {:selection :point-hover :value 150}
+                                             :value     75}}}]}]}))
 
 (defn- render-vega [spec layer-click! elem]
   (when (and spec (seq (get-in spec [:data :values])))
@@ -114,8 +131,8 @@
 
 (defn vega-box
   "A function to create a Vega line plot."
-  [box-height box-width layer-click! units current-hour]
-  [vega-canvas {:spec         (layer-line-plot units current-hour)
+  [box-height box-width layer-click! units current-hour convert]
+  [vega-canvas {:spec         (layer-line-plot units current-hour convert)
                 :box-height   box-height
                 :box-width    box-width
                 :layer-click! layer-click!}])

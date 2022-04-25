@@ -578,3 +578,21 @@
   (if (#{"%" "\u00B0F" "\u00B0"} units)
     units
     (str " " units)))
+
+(defn filter-no-data
+  "Removes any nodata 'label' entries from the provided legend-list."
+  [legend-list]
+  (remove (fn [leg]
+            (= "nodata" (get leg "label")))
+          legend-list))
+
+(defn replace-no-data-nil
+  "Replaces any nodata 'band' entries from the provided last-clicked-info list
+   with nil."
+  [last-clicked-info no-data-quantities]
+  (mapv (fn [entry]
+         (let [band-val (:band entry)]
+           (assoc entry :band (if (contains? no-data-quantities (str band-val))
+                                nil
+                                band-val))))
+        last-clicked-info))

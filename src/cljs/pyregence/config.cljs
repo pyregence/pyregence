@@ -28,129 +28,148 @@
 ;; WG3 Forecast
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def common-underlays
+  {:us-buildings    {:enabled?      #(feature-enabled? :structures)
+                     :opt-label     "Structures"
+                     :z-index       104
+                     :filter-set    #{"fire-detections" "us-buildings"}
+                     :geoserver-key :pyrecast}})
+
 (def near-term-forecast-underlays
-  {:us-buildings    {:enabled?   #(feature-enabled? :structures)
-                     :opt-label  "Structures"
-                     :z-index    104
-                     :filter-set #{"fire-detections" "us-buildings"}}
-   :nifs-perimeters {:opt-label  "NIFS Perimeters"
-                     :z-index    103
-                     :filter-set #{"fire-detections" "nifs-perimeters"}}
-   :viirs-hotspots  {:opt-label  "VIIRS Hotspots"
-                     :z-index    102
-                     :filter-set #{"fire-detections" "viirs-timestamped"}}
-   :modis-hotspots  {:opt-label  "MODIS Hotspots"
-                     :z-index    101
-                     :filter-set #{"fire-detections" "modis-timestamped"}}
-   :goes-imagery    {:opt-label  "Live satellite (GOES-16)"
-                     :z-index    100
-                     :filter-set #{"fire-detections" "goes16-rgb"}}})
+  (array-map
+   :us-trans-lines  {:opt-label     "US Transmission Lines"
+                     :z-index       107
+                     :filter-set    #{"fire-detections" "us-transmission-lines"}
+                     :geoserver-key :pyrecast}
+   :nifs-perimeters {:opt-label     "NIFS Perimeters"
+                     :z-index       103
+                     :filter-set    #{"fire-detections" "nifs-perimeters"}
+                     :geoserver-key :pyrecast}
+   :viirs-hotspots  {:opt-label     "VIIRS Hotspots"
+                     :z-index       102
+                     :filter-set    #{"fire-detections" "viirs-timestamped"}
+                     :geoserver-key :pyrecast}
+   :modis-hotspots  {:opt-label     "MODIS Hotspots"
+                     :z-index       101
+                     :filter-set    #{"fire-detections" "modis-timestamped"}
+                     :geoserver-key :pyrecast}
+   :goes-imagery    {:opt-label     "Live satellite (GOES-16)"
+                     :z-index       100
+                     :filter-set    #{"fire-detections" "goes16-rgb"}
+                     :geoserver-key :pyrecast}))
 
 (def near-term-forecast-options
-  {:fuels        {:opt-label    "Fuels"
-                  :filter       "fuels"
-                  :time-slider? false
-                  :hover-text   "Layers related to fuel and potential fire behavior."
-                  :params       {:model {:opt-label  "Source"
-                                         :hover-text [:p {:style {:margin-bottom "0"}}
-                                                      "Stock "
-                                                      [:strong "LANDFIRE 2.0.0"]
-                                                      " data ("
-                                                      [:a {:href   "https://landfire.gov"
-                                                           :target "_blank"}
-                                                       "https://landfire.gov"]
-                                                      ") at 30 m resolution."
-                                                      [:br]
-                                                      [:br]
-                                                      [:strong "California Forest Observatory"]
-                                                      " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
-                                                      [:a {:href   "https://forestobservatory.com"
-                                                           :target "_blank"}
-                                                       "https://forestobservatory.com"]
-                                                      "), © Salo Sciences, Inc. 2020."
-                                                      [:br]
-                                                      [:br]
-                                                      [:strong "2021 California fuelscape"]
-                                                      " prepared by Pyrologix, LLC ("
-                                                      [:a {:href   "https://pyrologix.com"
-                                                           :target "_blank"}
-                                                       "https://pyrologix.com"]
-                                                      "), 2021."
-                                                      [:br]
-                                                      [:br]
-                                                      [:strong "California Ecosystem Climate Solutions"]
-                                                      " - Data provided by the "
-                                                      [:a {:href   "https://california-ecosystem-climate.solutions/"
-                                                           :target "_blank"}
-                                                       "California Ecosystem Climate Solutions"]
-                                                      ", Wang et al. (2021)."]
-
-                                         :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
-                                                                      :filter    "landfire-2.0.0"}
-                                                      :cfo           {:opt-label "California Forest Obs."
-                                                                      :filter    "cfo-2020"}
-                                                      :ca-fuelscapes {:opt-label "2021 CA fuelscape"
-                                                                      :filter    "ca-fuelscapes"}
-                                                      :cec           {:opt-label "CA Ecosystem Climate Solutions"
-                                                                      :filter    "cec"}}}
-                                 :layer {:opt-label  "Layer"
-                                         :hover-text [:p {:style {:margin-bottom "0"}}
-                                                      "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
-                                                      [:br]
-                                                      [:br]
-                                                      "Use the "
-                                                      [:strong "Point Information"]
-                                                      " tool for more detailed information about a selected point."]
-                                         :options    (array-map
-                                                      :fbfm40 {:opt-label       "Fire Behavior Fuel Model 40"
-                                                               :filter          "fbfm40"
-                                                               :units           ""
-                                                               :reverse-legend? false}
-                                                      :asp    {:opt-label       "Aspect"
-                                                               :filter          "asp"
-                                                               :units           ""
-                                                               :convert         #(str (u/direction %) " (" % "°)")
-                                                               :reverse-legend? false
-                                                               :disabled-for    #{:cec}}
-                                                      :slp    {:opt-label       "Slope (degrees)"
-                                                               :filter          "slp"
-                                                               :units           "\u00B0"
-                                                               :reverse-legend? true
-                                                               :disabled-for    #{:cec}}
-                                                      :dem    {:opt-label       "Elevation (ft)"
-                                                               :filter          "dem"
-                                                               :units           "ft"
-                                                               :convert         #(u/to-precision 1 (* % 3.28084))
-                                                               :reverse-legend? true
-                                                               :disabled-for    #{:cec}}
-                                                      :cc     {:opt-label       "Canopy Cover (%)"
-                                                               :filter          "cc"
-                                                               :units           "%"
-                                                               :reverse-legend? true
-                                                               :disabled-for    #{:cec}}
-                                                      :ch     {:opt-label       "Canopy Height (m)"
-                                                               :filter          "ch"
-                                                               :units           "m"
-                                                               :convert         #(u/to-precision 1 (/ % 10))
-                                                               :reverse-legend? true
-                                                               :disabled-for    #{:cec}}
-                                                      :cbh    {:opt-label       "Canopy Base Height (m)"
-                                                               :filter          "cbh"
-                                                               :units           "m"
-                                                               :convert         #(u/to-precision 1 (/ % 10))
-                                                               :reverse-legend? true
-                                                               :disabled-for    #{:cec}}
-                                                      :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
-                                                               :filter          "cbd"
-                                                               :units           "kg/m\u00b3"
-                                                               :convert         #(u/to-precision 2 %)
-                                                               :reverse-legend? true
-                                                               :disabled-for    #{:cec}})}
-                                 :model-init {:opt-label  "Model Creation Time"
-                                              :hover-text "Time the data was created."
-                                              :options    {:loading {:opt-label "Loading..."}}}}}
+  {:fuels        {:opt-label     "Fuels"
+                  :filter        "fuels"
+                  :geoserver-key :pyrecast
+                  :underlays     (merge common-underlays near-term-forecast-underlays)
+                  :time-slider?  false
+                  :hover-text    "Layers related to fuel and potential fire behavior."
+                  :params        {:layer {:opt-label  "Layer"
+                                          :hover-text [:p {:style {:margin-bottom "0"}}
+                                                       "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
+                                                       [:br]
+                                                       [:br]
+                                                       "Use the "
+                                                       [:strong "Point Information"]
+                                                       " tool for more detailed information about a selected point."]
+                                          :options    (array-map
+                                                       :fbfm40 {:opt-label       "Fire Behavior Fuel Model 40"
+                                                                :filter          "fbfm40"
+                                                                :units           ""
+                                                                :reverse-legend? false}
+                                                       :asp    {:opt-label       "Aspect"
+                                                                :filter          "asp"
+                                                                :units           ""
+                                                                :convert         #(str (u/direction %) " (" % "°)")
+                                                                :reverse-legend? false
+                                                                :disabled-for    #{:cec}}
+                                                       :slp    {:opt-label       "Slope (degrees)"
+                                                                :filter          "slp"
+                                                                :units           "\u00B0"
+                                                                :reverse-legend? true
+                                                                :disabled-for    #{:cec}}
+                                                       :dem    {:opt-label       "Elevation (ft)"
+                                                                :filter          "dem"
+                                                                :units           "ft"
+                                                                :convert         #(u/to-precision 1 (* % 3.28084))
+                                                                :reverse-legend? true
+                                                                :disabled-for    #{:cec}}
+                                                       :cc     {:opt-label       "Canopy Cover (%)"
+                                                                :filter          "cc"
+                                                                :units           "%"
+                                                                :reverse-legend? true
+                                                                :disabled-for    #{:cec}}
+                                                       :ch     {:opt-label       "Canopy Height (m)"
+                                                                :filter          "ch"
+                                                                :units           "m"
+                                                                :no-convert      #{:cfo}
+                                                                :convert         #(u/to-precision 1 (/ % 10))
+                                                                :reverse-legend? true
+                                                                :disabled-for    #{:cec}}
+                                                       :cbh    {:opt-label       "Canopy Base Height (m)"
+                                                                :filter          "cbh"
+                                                                :units           "m"
+                                                                :no-convert      #{:cfo}
+                                                                :convert         #(u/to-precision 1 (/ % 10))
+                                                                :reverse-legend? true
+                                                                :disabled-for    #{:cec}}
+                                                       :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
+                                                                :filter          "cbd"
+                                                                :units           "kg/m\u00b3"
+                                                                :convert         #(u/to-precision 2 (/ % 100))
+                                                                :no-convert      #{:cfo}
+                                                                :reverse-legend? true
+                                                                :disabled-for    #{:cec}})}
+                                  :model {:opt-label  "Source"
+                                          :hover-text [:p {:style {:margin-bottom "0"}}
+                                                       "Stock "
+                                                       [:strong "LANDFIRE 2.0.0"]
+                                                       " data ("
+                                                       [:a {:href   "https://landfire.gov"
+                                                            :target "_blank"}
+                                                        "https://landfire.gov"]
+                                                       ") at 30 m resolution."
+                                                       [:br]
+                                                       [:br]
+                                                       [:strong "California Forest Observatory"]
+                                                       " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
+                                                       [:a {:href   "https://forestobservatory.com"
+                                                            :target "_blank"}
+                                                        "https://forestobservatory.com"]
+                                                       "), © Salo Sciences, Inc. 2020."
+                                                       [:br]
+                                                       [:br]
+                                                       [:strong "2021 California fuelscape"]
+                                                       " prepared by Pyrologix, LLC ("
+                                                       [:a {:href   "https://pyrologix.com"
+                                                            :target "_blank"}
+                                                        "https://pyrologix.com"]
+                                                       "), 2021."
+                                                       [:br]
+                                                       [:br]
+                                                       [:strong "California Ecosystem Climate Solutions"]
+                                                       " - Data provided by the "
+                                                       [:a {:href   "https://california-ecosystem-climate.solutions/"
+                                                            :target "_blank"}
+                                                        "California Ecosystem Climate Solutions"]
+                                                       ", Wang et al. (2021)."]
+                                          :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
+                                                                       :filter    "landfire-2.0.0"}
+                                                       :cfo           {:opt-label "California Forest Obs."
+                                                                       :filter    "cfo-2020"}
+                                                       :ca-fuelscapes {:opt-label "2021 CA fuelscape"
+                                                                       :filter    "ca-fuelscapes"}
+                                                       :cec           {:opt-label    "CA Ecosystem Climate Solutions"
+                                                                       :filter       "cec"
+                                                                       :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
+                                  :model-init {:opt-label  "Model Creation Time"
+                                               :hover-text "Time the data was created."
+                                               :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-weather {:opt-label       "Weather"
                   :filter          "fire-weather-forecast"
+                  :geoserver-key   :pyrecast
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "8-day forecast of key parameters affecting wildfire behavior obtained from operational National Weather Service forecast models."
@@ -159,16 +178,16 @@
                                                               "8-day forecast updated 4x daily pulled from three operational weather models. Available quantities include common weather parameters plus fire weather indices:"
                                                               [:br]
                                                               [:br]
-                                                              [:strong "- Fosberg Fire Weather Index (FFWI)"]
-                                                              ": A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
+                                                              [:strong "Fosberg Fire Weather Index (FFWI)"]
+                                                              " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "- Vapor pressure deficit (VPD)"]
-                                                              ": Difference between amount of moisture in air and how much it can hold when saturated."
+                                                              [:strong "Vapor pressure deficit (VPD)"]
+                                                              " - Difference between amount of moisture in air and how much it can hold when saturated."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "- Hot Dry Windy Index"]
-                                                              ": Similar to FFWI, but based on VPD."]
+                                                              [:strong "Hot Dry Windy Index"]
+                                                              " - Similar to FFWI, but based on VPD."]
                                                  :options    (array-map
                                                               :tmpf   {:opt-label "Temperature (F)"
                                                                        :filter    "tmpf"
@@ -187,7 +206,8 @@
                                                                        :units     "mph"}
                                                               :apcp01 {:opt-label "1-hour precipitation (in)"
                                                                        :filter    "apcp01"
-                                                                       :units     "inches"}
+                                                                       :units     "inches"
+                                                                       :convert   #(u/to-precision 2 (* % 0.03937007874))}
                                                               :meq    {:opt-label "Fine dead fuel moisture (%)"
                                                                        :filter    "meq"
                                                                        :units     "%"}
@@ -205,6 +225,8 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
+                  :geoserver-key   :pyrecast
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "5-day forecast of fire consequence maps. Every day over 500 million hypothetical fires are ignited across California to evaluate potential fire risk.\n"
@@ -296,6 +318,8 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
+                  :geoserver-key   :pyrecast
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true
@@ -367,6 +391,81 @@
                                                                          :filter    "gridfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
+                                                 :options    {:loading {:opt-label "Loading..."}}}}}
+   :psps-zonal   {:opt-label       "PSPS"
+                  :geoserver-key   :psps
+                  :filter          "psps-zonal"
+                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :allowed-org     5
+                  :reverse-legend? true
+                  :time-slider?    true
+                  :hover-text      "Public Safety Power Shutoffs (PSPS) zonal statistics."
+                  :params          {:quantity   {:opt-label  "Zonal Quantity"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              "Public Safety Power Shutoffs (PSPS) Zonal Quantity. Options include:"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fosberg Fire Weather Index (FFWI)"]
+                                                              " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Hot Dry Windy Index"]
+                                                              " - Similar to FFWI, but based on Vapor Pressure Deficit (VPD)."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Relative Burn Probability"]
+                                                              " - Relative likelihood that an area is burned by fires that have not yet ignited within the next six hours of time shown in time slider."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Impacted Structures"]
+                                                              " - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fire Area"]
+                                                              " - Modeled fire size in acres by ignition location and time of ignition."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Fire Volume"]
+                                                              " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
+                                                 :options    (array-map
+                                                              :ws   {:opt-label "Sustained wind speed (mph)"
+                                                                     :filter    "nve"
+                                                                     :units     "mph"}
+                                                              :wg   {:opt-label "Wind gust (mph)"
+                                                                     :filter    "nve"
+                                                                     :units     "mph"}
+                                                              :area {:opt-label "Fire area (acres)"
+                                                                     :filter    "nve"
+                                                                     :units     "Acres"}
+                                                              :str  {:opt-label "Impacted structures"
+                                                                     :filter    "nve"
+                                                                     :units     "Structures"}
+                                                              :vol  {:opt-label "Fire volume (acre-ft)"
+                                                                     :filter    "nve"
+                                                                     :units     "Acre-ft"})}
+                                    :statistic  {:opt-label      "Statistic"
+                                                 :hover-text     "Options are minimum, mean, or maximum."
+                                                 :default-option :a
+                                                 :options        {:l {:opt-label "Minimum"
+                                                                      :filter    "deenergization-zones"}
+                                                                  :a {:opt-label "Mean"
+                                                                      :filter    "deenergization-zones"}
+                                                                  :h {:opt-label "Maximum"
+                                                                      :filter    "deenergization-zones"}}}
+                                    :model      {:opt-label  "Model"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "ELMFIRE"]
+                                                              " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
+                                                              [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
+                                                                   :target "_blank"}
+                                                               "https://doi.org/10.1016/j.firesaf.2013.08.014"]
+                                                              ")."]
+                                                 :options    {:h {:opt-label    "HRRR"
+                                                                  :disabled-for #{:area :str :vol}}
+                                                              :l {:opt-label    "ELMFIRE"
+                                                                  :disabled-for #{:wg :ws}}}}
+                                    :model-init {:opt-label  "Forecast Start Time"
+                                                 :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}})
 
 (def near-term-forecast-layers
@@ -382,6 +481,8 @@
    :fire-weather-forecast {:forecast-layer? true}
    :fuels-and-topography  {:forecast-layer? true}
    :fire-history          {:forecast-layer? false}
+   :psps-static           {:forecast-layer? false}
+   :psps-zonal            {:forecast-layer? true}
    :red-flag              {:forecast-layer? false}
    :fire-cameras          {:forecast-layer? false}})
 
@@ -392,6 +493,8 @@
 (def long-term-forecast-options
   {:fire-scenarios {:opt-label       "Fire Scenarios"
                     :filter          "climate_FireSim"
+                    :geoserver-key   :pyreclimate
+                    :underlays       common-underlays
                     :hover-text      "Wildfire scenario projections for area burned with varied emissions and population scenarios."
                     :reverse-legend? true
                     :block-info?     false
@@ -406,16 +509,16 @@
                                                    :auto-zoom? true
                                                    :options    {:can-esm2   {:opt-label "CanESM2"
                                                                              :filter    "CanESM2"
-                                                                             :units     ""}
+                                                                             :units     "ha"}
                                                                 :hadgem2-es {:opt-label "HadGEM2-ES"
                                                                              :filter    "HadGEM2-ES"
-                                                                             :units     ""}
+                                                                             :units     "ha"}
                                                                 :cnrm-cm5   {:opt-label "CNRM-CM5"
                                                                              :filter    "CNRM-CM5"
-                                                                             :units     ""}
+                                                                             :units     "ha"}
                                                                 :miroc5     {:opt-label "MIROC5"
                                                                              :filter    "MIROC5"
-                                                                             :units     ""}}}
+                                                                             :units     "ha"}}}
                                       :prob       {:opt-label  "RCP Scenario"
                                                    :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
                                                                 Options include:
@@ -463,14 +566,12 @@
   (reset! default-forecasts defaults))
 
 (def ^:private forecasts {:near-term {:options-config near-term-forecast-options
-                                      :layers         near-term-forecast-layers
-                                      :geoserver-key  :pyrecast}
+                                      :layers         near-term-forecast-layers}
                           :long-term {:options-config long-term-forecast-options
-                                      :layers         long-term-forecast-layers
-                                      :geoserver-key  :pyreclimate}})
+                                      :layers         long-term-forecast-layers}})
 
 (defn get-forecast
-  "Retrieves the forecast options, default tab, and GeoServer key."
+  "Retrieves the forecast options and default tab."
   [forecast-type]
   {:pre [(contains? #{:long-term :near-term} forecast-type)]}
   (forecast-type forecasts))
@@ -613,10 +714,7 @@
                            :description "Fine fuel load is 7 to 12 tons/acre, weighted toward 0 to 0.25 inch diameter class, depth is more than 1 foot. Spread rate high; flame length high. Blowdown is moderate, trees compacted to near the ground. Spread rate high; flame length high."}
                     204   {:label       "SB4"
                            :fuel-type   "Slash-Blowdown"
-                           :description "Blowdown is total, fuelbed not compacted, foliage still attached. Spread rate very high; flame length very high."}
-                    -9999 {:label       "NoData"
-                           :fuel-type   "No Data"
-                           :description "No data are available for this pixel"}})
+                           :description "Blowdown is total, fuelbed not compacted, foliage still attached. Spread rate very high; flame length very high."}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WFS/WMS Configuration
@@ -640,18 +738,39 @@
 
 (defn legend-url
   "Generates a URL for the legend given a layer."
-  [layer geoserver-key]
+  [layer geoserver-key style]
   (str (wms-url geoserver-key)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
        "&VERSION=1.3.0"
        "&REQUEST=GetLegendGraphic"
        "&FORMAT=application/json"
-       "&LAYER=" layer))
+       "&LAYER=" layer
+       "&STYLE=" (or style "")))
+
+(def all-psps-columns
+  "A list of all PSPS column names. To be used as the input to the propertyName
+   parameter for GetFeatureInfo in order to filter out extra info."
+  (str/join ","
+            ["h_wg_a"
+             "h_wg_h"
+             "h_wg_l"
+             "h_ws_a"
+             "h_ws_h"
+             "h_ws_l"
+             "l_area_a"
+             "l_area_h"
+             "l_area_l"
+             "l_str_a"
+             "l_str_h"
+             "l_str_l"
+             "l_vol_a"
+             "l_vol_h"
+             "l_vol_l"]))
 
 (defn point-info-url
   "Generates a URL for the point information."
-  [layer-group bbox feature-count geoserver-key]
+  [layer-group bbox feature-count geoserver-key & [properties]]
   (str (wms-url geoserver-key)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
@@ -668,32 +787,34 @@
        "&HEIGHT=1"
        "&CRS=EPSG:3857"
        "&STYLES="
-       "&BBOX=" bbox))
+       "&BBOX=" bbox
+       (when properties
+         (str "&propertyName=" properties))))
 
 (defn wms-layer-url
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
 
    Mapbox GL requires tiles to be projected to EPSG:3857 (Web Mercator)."
-  ([layer geoserver-key]
+  ([layer geoserver-key style]
    (str (mvt-url geoserver-key)
         "?REQUEST=GetTile"
         "&SERVICE=WMTS"
         "&VERSION=1.0.0"
         "&LAYER=" layer
-        "&STYLE="
+        "&STYLE=" (or style "")
         "&FORMAT=image/png"
         "&TILEMATRIX=EPSG:900913:{z}"
         "&TILEMATRIXSET=EPSG:900913"
         "&TILECOL={x}&TILEROW={y}"))
 
-  ([layer geoserver-key layer-time]
+  ([layer geoserver-key style layer-time]
    (if (feature-enabled? :image-mosaic-gwc)
      (str (mvt-url geoserver-key)
           "?REQUEST=GetTile"
           "&SERVICE=WMTS"
           "&VERSION=1.0.0"
           "&LAYER=" layer
-          "&STYLE="
+          "&STYLE=" (or style "")
           "&FORMAT=image/png"
           "&TILEMATRIX=EPSG:900913:{z}"
           "&TILEMATRIXSET=EPSG:900913"
@@ -708,7 +829,7 @@
           "&WIDTH=256"
           "&HEIGHT=256"
           "&CRS=EPSG%3A3857"
-          "&STYLES="
+          "&STYLES=" (or style "")
           "&FORMAT_OPTIONS=dpi%3A113"
           "&BBOX={bbox-epsg-3857}"
           "&LAYERS=" layer
