@@ -246,6 +246,10 @@
                                                               [:br]
                                                               [:strong "Fire Volume"]
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Power line ignition rate"]
+                                                              " - Estimated power line ignition rate."]
                                                  :options    {:times-burned {:opt-label "Relative burn probability"
                                                                              :filter    "times-burned"
                                                                              :units     "Times"}
@@ -258,9 +262,9 @@
                                                               :fire-volume  {:opt-label "Fire volume"
                                                                              :filter    "fire-volume"
                                                                              :units     "Acre-ft"}
-                                                              :plignrate    {:opt-label    "Estimated powerline ignition rate"
-                                                                             :filter       "plignrate"
-                                                                             :units        "Ignitions / line-mi / hr"
+                                                              :plignrate    {:opt-label "Power line ignition rate"
+                                                                             :filter    "plignrate"
+                                                                             :units     "Ignitions / line-mi / hr"
                                                                              :disabled-for #{:all :tlines}}}}
                                     :pattern    {:opt-label  "Ignition Pattern"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
