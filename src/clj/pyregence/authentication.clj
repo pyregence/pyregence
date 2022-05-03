@@ -28,8 +28,7 @@
     (data-response "" {:status 403})))
 
 (defn add-new-user [email name password]
-  (let [default-settings (pr-str {:theme    :dark
-                                  :timezone :utc})
+  (let [default-settings (pr-str {:timezone :utc})
         new-user-id      (sql-primitive (call-sql "add_new_user"
                                                   {:log? false}
                                                   email
