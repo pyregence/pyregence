@@ -17,6 +17,7 @@
                      :structures   true
                      :gridfire     false}
  :geoserver         {:pyrecast    "https://data.pyregence.org/geoserver"
+                     :psps        "https://energy.pyregence.org:8443/geoserver"
                      :pyreclimate "https://climate.pyregence.org/geoserver"}
  :match-drop        {:app-host      "app.pyregence.org"
                      :app-port      31337
