@@ -13,7 +13,7 @@ behavior models:
 
 ** Installation Requirements
 
-- [[https://jdk.java.net][Java Development Kit (version 11+)]]
+- [[https://www.oracle.com/java/technologies/downloads/#java17][Java Development Kit (version 17.0.3)]]
 - [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
 - [[https://www.postgresql.org/download][Postgresql (version 12)]]
 - [[https://postgis.net/install][PostGIS (version 3)]]
@@ -172,6 +172,40 @@ This will emit warnings when reflection is needed to resolve Java
 method calls or field accesses. To resolve any that appear, add
 [[https://clojure.org/reference/java_interop#typehints][type hints]] to your code. Resolving all reflection warnings can improve
 system performance.
+
+*** Debugging Your Dev Environment
+
+If your dev environment isn't working properly, refer to the following
+list of things to double-check:
+
+1. Make sure you have all of the required installation requirements listed above.
+For exapmle, calling ~java --version~ should yield:
+
+#+begin_src
+openjdk 17.0.3 2022-04-19
+OpenJDK Runtime Environment (build 17.0.3+7-Ubuntu-0ubuntu0.20.04.1)
+OpenJDK 64-Bit Server VM (build 17.0.3+7-Ubuntu-0ubuntu0.20.04.1, mixed mode, sharing)
+#+end_src
+
+2. Make sure your ~config.edn~ file has every field from ~config.default.edn~ and you've
+correctly updated the fields that need updating (e.g. the access tokens are correct).
+
+3. Make sure your local database is working properly. To get a fresh database
+(with the development data) run:
+
+#+begin_src sh
+clojure -M:build-db functions
+clojure -M:build-db build-all --dev-data
+#+end_src
+
+4. Make sure your ~/etc/hosts~ file has a line for ~127.0.0.1 local.pyrecast.org~
+and that youre hitting http://local.pyrecast.org:8080
+(make sure the port matches up to whatever you've set in ~config.edn~) in your
+web broswer.
+
+If none of the above fix your problem, you should look at your Figwheel
+console and web browser dev tools console after running ~clojure -M:figwheel~
+for more information.
 
 ** Production Web Server
 

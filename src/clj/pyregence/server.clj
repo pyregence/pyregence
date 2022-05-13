@@ -1,4 +1,5 @@
 (ns pyregence.server
+  (:import java.io.File)
   (:require [clojure.java.io        :as io]
             [clojure.string         :as str]
             [clojure.core.server    :refer [start-server]]
@@ -26,9 +27,10 @@
 (defn- delete-tmp []
   (log-str "Removing temp files.")
   (let [tmp-dir (System/getProperty "java.io.tmpdir")
-        dirs    (filter #(and (.isDirectory %)
-                              (str/includes? (.getPath %) "pyregence-tmp")
-                              (expired? (.lastModified %)))
+        dirs    (filter (fn [^File file]
+                          (and (.isDirectory file)
+                               (str/includes? (.getPath file) "pyregence-tmp")
+                               (expired? (.lastModified file))))
                         (.listFiles (io/file tmp-dir)))]
     (doseq [dir  dirs
             file (reverse (file-seq dir))]
