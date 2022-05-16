@@ -288,26 +288,20 @@
                                        (js/Object.keys)
                                        (.-length)
                                        (> 1))
-            band-extraction-fn (if multi-column-info?
-                                 (fn [pi-layer]
-                                   (let [v (some->> (get-psps-column-name)
-                                                    (u/try-js-aget pi-layer "properties"))]
-                                     (if (>= v 1)
-                                       (u/to-precision 1 v)
-                                       (-> v
-                                          (dc/decimal)
-                                          (dc/to-significant-digits 1)
-                                          (dc/to-number)))))
-                                 (fn [pi-layer]
-                                   (let [v (some->> (u/try-js-aget  pi-layer "properties")
+            band-extraction-fn (fn [pi-layer]
+                                 (let [v (if multi-column-info?
+                                           (some->> (get-psps-column-name)
+                                                    (u/try-js-aget pi-layer "properties"))
+                                           (some->> (u/try-js-aget  pi-layer "properties")
                                                     (js/Object.values)
-                                                    (first))]
-                                     (if (>= v 1)
-                                       (u/to-precision 1 v)
-                                       (-> v
-                                          (dc/decimal)
-                                          (dc/to-significant-digits 1)
-                                          (dc/to-number))))))
+                                                    (first)))]
+                                   (if (>= v 1)
+                                     (u/to-precision 1 v)
+                                     (-> v
+                                         (dc/decimal)
+                                         (dc/to-significant-digits 1)
+                                         (dc/to-number)))))
+
             feature-info       (map (fn [pi-layer]
                                       {:band   (band-extraction-fn pi-layer)
                                        :vec-id (some-> pi-layer
