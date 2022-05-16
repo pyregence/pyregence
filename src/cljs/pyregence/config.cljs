@@ -248,7 +248,7 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "Fire Volume"]
-                                                              " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
+                                                              " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."
                                                               [:br]
                                                               [:br]
                                                               [:strong "Power line ignition rate"]
