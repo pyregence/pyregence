@@ -292,18 +292,22 @@
                                  (fn [pi-layer]
                                    (let [v (some->> (get-psps-column-name)
                                                     (u/try-js-aget pi-layer "properties"))]
-                                     (-> v
-                                         (dc/decimal)
-                                         (dc/to-significant-digits 1)
-                                         (dc/to-number))))
+                                     (if (>= v 1)
+                                       (u/to-precision 1 v)
+                                       (-> v
+                                          (dc/decimal)
+                                          (dc/to-significant-digits 1)
+                                          (dc/to-number)))))
                                  (fn [pi-layer]
                                    (let [v (some->> (u/try-js-aget  pi-layer "properties")
                                                     (js/Object.values)
                                                     (first))]
-                                     (-> v
-                                         (dc/decimal)
-                                         (dc/to-significant-digits 1)
-                                         (dc/to-number)))))
+                                     (if (>= v 1)
+                                       (u/to-precision 1 v)
+                                       (-> v
+                                          (dc/decimal)
+                                          (dc/to-significant-digits 1)
+                                          (dc/to-number))))))
             feature-info       (map (fn [pi-layer]
                                       {:band   (band-extraction-fn pi-layer)
                                        :vec-id (some-> pi-layer
