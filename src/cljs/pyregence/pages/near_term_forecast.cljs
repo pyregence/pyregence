@@ -8,6 +8,7 @@
             [clojure.string     :as str]
             [clojure.core.async :refer [go <!]]
             [cljs.core.async.interop :refer-macros [<p!]]
+            [decimal.core     :as dc]
             [pyregence.state  :as !]
             [pyregence.styles :as $]
             [pyregence.utils  :as u]
@@ -287,16 +288,19 @@
                                        (js/Object.keys)
                                        (.-length)
                                        (> 1))
-            band-extraction-fn (if multi-column-info?
-                                   (fn [pi-layer]
-                                     (some->> (get-psps-column-name)
-                                              (u/try-js-aget pi-layer "properties")
-                                              (u/to-precision 1)))
-                                   (fn [pi-layer]
-                                     (some->> (u/try-js-aget pi-layer "properties")
-                                              (js/Object.values)
-                                              (first)
-                                              (u/to-precision 1))))
+            band-extraction-fn (fn [pi-layer]
+                                 (let [v (if multi-column-info?
+                                           (some->> (get-psps-column-name)
+                                                    (u/try-js-aget pi-layer "properties"))
+                                           (some->> (u/try-js-aget  pi-layer "properties")
+                                                    (js/Object.values)
+                                                    (first)))]
+                                   (if (>= v 1)
+                                     (u/to-precision 1 v)
+                                     (-> v
+                                         (dc/decimal)
+                                         (dc/to-significant-digits 1)
+                                         (dc/to-number)))))
             feature-info       (map (fn [pi-layer]
                                       {:band   (band-extraction-fn pi-layer)
                                        :vec-id (some-> pi-layer
