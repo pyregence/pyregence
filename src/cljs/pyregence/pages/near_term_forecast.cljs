@@ -295,7 +295,7 @@
                                            (some->> (u/try-js-aget  pi-layer "properties")
                                                     (js/Object.values)
                                                     (first)))]
-                                   (if (>= v 1)
+                                   (if (or (>= v 1) (= v -9999))
                                      (u/to-precision 1 v)
                                      (-> v
                                          (dc/decimal)
