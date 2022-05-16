@@ -301,7 +301,6 @@
                                          (dc/decimal)
                                          (dc/to-significant-digits 1)
                                          (dc/to-number)))))
-
             feature-info       (map (fn [pi-layer]
                                       {:band   (band-extraction-fn pi-layer)
                                        :vec-id (some-> pi-layer
