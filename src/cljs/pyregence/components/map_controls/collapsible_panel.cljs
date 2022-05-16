@@ -130,7 +130,13 @@
           [:div {:style {:display "flex" :justify-content "space-between"}}
            [:label "Optional Layers"]
            [tool-tip-wrapper
-            "Check the boxes below to display additional layers."
+            [:div "Check the boxes below to display additional layers."
+             [:div {:style { :margin-top 10 }}
+             "Note: The optional layers do not contain any data that can be queried by the "
+             [:strong "Point Information "]
+              "tool. Clicking on a area overlaid by an optional layer, will display point "
+              "information for the base layer, beneath the point clicked, and not for any selected optional layer(s)."]]
+
             :left
             [:div {:style ($/combine ($/fixed-size "1rem")
                                      {:margin "0 .25rem 4px 0"
