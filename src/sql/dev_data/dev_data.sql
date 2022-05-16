@@ -10,8 +10,8 @@ VALUES
 INSERT INTO users
     (user_uid, email, name, password, verified, settings)
 VALUES
-    (1, 'admin@pyr.dev', 'Admin', crypt('admin', gen_salt('bf')), TRUE, '{:theme :dark, :timezone :utc}'),
-    (2, 'user@pyr.dev', 'User', crypt('user', gen_salt('bf')), TRUE, '{:theme :dark, :timezone :utc}');
+    (1, 'admin@pyr.dev', 'Admin', crypt('admin', gen_salt('bf')), TRUE, '{:timezone :utc}'),
+    (2, 'user@pyr.dev', 'User', crypt('user', gen_salt('bf')), TRUE, '{:timezone :utc}');
 
 -- Adds the admin and user to the "Development" organization
 INSERT INTO organization_users

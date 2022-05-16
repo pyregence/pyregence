@@ -210,11 +210,16 @@
                     :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
-(defn- add-icon! [icon-id url]
+(defn- add-icon! [icon-id url & [colorize?]]
   (when-not (.hasImage @the-map icon-id)
     (.loadImage @the-map
                 url
-                (fn [_ img] (.addImage @the-map icon-id img #js {:sdf true})))))
+                (fn [_ img] (.addImage @the-map
+                                       icon-id
+                                       img
+                                       (if colorize?
+                                         #js {:sdf true}
+                                         #js {}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
@@ -491,35 +496,33 @@
    off])
 
 (defn- incident-layer [layer-name source-name opacity]
-  {:id       layer-name
-   :type     "circle"
-   :source   source-name
-   :layout   {:visibility "visible"}
-   :metadata {:type (get-layer-type layer-name)}
-   :paint    {:circle-color        ["interpolate-lab" ["linear"] ["get" "containper"] 0 "#FF0000" 100 "#000000"]
-              :circle-opacity      opacity
-              :circle-radius       (zoom-interp 6
-                                                ["interpolate" ["linear"] ["get" "acres"]
-                                                 10000 10
-                                                 300000 100]
-                                                4
-                                                12)
-              :circle-stroke-color (on-hover "#FFFF00" "#000000")
-              :circle-stroke-width (on-hover 4 2)}})
-
-(defn- incident-layer-label [layer-name source-name opacity]
+  (add-icon! "fire-icon-0"   "./images/Active_Fire_0.png")
+  (add-icon! "fire-icon-50"  "./images/Active_Fire_50.png")
+  (add-icon! "fire-icon-90"  "./images/Active_Fire_90.png")
+  (add-icon! "fire-icon-100" "./images/Active_Fire_100.png")
   {:id       layer-name
    :type     "symbol"
    :source   source-name
-   :layout   {:text-anchor        "top"
+   :layout   {:icon-allow-overlap true
+              :icon-image         ["step" ["get" "containper"]
+                                   "fire-icon-0"
+                                   50  "fire-icon-50"
+                                   90  "fire-icon-90"
+                                   100 "fire-icon-100"]
+              :icon-size          ["interpolate" ["linear"] ["get" "acres"]
+                                   1000   0.5
+                                   10000  0.75
+                                   300000 1.0]
+              :text-anchor        "top"
               :text-allow-overlap true
               :text-field         ["to-string" ["get" "prettyname"]]
               :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
-              :text-offset        [0 0.6]
+              :text-offset        [0 0.8]
               :text-size          16
               :visibility         "visible"}
    :metadata {:type (get-layer-type layer-name)}
-   :paint    {:text-color      "#000000"
+   :paint    {:icon-opacity    opacity
+              :text-color      "#000000"
               :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
               :text-halo-width 1.5
               :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}})
@@ -531,9 +534,7 @@
    (negative z-index) Mapbox base map layers."
   [id source geoserver-key opacity]
   (let [new-source {id (wfs-source source geoserver-key)}
-        labels-id  (str id "-labels")
-        new-layers [(incident-layer id id opacity)
-                    (incident-layer-label labels-id id opacity)]]
+        new-layers [(incident-layer id id opacity)]]
     [new-source new-layers]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -659,7 +660,7 @@
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
   [id]
-  (add-icon! "video-icon" "./images/video.png")
+  (add-icon! "video-icon" "./images/video.png" true)
   (let [new-source {id {:type       "geojson"
                         :data       (clj->js @!/the-cameras)
                         :generateId true}}

@@ -135,11 +135,12 @@ Replace *X* with the PostgreSQL version installed on your computer.
 
 *** Modifying hosts file
 
-Add the following line to your hosts file. This local url will allows
-for a natural URL in the browser.
+Add the following line to your hosts file. This local URL should be used for
+local developing in lieu of ~localhost~ due to CORS settings on the GeoServer
+instances used in Pyrecast.
 
 #+begin_example
-127.0.0.1 local.pyregence.org
+127.0.0.1 local.pyrecast.org
 #+end_example
 
 *** Launching Figwheel
@@ -263,9 +264,9 @@ sudo service nginx restart
 
 **** Alternative server deployment
 
-When using nginx, run the server in http mode only.  If multiple servers are
-running on the same VM, be sure to assign them different ports.  Remember that
-nginx needs port 8080, witch is the default port for the server deployment.
+When using nginx, run the server in http mode only. If multiple servers are
+running on the same VM, be sure to assign them different ports. Remember that
+nginx needs port 8080, which is the default port for the server deployment.
 Instead deploy with a non default port:
 
 #+begin_src sh

@@ -65,50 +65,7 @@
                   :underlays     (merge common-underlays near-term-forecast-underlays)
                   :time-slider?  false
                   :hover-text    "Layers related to fuel and potential fire behavior."
-                  :params        {:model {:opt-label  "Source"
-                                          :hover-text [:p {:style {:margin-bottom "0"}}
-                                                       "Stock "
-                                                       [:strong "LANDFIRE 2.0.0"]
-                                                       " data ("
-                                                       [:a {:href   "https://landfire.gov"
-                                                            :target "_blank"}
-                                                        "https://landfire.gov"]
-                                                       ") at 30 m resolution."
-                                                       [:br]
-                                                       [:br]
-                                                       [:strong "California Forest Observatory"]
-                                                       " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
-                                                       [:a {:href   "https://forestobservatory.com"
-                                                            :target "_blank"}
-                                                        "https://forestobservatory.com"]
-                                                       "), © Salo Sciences, Inc. 2020."
-                                                       [:br]
-                                                       [:br]
-                                                       [:strong "2021 California fuelscape"]
-                                                       " prepared by Pyrologix, LLC ("
-                                                       [:a {:href   "https://pyrologix.com"
-                                                            :target "_blank"}
-                                                        "https://pyrologix.com"]
-                                                       "), 2021."
-                                                       [:br]
-                                                       [:br]
-                                                       [:strong "California Ecosystem Climate Solutions"]
-                                                       " - Data provided by the "
-                                                       [:a {:href   "https://california-ecosystem-climate.solutions/"
-                                                            :target "_blank"}
-                                                        "California Ecosystem Climate Solutions"]
-                                                       ", Wang et al. (2021)."]
-
-                                          :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
-                                                                       :filter    "landfire-2.0.0"}
-                                                       :cfo           {:opt-label "California Forest Obs."
-                                                                       :filter    "cfo-2020"}
-                                                       :ca-fuelscapes {:opt-label "2021 CA fuelscape"
-                                                                       :filter    "ca-fuelscapes"}
-                                                       :cec           {:opt-label    "CA Ecosystem Climate Solutions"
-                                                                       :filter       "cec"
-                                                                       :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
-                                  :layer {:opt-label  "Layer"
+                  :params        {:layer {:opt-label  "Layer"
                                           :hover-text [:p {:style {:margin-bottom "0"}}
                                                        "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
                                                        [:br]
@@ -146,21 +103,66 @@
                                                        :ch     {:opt-label       "Canopy Height (m)"
                                                                 :filter          "ch"
                                                                 :units           "m"
+                                                                :no-convert      #{:cfo}
                                                                 :convert         #(u/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cec}}
                                                        :cbh    {:opt-label       "Canopy Base Height (m)"
                                                                 :filter          "cbh"
                                                                 :units           "m"
+                                                                :no-convert      #{:cfo}
                                                                 :convert         #(u/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cec}}
                                                        :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
                                                                 :filter          "cbd"
                                                                 :units           "kg/m\u00b3"
-                                                                :convert         #(u/to-precision 2 %)
+                                                                :convert         #(u/to-precision 2 (/ % 100))
+                                                                :no-convert      #{:cfo}
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cec}})}
+                                  :model {:opt-label  "Source"
+                                          :hover-text [:p {:style {:margin-bottom "0"}}
+                                                       "Stock "
+                                                       [:strong "LANDFIRE 2.0.0"]
+                                                       " data ("
+                                                       [:a {:href   "https://landfire.gov"
+                                                            :target "_blank"}
+                                                        "https://landfire.gov"]
+                                                       ") at 30 m resolution."
+                                                       [:br]
+                                                       [:br]
+                                                       [:strong "California Forest Observatory"]
+                                                       " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
+                                                       [:a {:href   "https://forestobservatory.com"
+                                                            :target "_blank"}
+                                                        "https://forestobservatory.com"]
+                                                       "), © Salo Sciences, Inc. 2020."
+                                                       [:br]
+                                                       [:br]
+                                                       [:strong "2021 California fuelscape"]
+                                                       " prepared by Pyrologix, LLC ("
+                                                       [:a {:href   "https://pyrologix.com"
+                                                            :target "_blank"}
+                                                        "https://pyrologix.com"]
+                                                       "), 2021."
+                                                       [:br]
+                                                       [:br]
+                                                       [:strong "California Ecosystem Climate Solutions"]
+                                                       " - Data provided by the "
+                                                       [:a {:href   "https://california-ecosystem-climate.solutions/"
+                                                            :target "_blank"}
+                                                        "California Ecosystem Climate Solutions"]
+                                                       ", Wang et al. (2021)."]
+                                          :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
+                                                                       :filter    "landfire-2.0.0"}
+                                                       :cfo           {:opt-label "California Forest Obs."
+                                                                       :filter    "cfo-2020"}
+                                                       :ca-fuelscapes {:opt-label "2021 CA fuelscape"
+                                                                       :filter    "ca-fuelscapes"}
+                                                       :cec           {:opt-label    "CA Ecosystem Climate Solutions"
+                                                                       :filter       "cec"
+                                                                       :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
                                   :model-init {:opt-label  "Model Creation Time"
                                                :hover-text "Time the data was created."
                                                :options    {:loading {:opt-label "Loading..."}}}}}
@@ -204,7 +206,8 @@
                                                                        :units     "mph"}
                                                               :apcp01 {:opt-label "1-hour precipitation (in)"
                                                                        :filter    "apcp01"
-                                                                       :units     "inches"}
+                                                                       :units     "inches"
+                                                                       :convert   #(u/to-precision 2 (* % 0.03937007874))}
                                                               :meq    {:opt-label "Fine dead fuel moisture (%)"
                                                                        :filter    "meq"
                                                                        :units     "%"}
@@ -450,14 +453,15 @@
                                                               :vol  {:opt-label "Fire volume (acre-ft)"
                                                                      :filter    "nve"
                                                                      :units     "Acre-ft"})}
-                                    :statistic  {:opt-label  "Statistic"
-                                                 :hover-text "Options are minimum, mean, or maximum."
-                                                 :options    {:l {:opt-label "Minimum"
-                                                                  :filter    "deenergization-zones"}
-                                                              :a {:opt-label "Mean"
-                                                                  :filter    "deenergization-zones"}
-                                                              :h {:opt-label "Maximum"
-                                                                  :filter    "deenergization-zones"}}}
+                                    :statistic  {:opt-label      "Statistic"
+                                                 :hover-text     "Options are minimum, mean, or maximum."
+                                                 :default-option :a
+                                                 :options        {:l {:opt-label "Minimum"
+                                                                      :filter    "deenergization-zones"}
+                                                                  :a {:opt-label "Mean"
+                                                                      :filter    "deenergization-zones"}
+                                                                  :h {:opt-label "Maximum"
+                                                                      :filter    "deenergization-zones"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "ELMFIRE"]
@@ -878,10 +882,11 @@
 ;; Scroll speeds for time slider
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def speeds [{:opt-label ".5x" :delay 2000}
-             {:opt-label "1x"  :delay 1000}
-             {:opt-label "2x"  :delay 500}
-             {:opt-label "5x"  :delay 200}])
+(def speeds [{:opt-label ".25x" :delay 4000}
+             {:opt-label ".5x"  :delay 2000}
+             {:opt-label "1x"   :delay 1000}
+             {:opt-label "2x"   :delay 500}
+             {:opt-label "5x"   :delay 200}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Match Drop Configuration
