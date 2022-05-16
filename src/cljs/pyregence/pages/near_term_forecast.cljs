@@ -295,7 +295,7 @@
                                            (some->> (u/try-js-aget  pi-layer "properties")
                                                     (js/Object.values)
                                                     (first)))]
-                                   (if (or (>= v 1) (= v -9999))
+                                   (if (or (>= v 1) (= v -9999)) ; FIXME the -9999 check is due to -9999 being hard coded above in process-vector-layer-legend for the PSPS layers
                                      (u/to-precision 1 v)
                                      (-> v
                                          (dc/decimal)
