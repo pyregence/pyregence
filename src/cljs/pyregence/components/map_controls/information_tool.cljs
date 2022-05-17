@@ -39,7 +39,9 @@
         [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
          [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
           (if-let [value (:band current-point)]
-            (str (if (fn? convert) (convert value) value)
+            (str (if (fn? convert)
+                   (u/round-last-clicked-info (convert value))
+                   (u/round-last-clicked-info value))
                  (u/clean-units units))
             "No info available for this timestep.")]]))}))
 
@@ -134,8 +136,8 @@
     [:div#info-tool
      [resizable-window
       parent-box
-      200
-      400
+      290
+      460
       "Point Information"
       close-fn!
       (fn [box-height box-width]

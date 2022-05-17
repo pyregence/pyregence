@@ -1,5 +1,6 @@
 (ns pyregence.utils
-  (:require [cljs.reader        :as edn]
+  (:require [decimal.core       :as dc]
+            [cljs.reader        :as edn]
             [clojure.string     :as str]
             [clojure.set        :as sets]
             [clojure.core.async :refer [alts! go <! timeout go-loop chan put!]]
@@ -596,3 +597,14 @@
                                 nil
                                 band-val))))
         last-clicked-info))
+
+(defn round-last-clicked-info
+  "Rounds a point info value to the proper number of digits for rendering."
+  [last-clicked-info-val]
+  (when (some? last-clicked-info-val)
+    (if (>= last-clicked-info-val 1)
+      (to-precision 1 last-clicked-info-val)
+      (-> last-clicked-info-val
+          (dc/decimal)
+          (dc/to-significant-digits 2)
+          (dc/to-number)))))

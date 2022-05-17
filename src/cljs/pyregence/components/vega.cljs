@@ -43,7 +43,9 @@
   (let [processed-legend     (cond->> (u/filter-no-data @!/legend-list)
                                (fn? convert) (mapv #(update % "quantity" (comp str convert))))
         processed-point-info (cond->> (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)
-                               (fn? convert) (mapv #(update % :band convert)))]
+                               (fn? convert) (mapv (fn [entry]
+                                                     (update entry :band #(u/round-last-clicked-info (convert %)))))
+                               :else         (mapv #(update % :band u/round-last-clicked-info)))]
     {:width    "container"
      :height   "container"
      :autosize {:type "fit" :resize true}
