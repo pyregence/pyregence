@@ -8,6 +8,7 @@ Closes PYR-###
 - [ ] Included Jira issue in the PR title (e.g. `PYR-### Did something here`)
 - [ ] Code passes linter rules (`clj-kondo --lint src`)
 - [ ] Feature(s) work when compiled (`clojure -M:compile-cljs`)
+- [ ] No new reflection warnings (`clojure -M:check-reflection`)
 
 ## Module(s) Impacted
 <!-- List the Module > Submodule impacted by this PR (e.g. Underlays > Structures Layer) -->
