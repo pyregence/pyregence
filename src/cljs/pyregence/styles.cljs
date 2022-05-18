@@ -2,14 +2,13 @@
   (:require-macros [herb.core :refer [defglobal]]
                    pyregence.herb-patch)
   (:require herb.runtime
-            [reagent.core   :as r]
-            [clojure.string :as str]))
+            [reagent.dom.server :as rs]
+            [clojure.string     :as str]
+            [pyregence.components.svg-icons :as svg]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defonce light? (r/atom false))
 
 (defn combine
   "Combines all provided styles into one map."
@@ -27,24 +26,12 @@
    (color-picker color 1))
   ([color alpha]
    (case color
-     :bg-color         (if @light?
-                         (color-picker :white)
-                         (color-picker :dark-gray 0.9))
-     :bg-hover-color   (if @light?
-                         (color-picker :brown)
-                         (color-picker :white))
-     :border-color     (if @light?
-                         (color-picker :brown alpha)
-                         (color-picker :white alpha))
-     :font-color       (if @light?
-                         (color-picker :brown)
-                         "rgb(235, 235, 235)")
-     :font-hover-color (if @light?
-                         (color-picker :white)
-                         (color-picker :black))
-     :header-color     (if @light?
-                         (str "rgb(235, 235, 235, " alpha ")")
-                         (str "rgb(24, 30, 36, "    alpha ")"))
+     :bg-color         (color-picker :dark-gray 0.9)
+     :bg-hover-color   (color-picker :white)
+     :border-color     (color-picker :white alpha)
+     :font-color       "rgb(235, 235, 235)"
+     :font-hover-color (color-picker :black)
+     :header-color     (str "rgb(24, 30, 36, "     alpha ")")
      :black            (str "rgba(0, 0, 0, "       alpha ")")
      :blue             (str "rgba(0, 0, 175, "     alpha ")")
      :box-tan          (str "rgba(249, 248, 242, " alpha ")")
@@ -364,9 +351,8 @@
   "A shortcut for tool styling (eg. the legend or time slider)."
   []
   {:background-color (color-picker :bg-color)
-   :border           (str "1px solid " (color-picker :border-color))
    :border-radius    "5px"
-   :box-shadow       (str "0 0 0 2px " (color-picker :bg-color))
+   :box-shadow       "rgba(50, 50, 93, .7) 0px 3px 20px -8px, rgba(0, 0, 0, 0.3) 0px 3px 16px -11px"
    :color            (color-picker :font-color)
    :position         "absolute"
    :z-index          "100"})
@@ -399,3 +385,34 @@
    :justify-content  "space-between"
    :padding          ".25rem .7rem"
    :width            "100%"})
+
+(defn dropdown
+  "A shortcut for styling a dropdown."
+  []
+  (let [arrow (-> (color-picker :font-color)
+                  (svg/dropdown-arrow)
+                  (rs/render-to-string)
+                  (str/replace "\"" "'"))]
+    {:-moz-appearance     "none"
+     :-webkit-appearance  "none"
+     :appearance          "none"
+     :background-color    (color-picker :bg-color)
+     :background-image    (str "url(\"data:image/svg+xml;utf8," arrow "\")")
+     :background-position "right .75rem center"
+     :background-repeat   "no-repeat"
+     :background-size     "1rem 0.75rem"
+     :border-color        (color-picker :border-color)
+     :border-radius       "2px"
+     :border-size         "1px"
+     :border-width        "dashed"
+     :color               (color-picker :font-color)
+     :font-family         "inherit"
+     :height              "1.9rem"
+     :padding             ".2rem .3rem"}))
+
+(defn tool-bar
+  "A shortcut for defining a common tool-bar style"
+  []
+  {:display        "flex"
+   :flex-direction "column"
+   :right          "16px"})

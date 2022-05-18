@@ -3,67 +3,16 @@
   (:require [herb.core          :refer [<class]]
             [reagent.core       :as r]
             [reagent.dom        :as rd]
-            [clojure.string     :as str]
             [clojure.core.async :refer [go <! timeout]]
             [pyregence.styles   :as $]
             [pyregence.utils    :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI Styles
+;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $labeled-input []
-  {:display        "flex"
-   :flex           1
-   :flex-direction "column"
-   :padding-bottom ".5rem"
-   :width          "100%"})
-
-(defn- $radio [checked? themed?]
-  (merge
-   (when checked? {:background-color ($/color-picker (if themed? :border-color :black) 0.6)})
-   {:border        "2px solid"
-    :border-color  ($/color-picker (if themed? :border-color :black))
-    :border-radius "100%"
-    :height        "1rem"
-    :margin-right  ".4rem"
-    :width         "1rem"}))
-
-(defn- $arrow [arrow-x arrow-y arrow-position show?]
-  {:background-color ($/color-picker :font-color)
-   :border-top       (when (#{:top :right} arrow-position)    (str "1.5px solid " ($/color-picker :bg-color)))
-   :border-right     (when (#{:bottom :right} arrow-position) (str "1.5px solid " ($/color-picker :bg-color)))
-   :border-bottom    (when (#{:left :bottom} arrow-position)  (str "1.5px solid " ($/color-picker :bg-color)))
-   :border-left      (when (#{:top :left} arrow-position)     (str "1.5px solid " ($/color-picker :bg-color)))
-   :content          "close-quote"
-   :height           "16px"
-   :left             arrow-x
-   :position         "fixed"
-   :top              arrow-y
-   :transform        "rotate(45deg)"
-   :transition       (when-not show? "left 0s ease-out 300ms, top 0s ease-out 300ms")
-   :width            "16px"
-   :z-index          201})
-
-(defn- $tool-tip [tip-x tip-y arrow-position show?]
-  {:background-color ($/color-picker :font-color)
-   :border           (str "1.5px solid " ($/color-picker :bg-color))
-   :border-radius    "6px"
-   :color            ($/color-picker :bg-color)
-   :left             tip-x
-   :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
-   :opacity          (if show? 1.0 0.0)
-   :padding          ".5rem"
-   :position         "fixed"
-   :top              tip-y
-   :transition       (if show?
-                       "opacity 310ms ease-in"
-                       "opacity 300ms ease-out, left 0s ease-out 300ms, top 0s ease-out 300ms")
-   :z-index          200})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Private Functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn hs-str [hide?]
+  (if hide? "Hide" "Show"))
 
 (defn- calc-tool-position [sibling-ref tool-ref arrow-position show?]
   (if (and tool-ref show?)
@@ -107,18 +56,69 @@
     (fn [sibling _] sibling)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI Components
+;; Styles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- $labeled-input []
+  {:display        "flex"
+   :flex           1
+   :flex-direction "column"
+   :padding-bottom ".5rem"
+   :width          "100%"})
+
+(defn- $radio [checked?]
+  (merge
+   (when checked? {:background-color ($/color-picker :border-color 0.6)})
+   {:border        "2px solid"
+    :border-color  ($/color-picker :border-color)
+    :border-radius "100%"
+    :height        "1rem"
+    :margin-right  ".4rem"
+    :width         "1rem"}))
+
+(defn- $arrow [arrow-x arrow-y arrow-position show?]
+  {:background-color ($/color-picker :font-color)
+   :border-top       (when (#{:top :right} arrow-position)    (str "1.5px solid " ($/color-picker :bg-color)))
+   :border-right     (when (#{:bottom :right} arrow-position) (str "1.5px solid " ($/color-picker :bg-color)))
+   :border-bottom    (when (#{:left :bottom} arrow-position)  (str "1.5px solid " ($/color-picker :bg-color)))
+   :border-left      (when (#{:top :left} arrow-position)     (str "1.5px solid " ($/color-picker :bg-color)))
+   :content          "close-quote"
+   :height           "16px"
+   :left             arrow-x
+   :position         "fixed"
+   :top              arrow-y
+   :transform        "rotate(45deg)"
+   :transition       (when-not show? "left 0s ease-out 300ms, top 0s ease-out 300ms")
+   :width            "16px"
+   :z-index          201})
+
+(defn- $tool-tip [tip-x tip-y arrow-position show?]
+  {:background-color ($/color-picker :font-color)
+   :border           (str "1.5px solid " ($/color-picker :bg-color))
+   :border-radius    "6px"
+   :color            ($/color-picker :bg-color)
+   :left             tip-x
+   :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
+   :opacity          (if show? 1.0 0.0)
+   :padding          ".5rem"
+   :position         "fixed"
+   :top              tip-y
+   :transition       (if show?
+                       "opacity 310ms ease-in"
+                       "opacity 300ms ease-out, left 0s ease-out 300ms, top 0s ease-out 300ms")
+   :z-index          200})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn radio
   "A component for radio button."
-  ([label state condition on-click]
-   (radio label state condition on-click false))
-  ([label state condition on-click themed?]
-   [:div {:style    ($/flex-row)
-          :on-click #(on-click condition)}
-    [:div {:style ($radio (= state condition) themed?)}]
-    [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]]))
+  [label state condition on-click]
+  [:div {:style    ($/flex-row)
+         :on-click #(on-click condition)}
+   [:div {:style ($radio (= state condition))}]
+   [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]])
 
 (defn check-box
   "A component for check boxes."

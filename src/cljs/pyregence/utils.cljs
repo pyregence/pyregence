@@ -1,5 +1,6 @@
 (ns pyregence.utils
-  (:require [cljs.reader        :as edn]
+  (:require [decimal.core       :as dc]
+            [cljs.reader        :as edn]
             [clojure.string     :as str]
             [clojure.set        :as sets]
             [clojure.core.async :refer [alts! go <! timeout go-loop chan put!]]
@@ -578,3 +579,32 @@
   (if (#{"%" "\u00B0F" "\u00B0"} units)
     units
     (str " " units)))
+
+(defn filter-no-data
+  "Removes any nodata 'label' entries from the provided legend-list."
+  [legend-list]
+  (remove (fn [leg]
+            (= "nodata" (get leg "label")))
+          legend-list))
+
+(defn replace-no-data-nil
+  "Replaces any nodata 'band' entries from the provided last-clicked-info list
+   with nil."
+  [last-clicked-info no-data-quantities]
+  (mapv (fn [entry]
+         (let [band-val (:band entry)]
+           (assoc entry :band (if (contains? no-data-quantities (str band-val))
+                                nil
+                                band-val))))
+        last-clicked-info))
+
+(defn round-last-clicked-info
+  "Rounds a point info value to the proper number of digits for rendering."
+  [last-clicked-info-val]
+  (when (some? last-clicked-info-val)
+    (if (>= last-clicked-info-val 1)
+      (to-precision 1 last-clicked-info-val)
+      (-> last-clicked-info-val
+          (dc/decimal)
+          (dc/to-significant-digits 2)
+          (dc/to-number)))))

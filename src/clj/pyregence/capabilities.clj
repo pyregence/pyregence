@@ -36,7 +36,9 @@
 
 ;;; Layers
 
-(defn split-risk-layer-name [name-string]
+(defn- split-risk-weather-psps-layer-name
+  "Gets information about a risk, weather, or PSPS layer based on the layer's name."
+  [name-string]
   (let [[workspace layer]           (str/split name-string #":")
         [forecast init-timestamp]   (str/split workspace   #"_(?=\d{8}_)")
         [layer-group sim-timestamp] (str/split layer       #"_(?=\d{8}_)")]
@@ -50,7 +52,9 @@
                         (.getTime (java-date-from-string (str init-timestamp "0000"))))
                      1000 60 60)}))
 
-(defn split-active-layer-name [name-string]
+(defn- split-active-layer-name
+  "Gets information about an active fire layer based on its name."
+  [name-string]
   (let [[workspace layer]                      (str/split name-string #":")
         [forecast fire-name init-ts1 init-ts2] (str/split workspace   #"_")
         [layer-group sim-timestamp]            (str/split layer       #"_(?=\d{8}_)")
@@ -64,7 +68,9 @@
      :sim-time    sim-timestamp
      :hour        0}))
 
-(defn split-fire-detections [name-string]
+(defn- split-fire-detections
+  "Gets information about a fire risk layer based on its name."
+  [name-string]
   (let [[workspace layer]   (str/split name-string #":")
         [forecast type]     (str/split workspace #"_")
         [filter model-init] (str/split layer #"_(?=\d{8}_)")]
@@ -76,7 +82,9 @@
      :model-init  model-init
      :hour        0}))
 
-(defn- split-fuels [name-string]
+(defn- split-fuels
+  "Gets information about a fuels layer based on its name."
+  [name-string]
   (let [[workspace layer] (str/split name-string #":")
         [forecast model]  (str/split workspace #"_")]
     {:workspace   workspace
@@ -86,7 +94,9 @@
      :model-init  "20210407_000000"
      :hour        0}))
 
-(defn- split-wg4-scenarios [name-string]
+(defn- split-wg4-scenarios
+  "Gets information about a WG4 (climate) layer based on its name."
+  [name-string]
   (let [[workspace layer] (str/split name-string #":")
         [_ parameters]    (str/split layer #"_geoTiff_")
         [_ model prob measure year] (re-matches #"([^_]+)_([^_]+)_AA_all_([^_]+)_mean_(\d+)" parameters)]
@@ -98,7 +108,26 @@
      :sim-time    (str year "0101_000000")
      :hour        (- (Integer/parseInt year) 1954)}))
 
-(defn process-layers! [geoserver-key workspace-name]
+(defn- split-psps-underlays
+  "Gets information about a PSPS static layer based on its name."
+  [name-string]
+  (let [[workspace layer] (str/split name-string #":")
+        [forecast type]   (str/split workspace #"_")]
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    forecast
+     :type        type
+     :filter-set  #{forecast type}
+     :model-init  ""
+     :hour        0}))
+
+(defn process-layers!
+  "Makes a call to GetCapabilities and uses regex on the resulting XML response
+   to generate a vector of layer entries where each entry is a map. The info
+   in each entry map is generated based on the title of the layer. Different layer
+   types have their information generated in different ways using the split-
+   functions above."
+  [geoserver-key workspace-name]
   (let [xml-response (-> (get-config :geoserver geoserver-key)
                          (u/end-with "/")
                          (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
@@ -123,21 +152,24 @@
                             merge-fn  #(merge % {:layer full-name :extent coords})]
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
-                          (merge-fn (split-risk-layer-name full-name))
+                          (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-active-layer-name full-name))
 
                           (or (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
-                              (re-matches #"fire-detections.*:(fire_history|us-buildings).*" full-name))
+                              (re-matches #"fire-detections.*:(fire_history|us-buildings|us-transmission-lines).*" full-name))
                           (merge-fn (split-fire-detections full-name))
 
                           (str/starts-with? full-name "fuels")
                           (merge-fn (split-fuels full-name))
 
                           (re-matches #"climate_FireSim.*_\d{4}" full-name)
-                          (merge-fn (split-wg4-scenarios full-name))))))
+                          (merge-fn (split-wg4-scenarios full-name))
+
+                          (str/starts-with? full-name "psps-static")
+                          (merge-fn (split-psps-underlays full-name))))))
                    (vec)))
             xml)
       (apply concat xml)
@@ -145,7 +177,11 @@
 
 ;;; Routes
 
-(defn remove-workspace! [{:strs [geoserver-key workspace-name]}]
+(defn remove-workspace!
+  "Given a specific geoserver-key and a specific workspace-name, removes any
+   layers from that workspace from the layers atom."
+  [{:strs [geoserver-key workspace-name]}]
+  (println workspace-name)
   (swap! layers
          update (keyword geoserver-key)
                 #(filterv (fn [{:keys [workspace]}]
@@ -155,7 +191,13 @@
 (defn get-all-layers []
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
-(defn set-capabilities! [{:strs [geoserver-key workspace-name]}]
+(defn set-capabilities!
+  "Populates the layers atom with all of the layers that are returned
+   from a call to GetCapabilities on a specific GeoServer. Passing in a
+   geoserver-key specifies which GeoServer to call GetCapabilities on and
+   passing in an optional workspace-name allows you to call GetCapabilities
+   on just that workspace by passing it into process-layers!."
+  [{:strs [geoserver-key workspace-name]}]
   (let [geoserver-key  (keyword geoserver-key)]
     (if (contains? (get-config :geoserver) geoserver-key)
       (try
@@ -217,7 +259,12 @@
   (data-response (call-sql "get_user_layers_list" user-id)))
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
-(defn get-layers [geoserver-key selected-set-str]
+(defn get-layers
+  "Based on the given geoserver-key and set of strings to filter the layers by,
+   returns all of the matching layers from the layers atom and their associated
+   model-times. The selected-set-str is compared against the :filter-set property
+   of each layer in the layers atom. Any subsets lead to that layer being returned."
+  [geoserver-key selected-set-str]
   (when-not (seq @layers) (set-all-capabilities!))
   (let [selected-set (edn/read-string selected-set-str)
         available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer)))
