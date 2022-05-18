@@ -739,8 +739,8 @@
           [:span {:style {:display "flex" :padding ".25rem 0"}}
            (doall (map (fn [[key {:keys [opt-label hover-text allowed-org]}]]
                          (when (or (nil? allowed-org)
-                                   (some (fn [{org-id :opt-id}]
-                                           (= org-id allowed-org))
+                                   (some (fn [{org-name :opt-label}]
+                                           (= org-name allowed-org))
                                          @!/user-org-list))
                            ^{:key key}
                            [tool-tip-wrapper
