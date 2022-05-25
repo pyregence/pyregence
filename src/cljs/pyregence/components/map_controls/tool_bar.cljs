@@ -33,12 +33,16 @@
 (defn toggle-fire-history-layer!
   "Toggles the fire history layer."
   []
-  (swap! !/show-fire-history? not)
-  (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
-    (mb/create-fire-history-layer! "fire-history"
-                                   "fire-detections_fire-history%3Afire-history"
-                                   :pyrecast))
-  (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
+  (go
+    (let [layer-name (<! (u/get-layer-name :pyrecast #{"fire-detections" "fire-history"} identity))]
+      (swap! !/show-fire-history? not)
+      (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
+        (mb/create-wms-layer! layer-name
+                              layer-name
+                              :pyrecast
+                              true
+                              200))
+      (mb/set-visible-by-title! layer-name @!/show-fire-history?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component

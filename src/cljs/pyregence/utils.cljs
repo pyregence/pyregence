@@ -608,3 +608,11 @@
           (dc/decimal)
           (dc/to-significant-digits 2)
           (dc/to-number)))))
+
+(defn get-layer-name [geoserver-key filter-set update-layer!]
+  (go
+    (let [name (edn/read-string (:body (<! (call-clj-async! "get-layer-name"
+                                                            geoserver-key
+                                                            (pr-str filter-set)))))]
+      (update-layer! :name name)
+      name)))

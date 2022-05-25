@@ -14,18 +14,6 @@
             [pyregence.components.map-controls.tool-button    :refer [tool-button]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helper Functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn get-layer-name [geoserver-key filter-set update-layer!]
-  (go
-    (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
-                                                              geoserver-key
-                                                              (pr-str filter-set)))))]
-      (update-layer! :name name)
-      name)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -98,7 +86,7 @@
                :checked   @show?
                :on-change #(go
                              (swap! show? not)
-                             (mb/set-visible-by-title! (<! (get-layer-name geoserver-key filter-set identity))
+                             (mb/set-visible-by-title! (<! (u/get-layer-name geoserver-key filter-set identity))
                                                        @show?))}]
       [:label {:for id} opt-label]]]))
 
@@ -112,7 +100,7 @@
       (fn []
         (go-loop [opt-layers sorted-underlays]
           (let [{:keys [filter-set z-index geoserver-key]} (first opt-layers)
-                layer-name                                 (<! (get-layer-name geoserver-key filter-set identity))]
+                layer-name                                 (<! (u/get-layer-name geoserver-key filter-set identity))]
             (mb/create-wms-layer! layer-name
                                   layer-name
                                   geoserver-key
