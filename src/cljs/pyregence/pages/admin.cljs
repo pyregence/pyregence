@@ -17,9 +17,9 @@
             {:opt-id 3 :opt-label "Pending"}])
 
 (defonce _user-id  (r/atom -1))
-(defonce orgs      (r/atom []))
-(defonce *org      (r/atom -1))
-(defonce org-users (r/atom []))
+(defonce ^{:doc "Vector of organizations the current user is an admin of."} orgs (r/atom []))
+(defonce ^{:doc "The `first` organization object from `@orgs`, set as the selected default."} *org (r/atom -1))
+(defonce ^{:doc "Vector of the org users associated with the currently selected organization. "} org-users (r/atom []))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
