@@ -85,15 +85,11 @@
     (reverse (map (fn [{:keys [job-id] :as md}] ^{:key job-id} [match-drop-item md])
                   @match-drops))]])
 
-(defn- redirect-to-login! []
-  (u/set-session-storage! {:redirect-from "/dashboard"})
-  (u/jump-to-url! "/login"))
-
 (defn root-component
   "The root comopnent for the match drop /dashboard page.
    Displays a header, refresh button, and a table of a user's match drops "
   [{:keys [user-id]}]
-  (when (nil? user-id) (redirect-to-login!))
+  (when (nil? user-id) (u/redirect-to-login! "/dashboard"))
   (reset! _user-id user-id)
   (user-match-drops user-id)
   (fn [_]
