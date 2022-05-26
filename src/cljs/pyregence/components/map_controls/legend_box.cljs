@@ -7,11 +7,12 @@
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $legend-color [color]
+(defn- $legend-color [color opacity]
   {:background-color color
    :height           "1rem"
    :margin-right     ".5rem"
-   :min-width        "1rem"})
+   :min-width        "1rem"
+   :opacity          opacity})
 
 (defn- $legend-box [show? time-slider?]
   {:left          (if (and show? (not @!/mobile?)) "20rem" "2rem")
@@ -45,7 +46,7 @@
           (map-indexed (fn [i leg]
                          ^{:key i}
                          [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
-                          [:div {:style ($legend-color (get leg "color"))}]
+                          [:div {:style ($legend-color (get leg "color") (get leg "opacity"))}]
                           [:label (str (get leg "label") (u/clean-units units))]])
                        (if reverse?
                          (reverse processed-legend)
