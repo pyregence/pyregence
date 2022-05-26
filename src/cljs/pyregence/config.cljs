@@ -220,6 +220,11 @@
                                                               :smoke  {:opt-label "Smoke density (\u00b5g/m\u00b3)"
                                                                        :filter    "smoke"
                                                                        :units     "\u00b5g/m\u00b3"})}
+                                    :model      {:opt-label  "Model"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "National Weather Service "]
+                                                              " - Operational National Weather Service forecast model."]
+                                                 :options    {:nws {:opt-label "National Weather Service"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
