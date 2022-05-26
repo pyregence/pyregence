@@ -1,6 +1,6 @@
 {:cameras           {:wildfire-camera-api-key "<api-key>"}
  :mapbox            {:access-token "<access-token>"}
- :pyr-auth-token    "<auth-token>"
+ :pyr-auth-token    "<changeme123456789>"
  :database          {:host     "localhost"
                      :port     5432
                      :dbname   "pyregence"
