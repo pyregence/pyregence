@@ -19,7 +19,7 @@
 (defonce _user-id  (r/atom -1))
 (defonce ^{:doc "Vector of organizations the current user is an admin of."} orgs (r/atom []))
 (defonce ^{:doc "The `first` organization object from `@orgs`, set as the selected default."} *org (r/atom -1))
-(defonce ^{:doc "Vector of the org users associated with the currently selected organization. "} org-users (r/atom []))
+(defonce ^{:doc "Vector of the org users associated with the currently selected organization."} org-users (r/atom []))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -179,7 +179,7 @@
           nil)
 
       (= @*org -1)                      ; get-org-list has not completed yet
-      [:div
+      [:div {:style {:display "flex" :justify-content "center"}}
        [:h1 "Loading..."]]
 
       :else                             ; Logged-in user and admin of at least one org                                        ;
