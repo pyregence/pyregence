@@ -17,6 +17,7 @@
             [ring.middleware.ssl                :refer [wrap-ssl-redirect]]
             [ring.middleware.x-headers          :refer [wrap-frame-options wrap-content-type-options wrap-xss-protection]]
             [ring.util.codec                    :refer [url-decode]]
+            [triangulum.config                  :refer [get-config]]
             [triangulum.logging                 :refer [log-str]]
             [pyregence.remote-api               :refer [clj-handler sql-handler]]
             [pyregence.views                    :refer [data-response render-page]]))
@@ -43,7 +44,7 @@
 (defn bad-uri? [uri] (str/includes? (str/lower-case uri) "php"))
 
 (defn token-resp [{:keys [auth-token]} handler]
-  (if (= auth-token "883kljlsl36dnll9s9l2ls8xksl")
+  (if (= auth-token (get-config :pyr-auth-token))
     handler
     (constantly (data-response "Forbidden" {:status 403}))))
 

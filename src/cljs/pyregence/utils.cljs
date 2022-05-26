@@ -4,7 +4,8 @@
             [clojure.string     :as str]
             [clojure.set        :as sets]
             [clojure.core.async :refer [alts! go <! timeout go-loop chan put!]]
-            [cljs.core.async.interop :refer-macros [<p!]]))
+            [cljs.core.async.interop :refer-macros [<p!]]
+            [pyregence.state    :as !]))
 
 (defn input-value
   "Returns the value property of the target property of an event."
@@ -167,7 +168,8 @@
                         :headers {"Accept" "application/edn"
                                   "Content-Type" "application/edn"}}
           edn-string   (<! (fetch-and-process (str url
-                                                   "?auth-token=883kljlsl36dnll9s9l2ls8xksl"
+                                                   "?auth-token="
+                                                   @!/pyr-auth-token
                                                    (when (not= query-string "") (str "&" query-string)))
                                               fetch-params
                                               (fn [response] (.text response))))]
@@ -184,7 +186,7 @@
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
                                   fetch-params))]
       (if response
         {:success (.-ok response)
@@ -204,7 +206,7 @@
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
                                   fetch-params))]
       (if response
         {:success (.-ok response)
@@ -224,7 +226,7 @@
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
                                   fetch-params))]
       (if response
         {:success (.-ok response)
