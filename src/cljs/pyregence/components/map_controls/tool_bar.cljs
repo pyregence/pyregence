@@ -71,7 +71,7 @@
          [:flag
           (str (hs-str @!/show-red-flag?) " red flag warnings")
           toggle-red-flag-layer!]
-         (when (and (c/feature-enabled? :fire-history) (not @!/mobile?))
+         (when (c/feature-enabled? :fire-history)
            [:clock
             (str (hs-str @!/show-fire-history?) " fire history")
             toggle-fire-history-layer!])
