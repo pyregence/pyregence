@@ -38,7 +38,8 @@
     (mb/create-fire-history-layer! "fire-history"
                                    "fire-detections_fire-history%3Afire-history"
                                    :pyrecast))
-  (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
+  (mb/set-visible-by-title! "fire-history" @!/show-fire-history?)
+  (mb/clear-popup! "fire-history"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component
