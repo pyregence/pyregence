@@ -528,7 +528,8 @@
               :text-offset        [0 0.8]
               :text-size          16
               :visibility         "visible"}
-   :metadata {:type (get-layer-type layer-name)}
+   :metadata {:type    (get-layer-type layer-name)
+              :z-index 2000}
    :paint    {:icon-opacity    opacity
               :text-color      "#000000"
               :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
@@ -728,7 +729,10 @@
                                     :z-index 1002}
                      :layout       {:text-allow-overlap false
                                     :text-anchor        "top"
-                                    :text-field         ["to-string" ["get" "INCIDENT"]]
+                                    :text-field         ["concat" ["to-string" ["get" "INCIDENT"]]
+                                                                  " ("
+                                                                  ["to-string" ["get" "FIRE_YEAR"]]
+                                                                  ")"]
                                     :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
                                     :text-offset        [0 0.8]
                                     :text-size          12
