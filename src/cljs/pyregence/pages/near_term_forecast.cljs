@@ -404,7 +404,7 @@
         body       (fire-history-popup INCIDENT FIRE_YEAR GIS_ACRES)]
     (mb/init-popup! "fire-history" lnglat body {:width "200px"})))
 
-(defn change-type!
+(defn- change-type!
   "Changes the type of data that is being shown on the map."
   [get-model-times? clear? zoom? max-zoom]
   (go
@@ -425,10 +425,13 @@
     (if clear?
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))
-    (when zoom?
+    (when (or zoom? (= @!/*forecast :active-fire))
       (mb/zoom-to-extent! (get-current-layer-extent) (current-layer) max-zoom))))
 
-(defn select-param! [val & keys]
+(defn- select-param!
+  "The function called whenever an input dropdown is changed on the collapsible panel.
+   Resets the proper state atoms with the new, selected inputs from the UI."
+  [val & keys]
   (swap! !/*params assoc-in (cons @!/*forecast keys) val)
   (!/set-state-legend-list! [])
   (reset! !/last-clicked-info nil)
@@ -442,7 +445,9 @@
                   (get-current-option-key main-key val :auto-zoom?)
                   (get-any-level-key     :max-zoom))))
 
-(defn select-forecast! [key]
+(defn- select-forecast!
+  "The function called whenever you select a new forecast/tab."
+  [key]
   (go
     (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
