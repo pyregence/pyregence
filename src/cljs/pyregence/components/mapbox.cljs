@@ -344,7 +344,7 @@
   [source state-tag & [source-layer]]
   (when-let [id (get-in @feature-state [source state-tag])]
     (.setFeatureState @the-map
-                      (clj->js (merge {:source source :id id} 
+                      (clj->js (merge {:source source :id id}
                                       (when (some? source-layer) {:sourceLayer source-layer})))
                       (clj->js {state-tag false}))
     (swap! feature-state assoc-in [source state-tag] nil)))
@@ -703,15 +703,15 @@
    :tiles [(c/mvt-layer-url layer-name geoserver-key)]})
 
 (defn create-fire-history-layer!
-  "Adds red flag warning layer to the map."
+  "Adds a Fire History layer to the map."
   [id layer-name geoserver-key]
-  (let [new-source {id (mvt-source layer-name geoserver-key)}
-        color      ["step" ["get" "Decade"]
+  (let [color      ["step" ["get" "Decade"]
                     "#cccccc" ; Default
                     2000 "#fecc5c"
                     2010 "#fd8d3c"
                     2020 "#f03b20"]
-        new-layers [{:id           id
+        new-source {id (mvt-source layer-name geoserver-key)}
+        new-layer  [{:id           id
                      :source       id
                      :source-layer id
                      :type         "fill"
@@ -719,14 +719,20 @@
                                     :z-index 1002}
                      :paint        {:fill-color         color
                                     :fill-opacity       (on-hover 1 0.4)
-                                    :fill-outline-color (on-hover "#000000" color)}}
-                    {:id           (str id "-labels")
+                                    :fill-outline-color (on-hover "#000000" color)}}]]
+    (update-style! (get-style) :new-sources new-source :new-layers new-layer)))
+
+(defn create-fire-history-label-layer!
+  "Adds a layer with labels for the Fire History layer to the map."
+  [id layer-name geoserver-key]
+  (let [new-source {id (mvt-source layer-name geoserver-key)}
+        new-layer  [{:id           id
                      :source       id
                      :source-layer id
                      :type         "symbol"
                      :minzoom      7
-                     :metadata     {:type    (get-layer-type (str id "-labels"))
-                                    :z-index 1002}
+                     :metadata     {:type (get-layer-type id)
+                                    :z-index 1003}
                      :layout       {:text-allow-overlap false
                                     :text-anchor        "top"
                                     :text-field         ["concat" ["to-string" ["get" "INCIDENT"]]
@@ -734,13 +740,12 @@
                                                                   ["to-string" ["get" "FIRE_YEAR"]]
                                                                   ")"]
                                     :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
-                                    :text-offset        [0 0.8]
                                     :text-size          12
                                     :visibility         "visible"}
                      :paint        {:text-color      "#000000"
                                     :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
                                     :text-halo-width 1.5}}]]
-    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+    (update-style! (get-style) :new-sources new-source :new-layers new-layer)))
 
 (defn remove-layer!
   "Removes layer that matches `id`"
