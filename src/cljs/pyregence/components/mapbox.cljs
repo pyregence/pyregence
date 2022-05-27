@@ -344,9 +344,8 @@
   [source state-tag & [source-layer]]
   (when-let [id (get-in @feature-state [source state-tag])]
     (.setFeatureState @the-map
-                      (if (some? source-layer)
-                        #js {:source source :sourceLayer source-layer :id id}
-                        #js {:source source :id id})
+                      (clj->js (merge {:source source :id id} 
+                                      (when (some? source-layer) {:sourceLayer source-layer})))
                       (clj->js {state-tag false}))
     (swap! feature-state assoc-in [source state-tag] nil)))
 
@@ -356,9 +355,8 @@
   (clear-highlight! source state-tag source-layer)
   (swap! feature-state assoc-in [source state-tag] feature-id)
   (.setFeatureState @the-map
-                    (if (some? source-layer)
-                      #js {:source source :sourceLayer source-layer :id feature-id}
-                      #js {:source source :id feature-id})
+                    (clj->js (merge {:source source :id feature-id}
+                                    (when (some? source-layer) {:sourceLayer source-layer})))
                     (clj->js {state-tag true})))
 
 (defn add-feature-highlight!
