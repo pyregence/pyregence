@@ -63,6 +63,6 @@
    [:h6 {:style ($popup-header)}
     prod-type]
    [:div
-    [fire-property "Onset" onset]
-    [fire-property "Ends" ends]
-    [red-flag-link url]]])
+    [fire-property "Onset" (if (= onset "null") "N/A" onset)]
+    [fire-property "Ends" (if (= ends "null") "N/A" ends)]
+    (when (not= url "null") [red-flag-link url])]])
