@@ -357,7 +357,7 @@
   (swap! feature-state assoc-in [source state-tag] feature-id)
   (.setFeatureState @the-map
                     (if (some? source-layer)
-                      #js {:source source :sourceLayer source :id feature-id}
+                      #js {:source source :sourceLayer source-layer :id feature-id}
                       #js {:source source :id feature-id})
                     (clj->js {state-tag true})))
 
@@ -708,18 +708,20 @@
   "Adds red flag warning layer to the map."
   [id layer-name geoserver-key]
   (let [new-source {id (mvt-source layer-name geoserver-key)}
+        color      ["step" ["get" "Decade"]
+                    "#cccccc" ; Default
+                    2000 "#fecc5c"
+                    2010 "#fd8d3c"
+                    2020 "#f03b20"]
         new-layers [{:id           id
                      :source       id
                      :source-layer id
                      :type         "fill"
                      :metadata     {:type    (get-layer-type id)
                                     :z-index 1002}
-                     :paint        {:fill-color   ["step" ["get" "Decade"]
-                                                   "#cccccc"  ; Default
-                                                   2000 "#fecc5c"
-                                                   2010 "#fd8d3c"
-                                                   2020 "#f03b20"]
-                                    :fill-opacity (on-hover 1 0.4)}}
+                     :paint        {:fill-color         color
+                                    :fill-opacity       (on-hover 1 0.4)
+                                    :fill-outline-color (on-hover "#000000" color)}}
                     {:id           (str id "-labels")
                      :source       id
                      :source-layer id
