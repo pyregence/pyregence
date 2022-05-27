@@ -38,7 +38,8 @@
     (mb/create-fire-history-layer! "fire-history"
                                    "fire-detections_fire-history%3Afire-history"
                                    :pyrecast))
-  (mb/set-visible-by-title! "fire-history" @!/show-fire-history?))
+  (mb/set-visible-by-title! "fire-history" @!/show-fire-history?)
+  (mb/clear-popup! "fire-history"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component
@@ -70,7 +71,7 @@
          [:flag
           (str (hs-str @!/show-red-flag?) " red flag warnings")
           toggle-red-flag-layer!]
-         (when (and (c/feature-enabled? :fire-history) (not @!/mobile?))
+         (when (c/feature-enabled? :fire-history)
            [:clock
             (str (hs-str @!/show-fire-history?) " fire history")
             toggle-fire-history-layer!])

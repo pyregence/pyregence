@@ -13,7 +13,7 @@
             [pyregence.utils  :as u]
             [pyregence.config :as c]
             [pyregence.components.mapbox    :as mb]
-            [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
+            [pyregence.components.popups    :refer [fire-popup red-flag-popup fire-history-popup]]
             [pyregence.components.common    :refer [tool-tip-wrapper]]
             [pyregence.components.messaging :refer [message-box-modal toast-message!]]
             [pyregence.components.svg-icons :refer [pin]]
@@ -398,6 +398,12 @@
         body       (red-flag-popup url prod_type onset ends)]
     (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
 
+(defn- init-fire-history-popup! [feature lnglat]
+  (let [properties (-> feature (aget "properties") (js->clj))
+        {:strs [INCIDENT FIRE_YEAR GIS_ACRES]} properties
+        body       (fire-history-popup INCIDENT FIRE_YEAR GIS_ACRES)]
+    (mb/init-popup! "fire-history" lnglat body {:width "200px"})))
+
 (defn- change-type!
   "Changes the type of data that is being shown on the map."
   [get-model-times? clear? zoom? max-zoom]
@@ -412,8 +418,9 @@
                               (get-psps-layer-style))
       (mb/clear-popup!)
       (when (some? style-fn)
-        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!)
-        (mb/add-feature-highlight! "red-flag" "red-flag" init-red-flag-popup!))
+        (mb/add-feature-highlight! "fire-active" "fire-active" :click-fn init-fire-popup!)
+        (mb/add-feature-highlight! "red-flag" "red-flag" :click-fn init-red-flag-popup!)
+        (mb/add-feature-highlight! "fire-history" "fire-history" :click-fn init-fire-history-popup! :source-layer "fire-history"))
       (get-legend! source))
     (if clear?
       (clear-info!)

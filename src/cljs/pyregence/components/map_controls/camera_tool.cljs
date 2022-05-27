@@ -85,7 +85,7 @@
                                                                        60000)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _             (mb/create-camera-layer! "fire-cameras")
-               _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" on-click)]
+               _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" :click-fn on-click)]
     [:div#wildfire-camera-tool
      [resizable-window
       parent-box
