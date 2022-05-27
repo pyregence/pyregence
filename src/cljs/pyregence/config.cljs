@@ -496,6 +496,7 @@
    :fire-weather-forecast {:forecast-layer? true}
    :fuels-and-topography  {:forecast-layer? true}
    :fire-history          {:forecast-layer? false}
+   :fire-history-labels   {:forecast-layer? false}
    :psps-static           {:forecast-layer? false}
    :psps-zonal            {:forecast-layer? true}
    :red-flag              {:forecast-layer? false}

@@ -420,7 +420,12 @@
       (when (some? style-fn)
         (mb/add-feature-highlight! "fire-active" "fire-active" :click-fn init-fire-popup!)
         (mb/add-feature-highlight! "red-flag" "red-flag" :click-fn init-red-flag-popup!)
-        (mb/add-feature-highlight! "fire-history" "fire-history" :click-fn init-fire-history-popup! :source-layer "fire-history"))
+        (mb/add-feature-highlight! "fire-history" "fire-history"
+                                   :click-fn init-fire-history-popup!
+                                   :source-layer "fire-history")
+        (mb/add-feature-highlight! "fire-history-centroid" "fire-history-centroid"
+                                   :click-fn init-fire-history-popup!
+                                   :source-layer "fire-history-centroid"))
       (get-legend! source))
     (if clear?
       (clear-info!)

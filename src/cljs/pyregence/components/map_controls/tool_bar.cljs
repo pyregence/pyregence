@@ -37,8 +37,12 @@
   (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
     (mb/create-fire-history-layer! "fire-history"
                                    "fire-detections_fire-history%3Afire-history"
-                                   :pyrecast))
+                                   :pyrecast)
+    (mb/create-fire-history-label-layer! "fire-history-centroid"
+                                         "fire-detections_fire-history%3Afire-history-centroid"
+                                         :pyrecast))
   (mb/set-visible-by-title! "fire-history" @!/show-fire-history?)
+  (mb/set-visible-by-title! "fire-history-centroid" @!/show-fire-history?)
   (mb/clear-popup! "fire-history"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
