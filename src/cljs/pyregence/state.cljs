@@ -34,9 +34,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce last-clicked-info   (r/atom []))
-(defonce no-data-quantities
-  ^{:doc "A set containing all of the quantities associated with `nodata` points."}
-  (r/atom #{}))
+(defonce ^{:doc "A set containing all of the quantities associated with `nodata` points."}
+  no-data-quantities (r/atom #{}))
 (defonce legend-list         (r/atom []))
 (defonce point-info-loading? (r/atom false))
 
@@ -44,15 +43,21 @@
 ;; Miscellaneous State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce user-org-list
-  ^{:doc "For the currently logged in user, stores a list of all of the
-          organizations that they belong to."}
-  (r/atom []))
+(defonce ^{:doc "For the currently logged in user, stores a list of all of the
+organizations that they belong to."}
+  user-org-list (r/atom []))
 (defonce animate?    (r/atom false))
 (defonce loading?    (r/atom true))
 (defonce mobile?     (r/atom false))
 (defonce terrain?    (r/atom false))
 (defonce the-cameras (r/atom nil))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; config.edn State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce ^{:doc "The Pyrecast auth token for making API requests."}
+  pyr-auth-token (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State Setters

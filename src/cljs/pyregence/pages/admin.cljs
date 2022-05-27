@@ -17,9 +17,9 @@
             {:opt-id 3 :opt-label "Pending"}])
 
 (defonce _user-id  (r/atom -1))
-(defonce orgs      (r/atom []))
-(defonce *org      (r/atom -1))
-(defonce org-users (r/atom []))
+(defonce ^{:doc "Vector of organizations the current user is an admin of."} orgs (r/atom []))
+(defonce ^{:doc "The `first` organization object from `@orgs`, set as the selected default."} *org (r/atom -1))
+(defonce ^{:doc "Vector of the org users associated with the currently selected organization."} org-users (r/atom []))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -172,15 +172,24 @@
   (reset! _user-id user-id)
   (get-org-list)
   (fn [_]
-    [:<>
-     [:div {:style {:display "flex" :justify-content "center" :padding "2rem 8rem"}}
-      [:div {:style {:flex 1 :padding "1rem"}}
-       [org-list]]
-      ^{:key @*org}
-      [:div {:style {:display        "flex"
-                     :flex           2
-                     :flex-direction "column"
-                     :height         "100%"
-                     :padding        "1rem"}}
-       [org-settings (some (fn [{:keys [opt-id] :as org}] (when (= opt-id @*org) org)) @orgs)]
-       [org-users-list]]]]))
+    (cond
+      (or (nil? user-id)                ; User is not logged in
+          (nil? @*org))                 ; User is not an admin of any org
+      (do (u/redirect-to-login! "/admin")
+          nil)
+
+      (= @*org -1)                      ; get-org-list has not completed yet
+      [:div {:style {:display "flex" :justify-content "center"}}
+       [:h1 "Loading..."]]
+
+      :else                             ; Logged-in user and admin of at least one org                                        ;
+      [:div {:style {:display "flex" :justify-content "center" :padding "2rem 8rem"}}
+       [:div {:style {:flex 1 :padding "1rem"}}
+        [org-list]]
+       [:div {:style {:display        "flex"
+                      :flex           2
+                      :flex-direction "column"
+                      :height         "100%"
+                      :padding        "1rem"}}
+        [org-settings (some (fn [{:keys [opt-id] :as org}] (when (= opt-id @*org) org)) @orgs)]
+        [org-users-list]]])))

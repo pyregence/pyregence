@@ -15,11 +15,11 @@ Closes PYR-###
 <!-- The current list of all Modules is: Fuels Tab, Weather Tab, Risk Tab, Active Fires Tab, PSPS Tab, Underlays, Point Info, Toolbars, and Mobile. -->
 
 ## Testing
-<!-- Admin, User, or Vistor -->
 #### Role
+<!-- Admin, User, or Vistor -->
 
-<!-- All steps needed to test this PR -->
 #### Steps
+<!-- All steps needed to test this PR -->
 1.
 
 #### Desired Outcome
