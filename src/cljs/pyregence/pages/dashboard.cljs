@@ -89,22 +89,27 @@
   "The root comopnent for the match drop /dashboard page.
    Displays a header, refresh button, and a table of a user's match drops "
   [{:keys [user-id]}]
-  (when (nil? user-id) (u/redirect-to-login! "/dashboard"))
   (reset! _user-id user-id)
   (user-match-drops user-id)
   (fn [_]
-    [:div {:style ($/combine $/root {:height   "100%"
-                                     :padding  0
-                                     :position "relative"})}
-     [message-box-modal]
-     [:div {:style ($/combine $/flex-col {:padding "2rem 8rem"})}
-      [:div {:style {:display "flex"}}
-       [:h3 {:style {:margin-bottom "0"
-                     :margin-right  "1rem"}}
-        "Match Drop Dashboard"]
-       [:button {:class    (<class $/p-form-button)
-                 :on-click #(user-match-drops user-id)}
-        "Refresh"]]
-      [:div {:style {:padding "1rem"
-                     :width   "100%"}}
-       [match-drop-table]]]]))
+    (cond
+      (nil? user-id) ; User is not logged in
+      (do (u/redirect-to-login! "/dashboard")
+          nil)
+
+      :else  ; User is logged in
+      [:div {:style ($/combine $/root {:height   "100%"
+                                       :padding  0
+                                       :position "relative"})}
+       [message-box-modal]
+       [:div {:style ($/combine $/flex-col {:padding "2rem 8rem"})}
+        [:div {:style {:display "flex"}}
+         [:h3 {:style {:margin-bottom "0"
+                       :margin-right  "1rem"}}
+          "Match Drop Dashboard"]
+         [:button {:class    (<class $/p-form-button)
+                   :on-click #(user-match-drops user-id)}
+          "Refresh"]]
+        [:div {:style {:padding "1rem"
+                       :width   "100%"}}
+         [match-drop-table]]]])))
