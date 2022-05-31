@@ -154,8 +154,9 @@
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
-                          (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
-                               (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
+                          (or (str/includes? full-name "isochrones")
+                              (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
+                                   (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop")))))
                           (merge-fn (split-active-layer-name full-name))
 
                           (or (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
