@@ -14,11 +14,9 @@
                                   :body   ""
                                   :mode   :none
                                   :action nil})
-
-(def message-box-content (r/atom blank-message-box))
-(def toast-message-text  (r/atom nil))
-
-(def toast-message-chan (chan))
+(def ^:private message-box-content (r/atom blank-message-box))
+(def ^:private toast-message-text  (r/atom nil))
+(def ^:private toast-message-chan  (chan))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
