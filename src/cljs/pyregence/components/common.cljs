@@ -123,13 +123,14 @@
 (defn check-box
   "A component for check boxes."
   [label-text state]
-  [:span {:style {:margin-bottom ".5rem"}}
-   [:label
-    [:input {:style     {:margin-right ".25rem"}
-             :type      "checkbox"
-             :checked   @state
-             :on-change #(swap! state not)}]
-    label-text]])
+  (let [id  (str (random-uuid))]
+    [:span {:style {:margin-bottom ".5rem"}}
+     [:input {:id        id
+              :style     {:margin-right ".25rem"}
+              :type      "checkbox"
+              :checked   @state
+              :on-change #(swap! state not)}]
+     [:label {:for id} label-text]]))
 
 (defn labeled-input
   "Input and label pair component. Takes as `opts`
