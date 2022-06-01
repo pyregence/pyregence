@@ -124,11 +124,12 @@
   "A component for check boxes."
   [label-text state]
   [:span {:style {:margin-bottom ".5rem"}}
-   [:input {:style     {:margin-right ".25rem"}
-            :type      "checkbox"
-            :checked   @state
-            :on-change #(swap! state not)}]
-   [:label label-text]])
+   [:label
+    [:input {:style     {:margin-right ".25rem"}
+             :type      "checkbox"
+             :checked   @state
+             :on-change #(swap! state not)}]
+    label-text]])
 
 (defn labeled-input
   "Input and label pair component. Takes as `opts`
