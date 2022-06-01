@@ -24,13 +24,15 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn toast-message! [message]
+(defn toast-message!
   "Puts a message onto the toast message channel."
+  [message]
   (go (>! toast-message-chan message)))
 
-(defn process-toast-messages! []
+(defn process-toast-messages!
   "Perpetually takes a message off of the toast message channel and updates the appropriate atom.
    Waits 5.5 seconds before looking for the next message on the channel."
+  []
   (go (loop [message (<! toast-message-chan)]
         (reset! toast-message-text message)
         (<! (timeout 5000))
