@@ -1,12 +1,13 @@
 (ns pyregence.pages.admin
   (:require [herb.core          :refer [<class]]
             [clojure.core.async :refer [go <!]]
+            [clojure.string     :refer [blank?]]
             [reagent.core     :as r]
             [cljs.reader      :as edn]
             [pyregence.utils  :as u]
             [pyregence.styles :as $]
             [pyregence.components.common    :refer [check-box labeled-input]]
-            [pyregence.components.messaging :refer [toast-message!]]))
+            [pyregence.components.messaging :refer [confirmation-modal set-message-box-content! toast-message!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -81,6 +82,38 @@
          (when selected? {:background-color ($/color-picker :yellow 0.3)})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helper Functions - Handle click events and setup modal confirmation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- handle-add-user [_email]
+  (when-not (blank? _email)
+    (set-message-box-content! {:title  "Add New User"
+                               :body   (str "Are you sure that you want to add the user, with email \""
+                                            _email "\", to the system?")
+                               :action #(add-org-user! _email)})))
+
+(defn- handle-remove-user [_uid _username]
+  (set-message-box-content! {:title  "Delete User"
+                             :body   (str "Are you sure that you want to permanently remove user \""
+                                          _username "\" from the system.")
+                             :action #(remove-org-user! _uid)}))
+
+(defn- handle-update-role-id [_rid _uid _username]
+  (set-message-box-content! {:title  "Update User Role"
+                             :body   (str "Are you sure you want to change the role of user \""
+                                          _username "\" to \""
+                                          (->> roles
+                                               (filter (fn [role] (= _rid (role :opt-id))))
+                                               (first)
+                                               (:opt-label)) "\"?")
+                             :action #(update-org-user-role! _uid _rid)}))
+
+(defn- handle-update-org-settings [_oid _org-name _email-domains _auto-add _auto-accept]
+  (set-message-box-content! {:title  "Update Settings"
+                             :body   "Saving these changes will overwrite previous setting values."
+                             :action #(update-org-info! _oid _org-name _email-domains _auto-add _auto-accept)}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -112,13 +145,19 @@
       [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
        [labeled-input "Name" _opt-label]
        [labeled-input "Email Domains (comma separated)" _email-domains]
+       [:label]
        [check-box "Auto add user to organization" _auto-add?]
        [check-box "Auto accept user as member" _auto-accept?]
        [:input {:class    (<class $/p-form-button :large)
                 :style    ($/combine ($/align :block :center) {:margin-top ".5rem"})
                 :type     "button"
-                :value    "Save"
-                :on-click #(update-org-info! opt-id @_opt-label @_email-domains @_auto-add? @_auto-accept?)}]]]]))
+                :value    "Update"
+                :on-click #(handle-update-org-settings
+                            opt-id          ; Organization ID
+                            @_opt-label     ; Organization name
+                            @_email-domains ; Comma delimitted
+                            @_auto-add?
+                            @_auto-accept?)}]]]]))
 
 (defn- user-item [org-user-id opt-label email role-id]
   (r/with-let [_role-id (r/atom role-id)]
@@ -131,7 +170,7 @@
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Remove User"
-               :on-click #(remove-org-user! org-user-id)}]
+               :on-click #(handle-remove-user org-user-id opt-label)}]
       [:select {:class     (<class $/p-bordered-input)
                 :style     {:margin "0 .25rem 0 1rem" :height "2rem"}
                 :value     @_role-id
@@ -143,7 +182,7 @@
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Update Role"
-               :on-click #(update-org-user-role! org-user-id @_role-id)}]]]))
+               :on-click #(handle-update-role-id @_role-id org-user-id opt-label)}]]]))
 
 (defn- org-users-list []
   (r/with-let [new-email (r/atom "")]
@@ -159,7 +198,7 @@
                   :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                   :type     "button"
                   :value    "Add User"
-                  :on-click #(add-org-user! @new-email)}]]
+                  :on-click #(handle-add-user @new-email) }]]
         (doall (map (fn [{:keys [opt-id opt-label email role-id]}]
                       ^{:key opt-id}
                       [user-item opt-id opt-label email role-id])
@@ -184,6 +223,7 @@
 
       :else                             ; Logged-in user and admin of at least one org                                        ;
       [:div {:style {:display "flex" :justify-content "center" :padding "2rem 8rem"}}
+       [confirmation-modal]
        [:div {:style {:flex 1 :padding "1rem"}}
         [org-list]]
        [:div {:style {:display        "flex"
