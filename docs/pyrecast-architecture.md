@@ -22,8 +22,9 @@ From start to finish, here are the steps to display a layer on the front-end:
 3. Finally, once the layers are appropriately registered on GeoServer, the Pyrecast web-app is able to make the appropriate WMS or WFS requests to display the layers on the front-end.
 
 It's important to note that while the Pyrecast web-app itself has a Postgres database, it is **not** used to store information about any GeoServer layers.
-Currently, its use is primarily for storing users and organizations.
-All of the information about a layer comes from the GeoServer instance.
+Instead, all of the information about a layer comes from the GeoServer instance.
+Currently, the Pyrecast Postgres DB is used primarily for storing users and organizations.
+See the [Pyrecast Database document](./pyrecast-database.md) for more information.
 
 ```mermaid
 flowchart LR
