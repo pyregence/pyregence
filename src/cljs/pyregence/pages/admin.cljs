@@ -2,6 +2,7 @@
   (:require [herb.core          :refer [<class]]
             [clojure.core.async :refer [go <!]]
             [clojure.string     :refer [blank?]]
+            [goog.string        :refer [format]]
             [reagent.core     :as r]
             [cljs.reader      :as edn]
             [pyregence.utils  :as u]
@@ -85,42 +86,40 @@
 ;; Helper Functions - Handle click events and setup modal confirmation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- handle-add-user [_email]
-  (when-not (blank? _email)
+(defn- handle-add-user [email]
+  (when-not (blank? email)
     (set-message-box-content! {:title  "Add New User"
-                               :body   (str "Are you sure that you want to add the user, with email \""
-                                            _email "\", to the system?")
-                               :action #(add-org-user! _email)})))
+                               :body   (str "Are you sure that you want to add the user with email \"" email "\" to the system?")
+                               :action #(add-org-user! email)})))
 
-(defn- handle-remove-user [_uid _username]
+(defn- handle-remove-user [uid username]
   (set-message-box-content! {:title  "Delete User"
-                             :body   (str "Are you sure that you want to permanently remove user \""
-                                          _username "\" from the system.")
-                             :action #(remove-org-user! _uid)}))
+                             :body   (str "Are you sure that you want to permanently remove user \"" username "\" from the system.")
+                             :action #(remove-org-user! uid)}))
 
-(defn- handle-update-role-id [_rid _uid _username]
+(defn- handle-update-role-id [rid uid username]
   (set-message-box-content! {:title  "Update User Role"
-                             :body   (str "Are you sure you want to change the role of user \""
-                                          _username "\" to \""
-                                          (->> roles
-                                               (filter (fn [role] (= _rid (role :opt-id))))
-                                               (first)
-                                               (:opt-label)) "\"?")
-                             :action #(update-org-user-role! _uid _rid)}))
+                             :body   (format "Are you sure you want to change the role of user \"%s\" to \"%s\"?"
+                                             username
+                                             (->> roles
+                                                  (filter (fn [role] (= rid (role :opt-id))))
+                                                  (first)
+                                                  (:opt-label)))
+                             :action #(update-org-user-role! uid rid)}))
 
-(defn- handle-update-org-settings [_oid _org-name _email-domains _auto-add _auto-accept]
+(defn- handle-update-org-settings [oid org-name email-domains auto-add auto-accept]
   (set-message-box-content! {:title  "Update Settings"
                              :body   "Saving these changes will overwrite previous setting values."
-                             :action #(update-org-info! _oid _org-name _email-domains _auto-add _auto-accept)}))
+                             :action #(update-org-info! oid org-name email-domains auto-add auto-accept)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- org-item [org-id name]
+(defn- org-item [org-id org-name]
   [:label {:style    ($org-item (= org-id @*org))
            :on-click #(select-org org-id)}
-   name])
+   org-name])
 
 (defn- org-list []
   [:div#org-list
@@ -145,7 +144,6 @@
       [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
        [labeled-input "Name" _opt-label]
        [labeled-input "Email Domains (comma separated)" _email-domains]
-       [:label]
        [check-box "Auto add user to organization" _auto-add?]
        [check-box "Auto accept user as member" _auto-accept?]
        [:input {:class    (<class $/p-form-button :large)
@@ -193,7 +191,7 @@
       [:div {:style {:overflow "auto"}}
        [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
         [:div {:style {:align-items "flex-end" :display "flex"}}
-         [labeled-input "New User" new-email]
+         [labeled-input "New User Email Address" new-email]
          [:input {:class    (<class $/p-form-button)
                   :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                   :type     "button"
