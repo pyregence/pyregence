@@ -735,9 +735,9 @@
                                     :z-index 1003}
                      :layout       {:text-allow-overlap false
                                     :text-anchor        "top"
-                                    :text-field         ["concat" ["to-string" ["get" "INCIDENT"]]
+                                    :text-field         ["concat" ["to-string" ["get" "incidentna"]]
                                                                   " ("
-                                                                  ["to-string" ["get" "FIRE_YEAR"]]
+                                                                  ["to-string" ["get" "fireyear"]]
                                                                   ")"]
                                     :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
                                     :text-size          12

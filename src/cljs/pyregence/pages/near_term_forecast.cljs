@@ -400,8 +400,8 @@
 
 (defn- init-fire-history-popup! [feature lnglat]
   (let [properties (-> feature (aget "properties") (js->clj))
-        {:strs [INCIDENT FIRE_YEAR GIS_ACRES]} properties
-        body       (fire-history-popup INCIDENT FIRE_YEAR GIS_ACRES)]
+        {:strs [incidentna fireyear gisacres]} properties
+        body       (fire-history-popup incidentna fireyear gisacres)]
     (mb/init-popup! "fire-history" lnglat body {:width "200px"})))
 
 (defn- change-type!
