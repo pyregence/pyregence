@@ -168,7 +168,7 @@
     (when-not (= "" title)
       [:div {:style ($/combine $/modal {:position "fixed"})}
        [:div {:style ($/combine $message-box [$/align :text :left])}
-        [:div {:style ($/combine $/action-box)}
+        [:div {:style ($/action-box)}
          [:div {:style ($/action-header)}
           [:label {:style ($/padding "1px" :l)} title]]
          [:div {:style ($/combine $/flex-col {:padding "1.6rem"})}
