@@ -21,6 +21,7 @@
 (defonce _user-id  (r/atom -1))
 (defonce ^{:doc "Vector of organizations the current user is an admin of."} orgs (r/atom []))
 (defonce ^{:doc "The `first` organization object from `@orgs`, set as the selected default."} *org (r/atom -1))
+(defonce ^{:doc "The organization name of the selected organization"} *org-name (r/atom ""))
 (defonce ^{:doc "Vector of the org users associated with the currently selected organization."} org-users (r/atom []))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -36,6 +37,7 @@
   (go
     (reset! orgs (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
     (reset! *org (:opt-id (first @orgs)))
+    (reset! *org-name (:opt-label (first @orgs)))
     (get-org-users-list @*org)))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
@@ -71,6 +73,7 @@
 
 (defn- select-org [org-id]
   (reset! *org org-id)
+  (reset! *org-name (:opt-label (first (filter (comp #{@*org} :opt-id) @orgs))))
   (get-org-users-list @*org))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -87,30 +90,33 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- handle-add-user [email]
-  (when-not (blank? email)
-    (set-message-box-content! {:title  "Add New User"
-                               :body   (str "Are you sure that you want to add the user with email \"" email "\" to the system?")
-                               :action #(add-org-user! email)})))
+  (let [message "Are you sure that you want to add the user with email \"%s\" as a Member of the \"%s\" organization?"]
+    (when-not (blank? email)
+      (set-message-box-content! {:title  "Add New User"
+                                 :body   (format message email @*org-name)
+                                 :action #(add-org-user! email)}))))
 
 (defn- handle-remove-user [uid username]
-  (set-message-box-content! {:title  "Delete User"
-                             :body   (str "Are you sure that you want to permanently remove user \"" username "\" from the system.")
-                             :action #(remove-org-user! uid)}))
+  (let [message "Are you sure that you want to remove user \"%s\" from the \"%s\" organization?"]
+    (set-message-box-content! {:title  "Delete User"
+                               :body   (format message username @*org-name)
+                               :action #(remove-org-user! uid)})))
 
 (defn- handle-update-role-id [rid uid username]
-  (set-message-box-content! {:title  "Update User Role"
-                             :body   (format "Are you sure you want to change the role of user \"%s\" to \"%s\"?"
-                                             username
-                                             (->> roles
-                                                  (filter (fn [role] (= rid (role :opt-id))))
-                                                  (first)
-                                                  (:opt-label)))
-                             :action #(update-org-user-role! uid rid)}))
+  (let [message   "Are you sure you want to change the role of user \"%s\" to \"%s\"?"
+        role-name (->> roles
+                       (filter (fn [role] (= rid (role :opt-id))))
+                       (first)
+                       (:opt-label))]
+    (set-message-box-content! {:title  "Update User Role"
+                               :body   (format message username role-name)
+                               :action #(update-org-user-role! uid rid)})))
 
 (defn- handle-update-org-settings [oid org-name email-domains auto-add auto-accept]
-  (set-message-box-content! {:title  "Update Settings"
-                             :body   "Saving these changes will overwrite previous setting values."
-                             :action #(update-org-info! oid org-name email-domains auto-add auto-accept)}))
+  (let [message "Are you sure you wish to update the settings for the \"%s\" orginzation? Saving these changes will overwrite any previous settings."]
+    (set-message-box-content! {:title  "Update Settings"
+                               :body   (format message @*org-name)
+                               :action #(update-org-info! oid org-name email-domains auto-add auto-accept)})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
