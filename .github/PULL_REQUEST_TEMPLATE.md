@@ -11,8 +11,8 @@ Closes PYR-###
 - [ ] No new reflection warnings (`clojure -M:check-reflection`)
 
 ## Module(s) Impacted
-<!-- List the Module > Submodule impacted by this PR (e.g. Underlays > Structures Layer) -->
-<!-- The current list of all Modules is: Fuels Tab, Weather Tab, Risk Tab, Active Fires Tab, PSPS Tab, Underlays, Point Info, Toolbars, and Mobile. -->
+<!-- List the Module > Submodule impacted by this PR (e.g. Layers > NIFS Perimeters Underlay or Toolbars > Fire History) -->
+<!-- The current list of all Modules is: Layers, Side Panel, Point Info, Toolbars, Match Drop, Miscellaneous, and Mobile. -->
 
 ## Testing
 #### Role
