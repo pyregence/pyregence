@@ -20,8 +20,8 @@
 
 (defonce _user-id  (r/atom -1))
 (defonce ^{:doc "Vector of organizations the current user is an admin of."} orgs (r/atom []))
-(defonce ^{:doc "The `first` organization object from `@orgs`, set as the selected default."} *org (r/atom -1))
-(defonce ^{:doc "The organization name of the selected organization"} *org-name (r/atom ""))
+(defonce ^{:doc "The id of the currently selected organization."} *org-id (r/atom -1))
+(defonce ^{:doc "The display name of the currently selected organization."} *org-name (r/atom ""))
 (defonce ^{:doc "Vector of the org users associated with the currently selected organization."} org-users (r/atom []))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -36,9 +36,9 @@
 (defn- get-org-list []
   (go
     (reset! orgs (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
-    (reset! *org (:opt-id (first @orgs)))
+    (reset! *org-id (:opt-id (first @orgs)))
     (reset! *org-name (:opt-label (first @orgs)))
-    (get-org-users-list @*org)))
+    (get-org-users-list @*org-id)))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
   (go
@@ -53,28 +53,28 @@
 
 (defn- add-org-user! [email]
   (go
-    (let [res (<! (u/call-clj-async! "add-org-user" @*org email))]
+    (let [res (<! (u/call-clj-async! "add-org-user" @*org-id email))]
       (if (:success res)
-        (do (get-org-users-list @*org)
+        (do (get-org-users-list @*org-id)
             (toast-message! (str "User " email " added.")))
         (toast-message! (:body res))))))
 
 (defn- update-org-user-role! [org-user-id role-id]
   (go
     (<! (u/call-clj-async! "update-org-user-role" org-user-id role-id))
-    (get-org-users-list @*org)
+    (get-org-users-list @*org-id)
     (toast-message! "User role updated.")))
 
 (defn- remove-org-user! [org-user-id]
   (go
     (<! (u/call-clj-async! "remove-org-user" org-user-id))
-    (get-org-users-list @*org)
+    (get-org-users-list @*org-id)
     (toast-message! "User removed.")))
 
 (defn- select-org [org-id]
-  (reset! *org org-id)
-  (reset! *org-name (:opt-label (first (filter (comp #{@*org} :opt-id) @orgs))))
-  (get-org-users-list @*org))
+  (reset! *org-id org-id)
+  (reset! *org-name (:opt-label (first (filter (comp #{@*org-id} :opt-id) @orgs))))
+  (get-org-users-list @*org-id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -123,7 +123,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- org-item [org-id org-name]
-  [:label {:style    ($org-item (= org-id @*org))
+  [:label {:style    ($org-item (= org-id @*org-id))
            :on-click #(select-org org-id)}
    org-name])
 
@@ -202,7 +202,7 @@
                   :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                   :type     "button"
                   :value    "Add User"
-                  :on-click #(handle-add-user @new-email) }]]
+                  :on-click #(handle-add-user @new-email)}]]
         (doall (map (fn [{:keys [opt-id opt-label email role-id]}]
                       ^{:key opt-id}
                       [user-item opt-id opt-label email role-id])
@@ -217,11 +217,11 @@
   (fn [_]
     (cond
       (or (nil? user-id)                ; User is not logged in
-          (nil? @*org))                 ; User is not an admin of any org
+          (nil? @*org-id))              ; User is not an admin of any org
       (do (u/redirect-to-login! "/admin")
           nil)
 
-      (= @*org -1)                      ; get-org-list has not completed yet
+      (= @*org-id -1)                   ; get-org-list has not completed yet
       [:div {:style {:display "flex" :justify-content "center"}}
        [:h1 "Loading..."]]
 
@@ -235,5 +235,5 @@
                       :flex-direction "column"
                       :height         "100%"
                       :padding        "1rem"}}
-        [org-settings (some (fn [{:keys [opt-id] :as org}] (when (= opt-id @*org) org)) @orgs)]
+        [org-settings (some (fn [{:keys [opt-id] :as org}] (when (= opt-id @*org-id) org)) @orgs)]
         [org-users-list]]])))
