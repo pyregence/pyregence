@@ -334,7 +334,14 @@
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
                   :geoserver-key   :pyrecast
-                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :underlays       (merge common-underlays
+                                          near-term-forecast-underlays
+                                          {:isochrones  {:opt-label        "Isochrones"
+                                                         :z-index          125
+                                                         :filter-set       #{"isochrones"}
+                                                         :dependent-inputs [:fire-name :burn-pct :fuel :model :model-init]
+                                                         :disabled-for     #{:active-fires :gridfire}
+                                                         :geoserver-key    :pyrecast}})
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true
@@ -497,6 +504,7 @@
    :fuels-and-topography  {:forecast-layer? true}
    :fire-history          {:forecast-layer? false}
    :fire-history-labels   {:forecast-layer? false}
+   :isochrones            {:forecast-layer? false}
    :psps-static           {:forecast-layer? false}
    :psps-zonal            {:forecast-layer? true}
    :red-flag              {:forecast-layer? false}

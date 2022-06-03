@@ -3,6 +3,7 @@
             [herb.core          :refer [<class]]
             [clojure.edn        :as edn]
             [clojure.core.async :refer [<! go go-loop]]
+            [clojure.set        :as set]
             [pyregence.state    :as !]
             [pyregence.utils    :as u]
             [pyregence.styles   :as $]
@@ -88,71 +89,96 @@
                    :visibility   (if (and @!/show-panel? @!/mobile?) "visible" "hidden")}}
     [tool-button :close #(reset! !/show-panel? false)]]])
 
-(defn- optional-layer [opt-label filter-set id geoserver-key]
-  (r/with-let [show? (r/atom false)]
+(defn- optional-layer [opt-label filter-set id z-index geoserver-key dependent-inputs disabled-for]
+  (r/with-let [show?            (r/atom false)
+               merge-filter-set (fn [init-filter-set dep-inputs]     ; Combines :dependent-inputs with the filter-set of an underlay.
+                                  (as-> (@!/*forecast @!/*params) %  ; Should only be used with non-static underlays.
+                                        (select-keys % dep-inputs)
+                                        (vals %)
+                                        (map name %)
+                                        (set %)
+                                        (set/union init-filter-set %)))
+               add-params-watch (fn [show?]
+                                  (add-watch !/*params :watch-*params
+                                             (fn [key atom old-params new-params]
+                                               (when show?
+                                                 (go
+                                                   (let [old-param-map      (@!/*forecast old-params)
+                                                         new-param-map      (@!/*forecast new-params)
+                                                         changed-keys       (u/get-changed-keys old-param-map new-param-map)
+                                                         underlays          (get-in c/near-term-forecast-options [@!/*forecast :underlays])
+                                                         filtered-underlays (into {} (filter (fn [[underlay attributes]]
+                                                                                               (seq (set/intersection changed-keys (set (:dependent-inputs attributes)))))
+                                                                                             underlays))]
+                                                     (mb/set-multiple-layers-visibility! #"isochrones" false)
+                                                     (doseq [[underlay attributes] filtered-underlays]
+                                                       (let [cleaned-filter-set (merge-filter-set (:filter-set attributes) (:dependent-inputs attributes)) ; add in dependent-inputs to the filter-set of an underlay that isn't static
+                                                             layer-id           (<! (get-layer-name geoserver-key cleaned-filter-set identity))]
+                                                         (when (some? layer-id)
+                                                           (when (not (mb/layer-exists? layer-id))
+                                                             (mb/create-wms-layer! layer-id layer-id (:geoserver-key attributes) false (:z-index attributes)))
+                                                           (mb/set-visible-by-title! layer-id show?))))))))))]
     [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
-     [:div {:style {:display "flex"}}
+     [:div#optional-layer-checkbox {:style {:display "flex"}}
       [:input {:id        id
                :style     {:margin ".25rem .5rem 0 0"}
+               :disabled  (and (set? disabled-for) ; Disable the checbox if the currently selected inputs include at least one val from the :disabled-for set
+                               (some (->> (@!/*forecast @!/*params)
+                                          (vals)
+                                          (filter keyword?)
+                                          (set))
+                                     disabled-for))
                :type      "checkbox"
                :checked   @show?
                :on-change #(go
                              (swap! show? not)
-                             (mb/set-visible-by-title! (<! (get-layer-name geoserver-key filter-set identity))
-                                                       @show?))}]
-      [:label {:for id} opt-label]]]))
+                             (add-params-watch @show?)
+                             (let [cleaned-filter-set (if (some? dependent-inputs)
+                                                        (merge-filter-set filter-set dependent-inputs)
+                                                        filter-set)
+                                   layer-id          (<! (get-layer-name geoserver-key cleaned-filter-set identity))]
+                               (when (not (mb/layer-exists? layer-id))
+                                 (mb/create-wms-layer! layer-id layer-id geoserver-key false z-index))
+                               (mb/set-visible-by-title! layer-id @show?)))}]
+      [:label {:for id} opt-label]]]
+    (finally
+      (remove-watch !/*params :watch-*params))))
 
 (defn- optional-layers [underlays]
   (let [sorted-underlays (->> underlays
                               (map (fn [[id v]] (assoc v :id id)))
                               (sort-by :z-index)
                               (reverse))]
-    (r/create-class
-     {:component-did-mount
-      (fn []
-        (go-loop [opt-layers sorted-underlays]
-          (let [{:keys [filter-set z-index geoserver-key]} (first opt-layers)
-                layer-name                                 (<! (get-layer-name geoserver-key filter-set identity))]
-            (mb/create-wms-layer! layer-name
-                                  layer-name
-                                  geoserver-key
-                                  false
-                                  z-index)
-            (when-let [tail (seq (rest opt-layers))]
-              (recur tail)))))
-
-      :display-name "optional-layers"
-
-      :reagent-render
-      (fn []
-        [:<>
-         [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
-          [:div {:style {:display "flex" :justify-content "space-between"}}
-           [:label "Optional Layers"]
-           [tool-tip-wrapper
-            [:div "Check the boxes below to display additional layers."
-             [:div {:style {:margin-top 10}}
-             [:hr]
-             [:strong "Note"]
-             ": The optional layers do not contain any data that can be queried by the "
-             [:strong "Point Information "]
-             "tool. Clicking on an area overlaid by an optional layer will display point information for the base layer beneath the point clicked and not for any selected optional layer(s)."]]
-            :left
-            [:div {:style ($/combine ($/fixed-size "1rem")
-                                     {:margin "0 .25rem 4px 0"
-                                      :fill   ($/color-picker :font-color)})}
-             [svg/help]]]]
-
-          (doall
-           (map (fn [{:keys [id opt-label filter-set enabled? geoserver-key]}]
-                  (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
-                    ^{:key id}
-                    [optional-layer
-                     opt-label
-                     filter-set
-                     id
-                     geoserver-key]))
-                sorted-underlays))]])})))
+    [:<>
+     [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
+      [:div {:style {:display "flex" :justify-content "space-between"}}
+       [:label "Optional Layers"]
+       [tool-tip-wrapper
+        [:div "Check the boxes below to display additional layers."
+         [:div {:style {:margin-top 10}}
+          [:hr]
+          [:strong "Note"]
+          ": The optional layers do not contain any data that can be queried by the "
+          [:strong "Point Information "]
+          "tool. Clicking on an area overlaid by an optional layer will display point information for the base layer beneath the point clicked and not for any selected optional layer(s)."]]
+        :left
+        [:div {:style ($/combine ($/fixed-size "1rem")
+                                 {:margin "0 .25rem 4px 0"
+                                  :fill   ($/color-picker :font-color)})}
+         [svg/help]]]]
+      (doall
+       (map (fn [{:keys [id opt-label filter-set z-index enabled? geoserver-key dependent-inputs disabled-for]}]
+              (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
+                ^{:key id}
+                [optional-layer
+                 opt-label
+                 filter-set
+                 id
+                 z-index
+                 geoserver-key
+                 dependent-inputs
+                 disabled-for]))
+            sorted-underlays))]]))
 
 (defn- collapsible-button []
   [:button

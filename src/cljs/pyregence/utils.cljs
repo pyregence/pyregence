@@ -614,3 +614,15 @@
           (dc/decimal)
           (dc/to-significant-digits 2)
           (dc/to-number)))))
+
+(defn get-changed-keys
+  "Takes in two maps with the same keys and (potentially) different values.
+   Determines which values are different between the two maps and returns a set
+   containing the keys associated with the changed values."
+  [old-map new-map]
+  (reduce (fn [acc k]
+             (if (not= (k old-map) (k new-map))
+               (conj acc k)
+               acc))
+          #{}
+          (keys old-map)))

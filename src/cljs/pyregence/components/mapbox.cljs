@@ -88,6 +88,16 @@
   [id layers]
   (index-of #(= id (get % "id")) layers))
 
+(defn- get-layers-by-pattern
+  "Returns all layers matching the provided regex pattern."
+  [pattern]
+  (as-> (get-style) %
+        (get % "layers")
+        (filter (fn [layer]
+                  (re-find pattern (get layer "id")))
+                %)
+        (vec %)))
+
 (defn get-zoom-info
   "Get zoom information. Returns [zoom min-zoom max-zoom]."
   []
@@ -439,8 +449,17 @@
   [layer visible?]
   (assoc-in layer ["layout" "visibility"] (if visible? "visible" "none")))
 
+(defn is-layer-visible?
+  "Based on a layer's id, returns whether or not that layer is visible."
+  [layer-id]
+  (let [layers (get (get-style) "layers")]
+    (when-let [idx (get-layer-idx-by-id layer-id layers)]
+      (if (= (get-in layers [idx "layout" "visibility"]) "visible")
+          true
+          false))))
+
 (defn set-visible-by-title!
-  "Sets a layer's visibility"
+  "Sets a layer's visibility."
   [id visible?]
   {:pre [(string? id) (boolean? visible?)]}
   (let [style  (get-style)
@@ -448,6 +467,24 @@
     (when-let [idx (get-layer-idx-by-id id layers)]
       (let [new-layers (assoc-in layers [idx "layout" "visibility"] (if visible? "visible" "none"))]
         (update-style! style :layers new-layers)))))
+
+(defn set-multiple-layers-visibility!
+  "Sets multiple layers' visibility based on a regex pattern."
+  [pattern visible?]
+  (let [style                    (get-style)
+        layers                   (get style "layers")
+        layers-to-change         (get-layers-by-pattern pattern)
+        layers-to-change-indices (->> layers-to-change
+                                      (map #(get-layer-idx-by-id (get % "id") layers))
+                                      (set))
+        new-layers               (->> layers
+                                     (map-indexed (fn [idx layer]
+                                                    (if (contains? layers-to-change-indices idx)
+                                                      (assoc-in layer ["layout" "visibility"]
+                                                                (if visible? "visible" "none"))
+                                                      layer)))
+                                     (doall))]
+    (update-style! style :layers new-layers)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WMS Layers
@@ -463,7 +500,9 @@
    :type     "raster"
    :source   source-name
    :layout   {:visibility (if visible? "visible" "none")}
-   :metadata {:type    (get-layer-type layer-name)
+   :metadata {:type    (if (str/includes? layer-name "isochrones")
+                         "isochrones"
+                         (get-layer-type layer-name))
               :z-index (or z-index 1)}
    :paint    {:raster-opacity opacity}})
 
