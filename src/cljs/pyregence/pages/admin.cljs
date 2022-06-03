@@ -113,7 +113,7 @@
                                :action #(update-org-user-role! uid rid)})))
 
 (defn- handle-update-org-settings [oid org-name email-domains auto-add auto-accept]
-  (let [message "Are you sure you wish to update the settings for the \"%s\" orginzation? Saving these changes will overwrite any previous settings."]
+  (let [message "Are you sure you wish to update the settings for the \"%s\" organization? Saving these changes will overwrite any previous settings."]
     (set-message-box-content! {:title  "Update Settings"
                                :body   (format message @*org-name)
                                :action #(update-org-info! oid org-name email-domains auto-add auto-accept)})))
