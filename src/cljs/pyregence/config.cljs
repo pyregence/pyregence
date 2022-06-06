@@ -515,9 +515,9 @@
                     :reverse-legend? true
                     :block-info?     false
                     :time-slider?    true
-                    :hide-camera?    true
-                    :hide-flag?      true
-                    :hide-history?   true
+                    :disable-camera?    true
+                    :disable-flag?      true
+                    :disable-history?   true
                     :params          {:model      {:opt-label  "Global Climate Model"
                                                    :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
                                                                 Projected future climate from these four models can be described as producing:

@@ -65,18 +65,18 @@
                  (set-show-info! false)
                  (reset! !/show-camera? false))
             @!/show-match-drop?])
-         (when-not (or @!/mobile? (get-any-level-key :hide-camera?))
+         (when-not (or @!/mobile? (get-any-level-key :disable-camera?))
            [:camera
             (str (hs-str @!/show-camera?) " cameras")
             #(do (swap! !/show-camera? not)
                  (set-show-info! false)
                  (reset! !/show-match-drop? false))
             @!/show-camera?])
-         (when-not (get-any-level-key :hide-flag?)
+         (when-not (get-any-level-key :disable-flag?)
            [:flag
             (str (hs-str @!/show-red-flag?) " red flag warnings")
             toggle-red-flag-layer!])
-         (when (and (c/feature-enabled? :fire-history) (not (get-any-level-key :hide-history?)))
+         (when (and (c/feature-enabled? :fire-history) (not (get-any-level-key :disable-history?)))
            [:clock
             (str (hs-str @!/show-fire-history?) " fire history")
             toggle-fire-history-layer!])
