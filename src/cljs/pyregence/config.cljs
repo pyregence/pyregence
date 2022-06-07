@@ -336,12 +336,12 @@
                   :geoserver-key   :pyrecast
                   :underlays       (merge common-underlays
                                           near-term-forecast-underlays
-                                          {:isochrones  {:opt-label        "Isochrones"
-                                                         :z-index          125
-                                                         :filter-set       #{"isochrones"}
-                                                         :dependent-inputs [:fire-name :burn-pct :fuel :model :model-init]
-                                                         :disabled-for     #{:active-fires :gridfire}
-                                                         :geoserver-key    :pyrecast}})
+                                          {:isochrones {:opt-label        "Isochrones"
+                                                        :z-index          125
+                                                        :filter-set       #{"isochrones"}
+                                                        :dependent-inputs [:fire-name :burn-pct :fuel :model :model-init]
+                                                        :disabled-for     #{:active-fires :gridfire}
+                                                        :geoserver-key    :pyrecast}})
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true

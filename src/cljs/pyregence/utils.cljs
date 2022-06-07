@@ -621,7 +621,7 @@
    containing the keys associated with the changed values."
   [old-map new-map]
   (reduce (fn [acc k]
-             (if (not= (k old-map) (k new-map))
+             (if (not= (get old-map k) (get new-map k))
                (conj acc k)
                acc))
           #{}
