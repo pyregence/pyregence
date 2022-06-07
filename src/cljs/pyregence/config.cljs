@@ -520,11 +520,11 @@
                     :disable-history? true
                     :params           {:model      {:opt-label  "Global Climate Model"
                                                     :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
-                                                                Projected future climate from these four models can be described as producing:
-                                                                HadGEM2-ES - A warmer/dry simulation
-                                                                CNRM-CM5 - A cooler/wetter simulation
-                                                                CanESM2 - An average simulation
-                                                                MIROC5 - A model that is most unlike the first three to offer the best coverage of different possibilities."
+                                                                 Projected future climate from these four models can be described as producing:
+                                                                 HadGEM2-ES - A warmer/dry simulation
+                                                                 CNRM-CM5 - A cooler/wetter simulation
+                                                                 CanESM2 - An average simulation
+                                                                 MIROC5 - A model that is most unlike the first three to offer the best coverage of different possibilities."
                                                     :auto-zoom? true
                                                     :options    {:can-esm2   {:opt-label "CanESM2"
                                                                               :filter    "CanESM2"
@@ -540,9 +540,9 @@
                                                                               :units     "ha"}}}
                                        :prob       {:opt-label  "RCP Scenario"
                                                     :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
-                                                                Options include:
-                                                                4.5 - emissions start declining starting in 2045 to reach half the levels of CO2 of 2050 by 2100.
-                                                                8.5 - emissions keep rising throughout the 2100."
+                                                                 Options include:
+                                                                 4.5 - emissions start declining starting in 2045 to reach half the levels of CO2 of 2050 by 2100.
+                                                                 8.5 - emissions keep rising throughout the 2100."
                                                     :options    {:p45 {:opt-label "4.5"
                                                                        :filter    "45"
                                                                        :units     ""}
