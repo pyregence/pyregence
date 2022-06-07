@@ -26,6 +26,30 @@
       (update-layer! :name name)
       name)))
 
+(defn- merge-filter-set
+  "Combines the values in !/*params associated with the keys in the dependent-inputs
+   vector with the filter-set of a layer into a new set."
+  [init-filter-set dep-inputs]
+  (as-> (@!/*forecast @!/*params) %
+        (select-keys % dep-inputs)
+        (vals %)
+        (map name %)
+        (set %)
+        (set/union init-filter-set %)))
+
+(defn- toggle-underlay!
+  "Toggles an underlay on the map based on the value of `show?`"
+  [filter-set dependent-inputs geoserver-key z-index show?]
+  (go
+    (let [cleaned-filter-set (if (seq dependent-inputs)
+                               (merge-filter-set filter-set dependent-inputs)
+                               filter-set) ; add in dependent-inputs to the filter-set of an underlay that isn't static
+          layer-id           (<! (get-layer-name geoserver-key cleaned-filter-set identity))]
+      (when layer-id
+        (when (not (mb/layer-exists? layer-id))
+          (mb/create-wms-layer! layer-id layer-id geoserver-key false z-index))
+        (mb/set-visible-by-title! layer-id show?)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -90,42 +114,26 @@
     [tool-button :close #(reset! !/show-panel? false)]]])
 
 (defn- optional-layer [opt-label filter-set id z-index geoserver-key dependent-inputs disabled-for]
-  (r/with-let [show?            (r/atom false)
-               merge-filter-set (fn [init-filter-set dep-inputs]     ; Combines :dependent-inputs with the filter-set of an underlay.
-                                  (as-> (@!/*forecast @!/*params) %  ; Should only be used with non-static underlays.
-                                        (select-keys % dep-inputs)
-                                        (vals %)
-                                        (map name %)
-                                        (set %)
-                                        (set/union init-filter-set %)))
-               add-underlay!    (fn [filter-set dependent-inputs geoserver-key z-index show?]
-                                  (go
-                                    (let [cleaned-filter-set (if (seq dependent-inputs)
-                                                               (merge-filter-set filter-set dependent-inputs)
-                                                               filter-set) ; add in dependent-inputs to the filter-set of an underlay that isn't static
-                                          layer-id           (<! (get-layer-name geoserver-key cleaned-filter-set identity))]
-                                      (when (some? layer-id)
-                                        (when (not (mb/layer-exists? layer-id))
-                                          (mb/create-wms-layer! layer-id layer-id geoserver-key false z-index))
-                                        (mb/set-visible-by-title! layer-id show?)))))
-               add-params-watch (fn [show?]
-                                  (add-watch !/*params :watch-*params
-                                             (fn [key atom old-params new-params]
-                                               (when show?
-                                                 (let [old-param-map      (@!/*forecast old-params)
-                                                       new-param-map      (@!/*forecast new-params)
-                                                       changed-keys       (u/get-changed-keys old-param-map new-param-map)
-                                                       underlays          (get-in c/near-term-forecast-options [@!/*forecast :underlays])
-                                                       filtered-underlays (into {} (filter (fn [[underlay attributes]]
-                                                                                             (seq (set/intersection changed-keys (set (:dependent-inputs attributes)))))
-                                                                                           underlays))]
-                                                   (mb/set-multiple-layers-visibility! #"isochrones" false)
-                                                   (doseq [[underlay attributes] filtered-underlays]
-                                                     (add-underlay! (:filter-set attributes)
-                                                                    (:dependent-inputs attributes)
-                                                                    (:geoserver-key attributes)
-                                                                    (:z-index attributes)
-                                                                    show?)))))))]
+  (r/with-let [show?               (r/atom false)
+               watcher-id          (keyword (str "watch-" opt-label))
+               add-params-watch    (fn []
+                                     (add-watch !/*params watcher-id
+                                                (fn [key atom old-params new-params]
+                                                  (let [old-param-map    (@!/*forecast old-params)
+                                                        new-param-map    (@!/*forecast new-params)
+                                                        changed-keys     (u/get-changed-keys old-param-map new-param-map)
+                                                        underlay         (get-in c/near-term-forecast-options [@!/*forecast :underlays id])
+                                                        update-underlay? (seq (set/intersection changed-keys (set (:dependent-inputs underlay))))]
+                                                    (when (filter-set "isochrones")
+                                                      (mb/set-multiple-layers-visibility! #"isochrones" false))
+                                                    (when update-underlay?
+                                                      (toggle-underlay! (:filter-set underlay)
+                                                                        (:dependent-inputs underlay)
+                                                                        (:geoserver-key underlay)
+                                                                        (:z-index underlay)
+                                                                        true))))))
+               remove-params-watch (fn []
+                                     (remove-watch !/*params watcher-id))]
     [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
      [:div#optional-layer-checkbox {:style {:display "flex"}}
       [:input {:id        id
@@ -139,15 +147,17 @@
                :checked   @show?
                :on-change #(do
                              (swap! show? not)
-                             (add-params-watch @show?)
-                             (add-underlay! filter-set
-                                            dependent-inputs
-                                            geoserver-key
-                                            z-index
-                                            @show?))}]
+                             (if @show?
+                               (add-params-watch)
+                               (remove-params-watch))
+                             (toggle-underlay! filter-set
+                                               dependent-inputs
+                                               geoserver-key
+                                               z-index
+                                               @show?))}]
       [:label {:for id} opt-label]]]
     (finally
-      (remove-watch !/*params :watch-*params))))
+      (remove-watch !/*params watcher-id))))
 
 (defn- optional-layers [underlays]
   (let [sorted-underlays (->> underlays
