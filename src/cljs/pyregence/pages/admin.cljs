@@ -74,9 +74,9 @@
 (defn- select-org [org-id]
   (reset! *org-id org-id)
   (reset! *org-name (->> @orgs
-                       (filter #(= @*org-id (:opt-id %))
+                       (filter #(= @*org-id (:opt-id %)))
                        (first)
-                       (:opt-label))))
+                       (:opt-label)))
   (get-org-users-list @*org-id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
