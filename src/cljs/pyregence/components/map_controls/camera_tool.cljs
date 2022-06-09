@@ -25,13 +25,14 @@
 
 (defn- get-camera-age-chan [active-camera]
   (go
-    (->> (u/call-clj-async! "get-camera-time" (:name active-camera))
-         (<!)
-         (:body)
-         (edn/read-string)
-         (u/camera-time->js-date)
-         (u/get-time-difference)
-         (u/ms->hr))))
+    (-> (u/call-clj-async! "get-camera-time" (:name active-camera))
+        (<!)
+        (:body)
+        (edn/read-string)
+        (update :update_time #(-> %
+                                  (u/camera-time->js-date)
+                                  (u/get-time-difference)
+                                  (u/ms->hr))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
