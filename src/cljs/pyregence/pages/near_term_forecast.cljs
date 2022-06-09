@@ -458,6 +458,7 @@
     (reset! !/last-clicked-info nil)
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
+    (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
     (<! (change-type! true
                       true
                       (get-any-level-key :auto-zoom?)

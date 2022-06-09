@@ -52,8 +52,10 @@
 (defn- get-layer-type
   "Returns the layer's type from its id string. Example:
    fire-detections_active-fires:active-fires_20210929_155400 => fire-detections"
-  [id]
-  (first (str/split id #"_")))
+  [layer-id]
+  (if (str/includes? layer-id "isochrones")
+    "isochrones"
+    (first (str/split layer-id #"_"))))
 
 (defn- get-layer-metadata
   "Gets the value of a specified property of a layer's metadata."
@@ -439,8 +441,15 @@
   [layer visible?]
   (assoc-in layer ["layout" "visibility"] (if visible? "visible" "none")))
 
+(defn- is-layer-visible?
+  "Based on a layer's id, returns whether or not that layer is visible."
+  [layer-id]
+  (let [layers (get (get-style) "layers")]
+    (when-let [idx (get-layer-idx-by-id layer-id layers)]
+      (= (get-in layers [idx "layout" "visibility"]) "visible"))))
+
 (defn set-visible-by-title!
-  "Sets a layer's visibility"
+  "Sets a layer's visibility."
   [id visible?]
   {:pre [(string? id) (boolean? visible?)]}
   (let [style  (get-style)
@@ -448,6 +457,19 @@
     (when-let [idx (get-layer-idx-by-id id layers)]
       (let [new-layers (assoc-in layers [idx "layout" "visibility"] (if visible? "visible" "none"))]
         (update-style! style :layers new-layers)))))
+
+(defn set-multiple-layers-visibility!
+  "Sets multiple layers' visibility based on a regex pattern."
+  [pattern visible?]
+  (let [style      (get-style)
+        layers     (get style "layers")
+        visibility (if visible? "visible" "none")
+        new-layers (mapv (fn [layer]
+                           (if (some? (re-find pattern (get layer "id")))
+                             (assoc-in layer ["layout" "visibility"] visibility)
+                             layer))
+                         layers)]
+    (update-style! style :layers new-layers)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WMS Layers
