@@ -72,7 +72,7 @@
   (fn [{:keys [params server-name]}]
     {:status  (if valid? 200 404)
      :headers {"Content-Type" "text/html"}
-     :body    (html5
+     :body    (html5 {:lang "en"}
                (head-meta-css)
                [:body
                 [:div#app]
