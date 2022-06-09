@@ -96,7 +96,7 @@
   {:pre [(string? camera-name)]}
   (data-response (-> (api-get-camera camera-name)
                      (first)
-                     (:update_time))))
+                     (select-keys [:name :update_time]))))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.
