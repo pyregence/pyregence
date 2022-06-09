@@ -105,7 +105,13 @@
 
           (>= @camera-age 4)
           [:div {:style {:padding "1.2em"}}
-           (str "This camera has not been refreshed for " (u/to-precision 1 @camera-age) " hours. Please try again later.")]
+           [:p (str "This camera has not been refreshed for " (u/to-precision 1 @camera-age) " hours. Please try again later.")]
+           [:p "Click"
+            [:a {:href (str "https://www.alertwildfire.org/region/?camera=" @camera-name)
+                 :ref "noreferrer noopener"
+                 :target "_blank"}
+             " here "]
+            "for more information about " @camera-name]]
 
           (some? @image-src)
           [:div
