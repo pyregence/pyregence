@@ -51,9 +51,7 @@
     (when (= 200 status)
       (json/read-str body :key-fn keyword))))
 
-(defn- api-current-image
-  [camera-name]
-  {:pre [(string? camera-name)]}
+(defn- api-current-image [camera-name]
   (let [{:keys [status body]} (api-request (str "currentimage?name=" camera-name)
                                            {:as :byte-array})]
     (when (= 200 status) body)))
