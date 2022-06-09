@@ -1,8 +1,8 @@
 (ns pyregence.cameras
-  (:require [clojure.data.json :as json]
-            [clj-http.client   :as client]
-            [triangulum.config :refer [get-config]]
-            [pyregence.views   :refer [data-response]]))
+  (:require [clj-http.client    :as client]
+            [clojure.data.json  :as json]
+            [pyregence.views    :refer [data-response]]
+            [triangulum.config  :refer [get-config]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AlertWildfire Cameras
