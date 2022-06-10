@@ -124,7 +124,7 @@
                                   :model {:opt-label  "Source"
                                           :hover-text [:p {:style {:margin-bottom "0"}}
                                                        "Stock "
-                                                       [:strong "LANDFIRE 2.0.0"]
+                                                       [:strong "LANDFIRE 2.2.0"]
                                                        " data ("
                                                        [:a {:href   "https://landfire.gov"
                                                             :target "_blank"}
@@ -154,12 +154,12 @@
                                                             :target "_blank"}
                                                         "California Ecosystem Climate Solutions"]
                                                        ", Wang et al. (2021)."]
-                                          :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
-                                                                       :filter    "landfire-2.0.0"}
+                                          :options    {:landfire      {:opt-label "LANDFIRE 2.2.0"
+                                                                       :filter    "landfire-2.2.0"}
                                                        :cfo           {:opt-label "California Forest Obs."
                                                                        :filter    "cfo-2020"}
-                                                       :ca-fuelscapes {:opt-label "2021 CA fuelscape"
-                                                                       :filter    "ca-fuelscapes"}
+                                                       :ca-fuelscapes {:opt-label "2022 CA fuelscape"
+                                                                       :filter    "ca-2022-fuelscape"}
                                                        :cec           {:opt-label    "CA Ecosystem Climate Solutions"
                                                                        :filter       "cec"
                                                                        :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
@@ -311,7 +311,7 @@
                                                                    :target "_blank"}
                                                                "https://forestobservatory.com"]
                                                               "), © Salo Sciences, Inc. 2020."]
-                                                 :options    {:landfire {:opt-label "2021 CA fuelscape"
+                                                 :options    {:landfire {:opt-label "2022 CA fuelscape"
                                                                          :filter    "landfire"}
                                                               :cfo      {:opt-label "2020 CA Forest Obs."
                                                                          :filter    "cfo"}}}
@@ -385,7 +385,7 @@
                                                                    :target "_blank"}
                                                                "https://forestobservatory.com"]
                                                               "), © Salo Sciences, Inc. 2020."]
-                                                 :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.0.0"
+                                                 :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.2.0"
                                                                          :filter    "landfire"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
