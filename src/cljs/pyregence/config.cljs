@@ -140,12 +140,12 @@
                                                        "), © Salo Sciences, Inc. 2020."
                                                        [:br]
                                                        [:br]
-                                                       [:strong "2021 California fuelscape"]
+                                                       [:strong "2022 California fuelscape"]
                                                        " prepared by Pyrologix, LLC ("
                                                        [:a {:href   "https://pyrologix.com"
                                                             :target "_blank"}
                                                         "https://pyrologix.com"]
-                                                       "), 2021."
+                                                       "), 2022."
                                                        [:br]
                                                        [:br]
                                                        [:strong "California Ecosystem Climate Solutions"]
@@ -297,12 +297,12 @@
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
                                                               [:br]
-                                                              [:strong "- 2021 California fuelscape"]
+                                                              [:strong "- 2022 California fuelscape"]
                                                               " prepared by Pyrologix, LLC ("
                                                               [:a {:href   "https://pyrologix.com"
                                                                    :target "_blank"}
                                                                "https://pyrologix.com"]
-                                                              "), 2021."
+                                                              "), 2022."
                                                               [:br]
                                                               [:br]
                                                               [:strong "- California Forest Observatory"]
@@ -378,12 +378,12 @@
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
                                                               [:br]
-                                                              [:strong  "- 2021 California fuelscape"]
+                                                              [:strong  "- 2022 California fuelscape"]
                                                               " prepared by Pyrologix, LLC ("
                                                               [:a {:href   "https://pyrologix.com"
                                                                    :target "_blank"}
                                                                "https://pyrologix.com"]
-                                                              "), 2021."
+                                                              "), 2022."
                                                               [:br]
                                                               [:br]
                                                               [:strong "- California Forest Observatory"]
