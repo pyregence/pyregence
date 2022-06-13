@@ -70,6 +70,8 @@ organizations that they belong to."}
 ;; config.edn State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce dev-mode? (atom nil))
+
 (defonce ^{:doc "The Pyrecast auth token for making API requests."}
   pyr-auth-token (r/atom nil))
 

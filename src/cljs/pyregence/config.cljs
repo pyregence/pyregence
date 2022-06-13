@@ -943,9 +943,7 @@
 ;; Dev-mode Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce dev-mode? (atom nil))
-
 (defn set-dev-mode!
   "Sets the dev mode given the value from `config.edn`."
   [val]
-  (reset! dev-mode? val))
+  (reset! !/dev-mode? val))
