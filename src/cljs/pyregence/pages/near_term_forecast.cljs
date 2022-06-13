@@ -634,6 +634,7 @@
           (get-current-layer-key :units)]
          [tool-bar
           set-show-info!
+          get-any-level-key
           user-id]
          [scale-bar (get-any-level-key :time-slider?)]
          (when-not @!/mobile? [mouse-lng-lat])
