@@ -917,15 +917,13 @@
 ;; Mapbox Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce mapbox-access-token (atom nil))
-
 (defn set-mapbox-access-token!
   "Sets the Mapbox access token given the value from `config.edn`."
   [token]
-  (reset! mapbox-access-token token))
+  (reset! !/mapbox-access-token token))
 
 (defn- style-url [id]
-  (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @mapbox-access-token))
+  (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @!/mapbox-access-token))
 
 (defn base-map-options
   "Provides the configuration for the different Mapbox map view options."
