@@ -16,6 +16,7 @@ field associated with each layer, starts at 0, and is an integer."}
 (defonce ^{:doc "A map containing the selected parameters/inputs from each forecast tab.
 Ex: {:fuels {:layer :fbfm40, :model :landfire, :model-init :20210407_000000} ... }"}
   *params (r/atom {}))
+(defonce default-forecasts (atom {}))
 (defonce active-opacity   (r/atom 100.0))
 (defonce capabilities     (r/atom []))
 (defonce options          (r/atom {}))

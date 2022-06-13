@@ -1,6 +1,7 @@
 (ns pyregence.config
   (:require [clojure.string  :as str]
-            [pyregence.utils :as u]))
+            [pyregence.utils :as u]
+            [pyregence.state :as !]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
@@ -585,12 +586,10 @@
 ;; Forecast Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce default-forecasts (atom {}))
-
 (defn set-default-forecasts!
   "Sets the default forecast tabs given the value from `config.edn`."
   [defaults]
-  (reset! default-forecasts defaults))
+  (reset! !/default-forecasts defaults))
 
 (def ^:private forecasts {:near-term {:options-config near-term-forecast-options
                                       :layers         near-term-forecast-layers}
