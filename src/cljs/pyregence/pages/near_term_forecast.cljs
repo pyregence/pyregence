@@ -764,7 +764,7 @@
                        @!/capabilities))]
           (when-not @!/mobile?
             (if user-id
-              [:div {:style {:position "absolute" :top ".25rem" :right "1rem" :display "flex"}}
+              [:div {:style {:position "absolute" :top "3px" :right "1rem" :display "flex"}}
                (when (> (count @!/user-org-list) 0)
                  [tool-tip-wrapper
                   "Visit the admin page"
@@ -773,7 +773,7 @@
                        :aria-label="Visit the admin page"
                        :style {:margin-right "1rem" :cursor "pointer"}}
                    [svg/admin-user]]])
-               [:label {:style {:margain-right "1rem" :cursor "pointer"}
+               [:label {:style {:margin ".16rem 1rem 0 0" :cursor "pointer"}
                         :on-click (fn []
                                     (go (<! (u/call-clj-async! "log-out"))
                                         (-> js/window .-location .reload)))}
