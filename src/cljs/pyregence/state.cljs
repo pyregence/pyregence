@@ -16,7 +16,6 @@ field associated with each layer, starts at 0, and is an integer."}
 (defonce ^{:doc "A map containing the selected parameters/inputs from each forecast tab.
 Ex: {:fuels {:layer :fbfm40, :model :landfire, :model-init :20210407_000000} ... }"}
   *params (r/atom {}))
-(defonce default-forecasts (atom {}))
 (defonce active-opacity   (r/atom 100.0))
 (defonce capabilities     (r/atom []))
 (defonce options          (r/atom {}))
@@ -48,12 +47,6 @@ Ex: {:fuels {:layer :fbfm40, :model :landfire, :model-init :20210407_000000} ...
   point-info-loading? (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mapbox State
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defonce mapbox-access-token (atom nil))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Miscellaneous State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -70,7 +63,9 @@ organizations that they belong to."}
 ;; config.edn State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce default-forecasts (atom {}))
 (defonce dev-mode? (atom nil))
+(defonce mapbox-access-token (atom nil))
 
 (defonce ^{:doc "The Pyrecast auth token for making API requests."}
   pyr-auth-token (r/atom nil))
