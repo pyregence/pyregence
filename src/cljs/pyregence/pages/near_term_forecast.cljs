@@ -764,14 +764,15 @@
                        @!/capabilities))]
           (when-not @!/mobile?
             (if user-id
-              [:div {:style {:position "absolute" :top "3px" :right "1rem" :display "flex"}}
+              [:div {:style {:display "flex" :position "absolute" :right "1rem"}}
                (when (> (count @!/user-org-list) 0)
                  [tool-tip-wrapper
                   "Visit the admin page"
                   :top
-                  [:a {:href "/admin"
-                       :aria-label="Visit the admin page"
-                       :style {:margin-right "1rem" :cursor "pointer"}}
+                  [:a {:style      ($/combine ($/fixed-size "1.5rem")
+                                              {:margin-right "1rem" :cursor "pointer"})
+                       :aria-label "Visit the admin page"
+                       :href       "/admin"}
                    [svg/admin-user]]])
                [:label {:style {:margin ".16rem 1rem 0 0" :cursor "pointer"}
                         :on-click (fn []
