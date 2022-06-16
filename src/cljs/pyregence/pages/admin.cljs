@@ -36,9 +36,13 @@
 (defn- get-org-list []
   (go
     (reset! orgs (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
-    (reset! *org-id (:opt-id (first @orgs)))
-    (reset! *org-name (:opt-label (first @orgs)))
-    (get-org-users-list @*org-id)))
+    (let [org-match (->> @orgs
+                         ;; Search the `get-org-list` response, bound to the atom `orgs`, for a match of the currently selected org: `*org-id`
+                         (filter #(= @*org-id (:opt-id %)))
+                         first)]
+      (reset! *org-name (or (:opt-label org-match) ""))
+      (reset! *org-id   (or (:opt-id    org-match) -1))
+      (get-org-users-list @*org-id))))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
   (go
