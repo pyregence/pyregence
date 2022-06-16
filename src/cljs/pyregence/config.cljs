@@ -7,17 +7,15 @@
 ;; Feature Flags
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private features (atom nil))
-
 (defn set-feature-flags!
   "Sets the features atom with the specified features from `config.edn`."
   [config]
-  (reset! features (:features config)))
+  (reset! !/features (:features config)))
 
 (defn feature-enabled?
   "Checks whether or not a specific feature is enabled."
   [feature-name]
-  (get @features feature-name))
+  (get @!/features feature-name))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
@@ -586,11 +584,6 @@
 ;; Forecast Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn set-default-forecasts!
-  "Sets the default forecast tabs given the value from `config.edn`."
-  [defaults]
-  (reset! !/default-forecasts defaults))
-
 (def ^:private forecasts {:near-term {:options-config near-term-forecast-options
                                       :layers         near-term-forecast-layers}
                           :long-term {:options-config long-term-forecast-options
@@ -746,21 +739,14 @@
 ;; WFS/WMS Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private geoserver-urls (atom nil))
-
-(defn set-geoserver-urls!
-  "Stores the Geoserver URL's passed in via `config.edn`."
-  [urls]
-  (reset! geoserver-urls urls))
-
 (defn- wms-url [geoserver-key]
-  (str (u/end-with (geoserver-key @geoserver-urls) "/") "wms"))
+  (str (u/end-with (geoserver-key @!/geoserver-urls) "/") "wms"))
 
 (defn- wfs-url [geoserver-key]
-  (str (u/end-with (geoserver-key @geoserver-urls) "/") "wfs"))
+  (str (u/end-with (geoserver-key @!/geoserver-urls) "/") "wfs"))
 
 (defn- mvt-url [geoserver-key]
-  (str (u/end-with ((keyword geoserver-key) @geoserver-urls) "/") "gwc/service/wmts"))
+  (str (u/end-with ((keyword geoserver-key) @!/geoserver-urls) "/") "gwc/service/wmts"))
 
 (defn legend-url
   "Generates a URL for the legend given a layer."
@@ -917,11 +903,6 @@
 ;; Mapbox Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn set-mapbox-access-token!
-  "Sets the Mapbox access token given the value from `config.edn`."
-  [token]
-  (reset! !/mapbox-access-token token))
-
 (defn- style-url [id]
   (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @!/mapbox-access-token))
 
@@ -938,12 +919,3 @@
 (def base-map-default :mapbox-topo)
 
 (def mapbox-dem-url "mapbox://mapbox.mapbox-terrain-dem-v1")
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Dev-mode Configuration
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn set-dev-mode!
-  "Sets the dev mode given the value from `config.edn`."
-  [val]
-  (reset! !/dev-mode? val))
