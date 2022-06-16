@@ -39,9 +39,10 @@
     (let [org-match (->> @orgs
                          ;; Search the `get-org-list` response, bound to the atom `orgs`, for a match of the currently selected org: `*org-id`
                          (filter #(= @*org-id (:opt-id %)))
-                         first)]
-      (reset! *org-name (or (:opt-label org-match) ""))
-      (reset! *org-id   (or (:opt-id    org-match) -1))
+                         first)
+          org-fallback (first @orgs)]
+      (reset! *org-name (:opt-label (or org-match org-fallback)))
+      (reset! *org-id   (:opt-id    (or org-match org-fallback)))
       (get-org-users-list @*org-id))))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
