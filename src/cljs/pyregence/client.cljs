@@ -64,7 +64,7 @@
                              (js->clj params :keywordize-keys true))
                      @original-params)]
     (reset! !/dev-mode? (:dev-mode cur-params))
-    (c/set-feature-flags! cur-params)
+    (reset! !/features cur-params)
     (reset! !/mapbox-access-token (get-in cur-params [:mapbox :access-token]))
     (reset! !/geoserver-urls (:geoserver cur-params))
     (reset! !/default-forecasts (get cur-params :default-forecasts))

@@ -7,11 +7,6 @@
 ;; Feature Flags
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn set-feature-flags!
-  "Sets the features atom with the specified features from `config.edn`."
-  [config]
-  (reset! !/features (:features config)))
-
 (defn feature-enabled?
   "Checks whether or not a specific feature is enabled."
   [feature-name]
