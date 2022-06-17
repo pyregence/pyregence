@@ -13,7 +13,7 @@
             [pyregence.utils  :as u]
             [pyregence.config :as c]
             [pyregence.components.mapbox    :as mb]
-            [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
+            [pyregence.components.popups    :refer [fire-popup red-flag-popup fire-history-popup]]
             [pyregence.components.common    :refer [tool-tip-wrapper]]
             [pyregence.components.messaging :refer [message-box-modal toast-message!]]
             [pyregence.components.svg-icons :refer [pin]]
@@ -398,7 +398,13 @@
         body       (red-flag-popup url prod_type onset ends)]
     (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
 
-(defn change-type!
+(defn- init-fire-history-popup! [feature lnglat]
+  (let [properties (-> feature (aget "properties") (js->clj))
+        {:strs [incidentna fireyear gisacres]} properties
+        body       (fire-history-popup incidentna fireyear gisacres)]
+    (mb/init-popup! "fire-history" lnglat body {:width "200px"})))
+
+(defn- change-type!
   "Changes the type of data that is being shown on the map."
   [get-model-times? clear? zoom? max-zoom]
   (go
@@ -412,16 +418,25 @@
                               (get-psps-layer-style))
       (mb/clear-popup!)
       (when (some? style-fn)
-        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!)
-        (mb/add-feature-highlight! "red-flag" "red-flag" init-red-flag-popup!))
+        (mb/add-feature-highlight! "fire-active" "fire-active" :click-fn init-fire-popup!)
+        (mb/add-feature-highlight! "red-flag" "red-flag" :click-fn init-red-flag-popup!)
+        (mb/add-feature-highlight! "fire-history" "fire-history"
+                                   :click-fn init-fire-history-popup!
+                                   :source-layer "fire-history")
+        (mb/add-feature-highlight! "fire-history-centroid" "fire-history-centroid"
+                                   :click-fn init-fire-history-popup!
+                                   :source-layer "fire-history-centroid"))
       (get-legend! source))
     (if clear?
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))
-    (when zoom?
+    (when (or zoom? (= @!/*forecast :active-fire))
       (mb/zoom-to-extent! (get-current-layer-extent) (current-layer) max-zoom))))
 
-(defn select-param! [val & keys]
+(defn- select-param!
+  "The function called whenever an input dropdown is changed on the collapsible panel.
+   Resets the proper state atoms with the new, selected inputs from the UI."
+  [val & keys]
   (swap! !/*params assoc-in (cons @!/*forecast keys) val)
   (!/set-state-legend-list! [])
   (reset! !/last-clicked-info nil)
@@ -435,12 +450,15 @@
                   (get-current-option-key main-key val :auto-zoom?)
                   (get-any-level-key     :max-zoom))))
 
-(defn select-forecast! [key]
+(defn- select-forecast!
+  "The function called whenever you select a new forecast/tab."
+  [key]
   (go
     (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
+    (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
     (<! (change-type! true
                       true
                       (get-any-level-key :auto-zoom?)
@@ -616,6 +634,7 @@
           (get-current-layer-key :units)]
          [tool-bar
           set-show-info!
+          get-any-level-key
           user-id]
          [scale-bar (get-any-level-key :time-slider?)]
          (when-not @!/mobile? [mouse-lng-lat])

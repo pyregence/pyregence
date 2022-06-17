@@ -63,6 +63,7 @@
                                :mapbox            (get-config :mapbox)
                                :features          (get-config :features)
                                :geoserver         (get-config :geoserver)
+                               :pyr-auth-token    (get-config :pyr-auth-token)
                                :announcement      (when (.exists (io/as-file "announcement.txt"))
                                                     (slurp "announcement.txt"))))
         "); };")])
@@ -71,7 +72,7 @@
   (fn [{:keys [params server-name]}]
     {:status  (if valid? 200 404)
      :headers {"Content-Type" "text/html"}
-     :body    (html5
+     :body    (html5 {:lang "en"}
                (head-meta-css)
                [:body
                 [:div#app]

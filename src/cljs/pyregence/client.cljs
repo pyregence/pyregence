@@ -2,6 +2,7 @@
   (:require [goog.dom                           :as dom]
             [reagent.dom                        :refer [render]]
             [pyregence.config                   :as c]
+            [pyregence.state                    :as !]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.dashboard          :as dashboard]
             [pyregence.pages.help               :as help]
@@ -67,6 +68,7 @@
     (c/set-mapbox-access-token! (get-in cur-params [:mapbox :access-token]))
     (c/set-geoserver-urls! (:geoserver cur-params))
     (c/set-default-forecasts! (get cur-params :default-forecasts))
+    (reset! !/pyr-auth-token (get cur-params :pyr-auth-token))
     (set-announcement-text! (:announcement cur-params))
     (render-root cur-params)))
 

@@ -124,7 +124,7 @@
                                   :model {:opt-label  "Source"
                                           :hover-text [:p {:style {:margin-bottom "0"}}
                                                        "Stock "
-                                                       [:strong "LANDFIRE 2.0.0"]
+                                                       [:strong "LANDFIRE 2.2.0"]
                                                        " data ("
                                                        [:a {:href   "https://landfire.gov"
                                                             :target "_blank"}
@@ -140,12 +140,12 @@
                                                        "), © Salo Sciences, Inc. 2020."
                                                        [:br]
                                                        [:br]
-                                                       [:strong "2021 California fuelscape"]
+                                                       [:strong "2022 California fuelscape"]
                                                        " prepared by Pyrologix, LLC ("
                                                        [:a {:href   "https://pyrologix.com"
                                                             :target "_blank"}
                                                         "https://pyrologix.com"]
-                                                       "), 2021."
+                                                       "), 2022."
                                                        [:br]
                                                        [:br]
                                                        [:strong "California Ecosystem Climate Solutions"]
@@ -154,12 +154,12 @@
                                                             :target "_blank"}
                                                         "California Ecosystem Climate Solutions"]
                                                        ", Wang et al. (2021)."]
-                                          :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
-                                                                       :filter    "landfire-2.0.0"}
+                                          :options    {:landfire      {:opt-label "LANDFIRE 2.2.0"
+                                                                       :filter    "landfire-2.2.0"}
                                                        :cfo           {:opt-label "California Forest Obs."
                                                                        :filter    "cfo-2020"}
-                                                       :ca-fuelscapes {:opt-label "2021 CA fuelscape"
-                                                                       :filter    "ca-fuelscapes"}
+                                                       :ca-fuelscapes {:opt-label "2022 CA fuelscape"
+                                                                       :filter    "ca-2022-fuelscape"}
                                                        :cec           {:opt-label    "CA Ecosystem Climate Solutions"
                                                                        :filter       "cec"
                                                                        :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
@@ -220,6 +220,11 @@
                                                               :smoke  {:opt-label "Smoke density (\u00b5g/m\u00b3)"
                                                                        :filter    "smoke"
                                                                        :units     "\u00b5g/m\u00b3"})}
+                                    :model      {:opt-label  "Model"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "National Weather Service "]
+                                                              " - Operational National Weather Service forecast model."]
+                                                 :options    {:nws {:opt-label "National Weather Service"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
@@ -292,12 +297,12 @@
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
                                                               [:br]
-                                                              [:strong "- 2021 California fuelscape"]
+                                                              [:strong "- 2022 California fuelscape"]
                                                               " prepared by Pyrologix, LLC ("
                                                               [:a {:href   "https://pyrologix.com"
                                                                    :target "_blank"}
                                                                "https://pyrologix.com"]
-                                                              "), 2021."
+                                                              "), 2022."
                                                               [:br]
                                                               [:br]
                                                               [:strong "- California Forest Observatory"]
@@ -306,10 +311,11 @@
                                                                    :target "_blank"}
                                                                "https://forestobservatory.com"]
                                                               "), © Salo Sciences, Inc. 2020."]
-                                                 :options    {:landfire {:opt-label "2021 CA fuelscape"
+                                                 :options    {:landfire {:opt-label "2022 CA fuelscape"
                                                                          :filter    "landfire"}
-                                                              :cfo      {:opt-label "2020 CA Forest Obs."
-                                                                         :filter    "cfo"}}}
+                                                              :cfo      {:opt-label    "2020 CA Forest Obs."
+                                                                         :filter       "cfo"
+                                                                         :disabled-for #{:times-burned :impacted :fire-area :fire-volume :plignrate}}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Computer fire spread model used to generate active fire and risk forecasts."
@@ -329,7 +335,14 @@
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
                   :geoserver-key   :pyrecast
-                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :underlays       (merge common-underlays
+                                          near-term-forecast-underlays
+                                          {:isochrones {:opt-label        "Isochrones"
+                                                        :z-index          125
+                                                        :filter-set       #{"isochrones"}
+                                                        :dependent-inputs [:fire-name :burn-pct :fuel :model :model-init]
+                                                        :disabled-for     #{:active-fires :gridfire}
+                                                        :geoserver-key    :pyrecast}})
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true
@@ -366,12 +379,12 @@
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
                                                               [:br]
-                                                              [:strong  "- 2021 California fuelscape"]
+                                                              [:strong  "- 2022 California fuelscape"]
                                                               " prepared by Pyrologix, LLC ("
                                                               [:a {:href   "https://pyrologix.com"
                                                                    :target "_blank"}
                                                                "https://pyrologix.com"]
-                                                              "), 2021."
+                                                              "), 2022."
                                                               [:br]
                                                               [:br]
                                                               [:strong "- California Forest Observatory"]
@@ -380,7 +393,7 @@
                                                                    :target "_blank"}
                                                                "https://forestobservatory.com"]
                                                               "), © Salo Sciences, Inc. 2020."]
-                                                 :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.0.0"
+                                                 :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.2.0"
                                                                          :filter    "landfire"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
@@ -491,6 +504,8 @@
    :fire-weather-forecast {:forecast-layer? true}
    :fuels-and-topography  {:forecast-layer? true}
    :fire-history          {:forecast-layer? false}
+   :fire-history-labels   {:forecast-layer? false}
+   :isochrones            {:forecast-layer? false}
    :psps-static           {:forecast-layer? false}
    :psps-zonal            {:forecast-layer? true}
    :red-flag              {:forecast-layer? false}
@@ -501,59 +516,62 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def long-term-forecast-options
-  {:fire-scenarios {:opt-label       "Fire Scenarios"
-                    :filter          "climate_FireSim"
-                    :geoserver-key   :pyreclimate
-                    :underlays       common-underlays
-                    :hover-text      "Wildfire scenario projections for area burned with varied emissions and population scenarios."
-                    :reverse-legend? true
-                    :block-info?     false
-                    :time-slider?    true
-                    :params          {:model      {:opt-label  "Global Climate Model"
-                                                   :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
-                                                                Projected future climate from these four models can be described as producing:
-                                                                HadGEM2-ES - A warmer/dry simulation
-                                                                CNRM-CM5 - A cooler/wetter simulation
-                                                                CanESM2 - An average simulation
-                                                                MIROC5 - A model that is most unlike the first three to offer the best coverage of different possibilities."
-                                                   :auto-zoom? true
-                                                   :options    {:can-esm2   {:opt-label "CanESM2"
-                                                                             :filter    "CanESM2"
-                                                                             :units     "ha"}
-                                                                :hadgem2-es {:opt-label "HadGEM2-ES"
-                                                                             :filter    "HadGEM2-ES"
-                                                                             :units     "ha"}
-                                                                :cnrm-cm5   {:opt-label "CNRM-CM5"
-                                                                             :filter    "CNRM-CM5"
-                                                                             :units     "ha"}
-                                                                :miroc5     {:opt-label "MIROC5"
-                                                                             :filter    "MIROC5"
-                                                                             :units     "ha"}}}
-                                      :prob       {:opt-label  "RCP Scenario"
-                                                   :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
-                                                                Options include:
-                                                                4.5 - emissions start declining starting in 2045 to reach half the levels of CO2 of 2050 by 2100.
-                                                                8.5 - emissions keep rising throughout the 2100."
-                                                   :options    {:p45 {:opt-label "4.5"
-                                                                      :filter    "45"
-                                                                      :units     ""}
-                                                                :p85 {:opt-label "8.5"
-                                                                      :filter    "85"
-                                                                      :units     ""}}}
-                                      :measure    {:opt-label  "Population Growth Scenario"
-                                                   :hover-text "Vary population growth."
-                                                   :options    {:bau  {:opt-label "Central"
-                                                                       :filter    "bau"
+  {:fire-scenarios {:opt-label        "Fire Scenarios"
+                    :filter           "climate_FireSim"
+                    :geoserver-key    :pyreclimate
+                    :underlays        common-underlays
+                    :hover-text       "Wildfire scenario projections for area burned with varied emissions and population scenarios."
+                    :reverse-legend?  true
+                    :block-info?      false
+                    :time-slider?     true
+                    :disable-camera?  true
+                    :disable-flag?    true
+                    :disable-history? true
+                    :params           {:model      {:opt-label  "Global Climate Model"
+                                                    :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
+                                                                 Projected future climate from these four models can be described as producing:
+                                                                 HadGEM2-ES - A warmer/dry simulation
+                                                                 CNRM-CM5 - A cooler/wetter simulation
+                                                                 CanESM2 - An average simulation
+                                                                 MIROC5 - A model that is most unlike the first three to offer the best coverage of different possibilities."
+                                                    :auto-zoom? true
+                                                    :options    {:can-esm2   {:opt-label "CanESM2"
+                                                                              :filter    "CanESM2"
+                                                                              :units     "ha"}
+                                                                 :hadgem2-es {:opt-label "HadGEM2-ES"
+                                                                              :filter    "HadGEM2-ES"
+                                                                              :units     "ha"}
+                                                                 :cnrm-cm5   {:opt-label "CNRM-CM5"
+                                                                              :filter    "CNRM-CM5"
+                                                                              :units     "ha"}
+                                                                 :miroc5     {:opt-label "MIROC5"
+                                                                              :filter    "MIROC5"
+                                                                              :units     "ha"}}}
+                                       :prob       {:opt-label  "RCP Scenario"
+                                                    :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
+                                                                 Options include:
+                                                                 4.5 - emissions start declining starting in 2045 to reach half the levels of CO2 of 2050 by 2100.
+                                                                 8.5 - emissions keep rising throughout the 2100."
+                                                    :options    {:p45 {:opt-label "4.5"
+                                                                       :filter    "45"
                                                                        :units     ""}
-                                                                :high {:opt-label "High"
-                                                                       :filter    "H"
-                                                                       :units     ""}
-                                                                :low  {:opt-label "Low"
-                                                                       :filter    "L"
+                                                                 :p85 {:opt-label "8.5"
+                                                                       :filter    "85"
                                                                        :units     ""}}}
-                                      :model-init {:opt-label  "Scenario Year"
-                                                   :hover-text "Year"
-                                                   :options    {:loading {:opt-label "Loading..."}}}}}})
+                                       :measure    {:opt-label  "Population Growth Scenario"
+                                                    :hover-text "Vary population growth."
+                                                    :options    {:bau  {:opt-label "Central"
+                                                                        :filter    "bau"
+                                                                        :units     ""}
+                                                                 :high {:opt-label "High"
+                                                                        :filter    "H"
+                                                                        :units     ""}
+                                                                 :low  {:opt-label "Low"
+                                                                        :filter    "L"
+                                                                        :units     ""}}}
+                                       :model-init {:opt-label  "Scenario Year"
+                                                    :hover-text "Year"
+                                                    :options    {:loading {:opt-label "Loading..."}}}}}})
 
 (def long-term-forecast-layers
   "All layers added in addition to the default Mapbox layers and their

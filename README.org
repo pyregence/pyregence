@@ -29,9 +29,11 @@ it according to the following sections.
 
 Please note that you must replace all values surrounded with angle
 brackets (e.g., "<api-key>") with actual values for the application to
-work correctly. While most of the fields should be self-explanatory,
-the ~:wildfire-camera-api-key~ field may not be. This is simply an API
-key for the [[http://alertwildfire.org][AlertWildfire]] API.
+work correctly. The Mapbox ~:access-token~ field requires a
+[[https://docs.mapbox.com/help/getting-started/access-tokens/][Mapbox access token]].
+The ~:wildfire-camera-api-key~ field requires an API key for the
+[[http://alertwildfire.org][AlertWildfire]] API. You should change the
+~:pyr-auth-token~ field to a unique string that's at least 16 characters long.
 
 ** Postgresql Database Setup
 

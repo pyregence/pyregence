@@ -52,8 +52,10 @@
 (defn- get-layer-type
   "Returns the layer's type from its id string. Example:
    fire-detections_active-fires:active-fires_20210929_155400 => fire-detections"
-  [id]
-  (first (str/split id #"_")))
+  [layer-id]
+  (if (str/includes? layer-id "isochrones")
+    "isochrones"
+    (first (str/split layer-id #"_"))))
 
 (defn- get-layer-metadata
   "Gets the value of a specified property of a layer's metadata."
@@ -132,8 +134,8 @@
   (.fitBounds @the-map
               (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
               (-> {:linear  true
-                   :padding (if (#{"fire-risk-forecast" "fire-detections"} (get-layer-type (:layer current-layer)))
-                              {:top 30 :bottom 150 :left 0 :right 0}
+                   :padding (if (#{"fire-active" "fire-risk-forecast" "fire-detections"} (get-layer-type (:layer current-layer)))
+                              {:top 150 :bottom 150 :left 150 :right 150}
                               0)}
                   (merge (when max-zoom {:maxZoom max-zoom}))
                   (clj->js))))
@@ -341,22 +343,28 @@
 
 (defn clear-highlight!
   "Clears the appropriate highlight of WFS features."
-  [source state-tag]
+  [source state-tag & [source-layer]]
   (when-let [id (get-in @feature-state [source state-tag])]
-    (.setFeatureState @the-map #js {:source source :id id} (clj->js {state-tag false}))
+    (.setFeatureState @the-map
+                      (clj->js (merge {:source source :id id}
+                                      (when (some? source-layer) {:sourceLayer source-layer})))
+                      (clj->js {state-tag false}))
     (swap! feature-state assoc-in [source state-tag] nil)))
 
 (defn- feature-highlight!
   "Sets the appropriate highlight of WFS features."
-  [source feature-id state-tag]
-  (clear-highlight! source state-tag)
+  [source feature-id state-tag & [source-layer]]
+  (clear-highlight! source state-tag source-layer)
   (swap! feature-state assoc-in [source state-tag] feature-id)
-  (.setFeatureState @the-map #js {:source source :id feature-id} (clj->js {state-tag true})))
+  (.setFeatureState @the-map
+                    (clj->js (merge {:source source :id feature-id}
+                                    (when (some? source-layer) {:sourceLayer source-layer})))
+                    (clj->js {state-tag true})))
 
 (defn add-feature-highlight!
   "Adds events to highlight WFS features. Optionally can provide a function `click-fn`,
    which will be called on click as `(click-fn <feature-js-object> [lng lat])`"
-  [layer source & [click-fn]]
+  [layer source & {:keys [click-fn source-layer]}]
   (remove-events! "mousemove" layer)
   (remove-events! "mouseleave" layer)
   (remove-events! "click" layer)
@@ -364,18 +372,18 @@
     (add-event! "mouseenter"
                 (fn [e]
                   (when-let [feature (-> e (aget "features") (first))]
-                    (feature-highlight! source (aget feature "id") :hover)))
+                    (feature-highlight! source (aget feature "id") :hover source-layer)))
                 :layer layer)
     (add-event! "mouseleave"
-                #(clear-highlight! source :hover)
+                #(clear-highlight! source :hover source-layer)
                 :layer layer)
     (add-event! "mouseout"
-                #(clear-highlight! source :hover)
+                #(clear-highlight! source :hover source-layer)
                 :layer layer))
   (add-event! "click"
               (fn [e]
                 (when-let [feature (-> e (aget "features") (first))]
-                  (feature-highlight! source (aget feature "id") :selected)
+                  (feature-highlight! source (aget feature "id") :selected source-layer)
                   (when (fn? click-fn) (click-fn feature (event->lnglat e)))))
               :layer layer))
 
@@ -433,8 +441,15 @@
   [layer visible?]
   (assoc-in layer ["layout" "visibility"] (if visible? "visible" "none")))
 
+(defn- is-layer-visible?
+  "Based on a layer's id, returns whether or not that layer is visible."
+  [layer-id]
+  (let [layers (get (get-style) "layers")]
+    (when-let [idx (get-layer-idx-by-id layer-id layers)]
+      (= (get-in layers [idx "layout" "visibility"]) "visible"))))
+
 (defn set-visible-by-title!
-  "Sets a layer's visibility"
+  "Sets a layer's visibility."
   [id visible?]
   {:pre [(string? id) (boolean? visible?)]}
   (let [style  (get-style)
@@ -442,6 +457,19 @@
     (when-let [idx (get-layer-idx-by-id id layers)]
       (let [new-layers (assoc-in layers [idx "layout" "visibility"] (if visible? "visible" "none"))]
         (update-style! style :layers new-layers)))))
+
+(defn set-multiple-layers-visibility!
+  "Sets multiple layers' visibility based on a regex pattern."
+  [pattern visible?]
+  (let [style      (get-style)
+        layers     (get style "layers")
+        visibility (if visible? "visible" "none")
+        new-layers (mapv (fn [layer]
+                           (if (some? (re-find pattern (get layer "id")))
+                             (assoc-in layer ["layout" "visibility"] visibility)
+                             layer))
+                         layers)]
+    (update-style! style :layers new-layers)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WMS Layers
@@ -520,7 +548,8 @@
               :text-offset        [0 0.8]
               :text-size          16
               :visibility         "visible"}
-   :metadata {:type (get-layer-type layer-name)}
+   :metadata {:type    (get-layer-type layer-name)
+              :z-index 2000}
    :paint    {:icon-opacity    opacity
               :text-color      "#000000"
               :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
@@ -671,7 +700,7 @@
                                 :icon-rotate             ["-" ["get" "pan"] 90]
                                 :icon-rotation-alignment "map"
                                 :icon-size               0.5}
-                     :metadata {:type (get-layer-type id)
+                     :metadata {:type    (get-layer-type id)
                                 :z-index 1001}
                      :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
@@ -684,7 +713,7 @@
         new-layers [{:id       id
                      :source   id
                      :type     "fill"
-                     :metadata {:type (get-layer-type id)
+                     :metadata {:type    (get-layer-type id)
                                 :z-index 1000}
                      :paint    {:fill-color         color
                                 :fill-outline-color (on-hover "#000000" color)
@@ -696,23 +725,49 @@
    :tiles [(c/mvt-layer-url layer-name geoserver-key)]})
 
 (defn create-fire-history-layer!
-  "Adds red flag warning layer to the map."
+  "Adds a Fire History layer to the map."
+  [id layer-name geoserver-key]
+  (let [color      ["step" ["get" "Decade"]
+                    "#cccccc" ; Default
+                    2000 "#fecc5c"
+                    2010 "#fd8d3c"
+                    2020 "#f03b20"]
+        new-source {id (mvt-source layer-name geoserver-key)}
+        new-layer  [{:id           id
+                     :source       id
+                     :source-layer id
+                     :type         "fill"
+                     :metadata     {:type    (get-layer-type id)
+                                    :z-index 1002}
+                     :paint        {:fill-color         color
+                                    :fill-opacity       (on-hover 1 0.4)
+                                    :fill-outline-color (on-hover "#000000" color)}}]]
+    (update-style! (get-style) :new-sources new-source :new-layers new-layer)))
+
+(defn create-fire-history-label-layer!
+  "Adds a layer with labels for the Fire History layer to the map."
   [id layer-name geoserver-key]
   (let [new-source {id (mvt-source layer-name geoserver-key)}
-        new-layers [{:id           id
+        new-layer  [{:id           id
                      :source       id
-                     :source-layer "fire-history"
-                     :type         "fill"
-                     :metadata     {:type (get-layer-type id)}
-                     :paint        {:fill-color         ["step" ["get" "Decade"]
-                                                         "#cccccc"  ; Default
-                                                         1990 "#ffffb2"
-                                                         2000 "#fecc5c"
-                                                         2010 "#fd8d3c"
-                                                         2020 "#f03b20"]
-                                    :fill-opacity       0.3
-                                    :fill-outline-color "#ff0000"}}]]
-    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+                     :source-layer id
+                     :type         "symbol"
+                     :minzoom      7
+                     :metadata     {:type (get-layer-type id)
+                                    :z-index 1003}
+                     :layout       {:text-allow-overlap false
+                                    :text-anchor        "top"
+                                    :text-field         ["concat" ["to-string" ["get" "incidentna"]]
+                                                                  " ("
+                                                                  ["to-string" ["get" "fireyear"]]
+                                                                  ")"]
+                                    :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
+                                    :text-size          12
+                                    :visibility         "visible"}
+                     :paint        {:text-color      "#000000"
+                                    :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
+                                    :text-halo-width 1.5}}]]
+    (update-style! (get-style) :new-sources new-source :new-layers new-layer)))
 
 (defn remove-layer!
   "Removes layer that matches `id`"

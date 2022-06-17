@@ -7,9 +7,15 @@
 ;; Forecast/Layer State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce *forecast        (r/atom nil))
-(defonce *layer-idx       (r/atom 0))
-(defonce *params          (r/atom {}))
+(defonce ^{:doc "A keyword containing the currently selected forecast. The possible
+options come from the -options maps in config.cljs,  e.g. `:active-fire`."}
+  *forecast (r/atom nil))
+(defonce ^{:doc "The index/hour of the currently selected layer's forecast. Corresponds with the `:hour`
+field associated with each layer, starts at 0, and is an integer."}
+  *layer-idx (r/atom 0))
+(defonce ^{:doc "A map containing the selected parameters/inputs from each forecast tab.
+Ex: {:fuels {:layer :fbfm40, :model :landfire, :model-init :20210407_000000} ... }"}
+  *params (r/atom {}))
 (defonce active-opacity   (r/atom 100.0))
 (defonce capabilities     (r/atom []))
 (defonce options          (r/atom {}))
@@ -34,25 +40,31 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce last-clicked-info   (r/atom []))
-(defonce no-data-quantities
-  ^{:doc "A set containing all of the quantities associated with `nodata` points."}
-  (r/atom #{}))
+(defonce ^{:doc "A set containing all of the quantities associated with `nodata` points."}
+  no-data-quantities (r/atom #{}))
 (defonce legend-list         (r/atom []))
-(defonce point-info-loading? (r/atom false))
+(defonce ^{:doc "A boolean letting us know if the point info is loading or not."}
+  point-info-loading? (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Miscellaneous State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce user-org-list
-  ^{:doc "For the currently logged in user, stores a list of all of the
-          organizations that they belong to."}
-  (r/atom []))
+(defonce ^{:doc "For the currently logged in user, stores a list of all of the
+organizations that they belong to."}
+  user-org-list (r/atom []))
 (defonce animate?    (r/atom false))
 (defonce loading?    (r/atom true))
 (defonce mobile?     (r/atom false))
 (defonce terrain?    (r/atom false))
 (defonce the-cameras (r/atom nil))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; config.edn State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce ^{:doc "The Pyrecast auth token for making API requests."}
+  pyr-auth-token (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State Setters

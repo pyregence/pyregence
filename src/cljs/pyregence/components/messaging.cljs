@@ -14,23 +14,23 @@
                                   :body   ""
                                   :mode   :none
                                   :action nil})
-
-(def message-box-content (r/atom blank-message-box))
-(def toast-message-text  (r/atom nil))
-
-(def toast-message-chan (chan))
+(def ^:private message-box-content (r/atom blank-message-box))
+(def ^:private toast-message-text  (r/atom nil))
+(def ^:private toast-message-chan  (chan))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn toast-message! [message]
+(defn toast-message!
   "Puts a message onto the toast message channel."
+  [message]
   (go (>! toast-message-chan message)))
 
-(defn process-toast-messages! []
+(defn process-toast-messages!
   "Perpetually takes a message off of the toast message channel and updates the appropriate atom.
    Waits 5.5 seconds before looking for the next message on the channel."
+  []
   (go (loop [message (<! toast-message-chan)]
         (reset! toast-message-text message)
         (<! (timeout 5000))
@@ -160,3 +160,25 @@
                                        (when action (action))
                                        (close-message-box!))]]
             [:<>])]]]])))
+
+(defn confirmation-modal
+  "Creates a message box model component for confirming an action"
+  []
+  (let [{:keys [title body action]} @message-box-content]
+    (when-not (= "" title)
+      [:div {:style ($/combine $/modal {:position "fixed"})}
+       [:div {:style ($/combine $message-box [$/align :text :left])}
+        [:div {:style ($/action-box)}
+         [:div {:style ($/action-header)}
+          [:label {:style ($/padding "1px" :l)} title]]
+         [:div {:style ($/combine $/flex-col {:padding "1.6rem"})}
+          (if (vector? body)
+            body
+            [:label {:style {:font-size ".95rem"}}
+             (show-line-break body)])
+          [:div#call-to-actions {:style {:display "flex" :align-content "space-between" :margin-top "4px"}}
+           [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
+            [button "No, Cancel" #(close-message-box!)]]
+           [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
+            [button "Yes, Continue" #(do (action)
+                                         (close-message-box!))]]]]]]])))
