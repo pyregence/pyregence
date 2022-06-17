@@ -68,7 +68,7 @@ organizations that they belong to."}
 (defonce ^{:doc "A boolean that dictates the development or production mode of the application."}
   dev-mode? (atom nil))
 (defonce ^{:doc "A boolean map describing what features are enabled or disabled."}
-  features (atom nil))
+  feature-flags (atom nil))
 (defonce ^{:doc "A map of Geoserver URLs that are used to query layer data from."}
   geoserver-urls (atom nil))
 (defonce ^{:doc "The string value of the mapbox access token that is declared in config.edn"}

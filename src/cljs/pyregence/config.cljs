@@ -10,7 +10,7 @@
 (defn feature-enabled?
   "Checks whether or not a specific feature is enabled."
   [feature-name]
-  (get @!/features feature-name))
+  (get @!/feature-flags feature-name))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
