@@ -313,8 +313,9 @@
                                                               "), © Salo Sciences, Inc. 2020."]
                                                  :options    {:landfire {:opt-label "2022 CA fuelscape"
                                                                          :filter    "landfire"}
-                                                              :cfo      {:opt-label "2020 CA Forest Obs."
-                                                                         :filter    "cfo"}}}
+                                                              :cfo      {:opt-label    "2020 CA Forest Obs."
+                                                                         :filter       "cfo"
+                                                                         :disabled-for #{:times-burned :impacted :fire-area :fire-volume :plignrate}}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Computer fire spread model used to generate active fire and risk forecasts."
