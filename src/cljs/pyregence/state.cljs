@@ -63,6 +63,16 @@ organizations that they belong to."}
 ;; config.edn State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce ^{:doc "A map that defines the default tab to display for the near-term and long-term forecast pages."}
+  default-forecasts (atom {}))
+(defonce ^{:doc "A boolean that dictates the development or production mode of the application."}
+  dev-mode? (atom nil))
+(defonce ^{:doc "A boolean map describing what features are enabled or disabled."}
+  feature-flags (atom nil))
+(defonce ^{:doc "A map of Geoserver URLs that are used to query layer data from."}
+  geoserver-urls (atom nil))
+(defonce ^{:doc "The string value of the mapbox access token that is declared in config.edn"}
+  mapbox-access-token (atom nil))
 (defonce ^{:doc "The Pyrecast auth token for making API requests."}
   pyr-auth-token (r/atom nil))
 
