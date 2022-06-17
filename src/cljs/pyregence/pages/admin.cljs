@@ -18,11 +18,41 @@
             {:opt-id 2 :opt-label "Member"}
             {:opt-id 3 :opt-label "Pending"}])
 
-(defonce _user-id  (r/atom -1))
-(defonce ^{:doc "Vector of organizations the current user is an admin of."} orgs (r/atom []))
-(defonce ^{:doc "The id of the currently selected organization."} *org-id (r/atom -1))
-(defonce ^{:doc "The display name of the currently selected organization."} *org-name (r/atom ""))
-(defonce ^{:doc "Vector of the org users associated with the currently selected organization."} org-users (r/atom []))
+(defonce ^{:doc "The user id of the logged in user."}
+  _user-id  (r/atom -1))
+(defonce ^{:doc "Vector of organizations where the current user is an admin."}
+  orgs (r/atom []))
+(defonce ^{:doc "The id of the currently selected organization."}
+  *org-id (r/atom -1))
+(defonce ^{:doc "The display name of the currently selected organization."}
+  *org-name (r/atom ""))
+(defonce ^{:doc "The comma separated email domains of the selected organization."}
+  *org-email-domains (r/atom ""))
+(defonce ^{:doc "A boolean indicating if a user should be auto accepted as a member of the selected organization."}
+  *org-auto-accept? (r/atom false))
+(defonce ^{:doc "A boolean indicating if a user should be auto added to the selected organization."}
+  *org-auto-add? (r/atom false))
+(defonce ^{:doc "Vector of the org users associated with the currently selected organization."}
+  org-users (r/atom []))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helper Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-selected-org [id]
+  (->> @orgs
+       (filter #(= id (:opt-id %)))
+       first))
+
+(defn- set-selected-org! [org]
+  (reset! *org-id            (:opt-id        org))
+  (reset! *org-name          (:opt-label     org))
+  (reset! *org-email-domains (:email-domains org))
+  (reset! *org-auto-accept?  (:auto-accept?  org))
+  (reset! *org-auto-add?     (:auto-add?     org)))
+
+(defn- set-selected-org-by-id! [id]
+  (set-selected-org! (get-selected-org id)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -36,13 +66,11 @@
 (defn- get-org-list []
   (go
     (reset! orgs (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
-    (let [org-match (->> @orgs
-                         ;; Search the `get-org-list` response, bound to the atom `orgs`, for a match of the currently selected org: `*org-id`
-                         (filter #(= @*org-id (:opt-id %)))
-                         first)
-          org-fallback (first @orgs)]
-      (reset! *org-name (:opt-label (or org-match org-fallback)))
-      (reset! *org-id   (:opt-id    (or org-match org-fallback)))
+    (let [org-match    (->> @orgs
+                            (filter #(= @*org-id (:opt-id %)))
+                            first)
+          selected-org (or org-match (first @orgs))]
+      (set-selected-org! selected-org)
       (get-org-users-list @*org-id))))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
@@ -77,11 +105,7 @@
     (toast-message! "User removed.")))
 
 (defn- select-org [org-id]
-  (reset! *org-id org-id)
-  (reset! *org-name (->> @orgs
-                       (filter #(= @*org-id (:opt-id %)))
-                       (first)
-                       (:opt-label)))
+  (set-selected-org-by-id! org-id)
   (get-org-users-list @*org-id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -94,7 +118,7 @@
          (when selected? {:background-color ($/color-picker :yellow 0.3)})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helper Functions - Handle click events and setup modal confirmation
+;; Click Event Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- handle-add-user [email]
@@ -146,30 +170,26 @@
                     ^{:key opt-id} [org-item opt-id opt-label])
                   @orgs))]]]])
 
-(defn- org-settings [{:keys [opt-id opt-label email-domains auto-add? auto-accept?]}]
-  (r/with-let [_opt-label     (r/atom opt-label)
-               _email-domains (r/atom email-domains)
-               _auto-add?     (r/atom auto-add?)
-               _auto-accept?  (r/atom auto-accept?)]
-    [:div#org-settings {:style ($/action-box)}
-     [:div {:style ($/action-header)}
-      [:label {:style ($/padding "1px" :l)} "Settings"]]
-     [:div {:style {:overflow "auto"}}
-      [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
-       [labeled-input "Name" _opt-label]
-       [labeled-input "Email Domains (comma separated)" _email-domains]
-       [check-box "Auto add user to organization" _auto-add?]
-       [check-box "Auto accept user as member" _auto-accept?]
-       [:input {:class    (<class $/p-form-button :large)
-                :style    ($/combine ($/align :block :center) {:margin-top ".5rem"})
-                :type     "button"
-                :value    "Update"
-                :on-click #(handle-update-org-settings
-                            opt-id          ; Organization ID
-                            @_opt-label     ; Organization name
-                            @_email-domains ; Comma delimitted
-                            @_auto-add?
-                            @_auto-accept?)}]]]]))
+(defn- org-settings [_]
+  [:div#org-settings {:style ($/action-box)}
+   [:div {:style ($/action-header)}
+    [:label {:style ($/padding "1px" :l)} "Settings"]]
+   [:div {:style {:overflow "auto"}}
+    [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
+     [labeled-input "Name" *org-name]
+     [labeled-input "Email Domains (comma separated)" *org-email-domains]
+     [check-box "Auto add user to organization" *org-auto-add?]
+     [check-box "Auto accept user as member" *org-auto-accept?]
+     [:input {:class    (<class $/p-form-button :large)
+              :style    ($/combine ($/align :block :center) {:margin-top ".5rem"})
+              :type     "button"
+              :value    "Update"
+              :on-click #(handle-update-org-settings
+                          @*org-id
+                          @*org-name
+                          @*org-email-domains
+                          @*org-auto-add?
+                          @*org-auto-accept?)}]]]])
 
 (defn- user-item [org-user-id opt-label email role-id]
   (r/with-let [_role-id (r/atom role-id)]
@@ -243,5 +263,5 @@
                       :flex-direction "column"
                       :height         "100%"
                       :padding        "1rem"}}
-        [org-settings (some (fn [{:keys [opt-id] :as org}] (when (= opt-id @*org-id) org)) @orgs)]
+        [org-settings]
         [org-users-list]]])))
