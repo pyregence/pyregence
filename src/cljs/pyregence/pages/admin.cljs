@@ -66,12 +66,10 @@
 (defn- get-org-list []
   (go
     (reset! orgs (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
-    (let [org-match    (->> @orgs
-                            (filter #(= @*org-id (:opt-id %)))
-                            first)
-          selected-org (or org-match (first @orgs))]
-      (set-selected-org! selected-org)
-      (get-org-users-list @*org-id))))
+    ;; find the current org, by id, in the updated @orgs vector or fallback to the org on the first index
+    (let [selected-org (or (get-selected-org @*org-id) (first @orgs))]
+    (set-selected-org! selected-org))
+    (get-org-users-list @*org-id)))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
   (go
