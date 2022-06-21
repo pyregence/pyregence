@@ -39,7 +39,7 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- get-selected-org [id]
+(defn- get-org-by-id [id]
   (->> @orgs
        (filter #(= id (:opt-id %)))
        first))
@@ -52,7 +52,7 @@
   (reset! *org-auto-add?     (:auto-add?     org)))
 
 (defn- set-selected-org-by-id! [id]
-  (set-selected-org! (get-selected-org id)))
+  (set-selected-org! (get-org-by-id id)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -67,8 +67,7 @@
   (go
     (reset! orgs (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
     ;; find the current org, by id, in the updated @orgs vector or fallback to the org on the first index
-    (let [selected-org (or (get-selected-org @*org-id) (first @orgs))]
-    (set-selected-org! selected-org))
+    (set-selected-org! (or (get-org-by-id @*org-id) (first @orgs)))
     (get-org-users-list @*org-id)))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
