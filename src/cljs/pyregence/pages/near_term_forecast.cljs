@@ -770,7 +770,7 @@
                   "Visit the admin page"
                   :top
                   [:a {:style      ($/combine ($/fixed-size "1.5rem")
-                                              {:margin-right "1rem" :cursor "pointer"})
+                                              {:cursor "pointer" :margin-right "1rem"})
                        :aria-label "Visit the admin page"
                        :href       "/admin"}
                    [svg/admin-user]]])
