@@ -16,7 +16,7 @@
             [pyregence.components.popups    :refer [fire-popup red-flag-popup fire-history-popup]]
             [pyregence.components.common    :refer [tool-tip-wrapper]]
             [pyregence.components.messaging :refer [message-box-modal toast-message!]]
-            [pyregence.components.svg-icons :refer [pin]]
+            [pyregence.components.svg-icons :as svg]
             [pyregence.components.map-controls.camera-tool       :refer [camera-tool]]
             [pyregence.components.map-controls.collapsible-panel :refer [collapsible-panel]]
             [pyregence.components.map-controls.information-tool  :refer [information-tool]]
@@ -651,7 +651,7 @@
 
 (defn pop-up []
   [:div#pin {:style ($/fixed-size "2rem")}
-   [pin]])
+   [svg/pin]])
 
 (defn map-layer []
   (r/with-let [mouse-down? (r/atom false)
@@ -764,8 +764,17 @@
                        @!/capabilities))]
           (when-not @!/mobile?
             (if user-id
-              [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-               [:label {:style {:margin-right "1rem" :cursor "pointer"}
+              [:div {:style {:display "flex" :position "absolute" :right "1rem"}}
+               (when (> (count @!/user-org-list) 0)
+                 [tool-tip-wrapper
+                  "Visit the admin page"
+                  :top
+                  [:a {:style      ($/combine ($/fixed-size "1.5rem")
+                                              {:cursor "pointer" :margin-right "1rem"})
+                       :aria-label "Visit the admin page"
+                       :href       "/admin"}
+                   [svg/admin-user]]])
+               [:label {:style {:margin ".16rem 1rem 0 0" :cursor "pointer"}
                         :on-click (fn []
                                     (go (<! (u/call-clj-async! "log-out"))
                                         (-> js/window .-location .reload)))}

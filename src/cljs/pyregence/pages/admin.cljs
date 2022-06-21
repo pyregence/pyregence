@@ -250,7 +250,7 @@
       [:div {:style {:display "flex" :justify-content "center"}}
        [:h1 "Loading..."]]
 
-      :else                             ; Logged-in user and admin of at least one org                                        ;
+      :else                             ; Logged-in user and admin of at least one org
       [:div {:style {:display "flex" :justify-content "center" :padding "2rem 8rem"}}
        [confirmation-modal]
        [:div {:style {:flex 1 :padding "1rem"}}
