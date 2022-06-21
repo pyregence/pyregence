@@ -46,11 +46,6 @@
     (when (= 200 status)
       (json/read-str body :key-fn keyword))))
 
-(defn- api-get-camera [camera-name]
-  (let [{:keys [status body]} (api-request (str "cameras?name=" camera-name))]
-    (when (= 200 status)
-      (json/read-str body :key-fn keyword))))
-
 (defn- api-current-image [camera-name]
   (let [{:keys [status body]} (api-request (str "currentimage?name=" camera-name)
                                            {:as :byte-array})]
@@ -89,14 +84,6 @@
                                           (->feature-collection))]
                      (reset-cache! new-cameras)
                      new-cameras))))
-
-(defn get-camera-time
-  "Gets the last time a specific camera was updated (in UTC)."
-  [camera-name]
-  {:pre [(string? camera-name)]}
-  (data-response (-> (api-get-camera camera-name)
-                     (first)
-                     (select-keys [:name :update_time]))))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.

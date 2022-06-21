@@ -23,17 +23,6 @@
          (:body)
          (js/URL.createObjectURL))))
 
-(defn- get-camera-age-chan [active-camera]
-  (go
-    (-> (u/call-clj-async! "get-camera-time" (:name active-camera))
-        (<!)
-        (:body)
-        (edn/read-string)
-        (update :update_time #(-> %
-                                  (u/camera-time->js-date)
-                                  (u/get-time-difference)
-                                  (u/ms->hr))))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -52,7 +41,6 @@
 
 (defn camera-tool [parent-box close-fn!]
   (r/with-let [active-camera (r/atom nil)
-               camera-name   (r/atom "")
                camera-age    (r/atom 0)
                image-src     (r/atom nil)
                exit-chan     (r/atom nil)
@@ -78,17 +66,13 @@
                                    (reset! active-camera new-camera)
                                    (reset! camera-age 0)
                                    (reset! image-src nil)
-                                   (let [age-chan    (get-camera-age-chan @active-camera)
-                                         image-chan  (get-camera-image-chan @active-camera)
-                                         camera-info (<! age-chan)]
-                                     (reset! camera-name (:name camera-info))
-                                     (reset! camera-age  (:update_time camera-info))
+                                   (let [image-chan  (get-camera-image-chan @active-camera)]
+                                     (reset! camera-age  (:update_time @active-camera))
                                      (when (> 4 @camera-age)
                                        (reset! image-src (<! image-chan))
                                        (reset! exit-chan
-                                               (u/refresh-on-interval!
-                                                #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
-                                                60000)))))))
+                                                (u/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
+                                                                       60000)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _             (mb/create-camera-layer! "fire-cameras")
                _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" :click-fn on-click)]
@@ -113,11 +97,11 @@
           [:div {:style {:padding "1.2em"}}
            [:p (str "This camera has not been refreshed for " (u/to-precision 1 @camera-age) " hours. Please try again later.")]
            [:p "Click"
-            [:a {:href (str "https://www.alertwildfire.org/region/?camera=" @camera-name)
-                 :ref "noreferrer noopener"
+            [:a {:href   (str "https://www.alertwildfire.org/region/?camera=" (:name @active-camera))
+                 :ref    "noreferrer noopener"
                  :target "_blank"}
-             " here "]
-            "for more information about " @camera-name]]
+                " here "]
+            "for more information about the " (:name @active-camera) " camera."]]
 
           (some? @image-src)
           [:div
