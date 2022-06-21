@@ -37,19 +37,15 @@
       (let [cleaned-last-clicked-info (u/replace-no-data-nil @!/last-clicked-info
                                                              @!/no-data-quantities)
             current-point             (get cleaned-last-clicked-info @!/*layer-idx)]
-        [:div {:style {:align-items "flex-start"
-                       :display     "flex"
-                       :min-height  "25px"
-                       :position    "relative"
-                       :text-align  "center"}}
-         [:label {:style {:line-height "20px" :width "100%" }}
+        [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
+         [:label {:style {:margin-top ".6rem" :text-align "center" :width "100%"}}
           (if-let [value (:band current-point)]
             (str (if (fn? convert)
                    (u/round-last-clicked-info (convert value))
                    (u/round-last-clicked-info value))
                  (u/clean-units units))
             "No info available for this timestep.")]
-         [:div {:style {:position "absolute" :bottom "4px" :right "4px"}}
+         [:div {:style {:bottom "0" :position "absolute" :right "4px"}}
           [tool-tip-wrapper
            "Center on selected point"
            :bottom
