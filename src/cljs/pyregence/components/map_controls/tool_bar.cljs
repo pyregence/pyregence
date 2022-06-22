@@ -6,6 +6,7 @@
             [pyregence.config   :as c]
             [pyregence.components.mapbox    :as mb]
             [pyregence.components.messaging :refer [toast-message!]]
+            [pyregence.components.popups    :refer [red-flag-popup fire-history-popup]]
             [pyregence.components.common    :refer [tool-tip-wrapper hs-str]]
             [pyregence.components.map-controls.tool-button :refer [tool-button]]))
 
@@ -13,10 +14,25 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- init-red-flag-popup! [feature lnglat]
+  (let [properties (-> feature (aget "properties") (js->clj))
+        {:strs [url prod_type onset ends]} properties
+        body       (red-flag-popup url prod_type onset ends)]
+    (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
+
+(defn- init-fire-history-popup! [feature lnglat]
+  (let [properties (-> feature (aget "properties") (js->clj))
+        {:strs [incidentna fireyear gisacres]} properties
+        body       (fire-history-popup incidentna fireyear gisacres)]
+    (mb/init-popup! "fire-history" lnglat body {:width "200px"})))
+
 (defn toggle-red-flag-layer!
-  "Toggle the red-flag warning layer"
+  "Toggles the red-flag warning layer."
   []
   (swap! !/show-red-flag? not)
+  (if @!/show-red-flag?
+    (mb/add-feature-highlight! "red-flag" "red-flag" :click-fn init-red-flag-popup!)
+    (mb/clear-highlight! "red-flag" :selected))
   (go
     (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
                    (:body)
@@ -34,6 +50,17 @@
   "Toggles the fire history layer."
   []
   (swap! !/show-fire-history? not)
+  (if @!/show-fire-history?
+    (do
+      (mb/add-feature-highlight! "fire-history" "fire-history"
+                                 :click-fn init-fire-history-popup!
+                                 :source-layer "fire-history")
+      (mb/add-feature-highlight! "fire-history-centroid" "fire-history-centroid"
+                                 :click-fn init-fire-history-popup!
+                                 :source-layer "fire-history-centroid"))
+    (do
+      (mb/clear-highlight! "fire-history" :selected)
+      (mb/clear-highlight! "fire-history-centroid" :selected)))
   (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
     (mb/create-fire-history-layer! "fire-history"
                                    "fire-detections_fire-history%3Afire-history"
