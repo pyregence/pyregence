@@ -23,16 +23,6 @@
          (:body)
          (js/URL.createObjectURL))))
 
-(defn- get-camera-age-chan [active-camera]
-  (go
-    (->> (u/call-clj-async! "get-camera-time" (:name active-camera))
-         (<!)
-         (:body)
-         (edn/read-string)
-         (u/camera-time->js-date)
-         (u/get-time-difference)
-         (u/ms->hr))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -76,9 +66,12 @@
                                    (reset! active-camera new-camera)
                                    (reset! camera-age 0)
                                    (reset! image-src nil)
-                                   (let [age-chan   (get-camera-age-chan @active-camera)
-                                         image-chan (get-camera-image-chan @active-camera)]
-                                     (when (> 4 (reset! camera-age (<! age-chan)))
+                                   (let [image-chan  (get-camera-image-chan @active-camera)]
+                                     (reset! camera-age (-> (:update-time @active-camera)
+          					                                        (u/camera-time->js-date)
+          					                                        (u/get-time-difference)
+          					                                        (u/ms->hr)))
+                                     (when (> 4 @camera-age)
                                        (reset! image-src (<! image-chan))
                                        (reset! exit-chan
                                                (u/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
@@ -105,7 +98,13 @@
 
           (>= @camera-age 4)
           [:div {:style {:padding "1.2em"}}
-           (str "This camera has not been refreshed for " (u/to-precision 1 @camera-age) " hours. Please try again later.")]
+           [:p (str "This camera has not been refreshed for " (u/to-precision 1 @camera-age) " hours. Please try again later.")]
+           [:p "Click"
+            [:a {:href   (str "https://www.alertwildfire.org/region/?camera=" (:name @active-camera))
+                 :ref    "noreferrer noopener"
+                 :target "_blank"}
+                " here "]
+            "for more information about the " (:name @active-camera) " camera."]]
 
           (some? @image-src)
           [:div
