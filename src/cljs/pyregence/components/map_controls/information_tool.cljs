@@ -1,13 +1,15 @@
 (ns pyregence.components.map-controls.information-tool
-  (:require  [reagent.core     :as r]
-             [reagent.dom      :as rd]
-             [clojure.set      :as set]
-             [pyregence.state  :as !]
-             [pyregence.utils  :as u]
-             [pyregence.config :as c]
-             [pyregence.components.mapbox           :as mb]
-             [pyregence.components.vega             :refer [vega-box]]
-             [pyregence.components.resizable-window :refer [resizable-window]]))
+  (:require  [clojure.set                                   :as set]
+             [pyregence.components.common                   :refer [tool-tip-wrapper]]
+             [pyregence.components.map-controls.tool-button :refer [tool-button]]
+             [pyregence.components.mapbox                   :as mb]
+             [pyregence.components.resizable-window         :refer [resizable-window]]
+             [pyregence.components.vega                     :refer [vega-box]]
+             [pyregence.config                              :as c]
+             [pyregence.state                               :as !]
+             [pyregence.utils                               :as u]
+             [reagent.dom                                   :as rd]
+             [reagent.core                                  :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
@@ -30,20 +32,24 @@
                   (rd/dom-node)
                   (.getBoundingClientRect)
                   (aget "height"))))
-
     :render
     (fn [_]
       (let [cleaned-last-clicked-info (u/replace-no-data-nil @!/last-clicked-info
                                                              @!/no-data-quantities)
             current-point             (get cleaned-last-clicked-info @!/*layer-idx)]
         [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
-         [:label {:style {:margin-top ".5rem" :text-align "center" :width "100%"}}
+         [:label {:style {:margin-top ".6rem" :text-align "center" :width "100%"}}
           (if-let [value (:band current-point)]
             (str (if (fn? convert)
                    (u/round-last-clicked-info (convert value))
                    (u/round-last-clicked-info value))
                  (u/clean-units units))
-            "No info available for this timestep.")]]))}))
+            "No info available for this timestep.")]
+         [:div {:style {:bottom "0" :position "absolute" :right "4px"}}
+          [tool-tip-wrapper
+           "Center on selected point"
+           :bottom
+           [tool-button :center-on-point #(mb/center-on-overlay!)]]]]))}))
 
 (defn- vega-information [box-height box-width select-layer! units cur-hour convert]
   (r/with-let [info-height (r/atom 0)]
