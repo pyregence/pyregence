@@ -67,7 +67,10 @@
                                    (reset! camera-age 0)
                                    (reset! image-src nil)
                                    (let [image-chan  (get-camera-image-chan @active-camera)]
-                                     (reset! camera-age  (:update_time @active-camera))
+                                     (reset! camera-age (-> (:update-time @active-camera)
+					                                        (u/camera-time->js-date)
+					                                        (u/get-time-difference)
+					                                        (u/ms->hr)))
                                      (when (> 4 @camera-age)
                                        (reset! image-src (<! image-chan))
                                        (reset! exit-chan
