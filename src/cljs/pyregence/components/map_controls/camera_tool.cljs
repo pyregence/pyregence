@@ -68,13 +68,13 @@
                                    (reset! image-src nil)
                                    (let [image-chan  (get-camera-image-chan @active-camera)]
                                      (reset! camera-age (-> (:update-time @active-camera)
-					                                        (u/camera-time->js-date)
-					                                        (u/get-time-difference)
-					                                        (u/ms->hr)))
+          					                                        (u/camera-time->js-date)
+          					                                        (u/get-time-difference)
+          					                                        (u/ms->hr)))
                                      (when (> 4 @camera-age)
                                        (reset! image-src (<! image-chan))
                                        (reset! exit-chan
-                                                (u/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
+                                               (u/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
                                                                        60000)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _             (mb/create-camera-layer! "fire-cameras")
