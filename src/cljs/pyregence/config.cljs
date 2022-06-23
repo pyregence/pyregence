@@ -31,11 +31,11 @@
 
 (def near-term-forecast-underlays
   (array-map
-   :us-trans-lines  {:opt-label     "US Transmission Lines"
+   :us-trans-lines  {:opt-label     "Transmission Lines"
                      :z-index       107
                      :filter-set    #{"fire-detections" "us-transmission-lines"}
                      :geoserver-key :pyrecast}
-   :nifs-perimeters {:opt-label     "NIFS Perimeters"
+   :nifs-perimeters {:opt-label     "2022 fire perimeters"
                      :z-index       103
                      :filter-set    #{"fire-detections" "nifs-perimeters"}
                      :geoserver-key :pyrecast}
@@ -331,7 +331,7 @@
                   :geoserver-key   :pyrecast
                   :underlays       (merge common-underlays
                                           near-term-forecast-underlays
-                                          {:isochrones {:opt-label        "Isochrones"
+                                          {:isochrones {:opt-label        "Modeled Perimeter"
                                                         :z-index          125
                                                         :filter-set       #{"isochrones"}
                                                         :dependent-inputs [:fire-name :burn-pct :fuel :model :model-init]
