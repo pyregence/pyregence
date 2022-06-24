@@ -11,21 +11,26 @@
 options come from the -options maps in config.cljs, e.g. `:active-fire`."}
   *forecast (r/atom nil))
 (defonce ^{:doc "The index/hour of the currently selected layer's forecast. Corresponds with the `:hour`
-field associated with each layer, starts at 0, and is an integer."}
+field associated with each layer from the `param-layers`, starts at 0, and is an integer."}
   *layer-idx (r/atom 0))
 (defonce ^{:doc "A map containing the selected parameters/inputs from each forecast tab.
 Ex: {:fuels {:layer :fbfm40, :model :landfire, :model-init :20210407_000000} ... }"}
   *params (r/atom {}))
-(defonce ^{:doc "An integer value, from 0 to 100, that designates the opacity for the active layer. Defaults to 0"}
+(defonce ^{:doc "An integer value, from 0 to 100, that designates the opacity for the active layer. Defaults to 100"}
   active-opacity (r/atom 100.0))
-(defonce ^{:doc "A `map` that combines the configuration in `config.cljs` and the processed output
-from a call to `set-all-capabilities`. The toplevel keys correspond to a particular `Map Tab` and
-the values correspond to a nested structure containing layer and feature data,
-as well the supporting data to configure and drive the visual interactive elements on the active tab."}
-  capabilities (r/atom []))
-(defonce ^{:doc "A map containing configuration options for the current forecast."}
-  options (r/atom {}))
-(defonce ^{:doc "A vector of layers that match the set of strings to filter layers by."}
+(defonce ^{:doc "A map that combines the values from the `options-config` and the processed output from a call to process-capabilities! in near_term_forecast.cljs.
+The `options-config`:
+holds the value of either the `near-term-forecast-options` or `long-term-forecast-options` map as defined in `config.cljs`.
+The toplevel keys correspond to a particular `Map Tab` and the values correspond to a nested structure containing configuration options for that tab.
+Important options include the `:opt-label` string (which describes the label of the tab on the front-end),
+the `:underlays` map (which defines the optional layers available on the given tab), and the `:params` map
+(which is used to define each input box and the options available in that input box on the side-panel for the given tab).
+The processed output from `process-capabilities!`:
+notably contains any fire names and/or user layers (obtained from the back-end) that are added to the capabilties atom
+(since the fire names and user layers are not defined initially in config.cljs and thus the options atom)."}
+  capabilities (r/atom {}))
+(defonce ^{:doc " Contains the map associated with the :params key inside of the currently selected forecast in the capabilities atom.
+For example, the processed-params for a user on the Weather tab would be a map containing the :band, :model, and :model-init maps."}
   param-layers (r/atom []))
 (defonce ^{:doc "Contains the populated form field values to populate the `Layer Selection` form on the side-panel."}
   processed-params (r/atom []))
@@ -34,19 +39,19 @@ as well the supporting data to configure and drive the visual interactive elemen
 ;; Show/Hide State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Wildfire Camera Feature."}
+(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Wildfire Camera Tool."}
   show-camera? (r/atom false))
-(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Fire History Feature."}
+(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Fire History Tool."}
   show-fire-history? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Point Information Tool."}
   show-info? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Legend Box."}
   show-legend? (r/atom true))
-(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Match Drop Feature."}
+(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Match Drop Tool."}
   show-match-drop? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Side Panel."}
   show-panel? (r/atom true))
-(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Red Flag Warning Feature."}
+(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Red Flag Warning Tool."}
   show-red-flag? (r/atom false))
 (defonce ^{:doc "A boolean that maintains UTC or local time display preference."}
   show-utc? (r/atom true))
@@ -55,13 +60,16 @@ as well the supporting data to configure and drive the visual interactive elemen
 ;; Point Information State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^{:doc "Contains the processed output from a GetFeatureInfo call. Note that atom may contain either
-single-point-info or timeline-point-info, depending on whether the layer has multiple columns per layer."}
+(defonce ^{:doc "The atom used to populate the point information tool for a layer. Contains the processed output from a GetFeatureInfo call.
+Note that atom may contain either single-point-info (in which case last-clicked-info is an integer or double) or
+timeline-point-info (in which case last-clicked-info is a vector of maps where each entry in the vector has the point info
+for one time step in the forecast)."}
   last-clicked-info (r/atom []))
 (defonce ^{:doc "A set containing all of the quantities associated with `nodata` points."}
   no-data-quantities (r/atom #{}))
-(defonce ^{:doc "A sequence of data maps to render the Legend for the active layer:
-label, quantity, color, and opacity"}
+(defonce ^{:doc "The atom used to populate the legend for a layer. Contains the processed output from a GetLegendGraphic call.
+The legend-list is a vector of maps where each map contains an entry in the legend for the active layer.
+Each entry in the legend contains the legend's label, value, color, and opacity."}
   legend-list (r/atom []))
 (defonce ^{:doc "A boolean letting us know if the point info is loading or not."}
   point-info-loading? (r/atom false))
@@ -75,13 +83,15 @@ organizations that they belong to."}
   user-org-list (r/atom []))
 (defonce ^{:doc "A boolean that enables time-step animation for the Time Slider when true."}
   animate? (r/atom false))
-(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the modal dialog."}
+(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the loading modal dialog."}
   loading? (r/atom true))
-(defonce ^{:doc "A boolean that designates if the browser's innerwidth reaches below the 800 pixels wide breakpoint."}
+(defonce ^{:doc "A boolean that designates if the browser's innerwidth reaches below the 800 pixel wide breakpoint.
+A browser more narrow than 800 pixels enables a special "mobile" styling across the front-end."}
   mobile? (r/atom false))
-(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the 3D Terrain Feature."}
+(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the 3D Terrain Tool."}
   terrain? (r/atom false))
-(defonce ^{:doc "The geojson feature collection of Wildfire Cameras."}
+(defonce ^{:doc "The GeoJSON response from pinging the AlertWildfire camera API.
+Returns all cameras currently available on AlertWildifre and is used to create the camera layer in mapbox.cljs."}
   the-cameras (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
