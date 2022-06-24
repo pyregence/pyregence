@@ -519,6 +519,7 @@
           fire-names-chan                 (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras                    (u/call-clj-async! "get-cameras")]
       (reset! !/options options-config)
+      (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast (or (keyword forecast)
                               (keyword (forecast-type @!/default-forecasts))))
       (reset! !/*layer-idx (if layer-idx (js/parseInt layer-idx) 0))
