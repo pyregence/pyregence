@@ -46,7 +46,7 @@
                                (fn? convert) (mapv (fn [entry]
                                                      (update entry :band #(u/round-last-clicked-info (convert %)))))
                                :else         (mapv #(update % :band u/round-last-clicked-info)))
-        hour-units           ({:near-term "Hour" :long-term "Year"} @!/*forecast-type)]
+        x-axis-units           ({:near-term "Hour" :long-term "Year"} @!/*forecast-type)]
     {:width    "container"
      :height   "container"
      :autosize {:type "fit" :resize true}
@@ -54,7 +54,7 @@
      :data     {:values processed-point-info}
      :layer    [{:encoding {:x {:field "hour"
                                 :type  "quantitative"
-                                :title hour-units
+                                :title x-axis-units
                                 :scale (create-data-scale)}
                             :y {:field "band"
                                 :type  "quantitative"
@@ -62,7 +62,7 @@
                             :tooltip [{:field "band" :title units      :type "nominal"}
                                       {:field "date" :title "Date"     :type "nominal"}
                                       {:field "time" :title "Time"     :type "nominal"}
-                                      {:field "hour" :title hour-units :type "nominal"}]}
+                                      {:field "hour" :title x-axis-units :type "nominal"}]}
                  :layer [{:mark {:type        "line"
                                  :interpolate "monotone"
                                  :stroke      {:x2       0
