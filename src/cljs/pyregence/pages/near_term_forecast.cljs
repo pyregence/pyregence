@@ -471,7 +471,7 @@
 
 ;;; Capabilities
 
-(defn process-capabilities! [fire-names user-layers & [selected-options]]
+(defn process-capabilities! [fire-names user-layers options-config]
   (reset! !/capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
@@ -480,20 +480,21 @@
                                    (s/valid? ::layer-config layer-config))
                             (assoc-in acc layer-path layer-config)
                             acc)))
-                      @!/options
+                      options-config
                       user-layers)
               (update-in [:active-fire :params :fire-name :options]
                          merge
                          fire-names)))
   (reset! !/*params (u/mapm
                      (fn [[forecast _]]
-                       (let [params (get-in @!/capabilities [forecast :params])]
+                       (let [params           (get-in @!/capabilities [forecast :params])
+                             selected-options (params->selected-options options-config @!/*forecast params)]
                          [forecast (merge (u/mapm (fn [[k v]]
                                                     [k (or (get-in selected-options [forecast k])
                                                            (:default-option v)
                                                            (ffirst (:options v)))])
                                                   params))]))
-                     @!/options)))
+                     options-config)))
 
 (defn refresh-fire-names! [user-id]
   (go
@@ -504,7 +505,7 @@
       (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge fire-names))))
 
 (defn- params->selected-options
-  "Parses url query parameters to into the selected options"
+  "Parses url query parameters into the selected options"
   [options-config forecast params]
   {forecast (as-> options-config oc
               (get-in oc [forecast :params])
@@ -518,7 +519,6 @@
           user-layers-chan                (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan                 (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras                    (u/call-clj-async! "get-cameras")]
-      (reset! !/options options-config)
       (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast (or (keyword forecast)
                               (keyword (forecast-type @!/default-forecasts))))
@@ -526,7 +526,7 @@
       (mb/init-map! "map" layers (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
-                             (params->selected-options @!/options @!/*forecast params))
+                             options-config)
       (<! (select-forecast! @!/*forecast))
       (reset! !/user-org-list (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" user-id)))))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))

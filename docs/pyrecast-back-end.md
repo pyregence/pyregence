@@ -10,7 +10,7 @@ In particular, it is responsible for parsing the massive XML response from the W
 
 ## `GetCapabilities`
 
-[`GetCapabilties`](https://docs.geoserver.org/latest/en/user/services/wms/reference.html#getcapabilities) is an operation that requests information about each of the layers that we have registered on a GeoServer instance.
+[`GetCapabilities`](https://docs.geoserver.org/latest/en/user/services/wms/reference.html#getcapabilities) is an operation that requests information about each of the layers that we have registered on a GeoServer instance.
 This is the entry point from GeoServer to Pyrecast.
 An example `GetCapabilities` request that we make to the `data` GeoServer instance is the following:
 ```
@@ -158,7 +158,7 @@ There are many examples of calling `call-clj-async` throughout the front-end whi
 
 Now that we know how the `layers` atom is populated and how we can make API calls, how do we leverage the `layers` that exist on the back-end on the front-end?
 The answer lies in the `get-layers` function.
-`get-layers` is a function that lives inside of `capabilties.clj` and is made available to the front-end in `remote_api.clj`.
+`get-layers` is a function that lives inside of `capabilities.clj` and is made available to the front-end in `remote_api.clj`.
 `get-layers` takes in a GeoServer key and a set of strings to filter the layers by and returns all of the matching layers from the `layers` atom and their associated `model-times`.
 The `geoserver-key` tells us which key-value pair to look at inside of the `layers` atom and the `selected-set-str` is then compared against the `:filter-set` property of each layer.
 Any layers where (at least) a subset of the `:filter-set` hash-set is present in the `selected-set-str` hash-set are then returned to the front-end.
@@ -176,7 +176,7 @@ stateDiagram
     b: process-layers!
     c: layers atom
 
-    A --> B: GetCapabilties
+    A --> B: GetCapabilities
     state B {
       direction LR
       a --> b

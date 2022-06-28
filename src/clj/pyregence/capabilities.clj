@@ -215,7 +215,7 @@
           (data-response message))
         (catch Exception _
           (log-str "Failed to load capabilities.")))
-      (log-str "Failed to load capabilties. The GeoServer URL passed in was not found in config.edn."))))
+      (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn."))))
 
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
