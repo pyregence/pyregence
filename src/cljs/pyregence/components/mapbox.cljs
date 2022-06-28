@@ -53,6 +53,7 @@
   "Returns the layer's type from its id string. Example:
    fire-detections_active-fires:active-fires_20210929_155400 => fire-detections"
   [layer-id]
+  ^{:pre [layer-id]}
   (if (str/includes? layer-id "isochrones")
     "isochrones"
     (first (str/split layer-id #"_"))))
