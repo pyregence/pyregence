@@ -169,7 +169,37 @@
       [:div {:style {:display "flex" :justify-content "space-between"}}
        [:label "Optional Layers"]
        [tool-tip-wrapper
-        [:div "Check the boxes below to display additional layers."
+        [:p {:style {:margin-bottom 0}}
+         "Check the boxes below to display additional layers. Options include:"
+         [:br]
+         [:br]
+         [:strong "Modeled perimeter"]
+         " - Modeled fire perimeter after 5 days of spread."
+         [:br]
+         [:br]
+         [:strong "Transmission lines"]
+         " - from DHS Homeland Infrastructure Foundation Level Dataset."
+         [:br]
+         [:br]
+         [:strong "Structures"]
+         " - Microsoft building footprints."
+         [:br]
+         [:br]
+         [:strong "2022 perimeters"]
+         " - Current season fires to date."
+         [:br]
+         [:br]
+         [:strong "VIIRS hotspots"]
+         " - Hot spots detected by the Visible Imaging Radiometer Suite
+         sensor on the Terra and Aqua satellites - 375 m resolution."
+         [:br]
+         [:br]
+         [:strong "MODIS hotspots"]
+         " - Hot spots detected by the Moderate Resolution Imaging Spectroradiometer sensor on the Suomi NPP and NOAA-20 satellites."
+         [:br]
+         [:br]
+         [:strong "Live satellite (GOES-16)"]
+         " - Real time imagery from the GOES East satellite."
          [:div {:style {:margin-top 10}}
           [:hr]
           [:strong "Note"]
