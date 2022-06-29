@@ -488,7 +488,7 @@
   (reset! !/*params (u/mapm
                      (fn [[forecast _]]
                        (let [params           (get-in @!/capabilities [forecast :params])
-                             selected-options (params->selected-options options-config @!/*forecast params)]
+                             selected-options options-config]
                          [forecast (merge (u/mapm (fn [[k v]]
                                                     [k (or (get-in selected-options [forecast k])
                                                            (:default-option v)
