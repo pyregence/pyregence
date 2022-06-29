@@ -10,6 +10,9 @@
 (defonce ^{:doc "A keyword containing the currently selected forecast. The possible
 options come from the -options maps in config.cljs, e.g. `:active-fire`."}
   *forecast (r/atom nil))
+(defonce ^{:doc "A keyword identifying the current forecast-type:
+either :near-term or :long-term"}
+  *forecast-type (r/atom nil))
 (defonce ^{:doc "The index/hour of the currently selected layer's forecast. Corresponds with the `:hour`
 field associated with each layer from the `param-layers`, starts at 0, and is an integer."}
   *layer-idx (r/atom 0))

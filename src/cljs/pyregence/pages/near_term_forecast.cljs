@@ -469,8 +469,16 @@
                                                              (u/time-zone-iso-date utc-time @!/show-utc?))])
                                                  options)))))
 
-;;; Capabilities
+(defn- params->selected-options
+  "Parses url query parameters into the selected options"
+  [options-config forecast params]
+  {forecast (as-> options-config oc
+              (get-in oc [forecast :params])
+              (keys oc)
+              (select-keys params oc)
+              (u/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
+;;; Capabilities
 (defn process-capabilities! [fire-names user-layers options-config]
   (reset! !/capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
@@ -504,21 +512,13 @@
       (edn/read-string fire-names)
       (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge fire-names))))
 
-(defn- params->selected-options
-  "Parses url query parameters into the selected options"
-  [options-config forecast params]
-  {forecast (as-> options-config oc
-              (get-in oc [forecast :params])
-              (keys oc)
-              (select-keys params oc)
-              (u/mapm (fn [[k v]] [k (keyword v)]) oc))})
-
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
           user-layers-chan                (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan                 (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras                    (u/call-clj-async! "get-cameras")]
+      (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast (or (keyword forecast)
                               (keyword (forecast-type @!/default-forecasts))))
       (reset! !/*layer-idx (if layer-idx (js/parseInt layer-idx) 0))
