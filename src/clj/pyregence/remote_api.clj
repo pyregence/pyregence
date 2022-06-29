@@ -7,6 +7,7 @@
             [triangulum.utils    :refer [kebab->snake]]
             [pyregence.authentication :refer [add-new-user
                                               add-org-user
+                                              add-org-new-user
                                               get-org-list
                                               get-org-users-list
                                               get-user-info
@@ -35,6 +36,7 @@
             [pyregence.views          :refer [data-response]]))
 
 (def name->fn {"add-org-user"         add-org-user
+               "add-org-new-user"     add-org-new-user
                "add-new-user"         add-new-user
                "get-all-layers"       get-all-layers
                "get-cameras"          get-cameras
