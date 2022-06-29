@@ -81,12 +81,12 @@
     (get-org-list)
     (toast-message! "Organization info updated.")))
 
-(defn- add-org-user! [email]
+(defn- add-org-user! [email name password]
   (go
-    (let [res (<! (u/call-clj-async! "add-org-user" @*org-id email))]
+    (let [res (<! (u/call-clj-async! "add-org-new-user" @*org-id email name password))]
       (if (:success res)
         (do (get-org-users-list @*org-id)
-            (toast-message! (str "User " email " added.")))
+            (toast-message! (str "User " name ", with email " email  ", added.")))
         (toast-message! (:body res))))))
 
 (defn- update-org-user-role! [org-user-id role-id]
@@ -118,12 +118,14 @@
 ;; Click Event Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- handle-add-user [email]
-  (let [message "Are you sure that you want to add the user with email \"%s\" as a Member of the \"%s\" organization?"]
+(defn- handle-add-user [email name password]
+  (let [message (str "Are you sure that you want to add the following new user\n"
+                     "as a Member of the \"%s\" organization?\n\n"
+                     "%s <%s>")]
     (when-not (blank? email)
       (set-message-box-content! {:title  "Add New User"
-                                 :body   (format message email @*org-name)
-                                 :action #(add-org-user! email)}))))
+                                 :body   (format message @*org-name name email)
+                                 :action #(add-org-user! email name password)}))))
 
 (defn- handle-remove-user [uid username]
   (let [message "Are you sure that you want to remove user \"%s\" from the \"%s\" organization?"]
@@ -188,6 +190,27 @@
                           @*org-auto-add?
                           @*org-auto-accept?)}]]]])
 
+(defn- org-user-add-form []
+  (r/with-let [newuser-name     (r/atom "")
+               newuser-password (r/atom "")
+               newuser-email    (r/atom "")]
+    [:div {:style ($/combine $/action-box {:margin-top "2rem"})}
+     [:div {:style ($/action-header)}
+      [:label {:style ($/padding "1px" :l)} "Add User"]]
+     [:div {:style {:overflow "auto"}}
+      [:form#add-user-form {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
+       [labeled-input "Name" newuser-name]
+       [labeled-input "Password" newuser-password]
+       [labeled-input "Email" newuser-email]
+       [:input {:class    (<class $/p-form-button :large)
+                :style    ($/combine ($/align :block :center) {:margin-top "0.5rem"})
+                :type     "button"
+                :value    "Add New User"
+                :on-click #((handle-add-user @newuser-email @newuser-name @newuser-password)
+                            (reset! newuser-email    "")
+                            (reset! newuser-name     "")
+                            (reset! newuser-password ""))}]]]]))
+
 (defn- user-item [org-user-id opt-label email role-id]
   (r/with-let [_role-id (r/atom role-id)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
@@ -221,13 +244,6 @@
        [:label {:style ($/padding "1px" :l)} "Users"]]
       [:div {:style {:overflow "auto"}}
        [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
-        [:div {:style {:align-items "flex-end" :display "flex"}}
-         [labeled-input "New User Email Address" new-email]
-         [:input {:class    (<class $/p-form-button)
-                  :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
-                  :type     "button"
-                  :value    "Add User"
-                  :on-click #(handle-add-user @new-email)}]]
         (doall (map (fn [{:keys [opt-id opt-label email role-id]}]
                       ^{:key opt-id}
                       [user-item opt-id opt-label email role-id])
@@ -261,4 +277,5 @@
                       :height         "100%"
                       :padding        "1rem"}}
         [org-settings]
+        [org-user-add-form]
         [org-users-list]]])))
