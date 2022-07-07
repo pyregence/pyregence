@@ -1,16 +1,17 @@
 (ns pyregence.components.map-controls.camera-tool
-  (:require [reagent.core       :as r]
-            [herb.core          :refer [<class]]
-            [clojure.edn        :as edn]
-            [clojure.core.async :refer [go <!]]
-            [pyregence.state    :as !]
-            [pyregence.styles   :as $]
-            [pyregence.utils    :as u]
-            [pyregence.components.help      :as h]
-            [pyregence.components.mapbox    :as mb]
-            [pyregence.components.svg-icons :as svg]
+  (:require [clojure.core.async                    :refer [go <!]]
+            [herb.core                             :refer [<class]]
             [pyregence.components.common           :refer [tool-tip-wrapper]]
-            [pyregence.components.resizable-window :refer [resizable-window]]))
+            [pyregence.components.help             :as h]
+            [pyregence.components.mapbox           :as mb]
+            [pyregence.components.resizable-window :refer [resizable-window]]
+            [pyregence.components.svg-icons        :as svg]
+            [pyregence.state                       :as !]
+            [pyregence.styles                      :as $]
+            [pyregence.utils.async-utils           :as u-async]
+            [pyregence.utils.misc-utils            :as u-misc]
+            [pyregence.utils.time-utils            :as u-time]
+            [reagent.core                          :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -18,7 +19,7 @@
 
 (defn- get-camera-image-chan [active-camera]
   (go
-    (->> (u/call-clj-async! "get-current-image" :post-blob (:name active-camera))
+    (->> (u-async/call-clj-async! "get-current-image" :post-blob (:name active-camera))
          (<!)
          (:body)
          (js/URL.createObjectURL))))
@@ -62,19 +63,19 @@
                on-click      (fn [features]
                                (go
                                  (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
-                                   (u/stop-refresh! @exit-chan)
+                                   (u-async/stop-refresh! @exit-chan)
                                    (reset! active-camera new-camera)
                                    (reset! camera-age 0)
                                    (reset! image-src nil)
                                    (let [image-chan  (get-camera-image-chan @active-camera)]
                                      (reset! camera-age (-> (:update-time @active-camera)
-                                                            (u/camera-time->js-date)
-                                                            (u/get-time-difference)
-                                                            (u/ms->hr)))
+                                                            (u-time/camera-time->js-date)
+                                                            (u-time/get-time-difference)
+                                                            (u-time/ms->hr)))
                                      (when (> 4 @camera-age)
                                        (reset! image-src (<! image-chan))
                                        (reset! exit-chan
-                                               (u/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
+                                               (u-async/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
                                                                        60000)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _             (mb/create-camera-layer! "fire-cameras")
@@ -98,7 +99,7 @@
 
           (>= @camera-age 4)
           [:div {:style {:padding "1.2em"}}
-           [:p (str "This camera has not been refreshed for " (u/to-precision 1 @camera-age) " hours. Please try again later.")]
+           [:p (str "This camera has not been refreshed for " (u-misc/to-precision 1 @camera-age) " hours. Please try again later.")]
            [:p "Click"
             [:a {:href   (str "https://www.alertwildfire.org/region/?camera=" (:name @active-camera))
                  :ref    "noreferrer noopener"
@@ -148,6 +149,6 @@
           [:div {:style {:padding "1.2em"}}
            (str "Loading camera " (:name @active-camera) "...")]))]]
     (finally
-      (u/stop-refresh! @exit-chan)
+      (u-async/stop-refresh! @exit-chan)
       (mb/remove-layer! "fire-cameras")
       (mb/clear-highlight! "fire-cameras" :selected))))

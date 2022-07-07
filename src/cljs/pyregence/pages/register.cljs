@@ -1,10 +1,12 @@
 (ns pyregence.pages.register
-  (:require [reagent.core       :as r]
-            [clojure.core.async :refer [go <! timeout]]
-            [pyregence.utils    :as u]
-            [pyregence.styles   :as $]
+  (:require [clojure.core.async             :refer [go <! timeout]]
             [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]))
+            [pyregence.components.messaging :refer [toast-message!]]
+            [pyregence.styles               :as $]
+            [pyregence.utils.async-utils    :refer [call-clj-async!]]
+            [pyregence.utils.browser-utils  :refer [jump-to-url!]]
+            [pyregence.utils.misc-utils     :refer [missing-data?]]
+            [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -24,21 +26,21 @@
 (defn- add-user! []
   (go
     (toast-message! "Creating new account. This may take a moment...")
-    (if (and (:success (<! (u/call-clj-async! "add-new-user" @email @full-name @password)))
-             (:success (<! (u/call-clj-async! "send-email" @email :new-user))))
+    (if (and (:success (<! (call-clj-async! "add-new-user" @email @full-name @password)))
+             (:success (<! (call-clj-async! "send-email" @email :new-user))))
       (do (toast-message! ["Your account has been created successfully."
                            "Please check your email for a link to complete registration."])
           (<! (timeout 4000))
-          (u/jump-to-url! "/forecast"))
+          (jump-to-url! "/forecast"))
       (toast-message! ["An error occurred while registering."
                        "Please contact support@pyregence.org for help."]))))
 
 (defn- register! []
   (go
     (reset! pending? true)
-    (let [email-chan (u/call-clj-async! "user-email-taken" @email)
+    (let [email-chan (call-clj-async! "user-email-taken" @email)
           errors     (remove nil?
-                             [(when (u/missing-data? @email @password @re-password)
+                             [(when (missing-data? @email @password @re-password)
                                 "You must fill in all required information to continue.")
 
                               (when (< (count @password) 8)

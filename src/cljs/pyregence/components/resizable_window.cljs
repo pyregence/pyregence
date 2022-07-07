@@ -1,9 +1,9 @@
 (ns pyregence.components.resizable-window
-  (:require [reagent.core     :as r]
-            [reagent.dom      :as rd]
-            [herb.core :refer [<class]]
-            [pyregence.styles :as $]
-            [pyregence.components.svg-icons :refer [close]]))
+  (:require [herb.core                      :refer [<class]]
+            [pyregence.components.svg-icons :refer [close]]
+            [pyregence.styles               :as $]
+            [reagent.core                   :as r]
+            [reagent.dom                    :as rd]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles

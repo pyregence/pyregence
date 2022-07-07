@@ -1,21 +1,21 @@
 (ns ^:figwheel-hooks pyregence.client
-  (:require [goog.dom                           :as dom]
-            [reagent.dom                        :refer [render]]
-            [pyregence.config                   :as c]
-            [pyregence.state                    :as !]
-            [pyregence.pages.admin              :as admin]
-            [pyregence.pages.dashboard          :as dashboard]
-            [pyregence.pages.help               :as help]
-            [pyregence.pages.login              :as login]
-            [pyregence.pages.near-term-forecast :as ntf]
-            [pyregence.pages.not-found          :as not-found]
-            [pyregence.pages.privacy-policy     :as privacy]
-            [pyregence.pages.register           :as register]
-            [pyregence.pages.reset-password     :as reset-password]
-            [pyregence.pages.terms-of-use       :as terms]
-            [pyregence.pages.verify-email       :as verify-email]
-            [pyregence.components.page-layout   :refer [set-announcement-text!
-                                                        wrap-page]]))
+  (:require
+   [goog.dom :as dom]
+   [pyregence.components.page-layout
+    :refer [set-announcement-text! wrap-page]]
+   [pyregence.pages.admin :as admin]
+   [pyregence.pages.dashboard :as dashboard]
+   [pyregence.pages.help :as help]
+   [pyregence.pages.login :as login]
+   [pyregence.pages.near-term-forecast :as ntf]
+   [pyregence.pages.not-found :as not-found]
+   [pyregence.pages.privacy-policy :as privacy]
+   [pyregence.pages.register :as register]
+   [pyregence.pages.reset-password :as reset-password]
+   [pyregence.pages.terms-of-use :as terms]
+   [pyregence.pages.verify-email :as verify-email]
+   [pyregence.state :as !]
+   [reagent.dom :refer [render]]))
 
 (defonce ^:private original-params (atom {}))
 
@@ -47,12 +47,10 @@
               (wrap-page #((uri->root-component-ha uri) params))
 
               (uri->root-component-hf uri)
-              (wrap-page #((uri->root-component-hf uri) params)
-                         :footer? true)
+              (wrap-page #((uri->root-component-hf uri) params) :footer? true)
 
               :else
-              (wrap-page not-found/root-component
-                         :footer? true))
+              (wrap-page not-found/root-component :footer? true))
             (dom/getElement "app"))))
 
 (defn- ^:export init

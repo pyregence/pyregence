@@ -1,10 +1,10 @@
 (ns pyregence.components.messaging
-  (:require [herb.core          :refer [<class]]
-            [reagent.core       :as r]
-            [clojure.core.async :refer [chan go >! <! timeout]]
+  (:require [clojure.core.async :refer [chan go >! <! timeout]]
             [clojure.string     :as str]
+            [herb.core          :refer [<class]]
             [pyregence.state    :as !]
-            [pyregence.styles   :as $]))
+            [pyregence.styles   :as $]
+            [reagent.core       :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State

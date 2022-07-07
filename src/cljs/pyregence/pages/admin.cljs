@@ -1,14 +1,16 @@
 (ns pyregence.pages.admin
-  (:require [herb.core          :refer [<class]]
-            [clojure.core.async :refer [go <!]]
-            [clojure.string     :refer [blank?]]
-            [goog.string        :refer [format]]
-            [reagent.core     :as r]
-            [cljs.reader      :as edn]
-            [pyregence.utils  :as u]
-            [pyregence.styles :as $]
+  (:require [cljs.reader                    :as edn]
+            [clojure.core.async             :refer [go <!]]
+            [clojure.string                 :refer [blank?]]
+            [goog.string                    :refer [format]]
+            [herb.core                      :refer [<class]]
             [pyregence.components.common    :refer [check-box labeled-input]]
-            [pyregence.components.messaging :refer [confirmation-modal set-message-box-content! toast-message!]]))
+            [pyregence.components.messaging :refer [confirmation-modal set-message-box-content! toast-message!]]
+            [pyregence.styles               :as $]
+            [pyregence.utils.async-utils    :as u-async]
+            [pyregence.utils.browser-utils  :as u-browser]
+            [pyregence.utils.dom-utils      :as u-dom]
+            [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -61,18 +63,18 @@
 (defn- get-org-users-list [org-id]
   (go
     (reset! org-users
-            (edn/read-string (:body (<! (u/call-clj-async! "get-org-users-list" org-id)))))))
+            (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-users-list" org-id)))))))
 
 (defn- get-org-list []
   (go
-    (reset! orgs (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
+    (reset! orgs (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
     ;; find the current org, by id, in the updated @orgs vector or fallback to the org on the first index
     (set-selected-org! (or (get-org-by-id @*org-id) (first @orgs)))
     (get-org-users-list @*org-id)))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
   (go
-    (<! (u/call-clj-async! "update-org-info"
+    (<! (u-async/call-clj-async! "update-org-info"
                            opt-id
                            org-name
                            email-domains
@@ -83,7 +85,7 @@
 
 (defn- add-org-user! [email]
   (go
-    (let [res (<! (u/call-clj-async! "add-org-user" @*org-id email))]
+    (let [res (<! (u-async/call-clj-async! "add-org-user" @*org-id email))]
       (if (:success res)
         (do (get-org-users-list @*org-id)
             (toast-message! (str "User " email " added.")))
@@ -91,13 +93,13 @@
 
 (defn- update-org-user-role! [org-user-id role-id]
   (go
-    (<! (u/call-clj-async! "update-org-user-role" org-user-id role-id))
+    (<! (u-async/call-clj-async! "update-org-user-role" org-user-id role-id))
     (get-org-users-list @*org-id)
     (toast-message! "User role updated.")))
 
 (defn- remove-org-user! [org-user-id]
   (go
-    (<! (u/call-clj-async! "remove-org-user" org-user-id))
+    (<! (u-async/call-clj-async! "remove-org-user" org-user-id))
     (get-org-users-list @*org-id)
     (toast-message! "User removed.")))
 
@@ -203,7 +205,7 @@
       [:select {:class     (<class $/p-bordered-input)
                 :style     {:margin "0 .25rem 0 1rem" :height "2rem"}
                 :value     @_role-id
-                :on-change #(reset! _role-id (u/input-int-value %))}
+                :on-change #(reset! _role-id (u-dom/input-int-value %))}
        (map (fn [{:keys [opt-id opt-label]}]
               [:option {:key opt-id :value opt-id} opt-label])
             roles)]
@@ -243,7 +245,7 @@
     (cond
       (or (nil? user-id)                ; User is not logged in
           (nil? @*org-id))              ; User is not an admin of any org
-      (do (u/redirect-to-login! "/admin")
+      (do (u-browser/redirect-to-login! "/admin")
           nil)
 
       (= @*org-id -1)                   ; get-org-list has not completed yet

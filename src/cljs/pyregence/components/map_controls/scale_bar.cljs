@@ -1,9 +1,9 @@
 (ns pyregence.components.map-controls.scale-bar
-  (:require [reagent.core        :as r]
-            [pyregence.state     :as !]
-            [pyregence.styles    :as $]
-            [pyregence.geo-utils :as g]
-            [pyregence.components.mapbox :as mb]))
+  (:require [pyregence.components.mapbox :as mb]
+            [pyregence.geo-utils         :as g]
+            [pyregence.state             :as !]
+            [pyregence.styles            :as $]
+            [reagent.core                :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles

@@ -1,18 +1,17 @@
 (ns pyregence.components.common
   (:require-macros [pyregence.herb-patch :refer [style->class]])
-  (:require [herb.core          :refer [<class]]
-            [reagent.core       :as r]
-            [reagent.dom        :as rd]
-            [clojure.core.async :refer [go <! timeout]]
-            [pyregence.styles   :as $]
-            [pyregence.utils    :as u]))
+  (:require [clojure.core.async           :refer [go <! timeout]]
+            [herb.core                    :refer [<class]]
+            [pyregence.styles             :as $]
+            [pyregence.utils.dom-utils    :as u-dom]
+            [pyregence.utils.string-utils :as u-str]
+            [pyregence.utils.time-utils   :as u-time]
+            [reagent.core                 :as r]
+            [reagent.dom                  :as rd]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn hs-str [hide?]
-  (if hide? "Hide" "Show"))
 
 (defn- calc-tool-position [sibling-ref tool-ref arrow-position show?]
   (if (and tool-ref show?)
@@ -46,6 +45,9 @@
                               [(- sibling-y 22.6) (- sibling-y tool-height 14)]))]
       [(max 6 (min tip-x max-x)) (max 62 (min tip-y max-y)) arrow-x arrow-y]) ; There is a 56px y offset for the header
     [-1000 -1000 -1000 -1000]))
+
+(defn hs-str [hide?]
+  (if hide? "Hide" "Show"))
 
 (defn- sibling-wrapper [sibling sibling-ref]
   (r/create-class
@@ -141,16 +143,16 @@
    - required?"
   [label state & [opts]]
   (let [{:keys [type autocomplete disabled? call-back autofocus? required? placeholder]
-         :or {type "text" disabled? false call-back #(reset! state (u/input-value %))} required? false} opts]
+         :or {type "text" disabled? false call-back #(reset! state (u-dom/input-value %))} required? false} opts]
     [:section {:style ($labeled-input)}
-     [:label {:for (u/sentence->kebab label)} label]
+     [:label {:for (u-str/sentence->kebab label)} label]
      [:input {:class         (style->class $/p-bordered-input)
               :auto-complete autocomplete
               :auto-focus    autofocus?
               :disabled      disabled?
               :required      required?
               :placeholder   placeholder
-              :id            (u/sentence->kebab label)
+              :id            (u-str/sentence->kebab label)
               :type          type
               :value         @state
               :on-change     call-back}]]))
@@ -158,18 +160,18 @@
 (defn limited-date-picker
   "Creates a date input with limited dates."
   [label id value days-before days-after]
-  (let [today-ms (u/current-date-ms)
+  (let [today-ms (u-time/current-date-ms)
         day-ms   86400000]
     [:div {:style {:display "flex" :flex-direction "column"}}
      [:label {:for   id
               :style {:font-size "0.9rem" :font-weight "bold"}}
       label]
      [:select {:id        id
-               :on-change #(reset! value (u/input-int-value %))
+               :on-change #(reset! value (u-dom/input-int-value %))
                :value     @value}
       (for [day (range (* -1 days-before) (+ 1 days-after))]
         (let [date-ms (+ today-ms (* day day-ms))
-              date    (u/format-date (js/Date. date-ms))]
+              date    (u-time/format-date (js/Date. date-ms))]
           [:option {:key   date
                     :value date-ms}
            date]))]]))
@@ -177,13 +179,13 @@
 (defn input-hour
   "Simple 24-hour input component. Shows the hour with local timezone (e.g. 13:00 PDT)"
   [label id value]
-  (let [timezone (u/current-timezone-shortcode)]
+  (let [timezone (u-time/current-timezone-shortcode)]
     [:div {:style {:display "flex" :flex-direction "column"}}
      [:label {:for   id
               :style {:font-size "0.9rem" :font-weight "bold"}}
       label]
      [:select {:id        id
-               :on-change #(reset! value (u/input-int-value %))
+               :on-change #(reset! value (u-dom/input-int-value %))
                :value     @value}
       (for [hour (range 0 24)]
         [:option {:key   hour

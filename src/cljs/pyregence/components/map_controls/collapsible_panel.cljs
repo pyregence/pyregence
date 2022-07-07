@@ -1,18 +1,20 @@
 (ns pyregence.components.map-controls.collapsible-panel
-  (:require [reagent.core       :as r]
-            [herb.core          :refer [<class]]
-            [clojure.edn        :as edn]
-            [clojure.core.async :refer [<! go go-loop]]
-            [clojure.set        :as set]
-            [pyregence.state    :as !]
-            [pyregence.utils    :as u]
-            [pyregence.styles   :as $]
-            [pyregence.config   :as c]
-            [pyregence.components.mapbox    :as mb]
-            [pyregence.components.svg-icons :as svg]
-            [pyregence.components.common    :refer [hs-str tool-tip-wrapper]]
+  (:require [clojure.core.async                               :refer [<! go go-loop]]
+            [clojure.edn                                      :as edn]
+            [clojure.set                                      :as set]
+            [herb.core                                        :refer [<class]]
+            [pyregence.components.common                      :refer [hs-str tool-tip-wrapper]]
             [pyregence.components.map-controls.panel-dropdown :refer [panel-dropdown]]
-            [pyregence.components.map-controls.tool-button    :refer [tool-button]]))
+            [pyregence.components.map-controls.tool-button    :refer [tool-button]]
+            [pyregence.components.mapbox                      :as mb]
+            [pyregence.components.svg-icons                   :as svg]
+            [pyregence.config                                 :as c]
+            [pyregence.state                                  :as !]
+            [pyregence.styles                                 :as $]
+            [pyregence.utils.async-utils                      :as u-async]
+            [pyregence.utils.dom-utils                        :as u-dom]
+            [pyregence.utils.misc-utils                       :as u-misc]
+            [reagent.core                                     :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -20,7 +22,7 @@
 
 (defn get-layer-name [geoserver-key filter-set update-layer!]
   (go
-    (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
+    (let [name (edn/read-string (:body (<! (u-async/call-clj-async! "get-layer-name"
                                                               geoserver-key
                                                               (pr-str filter-set)))))]
       (update-layer! :name name)
@@ -121,7 +123,7 @@
                                                 (fn [key atom old-params new-params]
                                                   (let [old-param-map    (@!/*forecast old-params)
                                                         new-param-map    (@!/*forecast new-params)
-                                                        changed-keys     (u/get-changed-keys old-param-map new-param-map)
+                                                        changed-keys     (u-misc/get-changed-keys old-param-map new-param-map)
                                                         underlay         (get-in c/near-term-forecast-options [@!/*forecast :underlays id])
                                                         update-underlay? (seq (set/intersection changed-keys (set (:dependent-inputs underlay))))]
                                                     (when (filter-set "isochrones")
@@ -282,7 +284,7 @@
             :min       "0"
             :max       "100"
             :value     @!/active-opacity
-            :on-change #(do (reset! !/active-opacity (u/input-int-value %))
+            :on-change #(do (reset! !/active-opacity (u-dom/input-int-value %))
                             (mb/set-opacity-by-title! "active" (/ @!/active-opacity 100.0)))}]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

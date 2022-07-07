@@ -1,12 +1,11 @@
 (ns pyregence.components.page-layout
-  (:require [reagent.core       :as r]
-            [herb.core          :refer [<class]]
-            [clojure.string     :as str]
-            [clojure.core.async :refer [<! go timeout]]
-            [pyregence.styles   :as $]
-            [pyregence.components.messaging :refer [toast-message
-                                                    process-toast-messages!]]
-            [pyregence.components.svg-icons :refer [close]]))
+  (:require [clojure.core.async                 :refer [<! go timeout]]
+            [clojure.string                     :as str]
+            [herb.core                          :refer [<class]]
+            [pyregence.components.messaging     :refer [toast-message process-toast-messages!]]
+            [pyregence.components.svg-icons     :refer [close]]
+            [pyregence.styles                   :as $]
+            [reagent.core                       :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -18,6 +17,18 @@
   "Sets the text for the announcement banner given the value from `config.edn`."
   [text]
   (reset! announcement text))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Styles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn $app-header []
+  {:align-items     "center"
+   :display         "flex"
+   :justify-content "center"
+   :position        "relative"
+   :width           "100%"
+   })
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components

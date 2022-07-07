@@ -1,7 +1,8 @@
 (ns pyregence.pages.verify-email
-  (:require [reagent.core       :as r]
-            [clojure.core.async :refer [go <! timeout]]
-            [pyregence.utils    :as u]))
+  (:require [clojure.core.async            :refer [go <! timeout]]
+            [pyregence.utils.async-utils   :refer [call-clj-async!]]
+            [pyregence.utils.browser-utils :refer [jump-to-url!]]
+            [reagent.core                  :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -15,10 +16,10 @@
 
 (defn- verify-account! [email reset-key]
   (go
-    (if (:success (<! (u/call-clj-async! "verify-user-email" email reset-key)))
+    (if (:success (<! (call-clj-async! "verify-user-email" email reset-key)))
       (do
         (<! (timeout 2000))
-        (u/jump-to-url! "/forecast"))
+        (jump-to-url! "/forecast"))
       (reset! pending? false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

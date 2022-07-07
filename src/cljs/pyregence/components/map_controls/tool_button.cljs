@@ -1,7 +1,7 @@
 (ns pyregence.components.map-controls.tool-button
-  (:require [herb.core :refer [<class]]
-            [pyregence.styles :as $]
-            [pyregence.components.svg-icons :as svg]))
+  (:require [herb.core                      :refer [<class]]
+            [pyregence.components.svg-icons :as svg]
+            [pyregence.styles               :as $]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles

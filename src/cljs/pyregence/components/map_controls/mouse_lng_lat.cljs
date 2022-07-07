@@ -1,8 +1,8 @@
 (ns pyregence.components.map-controls.mouse-lng-lat
-  (:require [reagent.core     :as r]
-            [clojure.pprint   :refer [cl-format]]
-            [pyregence.styles :as $]
-            [pyregence.components.mapbox :as mb]))
+  (:require [clojure.pprint   :refer [cl-format]]
+            [pyregence.components.mapbox :as mb]
+            [pyregence.styles            :as $]
+            [reagent.core                :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles

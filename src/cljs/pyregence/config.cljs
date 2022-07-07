@@ -1,7 +1,8 @@
 (ns pyregence.config
-  (:require [clojure.string  :as str]
-            [pyregence.utils :as u]
-            [pyregence.state :as !]))
+  (:require [clojure.string                :as str]
+            [pyregence.state               :as !]
+            [pyregence.utils.misc-utils    :as u-misc]
+            [pyregence.utils.string-utils  :as u-str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
@@ -75,7 +76,7 @@
                                                        :asp    {:opt-label       "Aspect"
                                                                 :filter          "asp"
                                                                 :units           ""
-                                                                :convert         #(str (u/direction %) " (" % "°)")
+                                                                :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                 :reverse-legend? false
                                                                 :disabled-for    #{:cec}}
                                                        :slp    {:opt-label       "Slope (degrees)"
@@ -86,7 +87,7 @@
                                                        :dem    {:opt-label       "Elevation (ft)"
                                                                 :filter          "dem"
                                                                 :units           "ft"
-                                                                :convert         #(u/to-precision 1 (* % 3.28084))
+                                                                :convert         #(u-misc/to-precision 1 (* % 3.28084))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cec}}
                                                        :cc     {:opt-label       "Canopy Cover (%)"
@@ -98,20 +99,20 @@
                                                                 :filter          "ch"
                                                                 :units           "m"
                                                                 :no-convert      #{:cfo}
-                                                                :convert         #(u/to-precision 1 (/ % 10))
+                                                                :convert         #(u-misc/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cec}}
                                                        :cbh    {:opt-label       "Canopy Base Height (m)"
                                                                 :filter          "cbh"
                                                                 :units           "m"
                                                                 :no-convert      #{:cfo}
-                                                                :convert         #(u/to-precision 1 (/ % 10))
+                                                                :convert         #(u-misc/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cec}}
                                                        :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
                                                                 :filter          "cbd"
                                                                 :units           "kg/m\u00b3"
-                                                                :convert         #(u/to-precision 2 (/ % 100))
+                                                                :convert         #(u-misc/to-precision 2 (/ % 100))
                                                                 :no-convert      #{:cfo}
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cec}})}
@@ -201,7 +202,7 @@
                                                               :apcp01 {:opt-label "1-hour precipitation (in)"
                                                                        :filter    "apcp01"
                                                                        :units     "inches"
-                                                                       :convert   #(u/to-precision 2 (* % 0.03937007874))}
+                                                                       :convert   #(u-misc/to-precision 2 (* % 0.03937007874))}
                                                               :meq    {:opt-label "Fine dead fuel moisture (%)"
                                                                        :filter    "meq"
                                                                        :units     "%"}
@@ -736,13 +737,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- wms-url [geoserver-key]
-  (str (u/end-with (geoserver-key @!/geoserver-urls) "/") "wms"))
+  (str (u-str/end-with (geoserver-key @!/geoserver-urls) "/") "wms"))
 
 (defn- wfs-url [geoserver-key]
-  (str (u/end-with (geoserver-key @!/geoserver-urls) "/") "wfs"))
+  (str (u-str/end-with (geoserver-key @!/geoserver-urls) "/") "wfs"))
 
 (defn- mvt-url [geoserver-key]
-  (str (u/end-with ((keyword geoserver-key) @!/geoserver-urls) "/") "gwc/service/wmts"))
+  (str (u-str/end-with ((keyword geoserver-key) @!/geoserver-urls) "/") "gwc/service/wmts"))
 
 (defn legend-url
   "Generates a URL for the legend given a layer."

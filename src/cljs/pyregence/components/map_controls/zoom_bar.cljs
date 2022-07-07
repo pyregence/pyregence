@@ -1,13 +1,13 @@
 (ns pyregence.components.map-controls.zoom-bar
-  (:require [reagent.core     :as r]
-            [herb.core        :refer [<class]]
-            [pyregence.state  :as !]
-            [pyregence.styles :as $]
-            [pyregence.utils  :as u]
-            [pyregence.components.mapbox :as mb]
-            [pyregence.components.help   :as h]
-            [pyregence.components.common    :refer [tool-tip-wrapper]]
-            [pyregence.components.messaging :refer [set-message-box-content!]]
+  (:require [reagent.core                                  :as r]
+            [herb.core                                     :refer [<class]]
+            [pyregence.state                               :as !]
+            [pyregence.styles                              :as $]
+            [pyregence.utils.dom-utils                     :as u-dom]
+            [pyregence.components.mapbox                   :as mb]
+            [pyregence.components.help                     :as h]
+            [pyregence.components.common                   :refer [tool-tip-wrapper]]
+            [pyregence.components.messaging                :refer [set-message-box-content!]]
             [pyregence.components.map-controls.tool-button :refer [tool-button]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -32,7 +32,7 @@
   (r/with-let [copied     (r/atom false)
                share-link (create-share-link)
                on-click   #(do
-                             (u/copy-input-clipboard! "share-link")
+                             (u-dom/copy-input-clipboard! "share-link")
                              (reset! copied true))]
     [:div {:style (if @!/mobile?
                     {:display         "flex"

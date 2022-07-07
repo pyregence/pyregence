@@ -1,11 +1,11 @@
 (ns pyregence.components.vega
-  (:require [cljsjs.vega-embed]
-            [reagent.core    :as r]
-            [reagent.dom     :as rd]
-            [pyregence.state :as !]
-            [pyregence.utils :as u]
-            [clojure.core.async :refer [go]]
-            [cljs.core.async.interop :refer-macros [<p!]]))
+  (:require [cljs.core.async.interop    :refer-macros [<p!]]
+            [cljsjs.vega-embed]
+            [clojure.core.async         :refer [go]]
+            [pyregence.state            :as !]
+            [pyregence.utils.misc-utils :as u-misc]
+            [reagent.core               :as r]
+            [reagent.dom                :as rd]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -19,7 +19,7 @@
                       {:quantity cur-q
                        :offset   (min (/ cur-q max-band) 1.0)
                        :color    (if (< last-q max-band cur-q)
-                                   (u/interp-color (get last :color)
+                                   (u-misc/interp-color (get last :color)
                                                    (get cur  "color")
                                                    (/ (- max-band last-q)
                                                       (- cur-q last-q)))
@@ -40,12 +40,12 @@
    :range  (mapv #(get % "color")    processed-legend)})
 
 (defn- layer-line-plot [units current-hour convert]
-  (let [processed-legend     (cond->> (u/filter-no-data @!/legend-list)
+  (let [processed-legend     (cond->> (u-misc/filter-no-data @!/legend-list)
                                (fn? convert) (mapv #(update % "quantity" (comp str convert))))
-        processed-point-info (cond->> (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)
+        processed-point-info (cond->> (u-misc/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)
                                (fn? convert) (mapv (fn [entry]
-                                                     (update entry :band #(u/round-last-clicked-info (convert %)))))
-                               :else         (mapv #(update % :band u/round-last-clicked-info)))
+                                                     (update entry :band #(u-misc/round-last-clicked-info (convert %)))))
+                               :else         (mapv #(update % :band u-misc/round-last-clicked-info)))
         x-axis-units         ({:near-term "Hour" :long-term "Year"} @!/*forecast-type)]
     {:width    "container"
      :height   "container"
@@ -105,8 +105,8 @@
           (-> result .-view (.addEventListener
                              "click"
                              (fn [_ data]
-                               (when-let [hour (or (u/try-js-aget data "datum" "datum" "hour")
-                                                   (u/try-js-aget data "datum" "hour"))]
+                               (when-let [hour (or (u-misc/try-js-aget data "datum" "datum" "hour")
+                                                   (u-misc/try-js-aget data "datum" "hour"))]
                                  (layer-click! hour))))))
         (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
 
