@@ -433,7 +433,7 @@
                   (get-current-option-key main-key val :auto-zoom?)
                   (get-any-level-key     :max-zoom))))
 
-(defn- select-forecast!
+(defn select-forecast!
   "The function called whenever you select a new forecast/tab."
   [key]
   (go
@@ -730,7 +730,15 @@
          [message-box-modal]
          (when @!/loading? [loading-modal])
          [message-modal]
-         [nav-bar {:user-id user-id}]
+         [nav-bar {:capabilities         @!/capabilities
+                   :current-forecast     @!/*forecast
+                   :is-admin?            (> (count @!/user-org-list) 0)
+                   :logged-in?           user-id
+                   :mobile?              @!/mobile?
+                   :org-list-where-admin @!/user-org-list
+                   :select-forecast!     select-forecast!
+                   :user-id              user-id
+                   }]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
           (when (and @mb/the-map
                      (not-empty @!/capabilities)
