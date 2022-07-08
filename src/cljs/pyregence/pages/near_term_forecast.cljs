@@ -737,8 +737,7 @@
                    :mobile?              @!/mobile?
                    :org-list-where-admin @!/user-org-list
                    :select-forecast!     select-forecast!
-                   :user-id              user-id
-                   }]
+                   :user-id              user-id}]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
           (when (and @mb/the-map
                      (not-empty @!/capabilities)
