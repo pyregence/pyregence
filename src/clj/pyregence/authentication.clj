@@ -1,5 +1,6 @@
 (ns pyregence.authentication
   (:require [triangulum.database :refer [call-sql sql-primitive]]
+            [pyregence.utils     :refer [nil-on-error]]
             [pyregence.views     :refer [data-response]]))
 
 (defn log-in [email password]
@@ -29,12 +30,13 @@
 
 (defn add-new-user [email name password]
   (let [default-settings (pr-str {:timezone :utc})
-        new-user-id      (sql-primitive (call-sql "add_new_user"
-                                                  {:log? false}
-                                                  email
-                                                  name
-                                                  password
-                                                  default-settings))]
+        new-user-id      (nil-on-error
+                          (sql-primitive (call-sql "add_new_user"
+                                                   {:log? false}
+                                                   email
+                                                   name
+                                                   password
+                                                   default-settings)))]
     (if new-user-id
       (do (call-sql "auto_add_org_user" new-user-id (re-find #"@{1}.+" email))
           (data-response ""))
@@ -73,23 +75,6 @@
 (defn update-org-info [org-id org-name email-domains auto-add? auto-accept?]
   (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
   (data-response ""))
-
-(defn add-org-new-user
-  "Inserts a new user record into the `users` table and then
-  creates a relation between the user and the given organization id
-  by inserting a record into the `organization_users` table"
-  [org-id email name password]
-  (let [default-settings (pr-str {:timezone :utc})
-        new-user-id      (sql-primitive (call-sql "add_new_user"
-                                                  {:log? false}
-                                                  email
-                                                  name
-                                                  password
-                                                  default-settings))]
-    (if new-user-id
-      (do (call-sql "add_org_user" org-id new-user-id)
-          (data-response {:id new-user-id}))
-      (data-response "" {:status 403}))))
 
 (defn add-org-user [org-id email]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]

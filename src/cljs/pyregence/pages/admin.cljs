@@ -1,14 +1,15 @@
 (ns pyregence.pages.admin
-  (:require [herb.core          :refer [<class]]
-            [clojure.core.async :refer [go <!]]
-            [clojure.string     :refer [blank?]]
-            [goog.string        :refer [format]]
-            [reagent.core     :as r]
-            [cljs.reader      :as edn]
-            [pyregence.utils  :as u]
-            [pyregence.styles :as $]
+  (:require [cljs.reader                    :as edn]
+            [clojure.core.async             :refer [go <!]]
+            [clojure.core                   :refer [subs]]
+            [clojure.string                 :as str :refer [blank?]]
+            [goog.string                    :refer [format]]
+            [herb.core                      :refer [<class]]
             [pyregence.components.common    :refer [check-box labeled-input]]
-            [pyregence.components.messaging :refer [confirmation-modal set-message-box-content! toast-message!]]))
+            [pyregence.components.messaging :refer [confirmation-modal set-message-box-content! toast-message!]]
+            [pyregence.styles               :as $]
+            [pyregence.utils                :as u]
+            [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -83,11 +84,12 @@
 
 (defn- add-org-user! [email name password]
   (go
-    (let [res (<! (u/call-clj-async! "add-org-new-user" @*org-id email name password))]
+    (let [res (<! (u/call-clj-async! "add-new-user" email name password))]
       (if (:success res)
         (do (get-org-users-list @*org-id)
             (toast-message! (str "User " name ", with email " email  ", added.")))
-        (toast-message! (:body res))))))
+        (toast-message!
+         (str (:body res)))))))
 
 (defn- update-org-user-role! [org-user-id role-id]
   (go
@@ -115,6 +117,15 @@
          (when selected? {:background-color ($/color-picker :yellow 0.3)})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Input Validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- is-valid-email? [allowed-email-domains email]
+  (let [allowed-email-set (set (str/split allowed-email-domains  #","))
+        test-email-domain (subs email (str/index-of email "@"))]
+    (contains? allowed-email-set test-email-domain)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Click Event Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -122,7 +133,7 @@
   (let [message (str "Are you sure that you want to add the following new user\n"
                      "as a Member of the \"%s\" organization?\n\n"
                      "%s <%s>")]
-    (when-not (blank? email)
+    (and (when-not (blank? email) (is-valid-email? @*org-email-domains email))
       (set-message-box-content! {:title  "Add New User"
                                  :body   (format message @*org-name name email)
                                  :action #(add-org-user! email name password)}))))
@@ -200,13 +211,14 @@
      [:div {:style {:overflow "auto"}}
       [:form#add-user-form {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
        [labeled-input "Name" newuser-name]
-       [labeled-input "Password" newuser-password]
+       [labeled-input "Password" newuser-password {:type "password"}]
        [labeled-input "Email" newuser-email]
        [:input {:class    (<class $/p-form-button :large)
                 :style    ($/combine ($/align :block :center) {:margin-top "0.5rem"})
                 :type     "button"
                 :value    "Add New User"
-                :on-click #((handle-add-user @newuser-email @newuser-name @newuser-password)
+                :on-click (fn [_]
+                            (handle-add-user @newuser-email @newuser-name @newuser-password)
                             (reset! newuser-email    "")
                             (reset! newuser-name     "")
                             (reset! newuser-password ""))}]]]]))
@@ -217,7 +229,7 @@
      [:div {:style {:display "flex" :flex-direction "column"}}
       [:label opt-label]
       [:label email]]
-     [:span {:style ($/combine ($/align :block :right) {:display "flex"})}
+     [:div {:style ($/combine ($/align :block :right) {:display "flex"})}
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
