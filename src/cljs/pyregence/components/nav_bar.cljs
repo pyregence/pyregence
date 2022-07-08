@@ -3,20 +3,17 @@
             [pyregence.components.login-menu    :refer [login-menu]]
             [pyregence.styles                   :as $]))
 
-(defn- $nav-bar []
-  {
-   :display         "flex"
+(defn- $nav-bar
+  []
+  {:display         "flex"
    :justify-content "center"
    :padding         "4px"
-   :width           "100%"
-   ;; :border-bottom "1px solid lightgrey"
-   })
+   :width           "100%"})
 
-(defn- $nav-bar-container []
-  {
-   :display "flex"
-   :margin  "0px 10px"
-   })
+(defn- $nav-bar-container
+  []
+  {:display "flex"
+   :margin  "0px 10px"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
@@ -28,5 +25,4 @@
   [:nav {:style ($/combine $nav-bar {:background ($/color-picker :yellow)})}
    [:div {:style ($nav-bar-container)}
     [forecast-tabs props]
-    [login-menu props]
-    ]])
+    [login-menu props]]])

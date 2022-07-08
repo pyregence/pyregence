@@ -1,5 +1,5 @@
 (ns pyregence.components.forecast-tabs
-  (:require [pyregence.components.common        :refer [tool-tip-wrapper]]))
+  (:require [pyregence.components.common :refer [tool-tip-wrapper]]))
 
 (defn- $forecast-label [selected?]
   (merge
