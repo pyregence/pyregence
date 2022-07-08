@@ -18,22 +18,6 @@
 (defn java-date-from-string [date-str]
   (.parse (java.text.SimpleDateFormat. "yyyyMMdd_HHmmss") date-str))
 
-(defn mapm [f coll]
-  (persistent!
-   (reduce (fn [acc cur]
-             (conj! acc (f cur)))
-           (transient {})
-           coll)))
-
-(defn filterm [pred coll]
-  (persistent!
-   (reduce (fn [acc cur]
-             (if (pred cur)
-               (conj! acc cur)
-               acc))
-           (transient {})
-           coll)))
-
 ;;; Layers
 
 (defn- split-risk-weather-psps-layer-name

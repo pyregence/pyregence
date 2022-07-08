@@ -1,13 +1,14 @@
 (ns pyregence.components.mapbox
-  (:require [goog.dom            :as dom]
-            [reagent.core        :as r]
-            [reagent.dom         :refer [render]]
-            [clojure.core.async  :refer [go <!]]
-            [clojure.string      :as str]
-            [pyregence.state     :as !]
-            [pyregence.config    :as c]
-            [pyregence.utils     :as u]
-            [pyregence.geo-utils :as g]))
+  (:require [clojure.core.async         :refer [go <!]]
+            [clojure.string             :as str]
+            [goog.dom                   :as dom]
+            [pyregence.config           :as c]
+            [pyregence.geo-utils        :as g]
+            [pyregence.state            :as !]
+            [pyregence.utils            :as u]
+            [pyregence.utils.data-utils :as u-data]
+            [reagent.core               :as r]
+            [reagent.dom                :refer [render]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mapbox Aliases
@@ -630,7 +631,7 @@
     (let [style-chan  (u/fetch-and-process source {} (fn [res] (.json res)))
           cur-style   (get-style)
           cur-sources (->> (get cur-style "sources")
-                           (u/filterm (fn [[k _]]
+                           (u-data/filterm (fn [[k _]]
                                         (let [sname (name k)]
                                           (or (is-terrain? sname)
                                               (some? (get-layer-metadata (get-layer sname) "type")))))))

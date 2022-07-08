@@ -1,11 +1,12 @@
 (ns pyregence.components.vega
-  (:require [cljsjs.vega-embed]
-            [reagent.core    :as r]
-            [reagent.dom     :as rd]
-            [pyregence.state :as !]
-            [pyregence.utils :as u]
-            [clojure.core.async :refer [go]]
-            [cljs.core.async.interop :refer-macros [<p!]]))
+  (:require [cljs.core.async.interop    :refer-macros [<p!]]
+            [cljsjs.vega-embed]
+            [clojure.core.async         :refer [go]]
+            [pyregence.state            :as !]
+            [pyregence.utils            :as u]
+            [pyregence.utils.data-utils :as u-data]
+            [reagent.core               :as r]
+            [reagent.dom                :as rd]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -40,9 +41,9 @@
    :range  (mapv #(get % "color")    processed-legend)})
 
 (defn- layer-line-plot [units current-hour convert]
-  (let [processed-legend     (cond->> (u/filter-no-data @!/legend-list)
+  (let [processed-legend     (cond->> (u-data/filter-no-data @!/legend-list)
                                (fn? convert) (mapv #(update % "quantity" (comp str convert))))
-        processed-point-info (cond->> (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)
+        processed-point-info (cond->> (u-data/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)
                                (fn? convert) (mapv (fn [entry]
                                                      (update entry :band #(u/round-last-clicked-info (convert %)))))
                                :else         (mapv #(update % :band u/round-last-clicked-info)))

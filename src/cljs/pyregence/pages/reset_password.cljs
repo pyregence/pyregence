@@ -1,10 +1,12 @@
 (ns pyregence.pages.reset-password
-  (:require [reagent.core       :as r]
-            [clojure.core.async :refer [go <! timeout]]
-            [pyregence.utils    :as u]
-            [pyregence.styles   :as $]
+  (:require
+            [clojure.core.async             :refer [go <! timeout]]
             [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]))
+            [pyregence.components.messaging :refer [toast-message!]]
+            [pyregence.styles               :as $]
+            [pyregence.utils                :as u]
+            [pyregence.utils.data-utils     :as u-data]
+            [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -25,7 +27,7 @@
   (go
     (reset! pending? true)
     (let [errors (remove nil?
-                         [(when (u/missing-data? @email @password @re-password)
+                         [(when (u-data/missing-data? @email @password @re-password)
                             "Please fill in all the information.")
 
                           (when (< (count @password) 8)
