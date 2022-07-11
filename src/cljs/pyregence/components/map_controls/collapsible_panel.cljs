@@ -170,8 +170,7 @@
        [:label "Optional Layers"]
        [tool-tip-wrapper
         [:div {:style {:margin-bottom 0}}
-         [:p
-          "Check the boxes below to display additional layers. Options include:"
+         [:p "Check the boxes below to display additional layers. Options include:"
           [:br]
           [:br]
           [:strong "Modeled perimeter"]
@@ -186,7 +185,7 @@
           " - Microsoft building footprints."
           [:br]
           [:br]
-          [:strong "2022 perimeters"]
+          [:strong "2022 fire perimeters"]
           " - Current season fires to date."
           [:br]
           [:br]
