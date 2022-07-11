@@ -169,7 +169,7 @@
       [:div {:style {:display "flex" :justify-content "space-between"}}
        [:label "Optional Layers"]
        [tool-tip-wrapper
-        [:div  {:style {:margin-bottom 0}}
+        [:div {:style {:margin-bottom 0}}
          [:p
           "Check the boxes below to display additional layers. Options include:"
           [:br]
@@ -179,7 +179,7 @@
           [:br]
           [:br]
           [:strong "Transmission lines"]
-          " - from DHS Homeland Infrastructure Foundation Level Dataset."
+          " - From the DHS Homeland Infrastructure Foundation Level Dataset."
           [:br]
           [:br]
           [:strong "Structures"]
@@ -191,8 +191,7 @@
           [:br]
           [:br]
           [:strong "VIIRS hotspots"]
-          " - Hot spots detected by the Visible Imaging Radiometer Suite
-         sensor on the Terra and Aqua satellites - 375 m resolution."
+          " - Hot spots detected by the Visible Imaging Radiometer Suite sensor on the Terra and Aqua satellites - 375 m resolution."
           [:br]
           [:br]
           [:strong "MODIS hotspots"]
