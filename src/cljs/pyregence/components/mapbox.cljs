@@ -702,21 +702,23 @@
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
   [id]
-  (add-icon! "video-icon" "./images/video.png" true)
-  (let [new-source {id {:type       "geojson"
-                        :data       (clj->js @!/the-cameras)
-                        :generateId true}}
-        new-layers [{:id       id
-                     :source   id
-                     :type     "symbol"
-                     :layout   {:icon-image              "video-icon"
-                                :icon-rotate             ["-" ["get" "pan"] 90]
-                                :icon-rotation-alignment "map"
-                                :icon-size               0.5}
-                     :metadata {:type    (get-layer-type id)
-                                :z-index 1001}
-                     :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
-    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+  (go
+    (let [new-source {id {:type       "geojson"
+                          :data       (clj->js @!/the-cameras)
+                          :generateId true}}
+          new-layers [{:id       id
+                       :source   id
+                       :type     "symbol"
+                       :layout   {:icon-image              "video-icon"
+                                  :icon-rotate             ["-" ["get" "pan"] 90]
+                                  :icon-rotation-alignment "map"
+                                  :icon-size               0.5}
+                       :metadata {:type    (get-layer-type id)
+                                  :z-index 1001}
+                       :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]
+          icon-chan  (chan 1)]
+     (<! (add-icon! icon-chan "video-icon" "./images/video.png" true))
+     (update-style! (get-style) :new-sources new-source :new-layers new-layers))))
 
 (defn create-red-flag-layer!
   "Adds red flag warning layer to the map."
