@@ -2,7 +2,7 @@
   (:require [goog.dom            :as dom]
             [reagent.core        :as r]
             [reagent.dom         :refer [render]]
-            [clojure.core.async  :refer [go <!]]
+            [clojure.core.async  :refer [chan go >! <!]]
             [clojure.string      :as str]
             [pyregence.state     :as !]
             [pyregence.config    :as c]
@@ -213,16 +213,20 @@
                     :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
-(defn- add-icon! [icon-id url & [colorize?]]
-  (when-not (.hasImage @the-map icon-id)
-    (.loadImage @the-map
-                url
-                (fn [_ img] (.addImage @the-map
-                                       icon-id
-                                       img
-                                       (if colorize?
-                                         #js {:sdf true}
-                                         #js {}))))))
+(defn- add-icon! [icon-chan icon-id url & [colorize?]]
+  (go
+    (if (.hasImage @the-map icon-id)
+      (>! icon-chan icon-id)
+      (.loadImage @the-map
+                  url
+                  (fn [_ img]
+                    (.addImage @the-map
+                               icon-id
+                               img
+                               (if colorize?
+                                 #js {:sdf true}
+                                 #js {}))
+                    (>! icon-chan icon-id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
@@ -524,38 +528,46 @@
    ["boolean" ["feature-state" "hover"] false] hovered
    off])
 
+(defn- add-icons-to-map! []
+  (go
+    (let [icon-chan (chan 4)]
+      (add-icon! icon-chan "fire-icon-0"   "./images/Active_Fire_0.png")
+      (add-icon! icon-chan "fire-icon-50"  "./images/Active_Fire_50.png")
+      (add-icon! icon-chan "fire-icon-90"  "./images/Active_Fire_90.png")
+      (add-icon! icon-chan "fire-icon-100" "./images/Active_Fire_100.png")
+      (dotimes [_ 4]
+        (<! icon-chan)))))
+
 (defn- incident-layer [layer-name source-name opacity]
-  (add-icon! "fire-icon-0"   "./images/Active_Fire_0.png")
-  (add-icon! "fire-icon-50"  "./images/Active_Fire_50.png")
-  (add-icon! "fire-icon-90"  "./images/Active_Fire_90.png")
-  (add-icon! "fire-icon-100" "./images/Active_Fire_100.png")
-  {:id       layer-name
-   :type     "symbol"
-   :source   source-name
-   :layout   {:icon-allow-overlap true
-              :icon-image         ["step" ["get" "containper"]
-                                   "fire-icon-0"
-                                   50  "fire-icon-50"
-                                   90  "fire-icon-90"
-                                   100 "fire-icon-100"]
-              :icon-size          ["interpolate" ["linear"] ["get" "acres"]
-                                   1000   0.5
-                                   10000  0.75
-                                   300000 1.0]
-              :text-anchor        "top"
-              :text-allow-overlap true
-              :text-field         ["to-string" ["get" "prettyname"]]
-              :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
-              :text-offset        [0 0.8]
-              :text-size          16
-              :visibility         "visible"}
-   :metadata {:type    (get-layer-type layer-name)
-              :z-index 2000}
-   :paint    {:icon-opacity    opacity
-              :text-color      "#000000"
-              :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
-              :text-halo-width 1.5
-              :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}})
+  (go
+    (<! (add-icons-to-map!))
+    {:id       layer-name
+     :type     "symbol"
+     :source   source-name
+     :layout   {:icon-allow-overlap true
+                :icon-image         ["step" ["get" "containper"]
+                                     "fire-icon-0"
+                                     50  "fire-icon-50"
+                                     90  "fire-icon-90"
+                                     100 "fire-icon-100"]
+                :icon-size          ["interpolate" ["linear"] ["get" "acres"]
+                                     1000   0.5
+                                     10000  0.75
+                                     300000 1.0]
+                :text-anchor        "top"
+                :text-allow-overlap true
+                :text-field         ["to-string" ["get" "prettyname"]]
+                :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
+                :text-offset        [0 0.8]
+                :text-size          16
+                :visibility         "visible"}
+     :metadata {:type    (get-layer-type layer-name)
+                :z-index 2000}
+     :paint    {:icon-opacity    opacity
+                :text-color      "#000000"
+                :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
+                :text-halo-width 1.5
+                :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}}))
 
 (defn- build-wfs
   "Returns a new WFS source and layers in the form `[source layers]`.
