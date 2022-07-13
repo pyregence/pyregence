@@ -237,7 +237,7 @@
                               (reduce (fn [acc row]
                                         (assoc acc (:job_id row) (:display_name row)))
                                       {}))]
-    (->> (:pyrecast @layers)
+    (->> (:trinity @layers)
          (filter (fn [{:keys [forecast]}]
                    (= "fire-spread-forecast" forecast)))
          (map :fire-name)

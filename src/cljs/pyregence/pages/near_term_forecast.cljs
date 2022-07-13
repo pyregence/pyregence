@@ -144,7 +144,7 @@
                       processed-times))
     (swap! !/*params assoc-in [@!/*forecast :model-init] (ffirst processed-times))))
 
-(defn get-layers! [get-model-times?]
+(defn- get-layers! [get-model-times?]
   (go
     (let [params       (dissoc (get @!/*params @!/*forecast) (when get-model-times? :model-init))
           selected-set (or (some (fn [[key {:keys [options]}]]

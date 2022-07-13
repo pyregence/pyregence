@@ -27,35 +27,35 @@
                      :opt-label     "Structures"
                      :z-index       104
                      :filter-set    #{"fire-detections" "us-buildings"}
-                     :geoserver-key :pyrecast}})
+                     :geoserver-key :shasta}})
 
 (def near-term-forecast-underlays
   (array-map
-   :us-trans-lines  {:opt-label     "Transmission lines"
-                     :z-index       107
-                     :filter-set    #{"fire-detections" "us-transmission-lines"}
-                     :geoserver-key :pyrecast}
-   :nifs-perimeters {:opt-label     "2022 fire perimeters"
-                     :z-index       103
-                     :filter-set    #{"fire-detections" "nifs-perimeters"}
-                     :geoserver-key :pyrecast}
-   :viirs-hotspots  {:opt-label     "VIIRS hotspots"
-                     :z-index       102
-                     :filter-set    #{"fire-detections" "viirs-timestamped"}
-                     :geoserver-key :pyrecast}
-   :modis-hotspots  {:opt-label     "MODIS hotspots"
-                     :z-index       101
-                     :filter-set    #{"fire-detections" "modis-timestamped"}
-                     :geoserver-key :pyrecast}
-   :goes-imagery    {:opt-label     "Live satellite (GOES-16)"
-                     :z-index       100
-                     :filter-set    #{"fire-detections" "goes16-rgb"}
-                     :geoserver-key :pyrecast}))
+   :us-trans-lines   {:opt-label     "Transmission lines"
+                      :z-index       107
+                      :filter-set    #{"fire-detections" "us-transmission-lines"}
+                      :geoserver-key :shasta}
+   :firis-perimeters {:opt-label     "2022 fire perimeters"
+                      :z-index       103
+                      :filter-set    #{"fire-detections" "firis-perimeters"}
+                      :geoserver-key :shasta}
+   :viirs-hotspots   {:opt-label     "VIIRS hotspots"
+                      :z-index       102
+                      :filter-set    #{"fire-detections" "viirs-timestamped"}
+                      :geoserver-key :shasta}
+   :modis-hotspots   {:opt-label     "MODIS hotspots"
+                      :z-index       101
+                      :filter-set    #{"fire-detections" "modis-timestamped"}
+                      :geoserver-key :shasta}
+   :goes-imagery     {:opt-label     "Live satellite (GOES-16)"
+                      :z-index       100
+                      :filter-set    #{"fire-detections" "goes16-rgb"}
+                      :geoserver-key :shasta}))
 
 (def near-term-forecast-options
   {:fuels        {:opt-label     "Fuels"
                   :filter        "fuels"
-                  :geoserver-key :pyrecast
+                  :geoserver-key :shasta
                   :underlays     (merge common-underlays near-term-forecast-underlays)
                   :time-slider?  false
                   :hover-text    "Layers related to fuel and potential fire behavior."
@@ -77,44 +77,44 @@
                                                                 :units           ""
                                                                 :convert         #(str (u/direction %) " (" % "°)")
                                                                 :reverse-legend? false
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :slp    {:opt-label       "Slope (degrees)"
                                                                 :filter          "slp"
                                                                 :units           "\u00B0"
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :dem    {:opt-label       "Elevation (ft)"
                                                                 :filter          "dem"
                                                                 :units           "ft"
                                                                 :convert         #(u/to-precision 1 (* % 3.28084))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :cc     {:opt-label       "Canopy Cover (%)"
                                                                 :filter          "cc"
                                                                 :units           "%"
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :ch     {:opt-label       "Canopy Height (m)"
                                                                 :filter          "ch"
                                                                 :units           "m"
                                                                 :no-convert      #{:cfo}
                                                                 :convert         #(u/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :cbh    {:opt-label       "Canopy Base Height (m)"
                                                                 :filter          "cbh"
                                                                 :units           "m"
                                                                 :no-convert      #{:cfo}
                                                                 :convert         #(u/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
                                                                 :filter          "cbd"
                                                                 :units           "kg/m\u00b3"
                                                                 :convert         #(u/to-precision 2 (/ % 100))
                                                                 :no-convert      #{:cfo}
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}})}
+                                                                :disabled-for    #{:cecs}})}
                                   :model {:opt-label  "Source"
                                           :hover-text [:p {:style {:margin-bottom "0"}}
                                                        "Stock "
@@ -154,8 +154,8 @@
                                                                        :filter    "cfo-2020"}
                                                        :ca-fuelscapes {:opt-label "2022 CA fuelscape"
                                                                        :filter    "ca-2022-fuelscape"}
-                                                       :cec           {:opt-label    "CA Ecosystem Climate Solutions"
-                                                                       :filter       "cec"
+                                                       :cecs          {:opt-label    "CA Ecosystem Climate Solutions"
+                                                                       :filter       "cecs"
                                                                        :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
                                   :model-init {:opt-label  "Model Creation Time"
                                                :hover-text "Time the data was created."
@@ -224,7 +224,7 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
-                  :geoserver-key   :pyrecast
+                  :geoserver-key   :shasta
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
@@ -328,7 +328,7 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
-                  :geoserver-key   :pyrecast
+                  :geoserver-key   :trinity
                   :underlays       (merge common-underlays
                                           near-term-forecast-underlays
                                           {:isochrones {:opt-label        "Modeled perimeter"
@@ -336,7 +336,7 @@
                                                         :filter-set       #{"isochrones"}
                                                         :dependent-inputs [:fire-name :burn-pct :fuel :model :model-init]
                                                         :disabled-for     #{:active-fires :gridfire}
-                                                        :geoserver-key    :pyrecast}})
+                                                        :geoserver-key    :trinity}})
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true
@@ -345,11 +345,12 @@
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
                                                  :default-option :active-fires
-                                                 :options        {:active-fires    {:opt-label    "*All Active Fires"
-                                                                                    :style-fn     :default
-                                                                                    :filter-set   #{"fire-detections" "active-fires"}
-                                                                                    :auto-zoom?   false
-                                                                                    :time-slider? false}}}
+                                                 :options        {:active-fires    {:opt-label     "*All Active Fires"
+                                                                                    :style-fn      :default
+                                                                                    :filter-set    #{"fire-detections" "active-fires"}
+                                                                                    :auto-zoom?    false
+                                                                                    :time-slider?  false
+                                                                                    :geoserver-key :shasta}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
                                                  :options    {:burned {:opt-label       "Forecasted fire location"
