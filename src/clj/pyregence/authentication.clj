@@ -53,6 +53,13 @@
   (call-sql "update_user_info" user-id settings)
   (data-response ""))
 
+(defn update-user-name [email new-name]
+  (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
+    (do (call-sql "update_user_name" user-id new-name)
+        (data-response ""))
+    (data-response (str "There is no user with the email " email)
+                   {:status 403})))
+
 (defn get-org-list [user-id]
   (->> (call-sql "get_org_list" user-id)
        (mapv (fn [{:keys [org_id org_name email_domains auto_add auto_accept]}]

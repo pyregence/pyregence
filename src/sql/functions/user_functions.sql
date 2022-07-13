@@ -135,6 +135,17 @@ CREATE OR REPLACE FUNCTION update_user_info(
 
 $$ LANGUAGE SQL;
 
+  CREATE OR REPLACE FUNCTION update_user_name(
+    _user_id integer
+    _name
+  ) RETURNS void AS $$
+
+    UPDATE users
+    SET name = _name
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
 ---
 ---  Organizations
 ---

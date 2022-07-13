@@ -91,6 +91,11 @@
         (toast-message!
          (str (:body res)))))))
 
+(defn- update-org-user! [email new-name]
+  (go
+    (<! (u/call-clj-async! "update-user-name" email new-name))
+    (toast-message! (str "User " new-name ", with email " email  ", updated."))))
+
 (defn- update-org-user-role! [org-user-id role-id]
   (go
     (<! (u/call-clj-async! "update-org-user-role" org-user-id role-id))
@@ -129,29 +134,36 @@
 ;; Click Event Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- handle-add-user [email name password]
+(defn- handle-add-user [email user-name password]
   (let [message (str "Are you sure that you want to add the following new user\n"
                      "as a Member of the \"%s\" organization?\n\n"
                      "%s <%s>")]
     (and (when-not (blank? email) (is-valid-email? @*org-email-domains email))
-      (set-message-box-content! {:title  "Add New User"
-                                 :body   (format message @*org-name name email)
-                                 :action #(add-org-user! email name password)}))))
+         (set-message-box-content! {:title  "Add New User"
+                                    :body   (format message @*org-name user-name email)
+                                    :action #(add-org-user! email name password)}))))
 
-(defn- handle-remove-user [uid username]
+(defn- handle-edit-user [email prev-name new-name]
+  (let [message (str "Are you sure that you want to update the users' name from %s to %s?")]
+    (when-not (blank? new-name)
+      (set-message-box-content! {:title "Update User"
+                                 :body (format message prev-name new-name)
+                                 :action #(update-org-user! email new-name)}))))
+
+(defn- handle-remove-user [user-id user-name]
   (let [message "Are you sure that you want to remove user \"%s\" from the \"%s\" organization?"]
     (set-message-box-content! {:title  "Delete User"
-                               :body   (format message username @*org-name)
-                               :action #(remove-org-user! uid)})))
+                               :body   (format message user-name @*org-name)
+                               :action #(remove-org-user! user-id)})))
 
-(defn- handle-update-role-id [rid uid username]
+(defn- handle-update-role-id [rid uid user-name]
   (let [message   "Are you sure you want to change the role of user \"%s\" to \"%s\"?"
         role-name (->> roles
                        (filter (fn [role] (= rid (role :opt-id))))
                        (first)
                        (:opt-label))]
     (set-message-box-content! {:title  "Update User Role"
-                               :body   (format message username role-name)
+                               :body   (format message user-name role-name)
                                :action #(update-org-user-role! uid rid)})))
 
 (defn- handle-update-org-settings [oid org-name email-domains auto-add auto-accept]
@@ -223,13 +235,51 @@
                             (reset! newuser-name     "")
                             (reset! newuser-password ""))}]]]]))
 
+;; (defn- edit-user-name [user-id name-state edit-mode-enabled]
+;;   (r/with-let [
+;;                prev-name (r/atom @name-state)
+;;                new-name (r/atom @name-state)]
+;;     [:<>
+;;      [:input {:type "button"
+;;               :value "Cancel"
+;;               :on-click #(do (reset! new-name @prev-name)
+;;                            (reset! edit-mode false))}]
+;;      [:input {:type "button"
+;;               :value "Save"
+;;               :on-click #(do
+;;                            (handle-edit-user user-id @prev-name @new-name)
+;;                            (reset! edit-mode false))}]]))
+
 (defn- user-item [org-user-id opt-label email role-id]
-  (r/with-let [_role-id (r/atom role-id)]
+  (r/with-let [_role-id (r/atom role-id)
+               user-name (r/atom opt-label)
+               new-name (r/atom user-name)
+               edit-mode-enabled (r/atom false)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
-      [:label opt-label]
+      (if-not @edit-mode-enabled
+        [:label opt-label]
+        [labeled-input "" user-name {:disabled? (not @edit-mode-enabled)}])
       [:label email]]
      [:div {:style ($/combine ($/align :block :right) {:display "flex"})}
+      (if @edit-mode-enabled
+        [:<>
+         [:input {:class    (<class $/p-form-button)
+                  :type     "button"
+                  :value    "Cancel"
+                  :on-click #(do (reset! new-name @user-name)
+                                 (reset! edit-mode-enabled false))}]
+         [:input {:class    (<class $/p-form-button)
+                  :type     "button"
+                  :value    "Save"
+                  :on-click #(do
+                               (handle-edit-user org-user-id @user-name @new-name)
+                               (reset! edit-mode-enabled false))}]]
+        [:input {:class    (<class $/p-form-button)
+                 :type     "button"
+                 :value    "Edit User"
+                 :on-click #(reset! edit-mode-enabled (not @edit-mode-enabled))}])
+
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
