@@ -235,21 +235,6 @@
                             (reset! newuser-name     "")
                             (reset! newuser-password ""))}]]]]))
 
-;; (defn- edit-user-name [user-id name-state edit-mode-enabled]
-;;   (r/with-let [
-;;                prev-name (r/atom @name-state)
-;;                new-name (r/atom @name-state)]
-;;     [:<>
-;;      [:input {:type "button"
-;;               :value "Cancel"
-;;               :on-click #(do (reset! new-name @prev-name)
-;;                            (reset! edit-mode false))}]
-;;      [:input {:type "button"
-;;               :value "Save"
-;;               :on-click #(do
-;;                            (handle-edit-user user-id @prev-name @new-name)
-;;                            (reset! edit-mode false))}]]))
-
 (defn- user-item [org-user-id opt-label email role-id]
   (r/with-let [_role-id (r/atom role-id)
                user-name (r/atom opt-label)
