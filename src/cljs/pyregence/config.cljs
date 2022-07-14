@@ -246,8 +246,36 @@
                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm}})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
-                                                              [:strong "National Weather Service "]
-                                                              " - Operational National Weather Service forecast model."]
+                                                              [:strong "GFS 0.125\u00B0"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "GFS 0.250\u00B0"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "HRRR 3 km"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Hybrid"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM 12 km"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM 3 km"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NBM"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "RTMA"]
+                                                              " - Real Time Mesoscale Analysis Rapid Update."]
                                                  :options    {:gfs0p125      {:opt-label    "GFS 0.125\u00B0"
                                                                               :filter       "gfs0p125"
                                                                               :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
@@ -273,7 +301,7 @@
                                                                               :filter       "rtma-ru"
                                                                               :disabled-for #{:apcp :apcp01 :apcp03 :apcp06 :smoke}}}}
                                     :model-init {:opt-label  "Forecast Start Time"
-                                                 :hover-text "Start time for forecast cycle, new data comes every 6 hours."
+                                                 :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
