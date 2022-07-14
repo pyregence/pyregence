@@ -340,7 +340,7 @@
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true
-                  :hover-text      "5-day forecasts of active fires with burning areas established from satellite-based heat detection."
+                  :hover-text      "3-day forecasts of active fires with burning areas established from satellite-based heat detection."
                   :params          {:fire-name  {:opt-label      "Fire Name"
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
