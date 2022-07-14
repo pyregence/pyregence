@@ -31,26 +31,26 @@
 
 (def near-term-forecast-underlays
   (array-map
-   :us-trans-lines   {:opt-label     "Transmission lines"
-                      :z-index       107
-                      :filter-set    #{"fire-detections" "us-transmission-lines"}
-                      :geoserver-key :shasta}
-   :firis-perimeters {:opt-label     "2022 fire perimeters"
-                      :z-index       103
-                      :filter-set    #{"fire-detections" "firis-perimeters"}
-                      :geoserver-key :shasta}
-   :viirs-hotspots   {:opt-label     "VIIRS hotspots"
-                      :z-index       102
-                      :filter-set    #{"fire-detections" "viirs-timestamped"}
-                      :geoserver-key :shasta}
-   :modis-hotspots   {:opt-label     "MODIS hotspots"
-                      :z-index       101
-                      :filter-set    #{"fire-detections" "modis-timestamped"}
-                      :geoserver-key :shasta}
-   :goes-imagery     {:opt-label     "Live satellite (GOES-16)"
-                      :z-index       100
-                      :filter-set    #{"fire-detections" "goes16-rgb"}
-                      :geoserver-key :shasta}))
+   :us-trans-lines          {:opt-label     "Transmission lines"
+                             :z-index       107
+                             :filter-set    #{"fire-detections" "us-transmission-lines"}
+                             :geoserver-key :shasta}
+   :current-year-perimeters {:opt-label     "2022 fire perimeters"
+                             :z-index       103
+                             :filter-set    #{"fire-detections" "current-year-perimeters"}
+                             :geoserver-key :shasta}
+   :viirs-hotspots          {:opt-label     "VIIRS hotspots"
+                             :z-index       102
+                             :filter-set    #{"fire-detections" "viirs-timestamped"}
+                             :geoserver-key :shasta}
+   :modis-hotspots          {:opt-label     "MODIS hotspots"
+                             :z-index       101
+                             :filter-set    #{"fire-detections" "modis-timestamped"}
+                             :geoserver-key :shasta}
+   :goes-imagery            {:opt-label     "Live satellite (GOES-16)"
+                             :z-index       100
+                             :filter-set    #{"fire-detections" "goes16-rgb"}
+                             :geoserver-key :shasta}))
 
 (def near-term-forecast-options
   {:fuels        {:opt-label     "Fuels"
@@ -250,24 +250,32 @@
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."
                                                               [:br]
                                                               [:br]
+                                                              [:strong "Crown Fire Area"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "Power Line Ignition Rate"]
                                                               " - Estimated power line ignition rate."]
-                                                 :options    {:times-burned {:opt-label "Relative burn probability"
-                                                                             :filter    "times-burned"
-                                                                             :units     "Times"}
-                                                              :impacted     {:opt-label "Impacted structures"
-                                                                             :filter    "impacted-structures"
-                                                                             :units     "Structures"}
-                                                              :fire-area    {:opt-label "Fire area"
-                                                                             :filter    "fire-area"
-                                                                             :units     "Acres"}
-                                                              :fire-volume  {:opt-label "Fire volume"
-                                                                             :filter    "fire-volume"
-                                                                             :units     "Acre-ft"}
-                                                              :plignrate    {:opt-label    "Power line ignition rate"
-                                                                             :filter       "plignrate"
-                                                                             :units        "Ignitions/line-mi/hr"
-                                                                             :disabled-for #{:all :tlines}}}}
+                                                 :options    {:times-burned    {:opt-label "Relative burn probability"
+                                                                                :filter    "times-burned"
+                                                                                :units     "Times"}
+                                                              :impacted        {:opt-label "Impacted structures"
+                                                                                :filter    "impacted-structures"
+                                                                                :units     "Structures"}
+                                                              :fire-area       {:opt-label "Fire area"
+                                                                                :filter    "fire-area"
+                                                                                :units     "Acres"}
+                                                              :fire-volume     {:opt-label "Fire volume"
+                                                                                :filter    "fire-volume"
+                                                                                :units     "Acre-ft"}
+                                                              :crown-fire-area {:opt-label    "Crown fire area"
+                                                                                :filter       "crown-fire-area"
+                                                                                :units        "Acres"
+                                                                                :disabled-for #{:tlines :nve}}
+                                                              :plignrate       {:opt-label    "Power line ignition rate"
+                                                                                :filter       "plignrate"
+                                                                                :units        "Ignitions/line-mi/hr"
+                                                                                :disabled-for #{:all :tlines}}}}
                                     :pattern    {:opt-label  "Ignition Pattern"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Fires are ignited randomly across California at various times in the future so their impacts can be modeled. Patterns include:"
@@ -285,7 +293,7 @@
                                                               :tlines     {:opt-label    "Transmission lines"
                                                                            :filter       "tlines"
                                                                            :clear-point? true
-                                                                           :disabled-for #{:plignrate}}}}
+                                                                           :disabled-for #{:plignrate :crown-fire-area}}}}
                                     :fuel       {:opt-label  "Fuel"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
