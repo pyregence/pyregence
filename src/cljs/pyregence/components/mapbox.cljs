@@ -220,13 +220,14 @@
       (.loadImage @the-map
                   url
                   (fn [_ img]
-                    (.addImage @the-map
-                               icon-id
-                               img
-                               (if colorize?
-                                 #js {:sdf true}
-                                 #js {}))
-                    (>! icon-chan icon-id))))))
+                    (go
+                      (.addImage @the-map
+                                 icon-id
+                                 img
+                                 (if colorize?
+                                   #js {:sdf true}
+                                   #js {}))
+                      (>! icon-chan icon-id)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
@@ -575,9 +576,10 @@
    `z-index` allows layers to be rendered on-top (positive z-index) or below
    (negative z-index) Mapbox base map layers."
   [id source geoserver-key opacity]
-  (let [new-source {id (wfs-source source geoserver-key)}
-        new-layers [(incident-layer id id opacity)]]
-    [new-source new-layers]))
+  (go
+    (let [new-source {id (wfs-source source geoserver-key)}
+         new-layers [(<! (incident-layer id id opacity))]]
+     [new-source new-layers])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Terrain and 3D Viewing
@@ -678,15 +680,16 @@
    `style-fn` must not be nil."
   [geo-layer style-fn geoserver-key opacity css-style]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
-  (let [style  (get-style)
-        layers (hide-forecast-layers (get style "layers"))
-        [new-sources new-layers] (if (some? style-fn)
-                                   (build-wfs fire-active geo-layer geoserver-key opacity)
-                                   (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style))]
-    (update-style! style
-                   :layers      layers
-                   :new-sources new-sources
-                   :new-layers  new-layers)))
+  (go
+    (let [style  (get-style)
+         layers (hide-forecast-layers (get style "layers"))
+         [new-sources new-layers] (if (some? style-fn)
+                                    (<! (build-wfs fire-active geo-layer geoserver-key opacity))
+                                    (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style))]
+     (update-style! style
+                    :layers      layers
+                    :new-sources new-sources
+                    :new-layers  new-layers))))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map. This is currently only used to add optional layers to the map."
