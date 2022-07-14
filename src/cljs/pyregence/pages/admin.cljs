@@ -235,16 +235,16 @@
                             (reset! newuser-name     "")
                             (reset! newuser-password ""))}]]]]))
 
-(defn- user-item [org-user-id opt-label email role-id]
-  (r/with-let [_role-id (r/atom role-id)
-               user-name (r/atom opt-label)
-               new-name (r/atom user-name)
+(defn- user-item [org-user-id user-name email role-id]
+  (r/with-let [_role-id          (r/atom role-id)
+               current-name      (r/atom user-name)
+               updated-name      (r/atom user-name)
                edit-mode-enabled (r/atom false)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (if-not @edit-mode-enabled
-        [:label opt-label]
-        [labeled-input "" user-name {:disabled? (not @edit-mode-enabled)}])
+        [:label @current-name]
+        [labeled-input "" updated-name {:disabled? (not @edit-mode-enabled)}])
       [:label email]]
      [:div {:style ($/combine ($/align :block :right) {:display "flex"})}
       (if @edit-mode-enabled
@@ -252,14 +252,15 @@
          [:input {:class    (<class $/p-form-button)
                   :type     "button"
                   :value    "Cancel"
-                  :on-click #(do (reset! new-name @user-name)
+                  :on-click #(do (reset! updated-name user-name)
                                  (reset! edit-mode-enabled false))}]
          [:input {:class    (<class $/p-form-button)
                   :type     "button"
                   :value    "Save"
                   :on-click #(do
-                               (handle-edit-user org-user-id @user-name @new-name)
-                               (reset! edit-mode-enabled false))}]]
+                               (handle-edit-user email user-name @updated-name)
+                               (reset! edit-mode-enabled false)
+                               (reset! current-name @updated-name))}]]
         [:input {:class    (<class $/p-form-button)
                  :type     "button"
                  :value    "Edit User"
@@ -269,19 +270,19 @@
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Remove User"
-               :on-click #(handle-remove-user org-user-id opt-label)}]
+               :on-click #(handle-remove-user org-user-id user-name)}]
       [:select {:class     (<class $/p-bordered-input)
                 :style     {:margin "0 .25rem 0 1rem" :height "2rem"}
                 :value     @_role-id
                 :on-change #(reset! _role-id (u/input-int-value %))}
-       (map (fn [{:keys [opt-id opt-label]}]
-              [:option {:key opt-id :value opt-id} opt-label])
+       (map (fn [{role-id :opt-id role-name :opt-label}]
+              [:option {:key role-id :value role-id} role-name])
             roles)]
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Update Role"
-               :on-click #(handle-update-role-id @_role-id org-user-id opt-label)}]]]))
+               :on-click #(handle-update-role-id @_role-id org-user-id user-name)}]]]))
 
 (defn- org-users-list []
   (r/with-let [new-email (r/atom "")]
