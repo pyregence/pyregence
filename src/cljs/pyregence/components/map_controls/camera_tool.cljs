@@ -2,7 +2,7 @@
   (:require [reagent.core       :as r]
             [herb.core          :refer [<class]]
             [clojure.edn        :as edn]
-            [clojure.core.async :refer [go <!]]
+            [clojure.core.async :refer [take! go <!]]
             [pyregence.state    :as !]
             [pyregence.styles   :as $]
             [pyregence.utils    :as u]
@@ -77,8 +77,8 @@
                                                (u/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
                                                                        60000)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
-               _             (mb/create-camera-layer! "fire-cameras")
-               _             (mb/add-feature-highlight! "fire-cameras" "fire-cameras" :click-fn on-click)]
+               _             (take! (mb/create-camera-layer! "fire-cameras")
+                                    #(mb/add-feature-highlight! "fire-cameras" "fire-cameras" :click-fn on-click))]
     [:div#wildfire-camera-tool
      [resizable-window
       parent-box
