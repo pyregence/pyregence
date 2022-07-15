@@ -88,7 +88,7 @@
   (sql-primitive (call-sql "initialize_match_job" user-id)))
 
 (defn- update-match-job! [job-id {:keys [md-status display-name message elmfire-done? gridfire-done? request]}]
-  (call-sql "update_match_job" job-id md-status display-name message elmfire-done? gridfire-done? (when (some? request) (clj->json request))))
+  (call-sql "update_match_job" job-id md-status display-name message elmfire-done? gridfire-done? (when request (clj->json request))))
 
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]

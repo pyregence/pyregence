@@ -198,7 +198,7 @@
                              :headers {"Accept" "application/json, text/xml"
                                        "Content-Type" "application/json"}}
                             process-fn))
-   (when (some? loading-atom)
+   (when loading-atom
      (reset! loading-atom false))))
 
 (defn wrap-wms-errors [type response success-fn]
@@ -407,7 +407,7 @@
       (mb/clear-popup!)
       ; When we have a style-fn (which indicates a WFS layer) add the feature highlight.
       ; For now, the only dropdown layer that is WFS is the *Active Fires layer.
-      (when (some? style-fn)
+      (when style-fn
         (mb/add-feature-highlight! "fire-active" "fire-active" :click-fn init-fire-popup!))
       (get-legend! source))
     (if clear?

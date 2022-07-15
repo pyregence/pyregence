@@ -106,7 +106,7 @@
                 " here "]
             "for more information about the " (:name @active-camera) " camera."]]
 
-          (some? @image-src)
+          @image-src
           [:div
            [:div {:style {:display         "flex"
                           :justify-content "center"
