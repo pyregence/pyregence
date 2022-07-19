@@ -169,9 +169,8 @@
       [:div {:style {:display "flex" :justify-content "space-between"}}
        [:label "Optional Layers"]
        [tool-tip-wrapper
-        [:div  {:style {:margin-bottom 0}}
-         [:p
-          "Check the boxes below to display additional layers. Options include:"
+        [:div {:style {:margin-bottom 0}}
+         [:p "Check the boxes below to display additional layers. Options include:"
           [:br]
           [:br]
           [:strong "Modeled perimeter"]
@@ -179,20 +178,19 @@
           [:br]
           [:br]
           [:strong "Transmission lines"]
-          " - from DHS Homeland Infrastructure Foundation Level Dataset."
+          " - From the DHS Homeland Infrastructure Foundation Level Dataset."
           [:br]
           [:br]
           [:strong "Structures"]
           " - Microsoft building footprints."
           [:br]
           [:br]
-          [:strong "2022 perimeters"]
+          [:strong "2022 fire perimeters"]
           " - Current season fires to date."
           [:br]
           [:br]
           [:strong "VIIRS hotspots"]
-          " - Hot spots detected by the Visible Imaging Radiometer Suite
-         sensor on the Terra and Aqua satellites - 375 m resolution."
+          " - Hot spots detected by the Visible Imaging Radiometer Suite sensor on the Terra and Aqua satellites - 375 m resolution."
           [:br]
           [:br]
           [:strong "MODIS hotspots"]

@@ -30,7 +30,7 @@
   (reset! camera-cache cameras))
 
 (defn- valid-cache? []
-  (and (some? @camera-cache)
+  (and @camera-cache
        (< (- (System/currentTimeMillis) @cached-time) cache-max-age)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
