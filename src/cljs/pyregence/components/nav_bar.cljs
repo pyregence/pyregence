@@ -7,13 +7,8 @@
   []
   {:display         "flex"
    :justify-content "center"
-   :padding         "4px"
+   :align-items     "center"
    :width           "100%"})
-
-(defn- $nav-bar-container
-  []
-  {:display "flex"
-   :margin  "0px 10px"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
@@ -23,6 +18,5 @@
   "Defines the horizontal navigation component for the application"
   [props]
   [:nav {:style ($/combine $nav-bar {:background ($/color-picker :yellow)})}
-   [:div {:style ($nav-bar-container)}
-    [forecast-tabs props]
-    [login-menu props]]])
+   [forecast-tabs props]
+   [login-menu props]])
