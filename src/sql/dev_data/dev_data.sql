@@ -44,7 +44,6 @@ INSERT INTO organization_users
 VALUES
     (1, 1, 1),
     (1, 2, 2),
-    (1, 22, 1),
     (2, 12, 1),
     (2, 14, 3),
     (2, 17, 2),
