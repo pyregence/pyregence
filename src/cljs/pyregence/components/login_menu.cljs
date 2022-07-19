@@ -8,7 +8,7 @@
 (defn login-menu
   "A login and logout navigation menu item"
   [{:keys [is-admin? logged-in? mobile?]}]
-  [:div {:style {:position "absolute" :right "3rem" :top ".5rem"}}
+  [:div {:style {:position "absolute" :right "3rem" :top ".2rem"}}
    (when-not mobile?
      (if logged-in?
        [:div {:style {:align-items "center" :display "flex"}}
