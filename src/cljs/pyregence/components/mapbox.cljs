@@ -529,7 +529,7 @@
    ["boolean" ["feature-state" "hover"] false] hovered
    off])
 
-(defn- add-icons-to-map! []
+(defn- add-fire-icons-to-map! []
   (go
     (let [icon-chan (chan 4)]
       (add-icon! icon-chan "fire-icon-0"   "./images/Active_Fire_0.png")
@@ -541,7 +541,7 @@
 
 (defn- incident-layer [layer-name source-name opacity]
   (go
-    (<! (add-icons-to-map!))
+    (<! (add-fire-icons-to-map!))
     {:id       layer-name
      :type     "symbol"
      :source   source-name
@@ -578,7 +578,7 @@
   [id source geoserver-key opacity]
   (go
     (let [new-source {id (wfs-source source geoserver-key)}
-         new-layers [(<! (incident-layer id id opacity))]]
+          new-layers [(<! (incident-layer id id opacity))]]
      [new-source new-layers])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -681,15 +681,15 @@
   [geo-layer style-fn geoserver-key opacity css-style]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (go
-    (let [style  (get-style)
-         layers (hide-forecast-layers (get style "layers"))
-         [new-sources new-layers] (if (some? style-fn)
-                                    (<! (build-wfs fire-active geo-layer geoserver-key opacity))
-                                    (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style))]
-     (update-style! style
-                    :layers      layers
-                    :new-sources new-sources
-                    :new-layers  new-layers))))
+    (let [style                    (get-style)
+          layers                   (hide-forecast-layers (get style "layers"))
+          [new-sources new-layers] (if (some? style-fn)
+                                     (<! (build-wfs fire-active geo-layer geoserver-key opacity))
+                                     (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style))]
+      (update-style! style
+                     :layers      layers
+                     :new-sources new-sources
+                     :new-layers  new-layers))))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map. This is currently only used to add optional layers to the map."
