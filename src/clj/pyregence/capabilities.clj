@@ -131,7 +131,7 @@
   (let [xml-response (-> (get-config :geoserver geoserver-key)
                          (u/end-with "/")
                          (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
-                              (when (some? workspace-name)
+                              (when workspace-name
                                 (str "&NAMESPACE=" workspace-name)))
                          (client/get)
                          (:body))]
