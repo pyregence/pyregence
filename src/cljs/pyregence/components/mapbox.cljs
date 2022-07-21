@@ -77,7 +77,8 @@
 (defn- get-style
   "Returns the Mapbox style object."
   []
-  (-> @the-map .getStyle (js->clj)))
+  (when @the-map
+    (-> @the-map .getStyle (js->clj))))
 
 (defn- index-of
   "Returns first index of item in collection that matches predicate."
