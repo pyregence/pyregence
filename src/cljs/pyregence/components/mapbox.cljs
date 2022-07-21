@@ -77,7 +77,8 @@
 (defn- get-style
   "Returns the Mapbox style object."
   []
-  (-> @the-map .getStyle (js->clj)))
+  (when @the-map
+    (-> @the-map .getStyle (js->clj))))
 
 (defn- index-of
   "Returns first index of item in collection that matches predicate."
@@ -102,7 +103,7 @@
 (defn layer-exists?
   "Returns true if the layer with matching id exists."
   [id]
-  (some? (get-layer id)))
+  (get-layer id))
 
 (defn get-distance-meters
   "Returns distance in meters between center of the map and 100px to the right.
@@ -166,7 +167,7 @@
 (defn center-on-overlay!
   "Centers the map on the marker."
   []
-  (when (some? @the-marker)
+  (when @the-marker
     (set-center! (.getLngLat @the-marker) 12.0)))
 
 (defn set-center-my-location!
@@ -180,7 +181,7 @@
 (defn resize-map!
   "Resizes the map."
   []
-  (when (some? @the-map)
+  (when @the-map
     (.resize @the-map)))
 
 (defn- upsert-layer
@@ -231,14 +232,14 @@
 (defn get-overlay-center
   "Returns marker lng/lat coordinates in the form `[lng lat]`."
   []
-  (when (some? @the-marker)
+  (when @the-marker
     (-> @the-marker .getLngLat .toArray (js->clj))))
 
 (defn get-overlay-bbox
   "Converts marker lng/lat coordinates to EPSG:3857, finds the current
    resolution and returns a bounding box."
   []
-  (when (some? @the-marker)
+  (when @the-marker
     (let [[lng lat] (get-overlay-center)
           [x y]     (g/EPSG:4326->3857 [lng lat])
           zoom      (get (get-zoom-info) 0)
@@ -248,7 +249,7 @@
 (defn clear-point!
   "Removes marker from the map."
   []
-  (when (some? @the-marker)
+  (when @the-marker
     (.remove @the-marker)
     (reset! the-marker nil)))
 
@@ -274,7 +275,7 @@
 (defn clear-popup!
   "Remove a popup from the map."
   [& [popup-type]]
-  (when (and (some? @the-popup)
+  (when (and @the-popup
              (or (nil? popup-type)
                  (= popup-type (.. @the-popup -options -type))))
     (.remove @the-popup)
@@ -312,7 +313,7 @@
   "Removes the listener for function `f`."
   [f]
   (let [{:keys [event layer func]} (get @events (hash f))]
-    (if (some? layer)
+    (if layer
       (.off @the-map event layer func)
       (.off @the-map event func))
     (swap! events dissoc (hash f))))
@@ -348,7 +349,7 @@
   (when-let [id (get-in @feature-state [source state-tag])]
     (.setFeatureState @the-map
                       (clj->js (merge {:source source :id id}
-                                      (when (some? source-layer) {:sourceLayer source-layer})))
+                                      (when source-layer {:sourceLayer source-layer})))
                       (clj->js {state-tag false}))
     (swap! feature-state assoc-in [source state-tag] nil)))
 
@@ -359,7 +360,7 @@
   (swap! feature-state assoc-in [source state-tag] feature-id)
   (.setFeatureState @the-map
                     (clj->js (merge {:source source :id feature-id}
-                                    (when (some? source-layer) {:sourceLayer source-layer})))
+                                    (when source-layer {:sourceLayer source-layer})))
                     (clj->js {state-tag true})))
 
 (defn add-feature-highlight!
@@ -466,7 +467,7 @@
         layers     (get style "layers")
         visibility (if visible? "visible" "none")
         new-layers (mapv (fn [layer]
-                           (if (some? (re-find pattern (get layer "id")))
+                           (if (re-find pattern (get layer "id"))
                              (assoc-in layer ["layout" "visibility"] visibility)
                              layer))
                          layers)]
@@ -633,9 +634,9 @@
                            (u/filterm (fn [[k _]]
                                         (let [sname (name k)]
                                           (or (is-terrain? sname)
-                                              (some? (get-layer-metadata (get-layer sname) "type")))))))
+                                              (get-layer-metadata (get-layer sname) "type"))))))
           cur-layers  (->> (get cur-style "layers")
-                           (filter #(some? (get-layer-metadata % "type"))))
+                           (filter #(get-layer-metadata % "type")))
           new-style   (-> (<! style-chan)
                           (js->clj))]
       (update-style! cur-style
@@ -668,7 +669,7 @@
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
         layers (hide-forecast-layers (get style "layers"))
-        [new-sources new-layers] (if (some? style-fn)
+        [new-sources new-layers] (if style-fn
                                    (build-wfs fire-active geo-layer geoserver-key opacity)
                                    (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style))]
     (update-style! style

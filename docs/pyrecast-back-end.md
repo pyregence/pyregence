@@ -12,10 +12,12 @@ In particular, it is responsible for parsing the massive XML response from the W
 
 [`GetCapabilities`](https://docs.geoserver.org/latest/en/user/services/wms/reference.html#getcapabilities) is an operation that requests information about each of the layers that we have registered on a GeoServer instance.
 This is the entry point from GeoServer to Pyrecast.
-An example `GetCapabilities` request that we make to the `data` GeoServer instance is the following:
+An example `GetCapabilities` request that we make to the `shasta` GeoServer instance is the following:
+
 ```
-https://data.pyregence.org/geoserver/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities
+https://shasta.pyregence.org/geoserver/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities
 ```
+
 The above request will return a large XML response.
 Among other things, the most basic information that we get from this request pertains to individual layers.
 For example, the below `<Layer>` entry gives us information on the Landfire 2.0.0 Fire Behavior Fuel Model 40 (fbfm40) layer.
@@ -45,7 +47,7 @@ For example, the below `<Layer>` entry gives us information on the Landfire 2.0.
         <Title>fbfm40-css</Title>
         <LegendURL width="67" height="1055">
             <Format>image/png</Format>
-            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.pyregence.org/geoserver/ows?service=WMS&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=fuels-and-topography_landfire-2.0.0%3Afbfm40"/>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://shasta.pyregence.org/geoserver/ows?service=WMS&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=fuels-and-topography_landfire-2.0.0%3Afbfm40"/>
         </LegendURL>
     </Style>
 </Layer>
@@ -62,19 +64,20 @@ Each keyword in the `layers` atom will match up with the same keyword in the `:g
 For example, here is what `config.edn` might look like:
 
 ```clojure
-:geoserver {:pyrecast    "https://data.pyregence.org/geoserver"
+:geoserver {:trinity     "https://trinity.pyregence.org/geoserver"
             :pyreclimate "https://climate.pyregence.org/geoserver"}
 ```
 
 And here is what the `layers` atom might look like after it is populated by a call to `GetCapabilities`:
+
 ```clojure
-{:pyrecast    [{:hour        0
-                :workspace   "fire-detections_activefires"
+{:trinity     [{:hour        0
+                :workspace   "fire-detections_active-fires"
                 :layer-group ""
                 :forecast    "fire-detections"
                 :type        "active-fires"
                 :model-init  "20220504_132700"
-                :layer       "fire-detections_activefires:active-fires_20220504_132700"
+                :layer       "fire-detections_active-fires:active-fires_20220504_132700"
                 :extent      ["-108.492" "32.933" "-105.037""36.244"]
                 :filter-set  #{"20220504_132700" "fire-detections" "active-fires"}}
                {:hour 1 ;... }
@@ -103,19 +106,21 @@ And here is what the `layers` atom might look like after it is populated by a ca
 But how do we go from the raw XML returned from `GetCapabilities` to the populated `layers` atom that we see above?
 
 The steps are as follows:
+
 1. The `set-all-capabilities!` function is called when the Pyrecast back-end server starts (in `server.clj`).
 2. `set-all-capabilities!` calls `set-capabilities!` on each `geoserver-key` that exists in `config.edn`.
-In our example `config.edn` above, that would be `:pyrecast` and `:pyreclimate`.
+   In our example `config.edn` above, that would be `:trinity` and `:pyreclimate`.
 3. `set-capabilities!` eventually populates the `layers` atom through the use of a function called `process-layers!`.
 4. `process-layers!` is where we finally call `GetCapabilities` and where the resulting XML is parsed.
-We use regex and string parsing to determine which type of layer we are dealing with.
-In particular, we look at the `<Name>` of a layer (as specified on GeoServer).
-Based on specific naming conventions, we are able to tell which type of layer we are dealing with and thus are able to populate the `layers` atom appropriately.
+   We use regex and string parsing to determine which type of layer we are dealing with.
+   In particular, we look at the `<Name>` of a layer (as specified on GeoServer).
+   Based on specific naming conventions, we are able to tell which type of layer we are dealing with and thus are able to populate the `layers` atom appropriately.
 
 Let's look at an example of how `process-layers!` works using the XML from before.
 If we look for just the name of the layer in the `GetCapabilities` XML, we see the following: `<Name>fuels-and-topography_landfire-2.0.0:fbfm40</Name>`.
 Inside of the `process-layers!` `cond` function, we can see that the `(str/starts-with? full-name "fuels")` check will be hit.
 This means that we will call `(split-fuels "fuels-and-topography_landfire-2.0.0:fbfm40")` and will thus populate one of the layers in the `layers` atom with:
+
 ```clojure
 {:workspace   "fuels-and-topography_landfire-2.0.0"
  :layer-group ""
@@ -152,7 +157,6 @@ The `/src/cljs/pyregence/utils.cljs` file conveniently makes a function named `c
 This function calls a given back-end function—as specified by a string that is the same as the desired function in `remote_api.clj/name->fn`—and returns a go block containing the function's response.
 It does so by making a remote call to the back-end using the `/clj/<function-name>` pattern showed above.
 There are many examples of calling `call-clj-async` throughout the front-end which are useful to look at to understand all of the different ways it can be used.
-
 
 ## Tying it all together
 
