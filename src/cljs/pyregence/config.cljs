@@ -162,7 +162,7 @@
                                                :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-weather {:opt-label       "Weather"
                   :filter          "fire-weather-forecast"
-                  :geoserver-key   :pyrecast
+                  :geoserver-key   :shasta
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
@@ -189,38 +189,119 @@
                                                               :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                        :filter    "ffwi"
                                                                        :units     ""}
+                                                              :meq    {:opt-label "Fine dead fuel moisture (%)"
+                                                                       :filter    "meq"
+                                                                       :units     "%"}
+                                                              :pign   {:opt-label "Firebrand ignition probability"
+                                                                       :filter    "pign"
+                                                                       :units     "%"}
                                                               :rh     {:opt-label "Relative humidity (%)"
                                                                        :filter    "rh"
                                                                        :units     "%"}
+                                                              :wd     {:opt-label       "Wind direction"
+                                                                       :filter          "wd"
+                                                                       :units           "\u00B0"
+                                                                       :reverse-legend? false}
                                                               :ws     {:opt-label "Sustained wind speed (mph)"
                                                                        :filter    "ws"
                                                                        :units     "mph"}
                                                               :wg     {:opt-label "Wind gust (mph)"
                                                                        :filter    "wg"
                                                                        :units     "mph"}
-                                                              :apcp01 {:opt-label "1-hour precipitation (in)"
-                                                                       :filter    "apcp01"
-                                                                       :units     "inches"
-                                                                       :convert   #(u/to-precision 2 (* % 0.03937007874))}
-                                                              :meq    {:opt-label "Fine dead fuel moisture (%)"
-                                                                       :filter    "meq"
-                                                                       :units     "%"}
-                                                              :vpd    {:opt-label "Vapor pressure deficit (hPa)"
-                                                                       :filter    "vpd"
-                                                                       :units     "hPa"}
-                                                              :hdw    {:opt-label "Hot-Dry-Windy Index (hPa*m/s)"
-                                                                       :filter    "hdw"
-                                                                       :units     "hPa*m/s"}
-                                                              :smoke  {:opt-label "Smoke density (\u00b5g/m\u00b3)"
-                                                                       :filter    "smoke"
-                                                                       :units     "\u00b5g/m\u00b3"})}
+                                                              :apcp   {:opt-label    "Accumulated precipitation (in)"
+                                                                       :filter       "apcp"
+                                                                       :units        "inches"
+                                                                       :convert      #(u/to-precision 2 (* % 0.03937007874))
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :rtma-ru}}
+                                                              :apcp01 {:opt-label    "1-hour precipitation (in)"
+                                                                       :filter       "apcp01"
+                                                                       :units        "inches"
+                                                                       :convert      #(u/to-precision 2 (* % 0.03937007874))
+                                                                       :disabled-for #{:gfs0p25 :nam-awip12 :nbm :rtma-ru}}
+                                                              :apcp03 {:opt-label    "3-hour precipitation (in)"
+                                                                       :filter       "apcp03"
+                                                                       :units        "inches"
+                                                                       :convert      #(u/to-precision 2 (* % 0.03937007874))
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-conusnest :nbm :rtma-ru}}
+                                                              :apcp06 {:opt-label    "6-hour precipitation (in)"
+                                                                       :filter       "apcp06"
+                                                                       :units        "inches"
+                                                                       :convert      #(u/to-precision 2 (* % 0.03937007874))
+                                                                       :disabled-for #{:gfs0p125 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}}
+                                                              :vpd    {:opt-label    "Vapor pressure deficit (hPa)"
+                                                                       :filter       "vpd"
+                                                                       :units        "hPa"
+                                                                       :disabled-for #{:nbm}}
+                                                              :hdw    {:opt-label    "Hot-Dry-Windy Index (hPa*m/s)"
+                                                                       :filter       "hdw"
+                                                                       :units        "hPa*m/s"
+                                                                       :disabled-for #{:nbm}}
+                                                              :smoke  {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
+                                                                       :filter       "smoke"
+                                                                       :units        "\u00b5g/m\u00b3"
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}}
+                                                              :tcdc   {:opt-label    "Total cloud cover"
+                                                                       :filter       "tcdc"
+                                                                       :units        "%"
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm}})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
-                                                              [:strong "National Weather Service "]
-                                                              " - Operational National Weather Service forecast model."]
-                                                 :options    {:nws {:opt-label "National Weather Service"}}}
+                                                              [:strong "GFS 0.125\u00B0"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "GFS 0.250\u00B0"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "HRRR 3 km"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Hybrid"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM 12 km"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM 3 km"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NBM"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "RTMA"]
+                                                              " - Real Time Mesoscale Analysis Rapid Update."]
+                                                 :options    {:gfs0p125      {:opt-label    "GFS 0.125\u00B0"
+                                                                              :filter       "gfs0p125"
+                                                                              :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
+                                                              :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
+                                                                              :filter       "gfs0p25"
+                                                                              :disabled-for #{:apcp :apcp01 :apcp03 :smoke :tcdc}}
+                                                              :hrrr          {:opt-label    "HRRR 3 km"
+                                                                              :filter       "hrrr"
+                                                                              :disabled-for #{:apcp03 :apcp06 :tcdc}}
+                                                              :hybrid        {:opt-label    "Hybrid"
+                                                                              :filter       "hybrid"
+                                                                              :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
+                                                              :nam-awip12    {:opt-label    "NAM 12 km"
+                                                                              :filter       "nam-awip12"
+                                                                              :disabled-for #{:apcp :apcp01 :apcp06 :smoke :tcdc}}
+                                                              :nam-conusnest {:opt-label    "NAM 3 km"
+                                                                              :filter       "nam-conusnest"
+                                                                              :disabled-for #{:apcp03 :apcp06 :smoke :tcdc}}
+                                                              :nbm           {:opt-label    "NBM"
+                                                                              :filter       "nbm"
+                                                                              :disabled-for #{:apcp01 :apcp03 :apcp06 :hdw :smoke :tcdc :vpd}}
+                                                              :rtma-ru       {:opt-label    "RTMA"
+                                                                              :filter       "rtma-ru"
+                                                                              :disabled-for #{:apcp :apcp01 :apcp03 :apcp06 :smoke}}}}
                                     :model-init {:opt-label  "Forecast Start Time"
-                                                 :hover-text "Start time for forecast cycle, new data comes every 6 hours."
+                                                 :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"

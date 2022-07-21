@@ -151,7 +151,7 @@
                                            (vec))
                             merge-fn  #(merge % {:layer full-name :extent coords})]
                         (cond
-                          (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
+                          (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (or (str/includes? full-name "isochrones")
