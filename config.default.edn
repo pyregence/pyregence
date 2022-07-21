@@ -18,7 +18,6 @@
                      :structures   true
                      :gridfire     false}
  :geoserver         {; :psps        "https://energy.pyregence.org:8443/geoserver"
-                     :pyrecast    "https://data.pyregence.org/geoserver"
                      :pyreclimate "https://climate.pyregence.org/geoserver"
                      :shasta      "https://shasta.pyregence.org/geoserver"
                      :trinity     "https://trinity.pyregence.org/geoserver"}
