@@ -722,7 +722,7 @@
                    :is-admin?            (> (count @!/user-org-list) 0)
                    :logged-in?           user-id
                    :mobile?              @!/mobile?
-                   :admin-list           @!/user-org-list
+                   :user-org-list        @!/user-org-list
                    :select-forecast!     select-forecast!
                    :user-id              user-id}]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
