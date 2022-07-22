@@ -217,17 +217,17 @@
                           @*org-auto-accept?)}]]]])
 
 (defn- org-user-add-form []
-  (r/with-let [newuser-name     (r/atom "")
-               newuser-password (r/atom "")
-               newuser-email    (r/atom "")]
+  (r/with-let [newuser-email    (r/atom "")
+               newuser-name     (r/atom "")
+               newuser-password (r/atom "")]
     [:div {:style ($/combine $/action-box {:margin-top "2rem"})}
      [:div {:style ($/action-header)}
       [:label {:style ($/padding "1px" :l)} "Add User"]]
      [:div {:style {:overflow "auto"}}
       [:form#add-user-form {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
-       [labeled-input "Name" newuser-name]
-       [labeled-input "Password" newuser-password {:type "password"}]
        [labeled-input "Email" newuser-email]
+       [labeled-input "Full Name"  newuser-name]
+       [labeled-input "Password" newuser-password {:type "password"}]
        [:input {:class    (<class $/p-form-button :large)
                 :style    ($/combine ($/align :block :center) {:margin-top "0.5rem"})
                 :type     "button"
