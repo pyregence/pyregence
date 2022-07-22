@@ -82,7 +82,7 @@
     (get-org-list)
     (toast-message! "Organization info updated.")))
 
-(defn- add-org-user! [email name password]
+(defn- add-new-user! [email name password]
   (go
     (let [res (<! (u/call-clj-async! "add-new-user" email name password))]
       (if (:success res)
@@ -90,6 +90,14 @@
             (toast-message! (str "User " name ", with email " email  ", added.")))
         (toast-message!
          (str (:body res)))))))
+
+(defn- add-existing-user! [email]
+  (go
+    (let [res (<! (u/call-clj-async! "add-org-user" @*org-id email))]
+      (if (:success res)
+        (do (get-org-users-list @*org-id)
+            (toast-message! (str "User " email " added.")))
+        (toast-message! (:body res))))))
 
 (defn- update-org-user-role! [org-user-id role-id]
   (go
@@ -129,14 +137,21 @@
 ;; Click Event Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- handle-add-user [email name password]
+(defn- handle-add-user [email user-name password]
   (let [message (str "Are you sure that you want to add the following new user\n"
                      "as a Member of the \"%s\" organization?\n\n"
                      "%s <%s>")]
     (and (when-not (blank? email) (is-valid-email? @*org-email-domains email))
       (set-message-box-content! {:title  "Add New User"
-                                 :body   (format message @*org-name name email)
-                                 :action #(add-org-user! email name password)}))))
+                                 :body   (format message @*org-name user-name email)
+                                 :action #(add-new-user! email user-name password)}))))
+
+(defn- handle-add-existing-user [email]
+  (let [message "Are you sure that you want to add the user with email \"%s\" as a Member of the \"%s\" organization?"]
+    (when-not (blank? email)
+      (set-message-box-content! {:title "Add Existing User"
+      :body   (format message email @*org-name)
+      :action #(add-existing-user! email)}))))
 
 (defn- handle-remove-user [uid username]
   (let [message "Are you sure that you want to remove user \"%s\" from the \"%s\" organization?"]
@@ -249,13 +264,23 @@
                :on-click #(handle-update-role-id @_role-id org-user-id opt-label)}]]]))
 
 (defn- org-users-list []
-  (r/with-let [new-email (r/atom "")]
+  (r/with-let [existing-email (r/atom "")]
     [:div#org-users {:style {:margin-top "2rem"}}
      [:div {:style ($/action-box)}
       [:div {:style ($/action-header)}
        [:label {:style ($/padding "1px" :l)} "Users"]]
       [:div {:style {:overflow "auto"}}
        [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
+        [:div {:style {:align-items "flex-end" :display "flex"}}
+         [labeled-input "Existing User Email Address" existing-email]
+         [:input {:class    (<class $/p-form-button)
+                  :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
+                  :type     "button"
+                  :value    "Add User"
+                  :on-click (fn []
+                              (handle-add-existing-user @existing-email)
+                              (reset! existing-email ""))}]]
+        [:hr]
         (doall (map (fn [{:keys [opt-id opt-label email role-id]}]
                       ^{:key opt-id}
                       [user-item opt-id opt-label email role-id])
