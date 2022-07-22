@@ -535,19 +535,6 @@
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $app-header []
-  {:align-items     "center"
-   :display         "flex"
-   :justify-content "center"
-   :position        "relative"
-   :width           "100%"})
-
-(defn $forecast-label [selected?]
-  (merge
-   {:cursor "pointer"
-    :margin "0 1rem 0 1rem"}
-   (when selected? {:color "white"})))
-
 (defn $control-layer []
   {:height   "100%"
    :position "absolute"
@@ -735,7 +722,7 @@
                    :is-admin?            (> (count @!/user-org-list) 0)
                    :logged-in?           user-id
                    :mobile?              @!/mobile?
-                   :org-list-where-admin @!/user-org-list
+                   :admin-list           @!/user-org-list
                    :select-forecast!     select-forecast!
                    :user-id              user-id}]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
