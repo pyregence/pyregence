@@ -1,22 +1,12 @@
 (ns pyregence.pages.near-term-forecast
-  (:require [reagent.core :as r]
-            [reagent.dom  :as rd]
-            [herb.core    :refer [<class]]
-            [cognitect.transit :as t]
-            [clojure.edn        :as edn]
-            [clojure.spec.alpha :as s]
-            [clojure.string     :as str]
-            [clojure.core.async :refer [go <!]]
-            [cljs.core.async.interop :refer-macros [<p!]]
-            [pyregence.state  :as !]
-            [pyregence.styles :as $]
-            [pyregence.utils  :as u]
-            [pyregence.config :as c]
-            [pyregence.components.mapbox    :as mb]
-            [pyregence.components.popups    :refer [fire-popup]]
-            [pyregence.components.common    :refer [tool-tip-wrapper]]
-            [pyregence.components.messaging :refer [message-box-modal toast-message!]]
-            [pyregence.components.svg-icons :as svg]
+  (:require [cljs.core.async.interop                             :refer-macros [<p!]]
+            [clojure.core.async                                  :refer [go <!]]
+            [clojure.edn                                         :as edn]
+            [clojure.spec.alpha                                  :as s]
+            [clojure.string                                      :as str]
+            [cognitect.transit                                   :as t]
+            [herb.core                                           :refer [<class]]
+            [pyregence.components.common                         :refer [tool-tip-wrapper]]
             [pyregence.components.map-controls.camera-tool       :refer [camera-tool]]
             [pyregence.components.map-controls.collapsible-panel :refer [collapsible-panel]]
             [pyregence.components.map-controls.information-tool  :refer [information-tool]]
@@ -26,7 +16,18 @@
             [pyregence.components.map-controls.scale-bar         :refer [scale-bar]]
             [pyregence.components.map-controls.time-slider       :refer [time-slider]]
             [pyregence.components.map-controls.tool-bar          :refer [tool-bar]]
-            [pyregence.components.map-controls.zoom-bar          :refer [zoom-bar]]))
+            [pyregence.components.map-controls.zoom-bar          :refer [zoom-bar]]
+            [pyregence.components.mapbox                         :as mb]
+            [pyregence.components.messaging                      :refer [message-box-modal toast-message!]]
+            [pyregence.components.popups                         :refer [fire-popup]]
+            [pyregence.components.svg-icons                      :as svg]
+            [pyregence.config                                    :as c]
+            [pyregence.state                                     :as !]
+            [pyregence.styles                                    :as $]
+            [pyregence.utils                                     :as u]
+            [pyregence.utils.data-utils                          :as u-data]
+            [reagent.core                                        :as r]
+            [reagent.dom                                         :as rd]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec
@@ -131,7 +132,7 @@
   "Updates the necessary atoms based on the given model-times. This updates the
    :model-init values for each tab in config.cljs that are initially set to 'Loading...'"
   [model-times]
-  (let [processed-times (into (u/reverse-sorted-map)
+  (let [processed-times (into (u-data/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
                                       {:opt-label (u/time-zone-iso-date utc-time @!/show-utc?)
@@ -263,7 +264,7 @@
 (defn- get-legend!
   "Makes a call to GetLegendGraphic and passes the resulting JSON to process-legend!"
   [layer]
-  (when (u/has-data? layer)
+  (when (u-data/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url layer
                             (get-any-level-key :geoserver-key)
@@ -341,7 +342,7 @@
         single?             (str/blank? layer-group)
         layer               (if single? layer-name layer-group)
         process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
-    (when-not (u/missing-data? layer point-info)
+    (when-not (u-data/missing-data? layer point-info)
       (reset! !/point-info-loading? true)
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
@@ -463,7 +464,7 @@
   (swap! !/processed-params  #(update-in %
                                        [:model-init :options]
                                        (fn [options]
-                                         (u/mapm (fn [[k {:keys [utc-time] :as v}]]
+                                         (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
                                                    [k (assoc v
                                                              :opt-label
                                                              (u/time-zone-iso-date utc-time @!/show-utc?))])
@@ -476,7 +477,7 @@
               (get-in oc [forecast :params])
               (keys oc)
               (select-keys params oc)
-              (u/mapm (fn [[k v]] [k (keyword v)]) oc))})
+              (u-data/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
 ;;; Capabilities
 (defn process-capabilities! [fire-names user-layers options-config]
@@ -493,11 +494,11 @@
               (update-in [:active-fire :params :fire-name :options]
                          merge
                          fire-names)))
-  (reset! !/*params (u/mapm
+  (reset! !/*params (u-data/mapm
                      (fn [[forecast _]]
                        (let [params           (get-in @!/capabilities [forecast :params])
                              selected-options (params->selected-options options-config @!/*forecast params)]
-                         [forecast (merge (u/mapm (fn [[k v]]
+                         [forecast (merge (u-data/mapm (fn [[k v]]
                                                     [k (or (get-in selected-options [forecast k])
                                                            (:default-option v)
                                                            (ffirst (:options v)))])

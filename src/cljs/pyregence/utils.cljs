@@ -419,28 +419,6 @@
     (- (.getTime js-date) (.getTime js-date-opt))
     (- (.getTime (js/Date.)) (.getTime js-date))))
 
-;;; ->map HOF
-
-(defn mapm
-  "A version of `map` that uses transients."
-  [f coll]
-  (persistent!
-   (reduce (fn [acc cur]
-             (conj! acc (f cur)))
-           (transient {})
-           coll)))
-
-(defn filterm
-  "A version of `filter` that uses transients."
-  [f coll]
-  (persistent!
-   (reduce (fn [acc cur]
-             (if (f cur)
-               (conj! acc cur)
-               acc))
-           (transient {})
-           coll)))
-
 ;;; Colors
 
 (defn- to-hex-str [num]
@@ -467,26 +445,6 @@
 
 ;;; Misc Functions
 
-(defn- no-data? [x]
-  (or
-   (and (number? x) (.isNaN js/Number x))
-   (and (string? x)
-        (re-matches #"\d{4,}-\d{2}-\d{2}" x)
-        (not (< 1990 (js/parseInt (first (str/split x #"-"))) 2200)))
-   (and (string? x) (str/blank? x))
-   (and (coll?   x) (empty? x))
-   (nil? x)))
-
-(defn has-data?
-  "Checks if an input of any type has data."
-  [x]
-  (not (no-data? x)))
-
-(defn missing-data?
-  "Checks if an input of any type is missing specific data."
-  [& args]
-  (some no-data? args))
-
 (defn- is-numeric? [v]
   (if (string? v)
     (re-matches #"^-?([\d]+[\d\,]*\.*[\d]+)$|^-?([\d]+)$" v)
@@ -509,18 +467,6 @@
     (if asc
       (compare sort-x sort-y)
       (compare sort-y sort-x))))
-
-(defn find-key-by-id
-  "Finds the value of a key by id if one exists."
-  ([coll id]
-   (find-key-by-id coll id :opt-label))
-  ([coll id k]
-   (some #(when (= (:opt-id %) id) (get % k)) coll)))
-
-(defn find-by-id
-  "Finds the value of a specific id if one exists."
-  [coll id]
-  (some #(when (= (:opt-id %) id) %) coll))
 
 (defn try-js-aget
   "Trys to call `aget` on the specified object."
@@ -558,11 +504,6 @@
     (.select))
   (js/document.execCommand "copy"))
 
-(defn reverse-sorted-map
-  "Creates a sorted-map where the keys are sorted in reverse order."
-  []
-  (sorted-map-by (fn [a b] (* -1 (compare a b)))))
-
 (defn refresh-on-interval!
   "Refreshes the specified function every specified interval (ms) of time.
    Exit the go-loop by doing `put! exit-chan :exit` elsewhere in the code.
@@ -597,40 +538,12 @@
     360   "North"
     ""))
 
-(defn find-boundary-values
-  "Returns the two values from a sorted collection that bound v."
-  [v coll]
-  (loop [coll coll]
-    (let [s (second coll)]
-      (and s
-           (if (< v s)
-             (take 2 coll)
-             (recur (next coll)))))))
-
 (defn clean-units
   "Cleans units by adding/not adding a space when needed for units."
   [units]
   (if (#{"%" "\u00B0F" "\u00B0"} units)
     units
     (str " " units)))
-
-(defn filter-no-data
-  "Removes any nodata 'label' entries from the provided legend-list."
-  [legend-list]
-  (remove (fn [leg]
-            (= "nodata" (get leg "label")))
-          legend-list))
-
-(defn replace-no-data-nil
-  "Replaces any nodata 'band' entries from the provided last-clicked-info list
-   with nil."
-  [last-clicked-info no-data-quantities]
-  (mapv (fn [entry]
-         (let [band-val (:band entry)]
-           (assoc entry :band (if (contains? no-data-quantities (str band-val))
-                                nil
-                                band-val))))
-        last-clicked-info))
 
 (defn round-last-clicked-info
   "Rounds a point info value to the proper number of digits for rendering."
@@ -642,15 +555,3 @@
           (dc/decimal)
           (dc/to-significant-digits 2)
           (dc/to-number)))))
-
-(defn get-changed-keys
-  "Takes in two maps with the same keys and (potentially) different values.
-   Determines which values are different between the two maps and returns a set
-   containing the keys associated with the changed values."
-  [old-map new-map]
-  (reduce (fn [acc k]
-             (if (not= (get old-map k) (get new-map k))
-               (conj acc k)
-               acc))
-          #{}
-          (keys old-map)))

@@ -1,10 +1,11 @@
 (ns pyregence.pages.register
-  (:require [reagent.core       :as r]
-            [clojure.core.async :refer [go <! timeout]]
-            [pyregence.utils    :as u]
-            [pyregence.styles   :as $]
+  (:require [clojure.core.async             :refer [go <! timeout]]
             [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]))
+            [pyregence.components.messaging :refer [toast-message!]]
+            [pyregence.styles               :as $]
+            [pyregence.utils                :as u]
+            [pyregence.utils.data-utils     :as u-data]
+            [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -38,7 +39,7 @@
     (reset! pending? true)
     (let [email-chan (u/call-clj-async! "user-email-taken" @email)
           errors     (remove nil?
-                             [(when (u/missing-data? @email @password @re-password)
+                             [(when (u-data/missing-data? @email @password @re-password)
                                 "You must fill in all required information to continue.")
 
                               (when (< (count @password) 8)

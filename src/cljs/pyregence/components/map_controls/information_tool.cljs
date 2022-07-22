@@ -1,15 +1,16 @@
 (ns pyregence.components.map-controls.information-tool
-  (:require  [clojure.set                                   :as set]
-             [pyregence.components.common                   :refer [tool-tip-wrapper]]
-             [pyregence.components.map-controls.tool-button :refer [tool-button]]
-             [pyregence.components.mapbox                   :as mb]
-             [pyregence.components.resizable-window         :refer [resizable-window]]
-             [pyregence.components.vega                     :refer [vega-box]]
-             [pyregence.config                              :as c]
-             [pyregence.state                               :as !]
-             [pyregence.utils                               :as u]
-             [reagent.dom                                   :as rd]
-             [reagent.core                                  :as r]))
+  (:require [clojure.set                                   :as set]
+            [pyregence.components.common                   :refer [tool-tip-wrapper]]
+            [pyregence.components.map-controls.tool-button :refer [tool-button]]
+            [pyregence.components.mapbox                   :as mb]
+            [pyregence.components.resizable-window         :refer [resizable-window]]
+            [pyregence.components.vega                     :refer [vega-box]]
+            [pyregence.config                              :as c]
+            [pyregence.state                               :as !]
+            [pyregence.utils                               :as u]
+            [pyregence.utils.data-utils                    :as u-data]
+            [reagent.core                                  :as r]
+            [reagent.dom                                   :as rd]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
@@ -34,7 +35,7 @@
                   (aget "height"))))
     :render
     (fn [_]
-      (let [cleaned-last-clicked-info (u/replace-no-data-nil @!/last-clicked-info
+      (let [cleaned-last-clicked-info (u-data/replace-no-data-nil @!/last-clicked-info
                                                              @!/no-data-quantities)
             current-point             (get cleaned-last-clicked-info @!/*layer-idx)]
         [:div {:style {:bottom "0" :position "absolute" :width "100%"}}
@@ -74,13 +75,13 @@
     (get-in c/fbfm40-lookup [@!/last-clicked-info :description])]])
 
 (defn- single-point-info [box-height _ units convert no-convert]
-  (let [legend-map  (u/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) @!/legend-list)
+  (let [legend-map  (u-data/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) @!/legend-list)
         legend-keys (sort (keys legend-map))
         color       (or (get-in legend-map [(-> @!/last-clicked-info
                                                 (max (first legend-keys))
                                                 (min (last legend-keys)))
                                             "color"])
-                        (let [[low high] (u/find-boundary-values @!/last-clicked-info legend-keys)]
+                        (let [[low high] (u-data/find-boundary-values @!/last-clicked-info legend-keys)]
                           (when (and high low)
                             (u/interp-color (get-in legend-map [low "color"])
                                             (get-in legend-map [high "color"])
