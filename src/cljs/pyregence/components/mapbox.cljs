@@ -2,7 +2,7 @@
   (:require [goog.dom            :as dom]
             [reagent.core        :as r]
             [reagent.dom         :refer [render]]
-            [clojure.core.async  :refer [go <!]]
+            [clojure.core.async  :refer [chan go >! <!]]
             [clojure.string      :as str]
             [pyregence.state     :as !]
             [pyregence.config    :as c]
@@ -214,16 +214,21 @@
                     :always     (clj->js))]
     (-> @the-map (.setStyle new-style))))
 
-(defn- add-icon! [icon-id url & [colorize?]]
-  (when-not (.hasImage @the-map icon-id)
-    (.loadImage @the-map
-                url
-                (fn [_ img] (.addImage @the-map
-                                       icon-id
-                                       img
-                                       (if colorize?
-                                         #js {:sdf true}
-                                         #js {}))))))
+(defn- add-icon! [icon-chan icon-id url & [colorize?]]
+  (go
+    (if (.hasImage @the-map icon-id)
+      (>! icon-chan icon-id)
+      (.loadImage @the-map
+                  url
+                  (fn [_ img]
+                    (go
+                      (.addImage @the-map
+                                 icon-id
+                                 img
+                                 (if colorize?
+                                   #js {:sdf true}
+                                   #js {}))
+                      (>! icon-chan icon-id)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
@@ -525,38 +530,46 @@
    ["boolean" ["feature-state" "hover"] false] hovered
    off])
 
+(defn- add-fire-icons-to-map! []
+  (go
+    (let [icon-chan (chan 4)]
+      (add-icon! icon-chan "fire-icon-0"   "./images/Active_Fire_0.png")
+      (add-icon! icon-chan "fire-icon-50"  "./images/Active_Fire_50.png")
+      (add-icon! icon-chan "fire-icon-90"  "./images/Active_Fire_90.png")
+      (add-icon! icon-chan "fire-icon-100" "./images/Active_Fire_100.png")
+      (dotimes [_ 4]
+        (<! icon-chan)))))
+
 (defn- incident-layer [layer-name source-name opacity]
-  (add-icon! "fire-icon-0"   "./images/Active_Fire_0.png")
-  (add-icon! "fire-icon-50"  "./images/Active_Fire_50.png")
-  (add-icon! "fire-icon-90"  "./images/Active_Fire_90.png")
-  (add-icon! "fire-icon-100" "./images/Active_Fire_100.png")
-  {:id       layer-name
-   :type     "symbol"
-   :source   source-name
-   :layout   {:icon-allow-overlap true
-              :icon-image         ["step" ["get" "containper"]
-                                   "fire-icon-0"
-                                   50  "fire-icon-50"
-                                   90  "fire-icon-90"
-                                   100 "fire-icon-100"]
-              :icon-size          ["interpolate" ["linear"] ["get" "acres"]
-                                   1000   0.5
-                                   10000  0.75
-                                   300000 1.0]
-              :text-anchor        "top"
-              :text-allow-overlap true
-              :text-field         ["to-string" ["get" "prettyname"]]
-              :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
-              :text-offset        [0 0.8]
-              :text-size          16
-              :visibility         "visible"}
-   :metadata {:type    (get-layer-type layer-name)
-              :z-index 2000}
-   :paint    {:icon-opacity    opacity
-              :text-color      "#000000"
-              :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
-              :text-halo-width 1.5
-              :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}})
+  (go
+    (<! (add-fire-icons-to-map!))
+    {:id       layer-name
+     :type     "symbol"
+     :source   source-name
+     :layout   {:icon-allow-overlap true
+                :icon-image         ["step" ["get" "containper"]
+                                     "fire-icon-0"
+                                     50  "fire-icon-50"
+                                     90  "fire-icon-90"
+                                     100 "fire-icon-100"]
+                :icon-size          ["interpolate" ["linear"] ["get" "acres"]
+                                     1000   0.5
+                                     10000  0.75
+                                     300000 1.0]
+                :text-anchor        "top"
+                :text-allow-overlap true
+                :text-field         ["to-string" ["get" "prettyname"]]
+                :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
+                :text-offset        [0 0.8]
+                :text-size          16
+                :visibility         "visible"}
+     :metadata {:type    (get-layer-type layer-name)
+                :z-index 2000}
+     :paint    {:icon-opacity    opacity
+                :text-color      "#000000"
+                :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
+                :text-halo-width 1.5
+                :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}}))
 
 (defn- build-wfs
   "Returns a new WFS source and layers in the form `[source layers]`.
@@ -564,9 +577,10 @@
    `z-index` allows layers to be rendered on-top (positive z-index) or below
    (negative z-index) Mapbox base map layers."
   [id source geoserver-key opacity]
-  (let [new-source {id (wfs-source source geoserver-key)}
-        new-layers [(incident-layer id id opacity)]]
-    [new-source new-layers]))
+  (go
+    (let [new-source {id (wfs-source source geoserver-key)}
+          new-layers [(<! (incident-layer id id opacity))]]
+     [new-source new-layers])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Terrain and 3D Viewing
@@ -667,15 +681,16 @@
    `style-fn` must not be nil."
   [geo-layer style-fn geoserver-key opacity css-style]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
-  (let [style  (get-style)
-        layers (hide-forecast-layers (get style "layers"))
-        [new-sources new-layers] (if style-fn
-                                   (build-wfs fire-active geo-layer geoserver-key opacity)
-                                   (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style))]
-    (update-style! style
-                   :layers      layers
-                   :new-sources new-sources
-                   :new-layers  new-layers)))
+  (go
+    (let [style                    (get-style)
+          layers                   (hide-forecast-layers (get style "layers"))
+          [new-sources new-layers] (if style-fn
+                                     (<! (build-wfs fire-active geo-layer geoserver-key opacity))
+                                     (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style))]
+      (update-style! style
+                     :layers      layers
+                     :new-sources new-sources
+                     :new-layers  new-layers))))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map. This is currently only used to add optional layers to the map."
@@ -691,21 +706,24 @@
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
   [id]
-  (add-icon! "video-icon" "./images/video.png" true)
-  (let [new-source {id {:type       "geojson"
-                        :data       (clj->js @!/the-cameras)
-                        :generateId true}}
-        new-layers [{:id       id
-                     :source   id
-                     :type     "symbol"
-                     :layout   {:icon-image              "video-icon"
-                                :icon-rotate             ["-" ["get" "pan"] 90]
-                                :icon-rotation-alignment "map"
-                                :icon-size               0.5}
-                     :metadata {:type    (get-layer-type id)
-                                :z-index 1001}
-                     :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]]
-    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+  (go
+    (let [new-source {id {:type       "geojson"
+                          :data       (clj->js @!/the-cameras)
+                          :generateId true}}
+          new-layers [{:id       id
+                       :source   id
+                       :type     "symbol"
+                       :layout   {:icon-image              "video-icon"
+                                  :icon-rotate             ["-" ["get" "pan"] 90]
+                                  :icon-rotation-alignment "map"
+                                  :icon-size               0.5}
+                       :metadata {:type    (get-layer-type id)
+                                  :z-index 1001}
+                       :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]
+          icon-chan  (chan)]
+      (add-icon! icon-chan "video-icon" "./images/video.png" true)
+      (<! icon-chan)
+      (update-style! (get-style) :new-sources new-source :new-layers new-layers))))
 
 (defn create-red-flag-layer!
   "Adds red flag warning layer to the map."

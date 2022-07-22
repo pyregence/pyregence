@@ -399,11 +399,11 @@
     (<! (get-layers! get-model-times?))
     (let [source   (get-current-layer-name)
           style-fn (get-current-layer-key :style-fn)]
-      (mb/reset-active-layer! source
-                              style-fn
-                              (get-any-level-key :geoserver-key)
-                              (/ @!/active-opacity 100)
-                              (get-psps-layer-style))
+      (<! (mb/reset-active-layer! source
+                                  style-fn
+                                  (get-any-level-key :geoserver-key)
+                                  (/ @!/active-opacity 100)
+                                  (get-psps-layer-style)))
       (mb/clear-popup!)
       ; When we have a style-fn (which indicates a WFS layer) add the feature highlight.
       ; For now, the only dropdown layer that is WFS is the *Active Fires layer.
