@@ -141,7 +141,7 @@
   (let [message (str "Are you sure that you want to add the following new user\n"
                      "as a Member of the \"%s\" organization?\n\n"
                      "%s <%s>")]
-    (and (when-not (blank? email) (is-valid-email? @*org-email-domains email))
+    (when (and (not (blank? email)) (is-valid-email? @*org-email-domains email))
       (set-message-box-content! {:title  "Add New User"
                                  :body   (format message @*org-name user-name email)
                                  :action #(add-new-user! email user-name password)}))))
@@ -225,9 +225,9 @@
       [:label {:style ($/padding "1px" :l)} "Add User"]]
      [:div {:style {:overflow "auto"}}
       [:form#add-user-form {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
-       [labeled-input "Email" newuser-email]
-       [labeled-input "Full Name"  newuser-name]
-       [labeled-input "Password" newuser-password {:type "password"}]
+       [labeled-input "Email"     newuser-email]
+       [labeled-input "Full Name" newuser-name]
+       [labeled-input "Password"  newuser-password {:type "password"}]
        [:input {:class    (<class $/p-form-button :large)
                 :style    ($/combine ($/align :block :center) {:margin-top "0.5rem"})
                 :type     "button"
