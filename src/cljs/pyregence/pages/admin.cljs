@@ -82,7 +82,7 @@
     (get-org-list)
     (toast-message! "Organization info updated.")))
 
-(defn- add-org-user! [email name password]
+(defn- add-new-user! [email name password]
   (go
     (let [res (<! (u/call-clj-async! "add-new-user" email name password))]
       (if (:success res)
@@ -95,6 +95,14 @@
   (go
     (<! (u/call-clj-async! "update-user-name" email new-name))
     (toast-message! (str "User " new-name ", with email " email  ", updated."))))
+
+(defn- add-existing-user! [email]
+  (go
+    (let [res (<! (u/call-clj-async! "add-org-user" @*org-id email))]
+      (if (:success res)
+        (do (get-org-users-list @*org-id)
+            (toast-message! (str "User " email " added.")))
+        (toast-message! (:body res))))))
 
 (defn- update-org-user-role! [org-user-id role-id]
   (go
@@ -138,10 +146,17 @@
   (let [message (str "Are you sure that you want to add the following new user\n"
                      "as a Member of the \"%s\" organization?\n\n"
                      "%s <%s>")]
-    (and (when-not (blank? email) (is-valid-email? @*org-email-domains email))
-         (set-message-box-content! {:title  "Add New User"
-                                    :body   (format message @*org-name user-name email)
-                                    :action #(add-org-user! email name password)}))))
+    (when (and (not (blank? email)) (is-valid-email? @*org-email-domains email))
+      (set-message-box-content! {:title  "Add New User"
+                                 :body   (format message @*org-name user-name email)
+                                 :action #(add-new-user! email user-name password)}))))
+
+(defn- handle-add-existing-user [email]
+  (let [message "Are you sure that you want to add the user with email \"%s\" as a Member of the \"%s\" organization?"]
+    (when-not (blank? email)
+      (set-message-box-content! {:title "Add Existing User"
+                                 :body   (format message email @*org-name)
+                                 :action #(add-existing-user! email)}))))
 
 (defn- handle-edit-user [email prev-name new-name]
   (let [message (str "Are you sure that you want to update the users' name from %s to %s?")]
@@ -214,17 +229,17 @@
                           @*org-auto-accept?)}]]]])
 
 (defn- org-user-add-form []
-  (r/with-let [newuser-name     (r/atom "")
-               newuser-password (r/atom "")
-               newuser-email    (r/atom "")]
+  (r/with-let [newuser-email    (r/atom "")
+               newuser-name     (r/atom "")
+               newuser-password (r/atom "")]
     [:div {:style ($/combine $/action-box {:margin-top "2rem"})}
      [:div {:style ($/action-header)}
       [:label {:style ($/padding "1px" :l)} "Add User"]]
      [:div {:style {:overflow "auto"}}
       [:form#add-user-form {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
-       [labeled-input "Name" newuser-name]
-       [labeled-input "Password" newuser-password {:type "password"}]
-       [labeled-input "Email" newuser-email]
+       [labeled-input "Email"     newuser-email]
+       [labeled-input "Full Name" newuser-name]
+       [labeled-input "Password"  newuser-password {:type "password"}]
        [:input {:class    (<class $/p-form-button :large)
                 :style    ($/combine ($/align :block :center) {:margin-top "0.5rem"})
                 :type     "button"
@@ -285,13 +300,23 @@
                :on-click #(handle-update-role-id @_role-id org-user-id user-name)}]]]))
 
 (defn- org-users-list []
-  (r/with-let [new-email (r/atom "")]
+  (r/with-let [existing-email (r/atom "")]
     [:div#org-users {:style {:margin-top "2rem"}}
      [:div {:style ($/action-box)}
       [:div {:style ($/action-header)}
        [:label {:style ($/padding "1px" :l)} "Users"]]
       [:div {:style {:overflow "auto"}}
        [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
+        [:div {:style {:align-items "flex-end" :display "flex"}}
+         [labeled-input "Existing User Email Address" existing-email]
+         [:input {:class    (<class $/p-form-button)
+                  :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
+                  :type     "button"
+                  :value    "Add User"
+                  :on-click (fn []
+                              (handle-add-existing-user @existing-email)
+                              (reset! existing-email ""))}]]
+        [:hr]
         (doall (map (fn [{:keys [opt-id opt-label email role-id]}]
                       ^{:key opt-id}
                       [user-item opt-id opt-label email role-id])
