@@ -24,14 +24,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
-(defonce the-map        (r/atom nil))
+(defonce ^{:doc "A reference to the mapbox object rendered on the \"map\" element by `init-map` function below."}
+  the-map (r/atom nil))
 ;; Project layers (and their associated metadata) for a forecast as defined in `config.cljs`
-(defonce project-layers (r/atom nil))
+(defonce ^{:doc "Contains the project layers defined by forecast type."}
+  project-layers (r/atom nil))
 
-(def ^:private the-marker    (r/atom nil))
-(def ^:private the-popup     (r/atom nil))
-(def ^:private events        (atom {}))
-(def ^:private feature-state (atom {}))
+(def ^{:private true :doc "A reference to the marker object created with `init-point!`."}
+  the-marker (r/atom nil))
+(def ^{:private true :doc "A reference to the popup object creaet with `init-popup!`."}
+  the-popup (r/atom nil))
+(def ^{:private true :doc "A map of events to event listeners on an associated layer."}
+  events (atom {}))
+(def ^{:private true :doc "A map to track the interactive state of a feature: i.e. hovered, clicked, etc."}
+  feature-state (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -74,20 +80,20 @@
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- get-style
+(defn get-style
   "Returns the Mapbox style object."
   []
   (when @the-map
     (-> @the-map .getStyle (js->clj))))
 
-(defn- index-of
+(defn index-of
   "Returns first index of item in collection that matches predicate."
   [pred xs]
   (->> xs
        (keep-indexed (fn [idx x] (when (pred x) idx)))
        (first)))
 
-(defn- get-layer-idx-by-id
+(defn get-layer-idx-by-id
   "Returns index of layer with matching id."
   [id layers]
   (index-of #(= id (get % "id")) layers))
