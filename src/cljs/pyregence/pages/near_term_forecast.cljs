@@ -71,7 +71,7 @@
 (defn- get-current-layer-extent []
   (:extent (current-layer) c/california-extent))
 
-(defn get-current-layer-group []
+(defn- get-current-layer-group []
   (:layer-group (current-layer) ""))
 
 (defn- get-current-layer-key [key-name]
@@ -562,8 +562,8 @@
                        (and @!/mobile? loading-message?) "10rem 4rem .5rem 4rem"
                        @!/mobile?                ".25rem"
                        :else                  "8rem auto")
-   :overflow         "hidden"
    :max-height       (if @!/mobile? "calc(100% - .5rem)" "50%")
+   :overflow         "hidden"
    :width            (if @!/mobile? "unset" "25rem")})
 
 (defn- $p-mb-cursor []
@@ -643,7 +643,7 @@
                               (or @!/show-info? @!/show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
                               :else                                  "grab")]
     [:div#map {:class (<class $p-mb-cursor)
-               :style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
+               :style {:cursor (cursor-fn) :height "100%" :position "absolute" :width "100%"}
                :on-mouse-down #(reset! mouse-down? true)
                :on-mouse-up   #(reset! mouse-down? false)}]))
 
@@ -654,9 +654,9 @@
        [:div {:style ($message-modal false)}
         [:div {:style {:background ($/color-picker :yellow)
                        :width      "100%"}}
-         [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
+         [:label {:style {:font-size "1.5rem" :padding ".5rem 0 0 .5rem"}}
           "Disclaimer"]]
-        [:div {:style {:padding ".5rem" :overflow "auto"}}
+        [:div {:style {:overflow "auto" :padding ".5rem"}}
          [:label {:style {:margin-bottom ".5rem"}}
           "This site is currently a work in progress and is in a Beta testing phase.
            It provides access to an experimental fire spread forecast tool. Use at your own risk."]
@@ -759,12 +759,12 @@
                        :aria-label "Visit the admin page"
                        :href       "/admin"}
                    [svg/admin-user]]])
-               [:label {:style {:margin ".16rem 1rem 0 0" :cursor "pointer"}
+               [:label {:style {:cursor "pointer" :margin ".16rem 1rem 0 0"}
                         :on-click (fn []
                                     (go (<! (u/call-clj-async! "log-out"))
                                         (-> js/window .-location .reload)))}
                 "Log Out"]]
-              [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
+              [:span {:style {:display "flex" :position "absolute" :right "3rem"}}
                ;; Remove for the time being
                ;; [:label {:style {:margin-right "1rem" :cursor "pointer"}
                ;;          :on-click #(u/jump-to-url! "/register")} "Register"]
