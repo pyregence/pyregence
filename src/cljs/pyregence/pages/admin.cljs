@@ -150,8 +150,8 @@
   (let [message "Are you sure that you want to add the user with email \"%s\" as a Member of the \"%s\" organization?"]
     (when-not (blank? email)
       (set-message-box-content! {:title "Add Existing User"
-      :body   (format message email @*org-name)
-      :action #(add-existing-user! email)}))))
+                                 :body   (format message email @*org-name)
+                                 :action #(add-existing-user! email)}))))
 
 (defn- handle-remove-user [uid username]
   (let [message "Are you sure that you want to remove user \"%s\" from the \"%s\" organization?"]
