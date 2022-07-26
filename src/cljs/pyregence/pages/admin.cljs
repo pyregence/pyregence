@@ -5,7 +5,7 @@
             [clojure.string                 :as str :refer [blank?]]
             [goog.string                    :refer [format]]
             [herb.core                      :refer [<class]]
-            [pyregence.components.common    :refer [check-box labeled-input]]
+            [pyregence.components.common    :refer [check-box labeled-input simple-form]]
             [pyregence.components.messaging :refer [confirmation-modal set-message-box-content! toast-message!]]
             [pyregence.styles               :as $]
             [pyregence.utils                :as u]
@@ -84,7 +84,13 @@
 
 (defn- add-new-user! [email name password]
   (go
-    (let [res (<! (u/call-clj-async! "add-new-user" email name password))]
+    (let [res (<! (u/call-clj-async!
+                   "add-new-user"
+                   email
+                   name
+                   password
+                   {:org-id          @*org-id
+                    :restrict-email? false}))]
       (if (:success res)
         (do (get-org-users-list @*org-id)
             (toast-message! (str "User " name ", with email " email  ", added.")))
@@ -125,15 +131,6 @@
          (when selected? {:background-color ($/color-picker :yellow 0.3)})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Input Validation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- is-valid-email? [allowed-email-domains email]
-  (let [allowed-email-set (set (str/split allowed-email-domains  #","))
-        test-email-domain (subs email (str/index-of email "@"))]
-    (contains? allowed-email-set test-email-domain)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Click Event Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -141,10 +138,9 @@
   (let [message (str "Are you sure that you want to add the following new user\n"
                      "as a Member of the \"%s\" organization?\n\n"
                      "%s <%s>")]
-    (when (and (not (blank? email)) (is-valid-email? @*org-email-domains email))
-      (set-message-box-content! {:title  "Add New User"
-                                 :body   (format message @*org-name user-name email)
-                                 :action #(add-new-user! email user-name password)}))))
+    (set-message-box-content! {:title  "Add New User"
+                               :body   (format message @*org-name user-name email)
+                               :action #(add-new-user! email user-name password)})))
 
 (defn- handle-add-existing-user [email]
   (let [message "Are you sure that you want to add the user with email \"%s\" as a Member of the \"%s\" organization?"]
@@ -220,23 +216,18 @@
   (r/with-let [newuser-email    (r/atom "")
                newuser-name     (r/atom "")
                newuser-password (r/atom "")]
-    [:div {:style ($/combine $/action-box {:margin-top "2rem"})}
-     [:div {:style ($/action-header)}
-      [:label {:style ($/padding "1px" :l)} "Add User"]]
-     [:div {:style {:overflow "auto"}}
-      [:form#add-user-form {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
-       [labeled-input "Email"     newuser-email]
-       [labeled-input "Full Name" newuser-name]
-       [labeled-input "Password"  newuser-password {:type "password"}]
-       [:input {:class    (<class $/p-form-button :large)
-                :style    ($/combine ($/align :block :center) {:margin-top "0.5rem"})
-                :type     "button"
-                :value    "Add New User"
-                :on-click (fn [_]
-                            (handle-add-user @newuser-email @newuser-name @newuser-password)
-                            (reset! newuser-email    "")
-                            (reset! newuser-name     "")
-                            (reset! newuser-password ""))}]]]]))
+    [:div {:style {:margin-top "2rem"}}
+     [simple-form
+      "Add User"
+      "Add New User"
+      [["Email"     newuser-email    "email"    "email"]
+       ["Full Name" newuser-name     "text"     "name"]
+       ["Password"  newuser-password "password" "new-password"]]
+      (fn [_]
+        (handle-add-user @newuser-email @newuser-name @newuser-password)
+        (reset! newuser-email    "")
+        (reset! newuser-name     "")
+        (reset! newuser-password ""))]]))
 
 (defn- user-item [org-user-id opt-label email role-id]
   (r/with-let [_role-id (r/atom role-id)]
