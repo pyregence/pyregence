@@ -164,12 +164,12 @@
   (go
     (let [message (str "Are you sure that you want to update the user's name from %s to %s?")]
      (when-not (blank? @updated-name-state)
-       (set-message-box-content! {:title  "Update Username"
-                                  :body   (format message prev-name @updated-name-state)
-                                  :action #(go
-                                             (do (<! (update-org-user! email @updated-name-state))
-                                                 (get-org-users-list @*org-id)))
-                                  :cancel #(reset! updated-name-state prev-name)})))))
+       (set-message-box-content! {:title     "Update Username"
+                                  :body      (format message prev-name @updated-name-state)
+                                  :action    #(go
+                                                (do (<! (update-org-user! email @updated-name-state))
+                                                    (get-org-users-list @*org-id)))
+                                  :cancel-fn #(reset! updated-name-state prev-name)})))))
 
 (defn- handle-remove-user [user-id user-name]
   (let [message "Are you sure that you want to remove user \"%s\" from the \"%s\" organization?"]
@@ -280,7 +280,6 @@
                  :type     "button"
                  :value    "Edit User"
                  :on-click #(swap! edit-mode-enabled not)}])
-
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"

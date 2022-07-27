@@ -164,7 +164,7 @@
 (defn confirmation-modal
   "Creates a message box model component, allowing the user to confirm and continue an action or cancel."
   []
-  (let [{:keys [title body action cancel]} @message-box-content]
+  (let [{:keys [title body action cancel-fn]} @message-box-content]
     (when-not (= "" title)
       [:div {:style ($/combine $/modal {:position "fixed"})}
        [:div {:style ($/combine $message-box [$/align :text :left])}
@@ -178,7 +178,7 @@
              (show-line-break body)])
           [:div#call-to-actions {:style {:display "flex" :align-content "space-between" :margin-top "4px"}}
            [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
-            [button "No, Cancel" #(do (when cancel (cancel))
+            [button "No, Cancel" #(do (when cancel-fn (cancel-fn))
                                       (close-message-box!))]]
            [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
             [button "Yes, Continue" #(do (action)
