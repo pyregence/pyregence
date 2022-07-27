@@ -1,7 +1,6 @@
 (ns pyregence.pages.admin
   (:require [cljs.reader                    :as edn]
             [clojure.core.async             :refer [go <!]]
-            [clojure.core                   :refer [subs]]
             [clojure.string                 :as str :refer [blank?]]
             [goog.string                    :refer [format]]
             [herb.core                      :refer [<class]]
@@ -35,6 +34,8 @@
   *org-auto-add? (r/atom false))
 (defonce ^{:doc "Vector of the org users associated with the currently selected organization."}
   org-users (r/atom []))
+(defonce ^{:doc "The pending state of a \"New User\" form submission."}
+  pending-new-user-submission? (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -82,20 +83,39 @@
     (get-org-list)
     (toast-message! "Organization info updated.")))
 
-(defn- add-new-user! [email name password]
+(defn- add-new-user! [email user-name password re-password]
   (go
-    (let [res (<! (u/call-clj-async!
-                   "add-new-user"
-                   email
-                   name
-                   password
-                   {:org-id          @*org-id
-                    :restrict-email? false}))]
+    (reset! pending-new-user-submission? true)
+    (let [email-chan (u/call-clj-async! "user-email-taken" email -1)
+          errors      (remove nil?
+                             [(when (u/missing-data? email user-name password)
+                                "You must fill in all required information to continue.")
+
+                              (when (< (count password) 8)
+                                "Your password must be at least 8 charactors long.")
+
+                              (when-not (= password re-password)
+                                "The passwords you have entered do not match.")
+
+                              (when (:success (<! email-chan))
+                                (str "A user with the email '" email "' has already been created."))])
+          error-count (count errors)
+          res         (when (zero? error-count)
+                        (<! (u/call-clj-async!
+                             "add-new-user"
+                             email
+                             user-name
+                             password
+                             {:org-id          @*org-id
+                              :restrict-email? false})))]
       (if (:success res)
         (do (get-org-users-list @*org-id)
-            (toast-message! (str "User " name ", with email " email  ", added.")))
-        (toast-message!
-         (str (:body res)))))))
+            (toast-message! (str "The User " user-name " with email " email " was successfully added."))
+            (reset! pending-new-user-submission? false))
+        (do (if (pos? error-count)
+              (toast-message! errors)
+              (toast-message! (str (:body res))))
+            (reset! pending-new-user-submission? false))))))
 
 (defn- add-existing-user! [email]
   (go
@@ -134,13 +154,13 @@
 ;; Click Event Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- handle-add-user [email user-name password]
+(defn- handle-add-user [email user-name password re-password]
   (let [message (str "Are you sure that you want to add the following new user\n"
                      "as a Member of the \"%s\" organization?\n\n"
                      "%s <%s>")]
     (set-message-box-content! {:title  "Add New User"
                                :body   (format message @*org-name user-name email)
-                               :action #(add-new-user! email user-name password)})))
+                               :action #(add-new-user! email user-name password re-password)})))
 
 (defn- handle-add-existing-user [email]
   (let [message "Are you sure that you want to add the user with email \"%s\" as a Member of the \"%s\" organization?"]
@@ -213,21 +233,24 @@
                           @*org-auto-accept?)}]]]])
 
 (defn- org-user-add-form []
-  (r/with-let [newuser-email    (r/atom "")
-               newuser-name     (r/atom "")
-               newuser-password (r/atom "")]
+  (r/with-let [newuser-email       (r/atom "")
+               newuser-name        (r/atom "")
+               newuser-password    (r/atom "")
+               newuser-re-password (r/atom "")]
     [:div {:style {:margin-top "2rem"}}
      [simple-form
       "Add User"
       "Add New User"
-      [["Email"     newuser-email    "email"    "email"]
-       ["Full Name" newuser-name     "text"     "name"]
-       ["Password"  newuser-password "password" "new-password"]]
+      [["Email"            newuser-email       "email"    "email"]
+       ["Full Name"        newuser-name        "text"     "name"]
+       ["Password"         newuser-password    "password" "new-password"]
+       ["Confirm Password" newuser-re-password "password" "confirm-password"]]
       (fn [_]
-        (handle-add-user @newuser-email @newuser-name @newuser-password)
-        (reset! newuser-email    "")
-        (reset! newuser-name     "")
-        (reset! newuser-password ""))]]))
+        (handle-add-user @newuser-email @newuser-name @newuser-password @newuser-re-password)
+        (reset! newuser-email       "")
+        (reset! newuser-name        "")
+        (reset! newuser-password    "")
+        (reset! newuser-re-password ""))]]))
 
 (defn- user-item [org-user-id opt-label email role-id]
   (r/with-let [_role-id (r/atom role-id)]
