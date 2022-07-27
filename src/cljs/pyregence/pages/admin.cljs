@@ -94,7 +94,7 @@
 (defn- update-org-user! [email new-name]
   (go
     (<! (u/call-clj-async! "update-user-name" email new-name))
-    (toast-message! (str "User " new-name ", with email " email  ", updated."))))
+    (toast-message! (str "The user " new-name " with the email " email  " has been updated."))))
 
 (defn- add-existing-user! [email]
   (go
@@ -159,9 +159,9 @@
                                  :action #(add-existing-user! email)}))))
 
 (defn- handle-edit-user [email prev-name new-name]
-  (let [message (str "Are you sure that you want to update the users' name from %s to %s?")]
+  (let [message (str "Are you sure that you want to update the user's name from %s to %s?")]
     (when-not (blank? new-name)
-      (set-message-box-content! {:title "Update User"
+      (set-message-box-content! {:title "Update Username"
                                  :body (format message prev-name new-name)
                                  :action #(update-org-user! email new-name)}))))
 
@@ -257,9 +257,9 @@
                edit-mode-enabled (r/atom false)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
-      (if-not @edit-mode-enabled
-        [:label @current-name]
-        [labeled-input "" updated-name {:disabled? (not @edit-mode-enabled)}])
+      (if @edit-mode-enabled
+        [labeled-input "" updated-name {:disabled? (not @edit-mode-enabled)}]
+        [:label @current-name])
       [:label email]]
      [:div {:style ($/combine ($/align :block :right) {:display "flex"})}
       (if @edit-mode-enabled
@@ -274,12 +274,12 @@
                   :value    "Save"
                   :on-click #(do
                                (handle-edit-user email user-name @updated-name)
-                               (reset! edit-mode-enabled false)
-                               (reset! current-name @updated-name))}]]
+                               (reset! current-name @updated-name)
+                               (reset! edit-mode-enabled false))}]]
         [:input {:class    (<class $/p-form-button)
                  :type     "button"
                  :value    "Edit User"
-                 :on-click #(reset! edit-mode-enabled (not @edit-mode-enabled))}])
+                 :on-click #(swap! edit-mode-enabled not)}])
 
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
