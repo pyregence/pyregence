@@ -156,20 +156,20 @@
 (defn- handle-add-existing-user [email]
   (let [message "Are you sure that you want to add the user with email \"%s\" as a Member of the \"%s\" organization?"]
     (when-not (blank? email)
-      (set-message-box-content! {:title "Add Existing User"
+      (set-message-box-content! {:title  "Add Existing User"
                                  :body   (format message email @*org-name)
                                  :action #(add-existing-user! email)}))))
 
 (defn- handle-edit-user [email prev-name updated-name-state]
   (go
     (let [message (str "Are you sure that you want to update the user's name from %s to %s?")]
-    (when-not (blank? @updated-name-state)
-      (set-message-box-content! {:title "Update Username"
-                                 :body (format message prev-name @updated-name-state)
-                                 :action #(go
-                                            (do (<! (update-org-user! email @updated-name-state))
-                                                (get-org-users-list @*org-id)))
-                                 :cancel #(reset! updated-name-state prev-name)})))))
+     (when-not (blank? @updated-name-state)
+       (set-message-box-content! {:title  "Update Username"
+                                  :body   (format message prev-name @updated-name-state)
+                                  :action #(go
+                                             (do (<! (update-org-user! email @updated-name-state))
+                                                 (get-org-users-list @*org-id)))
+                                  :cancel #(reset! updated-name-state prev-name)})))))
 
 (defn- handle-remove-user [user-id user-name]
   (let [message "Are you sure that you want to remove user \"%s\" from the \"%s\" organization?"]
