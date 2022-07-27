@@ -36,6 +36,12 @@
   orgs (r/atom []))
 (defonce ^{:doc "Vector of the org users associated with the currently selected organization."}
   org-users (r/atom []))
+
+;; Current User Selections
+(defonce ^{:doc "The user id of the logged in user."}
+  _user-id  (r/atom -1))
+
+;; Add User form state
 (defonce ^{:doc "The email in the Add User form."}
   new-user-email (r/atom ""))
 (defonce ^{:doc "The full name in the Add User form."}
@@ -46,10 +52,6 @@
   new-user-re-password (r/atom ""))
 (defonce ^{:doc "The pending state of a \"New User\" form submission."}
   pending-new-user-submission? (r/atom false))
-
-;; Current User Selections
-(defonce ^{:doc "The user id of the logged in user."}
-  _user-id  (r/atom -1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -107,15 +109,19 @@
 
 (defn- add-new-user! []
   (go
-    (if (:success (<! (u/call-clj-async! "add-new-user"
-                                         @new-user-email
-                                         @new-user-full-name
-                                         @new-user-password
-                                         {:org-id          @*org-id
-                                          :restrict-email? false})))
+    (toast-message! "Creating new account. This may take a moment...")
+    (if (and (:success (<! (u/call-clj-async! "add-new-user"
+                                              @new-user-email
+                                              @new-user-full-name
+                                              @new-user-password
+                                              {:org-id          @*org-id
+                                               :restrict-email? false})))
+             (:success (<! (u/call-clj-async! "send-email" @new-user-email :new-user))))
       (do
-        (toast-message! ["Your account has been created successfully."])
-        (reset-add-user-form!))
+        (toast-message! ["Your account has been created successfully."
+                         "Please check your email for a link to complete registration."])
+        (reset-add-user-form!)
+        (get-org-users-list @*org-id))
       (toast-message! ["An error occurred while registering."
                        "Please contact support@pyregence.org for help."]))))
 
