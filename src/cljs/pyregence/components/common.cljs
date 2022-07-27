@@ -195,7 +195,7 @@
   ([title button-text fields on-click]
    (simple-form title button-text fields on-click nil))
   ([title button-text fields on-click footer]
-   [:form {:style     {:height "fit-content" :width "25rem"}
+   [:form {:style     {:height "fit-content" :min-width "25rem"}
            :action    "#"
            :on-submit #(do (.preventDefault %) (.stopPropagation %) (on-click %))}
     [:div {:style ($/action-box)}

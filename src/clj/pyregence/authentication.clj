@@ -1,5 +1,6 @@
 (ns pyregence.authentication
   (:require [triangulum.database :refer [call-sql sql-primitive]]
+            [pyregence.utils     :refer [nil-on-error]]
             [pyregence.views     :refer [data-response]]))
 
 (defn log-in [email password]
@@ -27,16 +28,21 @@
     (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
-(defn add-new-user [email name password]
-  (let [default-settings (pr-str {:timezone :utc})
-        new-user-id      (sql-primitive (call-sql "add_new_user"
-                                                  {:log? false}
-                                                  email
-                                                  name
-                                                  password
-                                                  default-settings))]
+(defn add-new-user [email name password opts]
+  (let [{:keys [org-id restrict-email?]
+         :or   {org-id nil restrict-email? true}} opts
+        default-settings               (pr-str {:timezone :utc})
+        new-user-id                    (nil-on-error
+                                        (sql-primitive (call-sql "add_new_user"
+                                                                 {:log? false}
+                                                                 email
+                                                                 name
+                                                                 password
+                                                                 default-settings)))]
     (if new-user-id
-      (do (call-sql "auto_add_org_user" new-user-id (re-find #"@{1}.+" email))
+      (do (if (and org-id (not restrict-email?))
+            (call-sql "add_org_user" org-id new-user-id)
+            (call-sql "auto_add_org_user" new-user-id (re-find #"@{1}.+" email)))
           (data-response ""))
       (data-response "" {:status 403}))))
 
@@ -50,6 +56,13 @@
 (defn update-user-info [user-id settings]
   (call-sql "update_user_info" user-id settings)
   (data-response ""))
+
+(defn update-user-name [email new-name]
+  (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
+    (do (call-sql "update_user_name" user-id new-name)
+        (data-response ""))
+    (data-response (str "There is no user with the email " email)
+                   {:status 403})))
 
 (defn get-org-list [user-id]
   (->> (call-sql "get_org_list" user-id)
