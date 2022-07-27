@@ -15,14 +15,12 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Organization Role Enumeration
 (def roles [{:opt-id 1 :opt-label "Admin"}
             {:opt-id 2 :opt-label "Member"}
             {:opt-id 3 :opt-label "Pending"}])
 
-(defonce ^{:doc "The user id of the logged in user."}
-  _user-id  (r/atom -1))
-(defonce ^{:doc "Vector of organizations where the current user is an admin."}
-  orgs (r/atom []))
+;; Organization Object Properties
 (defonce ^{:doc "The id of the currently selected organization."}
   *org-id (r/atom -1))
 (defonce ^{:doc "The display name of the currently selected organization."}
@@ -33,8 +31,16 @@
   *org-auto-accept? (r/atom false))
 (defonce ^{:doc "A boolean indicating if a user should be auto added to the selected organization."}
   *org-auto-add? (r/atom false))
+
+;; Current Organization Selections
+(defonce ^{:doc "Vector of organizations where the current user is an admin."}
+  orgs (r/atom []))
 (defonce ^{:doc "Vector of the org users associated with the currently selected organization."}
   org-users (r/atom []))
+
+;; Current User Selections
+(defonce ^{:doc "The user id of the logged in user."}
+  _user-id  (r/atom -1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -100,7 +106,7 @@
 (defn- update-org-user! [email new-name]
   (go
     (<! (u/call-clj-async! "update-user-name" email new-name))
-    (toast-message! (str "User " new-name ", with email " email  ", updated."))))
+    (toast-message! (str "The user " new-name " with the email " email  " has been updated."))))
 
 (defn- add-existing-user! [email]
   (go
@@ -154,12 +160,16 @@
                                  :body   (format message email @*org-name)
                                  :action #(add-existing-user! email)}))))
 
-(defn- handle-edit-user [email prev-name new-name]
-  (let [message (str "Are you sure that you want to update the users' name from %s to %s?")]
-    (when-not (blank? new-name)
-      (set-message-box-content! {:title "Update User"
-                                 :body (format message prev-name new-name)
-                                 :action #(update-org-user! email new-name)}))))
+(defn- handle-edit-user [email prev-name updated-name-state]
+  (go
+    (let [message (str "Are you sure that you want to update the user's name from %s to %s?")]
+    (when-not (blank? @updated-name-state)
+      (set-message-box-content! {:title "Update Username"
+                                 :body (format message prev-name @updated-name-state)
+                                 :action #(go
+                                            (do (<! (update-org-user! email @updated-name-state))
+                                                (get-org-users-list @*org-id)))
+                                 :cancel #(reset! updated-name-state prev-name)})))))
 
 (defn- handle-remove-user [user-id user-name]
   (let [message "Are you sure that you want to remove user \"%s\" from the \"%s\" organization?"]
@@ -243,14 +253,13 @@
 
 (defn- user-item [org-user-id user-name email role-id]
   (r/with-let [_role-id          (r/atom role-id)
-               current-name      (r/atom user-name)
                updated-name      (r/atom user-name)
                edit-mode-enabled (r/atom false)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
-      (if-not @edit-mode-enabled
-        [:label @current-name]
-        [labeled-input "" updated-name {:disabled? (not @edit-mode-enabled)}])
+      (if @edit-mode-enabled
+        [labeled-input "" updated-name {:disabled? (not @edit-mode-enabled)}]
+        [:label @updated-name])
       [:label email]]
      [:div {:style ($/combine ($/align :block :right) {:display "flex"})}
       (if @edit-mode-enabled
@@ -263,14 +272,14 @@
          [:input {:class    (<class $/p-form-button)
                   :type     "button"
                   :value    "Save"
-                  :on-click #(do
-                               (handle-edit-user email user-name @updated-name)
-                               (reset! edit-mode-enabled false)
-                               (reset! current-name @updated-name))}]]
+                  :on-click #(go
+                               (do
+                                 (<! (handle-edit-user email user-name updated-name))
+                                 (reset! edit-mode-enabled false)))}]]
         [:input {:class    (<class $/p-form-button)
                  :type     "button"
                  :value    "Edit User"
-                 :on-click #(reset! edit-mode-enabled (not @edit-mode-enabled))}])
+                 :on-click #(swap! edit-mode-enabled not)}])
 
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
