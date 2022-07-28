@@ -28,7 +28,7 @@
     (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
-(defn add-new-user [email name password opts]
+(defn add-new-user [email name password & [opts]]
   (let [{:keys [org-id restrict-email?]
          :or   {org-id nil restrict-email? true}} opts
         default-settings               (pr-str {:timezone :utc})
