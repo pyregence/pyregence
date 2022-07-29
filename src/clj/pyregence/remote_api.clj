@@ -18,6 +18,7 @@
                                               update-org-info
                                               update-org-user-role
                                               update-user-info
+                                              update-user-name
                                               verify-user-email]]
             [pyregence.cameras        :refer [get-cameras
                                               get-current-image]]
@@ -62,6 +63,7 @@
                "update-org-info"      update-org-info
                "update-org-user-role" update-org-user-role
                "update-user-info"     update-user-info
+               "update-user-name"     update-user-name
                "verify-user-email"    verify-user-email})
 
 (defn- fn->sym [f]
