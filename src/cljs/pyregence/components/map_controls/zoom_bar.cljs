@@ -90,10 +90,6 @@
                    [:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition mb/set-center-my-location!))]
-                   ;; TODO move this action to the information panel
-                   ;;  [:center-on-point
-                   ;;   "Center on selected point"
-                   ;;   #(mb/center-on-overlay!)]
                    [:extent
                     "Zoom to fit layer"
                     #(mb/zoom-to-extent! current-layer-extent current-layer)]

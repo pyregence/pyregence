@@ -235,7 +235,6 @@ th {
 label {
   display: inline-block;
   margin-bottom: 0.5rem;
-  cursor: pointer;
 }
 
 button {
@@ -299,9 +298,14 @@ input:disabled {
   cursor: not-allowed;
 }
 
-#optional-layer-checkbox input[disabled] + label {
+#optional-layer-checkbox input:disabled + label {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+#optional-layer-checkbox input:enabled,
+#optional-layer-checkbox label {
+  cursor: pointer;
 }
 
 button::-moz-focus-inner,

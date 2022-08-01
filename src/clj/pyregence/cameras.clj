@@ -1,8 +1,8 @@
 (ns pyregence.cameras
-  (:require [clojure.data.json :as json]
-            [clj-http.client   :as client]
-            [triangulum.config :refer [get-config]]
-            [pyregence.views   :refer [data-response]]))
+  (:require [clj-http.client    :as client]
+            [clojure.data.json  :as json]
+            [pyregence.views    :refer [data-response]]
+            [triangulum.config  :refer [get-config]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AlertWildfire Cameras
@@ -30,7 +30,7 @@
   (reset! camera-cache cameras))
 
 (defn- valid-cache? []
-  (and (some? @camera-cache)
+  (and @camera-cache
        (< (- (System/currentTimeMillis) @cached-time) cache-max-age)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -46,14 +46,7 @@
     (when (= 200 status)
       (json/read-str body :key-fn keyword))))
 
-(defn- api-get-camera [camera-name]
-  (let [{:keys [status body]} (api-request (str "cameras?name=" camera-name))]
-    (when (= 200 status)
-      (json/read-str body :key-fn keyword))))
-
-(defn- api-current-image
-  [camera-name]
-  {:pre [(string? camera-name)]}
+(defn- api-current-image [camera-name]
   (let [{:keys [status body]} (api-request (str "currentimage?name=" camera-name)
                                            {:as :byte-array})]
     (when (= 200 status) body)))
@@ -91,14 +84,6 @@
                                           (->feature-collection))]
                      (reset-cache! new-cameras)
                      new-cameras))))
-
-(defn get-camera-time
-  "Gets the last time a specific camera was updated (in UTC)."
-  [camera-name]
-  {:pre [(string? camera-name)]}
-  (data-response (-> (api-get-camera camera-name)
-                     (first)
-                     (:update_time))))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.
