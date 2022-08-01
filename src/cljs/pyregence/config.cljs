@@ -398,7 +398,7 @@
                                                                          :filter    "landfire"}
                                                               :cfo      {:opt-label    "2020 CA Forest Obs."
                                                                          :filter       "cfo"
-                                                                         :disabled-for #{:times-burned :impacted :fire-area :fire-volume :plignrate}}}}
+                                                                         :disabled-for #{:times-burned :impacted :fire-area :fire-volume :plignrate :crown-fire-area}}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Computer fire spread model used to generate active fire and risk forecasts."
