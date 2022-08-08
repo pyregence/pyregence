@@ -288,3 +288,29 @@ CREATE OR REPLACE FUNCTION add_org_layer(
         (_org_id, _layer_path, _layer_config)
 
 $$ LANGUAGE SQL;
+
+-- Simplifies adding and linking a new test user to the given organization
+CREATE OR REPLACE PROCEDURE add_org_test_user(
+    _org_name    text,
+    _email       text,
+    _name        text,
+    _password    text,
+    _verified    boolean,
+    _role        integer
+) LANGUAGE plpgsql AS $$
+DECLARE
+  _user_id    integer;
+  _org_id     integer;
+BEGIN
+    INSERT INTO users
+        (email, name, password, verified, settings)
+    VALUES
+        (_email, _name, _password, _verified, '{:timezone :utc}') RETURNING user_uid INTO _user_id;
+
+    SELECT organization_uid INTO _org_id FROM organizations WHERE org_name = _org_name;
+
+    INSERT INTO organization_users
+        (organization_rid, user_rid, role_rid)
+    VALUES
+        (_org_id, _user_id, _role);
+END $$;
