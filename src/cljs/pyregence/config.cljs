@@ -212,22 +212,26 @@
                                                               :wg     {:opt-label "Wind gust (mph)"
                                                                        :filter    "wg"
                                                                        :units     "mph"}
-                                                              :apcp   {:opt-label    "Accumulated precipitation (in)"
-                                                                       :filter       "apcp"
-                                                                       :units        "inches"
-                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :rtma-ru}}
-                                                              :apcp01 {:opt-label    "1-hour precipitation (in)"
-                                                                       :filter       "apcp01"
-                                                                       :units        "inches"
-                                                                       :disabled-for #{:gfs0p25 :nam-awip12 :nbm :rtma-ru}}
-                                                              :apcp03 {:opt-label    "3-hour precipitation (in)"
-                                                                       :filter       "apcp03"
-                                                                       :units        "inches"
-                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-conusnest :nbm :rtma-ru}}
-                                                              :apcp06 {:opt-label    "6-hour precipitation (in)"
-                                                                       :filter       "apcp06"
-                                                                       :units        "inches"
-                                                                       :disabled-for #{:gfs0p125 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}}
+                                                              :apcp   {:opt-label       "Accumulated precipitation (in)"
+                                                                       :filter          "apcp"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :rtma-ru}
+                                                                       :reverse-legend? false}
+                                                              :apcp01 {:opt-label       "1-hour precipitation (in)"
+                                                                       :filter          "apcp01"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p25 :nam-awip12 :nbm :rtma-ru}
+                                                                       :reverse-legend? false}
+                                                              :apcp03 {:opt-label       "3-hour precipitation (in)"
+                                                                       :filter          "apcp03"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-conusnest :nbm :rtma-ru}
+                                                                       :reverse-legend? false}
+                                                              :apcp06 {:opt-label       "6-hour precipitation (in)"
+                                                                       :filter          "apcp06"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p125 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}
+                                                                       :reverse-legend? false}
                                                               :vpd    {:opt-label    "Vapor pressure deficit (hPa)"
                                                                        :filter       "vpd"
                                                                        :units        "hPa"
