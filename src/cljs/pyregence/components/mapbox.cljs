@@ -80,20 +80,20 @@
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-style
+(defn- get-style
   "Returns the Mapbox style object."
   []
   (when @the-map
     (-> @the-map .getStyle (js->clj))))
 
-(defn index-of
+(defn- index-of
   "Returns first index of item in collection that matches predicate."
   [pred xs]
   (->> xs
        (keep-indexed (fn [idx x] (when (pred x) idx)))
        (first)))
 
-(defn get-layer-idx-by-id
+(defn- get-layer-idx-by-id
   "Returns index of layer with matching id."
   [id layers]
   (index-of #(= id (get % "id")) layers))
