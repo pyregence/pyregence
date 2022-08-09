@@ -1,22 +1,12 @@
 (ns pyregence.pages.near-term-forecast
-  (:require [reagent.core :as r]
-            [reagent.dom  :as rd]
-            [herb.core    :refer [<class]]
-            [cognitect.transit :as t]
-            [clojure.edn        :as edn]
-            [clojure.spec.alpha :as s]
-            [clojure.string     :as str]
-            [clojure.core.async :refer [go <!]]
-            [cljs.core.async.interop :refer-macros [<p!]]
-            [pyregence.state  :as !]
-            [pyregence.styles :as $]
-            [pyregence.utils  :as u]
-            [pyregence.config :as c]
-            [pyregence.components.mapbox    :as mb]
-            [pyregence.components.popups    :refer [fire-popup]]
-            [pyregence.components.common    :refer [tool-tip-wrapper]]
-            [pyregence.components.messaging :refer [message-box-modal toast-message!]]
-            [pyregence.components.svg-icons :as svg]
+  (:require [cljs.core.async.interop                             :refer-macros [<p!]]
+            [clojure.core.async                                  :refer [go <!]]
+            [clojure.edn                                         :as edn]
+            [clojure.spec.alpha                                  :as s]
+            [clojure.string                                      :as str]
+            [cognitect.transit                                   :as t]
+            [herb.core                                           :refer [<class]]
+            [pyregence.components.nav-bar                        :refer [nav-bar]]
             [pyregence.components.map-controls.camera-tool       :refer [camera-tool]]
             [pyregence.components.map-controls.collapsible-panel :refer [collapsible-panel]]
             [pyregence.components.map-controls.information-tool  :refer [information-tool]]
@@ -26,7 +16,17 @@
             [pyregence.components.map-controls.scale-bar         :refer [scale-bar]]
             [pyregence.components.map-controls.time-slider       :refer [time-slider]]
             [pyregence.components.map-controls.tool-bar          :refer [tool-bar]]
-            [pyregence.components.map-controls.zoom-bar          :refer [zoom-bar]]))
+            [pyregence.components.map-controls.zoom-bar          :refer [zoom-bar]]
+            [pyregence.components.mapbox                         :as mb]
+            [pyregence.components.messaging                      :refer [message-box-modal toast-message!]]
+            [pyregence.components.popups                         :refer [fire-popup]]
+            [pyregence.components.svg-icons                      :as svg]
+            [pyregence.config                                    :as c]
+            [pyregence.state                                     :as !]
+            [pyregence.styles                                    :as $]
+            [pyregence.utils                                     :as u]
+            [reagent.core                                        :as r]
+            [reagent.dom                                         :as rd]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec
@@ -433,7 +433,7 @@
                   (get-current-option-key main-key val :auto-zoom?)
                   (get-any-level-key     :max-zoom))))
 
-(defn- select-forecast!
+(defn select-forecast!
   "The function called whenever you select a new forecast/tab."
   [key]
   (go
@@ -535,20 +535,7 @@
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $app-header []
-  {:align-items     "center"
-   :display         "flex"
-   :justify-content "center"
-   :position        "relative"
-   :width           "100%"})
-
-(defn- $forecast-label [selected?]
-  (merge
-   {:cursor "pointer"
-    :margin "0 1rem 0 1rem"}
-   (when selected? {:color "white"})))
-
-(defn- $control-layer []
+(defn $control-layer []
   {:height   "100%"
    :position "absolute"
    :width    "100%"})
@@ -732,44 +719,14 @@
          [message-box-modal]
          (when @!/loading? [loading-modal])
          [message-modal]
-         [:div {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
-          [:span {:style {:display "flex" :padding ".25rem 0"}}
-           (doall (map (fn [[key {:keys [opt-label hover-text allowed-org]}]]
-                         (when (or (nil? allowed-org)
-                                   (some (fn [{org-name :opt-label}]
-                                           (= org-name allowed-org))
-                                         @!/user-org-list))
-                           ^{:key key}
-                           [tool-tip-wrapper
-                            hover-text
-                            :top
-                            [:label {:style    ($forecast-label (= @!/*forecast key))
-                                     :on-click #(select-forecast! key)}
-                             opt-label]]))
-                       @!/capabilities))]
-          (when-not @!/mobile?
-            (if user-id
-              [:div {:style {:display "flex" :position "absolute" :right "1rem"}}
-               (when (> (count @!/user-org-list) 0)
-                 [tool-tip-wrapper
-                  "Visit the admin page"
-                  :top
-                  [:a {:style      ($/combine ($/fixed-size "1.5rem")
-                                              {:cursor "pointer" :margin-right "1rem"})
-                       :aria-label "Visit the admin page"
-                       :href       "/admin"}
-                   [svg/admin-user]]])
-               [:label {:style {:cursor "pointer" :margin ".16rem 1rem 0 0"}
-                        :on-click (fn []
-                                    (go (<! (u/call-clj-async! "log-out"))
-                                        (-> js/window .-location .reload)))}
-                "Log Out"]]
-              [:span {:style {:display "flex" :position "absolute" :right "3rem"}}
-               ;; Remove for the time being
-               ;; [:label {:style {:margin-right "1rem" :cursor "pointer"}
-               ;;          :on-click #(u/jump-to-url! "/register")} "Register"]
-               [:label {:style {:cursor "pointer"}
-                        :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
+         [nav-bar {:capabilities         @!/capabilities
+                   :current-forecast     @!/*forecast
+                   :is-admin?            (> (count @!/user-org-list) 0)
+                   :logged-in?           user-id
+                   :mobile?              @!/mobile?
+                   :user-org-list        @!/user-org-list
+                   :select-forecast!     select-forecast!
+                   :user-id              user-id}]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
           (when (and @mb/the-map
                      (not-empty @!/capabilities)
