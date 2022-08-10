@@ -50,7 +50,7 @@
      :sim-time    sim-timestamp
      :hour        (/ (- (.getTime (java-date-from-string sim-timestamp))
                         (.getTime (java-date-from-string (str init-timestamp "0000"))))
-                     1000 60 60)}))
+                     1000.0 60 60)}))
 
 (defn- split-active-layer-name
   "Gets information about an active fire layer based on its name."
