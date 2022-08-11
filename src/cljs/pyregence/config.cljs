@@ -23,11 +23,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def common-underlays
-  {:us-buildings    {:enabled?      #(feature-enabled? :structures)
-                     :opt-label     "Structures"
-                     :z-index       104
-                     :filter-set    #{"fire-detections" "us-buildings"}
-                     :geoserver-key :shasta}})
+  {:conus-buildings    {:enabled?      #(feature-enabled? :structures)
+                        :opt-label     "Structures"
+                        :z-index       104
+                        :filter-set    #{"fire-detections" "conus-buildings"}
+                        :geoserver-key :shasta}})
 
 (def near-term-forecast-underlays
   (array-map
