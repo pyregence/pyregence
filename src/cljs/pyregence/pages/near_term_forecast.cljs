@@ -6,7 +6,7 @@
             [clojure.string                                      :as str]
             [cognitect.transit                                   :as t]
             [herb.core                                           :refer [<class]]
-            [pyregence.components.common                         :refer [tool-tip-wrapper]]
+            [pyregence.components.nav-bar                        :refer [nav-bar]]
             [pyregence.components.map-controls.camera-tool       :refer [camera-tool]]
             [pyregence.components.map-controls.collapsible-panel :refer [collapsible-panel]]
             [pyregence.components.map-controls.information-tool  :refer [information-tool]]
@@ -55,34 +55,34 @@
 (defn- get-forecast-opt [key-name]
   (get-in @!/capabilities [@!/*forecast key-name]))
 
-(defn current-layer []
+(defn- current-layer []
   (get @!/param-layers @!/*layer-idx))
 
-(defn get-current-layer-name []
+(defn- get-current-layer-name []
   (:layer (current-layer) ""))
 
-(defn get-current-layer-hour []
+(defn- get-current-layer-hour []
   (:hour (current-layer) 0))
 
-(defn get-current-layer-full-time []
+(defn- get-current-layer-full-time []
   (if-let [sim-time (:sim-time (current-layer))]
     (u/time-zone-iso-date sim-time @!/show-utc?)
     ""))
 
-(defn get-current-layer-extent []
+(defn- get-current-layer-extent []
   (:extent (current-layer) c/california-extent))
 
-(defn get-current-layer-group []
+(defn- get-current-layer-group []
   (:layer-group (current-layer) ""))
 
-(defn get-current-layer-key [key-name]
+(defn- get-current-layer-key [key-name]
   (->> (get-forecast-opt :params)
        (map (fn [[key {:keys [options]}]]
               (get-in options [(get-in @!/*params [@!/*forecast key]) key-name])))
        (remove nil?)
        (first)))
 
-(defn get-current-option-key
+(defn- get-current-option-key
   "Retreive the value for a particular parameter's option."
   [param-key option-key key-name]
   (get-in (get-forecast-opt :params) [param-key :options option-key key-name]))
@@ -145,7 +145,7 @@
                       processed-times))
     (swap! !/*params assoc-in [@!/*forecast :model-init] (ffirst processed-times))))
 
-(defn get-layers! [get-model-times?]
+(defn- get-layers! [get-model-times?]
   (go
     (let [params       (dissoc (get @!/*params @!/*forecast) (when get-model-times? :model-init))
           selected-set (or (some (fn [[key {:keys [options]}]]
@@ -166,7 +166,7 @@
       (when-not (seq @!/param-layers)
         (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
 
-(defn create-share-link
+(defn- create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
   []
   (let [center          (mb/get-center)
@@ -199,10 +199,10 @@
                              :headers {"Accept" "application/json, text/xml"
                                        "Content-Type" "application/json"}}
                             process-fn))
-   (when (some? loading-atom)
+   (when loading-atom
      (reset! loading-atom false))))
 
-(defn wrap-wms-errors [type response success-fn]
+(defn- wrap-wms-errors [type response success-fn]
   (go
     (let [json-res (<p! (.json response))]
       (if-let [exceptions (u/try-js-aget json-res "exceptions")]
@@ -357,19 +357,19 @@
 ;; More Data Processing Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn select-layer! [new-layer]
+(defn- select-layer! [new-layer]
   (reset! !/*layer-idx new-layer)
   (mb/swap-active-layer! (get-current-layer-name)
                          (get-any-level-key :geoserver-key)
                          (/ @!/active-opacity 100)
                          (get-psps-layer-style)))
 
-(defn select-layer-by-hour! [hour]
+(defn- select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
                                         (when (= hour (:hour layer)) idx))
                                       @!/param-layers))))
 
-(defn clear-info! []
+(defn- clear-info! []
   (mb/clear-point!)
   (reset! !/last-clicked-info [])
   (when (get-forecast-opt :block-info?)
@@ -400,15 +400,15 @@
     (<! (get-layers! get-model-times?))
     (let [source   (get-current-layer-name)
           style-fn (get-current-layer-key :style-fn)]
-      (mb/reset-active-layer! source
-                              style-fn
-                              (get-any-level-key :geoserver-key)
-                              (/ @!/active-opacity 100)
-                              (get-psps-layer-style))
+      (<! (mb/reset-active-layer! source
+                                  style-fn
+                                  (get-any-level-key :geoserver-key)
+                                  (/ @!/active-opacity 100)
+                                  (get-psps-layer-style)))
       (mb/clear-popup!)
       ; When we have a style-fn (which indicates a WFS layer) add the feature highlight.
       ; For now, the only dropdown layer that is WFS is the *Active Fires layer.
-      (when (some? style-fn)
+      (when style-fn
         (mb/add-feature-highlight! "fire-active" "fire-active" :click-fn init-fire-popup!))
       (get-legend! source))
     (if clear?
@@ -434,7 +434,7 @@
                   (get-current-option-key main-key val :auto-zoom?)
                   (get-any-level-key     :max-zoom))))
 
-(defn- select-forecast!
+(defn select-forecast!
   "The function called whenever you select a new forecast/tab."
   [key]
   (go
@@ -448,13 +448,13 @@
                       (get-any-level-key :auto-zoom?)
                       (get-any-level-key :max-zoom)))))
 
-(defn set-show-info! [show?]
+(defn- set-show-info! [show?]
   (if (and show? (get-forecast-opt :block-info?))
     (toast-message! "There is currently no point information available for this layer.")
     (do (reset! !/show-info? show?)
         (clear-info!))))
 
-(defn select-time-zone! [utc?]
+(defn- select-time-zone! [utc?]
   (reset! !/show-utc? utc?)
   (swap! !/last-clicked-info #(mapv (fn [{:keys [js-time] :as layer}]
                                       (assoc layer
@@ -480,7 +480,7 @@
               (u-data/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
 ;;; Capabilities
-(defn process-capabilities! [fire-names user-layers options-config]
+(defn- process-capabilities! [fire-names user-layers options-config]
   (reset! !/capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
@@ -505,7 +505,7 @@
                                                   params))]))
                      options-config)))
 
-(defn refresh-fire-names! [user-id]
+(defn- refresh-fire-names! [user-id]
   (go
     (as-> (u/call-clj-async! "get-fire-names" user-id) fire-names
       (<! fire-names)
@@ -536,25 +536,12 @@
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $app-header []
-  {:align-items     "center"
-   :display         "flex"
-   :justify-content "center"
-   :position        "relative"
-   :width           "100%"})
-
-(defn $forecast-label [selected?]
-  (merge
-   {:cursor "pointer"
-    :margin "0 1rem 0 1rem"}
-   (when selected? {:color "white"})))
-
 (defn $control-layer []
   {:height   "100%"
    :position "absolute"
    :width    "100%"})
 
-(defn $message-modal [loading-message?]
+(defn- $message-modal [loading-message?]
   {:background-color "white"
    :border-radius    "3px"
    :display          "flex"
@@ -563,11 +550,11 @@
                        (and @!/mobile? loading-message?) "10rem 4rem .5rem 4rem"
                        @!/mobile?                ".25rem"
                        :else                  "8rem auto")
-   :overflow         "hidden"
    :max-height       (if @!/mobile? "calc(100% - .5rem)" "50%")
+   :overflow         "hidden"
    :width            (if @!/mobile? "unset" "25rem")})
 
-(defn $p-mb-cursor []
+(defn- $p-mb-cursor []
   (with-meta
     {}
     {:combinators {[:descendant :.mapboxgl-canvas-container] {:cursor "inherit"}}}))
@@ -576,7 +563,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn control-layer [user-id]
+(defn- control-layer [user-id]
   (let [my-box (r/atom #js {})]
     (r/create-class
      {:component-did-mount
@@ -633,31 +620,31 @@
             select-layer!
             select-time-zone!])])})))
 
-(defn pop-up []
+(defn- pop-up []
   [:div#pin {:style ($/fixed-size "2rem")}
    [svg/pin]])
 
-(defn map-layer []
+(defn- map-layer []
   (r/with-let [mouse-down? (r/atom false)
                cursor-fn   #(cond
                               @mouse-down?                           "grabbing"
                               (or @!/show-info? @!/show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
                               :else                                  "grab")]
     [:div#map {:class (<class $p-mb-cursor)
-               :style {:height "100%" :position "absolute" :width "100%" :cursor (cursor-fn)}
+               :style {:cursor (cursor-fn) :height "100%" :position "absolute" :width "100%"}
                :on-mouse-down #(reset! mouse-down? true)
                :on-mouse-up   #(reset! mouse-down? false)}]))
 
-(defn message-modal []
+(defn- message-modal []
   (r/with-let [show-me? (r/atom (not @!/dev-mode?))]
     (when @show-me?
       [:div#message-modal {:style ($/modal)}
        [:div {:style ($message-modal false)}
         [:div {:style {:background ($/color-picker :yellow)
                        :width      "100%"}}
-         [:label {:style {:padding ".5rem 0 0 .5rem" :font-size "1.5rem"}}
+         [:label {:style {:font-size "1.5rem" :padding ".5rem 0 0 .5rem"}}
           "Disclaimer"]]
-        [:div {:style {:padding ".5rem" :overflow "auto"}}
+        [:div {:style {:overflow "auto" :padding ".5rem"}}
          [:label {:style {:margin-bottom ".5rem"}}
           "This site is currently a work in progress and is in a Beta testing phase.
            It provides access to an experimental fire spread forecast tool. Use at your own risk."]
@@ -696,7 +683,7 @@
                    :on-click #(reset! show-me? false)}
            "Accept"]]]]])))
 
-(defn loading-modal []
+(defn- loading-modal []
   [:div#message-modal {:style ($/modal)}
    [:div {:style ($message-modal true)}
     [:h3 {:style {:margin-bottom "0"
@@ -704,7 +691,9 @@
                   :text-align    "center"}}
      "Loading..."]]])
 
-(defn root-component [{:keys [user-id] :as params}]
+(defn root-component
+  "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
+  [{:keys [user-id] :as params}]
   (let [height (r/atom "100%")]
     (r/create-class
      {:component-did-mount
@@ -731,44 +720,14 @@
          [message-box-modal]
          (when @!/loading? [loading-modal])
          [message-modal]
-         [:div {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
-          [:span {:style {:display "flex" :padding ".25rem 0"}}
-           (doall (map (fn [[key {:keys [opt-label hover-text allowed-org]}]]
-                         (when (or (nil? allowed-org)
-                                   (some (fn [{org-name :opt-label}]
-                                           (= org-name allowed-org))
-                                         @!/user-org-list))
-                           ^{:key key}
-                           [tool-tip-wrapper
-                            hover-text
-                            :top
-                            [:label {:style    ($forecast-label (= @!/*forecast key))
-                                     :on-click #(select-forecast! key)}
-                             opt-label]]))
-                       @!/capabilities))]
-          (when-not @!/mobile?
-            (if user-id
-              [:div {:style {:display "flex" :position "absolute" :right "1rem"}}
-               (when (> (count @!/user-org-list) 0)
-                 [tool-tip-wrapper
-                  "Visit the admin page"
-                  :top
-                  [:a {:style      ($/combine ($/fixed-size "1.5rem")
-                                              {:cursor "pointer" :margin-right "1rem"})
-                       :aria-label "Visit the admin page"
-                       :href       "/admin"}
-                   [svg/admin-user]]])
-               [:label {:style {:margin ".16rem 1rem 0 0" :cursor "pointer"}
-                        :on-click (fn []
-                                    (go (<! (u/call-clj-async! "log-out"))
-                                        (-> js/window .-location .reload)))}
-                "Log Out"]]
-              [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-               ;; Remove for the time being
-               ;; [:label {:style {:margin-right "1rem" :cursor "pointer"}
-               ;;          :on-click #(u/jump-to-url! "/register")} "Register"]
-               [:label {:style {:cursor "pointer"}
-                        :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
+         [nav-bar {:capabilities         @!/capabilities
+                   :current-forecast     @!/*forecast
+                   :is-admin?            (> (count @!/user-org-list) 0)
+                   :logged-in?           user-id
+                   :mobile?              @!/mobile?
+                   :user-org-list        @!/user-org-list
+                   :select-forecast!     select-forecast!
+                   :user-id              user-id}]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
           (when (and @mb/the-map
                      (not-empty @!/capabilities)

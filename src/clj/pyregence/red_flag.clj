@@ -29,7 +29,7 @@
   (reset! cache new-cache))
 
 (defn- valid-cache? []
-  (and (some? @cache)
+  (and @cache
        (< (- (System/currentTimeMillis) @cache-time) cache-max-age)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
