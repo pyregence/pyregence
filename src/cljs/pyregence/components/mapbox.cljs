@@ -734,7 +734,7 @@
 (defn create-red-flag-layer!
   "Adds red flag warning layer to the map."
   [id data]
-  (let [color      ["concat" "#" ["get" "color"]]
+  (let [color      ["get" "color"]
         new-source {id {:type "geojson" :data data :generateId true}}
         new-layers [{:id       id
                      :source   id
