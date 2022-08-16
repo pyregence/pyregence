@@ -1,7 +1,8 @@
 (ns pyregence.config
-  (:require [clojure.string  :as str]
-            [pyregence.utils :as u]
-            [pyregence.state :as !]))
+  (:require [clojure.string               :as str]
+            [pyregence.state              :as !]
+            [pyregence.utils              :as u]
+            [pyregence.utils.number-utils :as u-num]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
@@ -86,7 +87,7 @@
                                                        :dem    {:opt-label       "Elevation (ft)"
                                                                 :filter          "dem"
                                                                 :units           "ft"
-                                                                :convert         #(u/to-precision 1 (* % 3.28084))
+                                                                :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cecs}}
                                                        :cc     {:opt-label       "Canopy Cover (%)"
@@ -98,20 +99,20 @@
                                                                 :filter          "ch"
                                                                 :units           "m"
                                                                 :no-convert      #{:cfo}
-                                                                :convert         #(u/to-precision 1 (/ % 10))
+                                                                :convert         #(u-num/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cecs}}
                                                        :cbh    {:opt-label       "Canopy Base Height (m)"
                                                                 :filter          "cbh"
                                                                 :units           "m"
                                                                 :no-convert      #{:cfo}
-                                                                :convert         #(u/to-precision 1 (/ % 10))
+                                                                :convert         #(u-num/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cecs}}
                                                        :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
                                                                 :filter          "cbd"
                                                                 :units           "kg/m\u00b3"
-                                                                :convert         #(u/to-precision 2 (/ % 100))
+                                                                :convert         #(u-num/to-precision 2 (/ % 100))
                                                                 :no-convert      #{:cfo}
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cecs}})}
