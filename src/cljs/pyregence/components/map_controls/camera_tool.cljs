@@ -1,6 +1,5 @@
 (ns pyregence.components.map-controls.camera-tool
-  (:require
-            [clojure.core.async                    :refer [take! go <!]]
+  (:require [clojure.core.async                    :refer [take! go <!]]
             [clojure.edn                           :as edn]
             [herb.core                             :refer [<class]]
             [pyregence.components.common           :refer [tool-tip-wrapper]]
@@ -12,6 +11,7 @@
             [pyregence.styles                      :as $]
             [pyregence.utils                       :as u]
             [pyregence.utils.number-utils          :as u-num]
+            [pyregence.utils.time-utils            :as u-time]
             [reagent.core                          :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -70,9 +70,9 @@
                                    (reset! image-src nil)
                                    (let [image-chan  (get-camera-image-chan @active-camera)]
                                      (reset! camera-age (-> (:update-time @active-camera)
-                                                            (u/camera-time->js-date)
-                                                            (u/get-time-difference)
-                                                            (u/ms->hr)))
+                                                            (u-time/camera-time->js-date)
+                                                            (u-time/get-time-difference)
+                                                            (u-time/ms->hr)))
                                      (when (> 4 @camera-age)
                                        (reset! image-src (<! image-chan))
                                        (reset! exit-chan

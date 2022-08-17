@@ -27,6 +27,7 @@
             [pyregence.utils                                     :as u]
             [pyregence.utils.data-utils                          :as u-data]
             [pyregence.utils.number-utils                        :as u-num]
+            [pyregence.utils.time-utils                          :as u-time]
             [reagent.core                                        :as r]
             [reagent.dom                                         :as rd]))
 
@@ -67,7 +68,7 @@
 
 (defn- get-current-layer-full-time []
   (if-let [sim-time (:sim-time (current-layer))]
-    (u/time-zone-iso-date sim-time @!/show-utc?)
+    (u-time/time-zone-iso-date sim-time @!/show-utc?)
     ""))
 
 (defn- get-current-layer-extent []
@@ -136,7 +137,7 @@
   (let [processed-times (into (u-data/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
-                                      {:opt-label (u/time-zone-iso-date utc-time @!/show-utc?)
+                                      {:opt-label (u-time/time-zone-iso-date utc-time @!/show-utc?)
                                        :utc-time  utc-time ; TODO is utc-time redundant?
                                        :filter    utc-time}])
                                    model-times))]
@@ -309,11 +310,11 @@
                 (->> feature-info
                      (filter (fn [pi-layer] (= (:vec-id pi-layer) vec-id-max)))
                      (mapv (fn [{:keys [sim-time hour]} pi-layer]
-                             (let [js-time (u/js-date-from-string sim-time)]
+                             (let [js-time (u-time/js-date-from-string sim-time)]
                                  (assoc pi-layer
                                         :js-time js-time
-                                        :date    (u/get-date-from-js js-time @!/show-utc?)
-                                        :time    (u/get-time-from-js js-time @!/show-utc?)
+                                        :date    (u-time/get-date-from-js js-time @!/show-utc?)
+                                        :time    (u-time/get-time-from-js js-time @!/show-utc?)
                                         :hour    hour)))
                            @!/param-layers)))))))
 
@@ -459,8 +460,8 @@
   (reset! !/show-utc? utc?)
   (swap! !/last-clicked-info #(mapv (fn [{:keys [js-time] :as layer}]
                                       (assoc layer
-                                             :date (u/get-date-from-js js-time @!/show-utc?)
-                                             :time (u/get-time-from-js js-time @!/show-utc?)))
+                                             :date (u-time/get-date-from-js js-time @!/show-utc?)
+                                             :time (u-time/get-time-from-js js-time @!/show-utc?)))
                                     @!/last-clicked-info))
   (swap! !/processed-params  #(update-in %
                                        [:model-init :options]
@@ -468,7 +469,7 @@
                                          (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
                                                    [k (assoc v
                                                              :opt-label
-                                                             (u/time-zone-iso-date utc-time @!/show-utc?))])
+                                                             (u-time/time-zone-iso-date utc-time @!/show-utc?))])
                                                  options)))))
 
 (defn- params->selected-options
