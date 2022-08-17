@@ -9,6 +9,7 @@
             [pyregence.state                               :as !]
             [pyregence.utils                               :as u]
             [pyregence.utils.data-utils                    :as u-data]
+            [pyregence.utils.number-utils                  :as u-num]
             [reagent.core                                  :as r]
             [reagent.dom                                   :as rd]))
 
@@ -42,9 +43,9 @@
          [:label {:style {:margin-top ".6rem" :text-align "center" :width "100%"}}
           (if-let [value (:band current-point)]
             (str (if (fn? convert)
-                   (u/round-last-clicked-info (convert value))
-                   (u/round-last-clicked-info value))
-                 (u/clean-units units))
+                   (u-num/round-last-clicked-info (convert value))
+                   (u-num/round-last-clicked-info value))
+                 (u-num/clean-units units))
             "No info available for this timestep.")]
          [:div {:style {:bottom "0" :position "absolute" :right "4px"}}
           [tool-tip-wrapper
@@ -90,7 +91,7 @@
                          (@!/*forecast)
                          (vals)
                          (into #{}))
-        add-units   #(u/end-with % (u/clean-units units))
+        add-units   #(u/end-with % (u-num/clean-units units))
         fbfm40?     (contains? *inputs :fbfm40)
         display-val (cond
                       fbfm40? ; for all fbfm40 layers we just need a simple lookup

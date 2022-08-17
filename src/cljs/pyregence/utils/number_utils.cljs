@@ -1,6 +1,10 @@
 (ns pyregence.utils.number-utils
   (:require [decimal.core :as dc]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Utility Functions - Numbers and Calculations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn clean-units
   "Cleans units by adding/not adding a space when needed for units."
   [units]

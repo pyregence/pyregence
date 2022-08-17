@@ -1,16 +1,18 @@
 (ns pyregence.components.map-controls.camera-tool
-  (:require [reagent.core       :as r]
-            [herb.core          :refer [<class]]
-            [clojure.edn        :as edn]
-            [clojure.core.async :refer [take! go <!]]
-            [pyregence.state    :as !]
-            [pyregence.styles   :as $]
-            [pyregence.utils    :as u]
-            [pyregence.components.help      :as h]
-            [pyregence.components.mapbox    :as mb]
-            [pyregence.components.svg-icons :as svg]
+  (:require
+            [clojure.core.async                    :refer [take! go <!]]
+            [clojure.edn                           :as edn]
+            [herb.core                             :refer [<class]]
             [pyregence.components.common           :refer [tool-tip-wrapper]]
-            [pyregence.components.resizable-window :refer [resizable-window]]))
+            [pyregence.components.help             :as h]
+            [pyregence.components.mapbox           :as mb]
+            [pyregence.components.resizable-window :refer [resizable-window]]
+            [pyregence.components.svg-icons        :as svg]
+            [pyregence.state                       :as !]
+            [pyregence.styles                      :as $]
+            [pyregence.utils                       :as u]
+            [pyregence.utils.number-utils          :as u-num]
+            [reagent.core                          :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -98,7 +100,7 @@
 
           (>= @camera-age 4)
           [:div {:style {:padding "1.2em"}}
-           [:p (str "This camera has not been refreshed for " (u/to-precision 1 @camera-age) " hours. Please try again later.")]
+           [:p (str "This camera has not been refreshed for " (u-num/to-precision 1 @camera-age) " hours. Please try again later.")]
            [:p "Click"
             [:a {:href   (str "https://www.alertwildfire.org/region/?camera=" (:name @active-camera))
                  :ref    "noreferrer noopener"
