@@ -26,6 +26,7 @@
             [pyregence.styles                                    :as $]
             [pyregence.utils                                     :as u]
             [pyregence.utils.data-utils                          :as u-data]
+            [pyregence.utils.number-utils                        :as u-num]
             [reagent.core                                        :as r]
             [reagent.dom                                         :as rd]))
 
@@ -324,7 +325,7 @@
     (if (empty? features)
       (reset! !/last-clicked-info [])
       (reset! !/last-clicked-info
-              (u/to-precision 2 (some-> features
+              (u-num/to-precision 2 (some-> features
                                         (first)
                                         (u/try-js-aget "properties")
                                         (js/Object.values)
