@@ -29,4 +29,4 @@
        ;; [:label {:style {:margin-right "1rem" :cursor "pointer"}
        ;;          :on-click #(u-browser/jump-to-url! "/register")} "Register"]
        [:label {:style    {:cursor "pointer" :margin ".16rem .2rem 0 0"}
-                :on-click #(u/jump-to-url! "/login")} "Log In"]))])
+                :on-click #(u-browser/jump-to-url! "/login")} "Log In"]))])
