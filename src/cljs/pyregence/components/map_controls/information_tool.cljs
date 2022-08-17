@@ -10,6 +10,7 @@
             [pyregence.utils                               :as u]
             [pyregence.utils.data-utils                    :as u-data]
             [pyregence.utils.number-utils                  :as u-num]
+            [pyregence.utils.string-utils                  :as u-str]
             [reagent.core                                  :as r]
             [reagent.dom                                   :as rd]))
 
@@ -91,7 +92,7 @@
                          (@!/*forecast)
                          (vals)
                          (into #{}))
-        add-units   #(u/end-with % (u-num/clean-units units))
+        add-units   #(u-str/end-with % (u-num/clean-units units))
         fbfm40?     (contains? *inputs :fbfm40)
         display-val (cond
                       fbfm40? ; for all fbfm40 layers we just need a simple lookup

@@ -1,12 +1,13 @@
 (ns pyregence.components.common
   (:require-macros [pyregence.herb-patch :refer [style->class]])
-  (:require [clojure.core.async         :refer [go <! timeout]]
-            [herb.core                  :refer [<class]]
-            [pyregence.styles           :as $]
-            [pyregence.utils            :as u]
-            [pyregence.utils.time-utils :as u-time]
-            [reagent.core               :as r]
-            [reagent.dom                :as rd]))
+  (:require [clojure.core.async           :refer [go <! timeout]]
+            [herb.core                    :refer [<class]]
+            [pyregence.styles             :as $]
+            [pyregence.utils              :as u]
+            [pyregence.utils.string-utils :as u-str]
+            [pyregence.utils.time-utils   :as u-time]
+            [reagent.core                 :as r]
+            [reagent.dom                  :as rd]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -144,14 +145,14 @@
   (let [{:keys [type autocomplete disabled? call-back autofocus? required? placeholder]
          :or {type "text" disabled? false call-back #(reset! state (u/input-value %))} required? false} opts]
     [:section {:style ($labeled-input)}
-     [:label {:for (u/sentence->kebab label)} label]
+     [:label {:for (u-str/sentence->kebab label)} label]
      [:input {:class         (style->class $/p-bordered-input)
               :auto-complete autocomplete
               :auto-focus    autofocus?
               :disabled      disabled?
               :required      required?
               :placeholder   placeholder
-              :id            (u/sentence->kebab label)
+              :id            (u-str/sentence->kebab label)
               :type          type
               :value         @state
               :on-change     call-back}]]))

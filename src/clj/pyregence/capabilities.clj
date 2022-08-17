@@ -1,13 +1,14 @@
 (ns pyregence.capabilities
-  (:require [clojure.edn        :as edn]
-            [clojure.string     :as str]
-            [clojure.set        :as set]
-            [clj-http.client    :as client]
-            [triangulum.utils    :as u]
-            [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql]]
-            [triangulum.logging  :refer [log log-str]]
-            [pyregence.views     :refer [data-response]]))
+  (:require [clj-http.client              :as client]
+            [clojure.edn                  :as edn]
+            [clojure.set                  :as set]
+            [clojure.string               :as str]
+            [pyregence.utils.string-utils :as u-str]
+            [pyregence.views              :refer [data-response]]
+            [triangulum.config            :refer [get-config]]
+            [triangulum.database          :refer [call-sql]]
+            [triangulum.logging           :refer [log log-str]]
+            [triangulum.utils             :as u]))
 
 ;;; State
 
@@ -113,7 +114,7 @@
    functions above."
   [geoserver-key workspace-name]
   (let [xml-response (-> (get-config :geoserver geoserver-key)
-                         (u/end-with "/")
+                         (u-str/end-with "/")
                          (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
                               (when workspace-name
                                 (str "&NAMESPACE=" workspace-name)))
