@@ -1,14 +1,15 @@
 (ns pyregence.components.map-controls.zoom-bar
-  (:require [reagent.core     :as r]
-            [herb.core        :refer [<class]]
-            [pyregence.state  :as !]
-            [pyregence.styles :as $]
-            [pyregence.utils  :as u]
-            [pyregence.components.mapbox :as mb]
-            [pyregence.components.help   :as h]
-            [pyregence.components.common    :refer [tool-tip-wrapper]]
-            [pyregence.components.messaging :refer [set-message-box-content!]]
-            [pyregence.components.map-controls.tool-button :refer [tool-button]]))
+  (:require [herb.core                                     :refer [<class]]
+            [pyregence.components.common                   :refer [tool-tip-wrapper]]
+            [pyregence.components.help                     :as h]
+            [pyregence.components.map-controls.tool-button :refer [tool-button]]
+            [pyregence.components.mapbox                   :as mb]
+            [pyregence.components.messaging                :refer [set-message-box-content!]]
+            [pyregence.state                               :as !]
+            [pyregence.styles                              :as $]
+            [pyregence.utils                               :as u]
+            [pyregence.utils.dom-utils                     :as u-dom]
+            [reagent.core                                  :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -32,7 +33,7 @@
   (r/with-let [copied     (r/atom false)
                share-link (create-share-link)
                on-click   #(do
-                             (u/copy-input-clipboard! "share-link")
+                             (u-dom/copy-input-clipboard! "share-link")
                              (reset! copied true))]
     [:div {:style (if @!/mobile?
                     {:display         "flex"

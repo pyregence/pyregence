@@ -13,6 +13,7 @@
             [pyregence.styles                                 :as $]
             [pyregence.utils                                  :as u]
             [pyregence.utils.data-utils                       :as u-data]
+            [pyregence.utils.dom-utils                        :as u-dom]
             [reagent.core                                     :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -281,7 +282,7 @@
             :min       "0"
             :max       "100"
             :value     @!/active-opacity
-            :on-change #(do (reset! !/active-opacity (u/input-int-value %))
+            :on-change #(do (reset! !/active-opacity (u-dom/input-int-value %))
                             (mb/set-opacity-by-title! "active" (/ @!/active-opacity 100.0)))}]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

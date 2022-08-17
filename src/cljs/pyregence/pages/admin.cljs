@@ -9,6 +9,7 @@
             [pyregence.styles               :as $]
             [pyregence.utils                :as u]
             [pyregence.utils.data-utils     :as u-data]
+            [pyregence.utils.dom-utils      :as u-dom]
             [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -327,7 +328,7 @@
       [:select {:class     (<class $/p-bordered-input)
                 :style     {:margin "0 .25rem 0 1rem" :height "2rem"}
                 :value     @_role-id
-                :on-change #(reset! _role-id (u/input-int-value %))}
+                :on-change #(reset! _role-id (u-dom/input-int-value %))}
        (map (fn [{role-id :opt-id role-name :opt-label}]
               [:option {:key role-id :value role-id} role-name])
             roles)]
