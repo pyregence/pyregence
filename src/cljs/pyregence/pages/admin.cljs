@@ -8,6 +8,7 @@
             [pyregence.components.messaging :refer [confirmation-modal set-message-box-content! toast-message!]]
             [pyregence.styles               :as $]
             [pyregence.utils                :as u]
+            [pyregence.utils.data-utils     :as u-data]
             [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -130,7 +131,7 @@
     (reset! pending-new-user-submission? true)
     (let [email-chan (u/call-clj-async! "user-email-taken" @new-user-email)
           errors     (remove nil?
-                            [(when (u/missing-data? @new-user-email @new-user-full-name @new-user-password @new-user-re-password)
+                            [(when (u-data/missing-data? @new-user-email @new-user-full-name @new-user-password @new-user-re-password)
                                "You must fill in all required information to continue.")
 
                              (when (< (count @new-user-password) 8)
