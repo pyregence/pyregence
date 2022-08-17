@@ -34,7 +34,7 @@
      :sim-time    sim-timestamp
      :hour        (/ (- (.getTime (java-date-from-string sim-timestamp))
                         (.getTime (java-date-from-string (str init-timestamp "0000"))))
-                     1000 60 60)}))
+                     1000.0 60 60)}))
 
 (defn- split-active-layer-name
   "Gets information about an active fire layer based on its name."
@@ -115,7 +115,7 @@
   (let [xml-response (-> (get-config :geoserver geoserver-key)
                          (u/end-with "/")
                          (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
-                              (when (some? workspace-name)
+                              (when workspace-name
                                 (str "&NAMESPACE=" workspace-name)))
                          (client/get)
                          (:body))]
@@ -135,7 +135,7 @@
                                            (vec))
                             merge-fn  #(merge % {:layer full-name :extent coords})]
                         (cond
-                          (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([a-z|-]+\d*_)+\d{8}_\d{6}" full-name)
+                          (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (or (str/includes? full-name "isochrones")
@@ -144,7 +144,7 @@
                           (merge-fn (split-active-layer-name full-name))
 
                           (or (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
-                              (re-matches #"fire-detections.*:(fire-history|us-buildings|us-transmission-lines).*" full-name))
+                              (re-matches #"fire-detections.*:(goes16-rgb|fire-history|conus-buildings|us-transmission-lines).*" full-name))
                           (merge-fn (split-fire-detections full-name))
 
                           (str/starts-with? full-name "fuels")
@@ -221,7 +221,7 @@
                               (reduce (fn [acc row]
                                         (assoc acc (:job_id row) (:display_name row)))
                                       {}))]
-    (->> (:pyrecast @layers)
+    (->> (:trinity @layers)
          (filter (fn [{:keys [forecast]}]
                    (= "fire-spread-forecast" forecast)))
          (map :fire-name)

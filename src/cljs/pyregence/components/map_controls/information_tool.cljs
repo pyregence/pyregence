@@ -176,7 +176,7 @@
              box-width
              "There was an issue getting point information for this layer."]
 
-            (and (some? @!/last-clicked-info) (empty? @!/legend-list))
+            (and @!/last-clicked-info (empty? @!/legend-list))
             [loading-cover
              box-height
              box-width

@@ -415,7 +415,7 @@
   "Returns the difference in milliseconds between a JS Date object and the current time.
    Optionally returns the difference between two different JS Date objects."
   [js-date & [js-date-opt]]
-  (if (some? js-date-opt)
+  (if js-date-opt
     (- (.getTime js-date) (.getTime js-date-opt))
     (- (.getTime (js/Date.)) (.getTime js-date))))
 
@@ -548,7 +548,7 @@
 (defn round-last-clicked-info
   "Rounds a point info value to the proper number of digits for rendering."
   [last-clicked-info-val]
-  (when (some? last-clicked-info-val)
+  (when last-clicked-info-val
     (if (>= last-clicked-info-val 1)
       (to-precision 1 last-clicked-info-val)
       (-> last-clicked-info-val

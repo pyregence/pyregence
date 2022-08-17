@@ -85,8 +85,10 @@ Each entry in the legend contains the legend's label, value, color, and opacity.
 ;; Miscellaneous State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^{:doc "For the currently logged in user, stores a list of all of the
-organizations that they belong to."}
+(defonce ^{:doc "For the currently logged in user, stores a list of all of the organizations that they belong to as an Admin.
+Will be bound to an empty vector if the following two conditions are not met by the user:
+the user must be linked to atleast one organization and
+the user must have the Admin role on atleast one linked organization"}
   user-org-list (r/atom []))
 (defonce ^{:doc "A boolean that enables time-step animation for the Time Slider when true."}
   animate? (r/atom false))
