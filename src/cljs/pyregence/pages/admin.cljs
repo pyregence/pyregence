@@ -8,6 +8,7 @@
             [pyregence.components.messaging :refer [confirmation-modal set-message-box-content! toast-message!]]
             [pyregence.styles               :as $]
             [pyregence.utils                :as u]
+            [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.data-utils     :as u-data]
             [pyregence.utils.dom-utils      :as u-dom]
             [reagent.core                   :as r]))
@@ -371,7 +372,7 @@
     (cond
       (or (nil? user-id)                ; User is not logged in
           (nil? @*org-id))              ; User is not an admin of any org
-      (do (u/redirect-to-login! "/admin")
+      (do (u-browser/redirect-to-login! "/admin")
           nil)
 
       (= @*org-id -1)                   ; get-org-list has not completed yet

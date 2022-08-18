@@ -6,6 +6,7 @@
             [pyregence.components.messaging :refer [set-message-box-content! message-box-modal]]
             [pyregence.styles               :as $]
             [pyregence.utils                :as u]
+            [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.time-utils     :as u-time]
             [reagent.core                   :as r]))
 
@@ -94,7 +95,7 @@
   (fn [_]
     (cond
       (nil? user-id) ; User is not logged in
-      (do (u/redirect-to-login! "/dashboard")
+      (do (u-browser/redirect-to-login! "/dashboard")
           nil)
 
       :else  ; User is logged in
