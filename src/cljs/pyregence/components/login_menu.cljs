@@ -4,6 +4,7 @@
             [pyregence.components.svg-icons     :as svg]
             [pyregence.styles                   :as $]
             [pyregence.utils                    :as u]
+            [pyregence.utils.async-utils        :as u-async]
             [pyregence.utils.browser-utils      :as u-browser]))
 
 (defn login-menu
@@ -24,7 +25,7 @@
             [svg/admin-user]]])
         [:label {:style    {:cursor "pointer" :margin ".16rem .2rem 0 0"}
                  :on-click (fn []
-                             (go (<! (u/call-clj-async! "log-out"))
+                             (go (<! (u-async/call-clj-async! "log-out"))
                                  (-> js/window .-location .reload)))}
          "Log Out"]]
        ;; [:label {:style {:margin-right "1rem" :cursor "pointer"}

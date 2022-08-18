@@ -1,14 +1,15 @@
 (ns pyregence.components.map-controls.tool-bar
-  (:require [clojure.core.async :refer [<! go]]
-            [pyregence.state    :as !]
-            [pyregence.styles   :as $]
-            [pyregence.utils    :as u]
-            [pyregence.config   :as c]
-            [pyregence.components.mapbox    :as mb]
-            [pyregence.components.messaging :refer [toast-message!]]
-            [pyregence.components.popups    :refer [red-flag-popup fire-history-popup]]
-            [pyregence.components.common    :refer [tool-tip-wrapper hs-str]]
-            [pyregence.components.map-controls.tool-button :refer [tool-button]]))
+  (:require [clojure.core.async                            :refer [<! go]]
+            [pyregence.components.common                   :refer [tool-tip-wrapper hs-str]]
+            [pyregence.components.map-controls.tool-button :refer [tool-button]]
+            [pyregence.components.mapbox                   :as mb]
+            [pyregence.components.messaging                :refer [toast-message!]]
+            [pyregence.components.popups                   :refer [red-flag-popup fire-history-popup]]
+            [pyregence.config                              :as c]
+            [pyregence.state                               :as !]
+            [pyregence.styles                              :as $]
+            [pyregence.utils                               :as u]
+            [pyregence.utils.async-utils                   :as u-async]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -34,7 +35,7 @@
     (mb/add-feature-highlight! "red-flag" "red-flag" :click-fn init-red-flag-popup!)
     (mb/clear-highlight! "red-flag" :selected))
   (go
-    (let [data (-> (<! (u/call-clj-async! "get-red-flag-layer"))
+    (let [data (-> (<! (u-async/call-clj-async! "get-red-flag-layer"))
                    (:body)
                    (js/JSON.parse))]
       (if (empty? (.-features data))

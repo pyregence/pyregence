@@ -4,6 +4,7 @@
             [pyregence.components.messaging :refer [toast-message!]]
             [pyregence.styles               :as $]
             [pyregence.utils                :as u]
+            [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.data-utils     :as u-data]
             [reagent.core                   :as r]))
@@ -36,13 +37,13 @@
                           (when (not= @password @re-password)
                             "Password fields do not match.")
 
-                          (when-not (:success (<! (u/call-clj-async! "user-email-taken" @email -1)))
+                          (when-not (:success (<! (u-async/call-clj-async! "user-email-taken" @email -1)))
                             (str "The email '" @email "' does not exist."))])]
 
       (if (pos? (count errors))
         (do (toast-message! errors)
             (reset! pending? false))
-        (if (:success (<! (u/call-clj-async! "set-user-password" @email @password @reset-key)))
+        (if (:success (<! (u-async/call-clj-async! "set-user-password" @email @password @reset-key)))
           (do (toast-message! "Your password has been reset successfully.")
               (<! (timeout 2000))
               (u-browser/jump-to-url! "/forecast"))

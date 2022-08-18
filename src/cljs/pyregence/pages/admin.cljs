@@ -9,6 +9,7 @@
             [pyregence.styles               :as $]
             [pyregence.utils                :as u]
             [pyregence.utils.browser-utils  :as u-browser]
+            [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.data-utils     :as u-data]
             [pyregence.utils.dom-utils      :as u-dom]
             [reagent.core                   :as r]))
@@ -89,19 +90,19 @@
 (defn- get-org-users-list [org-id]
   (go
     (reset! org-users
-            (edn/read-string (:body (<! (u/call-clj-async! "get-org-users-list" org-id)))))
+            (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-users-list" org-id)))))
     (reset-add-user-form!)))
 
 (defn- get-org-list []
   (go
-    (reset! orgs (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
+    (reset! orgs (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-list" @_user-id))))) ; TODO get from session on the back end
     ;; find the current org, by id, in the updated @orgs vector or fallback to the org on the first index
     (set-selected-org! (or (get-org-by-id @*org-id) (first @orgs)))
     (get-org-users-list @*org-id)))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
   (go
-    (<! (u/call-clj-async! "update-org-info"
+    (<! (u-async/call-clj-async! "update-org-info"
                            opt-id
                            org-name
                            email-domains
@@ -113,13 +114,13 @@
 (defn- add-new-user! []
   (go
     (toast-message! "Creating new account. This may take a moment...")
-    (if (and (:success (<! (u/call-clj-async! "add-new-user"
+    (if (and (:success (<! (u-async/call-clj-async! "add-new-user"
                                               @new-user-email
                                               @new-user-full-name
                                               @new-user-password
                                               {:org-id          @*org-id
                                                :restrict-email? false})))
-             (:success (<! (u/call-clj-async! "send-email" @new-user-email :new-user))))
+             (:success (<! (u-async/call-clj-async! "send-email" @new-user-email :new-user))))
       (do
         (toast-message! ["Your account has been created successfully."
                          "Please check your email for a link to complete registration."])
@@ -131,7 +132,7 @@
 (defn- register-new-user! []
   (go
     (reset! pending-new-user-submission? true)
-    (let [email-chan (u/call-clj-async! "user-email-taken" @new-user-email)
+    (let [email-chan (u-async/call-clj-async! "user-email-taken" @new-user-email)
           errors     (remove nil?
                             [(when (u-data/missing-data? @new-user-email @new-user-full-name @new-user-password @new-user-re-password)
                                "You must fill in all required information to continue.")
@@ -151,12 +152,12 @@
 
 (defn- update-org-user! [email new-name]
   (go
-    (<! (u/call-clj-async! "update-user-name" email new-name))
+    (<! (u-async/call-clj-async! "update-user-name" email new-name))
     (toast-message! (str "The user " new-name " with the email " email  " has been updated."))))
 
 (defn- add-existing-user! [email]
   (go
-    (let [res (<! (u/call-clj-async! "add-org-user" @*org-id email))]
+    (let [res (<! (u-async/call-clj-async! "add-org-user" @*org-id email))]
       (if (:success res)
         (do (get-org-users-list @*org-id)
             (toast-message! (str "User " email " added.")))
@@ -164,13 +165,13 @@
 
 (defn- update-org-user-role! [org-user-id role-id]
   (go
-    (<! (u/call-clj-async! "update-org-user-role" org-user-id role-id))
+    (<! (u-async/call-clj-async! "update-org-user-role" org-user-id role-id))
     (get-org-users-list @*org-id)
     (toast-message! "User role updated.")))
 
 (defn- remove-org-user! [org-user-id]
   (go
-    (<! (u/call-clj-async! "remove-org-user" org-user-id))
+    (<! (u-async/call-clj-async! "remove-org-user" org-user-id))
     (get-org-users-list @*org-id)
     (toast-message! "User removed.")))
 

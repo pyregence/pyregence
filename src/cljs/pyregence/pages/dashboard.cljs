@@ -7,6 +7,7 @@
             [pyregence.styles               :as $]
             [pyregence.utils                :as u]
             [pyregence.utils.browser-utils  :as u-browser]
+            [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.time-utils     :as u-time]
             [reagent.core                   :as r]))
 
@@ -20,7 +21,7 @@
 (defn- user-match-drops [user-id]
   (go
     (reset! match-drops
-            (edn/read-string (:body (<! (u/call-clj-async! "get-match-drops" user-id)))))))
+            (edn/read-string (:body (<! (u-async/call-clj-async! "get-match-drops" user-id)))))))
 
 ;; Helper
 

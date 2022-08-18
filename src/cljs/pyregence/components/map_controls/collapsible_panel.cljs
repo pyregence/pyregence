@@ -12,6 +12,7 @@
             [pyregence.state                                  :as !]
             [pyregence.styles                                 :as $]
             [pyregence.utils                                  :as u]
+            [pyregence.utils.async-utils                      :as u-async]
             [pyregence.utils.data-utils                       :as u-data]
             [pyregence.utils.dom-utils                        :as u-dom]
             [reagent.core                                     :as r]))
@@ -22,7 +23,7 @@
 
 (defn get-layer-name [geoserver-key filter-set update-layer!]
   (go
-    (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
+    (let [name (edn/read-string (:body (<! (u-async/call-clj-async! "get-layer-name"
                                                               geoserver-key
                                                               (pr-str filter-set)))))]
       (update-layer! :name name)

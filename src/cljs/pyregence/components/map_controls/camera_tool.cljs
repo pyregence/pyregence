@@ -10,6 +10,7 @@
             [pyregence.state                       :as !]
             [pyregence.styles                      :as $]
             [pyregence.utils                       :as u]
+            [pyregence.utils.async-utils           :as u-async]
             [pyregence.utils.number-utils          :as u-num]
             [pyregence.utils.time-utils            :as u-time]
             [reagent.core                          :as r]))
@@ -20,7 +21,7 @@
 
 (defn- get-camera-image-chan [active-camera]
   (go
-    (->> (u/call-clj-async! "get-current-image" :post-blob (:name active-camera))
+    (->> (u-async/call-clj-async! "get-current-image" :post-blob (:name active-camera))
          (<!)
          (:body)
          (js/URL.createObjectURL))))
@@ -64,7 +65,7 @@
                on-click      (fn [features]
                                (go
                                  (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
-                                   (u/stop-refresh! @exit-chan)
+                                   (u-async/stop-refresh! @exit-chan)
                                    (reset! active-camera new-camera)
                                    (reset! camera-age 0)
                                    (reset! image-src nil)
@@ -76,7 +77,7 @@
                                      (when (> 4 @camera-age)
                                        (reset! image-src (<! image-chan))
                                        (reset! exit-chan
-                                               (u/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
+                                               (u-async/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
                                                                        60000)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _             (take! (mb/create-camera-layer! "fire-cameras")
@@ -150,6 +151,6 @@
           [:div {:style {:padding "1.2em"}}
            (str "Loading camera " (:name @active-camera) "...")]))]]
     (finally
-      (u/stop-refresh! @exit-chan)
+      (u-async/stop-refresh! @exit-chan)
       (mb/remove-layer! "fire-cameras")
       (mb/clear-highlight! "fire-cameras" :selected))))
