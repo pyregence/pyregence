@@ -7,7 +7,6 @@
             [pyregence.components.vega                     :refer [vega-box]]
             [pyregence.config                              :as c]
             [pyregence.state                               :as !]
-            [pyregence.utils                               :as u]
             [pyregence.utils.data-utils                    :as u-data]
             [pyregence.utils.misc-utils                    :as u-misc]
             [pyregence.utils.number-utils                  :as u-num]

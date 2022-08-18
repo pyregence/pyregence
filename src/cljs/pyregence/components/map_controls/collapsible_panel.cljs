@@ -11,7 +11,6 @@
             [pyregence.config                                 :as c]
             [pyregence.state                                  :as !]
             [pyregence.styles                                 :as $]
-            [pyregence.utils                                  :as u]
             [pyregence.utils.async-utils                      :as u-async]
             [pyregence.utils.data-utils                       :as u-data]
             [pyregence.utils.dom-utils                        :as u-dom]

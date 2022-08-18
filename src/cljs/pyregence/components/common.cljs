@@ -3,7 +3,6 @@
   (:require [clojure.core.async           :refer [go <! timeout]]
             [herb.core                    :refer [<class]]
             [pyregence.styles             :as $]
-            [pyregence.utils              :as u]
             [pyregence.utils.dom-utils    :as u-dom]
             [pyregence.utils.string-utils :as u-str]
             [pyregence.utils.time-utils   :as u-time]

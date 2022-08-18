@@ -2,7 +2,6 @@
   (:require [pyregence.components.common    :refer [tool-tip-wrapper]]
             [pyregence.components.svg-icons :as svg]
             [pyregence.styles               :as $]
-            [pyregence.utils                :as u]
             [pyregence.utils.dom-utils      :as u-dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

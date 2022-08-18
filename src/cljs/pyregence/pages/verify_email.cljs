@@ -1,6 +1,5 @@
 (ns pyregence.pages.verify-email
   (:require [clojure.core.async            :refer [go <! timeout]]
-            [pyregence.utils               :as u]
             [pyregence.utils.async-utils   :as u-async]
             [pyregence.utils.browser-utils :as u-browser]
             [reagent.core                  :as r]))

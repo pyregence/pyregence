@@ -9,7 +9,6 @@
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.config                      :as c]
             [pyregence.styles                      :as $]
-            [pyregence.utils                       :as u]
             [pyregence.utils.async-utils           :as u-async]
             [pyregence.utils.time-utils            :as u-time]
             [reagent.core                          :as r]))

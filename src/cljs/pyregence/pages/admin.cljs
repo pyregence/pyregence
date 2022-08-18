@@ -7,7 +7,6 @@
             [pyregence.components.common    :refer [check-box labeled-input simple-form]]
             [pyregence.components.messaging :refer [confirmation-modal set-message-box-content! toast-message!]]
             [pyregence.styles               :as $]
-            [pyregence.utils                :as u]
             [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.data-utils     :as u-data]

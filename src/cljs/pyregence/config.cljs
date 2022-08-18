@@ -1,7 +1,6 @@
 (ns pyregence.config
   (:require [clojure.string               :as str]
             [pyregence.state              :as !]
-            [pyregence.utils              :as u]
             [pyregence.utils.number-utils :as u-num]
             [pyregence.utils.string-utils :as u-str]))
 
