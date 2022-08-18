@@ -5,9 +5,9 @@
             [pyregence.config            :as c]
             [pyregence.geo-utils         :as g]
             [pyregence.state             :as !]
-            [pyregence.utils             :as u]
             [pyregence.utils.async-utils :as u-async]
             [pyregence.utils.data-utils  :as u-data]
+            [pyregence.utils.misc-utils  :as u-misc]
             [reagent.core                :as r]
             [reagent.dom                 :refer [render]]))
 
@@ -71,7 +71,7 @@
   [layer property]
   (or (get-in layer ["metadata" property])
       (get-in layer [:metadata (keyword property)])
-      (u/try-js-aget layer "metadata" property)))
+      (u-misc/try-js-aget layer "metadata" property)))
 
 (defn- get-layer-type-metadata-property
   "Gets the specified metadata property (originally set in config.cljs) based on a layer's type."
