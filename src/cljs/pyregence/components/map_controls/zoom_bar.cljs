@@ -7,7 +7,6 @@
             [pyregence.components.messaging                :refer [set-message-box-content!]]
             [pyregence.state                               :as !]
             [pyregence.styles                              :as $]
-            [pyregence.utils                               :as u]
             [pyregence.utils.dom-utils                     :as u-dom]
             [reagent.core                                  :as r]))
 
