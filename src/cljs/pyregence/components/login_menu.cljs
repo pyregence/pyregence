@@ -3,7 +3,8 @@
             [pyregence.components.common        :refer [tool-tip-wrapper]]
             [pyregence.components.svg-icons     :as svg]
             [pyregence.styles                   :as $]
-            [pyregence.utils                    :as u]))
+            [pyregence.utils                    :as u]
+            [pyregence.utils.browser-utils      :as u-browser]))
 
 (defn login-menu
   "A login and logout navigation menu item"
@@ -29,4 +30,4 @@
        ;; [:label {:style {:margin-right "1rem" :cursor "pointer"}
        ;;          :on-click #(u-browser/jump-to-url! "/register")} "Register"]
        [:label {:style    {:cursor "pointer" :margin ".16rem .2rem 0 0"}
-                :on-click #(u/jump-to-url! "/login")} "Log In"]))])
+                :on-click #(u-browser/jump-to-url! "/login")} "Log In"]))])

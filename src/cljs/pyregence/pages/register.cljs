@@ -4,6 +4,7 @@
             [pyregence.components.messaging :refer [toast-message!]]
             [pyregence.styles               :as $]
             [pyregence.utils                :as u]
+            [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.data-utils     :as u-data]
             [reagent.core                   :as r]))
 
@@ -30,7 +31,7 @@
       (do (toast-message! ["Your account has been created successfully."
                            "Please check your email for a link to complete registration."])
           (<! (timeout 4000))
-          (u/jump-to-url! "/forecast"))
+          (u-browser/jump-to-url! "/forecast"))
       (toast-message! ["An error occurred while registering."
                        "Please contact support@pyregence.org for help."]))))
 

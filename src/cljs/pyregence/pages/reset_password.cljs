@@ -1,10 +1,10 @@
 (ns pyregence.pages.reset-password
-  (:require
-            [clojure.core.async             :refer [go <! timeout]]
+  (:require [clojure.core.async             :refer [go <! timeout]]
             [pyregence.components.common    :refer [simple-form]]
             [pyregence.components.messaging :refer [toast-message!]]
             [pyregence.styles               :as $]
             [pyregence.utils                :as u]
+            [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.data-utils     :as u-data]
             [reagent.core                   :as r]))
 
@@ -45,7 +45,7 @@
         (if (:success (<! (u/call-clj-async! "set-user-password" @email @password @reset-key)))
           (do (toast-message! "Your password has been reset successfully.")
               (<! (timeout 2000))
-              (u/jump-to-url! "/forecast"))
+              (u-browser/jump-to-url! "/forecast"))
           (do (toast-message! (str "Error reseting password for " @email "."))
               (reset! pending? false)))))))
 
