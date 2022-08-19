@@ -199,10 +199,10 @@
   [process-fn url & [loading-atom]]
   (go
    (<! (u-async/fetch-and-process url
-                            {:method "get"
-                             :headers {"Accept" "application/json, text/xml"
-                                       "Content-Type" "application/json"}}
-                            process-fn))
+                                  {:method "get"
+                                   :headers {"Accept" "application/json, text/xml"
+                                             "Content-Type" "application/json"}}
+                                  process-fn))
    (when loading-atom
      (reset! loading-atom false))))
 
@@ -329,10 +329,10 @@
       (reset! !/last-clicked-info [])
       (reset! !/last-clicked-info
               (u-num/to-precision 2 (some-> features
-                                        (first)
-                                        (u-misc/try-js-aget "properties")
-                                        (js/Object.values)
-                                        (first)))))))
+                                            (first)
+                                            (u/try-js-aget "properties")
+                                            (js/Object.values)
+                                            (first)))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info!
