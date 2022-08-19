@@ -23,11 +23,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def common-underlays
-  {:us-buildings    {:enabled?      #(feature-enabled? :structures)
-                     :opt-label     "Structures"
-                     :z-index       104
-                     :filter-set    #{"fire-detections" "us-buildings"}
-                     :geoserver-key :shasta}})
+  {:conus-buildings    {:enabled?      #(feature-enabled? :structures)
+                        :opt-label     "Structures"
+                        :z-index       104
+                        :filter-set    #{"fire-detections" "conus-buildings"}
+                        :geoserver-key :shasta}})
 
 (def near-term-forecast-underlays
   (array-map
@@ -166,24 +166,28 @@
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
-                  :hover-text      "8-day forecast of key parameters affecting wildfire behavior obtained from operational National Weather Service forecast models."
+                  :hover-text      "Gridded weather forecasts from several US operational weather models including key parameters that affect wildfire behavior."
                   :params          {:band       {:opt-label  "Weather Parameter"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
-                                                              "8-day forecast updated 4x daily pulled from three operational weather models. Available quantities include common weather parameters plus fire weather indices:"
+                                                              "Gridded weather forecasts from several US operational weather models having different spatial resolutions and forecast durations. Available quantities include common weather parameters and fire weather indices:"
                                                               [:br]
                                                               [:br]
                                                               [:strong "Fosberg Fire Weather Index (FFWI)"]
                                                               " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "Vapor pressure deficit (VPD)"]
+                                                              [:strong "Vapor Pressure Deficit (VPD)"]
                                                               " - Difference between amount of moisture in air and how much it can hold when saturated."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "Hot Dry Windy Index"]
-                                                              " - Similar to FFWI, but based on VPD."]
+                                                              [:strong "Hot Dry Windy Index (HDWI)"]
+                                                              " - Similar to FFWI, but based on VPD."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Firebrand Ignition Probability"]
+                                                              " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
-                                                              :tmpf   {:opt-label "Temperature (F)"
+                                                              :tmpf   {:opt-label "Temperature (\u00B0F)"
                                                                        :filter    "tmpf"
                                                                        :units     "\u00B0F"}
                                                               :ffwi   {:opt-label "Fosberg Fire Weather Index"
@@ -192,13 +196,13 @@
                                                               :meq    {:opt-label "Fine dead fuel moisture (%)"
                                                                        :filter    "meq"
                                                                        :units     "%"}
-                                                              :pign   {:opt-label "Firebrand ignition probability"
+                                                              :pign   {:opt-label "Firebrand ignition probability (%)"
                                                                        :filter    "pign"
                                                                        :units     "%"}
                                                               :rh     {:opt-label "Relative humidity (%)"
                                                                        :filter    "rh"
                                                                        :units     "%"}
-                                                              :wd     {:opt-label       "Wind direction"
+                                                              :wd     {:opt-label       "Wind direction (\u00B0)"
                                                                        :filter          "wd"
                                                                        :units           "\u00B0"
                                                                        :reverse-legend? false}
@@ -208,26 +212,26 @@
                                                               :wg     {:opt-label "Wind gust (mph)"
                                                                        :filter    "wg"
                                                                        :units     "mph"}
-                                                              :apcp   {:opt-label    "Accumulated precipitation (in)"
-                                                                       :filter       "apcp"
-                                                                       :units        "inches"
-                                                                       :convert      #(u/to-precision 2 (* % 0.03937007874))
-                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :rtma-ru}}
-                                                              :apcp01 {:opt-label    "1-hour precipitation (in)"
-                                                                       :filter       "apcp01"
-                                                                       :units        "inches"
-                                                                       :convert      #(u/to-precision 2 (* % 0.03937007874))
-                                                                       :disabled-for #{:gfs0p25 :nam-awip12 :nbm :rtma-ru}}
-                                                              :apcp03 {:opt-label    "3-hour precipitation (in)"
-                                                                       :filter       "apcp03"
-                                                                       :units        "inches"
-                                                                       :convert      #(u/to-precision 2 (* % 0.03937007874))
-                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-conusnest :nbm :rtma-ru}}
-                                                              :apcp06 {:opt-label    "6-hour precipitation (in)"
-                                                                       :filter       "apcp06"
-                                                                       :units        "inches"
-                                                                       :convert      #(u/to-precision 2 (* % 0.03937007874))
-                                                                       :disabled-for #{:gfs0p125 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}}
+                                                              :apcp   {:opt-label       "Accumulated precipitation (in)"
+                                                                       :filter          "apcp"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :rtma-ru}
+                                                                       :reverse-legend? false}
+                                                              :apcp01 {:opt-label       "1-hour precipitation (in)"
+                                                                       :filter          "apcp01"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p25 :nam-awip12 :nbm :rtma-ru}
+                                                                       :reverse-legend? false}
+                                                              :apcp03 {:opt-label       "3-hour precipitation (in)"
+                                                                       :filter          "apcp03"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-conusnest :nbm :rtma-ru}
+                                                                       :reverse-legend? false}
+                                                              :apcp06 {:opt-label       "6-hour precipitation (in)"
+                                                                       :filter          "apcp06"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p125 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}
+                                                                       :reverse-legend? false}
                                                               :vpd    {:opt-label    "Vapor pressure deficit (hPa)"
                                                                        :filter       "vpd"
                                                                        :units        "hPa"
@@ -240,54 +244,54 @@
                                                                        :filter       "smoke"
                                                                        :units        "\u00b5g/m\u00b3"
                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}}
-                                                              :tcdc   {:opt-label    "Total cloud cover"
+                                                              :tcdc   {:opt-label    "Total cloud cover (%)"
                                                                        :filter       "tcdc"
                                                                        :units        "%"
                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm}})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "Hybrid"]
+                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "GFS 0.125\u00B0"]
-                                                              " - Description coming soon!"
+                                                              " - Global Forecast System at 0.125\u00B0 (approx 13 km) resolution to 16 days."
                                                               [:br]
                                                               [:br]
                                                               [:strong "GFS 0.250\u00B0"]
-                                                              " - Description coming soon!"
+                                                              " - Global Forecast System at 0.250\u00B0 (approx 26 km) resolution to 16 days."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "HRRR 3 km"]
-                                                              " - Description coming soon!"
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "Hybrid"]
-                                                              " - Description coming soon!"
+                                                              [:strong "HRRR"]
+                                                              " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
                                                               [:br]
                                                               [:br]
                                                               [:strong "NAM 12 km"]
-                                                              " - Description coming soon!"
+                                                              " - North American Mesoscale Model at 12 km resolution to 84 hours."
                                                               [:br]
                                                               [:br]
                                                               [:strong "NAM 3 km"]
-                                                              " - Description coming soon!"
+                                                              " -  North American Mesoscale Model at 3 km resolution to 60 hours."
                                                               [:br]
                                                               [:br]
                                                               [:strong "NBM"]
-                                                              " - Description coming soon!"
+                                                              " - National Blend of Models at 2.5 km to 11 days."
                                                               [:br]
                                                               [:br]
                                                               [:strong "RTMA"]
-                                                              " - Real Time Mesoscale Analysis Rapid Update."]
-                                                 :options    {:gfs0p125      {:opt-label    "GFS 0.125\u00B0"
+                                                              " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
+                                                 :options    {:hybrid        {:opt-label    "Hybrid"
+                                                                              :filter       "hybrid"
+                                                                              :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
+                                                              :gfs0p125      {:opt-label    "GFS 0.125\u00B0"
                                                                               :filter       "gfs0p125"
                                                                               :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
                                                                               :disabled-for #{:apcp :apcp01 :apcp03 :smoke :tcdc}}
-                                                              :hrrr          {:opt-label    "HRRR 3 km"
+                                                              :hrrr          {:opt-label    "HRRR"
                                                                               :filter       "hrrr"
                                                                               :disabled-for #{:apcp03 :apcp06 :tcdc}}
-                                                              :hybrid        {:opt-label    "Hybrid"
-                                                                              :filter       "hybrid"
-                                                                              :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
                                                               :nam-awip12    {:opt-label    "NAM 12 km"
                                                                               :filter       "nam-awip12"
                                                                               :disabled-for #{:apcp :apcp01 :apcp06 :smoke :tcdc}}
@@ -398,7 +402,7 @@
                                                                          :filter    "landfire"}
                                                               :cfo      {:opt-label    "2020 CA Forest Obs."
                                                                          :filter       "cfo"
-                                                                         :disabled-for #{:times-burned :impacted :fire-area :fire-volume :plignrate}}}}
+                                                                         :disabled-for #{:times-burned :impacted :fire-area :fire-volume :plignrate :crown-fire-area}}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Computer fire spread model used to generate active fire and risk forecasts."
@@ -429,7 +433,7 @@
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true
-                  :hover-text      "5-day forecasts of active fires with burning areas established from satellite-based heat detection."
+                  :hover-text      "7-day forecasts of active fires with burning areas established from satellite-based heat detection."
                   :params          {:fire-name  {:opt-label      "Fire Name"
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
