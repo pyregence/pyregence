@@ -3,7 +3,6 @@
             [pyregence.components.common    :refer [simple-form]]
             [pyregence.components.messaging :refer [toast-message!]]
             [pyregence.styles               :as $]
-            [pyregence.utils                :as u]
             [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.data-utils     :as u-data]

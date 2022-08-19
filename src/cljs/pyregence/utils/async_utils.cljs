@@ -12,7 +12,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- chan? [c]
-  (= (type c) cljs.core.async.impl.channels/ManyToManyChannel))
+  (= (type c) ManyToManyChannel))
 
 (defn refresh-on-interval!
   "Refreshes the specified function every specified interval (ms) of time.

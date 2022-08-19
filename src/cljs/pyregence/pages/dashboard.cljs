@@ -5,7 +5,6 @@
             [herb.core                      :refer [<class]]
             [pyregence.components.messaging :refer [set-message-box-content! message-box-modal]]
             [pyregence.styles               :as $]
-            [pyregence.utils                :as u]
             [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.time-utils     :as u-time]

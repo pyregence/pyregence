@@ -3,7 +3,6 @@
             [pyregence.components.common        :refer [tool-tip-wrapper]]
             [pyregence.components.svg-icons     :as svg]
             [pyregence.styles                   :as $]
-            [pyregence.utils                    :as u]
             [pyregence.utils.async-utils        :as u-async]
             [pyregence.utils.browser-utils      :as u-browser]))
 

@@ -654,9 +654,9 @@
           cur-style   (get-style)
           cur-sources (->> (get cur-style "sources")
                            (u-data/filterm (fn [[k _]]
-                                        (let [sname (name k)]
-                                          (or (is-terrain? sname)
-                                              (get-layer-metadata (get-layer sname) "type"))))))
+                                            (let [sname (name k)]
+                                              (or (is-terrain? sname)
+                                                  (get-layer-metadata (get-layer sname) "type"))))))
           cur-layers  (->> (get cur-style "layers")
                            (filter #(get-layer-metadata % "type")))
           new-style   (-> (<! style-chan)

@@ -8,7 +8,6 @@
             [pyregence.config                              :as c]
             [pyregence.state                               :as !]
             [pyregence.styles                              :as $]
-            [pyregence.utils                               :as u]
             [pyregence.utils.async-utils                   :as u-async]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
