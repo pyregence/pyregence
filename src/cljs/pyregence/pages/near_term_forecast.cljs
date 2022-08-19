@@ -24,10 +24,10 @@
             [pyregence.config                                    :as c]
             [pyregence.state                                     :as !]
             [pyregence.styles                                    :as $]
-            [pyregence.utils                                     :as u]
             [pyregence.utils.async-utils                         :as u-async]
             [pyregence.utils.browser-utils                       :as u-browser]
             [pyregence.utils.data-utils                          :as u-data]
+            [pyregence.utils.misc-utils                          :as u-misc]
             [pyregence.utils.number-utils                        :as u-num]
             [pyregence.utils.time-utils                          :as u-time]
             [reagent.core                                        :as r]
@@ -209,7 +209,7 @@
 (defn- wrap-wms-errors [type response success-fn]
   (go
     (let [json-res (<p! (.json response))]
-      (if-let [exceptions (u/try-js-aget json-res "exceptions")]
+      (if-let [exceptions (u-misc/try-js-aget json-res "exceptions")]
         (do
           (println exceptions)
           (toast-message! (str "Error retrieving " type ". See console for more details.")))
@@ -240,7 +240,7 @@
   "Parses the JSON data from GetLegendGraphic from a layer using raster colormap styling."
   [rules]
   (as-> rules %
-      (u/try-js-aget % 0 "symbolizers" 0 "Raster" "colormap" "entries")
+      (u-misc/try-js-aget % 0 "symbolizers" 0 "Raster" "colormap" "entries")
       (js->clj %)))
 
 (defn- process-legend!
@@ -248,16 +248,16 @@
    Also populates the no-data-quantities atom with all quantities associated
    with `nodata` points."
   [json-res]
-  (let [rules (u/try-js-aget json-res "Legend" 0 "rules")]
+  (let [rules (u-misc/try-js-aget json-res "Legend" 0 "rules")]
     (!/set-state-legend-list! (as-> rules %
                                 (cond
-                                  (u/try-js-aget % 0 "symbolizers" 0 "Raster")
+                                  (u-misc/try-js-aget % 0 "symbolizers" 0 "Raster")
                                   (process-raster-colormap-legend %)
 
-                                  (u/try-js-aget % 0 "symbolizers" 0 "Polygon")
+                                  (u-misc/try-js-aget % 0 "symbolizers" 0 "Polygon")
                                   (process-vector-layer-legend % true)
 
-                                  (u/try-js-aget % 0 "symbolizers" 0 "Line")
+                                  (u-misc/try-js-aget % 0 "symbolizers" 0 "Line")
                                   (process-vector-layer-legend % false)
 
                                   :else (process-raster-colormap-legend %))
@@ -284,25 +284,25 @@
    have multiple values that you can use for point information, thus they need
    to be parsed differently."
   [json-res]
-  (let [features (u/try-js-aget json-res "features")]
+  (let [features (u-misc/try-js-aget json-res "features")]
     (if (empty? features)
       (reset! !/last-clicked-info [])
       (let [multi-column-info? (some-> features
-                                       (u/try-js-aget 0 "properties")
+                                       (u-misc/try-js-aget 0 "properties")
                                        (js/Object.keys)
                                        (.-length)
                                        (> 1))
             band-extraction-fn (fn [pi-layer]
                                  (if multi-column-info?
                                    (some->> (get-psps-column-name)
-                                            (u/try-js-aget pi-layer "properties"))
-                                   (some->> (u/try-js-aget  pi-layer "properties")
+                                            (u-misc/try-js-aget pi-layer "properties"))
+                                   (some->> (u-misc/try-js-aget  pi-layer "properties")
                                             (js/Object.values)
                                             (first))))
             feature-info       (map (fn [pi-layer]
                                       {:band   (band-extraction-fn pi-layer)
                                        :vec-id (some-> pi-layer
-                                                       (u/try-js-aget "id")
+                                                       (u-misc/try-js-aget "id")
                                                        (str/split #"\.")
                                                        (peek))})
                                     features)
@@ -324,7 +324,7 @@
   "Resets the !/last-clicked-info atom according the the JSON resulting from a
    call to GetFeatureInfo for single-point-info layers."
   [json-res]
-  (let [features (u/try-js-aget json-res "features")]
+  (let [features (u-misc/try-js-aget json-res "features")]
     (if (empty? features)
       (reset! !/last-clicked-info [])
       (reset! !/last-clicked-info

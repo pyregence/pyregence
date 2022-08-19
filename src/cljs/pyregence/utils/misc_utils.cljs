@@ -1,7 +1,9 @@
-(ns pyregence.utils
+(ns pyregence.utils.misc-utils
   (:require [clojure.set :as sets]))
 
-;;; Colors
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Utility Functions - Misc Utils
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- to-hex-str [num]
   (let [hex-num (.toString (.round js/Math num) 16)]
@@ -24,8 +26,6 @@
            (to-hex-str (+ fr (* ratio (- tr fr))))
            (to-hex-str (+ fg (* ratio (- tg fg))))
            (to-hex-str (+ fb (* ratio (- tb fb))))))))
-
-;;; Misc Functions
 
 (defn intersects?
   "Checks whether or not two sets intersect."

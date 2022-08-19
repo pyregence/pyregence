@@ -3,8 +3,8 @@
             [cljsjs.vega-embed]
             [clojure.core.async           :refer [go]]
             [pyregence.state              :as !]
-            [pyregence.utils              :as u]
             [pyregence.utils.data-utils   :as u-data]
+            [pyregence.utils.misc-utils   :as u-misc]
             [pyregence.utils.number-utils :as u-num]
             [reagent.core                 :as r]
             [reagent.dom                  :as rd]))
@@ -21,10 +21,10 @@
                       {:quantity cur-q
                        :offset   (min (/ cur-q max-band) 1.0)
                        :color    (if (< last-q max-band cur-q)
-                                   (u/interp-color (get last :color)
-                                                   (get cur  "color")
-                                                   (/ (- max-band last-q)
-                                                      (- cur-q last-q)))
+                                   (u-misc/interp-color (get last :color)
+                                                        (get cur  "color")
+                                                        (/ (- max-band last-q)
+                                                           (- cur-q last-q)))
                                    (get cur "color"))}))
      {:offset 0.0
       :color  (get (first processed-legend) "color")}
@@ -107,8 +107,8 @@
           (-> result .-view (.addEventListener
                              "click"
                              (fn [_ data]
-                               (when-let [hour (or (u/try-js-aget data "datum" "datum" "hour")
-                                                   (u/try-js-aget data "datum" "hour"))]
+                               (when-let [hour (or (u-misc/try-js-aget data "datum" "datum" "hour")
+                                                   (u-misc/try-js-aget data "datum" "hour"))]
                                  (layer-click! hour))))))
         (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
 

@@ -7,8 +7,8 @@
             [pyregence.components.vega                     :refer [vega-box]]
             [pyregence.config                              :as c]
             [pyregence.state                               :as !]
-            [pyregence.utils                               :as u]
             [pyregence.utils.data-utils                    :as u-data]
+            [pyregence.utils.misc-utils                    :as u-misc]
             [pyregence.utils.number-utils                  :as u-num]
             [pyregence.utils.string-utils                  :as u-str]
             [reagent.core                                  :as r]
@@ -85,7 +85,7 @@
                                             "color"])
                         (let [[low high] (u-data/find-boundary-values @!/last-clicked-info legend-keys)]
                           (when (and high low)
-                            (u/interp-color (get-in legend-map [low "color"])
+                            (u-misc/interp-color (get-in legend-map [low "color"])
                                             (get-in legend-map [high "color"])
                                             (/ (- @!/last-clicked-info low) (- high low))))))
         *inputs     (->> @!/*params

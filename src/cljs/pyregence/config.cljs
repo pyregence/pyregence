@@ -1,7 +1,7 @@
 (ns pyregence.config
   (:require [clojure.string               :as str]
             [pyregence.state              :as !]
-            [pyregence.utils              :as u]
+            [pyregence.utils.misc-utils   :as u-misc]
             [pyregence.utils.number-utils :as u-num]
             [pyregence.utils.string-utils :as u-str]))
 
@@ -77,7 +77,7 @@
                                                        :asp    {:opt-label       "Aspect"
                                                                 :filter          "asp"
                                                                 :units           ""
-                                                                :convert         #(str (u/direction %) " (" % "°)")
+                                                                :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                 :reverse-legend? false
                                                                 :disabled-for    #{:cecs}}
                                                        :slp    {:opt-label       "Slope (degrees)"

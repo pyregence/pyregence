@@ -5,9 +5,9 @@
             [pyregence.config            :as c]
             [pyregence.geo-utils         :as g]
             [pyregence.state             :as !]
-            [pyregence.utils             :as u]
             [pyregence.utils.async-utils :as u-async]
             [pyregence.utils.data-utils  :as u-data]
+            [pyregence.utils.misc-utils  :as u-misc]
             [reagent.core                :as r]
             [reagent.dom                 :refer [render]]))
 
@@ -71,7 +71,7 @@
   [layer property]
   (or (get-in layer ["metadata" property])
       (get-in layer [:metadata (keyword property)])
-      (u/try-js-aget layer "metadata" property)))
+      (u-misc/try-js-aget layer "metadata" property)))
 
 (defn- get-layer-type-metadata-property
   "Gets the specified metadata property (originally set in config.cljs) based on a layer's type."
@@ -446,8 +446,8 @@
   [id opacity] ;TODO, this function doesn't make sense as is because it sets the opacity of all layers currently active, not just one layer by id.
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
-        new-layers (map (u/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :forecast-layer?))
-                                     #(set-opacity % opacity))
+        new-layers (map (u-misc/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :forecast-layer?))
+                                          #(set-opacity % opacity))
                         (get style "layers"))]
     (update-style! style :layers new-layers)))
 
@@ -668,8 +668,8 @@
 (defn- hide-forecast-layers
   "Given layers, hides any layer that is in the forecast-layers set."
   [layers]
-  (map (u/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :forecast-layer?))
-                    #(set-visible % false))
+  (map (u-misc/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :forecast-layer?))
+                         #(set-visible % false))
        layers))
 
 (defn swap-active-layer!
