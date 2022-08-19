@@ -2,7 +2,8 @@
   (:require [clojure.string               :as str]
             [pyregence.state              :as !]
             [pyregence.utils              :as u]
-            [pyregence.utils.number-utils :as u-num]))
+            [pyregence.utils.number-utils :as u-num]
+            [pyregence.utils.string-utils :as u-str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
@@ -831,13 +832,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- wms-url [geoserver-key]
-  (str (u/end-with (geoserver-key @!/geoserver-urls) "/") "wms"))
+  (str (u-str/end-with (geoserver-key @!/geoserver-urls) "/") "wms"))
 
 (defn- wfs-url [geoserver-key]
-  (str (u/end-with (geoserver-key @!/geoserver-urls) "/") "wfs"))
+  (str (u-str/end-with (geoserver-key @!/geoserver-urls) "/") "wfs"))
 
 (defn- mvt-url [geoserver-key]
-  (str (u/end-with ((keyword geoserver-key) @!/geoserver-urls) "/") "gwc/service/wmts"))
+  (str (u-str/end-with ((keyword geoserver-key) @!/geoserver-urls) "/") "gwc/service/wmts"))
 
 (defn legend-url
   "Generates a URL for the legend given a layer."
