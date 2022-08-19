@@ -1,6 +1,5 @@
 (ns pyregence.components.map-controls.camera-tool
   (:require [clojure.core.async                    :refer [take! go <!]]
-            [clojure.edn                           :as edn]
             [herb.core                             :refer [<class]]
             [pyregence.components.common           :refer [tool-tip-wrapper]]
             [pyregence.components.help             :as h]

@@ -326,10 +326,10 @@
       (reset! !/last-clicked-info [])
       (reset! !/last-clicked-info
               (u-num/to-precision 2 (some-> features
-                                        (first)
-                                        (u/try-js-aget "properties")
-                                        (js/Object.values)
-                                        (first)))))))
+                                            (first)
+                                            (u/try-js-aget "properties")
+                                            (js/Object.values)
+                                            (first)))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info!
@@ -466,9 +466,9 @@
                                        [:model-init :options]
                                        (fn [options]
                                          (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
-                                                   [k (assoc v
-                                                             :opt-label
-                                                             (u/time-zone-iso-date utc-time @!/show-utc?))])
+                                                       [k (assoc v
+                                                                 :opt-label
+                                                                 (u/time-zone-iso-date utc-time @!/show-utc?))])
                                                  options)))))
 
 (defn- params->selected-options
@@ -500,9 +500,9 @@
                        (let [params           (get-in @!/capabilities [forecast :params])
                              selected-options (params->selected-options options-config @!/*forecast params)]
                          [forecast (merge (u-data/mapm (fn [[k v]]
-                                                    [k (or (get-in selected-options [forecast k])
-                                                           (:default-option v)
-                                                           (ffirst (:options v)))])
+                                                        [k (or (get-in selected-options [forecast k])
+                                                               (:default-option v)
+                                                               (ffirst (:options v)))])
                                                   params))]))
                      options-config)))
 
