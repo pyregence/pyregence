@@ -3,7 +3,7 @@
             [pyregence.components.common    :refer [simple-form]]
             [pyregence.components.messaging :refer [toast-message!]]
             [pyregence.styles               :as $]
-            [pyregence.utils                :as u]
+            [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.browser-utils  :as u-browser]
             [reagent.core                   :as r]))
 
@@ -23,7 +23,7 @@
 
 (defn- log-in! []
   (go
-    (if (:success (<! (u/call-clj-async! "log-in" @email @password)))
+    (if (:success (<! (u-async/call-clj-async! "log-in" @email @password)))
       (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
         (u-browser/clear-session-storage!)
         (u-browser/jump-to-url! url))
@@ -36,10 +36,10 @@
     (reset! pending? true)
     (toast-message! "Submitting request. This may take a moment...")
     (cond
-      (not (:success (<! (u/call-clj-async! "user-email-taken" @email))))
+      (not (:success (<! (u-async/call-clj-async! "user-email-taken" @email))))
       (toast-message! (str "There is no user with the email '" @email "'"))
 
-      (:success (<! (u/call-clj-async! "send-email" @email :reset)))
+      (:success (<! (u-async/call-clj-async! "send-email" @email :reset)))
       (do (toast-message! "Please check your email for a password reset link.")
           (<! (timeout 4000))
           (u-browser/jump-to-url! "/forecast"))

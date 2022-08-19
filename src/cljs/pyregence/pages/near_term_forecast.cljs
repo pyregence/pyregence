@@ -25,6 +25,7 @@
             [pyregence.state                                     :as !]
             [pyregence.styles                                    :as $]
             [pyregence.utils                                     :as u]
+            [pyregence.utils.async-utils                         :as u-async]
             [pyregence.utils.browser-utils                       :as u-browser]
             [pyregence.utils.data-utils                          :as u-data]
             [pyregence.utils.number-utils                        :as u-num]
@@ -160,9 +161,9 @@
                                              (get-in options [(params key) :filter])))
                                       (remove nil?))))
           {:keys [layers model-times]} (t/read (t/reader :json)
-                                               (:body (<! (u/call-clj-async! "get-layers"
-                                                                             (get-any-level-key :geoserver-key)
-                                                                             (pr-str selected-set)))))]
+                                               (:body (<! (u-async/call-clj-async! "get-layers"
+                                                                                   (get-any-level-key :geoserver-key)
+                                                                                   (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count @!/param-layers) 1))))
@@ -197,11 +198,11 @@
    passed in. The loading-atom is set to false after the resource has been fetched."
   [process-fn url & [loading-atom]]
   (go
-   (<! (u/fetch-and-process url
-                            {:method "get"
-                             :headers {"Accept" "application/json, text/xml"
-                                       "Content-Type" "application/json"}}
-                            process-fn))
+   (<! (u-async/fetch-and-process url
+                                  {:method "get"
+                                   :headers {"Accept" "application/json, text/xml"
+                                             "Content-Type" "application/json"}}
+                                  process-fn))
    (when loading-atom
      (reset! loading-atom false))))
 
@@ -510,7 +511,7 @@
 
 (defn- refresh-fire-names! [user-id]
   (go
-    (as-> (u/call-clj-async! "get-fire-names" user-id) fire-names
+    (as-> (u-async/call-clj-async! "get-fire-names" user-id) fire-names
       (<! fire-names)
       (:body fire-names)
       (edn/read-string fire-names)
@@ -519,9 +520,9 @@
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
-          user-layers-chan                (u/call-clj-async! "get-user-layers" user-id)
-          fire-names-chan                 (u/call-clj-async! "get-fire-names" user-id)
-          fire-cameras                    (u/call-clj-async! "get-cameras")]
+          user-layers-chan                (u-async/call-clj-async! "get-user-layers" user-id)
+          fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
+          fire-cameras                    (u-async/call-clj-async! "get-cameras")]
       (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast (or (keyword forecast)
                               (keyword (forecast-type @!/default-forecasts))))
@@ -531,7 +532,7 @@
                              (edn/read-string (:body (<! user-layers-chan)))
                              options-config)
       (<! (select-forecast! @!/*forecast))
-      (reset! !/user-org-list (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" user-id)))))
+      (reset! !/user-org-list (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-list" user-id)))))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))
       (reset! !/loading? false))))
 

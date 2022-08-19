@@ -1,14 +1,15 @@
 (ns pyregence.components.mapbox
-  (:require [clojure.core.async         :refer [chan go >! <!]]
-            [clojure.string             :as str]
-            [goog.dom                   :as dom]
-            [pyregence.config           :as c]
-            [pyregence.geo-utils        :as g]
-            [pyregence.state            :as !]
-            [pyregence.utils            :as u]
-            [pyregence.utils.data-utils :as u-data]
-            [reagent.core               :as r]
-            [reagent.dom                :refer [render]]))
+  (:require [clojure.core.async          :refer [chan go >! <!]]
+            [clojure.string              :as str]
+            [goog.dom                    :as dom]
+            [pyregence.config            :as c]
+            [pyregence.geo-utils         :as g]
+            [pyregence.state             :as !]
+            [pyregence.utils             :as u]
+            [pyregence.utils.async-utils :as u-async]
+            [pyregence.utils.data-utils  :as u-data]
+            [reagent.core                :as r]
+            [reagent.dom                 :refer [render]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mapbox Aliases
@@ -649,13 +650,13 @@
   "Sets the base map source."
   [source]
   (go
-    (let [style-chan  (u/fetch-and-process source {} (fn [res] (.json res)))
+    (let [style-chan  (u-async/fetch-and-process source {} (fn [res] (.json res)))
           cur-style   (get-style)
           cur-sources (->> (get cur-style "sources")
                            (u-data/filterm (fn [[k _]]
-                                        (let [sname (name k)]
-                                          (or (is-terrain? sname)
-                                              (get-layer-metadata (get-layer sname) "type"))))))
+                                            (let [sname (name k)]
+                                              (or (is-terrain? sname)
+                                                  (get-layer-metadata (get-layer sname) "type"))))))
           cur-layers  (->> (get cur-style "layers")
                            (filter #(get-layer-metadata % "type")))
           new-style   (-> (<! style-chan)

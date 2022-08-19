@@ -9,7 +9,7 @@
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.config                      :as c]
             [pyregence.styles                      :as $]
-            [pyregence.utils                       :as u]
+            [pyregence.utils.async-utils           :as u-async]
             [pyregence.utils.time-utils            :as u-time]
             [reagent.core                          :as r]))
 
@@ -29,7 +29,7 @@
   [job-id refresh-fire-names! user-id]
   (go
     (while @poll?
-      (let [{:keys [message md-status log]} (-> (u/call-clj-async! "get-md-status" job-id)
+      (let [{:keys [message md-status log]} (-> (u-async/call-clj-async! "get-md-status" job-id)
                                                 (<!)
                                                 (:body)
                                                 (edn/read-string))]
@@ -53,12 +53,12 @@
   [display-name [lon lat] md-date md-hour refresh-fire-names! user-id]
   (go
     (let [datetime   (.toString (js/Date. (+ md-date (* md-hour 3600000))))
-          match-chan (u/call-clj-async! "initiate-md"
-                                        {:display-name  (when-not (empty? display-name) display-name)
-                                         :ignition-time (u-time/time-zone-iso-date datetime true)
-                                         :lon           lon
-                                         :lat           lat
-                                         :user-id       user-id})]
+          match-chan (u-async/call-clj-async! "initiate-md"
+                                              {:display-name  (when-not (empty? display-name) display-name)
+                                               :ignition-time (u-time/time-zone-iso-date datetime true)
+                                               :lon           lon
+                                               :lat           lat
+                                               :user-id       user-id})]
       (set-message-box-content! {:title  "Processing Match Drop"
                                  :body   "Initiating match drop run."
                                  :mode   :close

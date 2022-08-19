@@ -3,7 +3,7 @@
             [pyregence.components.common    :refer [simple-form]]
             [pyregence.components.messaging :refer [toast-message!]]
             [pyregence.styles               :as $]
-            [pyregence.utils                :as u]
+            [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.data-utils     :as u-data]
             [reagent.core                   :as r]))
@@ -26,8 +26,8 @@
 (defn- add-user! []
   (go
     (toast-message! "Creating new account. This may take a moment...")
-    (if (and (:success (<! (u/call-clj-async! "add-new-user" @email @full-name @password)))
-             (:success (<! (u/call-clj-async! "send-email" @email :new-user))))
+    (if (and (:success (<! (u-async/call-clj-async! "add-new-user" @email @full-name @password)))
+             (:success (<! (u-async/call-clj-async! "send-email" @email :new-user))))
       (do (toast-message! ["Your account has been created successfully."
                            "Please check your email for a link to complete registration."])
           (<! (timeout 4000))
@@ -38,7 +38,7 @@
 (defn- register! []
   (go
     (reset! pending? true)
-    (let [email-chan (u/call-clj-async! "user-email-taken" @email)
+    (let [email-chan (u-async/call-clj-async! "user-email-taken" @email)
           errors     (remove nil?
                              [(when (u-data/missing-data? @email @password @re-password)
                                 "You must fill in all required information to continue.")

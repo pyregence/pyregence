@@ -5,7 +5,8 @@
             [herb.core                      :refer [<class]]
             [pyregence.components.messaging :refer [set-message-box-content! message-box-modal]]
             [pyregence.styles               :as $]
-            [pyregence.utils                :as u]
+            [pyregence.utils.browser-utils  :as u-browser]
+            [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.time-utils     :as u-time]
             [reagent.core                   :as r]))
 
@@ -19,7 +20,7 @@
 (defn- user-match-drops [user-id]
   (go
     (reset! match-drops
-            (edn/read-string (:body (<! (u/call-clj-async! "get-match-drops" user-id)))))))
+            (edn/read-string (:body (<! (u-async/call-clj-async! "get-match-drops" user-id)))))))
 
 ;; Helper
 
@@ -94,7 +95,7 @@
   (fn [_]
     (cond
       (nil? user-id) ; User is not logged in
-      (do (u/redirect-to-login! "/dashboard")
+      (do (u-browser/redirect-to-login! "/dashboard")
           nil)
 
       :else  ; User is logged in
