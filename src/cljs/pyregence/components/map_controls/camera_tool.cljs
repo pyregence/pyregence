@@ -10,6 +10,7 @@
             [pyregence.styles                      :as $]
             [pyregence.utils                       :as u]
             [pyregence.utils.number-utils          :as u-num]
+            [pyregence.utils.time-utils            :as u-time]
             [reagent.core                          :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -68,9 +69,9 @@
                                    (reset! image-src nil)
                                    (let [image-chan  (get-camera-image-chan @active-camera)]
                                      (reset! camera-age (-> (:update-time @active-camera)
-                                                            (u/camera-time->js-date)
-                                                            (u/get-time-difference)
-                                                            (u/ms->hr)))
+                                                            (u-time/camera-time->js-date)
+                                                            (u-time/get-time-difference)
+                                                            (u-time/ms->hr)))
                                      (when (> 4 @camera-age)
                                        (reset! image-src (<! image-chan))
                                        (reset! exit-chan

@@ -1,13 +1,13 @@
 (ns pyregence.pages.dashboard
-  (:require [reagent.core       :as r]
-            [herb.core          :refer [<class]]
-            [cljs.reader        :as edn]
-            [clojure.core.async :refer [go <!]]
-            [clojure.string     :as string]
-            [pyregence.utils    :as u]
-            [pyregence.styles   :as $]
-            [pyregence.components.messaging :refer [set-message-box-content!
-                                                    message-box-modal]]))
+  (:require [cljs.reader                    :as edn]
+            [clojure.core.async             :refer [go <!]]
+            [clojure.string                 :as string]
+            [herb.core                      :refer [<class]]
+            [pyregence.components.messaging :refer [set-message-box-content! message-box-modal]]
+            [pyregence.styles               :as $]
+            [pyregence.utils                :as u]
+            [pyregence.utils.time-utils     :as u-time]
+            [reagent.core                   :as r]))
 
 ;; State
 
@@ -35,9 +35,9 @@
 
 (defn- fmt-datetime [js-date]
   (-> js-date
-      (u/js-date->iso-string true)
+      (u-time/js-date->iso-string true)
       (subs 0 16)
-      (str ":" (u/pad-zero (.getSeconds js-date)))))
+      (str ":" (u-time/pad-zero (.getSeconds js-date)))))
 
 ;; Styles
 
@@ -67,7 +67,7 @@
    [:td (subs (:ignition-time request) 0 16)]
    [:td (fmt-datetime created-at)]
    [:td (fmt-datetime updated-at)]
-   [:td (u/ms->hhmmss (- updated-at created-at))]
+   [:td (u-time/ms->hhmmss (- updated-at created-at))]
    [:td [:a {:href "#" :on-click #(show-log-modal! job-id log)} "View Logs"]]])
 
 (defn- match-drop-table []
