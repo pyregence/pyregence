@@ -3,7 +3,7 @@
   (:require [clojure.core.async           :refer [go <! timeout]]
             [herb.core                    :refer [<class]]
             [pyregence.styles             :as $]
-            [pyregence.utils              :as u]
+            [pyregence.utils.dom-utils    :as u-dom]
             [pyregence.utils.string-utils :as u-str]
             [pyregence.utils.time-utils   :as u-time]
             [reagent.core                 :as r]
@@ -143,7 +143,7 @@
    - required?"
   [label state & [opts]]
   (let [{:keys [type autocomplete disabled? call-back autofocus? required? placeholder]
-         :or {type "text" disabled? false call-back #(reset! state (u/input-value %))} required? false} opts]
+         :or {type "text" disabled? false call-back #(reset! state (u-dom/input-value %))} required? false} opts]
     [:section {:style ($labeled-input)}
      [:label {:for (u-str/sentence->kebab label)} label]
      [:input {:class         (style->class $/p-bordered-input)
@@ -167,7 +167,7 @@
               :style {:font-size "0.9rem" :font-weight "bold"}}
       label]
      [:select {:id        id
-               :on-change #(reset! value (u/input-int-value %))
+               :on-change #(reset! value (u-dom/input-int-value %))
                :value     @value}
       (for [day (range (* -1 days-before) (+ 1 days-after))]
         (let [date-ms (+ today-ms (* day day-ms))
@@ -185,7 +185,7 @@
               :style {:font-size "0.9rem" :font-weight "bold"}}
       label]
      [:select {:id        id
-               :on-change #(reset! value (u/input-int-value %))
+               :on-change #(reset! value (u-dom/input-int-value %))
                :value     @value}
       (for [hour (range 0 24)]
         [:option {:key   hour

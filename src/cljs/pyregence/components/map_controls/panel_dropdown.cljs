@@ -1,8 +1,8 @@
 (ns pyregence.components.map-controls.panel-dropdown
-  (:require [pyregence.styles :as $]
-             [pyregence.utils :as u]
-             [pyregence.components.svg-icons :as svg]
-             [pyregence.components.common    :refer [tool-tip-wrapper]]))
+  (:require [pyregence.components.common    :refer [tool-tip-wrapper]]
+            [pyregence.components.svg-icons :as svg]
+            [pyregence.styles               :as $]
+            [pyregence.utils.dom-utils      :as u-dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component
@@ -22,7 +22,7 @@
    [:select {:style     ($/dropdown)
              :value     (or val :none)
              :disabled  disabled?
-             :on-change #(call-back (u/input-keyword %))}
+             :on-change #(call-back (u-dom/input-keyword %))}
     (map (fn [[key {:keys [opt-label enabled? disabled-for]}]]
            [:option {:key      key
                      :value    key
