@@ -325,7 +325,7 @@ DECLARE
   _user_id    integer;
   _org_id     integer;
 BEGIN
-    SELECT user_uid INTO _user_id FROM users WHERE _email = _email;
+    SELECT user_uid INTO _user_id FROM users WHERE email = _email;
  
     SELECT organization_uid INTO _org_id FROM organizations WHERE org_name = _org_name;
 
