@@ -1,5 +1,5 @@
 (ns pyregence.components.map-controls.collapsible-panel
-  (:require [clojure.core.async                               :refer [<! go go-loop]]
+  (:require [clojure.core.async                               :refer [<! go]]
             [clojure.edn                                      :as edn]
             [clojure.set                                      :as set]
             [herb.core                                        :refer [<class]]
