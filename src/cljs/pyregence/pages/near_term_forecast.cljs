@@ -327,10 +327,10 @@
       (reset! !/last-clicked-info [])
       (reset! !/last-clicked-info
               (u-num/to-precision 2 (some-> features
-                                        (first)
-                                        (u/try-js-aget "properties")
-                                        (js/Object.values)
-                                        (first)))))))
+                                            (first)
+                                            (u/try-js-aget "properties")
+                                            (js/Object.values)
+                                            (first)))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info!
