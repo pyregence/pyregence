@@ -1,7 +1,6 @@
 (ns pyregence.components.help
   (:require [pyregence.components.messaging :refer [set-message-box-content!]]
             [pyregence.state                :as !]
-            [pyregence.utils                :as u]
             [pyregence.utils.browser-utils  :as u-browser]))
 
 ;;; Help Dialogs
