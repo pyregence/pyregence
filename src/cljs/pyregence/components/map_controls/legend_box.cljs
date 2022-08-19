@@ -1,8 +1,8 @@
 (ns pyregence.components.map-controls.legend-box
-  (:require [pyregence.state            :as !]
-            [pyregence.styles           :as $]
-            [pyregence.utils            :as u]
-            [pyregence.utils.data-utils :as u-data]))
+  (:require [pyregence.state              :as !]
+            [pyregence.styles             :as $]
+            [pyregence.utils.data-utils   :as u-data]
+            [pyregence.utils.number-utils :as u-num]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -48,7 +48,7 @@
                          ^{:key i}
                          [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
                           [:div {:style ($legend-color (get leg "color") (get leg "opacity"))}]
-                          [:label (str (get leg "label") (u/clean-units units))]])
+                          [:label (str (get leg "label") (u-num/clean-units units))]])
                        (if reverse?
                          (reverse processed-legend)
                          processed-legend))]]))))
