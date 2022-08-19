@@ -102,11 +102,11 @@
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
   (go
     (<! (u-async/call-clj-async! "update-org-info"
-                           opt-id
-                           org-name
-                           email-domains
-                           auto-add?
-                           auto-accept?))
+                                 opt-id
+                                 org-name
+                                 email-domains
+                                 auto-add?
+                                 auto-accept?))
     (get-org-list)
     (toast-message! "Organization info updated.")))
 
@@ -114,11 +114,11 @@
   (go
     (toast-message! "Creating new account. This may take a moment...")
     (if (and (:success (<! (u-async/call-clj-async! "add-new-user"
-                                              @new-user-email
-                                              @new-user-full-name
-                                              @new-user-password
-                                              {:org-id          @*org-id
-                                               :restrict-email? false})))
+                                                    @new-user-email
+                                                    @new-user-full-name
+                                                    @new-user-password
+                                                    {:org-id          @*org-id
+                                                     :restrict-email? false})))
              (:success (<! (u-async/call-clj-async! "send-email" @new-user-email :new-user))))
       (do
         (toast-message! ["Your account has been created successfully."

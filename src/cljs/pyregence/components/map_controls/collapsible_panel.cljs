@@ -1,5 +1,5 @@
 (ns pyregence.components.map-controls.collapsible-panel
-  (:require [clojure.core.async                               :refer [<! go go-loop]]
+  (:require [clojure.core.async                               :refer [<! go]]
             [clojure.edn                                      :as edn]
             [clojure.set                                      :as set]
             [herb.core                                        :refer [<class]]
@@ -23,8 +23,8 @@
 (defn get-layer-name [geoserver-key filter-set update-layer!]
   (go
     (let [name (edn/read-string (:body (<! (u-async/call-clj-async! "get-layer-name"
-                                                              geoserver-key
-                                                              (pr-str filter-set)))))]
+                                                                    geoserver-key
+                                                                    (pr-str filter-set)))))]
       (update-layer! :name name)
       name)))
 
