@@ -92,7 +92,7 @@
                  (set-show-info! false)
                  (reset! !/show-camera? false))
             @!/show-match-drop?])
-         (when-not (or @!/mobile? (get-any-level-key :disable-camera?))
+         (when (not (get-any-level-key :disable-camera?))
            [:camera
             (str (hs-str @!/show-camera?) " cameras")
             #(do (swap! !/show-camera? not)
