@@ -10,20 +10,24 @@ Closes PYR-###
 - [ ] Feature(s) work when compiled (`clojure -M:compile-cljs`)
 - [ ] No new reflection warnings (`clojure -M:check-reflection`)
 
+## Testing
 #### Module Impacted
 <!-- List the Module > Submodule impacted by this PR (e.g. Toolbars > Camera Tool) -->
 <!-- The current list of all Modules is: -->
 <!-- Layers, Side Panel, Point Info, Toolbars, Match Drop, Misc., Mobile -->
 
-## Testing
 #### Role
-<!-- Admin, User, or Vistor -->
+<!-- Admin, User, or Visitor -->
 
-<!-- All steps needed to test this PR -->
 #### Steps
+<!-- All steps needed to test this PR -->
 1.
 
 #### Desired Outcome
+
+---
+
+<!-- If needed, add more tests using the format above (Module Impacted, Role, Steps, Desired Outcome) here. -->
 
 ## Screenshots
 <!-- Add a screen shot when UI changes are included -->
