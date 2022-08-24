@@ -418,7 +418,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- symbol-opacity [opacity]
-  {"text-opacity" ["step" ["zoom"] 0 6 opacity 22 opacity]})
+  {"text-opacity" ["step" ["zoom"] 0 6 opacity 22 opacity]
+   "icon-opacity" opacity})
 
 (defn- circle-opacity [opacity]
   {"circle-opacity"        opacity
