@@ -1,22 +1,12 @@
 (ns pyregence.pages.near-term-forecast
-  (:require [reagent.core :as r]
-            [reagent.dom  :as rd]
-            [herb.core    :refer [<class]]
-            [cognitect.transit :as t]
-            [clojure.edn        :as edn]
-            [clojure.spec.alpha :as s]
-            [clojure.string     :as str]
-            [clojure.core.async :refer [go <!]]
-            [cljs.core.async.interop :refer-macros [<p!]]
-            [pyregence.state  :as !]
-            [pyregence.styles :as $]
-            [pyregence.utils  :as u]
-            [pyregence.config :as c]
-            [pyregence.components.mapbox    :as mb]
-            [pyregence.components.popups    :refer [fire-popup red-flag-popup]]
-            [pyregence.components.common    :refer [tool-tip-wrapper]]
-            [pyregence.components.messaging :refer [message-box-modal toast-message!]]
-            [pyregence.components.svg-icons :refer [pin]]
+  (:require [cljs.core.async.interop                             :refer-macros [<p!]]
+            [clojure.core.async                                  :refer [go <!]]
+            [clojure.edn                                         :as edn]
+            [clojure.spec.alpha                                  :as s]
+            [clojure.string                                      :as str]
+            [cognitect.transit                                   :as t]
+            [herb.core                                           :refer [<class]]
+            [pyregence.components.nav-bar                        :refer [nav-bar]]
             [pyregence.components.map-controls.camera-tool       :refer [camera-tool]]
             [pyregence.components.map-controls.collapsible-panel :refer [collapsible-panel]]
             [pyregence.components.map-controls.information-tool  :refer [information-tool]]
@@ -26,7 +16,17 @@
             [pyregence.components.map-controls.scale-bar         :refer [scale-bar]]
             [pyregence.components.map-controls.time-slider       :refer [time-slider]]
             [pyregence.components.map-controls.tool-bar          :refer [tool-bar]]
-            [pyregence.components.map-controls.zoom-bar          :refer [zoom-bar]]))
+            [pyregence.components.map-controls.zoom-bar          :refer [zoom-bar]]
+            [pyregence.components.mapbox                         :as mb]
+            [pyregence.components.messaging                      :refer [message-box-modal toast-message!]]
+            [pyregence.components.popups                         :refer [fire-popup]]
+            [pyregence.components.svg-icons                      :as svg]
+            [pyregence.config                                    :as c]
+            [pyregence.state                                     :as !]
+            [pyregence.styles                                    :as $]
+            [pyregence.utils                                     :as u]
+            [reagent.core                                        :as r]
+            [reagent.dom                                         :as rd]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec
@@ -144,7 +144,7 @@
                       processed-times))
     (swap! !/*params assoc-in [@!/*forecast :model-init] (ffirst processed-times))))
 
-(defn get-layers! [get-model-times?]
+(defn- get-layers! [get-model-times?]
   (go
     (let [params       (dissoc (get @!/*params @!/*forecast) (when get-model-times? :model-init))
           selected-set (or (some (fn [[key {:keys [options]}]]
@@ -198,7 +198,7 @@
                              :headers {"Accept" "application/json, text/xml"
                                        "Content-Type" "application/json"}}
                             process-fn))
-   (when (some? loading-atom)
+   (when loading-atom
      (reset! loading-atom false))))
 
 (defn wrap-wms-errors [type response success-fn]
@@ -392,36 +392,34 @@
     (mb/init-popup! "fire" lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 
-(defn- init-red-flag-popup! [feature lnglat]
-  (let [properties (-> feature (aget "properties") (js->clj))
-        {:strs [url prod_type onset ends]} properties
-        body       (red-flag-popup url prod_type onset ends)]
-    (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
-
-(defn change-type!
+(defn- change-type!
   "Changes the type of data that is being shown on the map."
   [get-model-times? clear? zoom? max-zoom]
   (go
     (<! (get-layers! get-model-times?))
     (let [source   (get-current-layer-name)
           style-fn (get-current-layer-key :style-fn)]
-      (mb/reset-active-layer! source
-                              style-fn
-                              (get-any-level-key :geoserver-key)
-                              (/ @!/active-opacity 100)
-                              (get-psps-layer-style))
+      (<! (mb/reset-active-layer! source
+                                  style-fn
+                                  (get-any-level-key :geoserver-key)
+                                  (/ @!/active-opacity 100)
+                                  (get-psps-layer-style)))
       (mb/clear-popup!)
-      (when (some? style-fn)
-        (mb/add-feature-highlight! "fire-active" "fire-active" init-fire-popup!)
-        (mb/add-feature-highlight! "red-flag" "red-flag" init-red-flag-popup!))
+      ; When we have a style-fn (which indicates a WFS layer) add the feature highlight.
+      ; For now, the only dropdown layer that is WFS is the *Active Fires layer.
+      (when style-fn
+        (mb/add-feature-highlight! "fire-active" "fire-active" :click-fn init-fire-popup!))
       (get-legend! source))
     (if clear?
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))
-    (when zoom?
+    (when (or zoom? (= @!/*forecast :active-fire))
       (mb/zoom-to-extent! (get-current-layer-extent) (current-layer) max-zoom))))
 
-(defn select-param! [val & keys]
+(defn- select-param!
+  "The function called whenever an input dropdown is changed on the collapsible panel.
+   Resets the proper state atoms with the new, selected inputs from the UI."
+  [val & keys]
   (swap! !/*params assoc-in (cons @!/*forecast keys) val)
   (!/set-state-legend-list! [])
   (reset! !/last-clicked-info nil)
@@ -435,12 +433,15 @@
                   (get-current-option-key main-key val :auto-zoom?)
                   (get-any-level-key     :max-zoom))))
 
-(defn select-forecast! [key]
+(defn select-forecast!
+  "The function called whenever you select a new forecast/tab."
+  [key]
   (go
     (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
+    (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
     (<! (change-type! true
                       true
                       (get-any-level-key :auto-zoom?)
@@ -468,9 +469,17 @@
                                                              (u/time-zone-iso-date utc-time @!/show-utc?))])
                                                  options)))))
 
-;;; Capabilities
+(defn- params->selected-options
+  "Parses url query parameters into the selected options"
+  [options-config forecast params]
+  {forecast (as-> options-config oc
+              (get-in oc [forecast :params])
+              (keys oc)
+              (select-keys params oc)
+              (u/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
-(defn process-capabilities! [fire-names user-layers & [selected-options]]
+;;; Capabilities
+(defn process-capabilities! [fire-names user-layers options-config]
   (reset! !/capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
@@ -479,20 +488,21 @@
                                    (s/valid? ::layer-config layer-config))
                             (assoc-in acc layer-path layer-config)
                             acc)))
-                      @!/options
+                      options-config
                       user-layers)
               (update-in [:active-fire :params :fire-name :options]
                          merge
                          fire-names)))
   (reset! !/*params (u/mapm
                      (fn [[forecast _]]
-                       (let [params (get-in @!/capabilities [forecast :params])]
+                       (let [params           (get-in @!/capabilities [forecast :params])
+                             selected-options (params->selected-options options-config @!/*forecast params)]
                          [forecast (merge (u/mapm (fn [[k v]]
                                                     [k (or (get-in selected-options [forecast k])
                                                            (:default-option v)
                                                            (ffirst (:options v)))])
                                                   params))]))
-                     @!/options)))
+                     options-config)))
 
 (defn refresh-fire-names! [user-id]
   (go
@@ -502,29 +512,20 @@
       (edn/read-string fire-names)
       (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge fire-names))))
 
-(defn- params->selected-options
-  "Parses url query parameters to into the selected options"
-  [options-config forecast params]
-  {forecast (as-> options-config oc
-              (get-in oc [forecast :params])
-              (keys oc)
-              (select-keys params oc)
-              (u/mapm (fn [[k v]] [k (keyword v)]) oc))})
-
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
           user-layers-chan                (u/call-clj-async! "get-user-layers" user-id)
           fire-names-chan                 (u/call-clj-async! "get-fire-names" user-id)
           fire-cameras                    (u/call-clj-async! "get-cameras")]
-      (reset! !/options options-config)
+      (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast (or (keyword forecast)
-                              (keyword (forecast-type @c/default-forecasts))))
+                              (keyword (forecast-type @!/default-forecasts))))
       (reset! !/*layer-idx (if layer-idx (js/parseInt layer-idx) 0))
       (mb/init-map! "map" layers (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
-                             (params->selected-options @!/options @!/*forecast params))
+                             options-config)
       (<! (select-forecast! @!/*forecast))
       (reset! !/user-org-list (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" user-id)))))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))
@@ -533,19 +534,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn $app-header []
-  {:align-items     "center"
-   :display         "flex"
-   :justify-content "center"
-   :position        "relative"
-   :width           "100%"})
-
-(defn $forecast-label [selected?]
-  (merge
-   {:cursor "pointer"
-    :margin "0 1rem 0 1rem"}
-   (when selected? {:color "white"})))
 
 (defn $control-layer []
   {:height   "100%"
@@ -616,6 +604,7 @@
           (get-current-layer-key :units)]
          [tool-bar
           set-show-info!
+          get-any-level-key
           user-id]
          [scale-bar (get-any-level-key :time-slider?)]
          (when-not @!/mobile? [mouse-lng-lat])
@@ -632,7 +621,7 @@
 
 (defn pop-up []
   [:div#pin {:style ($/fixed-size "2rem")}
-   [pin]])
+   [svg/pin]])
 
 (defn map-layer []
   (r/with-let [mouse-down? (r/atom false)
@@ -646,7 +635,7 @@
                :on-mouse-up   #(reset! mouse-down? false)}]))
 
 (defn message-modal []
-  (r/with-let [show-me? (r/atom (not @c/dev-mode?))]
+  (r/with-let [show-me? (r/atom (not @!/dev-mode?))]
     (when @show-me?
       [:div#message-modal {:style ($/modal)}
        [:div {:style ($message-modal false)}
@@ -728,35 +717,14 @@
          [message-box-modal]
          (when @!/loading? [loading-modal])
          [message-modal]
-         [:div {:style ($/combine $app-header {:background ($/color-picker :yellow)})}
-          [:span {:style {:display "flex" :padding ".25rem 0"}}
-           (doall (map (fn [[key {:keys [opt-label hover-text allowed-org]}]]
-                         (when (or (nil? allowed-org)
-                                   (some (fn [{org-name :opt-label}]
-                                           (= org-name allowed-org))
-                                         @!/user-org-list))
-                           ^{:key key}
-                           [tool-tip-wrapper
-                            hover-text
-                            :top
-                            [:label {:style    ($forecast-label (= @!/*forecast key))
-                                     :on-click #(select-forecast! key)}
-                             opt-label]]))
-                       @!/capabilities))]
-          (when-not @!/mobile?
-            (if user-id
-              [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-               [:label {:style {:margin-right "1rem" :cursor "pointer"}
-                        :on-click (fn []
-                                    (go (<! (u/call-clj-async! "log-out"))
-                                        (-> js/window .-location .reload)))}
-                "Log Out"]]
-              [:span {:style {:position "absolute" :right "3rem" :display "flex"}}
-               ;; Remove for the time being
-               ;; [:label {:style {:margin-right "1rem" :cursor "pointer"}
-               ;;          :on-click #(u/jump-to-url! "/register")} "Register"]
-               [:label {:style {:cursor "pointer"}
-                        :on-click #(u/jump-to-url! "/login")} "Log In"]]))]
+         [nav-bar {:capabilities         @!/capabilities
+                   :current-forecast     @!/*forecast
+                   :is-admin?            (> (count @!/user-org-list) 0)
+                   :logged-in?           user-id
+                   :mobile?              @!/mobile?
+                   :user-org-list        @!/user-org-list
+                   :select-forecast!     select-forecast!
+                   :user-id              user-id}]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
           (when (and @mb/the-map
                      (not-empty @!/capabilities)

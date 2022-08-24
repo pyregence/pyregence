@@ -41,6 +41,10 @@
    [:link {:rel "manifest" :href "/favicon/site.webmanifest?v=1.0"}]
    [:link {:rel "mask-icon" :href "/favicon/safari-pinned-tab.svg?v=1.0" :color "#5bbad5"}]
    [:link {:rel "shortcut icon" :href "/favicon/favicon.ico?v=1.0"}]
+   [:link {:rel "preload" :as "image" :href "./images/Active_Fire_0.png"}]
+   [:link {:rel "preload" :as "image" :href "./images/Active_Fire_50.png"}]
+   [:link {:rel "preload" :as "image" :href "./images/Active_Fire_90.png"}]
+   [:link {:rel "preload" :as "image" :href "./images/Active_Fire_100.png"}]
    [:meta {:name "msapplication-TileColor" :content "#da532c"}]
    [:meta {:name "msapplication-config" :content "/favicon/browserconfig.xml"}]
    [:meta {:name "theme-color" :content "#ffffff"}]
@@ -63,6 +67,7 @@
                                :mapbox            (get-config :mapbox)
                                :features          (get-config :features)
                                :geoserver         (get-config :geoserver)
+                               :pyr-auth-token    (get-config :pyr-auth-token)
                                :announcement      (when (.exists (io/as-file "announcement.txt"))
                                                     (slurp "announcement.txt"))))
         "); };")])
@@ -71,7 +76,7 @@
   (fn [{:keys [params server-name]}]
     {:status  (if valid? 200 404)
      :headers {"Content-Type" "text/html"}
-     :body    (html5
+     :body    (html5 {:lang "en"}
                (head-meta-css)
                [:body
                 [:div#app]

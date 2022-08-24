@@ -357,7 +357,7 @@
    :position         "absolute"
    :z-index          "100"})
 
-(def light-border (str "1.2px solid " (color-picker :brown)))
+(def light-border (str "1px solid " (color-picker :brown)))
 
 (defn action-box
   "A shortcut for styling an action box."

@@ -1,22 +1,16 @@
 (ns pyregence.config
   (:require [clojure.string  :as str]
-            [pyregence.utils :as u]))
+            [pyregence.utils :as u]
+            [pyregence.state :as !]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private features (atom nil))
-
-(defn set-feature-flags!
-  "Sets the features atom with the specified features from `config.edn`."
-  [config]
-  (reset! features (:features config)))
-
 (defn feature-enabled?
   "Checks whether or not a specific feature is enabled."
   [feature-name]
-  (get @features feature-name))
+  (get @!/feature-flags feature-name))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
@@ -33,35 +27,35 @@
                      :opt-label     "Structures"
                      :z-index       104
                      :filter-set    #{"fire-detections" "us-buildings"}
-                     :geoserver-key :pyrecast}})
+                     :geoserver-key :shasta}})
 
 (def near-term-forecast-underlays
   (array-map
-   :us-trans-lines  {:opt-label     "US Transmission Lines"
-                     :z-index       107
-                     :filter-set    #{"fire-detections" "us-transmission-lines"}
-                     :geoserver-key :pyrecast}
-   :nifs-perimeters {:opt-label     "NIFS Perimeters"
-                     :z-index       103
-                     :filter-set    #{"fire-detections" "nifs-perimeters"}
-                     :geoserver-key :pyrecast}
-   :viirs-hotspots  {:opt-label     "VIIRS Hotspots"
-                     :z-index       102
-                     :filter-set    #{"fire-detections" "viirs-timestamped"}
-                     :geoserver-key :pyrecast}
-   :modis-hotspots  {:opt-label     "MODIS Hotspots"
-                     :z-index       101
-                     :filter-set    #{"fire-detections" "modis-timestamped"}
-                     :geoserver-key :pyrecast}
-   :goes-imagery    {:opt-label     "Live satellite (GOES-16)"
-                     :z-index       100
-                     :filter-set    #{"fire-detections" "goes16-rgb"}
-                     :geoserver-key :pyrecast}))
+   :us-trans-lines          {:opt-label     "Transmission lines"
+                             :z-index       107
+                             :filter-set    #{"fire-detections" "us-transmission-lines"}
+                             :geoserver-key :shasta}
+   :current-year-perimeters {:opt-label     "2022 fire perimeters"
+                             :z-index       103
+                             :filter-set    #{"fire-detections" "current-year-perimeters"}
+                             :geoserver-key :shasta}
+   :viirs-hotspots          {:opt-label     "VIIRS hotspots"
+                             :z-index       102
+                             :filter-set    #{"fire-detections" "viirs-timestamped"}
+                             :geoserver-key :shasta}
+   :modis-hotspots          {:opt-label     "MODIS hotspots"
+                             :z-index       101
+                             :filter-set    #{"fire-detections" "modis-timestamped"}
+                             :geoserver-key :shasta}
+   :goes-imagery            {:opt-label     "Live satellite (GOES-16)"
+                             :z-index       100
+                             :filter-set    #{"fire-detections" "goes16-rgb"}
+                             :geoserver-key :shasta}))
 
 (def near-term-forecast-options
   {:fuels        {:opt-label     "Fuels"
                   :filter        "fuels"
-                  :geoserver-key :pyrecast
+                  :geoserver-key :shasta
                   :underlays     (merge common-underlays near-term-forecast-underlays)
                   :time-slider?  false
                   :hover-text    "Layers related to fuel and potential fire behavior."
@@ -83,48 +77,48 @@
                                                                 :units           ""
                                                                 :convert         #(str (u/direction %) " (" % "°)")
                                                                 :reverse-legend? false
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :slp    {:opt-label       "Slope (degrees)"
                                                                 :filter          "slp"
                                                                 :units           "\u00B0"
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :dem    {:opt-label       "Elevation (ft)"
                                                                 :filter          "dem"
                                                                 :units           "ft"
                                                                 :convert         #(u/to-precision 1 (* % 3.28084))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :cc     {:opt-label       "Canopy Cover (%)"
                                                                 :filter          "cc"
                                                                 :units           "%"
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :ch     {:opt-label       "Canopy Height (m)"
                                                                 :filter          "ch"
                                                                 :units           "m"
                                                                 :no-convert      #{:cfo}
                                                                 :convert         #(u/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :cbh    {:opt-label       "Canopy Base Height (m)"
                                                                 :filter          "cbh"
                                                                 :units           "m"
                                                                 :no-convert      #{:cfo}
                                                                 :convert         #(u/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}}
+                                                                :disabled-for    #{:cecs}}
                                                        :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
                                                                 :filter          "cbd"
                                                                 :units           "kg/m\u00b3"
                                                                 :convert         #(u/to-precision 2 (/ % 100))
                                                                 :no-convert      #{:cfo}
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cec}})}
+                                                                :disabled-for    #{:cecs}})}
                                   :model {:opt-label  "Source"
                                           :hover-text [:p {:style {:margin-bottom "0"}}
                                                        "Stock "
-                                                       [:strong "LANDFIRE 2.0.0"]
+                                                       [:strong "LANDFIRE 2.2.0"]
                                                        " data ("
                                                        [:a {:href   "https://landfire.gov"
                                                             :target "_blank"}
@@ -140,12 +134,12 @@
                                                        "), © Salo Sciences, Inc. 2020."
                                                        [:br]
                                                        [:br]
-                                                       [:strong "2021 California fuelscape"]
+                                                       [:strong "2022 California fuelscape"]
                                                        " prepared by Pyrologix, LLC ("
                                                        [:a {:href   "https://pyrologix.com"
                                                             :target "_blank"}
                                                         "https://pyrologix.com"]
-                                                       "), 2021."
+                                                       "), 2022."
                                                        [:br]
                                                        [:br]
                                                        [:strong "California Ecosystem Climate Solutions"]
@@ -154,78 +148,164 @@
                                                             :target "_blank"}
                                                         "California Ecosystem Climate Solutions"]
                                                        ", Wang et al. (2021)."]
-                                          :options    {:landfire      {:opt-label "LANDFIRE 2.0.0"
-                                                                       :filter    "landfire-2.0.0"}
+                                          :options    {:landfire      {:opt-label "LANDFIRE 2.2.0"
+                                                                       :filter    "landfire-2.2.0"}
                                                        :cfo           {:opt-label "California Forest Obs."
                                                                        :filter    "cfo-2020"}
-                                                       :ca-fuelscapes {:opt-label "2021 CA fuelscape"
-                                                                       :filter    "ca-fuelscapes"}
-                                                       :cec           {:opt-label    "CA Ecosystem Climate Solutions"
-                                                                       :filter       "cec"
+                                                       :ca-fuelscapes {:opt-label "2022 CA fuelscape"
+                                                                       :filter    "ca-2022-fuelscape"}
+                                                       :cecs          {:opt-label    "CA Ecosystem Climate Solutions"
+                                                                       :filter       "cecs"
                                                                        :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
                                   :model-init {:opt-label  "Model Creation Time"
                                                :hover-text "Time the data was created."
                                                :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-weather {:opt-label       "Weather"
                   :filter          "fire-weather-forecast"
-                  :geoserver-key   :pyrecast
+                  :geoserver-key   :shasta
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
-                  :hover-text      "8-day forecast of key parameters affecting wildfire behavior obtained from operational National Weather Service forecast models."
+                  :hover-text      "Gridded weather forecasts from several US operational weather models including key parameters that affect wildfire behavior."
                   :params          {:band       {:opt-label  "Weather Parameter"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
-                                                              "8-day forecast updated 4x daily pulled from three operational weather models. Available quantities include common weather parameters plus fire weather indices:"
+                                                              "Gridded weather forecasts from several US operational weather models having different spatial resolutions and forecast durations. Available quantities include common weather parameters and fire weather indices:"
                                                               [:br]
                                                               [:br]
                                                               [:strong "Fosberg Fire Weather Index (FFWI)"]
                                                               " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "Vapor pressure deficit (VPD)"]
+                                                              [:strong "Vapor Pressure Deficit (VPD)"]
                                                               " - Difference between amount of moisture in air and how much it can hold when saturated."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "Hot Dry Windy Index"]
-                                                              " - Similar to FFWI, but based on VPD."]
+                                                              [:strong "Hot Dry Windy Index (HDWI)"]
+                                                              " - Similar to FFWI, but based on VPD."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Firebrand Ignition Probability"]
+                                                              " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
-                                                              :tmpf   {:opt-label "Temperature (F)"
+                                                              :tmpf   {:opt-label "Temperature (\u00B0F)"
                                                                        :filter    "tmpf"
                                                                        :units     "\u00B0F"}
                                                               :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                        :filter    "ffwi"
                                                                        :units     ""}
+                                                              :meq    {:opt-label "Fine dead fuel moisture (%)"
+                                                                       :filter    "meq"
+                                                                       :units     "%"}
+                                                              :pign   {:opt-label "Firebrand ignition probability (%)"
+                                                                       :filter    "pign"
+                                                                       :units     "%"}
                                                               :rh     {:opt-label "Relative humidity (%)"
                                                                        :filter    "rh"
                                                                        :units     "%"}
+                                                              :wd     {:opt-label       "Wind direction (\u00B0)"
+                                                                       :filter          "wd"
+                                                                       :units           "\u00B0"
+                                                                       :reverse-legend? false}
                                                               :ws     {:opt-label "Sustained wind speed (mph)"
                                                                        :filter    "ws"
                                                                        :units     "mph"}
                                                               :wg     {:opt-label "Wind gust (mph)"
                                                                        :filter    "wg"
                                                                        :units     "mph"}
-                                                              :apcp01 {:opt-label "1-hour precipitation (in)"
-                                                                       :filter    "apcp01"
-                                                                       :units     "inches"
-                                                                       :convert   #(u/to-precision 2 (* % 0.03937007874))}
-                                                              :meq    {:opt-label "Fine dead fuel moisture (%)"
-                                                                       :filter    "meq"
-                                                                       :units     "%"}
-                                                              :vpd    {:opt-label "Vapor pressure deficit (hPa)"
-                                                                       :filter    "vpd"
-                                                                       :units     "hPa"}
-                                                              :hdw    {:opt-label "Hot-Dry-Windy Index (hPa*m/s)"
-                                                                       :filter    "hdw"
-                                                                       :units     "hPa*m/s"}
-                                                              :smoke  {:opt-label "Smoke density (\u00b5g/m\u00b3)"
-                                                                       :filter    "smoke"
-                                                                       :units     "\u00b5g/m\u00b3"})}
+                                                              :apcp   {:opt-label    "Accumulated precipitation (in)"
+                                                                       :filter       "apcp"
+                                                                       :units        "inches"
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :rtma-ru}}
+                                                              :apcp01 {:opt-label    "1-hour precipitation (in)"
+                                                                       :filter       "apcp01"
+                                                                       :units        "inches"
+                                                                       :disabled-for #{:gfs0p25 :nam-awip12 :nbm :rtma-ru}}
+                                                              :apcp03 {:opt-label    "3-hour precipitation (in)"
+                                                                       :filter       "apcp03"
+                                                                       :units        "inches"
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-conusnest :nbm :rtma-ru}}
+                                                              :apcp06 {:opt-label    "6-hour precipitation (in)"
+                                                                       :filter       "apcp06"
+                                                                       :units        "inches"
+                                                                       :disabled-for #{:gfs0p125 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}}
+                                                              :vpd    {:opt-label    "Vapor pressure deficit (hPa)"
+                                                                       :filter       "vpd"
+                                                                       :units        "hPa"
+                                                                       :disabled-for #{:nbm}}
+                                                              :hdw    {:opt-label    "Hot-Dry-Windy Index (hPa*m/s)"
+                                                                       :filter       "hdw"
+                                                                       :units        "hPa*m/s"
+                                                                       :disabled-for #{:nbm}}
+                                                              :smoke  {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
+                                                                       :filter       "smoke"
+                                                                       :units        "\u00b5g/m\u00b3"
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}}
+                                                              :tcdc   {:opt-label    "Total cloud cover (%)"
+                                                                       :filter       "tcdc"
+                                                                       :units        "%"
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm}})}
+                                    :model      {:opt-label  "Model"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "Hybrid"]
+                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "GFS 0.125\u00B0"]
+                                                              " - Global Forecast System at 0.125\u00B0 (approx 13 km) resolution to 16 days."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "GFS 0.250\u00B0"]
+                                                              " - Global Forecast System at 0.250\u00B0 (approx 26 km) resolution to 16 days."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "HRRR"]
+                                                              " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM 12 km"]
+                                                              " - North American Mesoscale Model at 12 km resolution to 84 hours."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM 3 km"]
+                                                              " -  North American Mesoscale Model at 3 km resolution to 60 hours."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NBM"]
+                                                              " - National Blend of Models at 2.5 km to 11 days."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "RTMA"]
+                                                              " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
+                                                 :options    {:hybrid        {:opt-label    "Hybrid"
+                                                                              :filter       "hybrid"
+                                                                              :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
+                                                              :gfs0p125      {:opt-label    "GFS 0.125\u00B0"
+                                                                              :filter       "gfs0p125"
+                                                                              :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
+                                                              :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
+                                                                              :filter       "gfs0p25"
+                                                                              :disabled-for #{:apcp :apcp01 :apcp03 :smoke :tcdc}}
+                                                              :hrrr          {:opt-label    "HRRR"
+                                                                              :filter       "hrrr"
+                                                                              :disabled-for #{:apcp03 :apcp06 :tcdc}}
+                                                              :nam-awip12    {:opt-label    "NAM 12 km"
+                                                                              :filter       "nam-awip12"
+                                                                              :disabled-for #{:apcp :apcp01 :apcp06 :smoke :tcdc}}
+                                                              :nam-conusnest {:opt-label    "NAM 3 km"
+                                                                              :filter       "nam-conusnest"
+                                                                              :disabled-for #{:apcp03 :apcp06 :smoke :tcdc}}
+                                                              :nbm           {:opt-label    "NBM"
+                                                                              :filter       "nbm"
+                                                                              :disabled-for #{:apcp01 :apcp03 :apcp06 :hdw :smoke :tcdc :vpd}}
+                                                              :rtma-ru       {:opt-label    "RTMA"
+                                                                              :filter       "rtma-ru"
+                                                                              :disabled-for #{:apcp :apcp01 :apcp03 :apcp06 :smoke}}}}
                                     :model-init {:opt-label  "Forecast Start Time"
-                                                 :hover-text "Start time for forecast cycle, new data comes every 6 hours."
+                                                 :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
-                  :geoserver-key   :pyrecast
+                  :geoserver-key   :shasta
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
@@ -251,24 +331,32 @@
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."
                                                               [:br]
                                                               [:br]
+                                                              [:strong "Crown Fire Area"]
+                                                              " - Description coming soon!"
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "Power Line Ignition Rate"]
                                                               " - Estimated power line ignition rate."]
-                                                 :options    {:times-burned {:opt-label "Relative burn probability"
-                                                                             :filter    "times-burned"
-                                                                             :units     "Times"}
-                                                              :impacted     {:opt-label "Impacted structures"
-                                                                             :filter    "impacted-structures"
-                                                                             :units     "Structures"}
-                                                              :fire-area    {:opt-label "Fire area"
-                                                                             :filter    "fire-area"
-                                                                             :units     "Acres"}
-                                                              :fire-volume  {:opt-label "Fire volume"
-                                                                             :filter    "fire-volume"
-                                                                             :units     "Acre-ft"}
-                                                              :plignrate    {:opt-label    "Power line ignition rate"
-                                                                             :filter       "plignrate"
-                                                                             :units        "Ignitions/line-mi/hr"
-                                                                             :disabled-for #{:all :tlines}}}}
+                                                 :options    {:times-burned    {:opt-label "Relative burn probability"
+                                                                                :filter    "times-burned"
+                                                                                :units     "Times"}
+                                                              :impacted        {:opt-label "Impacted structures"
+                                                                                :filter    "impacted-structures"
+                                                                                :units     "Structures"}
+                                                              :fire-area       {:opt-label "Fire area"
+                                                                                :filter    "fire-area"
+                                                                                :units     "Acres"}
+                                                              :fire-volume     {:opt-label "Fire volume"
+                                                                                :filter    "fire-volume"
+                                                                                :units     "Acre-ft"}
+                                                              :crown-fire-area {:opt-label    "Crown fire area"
+                                                                                :filter       "crown-fire-area"
+                                                                                :units        "Acres"
+                                                                                :disabled-for #{:tlines :nve}}
+                                                              :plignrate       {:opt-label    "Power line ignition rate"
+                                                                                :filter       "plignrate"
+                                                                                :units        "Ignitions/line-mi/hr"
+                                                                                :disabled-for #{:all :tlines}}}}
                                     :pattern    {:opt-label  "Ignition Pattern"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Fires are ignited randomly across California at various times in the future so their impacts can be modeled. Patterns include:"
@@ -286,18 +374,18 @@
                                                               :tlines     {:opt-label    "Transmission lines"
                                                                            :filter       "tlines"
                                                                            :clear-point? true
-                                                                           :disabled-for #{:plignrate}}}}
+                                                                           :disabled-for #{:plignrate :crown-fire-area}}}}
                                     :fuel       {:opt-label  "Fuel"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
                                                               [:br]
-                                                              [:strong "- 2021 California fuelscape"]
+                                                              [:strong "- 2022 California fuelscape"]
                                                               " prepared by Pyrologix, LLC ("
                                                               [:a {:href   "https://pyrologix.com"
                                                                    :target "_blank"}
                                                                "https://pyrologix.com"]
-                                                              "), 2021."
+                                                              "), 2022."
                                                               [:br]
                                                               [:br]
                                                               [:strong "- California Forest Observatory"]
@@ -306,10 +394,11 @@
                                                                    :target "_blank"}
                                                                "https://forestobservatory.com"]
                                                               "), © Salo Sciences, Inc. 2020."]
-                                                 :options    {:landfire {:opt-label "2021 CA fuelscape"
+                                                 :options    {:landfire {:opt-label "2022 CA fuelscape"
                                                                          :filter    "landfire"}
-                                                              :cfo      {:opt-label "2020 CA Forest Obs."
-                                                                         :filter    "cfo"}}}
+                                                              :cfo      {:opt-label    "2020 CA Forest Obs."
+                                                                         :filter       "cfo"
+                                                                         :disabled-for #{:times-burned :impacted :fire-area :fire-volume :plignrate :crown-fire-area}}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Computer fire spread model used to generate active fire and risk forecasts."
@@ -328,21 +417,29 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
-                  :geoserver-key   :pyrecast
-                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :geoserver-key   :trinity
+                  :underlays       (merge common-underlays
+                                          near-term-forecast-underlays
+                                          {:isochrones {:opt-label        "Modeled perimeter"
+                                                        :z-index          125
+                                                        :filter-set       #{"isochrones"}
+                                                        :dependent-inputs [:fire-name :burn-pct :fuel :model :model-init]
+                                                        :disabled-for     #{:active-fires :gridfire}
+                                                        :geoserver-key    :trinity}})
                   :block-info?     true
                   :reverse-legend? false
                   :time-slider?    true
-                  :hover-text      "3-day forecasts of active fires with burning areas established from satellite-based heat detection."
+                  :hover-text      "7-day forecasts of active fires with burning areas established from satellite-based heat detection."
                   :params          {:fire-name  {:opt-label      "Fire Name"
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
                                                  :default-option :active-fires
-                                                 :options        {:active-fires    {:opt-label    "*All Active Fires"
-                                                                                    :style-fn     :default
-                                                                                    :filter-set   #{"fire-detections" "active-fires"}
-                                                                                    :auto-zoom?   false
-                                                                                    :time-slider? false}}}
+                                                 :options        {:active-fires    {:opt-label     "*All Active Fires"
+                                                                                    :style-fn      :default
+                                                                                    :filter-set    #{"fire-detections" "active-fires"}
+                                                                                    :auto-zoom?    false
+                                                                                    :time-slider?  false
+                                                                                    :geoserver-key :shasta}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
                                                  :options    {:burned {:opt-label       "Forecasted fire location"
@@ -366,12 +463,12 @@
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
                                                               [:br]
-                                                              [:strong  "- 2021 California fuelscape"]
+                                                              [:strong  "- 2022 California fuelscape"]
                                                               " prepared by Pyrologix, LLC ("
                                                               [:a {:href   "https://pyrologix.com"
                                                                    :target "_blank"}
                                                                "https://pyrologix.com"]
-                                                              "), 2021."
+                                                              "), 2022."
                                                               [:br]
                                                               [:br]
                                                               [:strong "- California Forest Observatory"]
@@ -380,7 +477,7 @@
                                                                    :target "_blank"}
                                                                "https://forestobservatory.com"]
                                                               "), © Salo Sciences, Inc. 2020."]
-                                                 :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.0.0"
+                                                 :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.2.0"
                                                                          :filter    "landfire"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
@@ -491,6 +588,8 @@
    :fire-weather-forecast {:forecast-layer? true}
    :fuels-and-topography  {:forecast-layer? true}
    :fire-history          {:forecast-layer? false}
+   :fire-history-labels   {:forecast-layer? false}
+   :isochrones            {:forecast-layer? false}
    :psps-static           {:forecast-layer? false}
    :psps-zonal            {:forecast-layer? true}
    :red-flag              {:forecast-layer? false}
@@ -501,59 +600,62 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def long-term-forecast-options
-  {:fire-scenarios {:opt-label       "Fire Scenarios"
-                    :filter          "climate_FireSim"
-                    :geoserver-key   :pyreclimate
-                    :underlays       common-underlays
-                    :hover-text      "Wildfire scenario projections for area burned with varied emissions and population scenarios."
-                    :reverse-legend? true
-                    :block-info?     false
-                    :time-slider?    true
-                    :params          {:model      {:opt-label  "Global Climate Model"
-                                                   :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
-                                                                Projected future climate from these four models can be described as producing:
-                                                                HadGEM2-ES - A warmer/dry simulation
-                                                                CNRM-CM5 - A cooler/wetter simulation
-                                                                CanESM2 - An average simulation
-                                                                MIROC5 - A model that is most unlike the first three to offer the best coverage of different possibilities."
-                                                   :auto-zoom? true
-                                                   :options    {:can-esm2   {:opt-label "CanESM2"
-                                                                             :filter    "CanESM2"
-                                                                             :units     "ha"}
-                                                                :hadgem2-es {:opt-label "HadGEM2-ES"
-                                                                             :filter    "HadGEM2-ES"
-                                                                             :units     "ha"}
-                                                                :cnrm-cm5   {:opt-label "CNRM-CM5"
-                                                                             :filter    "CNRM-CM5"
-                                                                             :units     "ha"}
-                                                                :miroc5     {:opt-label "MIROC5"
-                                                                             :filter    "MIROC5"
-                                                                             :units     "ha"}}}
-                                      :prob       {:opt-label  "RCP Scenario"
-                                                   :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
-                                                                Options include:
-                                                                4.5 - emissions start declining starting in 2045 to reach half the levels of CO2 of 2050 by 2100.
-                                                                8.5 - emissions keep rising throughout the 2100."
-                                                   :options    {:p45 {:opt-label "4.5"
-                                                                      :filter    "45"
-                                                                      :units     ""}
-                                                                :p85 {:opt-label "8.5"
-                                                                      :filter    "85"
-                                                                      :units     ""}}}
-                                      :measure    {:opt-label  "Population Growth Scenario"
-                                                   :hover-text "Vary population growth."
-                                                   :options    {:bau  {:opt-label "Central"
-                                                                       :filter    "bau"
+  {:fire-scenarios {:opt-label        "Fire Scenarios"
+                    :filter           "climate_FireSim"
+                    :geoserver-key    :pyreclimate
+                    :underlays        common-underlays
+                    :hover-text       "Wildfire scenario projections for area burned with varied emissions and population scenarios."
+                    :reverse-legend?  true
+                    :block-info?      false
+                    :time-slider?     true
+                    :disable-camera?  true
+                    :disable-flag?    true
+                    :disable-history? true
+                    :params           {:model      {:opt-label  "Global Climate Model"
+                                                    :hover-text "Four climate models selected by the California's Climate Action Team as priority models for research contributing to California's Fourth Climate Change Assessment.\n
+                                                                 Projected future climate from these four models can be described as producing:
+                                                                 HadGEM2-ES - A warmer/dry simulation
+                                                                 CNRM-CM5 - A cooler/wetter simulation
+                                                                 CanESM2 - An average simulation
+                                                                 MIROC5 - A model that is most unlike the first three to offer the best coverage of different possibilities."
+                                                    :auto-zoom? true
+                                                    :options    {:can-esm2   {:opt-label "CanESM2"
+                                                                              :filter    "CanESM2"
+                                                                              :units     "ha"}
+                                                                 :hadgem2-es {:opt-label "HadGEM2-ES"
+                                                                              :filter    "HadGEM2-ES"
+                                                                              :units     "ha"}
+                                                                 :cnrm-cm5   {:opt-label "CNRM-CM5"
+                                                                              :filter    "CNRM-CM5"
+                                                                              :units     "ha"}
+                                                                 :miroc5     {:opt-label "MIROC5"
+                                                                              :filter    "MIROC5"
+                                                                              :units     "ha"}}}
+                                       :prob       {:opt-label  "RCP Scenario"
+                                                    :hover-text "Representative Concentration Pathway (RCP) is the greenhouse gas concentration trajectory adopted by the IPCC.\n
+                                                                 Options include:
+                                                                 4.5 - emissions start declining starting in 2045 to reach half the levels of CO2 of 2050 by 2100.
+                                                                 8.5 - emissions keep rising throughout the 2100."
+                                                    :options    {:p45 {:opt-label "4.5"
+                                                                       :filter    "45"
                                                                        :units     ""}
-                                                                :high {:opt-label "High"
-                                                                       :filter    "H"
-                                                                       :units     ""}
-                                                                :low  {:opt-label "Low"
-                                                                       :filter    "L"
+                                                                 :p85 {:opt-label "8.5"
+                                                                       :filter    "85"
                                                                        :units     ""}}}
-                                      :model-init {:opt-label  "Scenario Year"
-                                                   :hover-text "Year"
-                                                   :options    {:loading {:opt-label "Loading..."}}}}}})
+                                       :measure    {:opt-label  "Population Growth Scenario"
+                                                    :hover-text "Vary population growth."
+                                                    :options    {:bau  {:opt-label "Central"
+                                                                        :filter    "bau"
+                                                                        :units     ""}
+                                                                 :high {:opt-label "High"
+                                                                        :filter    "H"
+                                                                        :units     ""}
+                                                                 :low  {:opt-label "Low"
+                                                                        :filter    "L"
+                                                                        :units     ""}}}
+                                       :model-init {:opt-label  "Scenario Year"
+                                                    :hover-text "Year"
+                                                    :options    {:loading {:opt-label "Loading..."}}}}}})
 
 (def long-term-forecast-layers
   "All layers added in addition to the default Mapbox layers and their
@@ -567,13 +669,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Forecast Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defonce default-forecasts (atom {}))
-
-(defn set-default-forecasts!
-  "Sets the default forecast tabs given the value from `config.edn`."
-  [defaults]
-  (reset! default-forecasts defaults))
 
 (def ^:private forecasts {:near-term {:options-config near-term-forecast-options
                                       :layers         near-term-forecast-layers}
@@ -730,21 +825,14 @@
 ;; WFS/WMS Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private geoserver-urls (atom nil))
-
-(defn set-geoserver-urls!
-  "Stores the Geoserver URL's passed in via `config.edn`."
-  [urls]
-  (reset! geoserver-urls urls))
-
 (defn- wms-url [geoserver-key]
-  (str (u/end-with (geoserver-key @geoserver-urls) "/") "wms"))
+  (str (u/end-with (geoserver-key @!/geoserver-urls) "/") "wms"))
 
 (defn- wfs-url [geoserver-key]
-  (str (u/end-with (geoserver-key @geoserver-urls) "/") "wfs"))
+  (str (u/end-with (geoserver-key @!/geoserver-urls) "/") "wfs"))
 
 (defn- mvt-url [geoserver-key]
-  (str (u/end-with ((keyword geoserver-key) @geoserver-urls) "/") "gwc/service/wmts"))
+  (str (u/end-with ((keyword geoserver-key) @!/geoserver-urls) "/") "gwc/service/wmts"))
 
 (defn legend-url
   "Generates a URL for the legend given a layer."
@@ -901,15 +989,8 @@
 ;; Mapbox Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce mapbox-access-token (atom nil))
-
-(defn set-mapbox-access-token!
-  "Sets the Mapbox access token given the value from `config.edn`."
-  [token]
-  (reset! mapbox-access-token token))
-
 (defn- style-url [id]
-  (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @mapbox-access-token))
+  (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @!/mapbox-access-token))
 
 (defn base-map-options
   "Provides the configuration for the different Mapbox map view options."
@@ -924,14 +1005,3 @@
 (def base-map-default :mapbox-topo)
 
 (def mapbox-dem-url "mapbox://mapbox.mapbox-terrain-dem-v1")
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Dev-mode Configuration
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defonce dev-mode? (atom nil))
-
-(defn set-dev-mode!
-  "Sets the dev mode given the value from `config.edn`."
-  [val]
-  (reset! dev-mode? val))

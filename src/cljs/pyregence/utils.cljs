@@ -1,10 +1,12 @@
 (ns pyregence.utils
-  (:require [decimal.core       :as dc]
-            [cljs.reader        :as edn]
-            [clojure.string     :as str]
-            [clojure.set        :as sets]
-            [clojure.core.async :refer [alts! go <! timeout go-loop chan put!]]
-            [cljs.core.async.interop :refer-macros [<p!]]))
+  (:require [cljs.core.async.interop        :refer-macros [<p!]]
+            [cljs.reader                    :as edn]
+            [clojure.core.async             :refer [alts! go <! timeout go-loop chan put!]]
+            [clojure.set                    :as sets]
+            [clojure.string                 :as str]
+            [decimal.core                   :as dc]
+            [pyregence.components.messaging :refer [toast-message!]]
+            [pyregence.state                :as !]))
 
 (defn input-value
   "Returns the value property of the target property of an event."
@@ -114,6 +116,10 @@
      (.open js/window url window-name)
      (jump-to-url! url))))
 
+(defn redirect-to-login! [from-page]
+  (set-session-storage! {:redirect-from from-page})
+  (jump-to-url! "/login"))
+
 ;;; Fetch results
 
 (defn- chan? [c]
@@ -167,7 +173,8 @@
                         :headers {"Accept" "application/edn"
                                   "Content-Type" "application/edn"}}
           edn-string   (<! (fetch-and-process (str url
-                                                   "?auth-token=883kljlsl36dnll9s9l2ls8xksl"
+                                                   "?auth-token="
+                                                   @!/pyr-auth-token
                                                    (when (not= query-string "") (str "&" query-string)))
                                               fetch-params
                                               (fn [response] (.text response))))]
@@ -184,7 +191,7 @@
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
                                   fetch-params))]
       (if response
         {:success (.-ok response)
@@ -204,7 +211,7 @@
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
                                   fetch-params))]
       (if response
         {:success (.-ok response)
@@ -224,7 +231,7 @@
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=883kljlsl36dnll9s9l2ls8xksl")
+          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
                                   fetch-params))]
       (if response
         {:success (.-ok response)
@@ -239,6 +246,33 @@
 
 ;; TODO This whole routing should be more generic
 (def ^:private post-options #{:get :post :post-text :post-blob})
+
+(defn- show-sql-error! [error]
+  (toast-message!
+   (cond
+     (str/includes? error "duplicate key")
+     "This action cannot be completed because it would create a duplicate entry where this is prohibited."
+
+     (and (str/includes? error "violates foreign key")
+          (str/includes? error "still referenced from table"))
+     (let [message-start (+ (str/index-of error "from table \"") 11)
+           message-end   (+ 1 (str/index-of error "\"" (+ 1 message-start)))
+           table-str     (subs error message-start message-end)]
+       (str "This action cannot be completed because this value is being referenced by table " table-str "."))
+
+     (str/includes? error "violates foreign key")
+     "This action cannot be completed because the value selected is not valid."
+
+     :else
+     error)))
+
+(defn call-sql-async! [sql-fn-name & args]
+  (go
+    (let [[schema function]         (str/split sql-fn-name #"\.")
+          {:keys [success message]} (<! (call-remote! :post
+                                                      (str "/sql/" schema "/" function)
+                                                      {:sql-args args}))]
+      (if success message (do (show-sql-error! message) [{}])))))
 
 (defn call-clj-async!
   "Calls a given function from the backend and returns a go block
@@ -381,7 +415,7 @@
   "Returns the difference in milliseconds between a JS Date object and the current time.
    Optionally returns the difference between two different JS Date objects."
   [js-date & [js-date-opt]]
-  (if (some? js-date-opt)
+  (if js-date-opt
     (- (.getTime js-date) (.getTime js-date-opt))
     (- (.getTime (js/Date.)) (.getTime js-date))))
 
@@ -601,10 +635,22 @@
 (defn round-last-clicked-info
   "Rounds a point info value to the proper number of digits for rendering."
   [last-clicked-info-val]
-  (when (some? last-clicked-info-val)
+  (when last-clicked-info-val
     (if (>= last-clicked-info-val 1)
       (to-precision 1 last-clicked-info-val)
       (-> last-clicked-info-val
           (dc/decimal)
           (dc/to-significant-digits 2)
           (dc/to-number)))))
+
+(defn get-changed-keys
+  "Takes in two maps with the same keys and (potentially) different values.
+   Determines which values are different between the two maps and returns a set
+   containing the keys associated with the changed values."
+  [old-map new-map]
+  (reduce (fn [acc k]
+             (if (not= (get old-map k) (get new-map k))
+               (conj acc k)
+               acc))
+          #{}
+          (keys old-map)))

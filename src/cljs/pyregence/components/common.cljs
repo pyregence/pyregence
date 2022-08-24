@@ -123,12 +123,14 @@
 (defn check-box
   "A component for check boxes."
   [label-text state]
-  [:span {:style {:margin-bottom ".5rem"}}
-   [:input {:style     {:margin-right ".25rem"}
-            :type      "checkbox"
-            :checked   @state
-            :on-change #(swap! state not)}]
-   [:label label-text]])
+  (let [id  (str (random-uuid))]
+    [:span {:style {:margin-bottom ".5rem"}}
+     [:input {:id        id
+              :style     {:margin-right ".25rem"}
+              :type      "checkbox"
+              :checked   @state
+              :on-change #(swap! state not)}]
+     [:label {:for id} label-text]]))
 
 (defn labeled-input
   "Input and label pair component. Takes as `opts`
@@ -193,7 +195,7 @@
   ([title button-text fields on-click]
    (simple-form title button-text fields on-click nil))
   ([title button-text fields on-click footer]
-   [:form {:style     {:height "fit-content" :width "25rem"}
+   [:form {:style     {:height "fit-content" :min-width "25rem"}
            :action    "#"
            :on-submit #(do (.preventDefault %) (.stopPropagation %) (on-click %))}
     [:div {:style ($/action-box)}

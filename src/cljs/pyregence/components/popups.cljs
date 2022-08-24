@@ -63,6 +63,20 @@
    [:h6 {:style ($popup-header)}
     prod-type]
    [:div
-    [fire-property "Onset" onset]
-    [fire-property "Ends" ends]
-    [red-flag-link url]]])
+    [fire-property "Onset" (if (= onset "null") "N/A" onset)]
+    [fire-property "Ends" (if (= ends "null") "N/A" ends)]
+    (when (not= url "null") [red-flag-link url])]])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fire History Component
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn fire-history-popup
+  "Popup body for the fire history layer."
+  [fire-name fire-year acres-burned]
+  [:div {:style {:display "flex" :flex-direction "column"}}
+   [:h6 {:style ($popup-header)}
+    fire-name]
+   [:div
+    [fire-property "Fire Year" fire-year]
+    [fire-property "Acres Burned" (.toLocaleString (Math/ceil acres-burned))]]])

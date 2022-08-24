@@ -283,7 +283,6 @@ button,
 
 button:not(:disabled),
 select:not(:disabled),
-input:not(:disabled),
 [type="button"]:not(:disabled),
 [type="reset"]:not(:disabled),
 [type="submit"]:not(:disabled) {
@@ -292,6 +291,21 @@ input:not(:disabled),
 
 select:disabled {
   opacity: 0.5;
+}
+
+input:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+#optional-layer-checkbox input:disabled + label {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+#optional-layer-checkbox input:enabled,
+#optional-layer-checkbox label {
+  cursor: pointer;
 }
 
 button::-moz-focus-inner,

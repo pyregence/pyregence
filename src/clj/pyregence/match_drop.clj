@@ -10,6 +10,7 @@
             [triangulum.sockets         :refer [send-to-server!]]
             [triangulum.type-conversion :refer [val->long json->clj clj->json]]
             [pyregence.capabilities :refer [set-capabilities!]]
+            [pyregence.utils        :refer [nil-on-error]]
             [pyregence.views        :refer [data-response]]))
 
 ;;; Helper Functions
@@ -41,11 +42,6 @@
     (->> date-str
          (.parse in-format)
          (.format out-format))))
-
-(defmacro nil-on-error
-  [& body]
-  (let [_ (gensym)]
-    `(try ~@body (catch Exception ~_ nil))))
 
 (defn- get-md-config [k]
   (get-config :match-drop k))
@@ -88,7 +84,7 @@
   (sql-primitive (call-sql "initialize_match_job" user-id)))
 
 (defn- update-match-job! [job-id {:keys [md-status display-name message elmfire-done? gridfire-done? request]}]
-  (call-sql "update_match_job" job-id md-status display-name message elmfire-done? gridfire-done? (when (some? request) (clj->json request))))
+  (call-sql "update_match_job" job-id md-status display-name message elmfire-done? gridfire-done? (when request (clj->json request))))
 
 (defn- send-to-server-wrapper!
   [host port job-id & [extra-payload]]

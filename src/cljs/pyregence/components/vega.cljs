@@ -45,53 +45,54 @@
         processed-point-info (cond->> (u/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)
                                (fn? convert) (mapv (fn [entry]
                                                      (update entry :band #(u/round-last-clicked-info (convert %)))))
-                               :else         (mapv #(update % :band u/round-last-clicked-info)))]
+                               :else         (mapv #(update % :band u/round-last-clicked-info)))
+        x-axis-units         ({:near-term "Hour" :long-term "Year"} @!/*forecast-type)]
     {:width    "container"
      :height   "container"
      :autosize {:type "fit" :resize true}
      :padding  {:left "16" :top "16" :right "16" :bottom "16"}
      :data     {:values processed-point-info}
-     :layer    [{:encoding {:x {:field "hour"
-                                :type  "quantitative"
-                                :title "Hour"
-                                :scale (create-data-scale)}
-                            :y {:field "band"
-                                :type  "quantitative"
-                                :title units}
-                            :tooltip [{:field "band" :title units  :type "nominal"}
+     :layer    [{:encoding {:x       {:field "hour"
+                                      :type  "quantitative"
+                                      :title x-axis-units
+                                      :scale (create-data-scale)}
+                            :y       {:field "band"
+                                      :type  "quantitative"
+                                      :title units}
+                            :tooltip [{:field "band" :title units :type "nominal"}
                                       {:field "date" :title "Date" :type "nominal"}
                                       {:field "time" :title "Time" :type "nominal"}
-                                      {:field "hour" :title "Hour" :type "nominal"}]}
-                 :layer [{:mark {:type        "line"
-                                 :interpolate "monotone"
-                                 :stroke      {:x2       0
-                                               :y1       1
-                                               :gradient "linear"
-                                               :stops    (create-stops processed-legend
-                                                                       processed-point-info)}}}
-                         ;; This defines all of the points for selection
-                         {:mark      {:type   "point"
-                                      :opacity 0}
-                          :selection {:point-hover {:type  "single"
-                                                    :on    "mouseover"
-                                                    :empty "none"}}}
-                         {:transform [{:filter {:or [{:field "hour" :lt current-hour}
-                                                     {:field "hour" :gt current-hour}]}}]
-                          :mark      {:type   "point"
-                                      :filled true}
-                          :encoding  {:size  {:condition {:selection :point-hover :value 150}
-                                              :value     75}
-                                      :color {:field  "band"
-                                              :type   "quantitative"
-                                              :scale  (create-color-scale processed-legend)
-                                              :legend false}}}
-                         {:transform [{:filter {:field "hour" :equal current-hour}}]
-                          :mark      {:type   "point"
-                                      :filled false
-                                      :fill   "black"
-                                      :stroke "black"}
-                          :encoding  {:size {:condition {:selection :point-hover :value 150}
-                                             :value     75}}}]}]}))
+                                      {:field "hour" :title x-axis-units :type "nominal"}]}
+                 :layer    [{:mark {:type        "line"
+                                    :interpolate "monotone"
+                                    :stroke      {:x2       0
+                                                  :y1       1
+                                                  :gradient "linear"
+                                                  :stops    (create-stops processed-legend
+                                                                          processed-point-info)}}}
+                            ;; This defines all of the points for selection
+                            {:mark      {:type    "point"
+                                         :opacity 0}
+                             :selection {:point-hover {:type  "single"
+                                                       :on    "mouseover"
+                                                       :empty "none"}}}
+                            {:transform [{:filter {:or [{:field "hour" :lt current-hour}
+                                                        {:field "hour" :gt current-hour}]}}]
+                             :mark      {:type   "point"
+                                         :filled true}
+                             :encoding  {:size  {:condition {:selection :point-hover :value 150}
+                                                 :value     75}
+                                         :color {:field  "band"
+                                                 :type   "quantitative"
+                                                 :scale  (create-color-scale processed-legend)
+                                                 :legend false}}}
+                            {:transform [{:filter {:field "hour" :equal current-hour}}]
+                             :mark      {:type   "point"
+                                         :filled false
+                                         :fill   "black"
+                                         :stroke "black"}
+                             :encoding  {:size {:condition {:selection :point-hover :value 150}
+                                                :value     75}}}]}]}))
 
 (defn- render-vega [spec layer-click! elem]
   (when (and spec (seq (get-in spec [:data :values])))
