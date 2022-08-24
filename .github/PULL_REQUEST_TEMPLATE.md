@@ -10,13 +10,14 @@ Closes PYR-###
 - [ ] Feature(s) work when compiled (`clojure -M:compile-cljs`)
 - [ ] No new reflection warnings (`clojure -M:check-reflection`)
 
-## Module(s) Impacted
-<!-- List the Module > Submodule impacted by this PR (e.g. Underlays > Structures Layer) -->
-<!-- The current list of all Modules is: Fuels Tab, Weather Tab, Risk Tab, Active Fires Tab, PSPS Tab, Underlays, Point Info, Toolbars, and Mobile. -->
+#### Module Impacted
+<!-- List the Module > Submodule impacted by this PR (e.g. Toolbars > Camera Tool) -->
+<!-- The current list of all Modules is: -->
+<!-- Layers, Side Panel, Point Info, Toolbars, Match Drop, Misc., Mobile -->
 
 ## Testing
-<!-- Admin, User, or Vistor -->
 #### Role
+<!-- Admin, User, or Vistor -->
 
 <!-- All steps needed to test this PR -->
 #### Steps
