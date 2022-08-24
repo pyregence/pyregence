@@ -12,8 +12,9 @@ Closes PYR-###
 
 ## Testing
 #### Module Impacted
-<!-- List the Module > Submodule impacted by this test (e.g. Layers > NIFS Perimeters Underlay or Toolbars > Fire History) -->
-<!-- The current list of all Modules is: Layers, Side Panel, Point Info, Toolbars, Match Drop, Miscellaneous, and Mobile. -->
+<!-- List the Module > Submodule impacted by this PR (e.g. Toolbars > Camera Tool) -->
+<!-- The current list of all Modules is: -->
+<!-- Layers, Side Panel, Point Info, Toolbars, Match Drop, Misc., Mobile -->
 
 #### Role
 <!-- Admin, User, or Visitor -->
