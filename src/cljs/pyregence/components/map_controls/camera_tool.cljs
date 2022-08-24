@@ -233,8 +233,7 @@
         460
         "Wildfire Camera Tool"
         close-fn!
-        render-content
-        ]])
+        render-content]])
     (finally
       (u/stop-refresh! @exit-chan)
       (mb/remove-layer! "fire-cameras")
