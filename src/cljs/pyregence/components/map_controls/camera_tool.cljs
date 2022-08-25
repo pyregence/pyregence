@@ -1,6 +1,5 @@
 (ns pyregence.components.map-controls.camera-tool
   (:require [clojure.core.async                            :refer [take! go <!]]
-            [clojure.edn                                   :as edn]
             [herb.core                                     :refer [<class]]
             [pyregence.components.common                   :refer [hs-str tool-tip-wrapper]]
             [pyregence.components.help                     :as h]
@@ -12,13 +11,6 @@
             [pyregence.styles                              :as $]
             [pyregence.utils                               :as u]
             [reagent.core                                  :as r]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Local State
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defonce ^{:doc "A local state boolean that maintains the hide/show toggle state of the Camera Tool on mobile."}
-  show-camera-tool? (r/atom true))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -43,72 +35,37 @@
    :top       "2rem"
    :width     "10%"})
 
-(defn- $mobile-camera-panel [show?]
+(defn- $mobile-camera-tool [show?]
   {:background-color ($/color-picker :bg-color)
    :box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
    :color            ($/color-picker :font-color)
    :height           "290px"
    :display          "block"
-   :width            "100%"})
+   :width            "100%"
+   :z-index          "102"})
 
-(defn- $collapsible-button []
-  {:background-color           ($/color-picker :header-color)
-   :border-bottom-left-radius  "5px"
-   :border-bottom-right-radius "5px"
-   :border-color               ($/color-picker :transparent)
-   :border-style               "solid"
-   :border-width               "0px"
-   :box-shadow                 (str "3px 1px 4px 0 rgb(0, 0, 0, 0.25)")
-   :cursor                     "pointer"
-   :fill                       ($/color-picker :font-color)
-   :height                     "28px"
-   :padding                    "0"
-   :width                      "32px"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- collapsible-button []
-  [:button
-   {:style    ($collapsible-button)
-    :on-click #(swap! show-camera-tool? not)}
-   [:div {:style {:transform (if @show-camera-tool? "rotate(-90deg)" "rotate(90deg)")}}
-    [svg/right-arrow]]])
-
-(defn- camera-tool-show-toggle []
-  [:div#camera-tool-show-toggle
-   {:style {:display  (if (and @show-camera-tool? @!/mobile?) "none" "block")
-            :bottom   "100%"
-            :margin   "-28px"
-            :position "absolute"
-            :right    "49%"
-            :z-index  "101"}}
-   [tool-tip-wrapper
-    (str (hs-str @show-camera-tool?) " Camera Tool")
-    :down
-    [collapsible-button]]])
-
-(defn- camera-tool-hide-toggle []
-  [:div#camera-tool-hide-toggle
-   {:style {:display (if (and (not @show-camera-tool?) @!/mobile?) "none" "block")}}
-   [collapsible-button]])
-
-(defn- collapsible-camera-header []
+(defn- mobile-camera-tool-header []
   [:div#collapsible-camera-header
    {:style {:background-color ($/color-picker :header-color)
             :display          "flex"
-            :justify-content  "flex-start"
+            :justify-content  "space-between"
             :align-items      "center"
-            :padding          "0.1rem 1rem"}}
-   [:span {:style {:align-self   "flex-start"
-                   :fill         ($/color-picker :font-color)
+            :padding             "0.5rem 1rem"}}
+   [:span {:style {:fill         ($/color-picker :font-color)
                    :height       "2rem"
                    :margin-right "0.5rem"
                    :width        "2rem"}}
     [svg/camera]]
-   [:label {:style {:font-size "1.5rem" :margin "auto"}}
-    [camera-tool-hide-toggle]]])
+   [:label {:style {:font-size "1.5rem"}}
+    "Wildfire Camera Tool"]
+   [:span {:style {:margin-right "-.5rem"
+                   :visibility   (if (and @!/show-camera? @!/mobile?) "visible" "hidden")}}
+    [tool-button :close #(reset! !/show-camera? false)]]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root Component
@@ -136,7 +93,6 @@
                                                :zoom   6})))
                on-click       (fn [features]
                                 (go
-                                  (reset! show-camera-tool? true)
                                   (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
                                     (u/stop-refresh! @exit-chan)
                                     (reset! active-camera new-camera)
@@ -220,12 +176,10 @@
                                        "fire-cameras" "fire-cameras"
                                        :click-fn on-click))]
     (if @!/mobile?
-      [:<>
-       [camera-tool-show-toggle]
-       (when @show-camera-tool? [:div#wildfire-mobile-camera-tool
-                                 {:style ($/combine $/tool ($mobile-camera-panel @show-camera-tool?))}
-                                 [collapsible-camera-header]
-                                 (render-content 0 0)])]
+      [:div#wildfire-mobile-camera-tool
+       {:style ($/combine $/tool ($mobile-camera-tool @!/show-camera?))}
+       [mobile-camera-tool-header]
+       (render-content 0 0)]
       [:div#wildfire-camera-tool
        [resizable-window
         parent-box
