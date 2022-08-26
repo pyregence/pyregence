@@ -145,6 +145,18 @@ instances used in Pyrecast.
 127.0.0.1 local.pyrecast.org
 #+end_example
 
+*** Updating Chrome HSTS Settings
+
+If you are planning on doing your local development on Chrome, you'll need to
+update your HSTS (HTTP Strict Transport Security) settings so that trying to
+hit ~http://local.pyrecast.org~ doesn't automatically redirect to
+~https://local.pyrecast.org~. To do so, open chrome://net-internals/#hsts in your
+Chrome browser and scroll down to the "Delete domain security policies" section.
+Enter ~local.pyrecast.org~ in the box and click "Delete". You should now be all
+set to hit ~http://local.pyrecast.org~. If you're still running into issues,
+try clearing your Chrome browser cache (visit chrome://settings/privacy and
+click "Clear browsing data").
+
 *** Launching Figwheel
 
 To start the Figwheel server, navigate to the top-level project
