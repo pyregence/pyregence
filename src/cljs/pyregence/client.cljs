@@ -1,8 +1,8 @@
 (ns ^:figwheel-hooks pyregence.client
-  (:require [goog.dom                           :as dom]
-            [reagent.dom                        :refer [render]]
+  (:require [clojure.set                        :as set]
+            [goog.dom                           :as dom]
+            [pyregence.components.page-layout   :refer [set-announcement-text! wrap-page]]
             [pyregence.config                   :as c]
-            [pyregence.state                    :as !]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.dashboard          :as dashboard]
             [pyregence.pages.help               :as help]
@@ -14,8 +14,8 @@
             [pyregence.pages.reset-password     :as reset-password]
             [pyregence.pages.terms-of-use       :as terms]
             [pyregence.pages.verify-email       :as verify-email]
-            [pyregence.components.page-layout   :refer [set-announcement-text!
-                                                        wrap-page]]))
+            [pyregence.state                    :as !]
+            [reagent.dom                        :refer [render]]))
 
 (defonce ^:private original-params (atom {}))
 
@@ -63,6 +63,7 @@
                      (reset! original-params
                              (js->clj params :keywordize-keys true))
                      @original-params)]
+    (reset! !/share-url-provided? (set/subset? #{:zoom :lng :lat} cur-params))
     (reset! !/dev-mode? (:dev-mode cur-params))
     (reset! !/feature-flags (:features cur-params))
     (reset! !/mapbox-access-token (get-in cur-params [:mapbox :access-token]))

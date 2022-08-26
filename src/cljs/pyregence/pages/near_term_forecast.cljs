@@ -413,7 +413,8 @@
     (if clear?
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))
-    (when (or zoom? (= @!/*forecast :active-fire))
+    (when (and (false? @!/share-url-provided?)
+               (or zoom? (= @!/*forecast :active-fire)))
       (mb/zoom-to-extent! (get-current-layer-extent) (current-layer) max-zoom))))
 
 (defn- select-param!
