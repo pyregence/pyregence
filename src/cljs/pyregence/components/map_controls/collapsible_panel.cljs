@@ -67,7 +67,7 @@
    :position         "absolute"
    :transition       "all 200ms ease-in"
    :width            (if @!/mobile? "100%" "18rem")
-   :z-index          "101"})
+   :z-index          "110"})
 
 (defn- $collapsible-button []
   {:background-color           ($/color-picker :bg-color)

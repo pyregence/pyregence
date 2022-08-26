@@ -42,7 +42,7 @@
    :height           "290px"
    :display          "block"
    :width            "100%"
-   :z-index          "102"})
+   :z-index          "105"})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -55,13 +55,13 @@
             :display          "flex"
             :justify-content  "space-between"
             :align-items      "center"
-            :padding             "0.5rem 1rem"}}
+            :padding             "0 1rem"}}
    [:span {:style {:fill         ($/color-picker :font-color)
-                   :height       "2rem"
+                   :height       "1.5rem"
                    :margin-right "0.5rem"
-                   :width        "2rem"}}
+                   :width        "1.5rem"}}
     [svg/camera]]
-   [:label {:style {:font-size "1.5rem"}}
+   [:label {:style {:font-size "1rem"}}
     "Wildfire Camera Tool"]
    [:span {:style {:margin-right "-.5rem"
                    :visibility   (if (and @!/show-camera? @!/mobile?) "visible" "hidden")}}
