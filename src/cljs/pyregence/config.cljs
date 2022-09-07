@@ -508,7 +508,7 @@
                                                                           (filter keyword?)
                                                                           (set))
                                                                      #{:active-fires}))
-                                                 :options    {:loading {:opt-label    "Loading..."}}}}}
+                                                 :options    {:loading {:opt-label "Loading..."}}}}}
    :psps-zonal   {:opt-label       "PSPS"
                   :geoserver-key   :psps
                   :filter          "psps-zonal"
