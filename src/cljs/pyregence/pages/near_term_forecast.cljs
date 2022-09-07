@@ -330,7 +330,7 @@
       (reset! !/last-clicked-info
               (u-num/to-precision 2 (some-> features
                                             (first)
-                                            (u/try-js-aget "properties")
+                                            (u-misc/try-js-aget "properties")
                                             (js/Object.values)
                                             (first)))))))
 
