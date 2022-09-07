@@ -1,16 +1,17 @@
 (ns pyregence.components.map-controls.match-drop-tool
-  (:require [reagent.core :as r]
-            [herb.core          :refer [<class]]
-            [clojure.edn        :as edn]
-            [clojure.core.async :refer [<! go timeout]]
-            [clojure.pprint     :refer [cl-format]]
-            [pyregence.utils    :as u]
-            [pyregence.styles   :as $]
-            [pyregence.config   :as c]
-            [pyregence.components.mapbox           :as mb]
+  (:require [clojure.core.async                    :refer [<! go timeout]]
+            [clojure.edn                           :as edn]
+            [clojure.pprint                        :refer [cl-format]]
+            [herb.core                             :refer [<class]]
             [pyregence.components.common           :refer [labeled-input input-hour limited-date-picker]]
+            [pyregence.components.mapbox           :as mb]
             [pyregence.components.messaging        :refer [set-message-box-content!]]
-            [pyregence.components.resizable-window :refer [resizable-window]]))
+            [pyregence.components.resizable-window :refer [resizable-window]]
+            [pyregence.config                      :as c]
+            [pyregence.styles                      :as $]
+            [pyregence.utils.async-utils           :as u-async]
+            [pyregence.utils.time-utils            :as u-time]
+            [reagent.core                          :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -28,7 +29,7 @@
   [job-id refresh-fire-names! user-id]
   (go
     (while @poll?
-      (let [{:keys [message md-status log]} (-> (u/call-clj-async! "get-md-status" job-id)
+      (let [{:keys [message md-status log]} (-> (u-async/call-clj-async! "get-md-status" job-id)
                                                 (<!)
                                                 (:body)
                                                 (edn/read-string))]
@@ -52,12 +53,12 @@
   [display-name [lon lat] md-date md-hour refresh-fire-names! user-id]
   (go
     (let [datetime   (.toString (js/Date. (+ md-date (* md-hour 3600000))))
-          match-chan (u/call-clj-async! "initiate-md"
-                                        {:display-name  (when-not (empty? display-name) display-name)
-                                         :ignition-time (u/time-zone-iso-date datetime true)
-                                         :lon           lon
-                                         :lat           lat
-                                         :user-id       user-id})]
+          match-chan (u-async/call-clj-async! "initiate-md"
+                                              {:display-name  (when-not (empty? display-name) display-name)
+                                               :ignition-time (u-time/time-zone-iso-date datetime true)
+                                               :lon           lon
+                                               :lat           lat
+                                               :user-id       user-id})]
       (set-message-box-content! {:title  "Processing Match Drop"
                                  :body   "Initiating match drop run."
                                  :mode   :close
@@ -112,7 +113,7 @@
   [parent-box close-fn! refresh-fire-names! user-id]
   (r/with-let [display-name (r/atom "")
                lon-lat      (r/atom [0 0])
-               md-date      (r/atom (u/current-date-ms)) ; Stored in milliseconds
+               md-date      (r/atom (u-time/current-date-ms)) ; Stored in milliseconds
                md-hour      (r/atom (.getHours (js/Date.))) ; hour (0-23) in the local timezone
                click-event  (mb/add-single-click-popup! #(reset! lon-lat %))]
     [:div#match-drop-tool

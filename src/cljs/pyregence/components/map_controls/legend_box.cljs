@@ -1,7 +1,8 @@
 (ns pyregence.components.map-controls.legend-box
-  (:require [pyregence.state  :as !]
-            [pyregence.styles :as $]
-            [pyregence.utils  :as u]))
+  (:require [pyregence.state              :as !]
+            [pyregence.styles             :as $]
+            [pyregence.utils.data-utils   :as u-data]
+            [pyregence.utils.number-utils :as u-num]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -39,7 +40,7 @@
   (reset! !/show-legend? (not @!/mobile?))
   (fn [reverse? time-slider? units]
     (when (and @!/show-legend? (seq @!/legend-list))
-      (let [processed-legend (u/filter-no-data @!/legend-list)]
+      (let [processed-legend (u-data/filter-no-data @!/legend-list)]
         [:div#legend-box {:style ($/combine $/tool ($legend-box @!/show-panel? time-slider?))}
          [:div {:style {:display        "flex"
                         :flex-direction "column"}}
@@ -47,7 +48,7 @@
                          ^{:key i}
                          [:div {:style ($/combine {:display "flex" :justify-content "flex-start"})}
                           [:div {:style ($legend-color (get leg "color") (get leg "opacity"))}]
-                          [:label (str (get leg "label") (u/clean-units units))]])
+                          [:label (str (get leg "label") (u-num/clean-units units))]])
                        (if reverse?
                          (reverse processed-legend)
                          processed-legend))]]))))
