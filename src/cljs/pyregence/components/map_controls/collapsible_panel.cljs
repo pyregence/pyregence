@@ -2,7 +2,7 @@
   (:require [reagent.core       :as r]
             [herb.core          :refer [<class]]
             [clojure.edn        :as edn]
-            [clojure.core.async :refer [<! go go-loop]]
+            [clojure.core.async :refer [<! go]]
             [clojure.set        :as set]
             [pyregence.state    :as !]
             [pyregence.utils    :as u]

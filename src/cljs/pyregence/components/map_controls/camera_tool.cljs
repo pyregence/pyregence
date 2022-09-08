@@ -1,7 +1,7 @@
 (ns pyregence.components.map-controls.camera-tool
   (:require [clojure.core.async                            :refer [take! go <!]]
             [herb.core                                     :refer [<class]]
-            [pyregence.components.common                   :refer [hs-str tool-tip-wrapper]]
+            [pyregence.components.common                   :refer [tool-tip-wrapper]]
             [pyregence.components.help                     :as h]
             [pyregence.components.map-controls.tool-button :refer [tool-button]]
             [pyregence.components.mapbox                   :as mb]
@@ -179,7 +179,7 @@
       [:div#wildfire-mobile-camera-tool
        {:style ($/combine $/tool ($mobile-camera-tool @!/show-camera?))}
        [mobile-camera-tool-header]
-       (render-content 0 0)]
+       [render-content 0 0]]
       [:div#wildfire-camera-tool
        [resizable-window
         parent-box
