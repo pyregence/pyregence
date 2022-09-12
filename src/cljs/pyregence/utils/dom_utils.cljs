@@ -29,11 +29,24 @@
   [event]
   (-> event .-target .-files (aget 0)))
 
-(defn copy-input-clipboard!
-  "Copies the contents of `element-id` into the user's clipboard. `element-id` must
-   be the ID of an HTML element in the document."
-  [element-id]
-  {:pre [(string? element-id)]}
-  (doto (js/document.getElementById element-id)
-    (.select))
-  (js/document.execCommand "copy"))
+(defn- is-ios-mobile-device? []
+  (re-seq #"(?i)iphone|ipad" (. js/navigator -userAgent)))
+
+(defn- set-ios-mobile-selection [text-area]
+  (let [range      (. js/document createRange)
+        _          (. range selectNodeContents text-area)
+        selection  (. js/window getSelection)]
+      (. selection removeAllRanges)
+      (. selection addRange range)
+      (. text-area setSelectionRange 0 999999)))
+
+(defn copy-input-clipboard! [element-id]
+  (let [input      (.getElementById js/document element-id)
+        text-area  (.createElement js/document "textarea")]
+    (set! (.-value text-area) (.-value input))
+    (.appendChild (. js/document -body) text-area)
+    (if (is-ios-mobile-device?)
+      (set-ios-mobile-selection text-area)
+      (.select text-area))
+    (.execCommand js/document "copy")
+    (.removeChild (. js/document -body) text-area)))
