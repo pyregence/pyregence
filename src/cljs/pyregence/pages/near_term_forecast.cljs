@@ -24,7 +24,12 @@
             [pyregence.config                                    :as c]
             [pyregence.state                                     :as !]
             [pyregence.styles                                    :as $]
-            [pyregence.utils                                     :as u]
+            [pyregence.utils.async-utils                         :as u-async]
+            [pyregence.utils.browser-utils                       :as u-browser]
+            [pyregence.utils.data-utils                          :as u-data]
+            [pyregence.utils.misc-utils                          :as u-misc]
+            [pyregence.utils.number-utils                        :as u-num]
+            [pyregence.utils.time-utils                          :as u-time]
             [reagent.core                                        :as r]
             [reagent.dom                                         :as rd]))
 
@@ -65,7 +70,7 @@
 
 (defn- get-current-layer-full-time []
   (if-let [sim-time (:sim-time (current-layer))]
-    (u/time-zone-iso-date sim-time @!/show-utc?)
+    (u-time/time-zone-iso-date sim-time @!/show-utc?)
     ""))
 
 (defn- get-current-layer-extent []
@@ -131,10 +136,10 @@
   "Updates the necessary atoms based on the given model-times. This updates the
    :model-init values for each tab in config.cljs that are initially set to 'Loading...'"
   [model-times]
-  (let [processed-times (into (u/reverse-sorted-map)
+  (let [processed-times (into (u-data/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
-                                      {:opt-label (u/time-zone-iso-date utc-time @!/show-utc?)
+                                      {:opt-label (u-time/time-zone-iso-date utc-time @!/show-utc?)
                                        :utc-time  utc-time ; TODO is utc-time redundant?
                                        :filter    utc-time}])
                                    model-times))]
@@ -156,9 +161,9 @@
                                              (get-in options [(params key) :filter])))
                                       (remove nil?))))
           {:keys [layers model-times]} (t/read (t/reader :json)
-                                               (:body (<! (u/call-clj-async! "get-layers"
-                                                                             (get-any-level-key :geoserver-key)
-                                                                             (pr-str selected-set)))))]
+                                               (:body (<! (u-async/call-clj-async! "get-layers"
+                                                                                   (get-any-level-key :geoserver-key)
+                                                                                   (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count @!/param-layers) 1))))
@@ -193,18 +198,18 @@
    passed in. The loading-atom is set to false after the resource has been fetched."
   [process-fn url & [loading-atom]]
   (go
-   (<! (u/fetch-and-process url
-                            {:method "get"
-                             :headers {"Accept" "application/json, text/xml"
-                                       "Content-Type" "application/json"}}
-                            process-fn))
+   (<! (u-async/fetch-and-process url
+                                  {:method "get"
+                                   :headers {"Accept" "application/json, text/xml"
+                                             "Content-Type" "application/json"}}
+                                  process-fn))
    (when loading-atom
      (reset! loading-atom false))))
 
 (defn- wrap-wms-errors [type response success-fn]
   (go
     (let [json-res (<p! (.json response))]
-      (if-let [exceptions (u/try-js-aget json-res "exceptions")]
+      (if-let [exceptions (u-misc/try-js-aget json-res "exceptions")]
         (do
           (println exceptions)
           (toast-message! (str "Error retrieving " type ". See console for more details.")))
@@ -235,7 +240,7 @@
   "Parses the JSON data from GetLegendGraphic from a layer using raster colormap styling."
   [rules]
   (as-> rules %
-      (u/try-js-aget % 0 "symbolizers" 0 "Raster" "colormap" "entries")
+      (u-misc/try-js-aget % 0 "symbolizers" 0 "Raster" "colormap" "entries")
       (js->clj %)))
 
 (defn- process-legend!
@@ -243,16 +248,16 @@
    Also populates the no-data-quantities atom with all quantities associated
    with `nodata` points."
   [json-res]
-  (let [rules (u/try-js-aget json-res "Legend" 0 "rules")]
+  (let [rules (u-misc/try-js-aget json-res "Legend" 0 "rules")]
     (!/set-state-legend-list! (as-> rules %
                                 (cond
-                                  (u/try-js-aget % 0 "symbolizers" 0 "Raster")
+                                  (u-misc/try-js-aget % 0 "symbolizers" 0 "Raster")
                                   (process-raster-colormap-legend %)
 
-                                  (u/try-js-aget % 0 "symbolizers" 0 "Polygon")
+                                  (u-misc/try-js-aget % 0 "symbolizers" 0 "Polygon")
                                   (process-vector-layer-legend % true)
 
-                                  (u/try-js-aget % 0 "symbolizers" 0 "Line")
+                                  (u-misc/try-js-aget % 0 "symbolizers" 0 "Line")
                                   (process-vector-layer-legend % false)
 
                                   :else (process-raster-colormap-legend %))
@@ -263,7 +268,7 @@
 (defn- get-legend!
   "Makes a call to GetLegendGraphic and passes the resulting JSON to process-legend!"
   [layer]
-  (when (u/has-data? layer)
+  (when (u-data/has-data? layer)
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url layer
                             (get-any-level-key :geoserver-key)
@@ -279,25 +284,25 @@
    have multiple values that you can use for point information, thus they need
    to be parsed differently."
   [json-res]
-  (let [features (u/try-js-aget json-res "features")]
+  (let [features (u-misc/try-js-aget json-res "features")]
     (if (empty? features)
       (reset! !/last-clicked-info [])
       (let [multi-column-info? (some-> features
-                                       (u/try-js-aget 0 "properties")
+                                       (u-misc/try-js-aget 0 "properties")
                                        (js/Object.keys)
                                        (.-length)
                                        (> 1))
             band-extraction-fn (fn [pi-layer]
                                  (if multi-column-info?
                                    (some->> (get-psps-column-name)
-                                            (u/try-js-aget pi-layer "properties"))
-                                   (some->> (u/try-js-aget  pi-layer "properties")
+                                            (u-misc/try-js-aget pi-layer "properties"))
+                                   (some->> (u-misc/try-js-aget  pi-layer "properties")
                                             (js/Object.values)
                                             (first))))
             feature-info       (map (fn [pi-layer]
                                       {:band   (band-extraction-fn pi-layer)
                                        :vec-id (some-> pi-layer
-                                                       (u/try-js-aget "id")
+                                                       (u-misc/try-js-aget "id")
                                                        (str/split #"\.")
                                                        (peek))})
                                     features)
@@ -307,11 +312,11 @@
                 (->> feature-info
                      (filter (fn [pi-layer] (= (:vec-id pi-layer) vec-id-max)))
                      (mapv (fn [{:keys [sim-time hour]} pi-layer]
-                             (let [js-time (u/js-date-from-string sim-time)]
+                             (let [js-time (u-time/js-date-from-string sim-time)]
                                  (assoc pi-layer
                                         :js-time js-time
-                                        :date    (u/get-date-from-js js-time @!/show-utc?)
-                                        :time    (u/get-time-from-js js-time @!/show-utc?)
+                                        :date    (u-time/get-date-from-js js-time @!/show-utc?)
+                                        :time    (u-time/get-time-from-js js-time @!/show-utc?)
                                         :hour    hour)))
                            @!/param-layers)))))))
 
@@ -319,15 +324,15 @@
   "Resets the !/last-clicked-info atom according the the JSON resulting from a
    call to GetFeatureInfo for single-point-info layers."
   [json-res]
-  (let [features (u/try-js-aget json-res "features")]
+  (let [features (u-misc/try-js-aget json-res "features")]
     (if (empty? features)
       (reset! !/last-clicked-info [])
       (reset! !/last-clicked-info
-              (u/to-precision 2 (some-> features
-                                        (first)
-                                        (u/try-js-aget "properties")
-                                        (js/Object.values)
-                                        (first)))))))
+              (u-num/to-precision 2 (some-> features
+                                            (first)
+                                            (u-misc/try-js-aget "properties")
+                                            (js/Object.values)
+                                            (first)))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info!
@@ -341,7 +346,7 @@
         single?             (str/blank? layer-group)
         layer               (if single? layer-name layer-group)
         process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
-    (when-not (u/missing-data? layer point-info)
+    (when-not (u-data/missing-data? layer point-info)
       (reset! !/point-info-loading? true)
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
@@ -457,16 +462,16 @@
   (reset! !/show-utc? utc?)
   (swap! !/last-clicked-info #(mapv (fn [{:keys [js-time] :as layer}]
                                       (assoc layer
-                                             :date (u/get-date-from-js js-time @!/show-utc?)
-                                             :time (u/get-time-from-js js-time @!/show-utc?)))
+                                             :date (u-time/get-date-from-js js-time @!/show-utc?)
+                                             :time (u-time/get-time-from-js js-time @!/show-utc?)))
                                     @!/last-clicked-info))
   (swap! !/processed-params  #(update-in %
                                        [:model-init :options]
                                        (fn [options]
-                                         (u/mapm (fn [[k {:keys [utc-time] :as v}]]
-                                                   [k (assoc v
-                                                             :opt-label
-                                                             (u/time-zone-iso-date utc-time @!/show-utc?))])
+                                         (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
+                                                       [k (assoc v
+                                                                 :opt-label
+                                                                 (u-time/time-zone-iso-date utc-time @!/show-utc?))])
                                                  options)))))
 
 (defn- params->selected-options
@@ -476,7 +481,7 @@
               (get-in oc [forecast :params])
               (keys oc)
               (select-keys params oc)
-              (u/mapm (fn [[k v]] [k (keyword v)]) oc))})
+              (u-data/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
 ;;; Capabilities
 (defn- process-capabilities! [fire-names user-layers options-config]
@@ -493,20 +498,20 @@
               (update-in [:active-fire :params :fire-name :options]
                          merge
                          fire-names)))
-  (reset! !/*params (u/mapm
+  (reset! !/*params (u-data/mapm
                      (fn [[forecast _]]
                        (let [params           (get-in @!/capabilities [forecast :params])
                              selected-options (params->selected-options options-config @!/*forecast params)]
-                         [forecast (merge (u/mapm (fn [[k v]]
-                                                    [k (or (get-in selected-options [forecast k])
-                                                           (:default-option v)
-                                                           (ffirst (:options v)))])
+                         [forecast (merge (u-data/mapm (fn [[k v]]
+                                                        [k (or (get-in selected-options [forecast k])
+                                                               (:default-option v)
+                                                               (ffirst (:options v)))])
                                                   params))]))
                      options-config)))
 
 (defn- refresh-fire-names! [user-id]
   (go
-    (as-> (u/call-clj-async! "get-fire-names" user-id) fire-names
+    (as-> (u-async/call-clj-async! "get-fire-names" user-id) fire-names
       (<! fire-names)
       (:body fire-names)
       (edn/read-string fire-names)
@@ -515,9 +520,9 @@
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
-          user-layers-chan                (u/call-clj-async! "get-user-layers" user-id)
-          fire-names-chan                 (u/call-clj-async! "get-fire-names" user-id)
-          fire-cameras                    (u/call-clj-async! "get-cameras")]
+          user-layers-chan                (u-async/call-clj-async! "get-user-layers" user-id)
+          fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
+          fire-cameras                    (u-async/call-clj-async! "get-cameras")]
       (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast (or (keyword forecast)
                               (keyword (forecast-type @!/default-forecasts))))
@@ -527,7 +532,7 @@
                              (edn/read-string (:body (<! user-layers-chan)))
                              options-config)
       (<! (select-forecast! @!/*forecast))
-      (reset! !/user-org-list (edn/read-string (:body (<! (u/call-clj-async! "get-org-list" user-id)))))
+      (reset! !/user-org-list (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-list" user-id)))))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))
       (reset! !/loading? false))))
 
@@ -673,7 +678,7 @@
           [:label {:class (<class $/p-form-button)
                    :style {:padding-left  "1.75rem"
                            :padding-right "1.75rem"}
-                   :on-click #(u/jump-to-url! "https://pyregence.org/")}
+                   :on-click #(u-browser/jump-to-url! "https://pyregence.org/")}
            "Decline"]
           [:label {:class (<class $/p-form-button)
                    :style {:margin        ".5rem"
