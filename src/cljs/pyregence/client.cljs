@@ -2,7 +2,6 @@
   (:require [clojure.set                        :as set]
             [goog.dom                           :as dom]
             [pyregence.components.page-layout   :refer [set-announcement-text! wrap-page]]
-            [pyregence.config                   :as c]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.dashboard          :as dashboard]
             [pyregence.pages.help               :as help]
