@@ -484,7 +484,7 @@
               (u-data/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
 ;;; Capabilities
-(defn- process-capabilities! [fire-names user-layers options-config]
+(defn- process-capabilities! [fire-names user-layers options-config & [selected-options]]
   (reset! !/capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
@@ -500,8 +500,7 @@
                          fire-names)))
   (reset! !/*params (u-data/mapm
                      (fn [[forecast _]]
-                       (let [params           (get-in @!/capabilities [forecast :params])
-                             selected-options (params->selected-options options-config @!/*forecast params)]
+                       (let [params (get-in @!/capabilities [forecast :params])]
                          [forecast (merge (u-data/mapm (fn [[k v]]
                                                         [k (or (get-in selected-options [forecast k])
                                                                (:default-option v)
@@ -530,7 +529,8 @@
       (mb/init-map! "map" layers (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
-                             options-config)
+                             options-config
+                             (params->selected-options options-config @!/*forecast params))
       (<! (select-forecast! @!/*forecast))
       (reset! !/user-org-list (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-list" user-id)))))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))
