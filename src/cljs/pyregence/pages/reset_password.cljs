@@ -1,10 +1,12 @@
 (ns pyregence.pages.reset-password
-  (:require [reagent.core       :as r]
-            [clojure.core.async :refer [go <! timeout]]
-            [pyregence.utils    :as u]
-            [pyregence.styles   :as $]
+  (:require [clojure.core.async             :refer [go <! timeout]]
             [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]))
+            [pyregence.components.messaging :refer [toast-message!]]
+            [pyregence.styles               :as $]
+            [pyregence.utils.async-utils    :as u-async]
+            [pyregence.utils.browser-utils  :as u-browser]
+            [pyregence.utils.data-utils     :as u-data]
+            [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -25,7 +27,7 @@
   (go
     (reset! pending? true)
     (let [errors (remove nil?
-                         [(when (u/missing-data? @email @password @re-password)
+                         [(when (u-data/missing-data? @email @password @re-password)
                             "Please fill in all the information.")
 
                           (when (< (count @password) 8)
@@ -34,16 +36,16 @@
                           (when (not= @password @re-password)
                             "Password fields do not match.")
 
-                          (when-not (:success (<! (u/call-clj-async! "user-email-taken" @email -1)))
+                          (when-not (:success (<! (u-async/call-clj-async! "user-email-taken" @email -1)))
                             (str "The email '" @email "' does not exist."))])]
 
       (if (pos? (count errors))
         (do (toast-message! errors)
             (reset! pending? false))
-        (if (:success (<! (u/call-clj-async! "set-user-password" @email @password @reset-key)))
+        (if (:success (<! (u-async/call-clj-async! "set-user-password" @email @password @reset-key)))
           (do (toast-message! "Your password has been reset successfully.")
               (<! (timeout 2000))
-              (u/jump-to-url! "/forecast"))
+              (u-browser/jump-to-url! "/forecast"))
           (do (toast-message! (str "Error reseting password for " @email "."))
               (reset! pending? false)))))))
 

@@ -1,7 +1,7 @@
 (ns pyregence.components.help
-  (:require [pyregence.state :as !]
-            [pyregence.utils :as u]
-            [pyregence.components.messaging :refer [set-message-box-content!]]))
+  (:require [pyregence.components.messaging :refer [set-message-box-content!]]
+            [pyregence.state                :as !]
+            [pyregence.utils.browser-utils  :as u-browser]))
 
 ;;; Help Dialogs
 
@@ -15,12 +15,12 @@
 ;;; Session Helpers
 
 (defn- set-help-seen! [dialog]
-  (-> (u/get-local-storage)
+  (-> (u-browser/get-local-storage)
       (update-in [:help] merge {dialog true})
-      (u/set-local-storage!)))
+      (u-browser/set-local-storage!)))
 
 (defn- seen-help? [dialog]
-  (get-in (u/get-local-storage) [:help dialog]))
+  (get-in (u-browser/get-local-storage) [:help dialog]))
 
 ;;; Public Functions
 
