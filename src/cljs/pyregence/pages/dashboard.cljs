@@ -1,13 +1,14 @@
 (ns pyregence.pages.dashboard
-  (:require [reagent.core       :as r]
-            [herb.core          :refer [<class]]
-            [cljs.reader        :as edn]
-            [clojure.core.async :refer [go <!]]
-            [clojure.string     :as string]
-            [pyregence.utils    :as u]
-            [pyregence.styles   :as $]
-            [pyregence.components.messaging :refer [set-message-box-content!
-                                                    message-box-modal]]))
+  (:require [cljs.reader                    :as edn]
+            [clojure.core.async             :refer [go <!]]
+            [clojure.string                 :as string]
+            [herb.core                      :refer [<class]]
+            [pyregence.components.messaging :refer [set-message-box-content! message-box-modal]]
+            [pyregence.styles               :as $]
+            [pyregence.utils.browser-utils  :as u-browser]
+            [pyregence.utils.async-utils    :as u-async]
+            [pyregence.utils.time-utils     :as u-time]
+            [reagent.core                   :as r]))
 
 ;; State
 
@@ -19,7 +20,7 @@
 (defn- user-match-drops [user-id]
   (go
     (reset! match-drops
-            (edn/read-string (:body (<! (u/call-clj-async! "get-match-drops" user-id)))))))
+            (edn/read-string (:body (<! (u-async/call-clj-async! "get-match-drops" user-id)))))))
 
 ;; Helper
 
@@ -35,9 +36,9 @@
 
 (defn- fmt-datetime [js-date]
   (-> js-date
-      (u/js-date->iso-string true)
+      (u-time/js-date->iso-string true)
       (subs 0 16)
-      (str ":" (u/pad-zero (.getSeconds js-date)))))
+      (str ":" (u-time/pad-zero (.getSeconds js-date)))))
 
 ;; Styles
 
@@ -67,7 +68,7 @@
    [:td (subs (:ignition-time request) 0 16)]
    [:td (fmt-datetime created-at)]
    [:td (fmt-datetime updated-at)]
-   [:td (u/ms->hhmmss (- updated-at created-at))]
+   [:td (u-time/ms->hhmmss (- updated-at created-at))]
    [:td [:a {:href "#" :on-click #(show-log-modal! job-id log)} "View Logs"]]])
 
 (defn- match-drop-table []
@@ -94,7 +95,7 @@
   (fn [_]
     (cond
       (nil? user-id) ; User is not logged in
-      (do (u/redirect-to-login! "/dashboard")
+      (do (u-browser/redirect-to-login! "/dashboard")
           nil)
 
       :else  ; User is logged in

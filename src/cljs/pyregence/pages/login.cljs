@@ -1,10 +1,11 @@
 (ns pyregence.pages.login
-  (:require [reagent.core       :as r]
-            [clojure.core.async :refer [go <! timeout]]
-            [pyregence.utils    :as u]
-            [pyregence.styles   :as $]
+  (:require [clojure.core.async             :refer [go <! timeout]]
             [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]))
+            [pyregence.components.messaging :refer [toast-message!]]
+            [pyregence.styles               :as $]
+            [pyregence.utils.async-utils    :as u-async]
+            [pyregence.utils.browser-utils  :as u-browser]
+            [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -22,10 +23,10 @@
 
 (defn- log-in! []
   (go
-    (if (:success (<! (u/call-clj-async! "log-in" @email @password)))
-      (let [url (:redirect-from (u/get-session-storage) "/forecast")]
-        (u/clear-session-storage!)
-        (u/jump-to-url! url))
+    (if (:success (<! (u-async/call-clj-async! "log-in" @email @password)))
+      (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
+        (u-browser/clear-session-storage!)
+        (u-browser/jump-to-url! url))
       ;; TODO, it would be helpful to show the user which of the two errors it actually is.
       (toast-message! ["Invalid login credentials. Please try again."
                        "If you feel this is an error, check your email for the verification email."]))))
@@ -35,13 +36,13 @@
     (reset! pending? true)
     (toast-message! "Submitting request. This may take a moment...")
     (cond
-      (not (:success (<! (u/call-clj-async! "user-email-taken" @email))))
+      (not (:success (<! (u-async/call-clj-async! "user-email-taken" @email))))
       (toast-message! (str "There is no user with the email '" @email "'"))
 
-      (:success (<! (u/call-clj-async! "send-email" @email :reset)))
+      (:success (<! (u-async/call-clj-async! "send-email" @email :reset)))
       (do (toast-message! "Please check your email for a password reset link.")
           (<! (timeout 4000))
-          (u/jump-to-url! "/forecast"))
+          (u-browser/jump-to-url! "/forecast"))
 
       :else
       (toast-message! ["An error occurred."

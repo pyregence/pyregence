@@ -1,11 +1,11 @@
 (ns pyregence.components.map-controls.time-slider
-  (:require [reagent.core     :as r]
-            [pyregence.state  :as !]
-            [pyregence.styles :as $]
-            [pyregence.utils  :as u]
-            [pyregence.config :as c]
-            [pyregence.components.common :refer [radio tool-tip-wrapper]]
-            [pyregence.components.map-controls.tool-button :refer [tool-button]]))
+  (:require [pyregence.components.common                   :refer [radio tool-tip-wrapper]]
+            [pyregence.components.map-controls.tool-button :refer [tool-button]]
+            [pyregence.config                              :as c]
+            [pyregence.state                               :as !]
+            [pyregence.styles                              :as $]
+            [pyregence.utils.dom-utils                     :as u-dom]
+            [reagent.core                                  :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -46,7 +46,7 @@
                :min       "0"
                :max       (dec (count @!/param-layers))
                :value     (min (dec (count @!/param-layers)) (or @!/*layer-idx 0))
-               :on-change #(select-layer! (u/input-int-value %))}]
+               :on-change #(select-layer! (u-dom/input-int-value %))}]
       [:label layer-full-time]]
      [:span {:style {:display "flex" :margin "0 1rem"}}
       [tool-tip-wrapper
@@ -67,7 +67,7 @@
      (when-not @!/mobile?
        [:select {:style     ($/combine $/dropdown {:padding "0 0.5rem" :width "5rem"})
                  :value     (or @*speed 1)
-                 :on-change #(reset! *speed (u/input-int-value %))}
+                 :on-change #(reset! *speed (u-dom/input-int-value %))}
         (map-indexed (fn [id {:keys [opt-label]}]
                        [:option {:key id :value id} opt-label])
                      c/speeds)])]))
