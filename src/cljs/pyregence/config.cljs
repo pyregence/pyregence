@@ -504,6 +504,12 @@
                                                                          :filter    "gridfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
+                                                 :disabled   (fn [selected-set]
+                                                               (some (->> selected-set
+                                                                          (vals)
+                                                                          (filter keyword?)
+                                                                          (set))
+                                                                     #{:active-fires}))
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :psps-zonal   {:opt-label       "PSPS"
                   :geoserver-key   :psps

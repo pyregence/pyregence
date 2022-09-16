@@ -305,7 +305,7 @@
            [collapsible-panel-section
             "layer-selection"
             [:<>
-             (map (fn [[key {:keys [opt-label hover-text options sort?]}]]
+             (map (fn [[key {:keys [opt-label hover-text options sort? disabled]}]]
                     (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
                       ^{:key hover-text}
                       [:<>
@@ -314,7 +314,9 @@
                         hover-text
                         (get *params key)
                         sorted-options
-                        (= 1 (count sorted-options))
+                        (cond (ifn? disabled)     (disabled *params)
+                              (boolean? disabled) disabled
+                              :else               (= 1 (count sorted-options)))
                         #(select-param! % key)
                         selected-param-set]]))
                   @!/processed-params)
