@@ -64,8 +64,8 @@
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
 
-(defn get-org-list [user-id]
-  (->> (call-sql "get_org_list" user-id)
+(defn get-organizations [user-id]
+  (->> (call-sql "get_organizations" user-id)
        (mapv (fn [{:keys [org_id org_name email_domains auto_add auto_accept]}]
                {:opt-id        org_id
                 :opt-label     org_name
@@ -74,14 +74,17 @@
                 :auto-accept?  auto_accept}))
        (data-response)))
 
-(defn get-org-users-list [org-id]
-  (->> (call-sql "get_org_users_list" org-id)
+(defn get-org-member-users [org-id]
+  (->> (call-sql "get_org_member_users" org-id)
        (mapv (fn [{:keys [org_user_id name email role_id]}]
                {:opt-id    org_user_id
                 :opt-label name
                 :email     email
                 :role-id   role_id}))
        (data-response)))
+
+(defn get-org-non-member-users [org-id]
+  (data-response (call-sql "get_org_non_member_users" org-id)))
 
 (defn update-org-info [org-id org-name email-domains auto-add? auto-accept?]
   (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
