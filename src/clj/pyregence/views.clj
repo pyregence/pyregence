@@ -51,8 +51,8 @@
    (when-let [ga-id (get-config :ga-id)]
      (list [:script {:async true :src (str "https://www.googletagmanager.com/gtag/js?id=" ga-id)}]
            [:script (str "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '" ga-id "');")]))
-   (include-css "/css/style.css" "/css/mapbox-gl-v2.3.1.css")
-   (include-js "/js/mapbox-gl-v2.3.1.js" (find-app-js))])
+   (include-css "/css/style.css" "/css/mapbox-gl-v2.10.0.css")
+   (include-js "/js/mapbox-gl-v2.10.0.js" (find-app-js))])
 
 (defn- cljs-init
   "A JavaScript script that calls the `init` function in `client.cljs`.
