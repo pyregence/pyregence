@@ -114,7 +114,7 @@
       ;; Skip on returned zero-length list
       (when (> (count @*orgs) 0)
         (set-selected-org! (or (get-org-by-id @*orgs @*org-id) (first @*orgs)))
-        (get-org-member-users @*org-id)    
+        (get-org-member-users @*org-id)
         (get-org-non-member-users @*org-id)))))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
