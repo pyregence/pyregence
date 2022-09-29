@@ -147,7 +147,9 @@
             (assoc-in (get-forecast-opt :params)
                       [:model-init :options]
                       processed-times))
-    (swap! !/*params assoc-in [@!/*forecast :model-init] (ffirst processed-times))))
+    (swap! !/*params assoc-in [@!/*forecast :model-init]
+           (or (when (processed-times @!/*last-start-time) @!/*last-start-time)
+               (ffirst processed-times)))))
 
 (defn- get-layers! [get-model-times?]
   (go
@@ -429,6 +431,8 @@
   (!/set-state-legend-list! [])
   (reset! !/last-clicked-info nil)
   (let [main-key (first keys)]
+    (when (= main-key :model-init)
+      (reset! !/*last-start-time val))
     (when (= main-key :fire-name)
       (reset! !/*layer-idx 0)
       (swap! !/*params assoc-in (cons @!/*forecast [:burn-pct]) :50)

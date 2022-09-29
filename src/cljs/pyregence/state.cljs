@@ -19,6 +19,8 @@ field associated with each layer from the `param-layers`, starts at 0, and is an
 (defonce ^{:doc "A map containing the selected parameters/inputs from each forecast tab.
 Ex: {:fuels {:layer :fbfm40, :model :landfire, :model-init :20210407_000000} ... }"}
   *params (r/atom {}))
+(defonce ^{:doc "A UTC keyword value, corresponding to the last selected \"Forecast Start Time\""}
+  *last-start-time (r/atom nil))
 (defonce ^{:doc "An integer value, from 0 to 100, that designates the opacity for the active layer. Defaults to 100"}
   active-opacity (r/atom 100.0))
 (defonce ^{:doc "A map that combines the values from the `options-config` and the processed output from a call to process-capabilities! in near_term_forecast.cljs.
