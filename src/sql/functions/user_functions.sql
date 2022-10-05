@@ -195,12 +195,12 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION get_org_member_users(_org_id integer)
  RETURNS TABLE (
     org_user_id    integer,
-    name           text,
+    full_name      text,
     email          text,
     role_id        integer
  ) AS $$
 
-    SELECT org_user_uid, name, email, role_rid
+    SELECT org_user_uid, name AS full_name, email, role_rid
     FROM users, organization_users, organizations
     WHERE organization_uid = _org_id
         AND organization_rid = organization_uid

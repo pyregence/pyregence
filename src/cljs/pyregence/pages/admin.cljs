@@ -18,9 +18,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Organization Role Enumeration
-(def roles [{:opt-id 1 :opt-label "Admin"}
-            {:opt-id 2 :opt-label "Member"}
-            {:opt-id 3 :opt-label "Pending"}])
+(def ^:private roles [{:opt-id 1 :opt-label "Admin"}
+                {:opt-id 2 :opt-label "Member"}
+                {:opt-id 3 :opt-label "Pending"}])
 
 ;; Organization Object Properties
 (defonce ^{:doc "The currently selected organization."}
@@ -317,15 +317,15 @@
      ["Confirm Password" new-user-re-password "password" "confirm-password"]]
     handle-add-user]])
 
-(defn- user-item [org-user-id user-name email role-id]
+(defn- user-item [org-user-id full-name email role-id]
   (r/with-let [_role-id          (r/atom role-id)
-               updated-name      (r/atom user-name)
+               full-name-update      (r/atom full-name)
                edit-mode-enabled (r/atom false)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (if @edit-mode-enabled
-        [labeled-input "" updated-name {:disabled? (not @edit-mode-enabled)}]
-        [:label @updated-name])
+        [labeled-input "" full-name-update {:disabled? (not @edit-mode-enabled)}]
+        [:label @full-name-update])
       [:label email]]
      [:div {:style ($/combine ($/align :block :right) {:display "flex"})}
       (if @edit-mode-enabled
@@ -333,14 +333,14 @@
          [:input {:class    (<class $/p-form-button)
                   :type     "button"
                   :value    "Cancel"
-                  :on-click #(do (reset! updated-name user-name)
+                  :on-click #(do (reset! full-name-update full-name)
                                  (reset! edit-mode-enabled false))}]
          [:input {:class    (<class $/p-form-button)
                   :type     "button"
                   :value    "Save"
                   :on-click #(go
                                (do
-                                 (<! (handle-edit-user email user-name updated-name))
+                                 (<! (handle-edit-user email full-name full-name-update))
                                  (reset! edit-mode-enabled false)))}]]
         [:input {:class    (<class $/p-form-button)
                  :type     "button"
@@ -350,7 +350,7 @@
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Remove User"
-               :on-click #(handle-remove-user org-user-id user-name)}]
+               :on-click #(handle-remove-user org-user-id full-name)}]
       [:select {:class     (<class $/p-bordered-input)
                 :style     {:margin "0 .25rem 0 1rem" :height "2rem"}
                 :value     @_role-id
@@ -362,17 +362,18 @@
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Update Role"
-               :on-click #(handle-update-role-id @_role-id org-user-id user-name)}]]]))
+               :on-click #(handle-update-role-id @_role-id org-user-id full-name)}]]]))
 
-(defn- org-users-list [org-id org-member-users]
+(defn- org-users-list [org-member-users]
   [:div#org-users {:style {:margin-top "2rem"}}
    [:div {:style ($/action-box)}
     [:div {:style ($/action-header)}
      [:label {:style ($/padding "1px" :l)} "Member User-List"]]
     [:div {:style {:overflow "auto"}}
      [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
-      (doall (map (fn [{:keys [opt-id opt-label email role-id]}]
-                    ^{:key opt-id} [user-item opt-id opt-label email role-id])
+      (doall (map (fn [{:keys [org-user-id full-name email role-id]}]
+                    ^{:key org-user-id}
+                    [user-item org-user-id full-name email role-id])
                   org-member-users))]]]])
 
 (defn- org-non-members-list [org-id org-non-members]
@@ -389,7 +390,7 @@
         (doall
          (->> org-non-members
               (filter #(includes?  (:email %) @email-search))
-              (map (fn [{:keys [user_uid email name]}]
+              (map (fn [{:keys [email full-name]}]
                      ^{:key email} [:div {:style
                                           {:border-bottom   "lightgrey solid 1px"
                                            :display         "flex"
@@ -400,10 +401,10 @@
                                              :style    {:margin "0 1rem 0.5rem 0"}
                                              :type     "button"
                                              :value    "Link User"
-                                             :on-click #((reset! email-search "")
+                                             :on-click #(do (reset! email-search "")
                                                          (handle-add-existing-user org-id email))}]
                                     [:div {:style {:display "flex" :flex-direction "column"}}
-                                     [:label name]
+                                     [:label full-name]
                                      [:label email]]]))))]]]])) 
 
 (defn root-component
@@ -424,17 +425,16 @@
        [:h1 "Loading..."]]
 
       :else                           ; Logged-in user and admin of at least one org
-      (do
-        [:div {:style {:display "flex" :justify-content "center" :padding "2rem 8rem"}}
-         [confirmation-modal]
-         [:div {:style {:flex 1 :padding "1rem"}}
-          [org-list @*orgs]]
-         [:div {:style {:display        "flex"
-                        :flex           2
-                        :flex-direction "column"
-                        :height         "100%"
-                        :padding        "1rem"}}
-          [org-settings]
-          [org-user-add-form]
-          [org-users-list @*org-id @*org-members]
-          [org-non-members-list @*org-id @*org-non-members]]]))))
+      [:div {:style {:display "flex" :justify-content "center" :padding "2rem 8rem"}}
+       [confirmation-modal]
+       [:div {:style {:flex 1 :padding "1rem"}}
+        [org-list @*orgs]]
+       [:div {:style {:display        "flex"
+                      :flex           2
+                      :flex-direction "column"
+                      :height         "100%"
+                      :padding        "1rem"}}
+        [org-settings]
+        [org-user-add-form]
+        [org-users-list @*org-members]
+        [org-non-members-list @*org-id @*org-non-members]]])))

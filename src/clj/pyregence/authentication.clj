@@ -74,16 +74,20 @@
                 :auto-accept?  auto_accept}))
        (data-response)))
 
-(defn get-org-member-users [org-id]
+(defn get-org-member-users
+  "Returns a vector of member users by the given org-id."
+   [org-id]
   (->> (call-sql "get_org_member_users" org-id)
-       (mapv (fn [{:keys [org_user_id name email role_id]}]
-               {:opt-id    org_user_id
-                :opt-label name
-                :email     email
+       (mapv (fn [{:keys [org_user_id full_name email role_id]}]
+               {:org-user-id org_user_id
+                :full-name   full_name
+                :email       email
                 :role-id   role_id}))
        (data-response)))
 
-(defn get-org-non-member-users [org-id]
+(defn get-org-non-member-users
+  "Returns a vector of non-member users by the given org-id."
+  [org-id]
   (data-response (call-sql "get_org_non_member_users" org-id)))
 
 (defn update-org-info [org-id org-name email-domains auto-add? auto-accept?]
