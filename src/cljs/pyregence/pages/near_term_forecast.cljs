@@ -12,6 +12,7 @@
             [pyregence.components.map-controls.information-tool  :refer [information-tool]]
             [pyregence.components.map-controls.legend-box        :refer [legend-box]]
             [pyregence.components.map-controls.match-drop-tool   :refer [match-drop-tool]]
+            [pyregence.components.map-controls.measure-tool      :refer [measure-tool]]
             [pyregence.components.map-controls.mouse-lng-lat     :refer [mouse-lng-lat]]
             [pyregence.components.map-controls.scale-bar         :refer [scale-bar]]
             [pyregence.components.map-controls.time-slider       :refer [time-slider]]
@@ -605,6 +606,8 @@
                #(set-show-info! false)])
             (when @!/show-match-drop?
               [match-drop-tool @my-box #(reset! !/show-match-drop? false) refresh-fire-names! user-id])
+            (when @!/show-measure-tool?
+              [measure-tool @my-box #(reset! !/show-measure-tool? false)])
             (when @!/show-camera?
               [camera-tool @my-box #(reset! !/show-camera? false)])])
          [legend-box

@@ -96,6 +96,11 @@
    [:path {:d    "M0 0h48v48h-48z"
            :fill "none"}]])
 
+(defn measure-ruler []
+[:svg {:xmlns "http://www.w3.org/2000/svg" :viewBox "0 0 60 60"}
+  [:path {:d "M3.959 56.041h12.057M3.959 45.411h12.056M3.959 34.781h12.056M3.959 24.151h12.056M3.959 13.522h9.357m.09-9.961v9.717m10.63-9.717v12.056m10.63-12.056v12.056m10.63-12.056v12.056M55.925 3.561v12.056" :stroke-linejoin "round" :stroke "#FFF" :stroke-linecap "round" :stroke-width "3.125" :fill "none"}]
+  [:path {:d "M3.06 29.495h7.557M3.06 40.124h7.557M3.06 50.754h7.557M3.06 18.864h7.557m8.235-16.195v7.558m10.63-7.557v7.557m10.63-7.557v7.557m10.63-7.557v7.557" :stroke-linejoin "round" :stroke "#FFF" :stroke-linecap "round" :stroke-width "1.25" :fill "none"}]])
+
 (defn help []
   [:svg {:viewBox "0 0 16 16"}
    [:g {:id           "Icons with numbers"
