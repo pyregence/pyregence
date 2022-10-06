@@ -137,9 +137,7 @@
                                                     @new-user-password
                                                     {:org-id          @*org-id
                                                      :restrict-email? false})))
-             true
-             ;; (:success (<! (u-async/call-clj-async! "send" @new-user-email :new-user)))
-             )
+             (:success (<! (u-async/call-clj-async! "send" @new-user-email :new-user))))
       (do
         (toast-message! ["Your account has been created successfully."
                          "Please check your email for a link to complete registration."])
