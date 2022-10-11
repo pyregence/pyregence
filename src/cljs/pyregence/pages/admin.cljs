@@ -1,7 +1,7 @@
 (ns pyregence.pages.admin
   (:require [cljs.reader                    :as edn]
             [clojure.core.async             :refer [go <!]]
-            [clojure.string                 :as str :refer [blank? includes?]]
+            [clojure.string                 :refer [blank? includes?]]
             [goog.string                    :refer [format]]
             [herb.core                      :refer [<class]]
             [pyregence.components.common    :refer [check-box labeled-input simple-form]]
@@ -19,8 +19,8 @@
 
 ;; Organization Role Enumeration
 (def ^:private roles [{:opt-id 1 :opt-label "Admin"}
-                {:opt-id 2 :opt-label "Member"}
-                {:opt-id 3 :opt-label "Pending"}])
+                      {:opt-id 2 :opt-label "Member"}
+                      {:opt-id 3 :opt-label "Pending"}])
 
 ;; Organization Object Properties
 (defonce ^{:doc "The currently selected organization."}
@@ -137,7 +137,7 @@
                                                     @new-user-password
                                                     {:org-id          @*org-id
                                                      :restrict-email? false})))
-             (:success (<! (u-async/call-clj-async! "send" @new-user-email :new-user))))
+             (:success (<! (u-async/call-clj-async! "send-email" @new-user-email :new-user))))
       (do
         (toast-message! ["Your account has been created successfully."
                          "Please check your email for a link to complete registration."])
@@ -317,7 +317,7 @@
 
 (defn- user-item [org-user-id full-name email role-id]
   (r/with-let [_role-id          (r/atom role-id)
-               full-name-update      (r/atom full-name)
+               full-name-update  (r/atom full-name)
                edit-mode-enabled (r/atom false)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
@@ -387,14 +387,13 @@
        [:ol#org-non-member-list {:style {:display "flex" :flex-direction "column" :padding "1rem"}}
         (doall
          (->> org-non-members
-              (filter #(includes?  (:email %) @email-search))
+              (filter #(includes? (:email %) @email-search))
               (map (fn [{:keys [email full-name]}]
-                     ^{:key email} [:div {:style
-                                          {:border-bottom   "lightgrey solid 1px"
-                                           :display         "flex"
-                                           :justify-content "flex-start"
-                                           :margin          "0 0 1rem 1rem"
-                                           :padding-bottom  ".2rem"}}
+                     ^{:key email} [:div {:style {:border-bottom   "lightgrey solid 1px"
+                                                  :display         "flex"
+                                                  :justify-content "flex-start"
+                                                  :margin          "0 0 1rem 1rem"
+                                                  :padding-bottom  ".2rem"}}
                                     [:input {:class    (<class $/p-form-button)
                                              :style    {:margin "0 1rem 0.5rem 0"}
                                              :type     "button"
@@ -403,7 +402,7 @@
                                                          (handle-add-existing-user org-id email))}]
                                     [:div {:style {:display "flex" :flex-direction "column"}}
                                      [:label full-name]
-                                     [:label email]]]))))]]]])) 
+                                     [:label email]]]))))]]]]))
 
 (defn root-component
   "The root component for the /admin page.
@@ -413,8 +412,9 @@
   (get-organizations user-id)
   (fn [_]
     (cond
-      (or (nil? user-id)
-          (and (= (count @*orgs) 0) (false? @pending-get-organizations?)))
+      (or (nil? user-id)                              ; User is not logged in OR
+          (and (= (count @*orgs) 0)                   ; User is not an admin of any org AND
+               (false? @pending-get-organizations?))) ; The get-organizations call has finished 
       (do (u-browser/redirect-to-login! "/admin")
           nil)
 
