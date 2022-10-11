@@ -536,7 +536,7 @@
                              options-config
                              (params->selected-options options-config @!/*forecast params))
       (<! (select-forecast! @!/*forecast))
-      (reset! !/user-org-list (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-list" user-id)))))
+      (reset! !/user-org-list (edn/read-string (:body (<! (u-async/call-clj-async! "get-organizations" user-id)))))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))
       (reset! !/loading? false))))
 
