@@ -38,6 +38,8 @@
   the-popup (r/atom nil))
 (def ^{:private true :doc "A map of events to event listeners on an associated layer."}
   events (atom {}))
+(def ^{:private true :doc "A vector of marker objects to track a current set of displayed markers on the map."}
+  markers (atom []))
 (def ^{:private true :doc "A map to track the interactive state of a feature: i.e. hovered, clicked, etc."}
   feature-state (atom {}))
 
@@ -281,6 +283,27 @@
   [[lng lat]]
   (init-point! lng lat))
 
+(defn- add-marker-to-map
+  "An add-event callback listener that adds a marker at the lon-lat coordinates of the click event.
+  If non-nil, the given limit option restricts the marker count to the provided value.
+  Otherwise, markers are boundlessly added."
+  [[lng lat] {:keys [limit] :or {limit 0}}]
+
+  (let [detached-marker (first @markers)
+        extant-markers  (rest  @markers)
+        new-marker      (Marker. #js {:color "#FF0000"})]
+    (doto new-marker
+      (.setLngLat #js [lng lat])
+      (.addTo @the-map))
+    (cond (or (= limit 0)
+              (< (count @markers) limit))
+          (swap! markers conj {:lnglat [lng lat] :marker new-marker})
+
+          (>= (count @markers) limit)
+          (do
+            (.remove (detached-marker :marker))
+            (reset! markers (conj extant-markers {:lnglat [lng lat] :marker new-marker}))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popup
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -350,6 +373,20 @@
                         (let [lnglat (event->lnglat e)]
                           (add-point-on-click! lnglat)
                           (f lnglat)))))
+
+(defn add-marker-on-click
+  "Conjoins a marker to the tracked sequence of added markers"
+  [f options]
+  (add-event! "click" (fn [e]
+                        (let [lnglat (event->lnglat e)]
+                          (add-marker-to-map lnglat options)
+                          (f (mapv #(% :lnglat) @markers))))))
+
+(defn remove-markers!
+  "Removes the collection of markers that were added to the map"
+  []
+  (run! #(.remove (% :marker)) @markers)
+  (reset! markers []))
 
 (defn add-mouse-move-xy!
   "Passes `[lng lat]` to `f` on mousemove event."

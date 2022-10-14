@@ -1,8 +1,7 @@
 (ns pyregence.components.map-controls.measure-tool
   (:require [clojure.pprint                        :refer [cl-format]]
             [herb.core                             :refer [<class]]
-            [pyregence.components.mapbox           :as mb]
-            [pyregence.components.common           :refer [labeled-input]]
+            [pyregence.components.mapbox           :as mb :refer [remove-events!]]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.geo-utils                   :as geo :refer [California Paris]]
             [pyregence.styles                      :as $]
@@ -40,16 +39,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn measure-tool
-  "A map control tool that measure the distance between to points."
+  "A map control tool that measures the distance between two points."
   [parent-box close-fn!]
-  (r/with-let [point-one (r/atom [0 0])
-               point-two (r/atom [0 0])
-               click-event (mb/add-single-click-popup! #(reset! point-one %))
-               distance-to-paris (r/atom 0.0)]
+  (r/with-let [distance-between-points (r/atom 0)
+               point-one               (r/atom nil)
+               point-two               (r/atom nil)
+               click-event             (mb/add-marker-on-click
+                                        #(do (reset! point-one (first %))
+                                             (reset! point-two (second %)))
+                                        {:limit 2})]
     [:div#measure-tool
      [resizable-window
       parent-box
-      350
+      410
       320
       "Measure Distance Tool"
       close-fn!
@@ -57,19 +59,22 @@
         [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
          [:div {:style {:flex-grow 1 :font-size "0.9rem" :margin "0.5rem 1rem"}}
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
-           "Measures the distance between two points using an implementation of the haverine formula. Thanks Val."]
-          [lon-lat-position $measure-tool-location "Point One Location" @point-one]
-          [lon-lat-position $measure-tool-location "Point Two Location" @point-two]
-          [:div {:style {:display "flex"}}
-           [:div {:style {:flex "auto" :padding "0 0.5rem 0 0"}}
-            "That's it for this tool"]]
+           [:p "Measures the distance between two points using an implementation of the Haverine formula."]
+           [:p "Note: There is a +/- 0.5% Great-Circle calculation error."]]
+          [lon-lat-position $measure-tool-location "Point One Location" (if @point-one @point-one [0 0])]
+          [lon-lat-position $measure-tool-location "Point Two Location" (if @point-two @point-two [0 0])]
           [:div {:style {:display         "flex"
                          :flex-direction  "column"
-                         :margin-top      "2rem"}}
+                         :margin-top      ".2rem"}}
            [:div {:style {:height 30 :margin ".2rem"}}
-            (when (> @distance-to-paris 0) [:label {:style ($/padding "1px" :1)} (str (cl-format nil "~,4f" @distance-to-paris) " meters")])]
+            (when (> @distance-between-points 0) [:label {:style ($/padding "1px" :1)} (str (cl-format nil "~,4f" @distance-between-points) " meters")])]
            [:button {:class (<class $/p-themed-button)
-                     :on-click #(reset! distance-to-paris (geo/distance California Paris))}
-            "Calc Distance: LA to Paris"]]]])]]
+                     :style {:margin-bottom "1rem"}
+                     :on-click #(reset! distance-between-points (geo/distance @point-one @point-two))}
+            "Distance Between Points"]
+           [:button {:class    (<class $/p-themed-button)
+                     :style {:margin-bottom "1rem"}
+                     :on-click mb/remove-markers!}
+            "Clear Markers"]]]])]]
     (finally
       (mb/remove-event! click-event))))

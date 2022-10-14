@@ -638,9 +638,11 @@
 (defn- map-layer []
   (r/with-let [mouse-down? (r/atom false)
                cursor-fn   #(cond
-                              @mouse-down?                           "grabbing"
-                              (or @!/show-info? @!/show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
-                              :else                                  "grab")]
+                              @mouse-down?               "grabbing"
+                              (or @!/show-info?
+                                  @!/show-match-drop?
+                                  @!/show-measure-tool?) "crosshair"
+                              :else                      "grab")]
     [:div#map {:class (<class $p-mb-cursor)
                :style {:cursor (cursor-fn) :height "100%" :position "absolute" :width "100%"}
                :on-mouse-down #(reset! mouse-down? true)

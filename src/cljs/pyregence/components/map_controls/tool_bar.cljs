@@ -82,6 +82,7 @@
            [:info
             (str (hs-str @!/show-info?) " point information")
             #(do (set-show-info! (not @!/show-info?))
+                 (reset! !/show-measure-tool? false)
                  (reset! !/show-match-drop? false)
                  (reset! !/show-camera? false))
             @!/show-info?])

@@ -89,9 +89,9 @@
                        (mb/ease-to! {:pitch (if @!/terrain? 45 0) :bearing 0}))]
                    [:measure-ruler
                     "Measure Distance Tool"
-                    #(do (swap! !/show-measure-tool? not)
-                         ;; (set-show-info! false) ;; may want this.
-                         (reset! !/show-match-drop? false))]
+                    #(do (when-not @!/show-info?
+                           (swap! !/show-measure-tool? not)
+                           (reset! !/show-match-drop? false)))]
                    [:my-location
                     "Center on my location"
                     #(some-> js/navigator .-geolocation (.getCurrentPosition mb/set-center-my-location!))]
