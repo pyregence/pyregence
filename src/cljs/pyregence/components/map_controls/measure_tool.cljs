@@ -59,7 +59,8 @@
         [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
          [:div {:style {:flex-grow 1 :font-size "0.9rem" :margin "0.5rem 1rem"}}
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
-           [:p "Measures the distance between two points using an implementation of the Haverine formula."]
+           [:p "Measures the distance between two points using an implementation of the"
+            [:a {:href "https://en.wikipedia.org/wiki/Haversine_formula" :target "_blank"} " Haverine formula."]]
            [:p "Note: There is a +/- 0.5% Great-Circle calculation error."]]
           [lon-lat-position $measure-tool-location "Point One Location" (if @point-one @point-one [0 0])]
           [lon-lat-position $measure-tool-location "Point Two Location" (if @point-two @point-two [0 0])]
