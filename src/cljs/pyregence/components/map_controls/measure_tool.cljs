@@ -78,4 +78,5 @@
                      :on-click mb/remove-markers!}
             "Clear Markers"]]]])]]
     (finally
+      (mb/remove-markers!)
       (mb/remove-event! click-event))))
