@@ -422,7 +422,7 @@
                                                  :hover-text "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label       "Active Fires"
-                  :filter          "fire-spread-forecast"
+                  :filter          "fire-spread-forecast-dev"
                   :geoserver-key   :trinity
                   :underlays       (merge common-underlays
                                           near-term-forecast-underlays
@@ -433,7 +433,7 @@
                                                         :disabled-for     #{:active-fires :gridfire}
                                                         :geoserver-key    :trinity}})
                   :block-info?     true
-                  :reverse-legend? false
+                  :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "7-day forecasts of active fires with burning areas established from satellite-based heat detection."
                   :params          {:fire-name  {:opt-label      "Fire Name"
@@ -448,9 +448,19 @@
                                                                                     :geoserver-key :shasta}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
-                                                 :options    {:burned {:opt-label       "Forecasted fire location"
-                                                                       :filter          "hours-since-burned"
-                                                                       :units           ""}}}
+                                                 :options    {:burned       {:opt-label       "Forecasted fire location"
+                                                                             :filter          "hours-since-burned"
+                                                                             :units           ""
+                                                                             :reverse-legend? false}
+                                                              :crown-fire   {:opt-label "Crown Fire"
+                                                                             :filter    "crown-fire"
+                                                                             :units     ""}
+                                                              :flame-length {:opt-label "Flame Length"
+                                                                             :filter    "flame-length"
+                                                                             :units     "ft"}
+                                                              :spread-rate  {:opt-label "Spread Rate"
+                                                                             :filter    "spread-rate"
+                                                                             :units     "ft/min"}}}
                                     :burn-pct   {:opt-label      "Predicted Fire Size"
                                                  :default-option :50
                                                  :hover-text     "Each fire forecast is an ensemble of 1,000 separate simulations to account for uncertainty in model inputs. This leads to a range of predicted fire sizes, five of which can be selected from the dropdown menu."
@@ -592,7 +602,7 @@
    associated metadata for the near term forecast.
 
    forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras and underlays."
-  {:fire-spread-forecast  {:forecast-layer? true}
+  {:fire-spread-forecast-dev  {:forecast-layer? true}
    :fire-active           {:forecast-layer? true}
    :fire-active-labels    {:forecast-layer? true}
    :fire-detections       {:forecast-layer? false}

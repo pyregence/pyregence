@@ -20,6 +20,20 @@
 
 ;;; Layers
 
+(defn- split-fire-spread-forecast
+  "Gets information about a fire spread layer based on the layer's name."
+  [name-string]
+  (let [[workspace layer]              (str/split name-string #":")
+        [forecast fire-name ts1 ts2]   (str/split workspace #"_")
+        [model fuel percentile output] (str/split layer #"_")
+        model-init                     (str ts1 "_" ts2)]
+    {:workspace   workspace
+     :fire-name   fire-name
+     :forecast    forecast
+     :filter-set  #{forecast fire-name model fuel percentile output model-init}
+     :model-init  model-init
+     :layer-group ""}))
+
 (defn- split-risk-weather-psps-layer-name
   "Gets information about a risk, weather, or PSPS layer based on the layer's name."
   [name-string]
@@ -53,7 +67,7 @@
      :hour        0}))
 
 (defn- split-fire-detections
-  "Gets information about a fire risk layer based on its name."
+  "Gets information about a fire detections layer (e.g. MODIS or VIIRS) based on its name."
   [name-string]
   (let [[workspace layer]   (str/split name-string #":")
         [forecast type]     (str/split workspace #"_")
@@ -133,11 +147,19 @@
                                            (re-seq #"[\d|\.|-]+")
                                            (rest)
                                            (vec))
-                            merge-fn  #(merge % {:layer full-name :extent coords})]
+                            times     (some-> (re-find #"<Dimension .*>(.*)</Dimension>" layer) ; Times are used in ImageMosaic layers
+                                              (last)
+                                              (str/split #","))
+                            merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
+                          (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
+                               (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
+                          (merge-fn (split-fire-spread-forecast full-name))
+
+                          ;; TODO: Remove once fire forecasts are migrated to Image Mosiac format. Will still need isochrones to be read in properly.
                           (or (str/includes? full-name "isochrones")
                               (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
                                    (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop")))))
@@ -197,8 +219,8 @@
             (swap! layers assoc geoserver-key new-layers))
           (log message :force-stdout? stdout?)
           (data-response message))
-        (catch Exception _
-          (log-str "Failed to load capabilities.")))
+        (catch Exception e
+          (log-str "Failed to load capabilities.\n" (ex-message e))))
       (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn."))))
 
 (defn set-all-capabilities!
@@ -223,7 +245,7 @@
                                       {}))]
     (->> (:trinity @layers)
          (filter (fn [{:keys [forecast]}]
-                   (= "fire-spread-forecast" forecast)))
+                   (= "fire-spread-forecast-dev" forecast)))
          (map :fire-name)
          (distinct)
          (mapcat (fn [fire-name]
