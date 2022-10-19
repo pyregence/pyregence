@@ -10,18 +10,6 @@
 (def ^{:doc "Radians per Degree."}
   radians-per-degree (/ Math/PI 180.0))
 
-(def ^{:doc "California Lng-Lat Coordinates."}
-  California [34.0522 118.2437])
-
-(def ^{:doc "New-York Lng-Lat Coordinates."}
-  New-York [40.7134 -74.0055])
-
-(def ^{:doc "Paris Lng-Lat Coordinates."}
-  Paris [48.8566 2.3522])
-
-(def ^{:doc "Athens Lng-Lat Coordinates."}
-  Athens [37.9838 23.7275])
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Projections
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -109,7 +97,7 @@
 
 (defn- haversine
   "The haversine formula is a very accurate way of computing distances between
-two points on the surface of a sphere using the latitude and longitude of the two points"
+  two points on the surface of a sphere using the latitude and longitude of the two points"
   [x]
   (let [s (Math/sin (/ (double x) 2))]
     (* s s)))

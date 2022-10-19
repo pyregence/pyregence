@@ -283,12 +283,11 @@
   [[lng lat]]
   (init-point! lng lat))
 
-(defn- add-marker-to-map
+(defn- add-marker-to-map!
   "An add-event callback listener that adds a marker at the lon-lat coordinates of the click event.
   If non-nil, the given limit option restricts the marker count to the provided value.
   Otherwise, markers are boundlessly added."
   [[lng lat] {:keys [limit] :or {limit 0}}]
-
   (let [detached-marker (first @markers)
         extant-markers  (rest  @markers)
         new-marker      (Marker. #js {:color "#FF0000"})]
@@ -374,7 +373,7 @@
                           (add-point-on-click! lnglat)
                           (f lnglat)))))
 
-(defn add-marker-on-click
+(defn add-marker-on-click!
   "Conjoins a marker to the tracked sequence of added markers"
   [f options]
   (add-event! "click" (fn [e]
