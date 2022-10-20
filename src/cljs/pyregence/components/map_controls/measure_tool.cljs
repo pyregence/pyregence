@@ -12,20 +12,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- lon-lat-position [label lon-lat]
-  [:div {:class (<class #(with-meta
-                           {:font-weight "bold"
-                            :margin      "0.5rem 0"}
-                           {:combinators {[:> :div#md-lonlat] {:display "flex" :flex-direction "row"}
-                                          [:> :div#md-lonlat :div#md-lon] {:width "45%"}}}))}
+  [:div {:style {:font-weight "bold" :margin "0.5rem 0"}}
    [:div label]
-   [:div#md-lonlat
-    [:div#md-lon {:style {:display         "flex"
-                          :flex            1
-                          :justify-content "start"}}
+   [:div#md-lonlat {:style {:display "flex"}}
+    [:div#md-lon {:style {:width "45%"}}
      "Lat: " (cl-format nil "~,4f" (get lon-lat 1))]
-    [:div#md-lat {:style {:display         "flex"
-                          :flex            1
-                          :justify-content "start"}}
+    [:div#md-lat 
      "Lon: " (cl-format nil "~,4f" (get lon-lat 0))]]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
