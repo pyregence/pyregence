@@ -3,7 +3,7 @@
             [herb.core                             :refer [<class]]
             [pyregence.components.mapbox           :as mb]
             [pyregence.components.resizable-window :refer [resizable-window]]
-            [pyregence.geo-utils                   :as geo :refer [California Paris]]
+            [pyregence.geo-utils                   :as geo]
             [pyregence.styles                      :as $]
             [reagent.core                          :as r]))
 
@@ -38,7 +38,7 @@
   (r/with-let [distance-between-points (r/atom 0)
                point-one               (r/atom nil)
                point-two               (r/atom nil)
-               click-event             (mb/add-marker-on-click
+               click-event             (mb/add-marker-on-click!
                                         #(do (reset! point-one (first %))
                                              (reset! point-two (second %)))
                                         {:limit 2})]

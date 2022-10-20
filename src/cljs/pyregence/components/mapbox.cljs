@@ -378,7 +378,7 @@
   [f options]
   (add-event! "click" (fn [e]
                         (let [lnglat (event->lnglat e)]
-                          (add-marker-to-map lnglat options)
+                          (add-marker-to-map! lnglat options)
                           (f (mapv #(% :lnglat) @markers))))))
 
 (defn remove-markers!
