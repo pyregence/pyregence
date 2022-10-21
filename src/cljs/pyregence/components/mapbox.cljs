@@ -1,13 +1,15 @@
 (ns pyregence.components.mapbox
-  (:require [goog.dom            :as dom]
-            [reagent.core        :as r]
-            [reagent.dom         :refer [render]]
-            [clojure.core.async  :refer [chan go >! <!]]
-            [clojure.string      :as str]
-            [pyregence.state     :as !]
-            [pyregence.config    :as c]
-            [pyregence.utils     :as u]
-            [pyregence.geo-utils :as g]))
+  (:require [clojure.core.async          :refer [chan go >! <!]]
+            [clojure.string              :as str]
+            [goog.dom                    :as dom]
+            [pyregence.config            :as c]
+            [pyregence.geo-utils         :as g]
+            [pyregence.state             :as !]
+            [pyregence.utils.async-utils :as u-async]
+            [pyregence.utils.data-utils  :as u-data]
+            [pyregence.utils.misc-utils  :as u-misc]
+            [reagent.core                :as r]
+            [reagent.dom                 :refer [render]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mapbox Aliases
@@ -24,14 +26,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
-(defonce the-map        (r/atom nil))
+(defonce ^{:doc "A reference to the mapbox object rendered on the \"map\" element by `init-map` function below."}
+  the-map (r/atom nil))
 ;; Project layers (and their associated metadata) for a forecast as defined in `config.cljs`
-(defonce project-layers (r/atom nil))
+(defonce ^{:doc "Contains the project layers defined by forecast type."}
+  project-layers (r/atom nil))
 
-(def ^:private the-marker    (r/atom nil))
-(def ^:private the-popup     (r/atom nil))
-(def ^:private events        (atom {}))
-(def ^:private feature-state (atom {}))
+(def ^{:private true :doc "A reference to the marker object created with `init-point!`."}
+  the-marker (r/atom nil))
+(def ^{:private true :doc "A reference to the popup object creaet with `init-popup!`."}
+  the-popup (r/atom nil))
+(def ^{:private true :doc "A map of events to event listeners on an associated layer."}
+  events (atom {}))
+(def ^{:private true :doc "A map to track the interactive state of a feature: i.e. hovered, clicked, etc."}
+  feature-state (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -63,7 +71,7 @@
   [layer property]
   (or (get-in layer ["metadata" property])
       (get-in layer [:metadata (keyword property)])
-      (u/try-js-aget layer "metadata" property)))
+      (u-misc/try-js-aget layer "metadata" property)))
 
 (defn- get-layer-type-metadata-property
   "Gets the specified metadata property (originally set in config.cljs) based on a layer's type."
@@ -412,7 +420,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- symbol-opacity [opacity]
-  {"text-opacity" ["step" ["zoom"] 0 6 opacity 22 opacity]})
+  {"text-opacity" ["step" ["zoom"] 0 6 opacity 22 opacity]
+   "icon-opacity" opacity})
 
 (defn- circle-opacity [opacity]
   {"circle-opacity"        opacity
@@ -438,8 +447,8 @@
   [id opacity] ;TODO, this function doesn't make sense as is because it sets the opacity of all layers currently active, not just one layer by id.
   {:pre [(string? id) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style      (get-style)
-        new-layers (map (u/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :forecast-layer?))
-                                     #(set-opacity % opacity))
+        new-layers (map (u-misc/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :forecast-layer?))
+                                          #(set-opacity % opacity))
                         (get style "layers"))]
     (update-style! style :layers new-layers)))
 
@@ -642,13 +651,13 @@
   "Sets the base map source."
   [source]
   (go
-    (let [style-chan  (u/fetch-and-process source {} (fn [res] (.json res)))
+    (let [style-chan  (u-async/fetch-and-process source {} (fn [res] (.json res)))
           cur-style   (get-style)
           cur-sources (->> (get cur-style "sources")
-                           (u/filterm (fn [[k _]]
-                                        (let [sname (name k)]
-                                          (or (is-terrain? sname)
-                                              (get-layer-metadata (get-layer sname) "type"))))))
+                           (u-data/filterm (fn [[k _]]
+                                            (let [sname (name k)]
+                                              (or (is-terrain? sname)
+                                                  (get-layer-metadata (get-layer sname) "type"))))))
           cur-layers  (->> (get cur-style "layers")
                            (filter #(get-layer-metadata % "type")))
           new-style   (-> (<! style-chan)
@@ -660,8 +669,8 @@
 (defn- hide-forecast-layers
   "Given layers, hides any layer that is in the forecast-layers set."
   [layers]
-  (map (u/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :forecast-layer?))
-                    #(set-visible % false))
+  (map (u-misc/call-when #(-> % (get-layer-metadata "type") (get-layer-type-metadata-property :forecast-layer?))
+                         #(set-visible % false))
        layers))
 
 (defn swap-active-layer!

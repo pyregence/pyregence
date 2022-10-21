@@ -1,18 +1,20 @@
 (ns pyregence.components.map-controls.collapsible-panel
-  (:require [reagent.core       :as r]
-            [herb.core          :refer [<class]]
-            [clojure.edn        :as edn]
-            [clojure.core.async :refer [<! go go-loop]]
-            [clojure.set        :as set]
-            [pyregence.state    :as !]
-            [pyregence.utils    :as u]
-            [pyregence.styles   :as $]
-            [pyregence.config   :as c]
-            [pyregence.components.mapbox    :as mb]
-            [pyregence.components.svg-icons :as svg]
-            [pyregence.components.common    :refer [hs-str tool-tip-wrapper]]
+  (:require [clojure.core.async                               :refer [<! go]]
+            [clojure.edn                                      :as edn]
+            [clojure.set                                      :as set]
+            [herb.core                                        :refer [<class]]
+            [pyregence.components.common                      :refer [hs-str tool-tip-wrapper]]
             [pyregence.components.map-controls.panel-dropdown :refer [panel-dropdown]]
-            [pyregence.components.map-controls.tool-button    :refer [tool-button]]))
+            [pyregence.components.map-controls.tool-button    :refer [tool-button]]
+            [pyregence.components.mapbox                      :as mb]
+            [pyregence.components.svg-icons                   :as svg]
+            [pyregence.config                                 :as c]
+            [pyregence.state                                  :as !]
+            [pyregence.styles                                 :as $]
+            [pyregence.utils.async-utils                      :as u-async]
+            [pyregence.utils.data-utils                       :as u-data]
+            [pyregence.utils.dom-utils                        :as u-dom]
+            [reagent.core                                     :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -20,9 +22,9 @@
 
 (defn get-layer-name [geoserver-key filter-set update-layer!]
   (go
-    (let [name (edn/read-string (:body (<! (u/call-clj-async! "get-layer-name"
-                                                              geoserver-key
-                                                              (pr-str filter-set)))))]
+    (let [name (edn/read-string (:body (<! (u-async/call-clj-async! "get-layer-name"
+                                                                    geoserver-key
+                                                                    (pr-str filter-set)))))]
       (update-layer! :name name)
       name)))
 
@@ -67,7 +69,7 @@
    :position         "absolute"
    :transition       "all 200ms ease-in"
    :width            (if @!/mobile? "100%" "18rem")
-   :z-index          "101"})
+   :z-index          "110"})
 
 (defn- $collapsible-button []
   {:background-color           ($/color-picker :bg-color)
@@ -121,7 +123,7 @@
                                                 (fn [key atom old-params new-params]
                                                   (let [old-param-map    (@!/*forecast old-params)
                                                         new-param-map    (@!/*forecast new-params)
-                                                        changed-keys     (u/get-changed-keys old-param-map new-param-map)
+                                                        changed-keys     (u-data/get-changed-keys old-param-map new-param-map)
                                                         underlay         (get-in c/near-term-forecast-options [@!/*forecast :underlays id])
                                                         update-underlay? (seq (set/intersection changed-keys (set (:dependent-inputs underlay))))]
                                                     (when (filter-set "isochrones")
@@ -280,7 +282,7 @@
             :min       "0"
             :max       "100"
             :value     @!/active-opacity
-            :on-change #(do (reset! !/active-opacity (u/input-int-value %))
+            :on-change #(do (reset! !/active-opacity (u-dom/input-int-value %))
                             (mb/set-opacity-by-title! "active" (/ @!/active-opacity 100.0)))}]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -303,7 +305,7 @@
            [collapsible-panel-section
             "layer-selection"
             [:<>
-             (map (fn [[key {:keys [opt-label hover-text options sort?]}]]
+             (map (fn [[key {:keys [opt-label hover-text options sort? disabled]}]]
                     (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
                       ^{:key hover-text}
                       [:<>
@@ -312,7 +314,9 @@
                         hover-text
                         (get *params key)
                         sorted-options
-                        (= 1 (count sorted-options))
+                        (cond (ifn? disabled)     (disabled *params)
+                              (boolean? disabled) disabled
+                              :else               (= 1 (count sorted-options)))
                         #(select-param! % key)
                         selected-param-set]]))
                   @!/processed-params)

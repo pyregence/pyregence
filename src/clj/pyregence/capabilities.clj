@@ -1,13 +1,13 @@
 (ns pyregence.capabilities
-  (:require [clojure.edn        :as edn]
-            [clojure.string     :as str]
-            [clojure.set        :as set]
-            [clj-http.client    :as client]
-            [triangulum.utils    :as u]
-            [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql]]
-            [triangulum.logging  :refer [log log-str]]
-            [pyregence.views     :refer [data-response]]))
+  (:require [clj-http.client              :as client]
+            [clojure.edn                  :as edn]
+            [clojure.set                  :as set]
+            [clojure.string               :as str]
+            [pyregence.views              :refer [data-response]]
+            [triangulum.config            :refer [get-config]]
+            [triangulum.database          :refer [call-sql]]
+            [triangulum.logging           :refer [log log-str]]
+            [triangulum.utils             :as u]))
 
 ;;; State
 
@@ -17,22 +17,6 @@
 
 (defn java-date-from-string [date-str]
   (.parse (java.text.SimpleDateFormat. "yyyyMMdd_HHmmss") date-str))
-
-(defn mapm [f coll]
-  (persistent!
-   (reduce (fn [acc cur]
-             (conj! acc (f cur)))
-           (transient {})
-           coll)))
-
-(defn filterm [pred coll]
-  (persistent!
-   (reduce (fn [acc cur]
-             (if (pred cur)
-               (conj! acc cur)
-               acc))
-           (transient {})
-           coll)))
 
 ;;; Layers
 
@@ -50,7 +34,7 @@
      :sim-time    sim-timestamp
      :hour        (/ (- (.getTime (java-date-from-string sim-timestamp))
                         (.getTime (java-date-from-string (str init-timestamp "0000"))))
-                     1000 60 60)}))
+                     1000.0 60 60)}))
 
 (defn- split-active-layer-name
   "Gets information about an active fire layer based on its name."
@@ -160,7 +144,7 @@
                           (merge-fn (split-active-layer-name full-name))
 
                           (or (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
-                              (re-matches #"fire-detections.*:(goes16-rgb|fire-history|us-buildings|us-transmission-lines).*" full-name))
+                              (re-matches #"fire-detections.*:(goes16-rgb|fire-history|conus-buildings|us-transmission-lines).*" full-name))
                           (merge-fn (split-fire-detections full-name))
 
                           (str/starts-with? full-name "fuels")

@@ -1,7 +1,9 @@
 (ns pyregence.config
-  (:require [clojure.string  :as str]
-            [pyregence.utils :as u]
-            [pyregence.state :as !]))
+  (:require [clojure.string               :as str]
+            [pyregence.state              :as !]
+            [pyregence.utils.misc-utils   :as u-misc]
+            [pyregence.utils.number-utils :as u-num]
+            [pyregence.utils.string-utils :as u-str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
@@ -23,11 +25,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def common-underlays
-  {:us-buildings    {:enabled?      #(feature-enabled? :structures)
-                     :opt-label     "Structures"
-                     :z-index       104
-                     :filter-set    #{"fire-detections" "us-buildings"}
-                     :geoserver-key :shasta}})
+  {:conus-buildings    {:enabled?      #(feature-enabled? :structures)
+                        :opt-label     "Structures"
+                        :z-index       104
+                        :filter-set    #{"fire-detections" "conus-buildings"}
+                        :geoserver-key :shasta}})
 
 (def near-term-forecast-underlays
   (array-map
@@ -75,7 +77,7 @@
                                                        :asp    {:opt-label       "Aspect"
                                                                 :filter          "asp"
                                                                 :units           ""
-                                                                :convert         #(str (u/direction %) " (" % "°)")
+                                                                :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                 :reverse-legend? false
                                                                 :disabled-for    #{:cecs}}
                                                        :slp    {:opt-label       "Slope (degrees)"
@@ -86,7 +88,7 @@
                                                        :dem    {:opt-label       "Elevation (ft)"
                                                                 :filter          "dem"
                                                                 :units           "ft"
-                                                                :convert         #(u/to-precision 1 (* % 3.28084))
+                                                                :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cecs}}
                                                        :cc     {:opt-label       "Canopy Cover (%)"
@@ -98,20 +100,20 @@
                                                                 :filter          "ch"
                                                                 :units           "m"
                                                                 :no-convert      #{:cfo}
-                                                                :convert         #(u/to-precision 1 (/ % 10))
+                                                                :convert         #(u-num/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cecs}}
                                                        :cbh    {:opt-label       "Canopy Base Height (m)"
                                                                 :filter          "cbh"
                                                                 :units           "m"
                                                                 :no-convert      #{:cfo}
-                                                                :convert         #(u/to-precision 1 (/ % 10))
+                                                                :convert         #(u-num/to-precision 1 (/ % 10))
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cecs}}
                                                        :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
                                                                 :filter          "cbd"
                                                                 :units           "kg/m\u00b3"
-                                                                :convert         #(u/to-precision 2 (/ % 100))
+                                                                :convert         #(u-num/to-precision 2 (/ % 100))
                                                                 :no-convert      #{:cfo}
                                                                 :reverse-legend? true
                                                                 :disabled-for    #{:cecs}})}
@@ -212,22 +214,26 @@
                                                               :wg     {:opt-label "Wind gust (mph)"
                                                                        :filter    "wg"
                                                                        :units     "mph"}
-                                                              :apcp   {:opt-label    "Accumulated precipitation (in)"
-                                                                       :filter       "apcp"
-                                                                       :units        "inches"
-                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :rtma-ru}}
-                                                              :apcp01 {:opt-label    "1-hour precipitation (in)"
-                                                                       :filter       "apcp01"
-                                                                       :units        "inches"
-                                                                       :disabled-for #{:gfs0p25 :nam-awip12 :nbm :rtma-ru}}
-                                                              :apcp03 {:opt-label    "3-hour precipitation (in)"
-                                                                       :filter       "apcp03"
-                                                                       :units        "inches"
-                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-conusnest :nbm :rtma-ru}}
-                                                              :apcp06 {:opt-label    "6-hour precipitation (in)"
-                                                                       :filter       "apcp06"
-                                                                       :units        "inches"
-                                                                       :disabled-for #{:gfs0p125 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}}
+                                                              :apcp   {:opt-label       "Accumulated precipitation (in)"
+                                                                       :filter          "apcp"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :rtma-ru}
+                                                                       :reverse-legend? false}
+                                                              :apcp01 {:opt-label       "1-hour precipitation (in)"
+                                                                       :filter          "apcp01"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p25 :nam-awip12 :nbm :rtma-ru}
+                                                                       :reverse-legend? false}
+                                                              :apcp03 {:opt-label       "3-hour precipitation (in)"
+                                                                       :filter          "apcp03"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-conusnest :nbm :rtma-ru}
+                                                                       :reverse-legend? false}
+                                                              :apcp06 {:opt-label       "6-hour precipitation (in)"
+                                                                       :filter          "apcp06"
+                                                                       :units           "inches"
+                                                                       :disabled-for    #{:gfs0p125 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}
+                                                                       :reverse-legend? false}
                                                               :vpd    {:opt-label    "Vapor pressure deficit (hPa)"
                                                                        :filter       "vpd"
                                                                        :units        "hPa"
@@ -498,6 +504,12 @@
                                                                          :filter    "gridfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
+                                                 :disabled   (fn [selected-set]
+                                                               (some (->> selected-set
+                                                                          (vals)
+                                                                          (filter keyword?)
+                                                                          (set))
+                                                                     #{:active-fires}))
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :psps-zonal   {:opt-label       "PSPS"
                   :geoserver-key   :psps
@@ -826,13 +838,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- wms-url [geoserver-key]
-  (str (u/end-with (geoserver-key @!/geoserver-urls) "/") "wms"))
+  (str (u-str/end-with (geoserver-key @!/geoserver-urls) "/") "wms"))
 
 (defn- wfs-url [geoserver-key]
-  (str (u/end-with (geoserver-key @!/geoserver-urls) "/") "wfs"))
+  (str (u-str/end-with (geoserver-key @!/geoserver-urls) "/") "wfs"))
 
 (defn- mvt-url [geoserver-key]
-  (str (u/end-with ((keyword geoserver-key) @!/geoserver-urls) "/") "gwc/service/wmts"))
+  (str (u-str/end-with ((keyword geoserver-key) @!/geoserver-urls) "/") "gwc/service/wmts"))
 
 (defn legend-url
   "Generates a URL for the legend given a layer."

@@ -41,18 +41,18 @@
    [:link {:rel "manifest" :href "/favicon/site.webmanifest?v=1.0"}]
    [:link {:rel "mask-icon" :href "/favicon/safari-pinned-tab.svg?v=1.0" :color "#5bbad5"}]
    [:link {:rel "shortcut icon" :href "/favicon/favicon.ico?v=1.0"}]
-   [:link {:rel "preload" :as "image" :href "./images/Active_Fire_0.png"}]
-   [:link {:rel "preload" :as "image" :href "./images/Active_Fire_50.png"}]
-   [:link {:rel "preload" :as "image" :href "./images/Active_Fire_90.png"}]
-   [:link {:rel "preload" :as "image" :href "./images/Active_Fire_100.png"}]
+   [:link {:rel "prefetch" :href "./images/Active_Fire_0.png"}]
+   [:link {:rel "prefetch" :href "./images/Active_Fire_50.png"}]
+   [:link {:rel "prefetch" :href "./images/Active_Fire_90.png"}]
+   [:link {:rel "prefetch" :href "./images/Active_Fire_100.png"}]
    [:meta {:name "msapplication-TileColor" :content "#da532c"}]
    [:meta {:name "msapplication-config" :content "/favicon/browserconfig.xml"}]
    [:meta {:name "theme-color" :content "#ffffff"}]
    (when-let [ga-id (get-config :ga-id)]
      (list [:script {:async true :src (str "https://www.googletagmanager.com/gtag/js?id=" ga-id)}]
            [:script (str "window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '" ga-id "');")]))
-   (include-css "/css/style.css" "/css/mapbox-gl-v2.3.1.css")
-   (include-js "/js/mapbox-gl-v2.3.1.js" (find-app-js))])
+   (include-css "/css/style.css" "/css/mapbox-gl-v2.10.0.css")
+   (include-js "/js/mapbox-gl-v2.10.0.js" (find-app-js))])
 
 (defn- cljs-init
   "A JavaScript script that calls the `init` function in `client.cljs`.
