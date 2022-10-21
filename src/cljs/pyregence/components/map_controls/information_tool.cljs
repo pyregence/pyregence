@@ -141,7 +141,9 @@
    no-convert
    cur-hour
    close-fn!]
-  (r/with-let [click-event (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
+  (r/with-let [click-event (mb/add-marker-on-click!
+                            #(get-point-info! (mb/get-overlay-bbox))
+                            {:limit 1})]
     [:div#info-tool
      [resizable-window
       parent-box
@@ -156,9 +158,9 @@
                               (contains? @!/no-data-quantities (str @!/last-clicked-info))
                               (or (empty? @!/last-clicked-info)
                                   (->> @!/last-clicked-info
-                                    (map (fn [entry]
-                                           (contains? @!/no-data-quantities (str (:band entry)))))
-                                    (every? true?))))]
+                                       (map (fn [entry]
+                                              (contains? @!/no-data-quantities (str (:band entry)))))
+                                       (every? true?))))]
           (cond
             (not has-point?)
             [loading-cover

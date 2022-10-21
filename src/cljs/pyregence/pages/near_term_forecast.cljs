@@ -377,7 +377,7 @@
                                       @!/param-layers))))
 
 (defn- clear-info! []
-  (mb/clear-point!)
+  (mb/remove-markers!)
   (reset! !/last-clicked-info [])
   (when (get-forecast-opt :block-info?)
     (reset! !/show-info? false)))

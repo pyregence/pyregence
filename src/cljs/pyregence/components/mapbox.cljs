@@ -31,9 +31,6 @@
 ;; Project layers (and their associated metadata) for a forecast as defined in `config.cljs`
 (defonce ^{:doc "Contains the project layers defined by forecast type."}
   project-layers (r/atom nil))
-
-(def ^{:private true :doc "A reference to the marker object created with `init-point!`."}
-  the-marker (r/atom nil))
 (def ^{:private true :doc "A reference to the popup object creaet with `init-popup!`."}
   the-popup (r/atom nil))
 (def ^{:private true :doc "A map of events to event listeners on an associated layer."}
@@ -177,8 +174,11 @@
 (defn center-on-overlay!
   "Centers the map on the marker."
   []
-  (when @the-marker
-    (set-center! (.getLngLat @the-marker) 12.0)))
+  (when-let [the-marker (first @markers)]
+    (-> the-marker
+        :marker
+        (.getLngLat)
+        (set-center! 12.0))))
 
 (defn set-center-my-location!
   "Sets the center of the map using a geo-location event."
@@ -247,41 +247,24 @@
 (defn get-overlay-center
   "Returns marker lng/lat coordinates in the form `[lng lat]`."
   []
-  (when @the-marker
-    (-> @the-marker .getLngLat .toArray (js->clj))))
+  (when-let [the-marker (first @markers)]
+    (-> the-marker
+        :marker
+        .getLngLat
+        .toArray
+        (js->clj))))
 
 (defn get-overlay-bbox
   "Converts marker lng/lat coordinates to EPSG:3857, finds the current
    resolution and returns a bounding box."
   []
-  (when @the-marker
+  (when (and (seq @markers)
+             (first @markers))
     (let [[lng lat] (get-overlay-center)
           [x y]     (g/EPSG:4326->3857 [lng lat])
           zoom      (get (get-zoom-info) 0)
           res       (g/resolution zoom lat)]
       [x y (+ x res) (+ y res)])))
-
-(defn clear-point!
-  "Removes marker from the map."
-  []
-  (when @the-marker
-    (.remove @the-marker)
-    (reset! the-marker nil)))
-
-(defn- init-point!
-  "Creates a marker at `[lng lat]`"
-  [lng lat]
-  (clear-point!)
-  (let [marker (Marker. #js {:color "#FF0000"})]
-    (doto marker
-      (.setLngLat #js [lng lat])
-      (.addTo @the-map))
-    (reset! the-marker marker)))
-
-(defn- add-point-on-click!
-  "Callback for `click` listener."
-  [[lng lat]]
-  (init-point! lng lat))
 
 (defn- add-marker-to-map!
   "An add-event callback listener that adds a marker at the lon-lat coordinates of the click event.
@@ -302,6 +285,12 @@
           (do
             (.remove (detached-marker :marker))
             (reset! markers (conj extant-markers {:lnglat [lng lat] :marker new-marker}))))))
+
+(defn remove-markers!
+  "Removes the collection of markers that were added to the map"
+  []
+  (run! #(.remove (% :marker)) @markers)
+  (reset! markers []))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popup
@@ -365,14 +354,6 @@
 (defn- event->lnglat [e]
   (-> e (aget "lngLat") .toArray (js->clj)))
 
-(defn add-single-click-popup!
-  "Creates a marker where clicked and passes xy bounding box to `f` a click event."
-  [f]
-  (add-event! "click" (fn [e]
-                        (let [lnglat (event->lnglat e)]
-                          (add-point-on-click! lnglat)
-                          (f lnglat)))))
-
 (defn add-marker-on-click!
   "Conjoins a marker to the tracked sequence of added markers"
   [f options]
@@ -380,12 +361,6 @@
                         (let [lnglat (event->lnglat e)]
                           (add-marker-to-map! lnglat options)
                           (f (mapv #(% :lnglat) @markers))))))
-
-(defn remove-markers!
-  "Removes the collection of markers that were added to the map"
-  []
-  (run! #(.remove (% :marker)) @markers)
-  (reset! markers []))
 
 (defn add-mouse-move-xy!
   "Passes `[lng lat]` to `f` on mousemove event."
