@@ -189,20 +189,20 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
-                                                              :tmpf   {:opt-label "Temperature (\u00B0F)"
-                                                                       :filter    "tmpf"
-                                                                       :units     "\u00B0F"}
+                                                              :rh     {:opt-label "Relative humidity (%)"
+                                                                       :filter    "rh"
+                                                                       :units     "%"}
                                                               :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                        :filter    "ffwi"
                                                                        :units     ""}
+                                                              :tmpf   {:opt-label "Temperature (\u00B0F)"
+                                                                       :filter    "tmpf"
+                                                                       :units     "\u00B0F"}
                                                               :meq    {:opt-label "Fine dead fuel moisture (%)"
                                                                        :filter    "meq"
                                                                        :units     "%"}
                                                               :pign   {:opt-label "Firebrand ignition probability (%)"
                                                                        :filter    "pign"
-                                                                       :units     "%"}
-                                                              :rh     {:opt-label "Relative humidity (%)"
-                                                                       :filter    "rh"
                                                                        :units     "%"}
                                                               :wd     {:opt-label       "Wind direction (\u00B0)"
                                                                        :filter          "wd"
@@ -252,6 +252,10 @@
                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm}})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "NBM"]
+                                                              " - National Blend of Models at 2.5 km to 11 days."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "Hybrid"]
                                                               " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
                                                               [:br]
@@ -276,13 +280,12 @@
                                                               " -  North American Mesoscale Model at 3 km resolution to 60 hours."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "NBM"]
-                                                              " - National Blend of Models at 2.5 km to 11 days."
-                                                              [:br]
-                                                              [:br]
                                                               [:strong "RTMA"]
                                                               " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
-                                                 :options    {:hybrid        {:opt-label    "Hybrid"
+                                                 :options    {:nbm           {:opt-label    "NBM"
+                                                                              :filter       "nbm"
+                                                                              :disabled-for #{:apcp01 :apcp03 :apcp06 :hdw :smoke :tcdc :vpd}}
+                                                              :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
                                                                               :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
                                                               :gfs0p125      {:opt-label    "GFS 0.125\u00B0"
@@ -300,9 +303,6 @@
                                                               :nam-conusnest {:opt-label    "NAM 3 km"
                                                                               :filter       "nam-conusnest"
                                                                               :disabled-for #{:apcp03 :apcp06 :smoke :tcdc}}
-                                                              :nbm           {:opt-label    "NBM"
-                                                                              :filter       "nbm"
-                                                                              :disabled-for #{:apcp01 :apcp03 :apcp06 :hdw :smoke :tcdc :vpd}}
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
                                                                               :disabled-for #{:apcp :apcp01 :apcp03 :apcp06 :smoke}}}}
@@ -443,7 +443,7 @@
                                                  :options        {:active-fires    {:opt-label     "*All Active Fires"
                                                                                     :style-fn      :default
                                                                                     :filter-set    #{"fire-detections" "active-fires"}
-                                                                                    :auto-zoom?    false
+                                                                                    :auto-zoom?    true
                                                                                     :time-slider?  false
                                                                                     :geoserver-key :shasta}}}
                                     :output     {:opt-label  "Output"
