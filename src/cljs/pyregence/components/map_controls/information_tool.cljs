@@ -142,7 +142,6 @@
    cur-hour
    close-fn!]
   (r/with-let [click-event (mb/enqueue-marker-on-click!
-                            {:queue-type :fifo}
                             #(get-point-info! (mb/get-overlay-bbox)))]
     [:div#info-tool
      [resizable-window

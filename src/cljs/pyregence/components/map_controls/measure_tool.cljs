@@ -31,9 +31,9 @@
                point-one               (r/atom nil)
                point-two               (r/atom nil)
                click-event             (mb/enqueue-marker-on-click!
-                                        {:queue-type :lifo :queue-size 2}
                                         #(do (reset! point-one (first %))
-                                             (reset! point-two (second %))))]
+                                             (reset! point-two (second %)))
+                                        {:queue-type :lifo :queue-size 2})]
     [:div#measure-tool
      [resizable-window
       parent-box

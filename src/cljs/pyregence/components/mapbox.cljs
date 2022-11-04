@@ -280,11 +280,11 @@
   (.remove marker))
 
 (defmulti enqueue-marker
-  (fn [_ queue-options]
-    (get queue-options :queue-type)))
+  (fn [_ queue-options?]
+    (get queue-options? :queue-type)))
 
 ;; A vector with either :fifo or :lifo queue-ing behavior
-(defmethod enqueue-marker :fifo [marker {:keys [queue-size] :or {queue-size 1}}] (
+(defmethod enqueue-marker :fifo [marker {:keys [queue-size] :or {queue-size 1}}]
   (let [first-of-queue (first @markers)
         rest-of-queue  (vec (rest @markers))]
     (cond
@@ -294,7 +294,7 @@
       (>= (count @markers) queue-size)
       (do
         (remove-marker-from-map! first-of-queue)
-        (reset! markers (conj rest-of-queue marker)))))))
+        (reset! markers (conj rest-of-queue marker))))))
 
 (defmethod enqueue-marker :lifo [marker {:keys [queue-size] :or {queue-size 1}}]
   (let [last-of-queue    (peek @markers)
@@ -307,6 +307,9 @@
       (do
         (remove-marker-from-map! last-of-queue)
         (reset! markers (conj butlast-of-queue marker))))))
+
+(defmethod enqueue-marker :default [marker {:keys [queue-size] :or {queue-size 1}}]
+  (enqueue-marker marker {:queue-type :fifo :queue-size queue-size}))
 
 (defn remove-markers!
   "Removes the collection of markers that were added to the map"
@@ -378,13 +381,13 @@
 
 (defn enqueue-marker-on-click!
   "Tracks a queue of visible markers on the map."
-  [queue-options callback]
+  [callback queue-options?]
   (add-event! "click" (fn [e]
                         (let [lnglat     (event->lnglat e)
                               new-marker (add-marker-to-map! lnglat)]
-                          (enqueue-marker {:lnglat lnglat :marker new-marker} queue-options)
+                          (enqueue-marker {:lnglat lnglat :marker new-marker} queue-options?)
 
-                          ;; apply callback to a vector of lnglat coordinates
+                          ;; apply callback to a vector of lng-lat coordinates
                           (callback (mapv #(% :lnglat) @markers))))))
 
 (defn add-mouse-move-xy!
