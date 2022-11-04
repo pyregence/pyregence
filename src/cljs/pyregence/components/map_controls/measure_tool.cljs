@@ -66,6 +66,7 @@
                      :on-click (fn []
                                  (reset! point-one nil)
                                  (reset! point-two nil)
+                                 (reset! distance-between-points nil)
                                  (mb/remove-markers!))}
             "Clear Markers"]]]])]]
     (finally
