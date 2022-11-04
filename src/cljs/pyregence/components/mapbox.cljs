@@ -267,24 +267,46 @@
       [x y (+ x res) (+ y res)])))
 
 (defn- add-marker-to-map!
-  "An add-event callback listener that adds a marker at the lon-lat coordinates of the click event.
-  If non-nil, the given limit option restricts the marker count to the provided value.
-  Otherwise, markers are boundlessly added."
-  [[lng lat] {:keys [limit] :or {limit 0}}]
-  (let [detached-marker (first @markers)
-        extant-markers  (rest  @markers)
-        new-marker      (Marker. #js {:color "#FF0000"})]
+  "Adds a marker at the lon-lat coordinates of the click event."
+  [[lng lat]]
+  (let [new-marker (Marker. #js {:color "#FF0000"})]
     (doto new-marker
       (.setLngLat #js [lng lat])
-      (.addTo @the-map))
-    (cond (or (= limit 0)
-              (< (count @markers) limit))
-          (swap! markers conj {:lnglat [lng lat] :marker new-marker})
+      (.addTo @the-map))))
 
-          (>= (count @markers) limit)
-          (do
-            (.remove (detached-marker :marker))
-            (reset! markers (conj extant-markers {:lnglat [lng lat] :marker new-marker}))))))
+(defn- remove-marker-from-map!
+  "Removes a marker from the map."
+  [{:keys [marker]}]
+  (.remove marker))
+
+(defmulti enqueue-marker
+  (fn [_ queue-options]
+    (get queue-options :queue-type)))
+
+;; A vector with either :fifo or :lifo queue-ing behavior
+(defmethod enqueue-marker :fifo [marker {:keys [queue-size] :or {queue-size 1}}] (
+  (let [first-of-queue (first @markers)
+        rest-of-queue  (vec (rest @markers))]
+    (cond
+      (< (count @markers) queue-size)
+      (swap! markers conj marker)
+
+      (>= (count @markers) queue-size)
+      (do
+        (remove-marker-from-map! first-of-queue)
+        (reset! markers (conj rest-of-queue marker)))))))
+
+(defmethod enqueue-marker :lifo [marker {:keys [queue-size] :or {queue-size 1}}]
+  (let [last-of-queue    (peek @markers)
+        butlast-of-queue (vec (butlast @markers))]
+    (cond
+      (< (count @markers) queue-size)
+      (swap! markers conj marker)
+
+      (>= (count @markers) queue-size)
+      (do
+        (remove-marker-from-map! last-of-queue)
+        (reset! markers (conj butlast-of-queue marker))))))
 
 (defn remove-markers!
   "Removes the collection of markers that were added to the map"
@@ -354,13 +376,16 @@
 (defn- event->lnglat [e]
   (-> e (aget "lngLat") .toArray (js->clj)))
 
-(defn add-marker-on-click!
-  "Conjoins a marker to the tracked sequence of added markers"
-  [f options]
+(defn enqueue-marker-on-click!
+  "Tracks a queue of visible markers on the map."
+  [queue-options callback]
   (add-event! "click" (fn [e]
-                        (let [lnglat (event->lnglat e)]
-                          (add-marker-to-map! lnglat options)
-                          (f (mapv #(% :lnglat) @markers))))))
+                        (let [lnglat     (event->lnglat e)
+                              new-marker (add-marker-to-map! lnglat)]
+                          (enqueue-marker {:lnglat lnglat :marker new-marker} queue-options)
+
+                          ;; apply callback to a vector of lnglat coordinates
+                          (callback (mapv #(% :lnglat) @markers))))))
 
 (defn add-mouse-move-xy!
   "Passes `[lng lat]` to `f` on mousemove event."

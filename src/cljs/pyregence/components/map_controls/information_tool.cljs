@@ -141,9 +141,9 @@
    no-convert
    cur-hour
    close-fn!]
-  (r/with-let [click-event (mb/add-marker-on-click!
-                            #(get-point-info! (mb/get-overlay-bbox))
-                            {:limit 1})]
+  (r/with-let [click-event (mb/enqueue-marker-on-click!
+                            {:queue-type :fifo}
+                            #(get-point-info! (mb/get-overlay-bbox)))]
     [:div#info-tool
      [resizable-window
       parent-box

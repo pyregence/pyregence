@@ -30,10 +30,10 @@
   (r/with-let [distance-between-points (r/atom 0)
                point-one               (r/atom nil)
                point-two               (r/atom nil)
-               click-event             (mb/add-marker-on-click!
+               click-event             (mb/enqueue-marker-on-click!
+                                        {:queue-type :lifo :queue-size 2}
                                         #(do (reset! point-one (first %))
-                                             (reset! point-two (second %)))
-                                        {:limit 2})]
+                                             (reset! point-two (second %))))]
     [:div#measure-tool
      [resizable-window
       parent-box
@@ -46,7 +46,7 @@
          [:div {:style {:flex-grow 1 :font-size "0.9rem" :margin "0.5rem 1rem"}}
           [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
            [:p "Measures the distance between two points using an implementation of the"
-            [:a {:href "https://en.wikipedia.org/wiki/Haversine_formula" :target "_blank"} " Haverine formula."]]
+            [:a {:href "https://en.wikipedia.org/wiki/Haversine_formula" :target "_blank"} " Haversine formula."]]
            [:p "Note: There is a +/- 0.5% Great-Circle calculation error."]]
           [lon-lat-position "Point One Location" (if @point-one @point-one [0 0])]
           [lon-lat-position "Point Two Location" (if @point-two @point-two [0 0])]

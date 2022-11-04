@@ -115,9 +115,9 @@
                lon-lat      (r/atom [0 0])
                md-date      (r/atom (u-time/current-date-ms)) ; Stored in milliseconds
                md-hour      (r/atom (.getHours (js/Date.))) ; hour (0-23) in the local timezone
-               click-event  (mb/add-marker-on-click!
-                             #(reset! lon-lat %)
-                             {:limit 1})]
+               click-event  (mb/enqueue-marker-on-click!
+                             {:queue-type :fifo}
+                             #(reset! lon-lat %))]
     [:div#match-drop-tool
      [resizable-window
       parent-box
