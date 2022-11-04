@@ -63,7 +63,10 @@
             "Distance Between Points"]
            [:button {:class    (<class $/p-themed-button)
                      :style    {:margin-bottom "1rem"}
-                     :on-click mb/remove-markers!}
+                     :on-click (fn []
+                                 (reset! point-one nil)
+                                 (reset! point-two nil)
+                                 (mb/remove-markers!))}
             "Clear Markers"]]]])]]
     (finally
       (mb/remove-markers!)
