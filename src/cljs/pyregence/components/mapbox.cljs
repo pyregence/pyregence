@@ -280,8 +280,9 @@
   (.remove marker))
 
 (defmulti enqueue-marker
-  (fn [_ queue-options?]
-    (get queue-options? :queue-type)))
+  "Manages updates to the `markers` atom that is bound to a vector of \"Marker \" objects.
+  Insertions and removals follow the queueing behavior of either a `:lifo` queue, \"Last In First Out\"; or a `:fifo` queue, \"First In First Out\". The `:queue-type` in the options map designates the behavior."
+  (fn [_ & {queue-type :queue-type :or {queue-type :fifo}}] queue-type))
 
 ;; A vector with either :fifo or :lifo queue-ing behavior
 (defmethod enqueue-marker :fifo [marker {:keys [queue-size] :or {queue-size 1}}]
@@ -307,9 +308,6 @@
       (do
         (remove-marker-from-map! last-of-queue)
         (reset! markers (conj butlast-of-queue marker))))))
-
-(defmethod enqueue-marker :default [marker {:keys [queue-size] :or {queue-size 1}}]
-  (enqueue-marker marker {:queue-type :fifo :queue-size queue-size}))
 
 (defn remove-markers!
   "Removes the collection of markers that were added to the map"
@@ -381,7 +379,7 @@
 
 (defn enqueue-marker-on-click!
   "Tracks a queue of visible markers on the map."
-  [callback queue-options?]
+  [callback & queue-options?]
   (add-event! "click" (fn [e]
                         (let [lnglat     (event->lnglat e)
                               new-marker (add-marker-to-map! lnglat)]

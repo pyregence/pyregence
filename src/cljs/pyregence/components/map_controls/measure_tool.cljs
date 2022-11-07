@@ -53,10 +53,10 @@
           [:div {:style {:display         "flex"
                          :flex-direction  "column"
                          :margin-top      ".2rem"}}
-           [:div {:style {:height 30 :margin ".2rem"}}
-            (when (> @distance-between-points 0)
+           (when (> @distance-between-points 0)
+             [:div {:style {:height 30 :margin ".2rem"}}
               [:label {:style ($/padding "1px" :1)}
-               (str (cl-format nil "~,4f" @distance-between-points) " meters")])]
+               (str (cl-format nil "~,4f" @distance-between-points) " meters")]])
            [:button {:class    (<class $/p-themed-button)
                      :style    {:margin-bottom "1rem"}
                      :on-click #(reset! distance-between-points (geo/distance @point-one @point-two))}
