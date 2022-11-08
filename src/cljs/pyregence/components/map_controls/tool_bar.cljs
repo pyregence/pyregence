@@ -78,13 +78,12 @@
 
 (defn tool-bar [set-show-info! get-any-level-key user-id]
   [:div#tool-bar {:style ($/combine $/tool $/tool-bar {:top "16px"})}
-   (->> [(when-not @!/mobile?
-           [:info
-            (str (hs-str @!/show-info?) " point information")
-            #(do (set-show-info! (not @!/show-info?))
-                 (reset! !/show-match-drop? false)
-                 (reset! !/show-camera? false))
-            @!/show-info?])
+   (->> [[:info
+          (str (hs-str @!/show-info?) " point information")
+          #(do (set-show-info! (not @!/show-info?))
+               (reset! !/show-match-drop? false)
+               (reset! !/show-camera? false))
+          @!/show-info?]
          (when (and (c/feature-enabled? :match-drop) (number? user-id) (not @!/mobile?))
            [:flame
             (str (hs-str @!/show-match-drop?) " match drop tool")

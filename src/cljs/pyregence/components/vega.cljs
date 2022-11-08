@@ -88,6 +88,7 @@
                                                  :type   "quantitative"
                                                  :scale  (create-color-scale processed-legend)
                                                  :legend false}}}
+                            ; The black point to show the currently selected hour (point)
                             {:transform [{:filter {:field "hour" :equal current-hour}}]
                              :mark      {:type   "point"
                                          :filled false
