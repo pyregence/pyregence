@@ -17,7 +17,7 @@
    [:div#md-lonlat {:style {:display "flex"}}
     [:div#md-lon {:style {:width "45%"}}
      "Lat: " (cl-format nil "~,4f" (get lon-lat 1))]
-    [:div#md-lat 
+    [:div#md-lat
      "Lon: " (cl-format nil "~,4f" (get lon-lat 0))]]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -59,6 +59,8 @@
                (str (cl-format nil "~,4f" @distance-between-points) " meters")]])
            [:button {:class    (<class $/p-themed-button)
                      :style    {:margin-bottom "1rem"}
+                     :disabled (or (not @point-one)
+                                   (not @point-two))
                      :on-click #(reset! distance-between-points (geo/distance @point-one @point-two))}
             "Distance Between Points"]
            [:button {:class    (<class $/p-themed-button)

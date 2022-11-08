@@ -141,8 +141,7 @@
    no-convert
    cur-hour
    close-fn!]
-  (r/with-let [click-event (mb/enqueue-marker-on-click!
-                            #(get-point-info! (mb/get-overlay-bbox)))]
+  (r/with-let [click-event (mb/enqueue-marker-on-click! #(get-point-info! (mb/get-overlay-bbox)))]
     [:div#info-tool
      [resizable-window
       parent-box
@@ -208,4 +207,5 @@
              cur-hour
              convert])))]]
     (finally
+      (mb/remove-markers!)
       (mb/remove-event! click-event))))

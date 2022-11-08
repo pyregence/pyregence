@@ -36,7 +36,7 @@
 (def ^{:private true :doc "A map of events to event listeners on an associated layer."}
   events (atom {}))
 (def ^{:private true :doc "A vector of marker objects to track a current set of displayed markers on the map."}
-  markers (atom []))
+  markers (r/atom []))
 (def ^{:private true :doc "A map to track the interactive state of a feature: i.e. hovered, clicked, etc."}
   feature-state (atom {}))
 
@@ -176,8 +176,7 @@
   []
   (when-let [the-marker (first @markers)]
     (-> the-marker
-        :marker
-        (.getLngLat)
+        :lnglat
         (set-center! 12.0))))
 
 (defn set-center-my-location!
@@ -248,11 +247,7 @@
   "Returns marker lng/lat coordinates in the form `[lng lat]`."
   []
   (when-let [the-marker (first @markers)]
-    (-> the-marker
-        :marker
-        .getLngLat
-        .toArray
-        (js->clj))))
+    (:lnglat the-marker)))
 
 (defn get-overlay-bbox
   "Converts marker lng/lat coordinates to EPSG:3857, finds the current
@@ -279,35 +274,36 @@
   [{:keys [marker]}]
   (.remove marker))
 
-(defmulti enqueue-marker
+(defn enqueue-marker
   "Manages updates to the `markers` atom that is bound to a vector of \"Marker \" objects.
-  Insertions and removals follow the queueing behavior of either a `:lifo` queue, \"Last In First Out\"; or a `:fifo` queue, \"First In First Out\". The `:queue-type` in the options map designates the behavior."
-  (fn [_ & {queue-type :queue-type :or {queue-type :fifo}}] queue-type))
+   Insertions and removals follow the queueing behavior of either a `:lifo` queue,
+   \"Last In First Out\"; or a `:fifo` queue, \"First In First Out\".
+   The `:queue-type` in the options map designates the behavior.
 
-;; A vector with either :fifo or :lifo queue-ing behavior
-(defmethod enqueue-marker :fifo [marker {:keys [queue-size] :or {queue-size 1}}]
-  (let [first-of-queue (first @markers)
-        rest-of-queue  (vec (rest @markers))]
+   Takes in `the-marker` to add to the markers atom and the desired queue-options."
+  [the-marker {:keys [queue-size queue-type]
+               :or   {queue-size 1
+                      queue-type :fifo}}]
+  (let [first-or-last-item (cond
+                             (= queue-type :fifo)
+                             (first @markers)
+
+                             (= queue-type :lifo)
+                             (peek @markers))
+        remaining-queue    (cond
+                             (= queue-type :fifo)
+                             (vec (rest @markers))
+
+                             (= queue-type :lifo)
+                             (vec (butlast @markers)))]
     (cond
       (< (count @markers) queue-size)
-      (swap! markers conj marker)
+      (swap! markers conj the-marker)
 
       (>= (count @markers) queue-size)
       (do
-        (remove-marker-from-map! first-of-queue)
-        (reset! markers (conj rest-of-queue marker))))))
-
-(defmethod enqueue-marker :lifo [marker {:keys [queue-size] :or {queue-size 1}}]
-  (let [last-of-queue    (peek @markers)
-        butlast-of-queue (vec (butlast @markers))]
-    (cond
-      (< (count @markers) queue-size)
-      (swap! markers conj marker)
-
-      (>= (count @markers) queue-size)
-      (do
-        (remove-marker-from-map! last-of-queue)
-        (reset! markers (conj butlast-of-queue marker))))))
+        (remove-marker-from-map! first-or-last-item)
+        (reset! markers (conj remaining-queue the-marker))))))
 
 (defn remove-markers!
   "Removes the collection of markers that were added to the map"
@@ -379,12 +375,11 @@
 
 (defn enqueue-marker-on-click!
   "Tracks a queue of visible markers on the map."
-  [callback & queue-options?]
+  [callback & [queue-options?]]
   (add-event! "click" (fn [e]
                         (let [lnglat     (event->lnglat e)
                               new-marker (add-marker-to-map! lnglat)]
                           (enqueue-marker {:lnglat lnglat :marker new-marker} queue-options?)
-
                           ;; apply callback to a vector of lng-lat coordinates
                           (callback (mapv #(% :lnglat) @markers))))))
 

@@ -342,18 +342,19 @@
   "Called when you use the point information tool and click a point on the map.
    Processes the JSON result from GetFeatureInfo differently depending on whether or not
    the layer has single-point-info or timeline-point-info. This processing is used
-   to reset! the !/last-clicked-info atom for use in rendering the information-tool."
-  [point-info]
+   to reset! the !/last-clicked-info atom for use in rendering the information-tool.
+   Takes in one argument, the bounding box of the currently selected point."
+  [point-info-bbox]
   (let [layer-name          (get-current-layer-name)
         layer-group         (get-current-layer-group)
         single?             (str/blank? layer-group)
         layer               (if single? layer-name layer-group)
         process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
-    (when-not (u-data/missing-data? layer point-info)
+    (when-not (u-data/missing-data? layer point-info-bbox)
       (reset! !/point-info-loading? true)
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
-                                  (str/join "," point-info)
+                                  (str/join "," point-info-bbox)
                                   (if single? 1 50000)
                                   (get-any-level-key :geoserver-key)
                                   (when (= @!/*forecast :psps-zonal)

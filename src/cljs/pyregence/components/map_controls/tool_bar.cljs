@@ -90,6 +90,7 @@
            [:flame
             (str (hs-str @!/show-match-drop?) " match drop tool")
             #(do (swap! !/show-match-drop? not)
+                 (reset! !/show-measure-tool? false)
                  (set-show-info! false)
                  (reset! !/show-camera? false))
             @!/show-match-drop?])
