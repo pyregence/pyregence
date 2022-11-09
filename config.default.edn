@@ -39,7 +39,6 @@
                      :dps-name       "Data Provisioning Server"
                      :max-queue-size 5
                      :data-dir       "/srv/gis/fire_spread_forecast"}
-
  :mail              {:host     "<host>"
                      :user     "<user>"
                      :pass     "<pass>"
