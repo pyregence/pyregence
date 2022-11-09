@@ -49,7 +49,11 @@
 ;;; Static data
 
 (def ^:private host-names
-  (get-md-config :host-names))
+  {(get-md-config :app-host)      (get-md-config :app-name)
+   (get-md-config :geosync-host)  (get-md-config :geosync-name)
+   (get-md-config :elmfire-host)  (get-md-config :elmfire-name)
+   (get-md-config :gridfire-host) (get-md-config :gridfire-name)
+   (get-md-config :dps-host)      (get-md-config :dps-name)})
 
 ;; SQL fns
 
@@ -125,8 +129,8 @@
                        :request        request}]
     (update-match-job! job-id job)
     (log-str "Initiating match drop job #" job-id)
-    (send-to-server-wrapper! (get-md-config :wx-host)
-                             (get-md-config :wx-port)
+    (send-to-server-wrapper! (get-md-config :dps-host)
+                             (get-md-config :dps-port)
                              job-id)
     {:job-id job-id}))
 
@@ -168,19 +172,19 @@
   (when message
     (update-match-job! job-id {:message message}))
   (condp = response-host
-    (get-md-config :wx-host)
+    (get-md-config :dps-host)
     (do
       (send-to-server-wrapper! (get-md-config :elmfire-host) (get-md-config :elmfire-port) job-id)
       (send-to-server-wrapper! (get-md-config :gridfire-host) (get-md-config :gridfire-port) job-id))
 
     ;; TODO launching two geosync calls for the same directory might break if we switch to image mosaics
     (get-md-config :elmfire-host)
-    (send-to-server-wrapper! (get-md-config :data-host) (get-md-config :data-port) job-id {:model "elmfire"})
+    (send-to-server-wrapper! (get-md-config :geosync-host) (get-md-config :geosync-port) job-id {:model "elmfire"})
 
     (get-md-config :gridfire-host)
-    (send-to-server-wrapper! (get-md-config :data-host) (get-md-config :data-port) job-id {:model "gridfire"})
+    (send-to-server-wrapper! (get-md-config :geosync-host) (get-md-config :geosync-port) job-id {:model "gridfire"})
 
-    (get-md-config :data-host)
+    (get-md-config :geosync-host)
     (let [{:keys [elmfire-done? gridfire-done? request]} (get-match-job job-id)
           elmfire?  (or elmfire-done?  (= "elmfire" model))
           gridfire? (or gridfire-done? (= "gridfire" model))]
