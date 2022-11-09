@@ -188,8 +188,8 @@
         (do (update-match-job! job-id {:md-status      0
                                        :gridfire-done? true
                                        :elmfire-done?  true})
-            (set-capabilities! {"geoserver-key"       "match-drop"
-                                "geoserver-workspace" (:geoserver-workspace request)}))
+            (set-capabilities! {"geoserver-key"  "match-drop"
+                                "workspace-name" (:geoserver-workspace request)}))
         (update-match-job! job-id {:gridfire-done? gridfire?
                                    :elmfire-done?  elmfire?})))))
 
