@@ -24,7 +24,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- poll-status
-  "Continually polls for updated information about the match drop run.
+  "Continually polls for updated information about the match drop run every 5 seconds.
    Stops polling on finish or error signal."
   [job-id refresh-fire-names! user-id]
   (go

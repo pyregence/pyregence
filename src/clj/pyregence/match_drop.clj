@@ -49,10 +49,7 @@
 ;;; Static data
 
 (def ^:private host-names
-  {"elmfire.pyregence.org"  "ELMFIRE"
-   "gridfire.pyregence.org" "GridFire"
-   "wx.pyregence.org"       "Weather"
-   "data.pyregence.org"     "GeoServer"})
+  (get-md-config :host-names))
 
 ;; SQL fns
 
@@ -116,7 +113,7 @@
                               :east-buffer         24
                               :north-buffer        24
                               ;; GeoSync
-                              :data-dir            (str "/var/www/html/fire_spread_forecast/match-drop-" job-id "/" model-time)
+                              :data-dir            (str (get-md-config :data-dir) "/match-drop-" job-id "/" model-time)
                               :geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
                               :action              "add"})
         job           {:user-id        user-id
@@ -146,7 +143,7 @@
      (pos? (count-running-user-match-jobs user-id))
      {:error "Match drop is already running. Please wait until it has completed."}
 
-     (< 5 (count-all-running-match-drops))
+     (< (get-md-config :max-queue-size) (count-all-running-match-drops))
      {:error "The queue is currently full. Please try again later."}
 
      :else
@@ -191,7 +188,8 @@
         (do (update-match-job! job-id {:md-status      0
                                        :gridfire-done? true
                                        :elmfire-done?  true})
-            (set-capabilities! (:geoserver-workspace request)))
+            (set-capabilities! {"geoserver-key"       "match-drop"
+                                "geoserver-workspace" (:geoserver-workspace request)}))
         (update-match-job! job-id {:gridfire-done? gridfire?
                                    :elmfire-done?  elmfire?})))))
 
