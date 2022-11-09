@@ -88,7 +88,6 @@
         (reset! server (run-jetty handler config))
         (reset! clean-up-service (start-clean-up-service!))
         (set-log-path! log-dir)
-        ;; TODO: fixme, pull port from config.edn > :match-drop > :app-port
         (start-socket-server! 31337 process-message)
         (when (notify/available?) (notify/ready!))
         (set-all-capabilities!)))))
