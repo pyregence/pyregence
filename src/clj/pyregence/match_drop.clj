@@ -102,10 +102,10 @@
         model-time          (convert-date-string ignition-time)
         ;; TODO: do we still need the fire-name
         fire-name           (str "match-drop-" job-id)
-        ;; TODO /var/www/html should not be hardcoded.
+        ;; TODO: /var/www/html should not be hardcoded.
         data-dir            (str "/var/www/html/fire_spread_forecast/match-drop-" job-id "/" model-time)
         geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
-        ;; TODO consider different payloads per request instead of one large one.
+        ;; TODO: consider different payloads per request instead of one large one.
         request             {:job-id        job-id
                              :response-host (get-md-config :app-host)
                              :response-port (get-md-config :app-port)
@@ -223,7 +223,7 @@
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
   (let [{:keys [job-id status response-host response-port]
-         :as   response}                     (nil-on-error (json/read-str msg :key-fn (comp keyword camel->kebab)))
+         :as   response}                    (nil-on-error (json/read-str msg :key-fn (comp keyword camel->kebab)))
         {:keys [request md-status] :as job} (get-match-job job-id)]
     (if (and (pos? job-id)
              (= 2 md-status))
