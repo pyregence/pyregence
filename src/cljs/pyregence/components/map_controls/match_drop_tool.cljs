@@ -119,14 +119,14 @@
     [:div#match-drop-tool
      [resizable-window
       parent-box
-      350
+      400
       300
       "Match Drop Tool"
       close-fn!
       (fn [_ _]
         [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
          [:div {:style {:flex-grow 1 :font-size "0.9rem" :margin "0.5rem 1rem"}}
-          [:div {:style {:font-size "0.8rem" :margin "0.5rem 0"}}
+          [:div {:style {:font-size "0.85rem" :margin "0.5rem 0"}}
            c/match-drop-instructions]
           [labeled-input "Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
