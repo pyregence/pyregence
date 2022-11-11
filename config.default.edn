@@ -17,20 +17,28 @@
                      :fire-history true
                      :structures   true
                      :gridfire     false}
- :geoserver         {; :psps        "https://energy.pyregence.org:8443/geoserver"
+ :geoserver         {;:match-drop  "TODO"
+                     :psps        "https://energy.pyregence.org:8443/geoserver"
                      :pyreclimate "https://climate.pyregence.org/geoserver"
                      :shasta      "https://shasta.pyregence.org/geoserver"
                      :trinity     "https://trinity.pyregence.org/geoserver"}
- :match-drop        {:app-host      "app.pyregence.org"
-                     :app-port      31337
-                     :data-host     "data.pyregence.org"
-                     :data-port     31337
-                     :elmfire-host  "elmfire.pyregence.org"
-                     :elmfire-port  31338
-                     :gridfire-host "gridfire.pyregence.org"
-                     :gridfire-port 31337
-                     :wx-host       "wx.pyregence.org"
-                     :wx-port       31337}
+ :match-drop        {:app-host       "app.pyregence.org"
+                     :app-port       31337
+                     :app-name       "Pyrecast Web Server"
+                     :geosync-host   "data.pyregence.org"
+                     :geosync-port   31337
+                     :geosync-name   "GeoSync"
+                     :elmfire-host   "elmfire.pyregence.org"
+                     :elmfire-port   31338
+                     :elmfire-name   "ELMFIRE"
+                     :gridfire-host  "gridfire.pyregence.org"
+                     :gridfire-port  31337
+                     :gridfire-name  "GridFire"
+                     :dps-host       "wx.pyregence.org"
+                     :dps-port       31337
+                     :dps-name       "Data Provisioning Server"
+                     :max-queue-size 5
+                     :data-dir       "/srv/gis/fire_spread_forecast"}
  :mail              {:host     "<host>"
                      :user     "<user>"
                      :pass     "<pass>"

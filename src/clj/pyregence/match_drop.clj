@@ -49,30 +49,32 @@
 ;;; Static data
 
 (def ^:private host-names
-  {"elmfire.pyregence.org"  "ELMFIRE"
-   "gridfire.pyregence.org" "GridFire"
-   "wx.pyregence.org"       "Weather"
-   "data.pyregence.org"     "GeoServer"})
+  {(get-md-config :app-host)      (get-md-config :app-name)
+   (get-md-config :geosync-host)  (get-md-config :geosync-name)
+   (get-md-config :elmfire-host)  (get-md-config :elmfire-name)
+   (get-md-config :gridfire-host) (get-md-config :gridfire-name)
+   (get-md-config :dps-host)      (get-md-config :dps-name)})
 
 ;; SQL fns
 
 (defn- sql-result->job [result]
   (-> result
-      (rename-keys {:job_id        :job-id
-                    :user_id       :user-id
-                    :created_at    :created-at
-                    :updated_at    :updated-at
-                    :md_status     :md-status
-                    :display_name  :display-name
-                    :job_log       :log ; TODO: rename log to job-log
+      (rename-keys {:created_at    :created-at
                     :elmfire_done  :elmfire-done?
-                    :gridfire_done :gridfire-done?})
+                    :display_name  :display-name
+                    :gridfire_done :gridfire-done?
+                    :job_id        :job-id
+                    :user_id       :user-id
+                    :job_log       :log
+                    :md_status     :md-status
+                    :updated_at    :updated-at})
       (update :request json->clj)))
 
 (defn- get-match-job [job-id]
-  (-> (call-sql "get_match_job" job-id)
-      (first)
-      (sql-result->job)))
+  (when (integer? job-id)
+    (some-> (call-sql "get_match_job" job-id)
+            (first)
+            (sql-result->job))))
 
 (defn- count-all-running-match-drops []
   (sql-primitive (call-sql "count_all_running_match_jobs")))
@@ -87,12 +89,14 @@
   (call-sql "update_match_job" job-id md-status display-name message elmfire-done? gridfire-done? (when request (clj->json request))))
 
 (defn- send-to-server-wrapper!
-  [host port {:keys [job-id request] :as job} & [extra-payload]]
+  [host port job-id & [extra-payload]]
   (when-not (send-to-server! host
                              port
-                             (-> request
-                                 (update :script-args #(merge % extra-payload))
-                                 (json/write-str :key-fn kebab->camel)))
+                             (json/write-str
+                              (-> (get-match-job job-id)
+                                  (:request)
+                                  (merge extra-payload))
+                              :key-fn kebab->camel))
     (update-match-job! job-id {:md-status 1
                                :message   (str "Connection to " host " failed.")})))
 
@@ -103,7 +107,7 @@
         ;; TODO: do we still need the fire-name
         fire-name           (str "match-drop-" job-id)
         ;; TODO: /var/www/html should not be hardcoded.
-        data-dir            (str "/var/www/html/fire_spread_forecast/match-drop-" job-id "/" model-time)
+        data-dir            (str (get-md-config :data-dir) "/match-drop-" job-id "/" model-time)
         geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
         ;; TODO: consider different payloads per request instead of one large one.
         request             {:job-id        job-id
@@ -130,9 +134,9 @@
                              :request        request}]
     (update-match-job! job-id job)
     (log-str "Initiating match drop job #" job-id)
-    (send-to-server-wrapper! (get-md-config :wx-host)
-                             (get-md-config :wx-port)
-                             job)
+    (send-to-server-wrapper! (get-md-config :dps-host)
+                             (get-md-config :dps-port)
+                             job-id)
     {:job-id job-id}))
 
 ;;; Public API
@@ -148,7 +152,7 @@
      (pos? (count-running-user-match-jobs user-id))
      {:error "Match drop is already running. Please wait until it has completed."}
 
-     (< 5 (count-all-running-match-drops))
+     (< (get-md-config :max-queue-size) (count-all-running-match-drops))
      {:error "The queue is currently full. Please try again later."}
 
      :else
@@ -169,70 +173,72 @@
   (data-response (-> (get-match-job job-id)
                      (select-keys [:message :md-status :log]))))
 
-(defn- get-model [message]
-  (second (re-find #".*(elmfire|gridfire).*" (str/lower-case message))))
-  
-(defn- process-complete! [{:keys [job-id] :as job} {:keys [response-host message]}]
+(defn- process-complete! [job-id {:keys [response-host message model]}]
   (when message
     (update-match-job! job-id {:message message}))
   (condp = response-host
-    (get-md-config :wx-host)
+    (get-md-config :dps-host)
     (do
-      (send-to-server-wrapper! (get-md-config :elmfire-host) (get-md-config :elmfire-port) job)
-      (send-to-server-wrapper! (get-md-config :gridfire-host) (get-md-config :gridfire-port) job))
+      (send-to-server-wrapper! (get-md-config :elmfire-host) (get-md-config :elmfire-port) job-id)
+      (send-to-server-wrapper! (get-md-config :gridfire-host) (get-md-config :gridfire-port) job-id))
 
     ;; TODO launching two geosync calls for the same directory might break if we switch to image mosaics
     (get-md-config :elmfire-host)
-    (send-to-server-wrapper! (get-md-config :data-host) (get-md-config :data-port) job {:model "elmfire"})
+    (send-to-server-wrapper! (get-md-config :geosync-host) (get-md-config :geosync-port) job-id {:model "elmfire"})
 
     (get-md-config :gridfire-host)
-    (send-to-server-wrapper! (get-md-config :data-host) (get-md-config :data-port) job {:model "gridfire"})
+    (send-to-server-wrapper! (get-md-config :geosync-host) (get-md-config :geosync-port) job-id {:model "gridfire"})
 
-    (get-md-config :data-host)
-    (let [{:keys [elmfire-done? gridfire-done? request]} job
-          model     (get-model message)
+    (get-md-config :geosync-host)
+    (let [{:keys [elmfire-done? gridfire-done? request]} (get-match-job job-id)
           elmfire?  (or elmfire-done?  (= "elmfire" model))
           gridfire? (or gridfire-done? (= "gridfire" model))]
       (if (and elmfire? gridfire?)
         (do (update-match-job! job-id {:md-status      0
                                        :gridfire-done? true
                                        :elmfire-done?  true})
-            (set-capabilities! (get-in request [:script-args :geosync-args :geoserver-workspace])))
+            (set-capabilities! {"geoserver-key"  "match-drop"
+                                "workspace-name" (:geoserver-workspace request)}))
         (update-match-job! job-id {:gridfire-done? gridfire?
                                    :elmfire-done?  elmfire?})))))
 
-(defn- process-error! [job-id {:keys [message response-host]}]
-  (let [db-message (str (get host-names response-host) ": " message)]
-    (log-str "Match drop job #" job-id " error: " db-message)
-    (update-match-job! job-id {:md-status 1 :message db-message})))
+(defn- process-error! [job-id {:keys [message]}]
+  (log-str "Match drop job #" job-id " error: " message)
+  (update-match-job! job-id {:md-status 1 :message message}))
 
 (defn- process-message! [job-id {:keys [message response-host]}]
-  (let [db-message (str (get host-names response-host) ": " message)]
-    (update-match-job! job-id {:message db-message})))
+  (update-match-job! job-id {:message (str (get host-names response-host) ": " message)}))
 
-(defn- error-response [request response-host response-port message]
+(defn- error-response [response-host response-port message]
   (when (and response-host response-port) ; TODO: Use spec to validate these fields
     (send-to-server! response-host
                      response-port
                      (json/write-str
-                      (assoc-in request [:script-args :error-args]
-                                (clj->json {:status  1
-                                            :message (str "Bad Request: " message)}))
+                      {:status        1
+                       :message       (str "Bad Request: " message)
+                       :response-host (get-md-config :app-host)
+                       :response-port (get-md-config :app-port)}
                       :key-fn (comp kebab->camel name)))))
 
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing [msg]
-  (let [{:keys [job-id status response-host response-port]
-         :as   response}                    (nil-on-error (json/read-str msg :key-fn (comp keyword camel->kebab)))
-        {:keys [request md-status] :as job} (get-match-job job-id)]
-    (if (and (pos? job-id)
-             (= 2 md-status))
-      (case status
-        0 (process-complete! job response)
-        1 (process-error!    job-id response)
-        2 (process-message!  job-id response)
-        (error-response request response-host response-port "Invalid status code."))
-      (error-response request response-host response-port "Invalid or missing job-id."))))
+  (if-let [{:keys [job-id
+                   status
+                   response-host
+                   response-port]
+            :as   response} (nil-on-error
+                             (json/read-str msg :key-fn (comp keyword camel->kebab)))]
+    ;; TODO: Use spec to validate the message
+    (if-let [job (get-match-job job-id)]
+      (if (= 2 (:md-status job))        ; 2 indicates that the job has not yet completed.
+        (case status
+          0 (process-complete! job-id response) ; DONE
+          1 (process-error!    job-id response) ; ERROR
+          2 (process-message!  job-id response) ; INFO
+          (error-response response-host response-port (format "Invalid status code: %s" status)))
+        (error-response response-host response-port (format "Job %s has exited." job-id)))
+      (error-response response-host response-port (format "Invalid job-id: %s" job-id)))
+    (log-str "Invalid JSON.")))
 
 (defn process-message
   "Accepts a message from the socket server and sends it to be processed."

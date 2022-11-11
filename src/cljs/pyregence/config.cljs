@@ -464,7 +464,7 @@
                                                                        :filter    "30"}
                                                                   :10 {:opt-label "Smallest (10th percentile)"
                                                                        :filter    "10"}}}
-                                    :fuel       {:opt-label  "Fuel"
+                                    :fuel       {:opt-label  "Fuels"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
@@ -485,6 +485,11 @@
                                                               "), © Salo Sciences, Inc. 2020."]
                                                  :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.2.0"
                                                                          :filter    "landfire"}}}
+                                    :weather    {:opt-label  "Weather Model"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "Hybrid"]
+                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."]
+                                                 :options    {:hybrid {:opt-label "Hybrid"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "ELMFIRE"]
@@ -993,7 +998,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def match-drop-instructions
-  "Simulates a fire using real-time weather data.
+  "Simulates a fire using real-time weather data from the Hybrid model,
+   which is a blend of the HRRR, NAM 3 km, and GFS 0.125\u00B0 models.
    Click on a location to \"drop\" a match,
    then set the date and time to begin the simulation.")
 
