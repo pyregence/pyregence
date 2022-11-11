@@ -94,6 +94,7 @@
   (user-match-drops user-id)
   (fn [_]
     (cond
+      ; TODO need to make sure the user is logged in AND verified to use Match Drop
       (nil? user-id) ; User is not logged in
       (do (u-browser/redirect-to-login! "/dashboard")
           nil)
