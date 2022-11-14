@@ -99,7 +99,7 @@
                                :message   (str "Connection to " host " failed.")})))
 
 (defn- create-match-job!
-  [{:keys [display-name user-id ignition-time] :as params}]
+  [{:keys [display-name user-id ignition-time _lon _lat] :as params}]
   (let [job-id              (initialize-match-job! user-id)
         model-time          (convert-date-string ignition-time)
         ;; TODO: do we still need the fire-name
@@ -111,19 +111,16 @@
         request             {:job-id        job-id
                              :response-host (get-md-config :app-host)
                              :response-port (get-md-config :app-port)
-                             :script-args   (-> {:common-args  (merge params
-                                                                      {:fire-name     fire-name
-                                                                       :ignition-time ignition-time})
-                                                 :dps-args     {:add-to-active-fires "yes"
-                                                                :scp-input-deck      "both"
-                                                                :south-buffer        24
-                                                                :west-buffer         24
-                                                                :east-buffer         24
-                                                                :north-buffer        24}
-                                                 :geosync-args {:action              "add"
-                                                                :data-dir            data-dir
-                                                                :geoserver-workspace geoserver-workspace}}
-                                                (update-vals clj->json))}
+                             :script-args   {:common-args  (assoc params :fire-name fire-name)
+                                             :dps-args     {:add-to-active-fires "yes"
+                                                            :scp-input-deck      "both"
+                                                            :south-buffer        24
+                                                            :west-buffer         24
+                                                            :east-buffer         24
+                                                            :north-buffer        24}
+                                             :geosync-args {:action              "add"
+                                                            :data-dir            data-dir
+                                                            :geoserver-workspace geoserver-workspace}}}
         job                 {:display-name   (or display-name (str "Match Drop " job-id))
                              :md-status      2
                              :message        (str "Job " job-id " Initiated.")
@@ -232,15 +229,22 @@
             :as   response} (nil-on-error
                              (json/read-str msg :key-fn (comp keyword camel->kebab)))]
     ;; TODO: Use spec to validate the message
-    (if-let [{:keys [request md-status] :as job} (get-match-job job-id)]
-      (if (= 2 md-status)        ; 2 indicates that the job has not yet completed.
+    (let [{:keys [request md-status] :as job} (get-match-job job-id)]
+      (cond
+        (nil? job)
+        (error-response request response-host response-port (format "Invalid job-id: %s" job-id))
+
+        (< md-status 2)              ; 2 indicates that the job has not yet completed.
+        (error-response request response-host response-port (format "Job %s has exited." job-id))
+
+        (not (contains? #{0 1 2} status))
+        (error-response request response-host response-port (format "Invalid status code: %s" status))
+
+        :else
         (case status
-          0 (process-complete! job response)    ; DONE
-          1 (process-error!    job-id response) ; ERROR
-          2 (process-message!  job-id response) ; INFO
-          (error-response request response-host response-port (format "Invalid status code: %s" status)))
-        (error-response request response-host response-port (format "Job %s has exited." job-id)))
-      (error-response request response-host response-port (format "Invalid job-id: %s" job-id)))
+          0 (process-complete! job response)       ; DONE
+          1 (process-error!    job-id response)    ; ERROR
+          2 (process-message!  job-id response)))) ; INFO
     (log-str "Invalid JSON.")))
 
 (defn process-message
