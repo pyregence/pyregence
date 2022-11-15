@@ -8,7 +8,7 @@
             [triangulum.database        :refer [call-sql sql-primitive]]
             [triangulum.logging         :refer [log-str]]
             [triangulum.sockets         :refer [send-to-server!]]
-            [triangulum.type-conversion :refer [val->long json->clj clj->json]]
+            [triangulum.type-conversion :refer [json->clj clj->json]]
             [pyregence.capabilities :refer [set-capabilities!]]
             [pyregence.utils        :refer [nil-on-error]]
             [pyregence.views        :refer [data-response]]))
@@ -65,7 +65,7 @@
                     :updated_at    :updated-at
                     :md_status     :md-status
                     :display_name  :display-name
-                    :job_log       :log ; TODO: rename log to job-log
+                    :job_log       :job-log
                     :elmfire_done  :elmfire-done?
                     :gridfire_done :gridfire-done?})
       (update :request json->clj)))
@@ -102,16 +102,15 @@
   [{:keys [display-name user-id ignition-time _lon _lat] :as params}]
   (let [job-id              (initialize-match-job! user-id)
         model-time          (convert-date-string ignition-time)
-        ;; TODO: do we still need the fire-name
         fire-name           (str "match-drop-" job-id)
-        ;; TODO: /var/www/html should not be hardcoded.
         data-dir            (str (get-md-config :data-dir) "/match-drop-" job-id "/" model-time)
         geoserver-workspace (str "fire-spread-forecast_match-drop-" job-id "_" model-time)
         ;; TODO: consider different payloads per request instead of one large one.
         request             {:job-id        job-id
                              :response-host (get-md-config :app-host)
                              :response-port (get-md-config :app-port)
-                             :script-args   {:common-args  (assoc params :fire-name fire-name)
+                             :script-args   {:common-args  (merge params {:ignition-time ignition-time
+                                                                          :fire-name     fire-name})
                                              :dps-args     {:add-to-active-fires "yes"
                                                             :scp-input-deck      "both"
                                                             :south-buffer        24
@@ -166,11 +165,11 @@
   "Returns the current status of the given match drop run."
   [job-id]
   (data-response (-> (get-match-job job-id)
-                     (select-keys [:message :md-status :log]))))
+                     (select-keys [:message :md-status :job-log]))))
 
 (defn- get-model [message]
   (second (re-find #".*(elmfire|gridfire).*" (str/lower-case message))))
-  
+
 (defn- process-complete! [{:keys [job-id] :as job} {:keys [response-host message]}]
   (when message
     (update-match-job! job-id {:message message}))
