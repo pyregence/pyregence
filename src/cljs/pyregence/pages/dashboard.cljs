@@ -17,13 +17,12 @@
 
 ;; API Requests
 
-(defn- user-match-drops [user-id]
+(defn- get-user-match-drops [user-id]
   (go
     (reset! match-drops
             (edn/read-string (:body (<! (u-async/call-clj-async! "get-match-drops" user-id)))))))
 
 ;; Helper
-
 (defn- show-job-log-modal! [job-id job-log]
   (set-message-box-content!
    {:title (str "Match Drop #" job-id)
@@ -57,26 +56,30 @@
     (doall (map-indexed (fn [i col] ^{:key i} [:th col]) cols))]])
 
 (defn- match-drop-item [{:keys [job-id display-name md-status message created-at updated-at request job-log]}]
-  [:tr
-   [:td display-name]
-   [:td md-status]
-   [:td message]
-   [:td (->> (select-keys request [:lon :lat])
-             (vals)
-             (map #(-> % (str) (subs 0 6)))
-             (string/join ", "))]
-   [:td (subs (:ignition-time request) 0 16)]
-   [:td (fmt-datetime created-at)]
-   [:td (fmt-datetime updated-at)]
-   [:td (u-time/ms->hhmmss (- updated-at created-at))]
-   [:td [:a {:href "#" :on-click #(show-job-log-modal! job-id job-log)} "View Logs"]]])
+  (let [{:keys [common-args]} (:script-args request)]
+    [:tr
+     [:td job-id] ; "Job ID"
+     [:td {:width "10%"} display-name] ; "Fire Name"
+     [:td md-status] ; "Status"
+     [:td {:width "25%"} message] ; "Message"
+     [:td {:width "10%"}
+      (->> (select-keys common-args [:lon :lat]) ; "Lon, Lat"
+         (vals)
+         (map #(-> % (str) (subs 0 6)))
+         (string/join ", "))]
+     [:td (subs (:ignition-time common-args) 0 16)] ; "Ignition Time (UTC)"
+     [:td (fmt-datetime created-at)] ; "Time Started (UTC)"
+     [:td (fmt-datetime updated-at)] ; "Last Updated (UTC)"
+     [:td (u-time/ms->hhmmss (- updated-at created-at))] ; "Elapsed Time"
+     [:td [:a {:href "#" :on-click #(show-job-log-modal! job-id job-log)} "View Logs"]]])) ; "Logs"
 
 (defn- match-drop-table []
   [:table {:class (<class $table) :style {:width "100%"}}
-   [thead ["Fire Name"
+   [thead ["Job ID"
+           "Fire Name"
            "Status"
            "Message"
-           "Lon/Lat"
+           "Lon, Lat"
            "Ignition Time (UTC)"
            "Time Started (UTC)"
            "Last Updated (UTC)"
@@ -91,7 +94,7 @@
    Displays a header, refresh button, and a table of a user's match drops "
   [{:keys [user-id]}]
   (reset! _user-id user-id)
-  (user-match-drops user-id)
+  (get-user-match-drops user-id)
   (fn [_]
     (cond
       ; TODO need to make sure the user is logged in AND verified to use Match Drop
@@ -100,17 +103,15 @@
           nil)
 
       :else  ; User is logged in
-      [:div {:style ($/combine $/root {:height   "100%"
-                                       :padding  0
-                                       :position "relative"})}
+      [:div {:style ($/root)}
        [message-box-modal]
-       [:div {:style ($/combine $/flex-col {:padding "2rem 8rem"})}
+       [:div {:style ($/combine $/flex-col {:padding "2rem"})}
         [:div {:style {:display "flex"}}
          [:h3 {:style {:margin-bottom "0"
                        :margin-right  "1rem"}}
           "Match Drop Dashboard"]
          [:button {:class    (<class $/p-form-button)
-                   :on-click #(user-match-drops user-id)}
+                   :on-click #(get-user-match-drops user-id)}
           "Refresh"]]
         [:div {:style {:padding "1rem"
                        :width   "100%"}}
