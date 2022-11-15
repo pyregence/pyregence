@@ -1,13 +1,13 @@
 (ns pyregence.components.map-controls.tool-button
-  (:require [herb.core :refer [<class]]
-            [pyregence.styles :as $]
+  (:require [herb.core                      :refer [<class]]
+            [pyregence.styles               :as $]
             [pyregence.components.svg-icons :as svg]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn $tool-button []
+(defn- $tool-button []
   {:cursor  "pointer"
    :fill    ($/color-picker :font-color)
    :height  "100%"
@@ -39,12 +39,14 @@
        :magnify-zoom-in [svg/magnify-zoom-in]
        :my-location     [svg/my-location]
        :next-button     [svg/next-button]
-       :right-arrow     [svg/right-arrow]
        :pause-button    [svg/pause-button]
        :play-button     [svg/play-button]
        :previous-button [svg/previous-button]
+       :refresh         [svg/refresh]
+       :right-arrow     [svg/right-arrow]
        :share           [svg/share]
        :terrain         [svg/terrain]
+       :trash           [svg/trash]
        :zoom-in         [svg/zoom-in]
        :zoom-out        [svg/zoom-out]
        [:<>])]))
