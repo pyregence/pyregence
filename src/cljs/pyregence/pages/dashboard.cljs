@@ -24,14 +24,14 @@
 
 ;; Helper
 
-(defn- show-log-modal! [job-id log]
+(defn- show-job-log-modal! [job-id job-log]
   (set-message-box-content!
    {:title (str "Match Drop #" job-id)
     :body  [:div {:style {:max-height "300px"
                           :overflow-y "scroll"
                           :overflow-x "hidden"}}
             (doall (map-indexed (fn [i line] ^{:key i} [:div line])
-                                (string/split log #"\\n")))]
+                                (string/split job-log #"\\n")))]
     :mode  :close}))
 
 (defn- fmt-datetime [js-date]
@@ -56,7 +56,7 @@
    [:tr
     (doall (map-indexed (fn [i col] ^{:key i} [:th col]) cols))]])
 
-(defn- match-drop-item [{:keys [job-id display-name md-status message created-at updated-at request log]}]
+(defn- match-drop-item [{:keys [job-id display-name md-status message created-at updated-at request job-log]}]
   [:tr
    [:td display-name]
    [:td md-status]
@@ -69,7 +69,7 @@
    [:td (fmt-datetime created-at)]
    [:td (fmt-datetime updated-at)]
    [:td (u-time/ms->hhmmss (- updated-at created-at))]
-   [:td [:a {:href "#" :on-click #(show-log-modal! job-id log)} "View Logs"]]])
+   [:td [:a {:href "#" :on-click #(show-job-log-modal! job-id job-log)} "View Logs"]]])
 
 (defn- match-drop-table []
   [:table {:class (<class $table) :style {:width "100%"}}
