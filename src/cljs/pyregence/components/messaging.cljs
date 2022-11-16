@@ -93,7 +93,7 @@
      :cursor        "pointer"
      :fill          ($/color-picker :brown)
      :font-weight   "bold"
-     :padding       ".5rem"}
+     :padding       ".25rem"}
     {:pseudo {:hover {:background-color ($/color-picker :brown .5)
                       :fill             ($/color-picker :white)}}}))
 
@@ -135,7 +135,7 @@
           (show-line-break @message)]
          [:span {:class    (<class $p-alert-close)
                  :on-click #(reset! toast-message-text nil)}
-          [svg/close :height "32px" :width "32px"]]]))))
+          [svg/close :height "26px" :width "26px"]]]))))
 
 (defn- button [label & callback]
   [:input {:class    (<class $/p-form-button)
