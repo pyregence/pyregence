@@ -2,8 +2,13 @@
   (:require [cljs.reader                    :as edn]
             [clojure.core.async             :refer [go <!]]
             [clojure.string                 :as string]
+            [goog.string                    :refer [format]]
             [herb.core                      :refer [<class]]
-            [pyregence.components.messaging :refer [set-message-box-content! message-box-modal]]
+            [pyregence.components.messaging :refer [message-box-modal
+                                                    set-message-box-content!
+                                                    toast-message!]]
+            [pyregence.components.svg-icons :as svg]
+            [pyregence.components.map-controls.icon-button :refer [icon-button]]
             [pyregence.styles               :as $]
             [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.async-utils    :as u-async]
@@ -22,7 +27,13 @@
     (reset! match-drops
             (edn/read-string (:body (<! (u-async/call-clj-async! "get-match-drops" user-id)))))))
 
+(defn- remove-match-drop! [job-id]
+  ; TODO hook up to back-end API
+  ; TODO update the match-drops atom
+  (toast-message! (str "Match drop " job-id " has been deleted.")))
+
 ;; Helper
+
 (defn- show-job-log-modal! [job-id job-log]
   (set-message-box-content!
    {:title (str "Match Drop #" job-id)
@@ -38,6 +49,15 @@
       (u-time/js-date->iso-string true)
       (subs 0 16)
       (str ":" (u-time/pad-zero (.getSeconds js-date)))))
+
+(defn- handle-remove-match-drop [job-id display-name]
+  (let [message (str "Are you sure that you want to delete the Match Drop\n"
+                     "with name \"%s\" and Job ID \"%s\"?\n"
+                     "This action is irreversible.\n\n")]
+    (set-message-box-content! {:mode   :confirm
+                               :title  "Delete Match Drop"
+                               :body   (format message display-name job-id)
+                               :action #(remove-match-drop! job-id)})))
 
 ;; Styles
 
@@ -62,8 +82,8 @@
      [:td {:width "10%"} display-name] ; "Fire Name"
      [:td md-status] ; "Status"
      [:td {:width "25%"} message] ; "Message"
-     [:td {:width "10%"}
-      (->> (select-keys common-args [:lon :lat]) ; "Lon, Lat"
+     [:td {:width "10%"} ; "Lon, Lat"
+      (->> (select-keys common-args [:lon :lat])
          (vals)
          (map #(-> % (str) (subs 0 6)))
          (string/join ", "))]
@@ -71,7 +91,13 @@
      [:td (fmt-datetime created-at)] ; "Time Started (UTC)"
      [:td (fmt-datetime updated-at)] ; "Last Updated (UTC)"
      [:td (u-time/ms->hhmmss (- updated-at created-at))] ; "Elapsed Time"
-     [:td [:a {:href "#" :on-click #(show-job-log-modal! job-id job-log)} "View Logs"]]])) ; "Logs"
+     [:td [:a {:href "#" :on-click #(show-job-log-modal! job-id job-log)} "View Logs"]] ; "Logs"
+     [:td ; "Delete"
+      [:div {:style {:display "flex" :justify-content "center"}}
+       [icon-button :trash
+                    #(handle-remove-match-drop job-id display-name)
+                    nil
+                    :btn-size :circle]]]]))
 
 (defn- match-drop-table []
   [:table {:class (<class $table) :style {:width "100%"}}
@@ -84,10 +110,18 @@
            "Time Started (UTC)"
            "Last Updated (UTC)"
            "Elapsed Time"
-           "Logs"]]
+           "Logs"
+           "Delete"]]
    [:tbody
     (reverse (map (fn [{:keys [job-id] :as md}] ^{:key job-id} [match-drop-item md])
                   @match-drops))]])
+
+(defn- match-drop-header [user-id]
+  [:div {:style {:display "flex" :justify-content "center"}}
+   [:h3 {:style {:margin-bottom "0"}}
+    "Match Drop Dashboard"]
+   [:div {:style {:position "absolute" :right "6%"}}
+    [icon-button :refresh #(get-user-match-drops user-id) "Refresh"]]])
 
 (defn root-component
   "The root comopnent for the match drop /dashboard page.
@@ -106,13 +140,6 @@
       [:div {:style ($/root)}
        [message-box-modal]
        [:div {:style ($/combine $/flex-col {:padding "2rem"})}
-        [:div {:style {:display "flex"}}
-         [:h3 {:style {:margin-bottom "0"
-                       :margin-right  "1rem"}}
-          "Match Drop Dashboard"]
-         [:button {:class    (<class $/p-form-button)
-                   :on-click #(get-user-match-drops user-id)}
-          "Refresh"]]
-        [:div {:style {:padding "1rem"
-                       :width   "100%"}}
+        [match-drop-header user-id]
+        [:div {:style {:padding "1rem" :width "100%"}}
          [match-drop-table]]]])))
