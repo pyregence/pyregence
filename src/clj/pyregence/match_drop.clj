@@ -159,6 +159,13 @@
        (mapv sql-result->job)
        (data-response)))
 
+(defn delete-match-drop!
+  "Deletes the specified match drop from the DB and removes it from the GeoServer."
+  [job-id]
+  (call-sql "delete_match_job" job-id)
+  ; TODO Need to send a request to remove the match drop from the GeoServer
+  (data-response ""))
+
 ;;; Job queue progression
 
 (defn get-md-status

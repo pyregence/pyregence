@@ -137,3 +137,13 @@ CREATE OR REPLACE FUNCTION get_user_match_names(_user_rid integer)
         AND user_rid = _user_rid
 
 $$ LANGUAGE SQL;
+
+-- Delete the selected match job from the match_jobs table
+CREATE OR REPLACE FUNCTION delete_match_job(_job_rid integer)
+ RETURNS void AS $$
+
+   DELETE
+   FROM match_jobs
+   WHERE job_uid = _job_rid
+
+$$ LANGUAGE SQL;

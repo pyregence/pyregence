@@ -7,7 +7,6 @@
             [pyregence.components.messaging :refer [message-box-modal
                                                     set-message-box-content!
                                                     toast-message!]]
-            [pyregence.components.svg-icons :as svg]
             [pyregence.components.map-controls.icon-button :refer [icon-button]]
             [pyregence.styles               :as $]
             [pyregence.utils.browser-utils  :as u-browser]
@@ -27,10 +26,11 @@
     (reset! match-drops
             (edn/read-string (:body (<! (u-async/call-clj-async! "get-match-drops" user-id)))))))
 
-(defn- remove-match-drop! [job-id]
-  ; TODO hook up to back-end API
-  ; TODO update the match-drops atom
-  (toast-message! (str "Match drop " job-id " has been deleted.")))
+(defn- delete-match-drop! [job-id]
+  (go
+    (<! (u-async/call-clj-async! "delete-match-drop" job-id))
+    (get-user-match-drops @_user-id)
+    (toast-message! (str "Match drop " job-id " has been deleted."))))
 
 ;; Helper
 
@@ -50,14 +50,14 @@
       (subs 0 16)
       (str ":" (u-time/pad-zero (.getSeconds js-date)))))
 
-(defn- handle-remove-match-drop [job-id display-name]
+(defn- handle-delete-match-drop [job-id display-name]
   (let [message (str "Are you sure that you want to delete the Match Drop\n"
                      "with name \"%s\" and Job ID \"%s\"?\n"
                      "This action is irreversible.\n\n")]
     (set-message-box-content! {:mode   :confirm
                                :title  "Delete Match Drop"
                                :body   (format message display-name job-id)
-                               :action #(remove-match-drop! job-id)})))
+                               :action #(delete-match-drop! job-id)})))
 
 ;; Styles
 
@@ -95,7 +95,7 @@
      [:td ; "Delete"
       [:div {:style {:display "flex" :justify-content "center"}}
        [icon-button :trash
-                    #(handle-remove-match-drop job-id display-name)
+                    #(handle-delete-match-drop job-id display-name)
                     nil
                     :btn-size :circle]]]]))
 
@@ -124,7 +124,7 @@
     [icon-button :refresh #(get-user-match-drops user-id) "Refresh"]]])
 
 (defn root-component
-  "The root comopnent for the match drop /dashboard page.
+  "The root component for the match drop /dashboard page.
    Displays a header, refresh button, and a table of a user's match drops "
   [{:keys [user-id]}]
   (reset! _user-id user-id)
