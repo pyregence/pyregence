@@ -1,5 +1,5 @@
 (ns pyregence.match-drop
-  (:import  [java.util TimeZone]
+  (:import  [java.util TimeZone UUID]
             [java.text SimpleDateFormat])
   (:require [clojure.data.json :as json]
             [clojure.string    :as str]
@@ -167,7 +167,7 @@
   (let [{:keys [geoserver-workspace]} (get-match-job job-id)
         geosync-host (get-md-config :geosync-host)
         geosync-port (get-md-config :geosync-port)
-        request      {:job-id        (inst-ms (java.util.Date.))
+        request      {:job-id        (str (UUID/randomUUID))
                       :response-host (get-md-config :app-host)
                       :response-port (get-md-config :app-port)
                       :script-args   {:geosync-args {:action "remove" :geoserver-workspace geoserver-workspace}}}]
