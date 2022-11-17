@@ -8,6 +8,7 @@
                                                     set-message-box-content!
                                                     toast-message!]]
             [pyregence.components.map-controls.icon-button :refer [icon-button]]
+            [pyregence.components.svg-icons :as svg]
             [pyregence.styles               :as $]
             [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.async-utils    :as u-async]
@@ -127,6 +128,19 @@
    [:div {:style {:position "absolute" :right "6%"}}
     [icon-button :refresh #(get-user-match-drops user-id) "Refresh"]]])
 
+(defn- no-match-drops []
+  [:div {:style {:border        (str "2px solid " ($/color-picker :brown))
+                 :border-radius "5px"
+                 :display       "flex"
+                 :fill          ($/color-picker :brown)
+                 :margin-top    "3rem"
+                 :padding       "1rem"}}
+   [svg/exclamation-point :height "20px" :width "20px"]
+   [:span {:style {:padding-left "0.5rem"}}
+    "It doesn't look like you have any Match Drops. Please return "
+    [:a {:href "/"} "home"]
+    " and use the Match Drop Tool to start a job."]])
+
 (defn root-component
   "The root component for the match drop /dashboard page.
    Displays a header, refresh button, and a table of a user's match drops "
@@ -146,4 +160,6 @@
        [:div {:style ($/combine $/flex-col {:padding "2rem"})}
         [match-drop-header user-id]
         [:div {:style {:padding "1rem" :width "100%"}}
-         [match-drop-table]]]])))
+         (if (seq @match-drops)
+           [match-drop-table]
+           [no-match-drops])]]])))

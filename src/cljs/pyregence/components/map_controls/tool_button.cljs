@@ -30,6 +30,7 @@
        :center-on-point [svg/center-on-point]
        :close           [svg/close]
        :clock           [svg/clock]
+       :exclamation     [svg/exclamation-point]
        :extent          [svg/extent]
        :flag            [svg/flag]
        :flame           [svg/flame]
