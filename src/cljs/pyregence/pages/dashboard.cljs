@@ -23,8 +23,11 @@
 
 (defn- get-user-match-drops [user-id]
   (go
-    (reset! match-drops
-            (edn/read-string (:body (<! (u-async/call-clj-async! "get-match-drops" user-id)))))))
+    (reset! match-drops (->> (u-async/call-clj-async! "get-match-drops" user-id)
+                             (<!)
+                             (:body)
+                             (edn/read-string)
+                             (sort-by :job-id #(> %1 %2))))))
 
 (defn- delete-match-drop! [job-id]
   (go
@@ -113,8 +116,9 @@
            "Logs"
            "Delete"]]
    [:tbody
-    (reverse (map (fn [{:keys [job-id] :as md}] ^{:key job-id} [match-drop-item md])
-                  @match-drops))]])
+    (map (fn [{:keys [job-id] :as md}] ^{:key job-id}
+           [match-drop-item md])
+         @match-drops)]])
 
 (defn- match-drop-header [user-id]
   [:div {:style {:display "flex" :justify-content "center"}}
