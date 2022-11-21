@@ -516,14 +516,6 @@
                                                   params))]))
                      options-config)))
 
-(defn- refresh-fire-names! [user-id]
-  (go
-    (as-> (u-async/call-clj-async! "get-fire-names" user-id) fire-names
-      (<! fire-names)
-      (:body fire-names)
-      (edn/read-string fire-names)
-      (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge fire-names))))
-
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
@@ -608,7 +600,7 @@
                (get-current-layer-hour)
                #(set-show-info! false)])
             (when @!/show-match-drop?
-              [match-drop-tool @my-box #(reset! !/show-match-drop? false) refresh-fire-names! user-id])
+              [match-drop-tool @my-box #(reset! !/show-match-drop? false) user-id])
             (when @!/show-camera?
               [camera-tool @my-box #(reset! !/show-camera? false)])])
          [legend-box
