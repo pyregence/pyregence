@@ -18,7 +18,7 @@
                      :structures   true
                      :gridfire     false}
  :geoserver         {;:match-drop  "TODO"
-                     ;:psps        "https://energy.pyregence.org:8443/geoserver"
+                     :psps        "https://energy.pyregence.org:8443/geoserver"
                      :pyreclimate "https://climate.pyregence.org/geoserver"
                      :shasta      "https://shasta.pyregence.org/geoserver"
                      :trinity     "https://trinity.pyregence.org/geoserver"}

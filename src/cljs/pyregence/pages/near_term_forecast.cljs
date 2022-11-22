@@ -384,6 +384,7 @@
 (defn- clear-info! []
   (mb/remove-markers!)
   (reset! !/last-clicked-info [])
+  (reset! !/show-measure-tool? false)
   (when (get-forecast-opt :block-info?)
     (reset! !/show-info? false)))
 

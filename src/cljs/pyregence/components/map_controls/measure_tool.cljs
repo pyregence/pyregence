@@ -27,6 +27,8 @@
 (defn measure-tool
   "A map control tool that measures the distance between two points."
   [parent-box close-fn!]
+  ; TODO: Move some of the below atoms into `state.cljs` so we can clear the values
+  ; inside of near_term_forecast.cljs/clear-info! instead of reseting show-measure-tool? to false
   (r/with-let [distance-between-points (r/atom 0)
                point-one               (r/atom nil)
                point-two               (r/atom nil)
