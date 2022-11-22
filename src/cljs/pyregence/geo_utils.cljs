@@ -5,7 +5,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^{:doc "Radius of the Earth in Meters."}
-  earth-radius 6.371e6)
+  earth-radius 6378136.98)
 
 (def ^{:doc "Radians per Degree."}
   radians-per-degree (/ Math/PI 180.0))
