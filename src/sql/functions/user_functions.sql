@@ -148,7 +148,7 @@ $$ LANGUAGE SQL;
 ---  Organizations
 ---
 
-CREATE OR REPLACE FUNCTION get_org_list(_user_id integer)
+CREATE OR REPLACE FUNCTION get_organizations(_user_id integer)
  RETURNS TABLE (
     org_id           integer,
     org_name         text,
@@ -189,22 +189,38 @@ CREATE OR REPLACE FUNCTION update_org_info(
 $$ LANGUAGE SQL;
 
 ---
----  Organization Users
+---  Organization Member Users
 ---
 
-CREATE OR REPLACE FUNCTION get_org_users_list(_org_id integer)
+CREATE OR REPLACE FUNCTION get_org_member_users(_org_id integer)
  RETURNS TABLE (
     org_user_id    integer,
-    name           text,
+    full_name      text,
     email          text,
     role_id        integer
  ) AS $$
 
-    SELECT org_user_uid, name, email, role_rid
+    SELECT org_user_uid, name AS full_name, email, role_rid
     FROM users, organization_users, organizations
     WHERE organization_uid = _org_id
         AND organization_rid = organization_uid
         AND user_uid = user_rid
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION get_org_non_member_users(_org_id integer)
+  RETURNS TABLE (
+    user_uid    integer,
+    email       text,
+    name        text
+  ) AS $$
+
+  SELECT user_uid, email, name
+  FROM users
+  WHERE users.user_uid
+  NOT IN (SELECT user_rid
+          FROM organization_users
+          WHERE organization_rid = _org_id)
 
 $$ LANGUAGE SQL;
 

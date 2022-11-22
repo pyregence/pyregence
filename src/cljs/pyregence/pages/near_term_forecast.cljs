@@ -75,7 +75,11 @@
     ""))
 
 (defn- get-current-layer-extent []
-  (:extent (current-layer) c/california-extent))
+  (let [current-extent (:extent (current-layer))]
+    (cond
+      (= current-extent ["0.0" "0.0" "-1.0" "-1.0"]) c/california-extent
+      (seq current-extent) current-extent
+      :else c/california-extent)))
 
 (defn- get-current-layer-group []
   (:layer-group (current-layer) ""))
@@ -403,7 +407,7 @@
 
 (defn- change-type!
   "Changes the type of data that is being shown on the map."
-  [get-model-times? clear? zoom? max-zoom]
+  [get-model-times? clear? auto-zoom? max-zoom]
   (go
     (<! (get-layers! get-model-times?))
     (let [source   (get-current-layer-name)
@@ -422,7 +426,7 @@
     (if clear?
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))
-    (when (or zoom? (= @!/*forecast :active-fire))
+    (when auto-zoom?
       (mb/zoom-to-extent! (get-current-layer-extent) (current-layer) max-zoom))))
 
 (defn- select-param!
@@ -538,7 +542,7 @@
                              options-config
                              (params->selected-options options-config @!/*forecast params))
       (<! (select-forecast! @!/*forecast))
-      (reset! !/user-org-list (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-list" user-id)))))
+      (reset! !/user-org-list (edn/read-string (:body (<! (u-async/call-clj-async! "get-organizations" user-id)))))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))
       (reset! !/loading? false))))
 
