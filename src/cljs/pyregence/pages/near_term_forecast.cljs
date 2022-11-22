@@ -12,6 +12,7 @@
             [pyregence.components.map-controls.information-tool  :refer [information-tool]]
             [pyregence.components.map-controls.legend-box        :refer [legend-box]]
             [pyregence.components.map-controls.match-drop-tool   :refer [match-drop-tool]]
+            [pyregence.components.map-controls.measure-tool      :refer [measure-tool]]
             [pyregence.components.map-controls.mouse-lng-lat     :refer [mouse-lng-lat]]
             [pyregence.components.map-controls.scale-bar         :refer [scale-bar]]
             [pyregence.components.map-controls.time-slider       :refer [time-slider]]
@@ -345,18 +346,19 @@
   "Called when you use the point information tool and click a point on the map.
    Processes the JSON result from GetFeatureInfo differently depending on whether or not
    the layer has single-point-info or timeline-point-info. This processing is used
-   to reset! the !/last-clicked-info atom for use in rendering the information-tool."
-  [point-info]
+   to reset! the !/last-clicked-info atom for use in rendering the information-tool.
+   Takes in one argument, the bounding box of the currently selected point."
+  [point-info-bbox]
   (let [layer-name          (get-current-layer-name)
         layer-group         (get-current-layer-group)
         single?             (str/blank? layer-group)
         layer               (if single? layer-name layer-group)
         process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
-    (when-not (u-data/missing-data? layer point-info)
+    (when-not (u-data/missing-data? layer point-info-bbox)
       (reset! !/point-info-loading? true)
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
-                                  (str/join "," point-info)
+                                  (str/join "," point-info-bbox)
                                   (if single? 1 50000)
                                   (get-any-level-key :geoserver-key)
                                   (when (= @!/*forecast :psps-zonal)
@@ -380,8 +382,9 @@
                                       @!/param-layers))))
 
 (defn- clear-info! []
-  (mb/clear-point!)
+  (mb/remove-markers!)
   (reset! !/last-clicked-info [])
+  (reset! !/show-measure-tool? false)
   (when (get-forecast-opt :block-info?)
     (reset! !/show-info? false)))
 
@@ -609,6 +612,8 @@
                #(set-show-info! false)])
             (when @!/show-match-drop?
               [match-drop-tool @my-box #(reset! !/show-match-drop? false) refresh-fire-names! user-id])
+            (when @!/show-measure-tool?
+              [measure-tool @my-box #(reset! !/show-measure-tool? false)])
             (when @!/show-camera?
               [camera-tool @my-box #(reset! !/show-camera? false)])])
          [legend-box
@@ -639,9 +644,11 @@
 (defn- map-layer []
   (r/with-let [mouse-down? (r/atom false)
                cursor-fn   #(cond
-                              @mouse-down?                           "grabbing"
-                              (or @!/show-info? @!/show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
-                              :else                                  "grab")]
+                              @mouse-down?               "grabbing"
+                              (or @!/show-info?
+                                  @!/show-match-drop?
+                                  @!/show-measure-tool?) "crosshair"
+                              :else                      "grab")]
     [:div#map {:class (<class $p-mb-cursor)
                :style {:cursor (cursor-fn) :height "100%" :position "absolute" :width "100%"}
                :on-mouse-down #(reset! mouse-down? true)
