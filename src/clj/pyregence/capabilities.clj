@@ -216,12 +216,18 @@
                     (map str/capitalize (rest parts))))))
 
 ; FIXME get user-id from session on backend
-(defn get-fire-names [user-id]
+(defn get-fire-names
+  "Returns all unique fires from the layers atom parsed into the format
+   needed on the front-end. Takes special care to deal with match drop fires.
+   An example return value can be seen below:
+   {:foo {:opt-label \"foo\", :filter \"foo\", :auto-zoom? true,
+    :bar {:opt-label \"bar\", :filter \"bar\", :auto-zoom? true}}"
+  [user-id]
   (let [match-drop-names (->> (call-sql "get_user_match_names" user-id)
                               (reduce (fn [acc row]
                                         (assoc acc (:job_id row) (:display_name row)))
                                       {}))]
-    (->> (:trinity @layers)
+    (->> (apply merge (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
                    (= "fire-spread-forecast" forecast)))
          (map :fire-name)
