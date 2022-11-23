@@ -315,7 +315,7 @@
   "A shortcut for modal styling."
   []
   {:background-color "rgba(0,0,0,0.4)"
-   :height           "100%"
+   :height           "100vh"
    :left             "0"
    :position         "absolute"
    :top              "0"
