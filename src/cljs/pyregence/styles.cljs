@@ -116,13 +116,15 @@
 
 (defn p-button
   "A Herb class for non-tool buttons.
-   Optionally takes :small or :large for the size of the button."
+   Optionally takes :small, :large, or :circle for the size of the button."
   [bg-color border-color color bg-color-hover color-hover & [btn-size]]
   (let [base-style     {:background-color (color-picker bg-color)
                         :border-color     (color-picker border-color)
                         :border-width     "2px"
                         :border-style     "solid"
-                        :border-radius    "20px / 50%"
+                        :border-radius    (case btn-size
+                                            :circle "50% / 50%"
+                                            "20px / 50%")
                         :color            (color-picker color)
                         :cursor           "pointer"
                         :fill             (color-picker color)
@@ -131,8 +133,9 @@
                                             "0.85rem")
                         :outline          "none"
                         :padding          (case btn-size
-                                            :small "0.5rem 0.35rem 0.4rem"
-                                            :large "0.5rem 1.75rem 0.4rem"
+                                            :small  "0.5rem 0.35rem 0.4rem"
+                                            :circle "0.25rem"
+                                            :large  "0.5rem 1.75rem 0.4rem"
                                             "0.5rem 0.75rem 0.4rem")
                         :text-transform   "uppercase"}
         disabled-style {:opacity          "0.5"

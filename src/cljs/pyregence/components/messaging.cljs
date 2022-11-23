@@ -3,6 +3,7 @@
             [reagent.core       :as r]
             [clojure.core.async :refer [chan go >! <! timeout]]
             [clojure.string     :as str]
+            [pyregence.components.svg-icons :as svg]
             [pyregence.state    :as !]
             [pyregence.styles   :as $]))
 
@@ -41,7 +42,7 @@
 (defn set-message-box-content!
   "Sets message content map with merge. Content includes title, body, mode, and action.
    The message box will show when title is not an empty string.
-   Mode can be either :close or nil.
+   Mode can be either :close, :confirm, or nil.
    Action is optional and will be executed when the mode button is clicked."
   [content]
   (swap! message-box-content merge content))
@@ -59,18 +60,20 @@
   (with-meta
     {:align-items     "center"
      :background      "white"
-     :border          "1.5px solid #009"
+     :border          (str "1.5px solid " ($/color-picker :black))
      :border-radius   "4px"
+     :box-shadow      (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
      :display         "flex"
      :flex-direction  "row"
      :flex-wrap       "nowrap"
-     :font-size       ".9rem"
+     :font-size       "1rem"
      :font-style      "italic"
+     :font-weight     "bold"
      :justify-content "space-between"
      :left            "1rem"
+     :max-width       (if @!/mobile? "90%" "50%")
      :padding         ".5rem"
      :position        "fixed"
-     :width           (if @!/mobile? "90%" "50%")
      :z-index         "10000"}
     {:media {{:max-width "800px"}
              {:width "90%"}}}))
@@ -88,9 +91,11 @@
   (with-meta
     {:border-radius "4px"
      :cursor        "pointer"
+     :fill          ($/color-picker :brown)
      :font-weight   "bold"
-     :padding       ".5rem .75rem .5rem .5rem"}
-    {:pseudo {:hover {:background-color ($/color-picker :black 0.15)}}}))
+     :padding       ".25rem"}
+    {:pseudo {:hover {:background-color ($/color-picker :brown .5)
+                      :fill             ($/color-picker :white)}}}))
 
 (defn- $message-box []
   {:margin    "15% auto"
@@ -126,11 +131,11 @@
         (when message? (reset! message @toast-message-text))
         [:div#toast-message {:class (<class $alert-box)
                              :style ($alert-transition message?)}
-         [:span {:style ($/padding ".5rem")}
+         [:span {:style {:padding ".5rem .75rem .5rem .5rem"}}
           (show-line-break @message)]
          [:span {:class    (<class $p-alert-close)
                  :on-click #(reset! toast-message-text nil)}
-          "\u274C"]]))))
+          [svg/close :height "26px" :width "26px"]]]))))
 
 (defn- button [label & callback]
   [:input {:class    (<class $/p-form-button)
@@ -142,9 +147,9 @@
 (defn message-box-modal
   "Creates a message box modal component."
   []
-  (let [{:keys [title body mode action]} @message-box-content]
+  (let [{:keys [title body mode action cancel-fn]} @message-box-content]
     (when-not (= "" title)
-      [:div {:style ($/modal)}
+      [:div {:style ($/combine $/modal {:position "fixed"})}
        [:div {:style ($/combine $message-box [$/align :text :left])}
         [:div {:style ($/action-box)}
          [:div {:style ($/action-header)}
@@ -155,31 +160,17 @@
             [:label {:style {:font-size ".95rem"}}
              (show-line-break body)])
           (condp = mode
-            :close [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
-                    [button "Close" #(do
-                                       (when action (action))
-                                       (close-message-box!))]]
+            :close   [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
+                      [button "Close" #(do
+                                         (when action (action))
+                                         (close-message-box!))]]
+            :confirm [:div {:style {:align-content "space-between"
+                                    :display       "flex"
+                                    :margin-top    "4px"}}
+                      [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
+                       [button "No, Cancel" #(do (when cancel-fn (cancel-fn))
+                                                 (close-message-box!))]]
+                      [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
+                       [button "Yes, Continue" #(do (action)
+                                                    (close-message-box!))]]]
             [:<>])]]]])))
-
-(defn confirmation-modal
-  "Creates a message box model component, allowing the user to confirm and continue an action or cancel."
-  []
-  (let [{:keys [title body action cancel-fn]} @message-box-content]
-    (when-not (= "" title)
-      [:div {:style ($/combine $/modal {:position "fixed"})}
-       [:div {:style ($/combine $message-box [$/align :text :left])}
-        [:div {:style ($/action-box)}
-         [:div {:style ($/action-header)}
-          [:label {:style ($/padding "1px" :l)} title]]
-         [:div {:style ($/combine $/flex-col {:padding "1.6rem"})}
-          (if (vector? body)
-            body
-            [:label {:style {:font-size ".95rem"}}
-             (show-line-break body)])
-          [:div#call-to-actions {:style {:display "flex" :align-content "space-between" :margin-top "4px"}}
-           [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
-            [button "No, Cancel" #(do (when cancel-fn (cancel-fn))
-                                      (close-message-box!))]]
-           [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
-            [button "Yes, Continue" #(do (action)
-                                         (close-message-box!))]]]]]]])))
