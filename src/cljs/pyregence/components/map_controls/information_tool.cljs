@@ -180,7 +180,7 @@
    no-convert
    cur-hour
    close-fn!]
-  (r/with-let [click-event (mb/add-single-click-popup! #(get-point-info! (mb/get-overlay-bbox)))]
+  (r/with-let [click-event (mb/enqueue-marker-on-click! #(get-point-info! (mb/get-overlay-bbox)))]
     (let [render-content (fn [box-height box-width mobile?]
                           (let [has-point?    (mb/get-overlay-center)
                                 single-point? (number? @!/last-clicked-info)
@@ -188,9 +188,9 @@
                                                 (contains? @!/no-data-quantities (str @!/last-clicked-info))
                                                 (or (empty? @!/last-clicked-info)
                                                     (->> @!/last-clicked-info
-                                                      (map (fn [entry]
-                                                             (contains? @!/no-data-quantities (str (:band entry)))))
-                                                      (every? true?))))]
+                                                         (map (fn [entry]
+                                                                (contains? @!/no-data-quantities (str (:band entry)))))
+                                                         (every? true?))))]
                             (cond
                               (not has-point?)
                               [loading-cover
@@ -253,4 +253,5 @@
           close-fn!
           render-content nil nil false]]))
     (finally
+      (mb/remove-markers!)
       (mb/remove-event! click-event))))

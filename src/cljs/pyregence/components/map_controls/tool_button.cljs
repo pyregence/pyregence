@@ -37,6 +37,7 @@
        :layers          [svg/layers]
        :legend          [svg/legend]
        :magnify-zoom-in [svg/magnify-zoom-in]
+       :measure-ruler   [svg/measure-ruler]
        :my-location     [svg/my-location]
        :next-button     [svg/next-button]
        :right-arrow     [svg/right-arrow]

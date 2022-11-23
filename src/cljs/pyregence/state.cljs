@@ -58,6 +58,8 @@ that there are 145 different time steps in this specific forecast."}
   show-legend? (r/atom true))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Match Drop Tool."}
   show-match-drop? (r/atom false))
+(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Mesaure Distance Tool."}
+  show-measure-tool? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Side Panel."}
   show-panel? (r/atom true))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Red Flag Warning Tool."}
