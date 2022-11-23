@@ -81,6 +81,7 @@
    (->> [[:info
           (str (hs-str @!/show-info?) " point information")
           #(do (set-show-info! (not @!/show-info?))
+               (reset! !/show-measure-tool? false)
                (reset! !/show-match-drop? false)
                (reset! !/show-camera? false))
           @!/show-info?]
@@ -88,6 +89,7 @@
            [:flame
             (str (hs-str @!/show-match-drop?) " match drop tool")
             #(do (swap! !/show-match-drop? not)
+                 (reset! !/show-measure-tool? false)
                  (set-show-info! false)
                  (reset! !/show-camera? false))
             @!/show-match-drop?])
@@ -96,7 +98,8 @@
             (str (hs-str @!/show-camera?) " cameras")
             #(do (swap! !/show-camera? not)
                  (set-show-info! false)
-                 (reset! !/show-match-drop? false))
+                 (reset! !/show-match-drop? false)
+                 (reset! !/show-measure-tool? false))
             @!/show-camera?])
          (when-not (get-any-level-key :disable-flag?)
            [:flag
@@ -106,6 +109,12 @@
            [:clock
             (str (hs-str @!/show-fire-history?) " fire history")
             toggle-fire-history-layer!])
+         [:measure-ruler
+          "Measure Distance Tool"
+          #(do (set-show-info! false)
+               (reset! !/show-camera? false)
+               (reset! !/show-match-drop? false)
+               (swap! !/show-measure-tool? not))]
          [:legend
           (str (hs-str @!/show-legend?) " legend")
           #(swap! !/show-legend? not)
