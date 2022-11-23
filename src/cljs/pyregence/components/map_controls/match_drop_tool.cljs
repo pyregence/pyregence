@@ -8,6 +8,7 @@
             [pyregence.components.messaging        :refer [set-message-box-content!]]
             [pyregence.components.resizable-window :refer [resizable-window]]
             [pyregence.config                      :as c]
+            [pyregence.state                       :as !]
             [pyregence.styles                      :as $]
             [pyregence.utils.async-utils           :as u-async]
             [pyregence.utils.time-utils            :as u-time]
@@ -23,10 +24,24 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- refresh-fire-names!
+  "Updates the capabilities atom with all unique fires from the back-end
+   layers atom, parsed into the proper format. An example value from
+   get-fire-names can be seen below:
+   {:foo {:opt-label \"foo\", :filter \"foo\", :auto-zoom? true,
+    :bar {:opt-label \"bar\", :filter \"bar\", :auto-zoom? true}}"
+  [user-id]
+  (go
+    (as-> (u-async/call-clj-async! "get-fire-names" user-id) fire-names
+      (<! fire-names)
+      (:body fire-names)
+      (edn/read-string fire-names)
+      (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge fire-names))))
+
 (defn- poll-status
   "Continually polls for updated information about the match drop run every 5 seconds.
    Stops polling on finish or error signal."
-  [job-id refresh-fire-names! user-id]
+  [job-id user-id]
   (go
     (while @poll?
       (let [{:keys [message md-status log]} (-> (u-async/call-clj-async! "get-md-status" job-id)
@@ -50,7 +65,7 @@
 
 (defn- initiate-match-drop!
   "Initiates the match drop run and initiates polling for updates."
-  [display-name [lon lat] md-date md-hour refresh-fire-names! user-id]
+  [display-name [lon lat] md-date md-hour user-id]
   (go
     (let [datetime   (.toString (js/Date. (+ md-date (* md-hour 3600000))))
           match-chan (u-async/call-clj-async! "initiate-md"
@@ -67,7 +82,7 @@
         (if error
           (set-message-box-content! {:body (str "Error: " error)})
           (do (reset! poll? true)
-              (poll-status job-id refresh-fire-names! user-id)))))))
+              (poll-status job-id user-id)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -110,7 +125,7 @@
 (defn match-drop-tool
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular
    location and date/time."
-  [parent-box close-fn! refresh-fire-names! user-id]
+  [parent-box close-fn! user-id]
   (r/with-let [display-name (r/atom "")
                lon-lat      (r/atom [0 0])
                md-date      (r/atom (u-time/current-date-ms)) ; Stored in milliseconds
@@ -144,7 +159,7 @@
             "Dashboard"]
            [:button {:class    (<class $/p-button :bg-color :yellow :font-color :orange :white)
                      :disabled (or (= [0 0] @lon-lat) (nil? @md-date) (nil? @md-hour))
-                     :on-click #(initiate-match-drop! @display-name @lon-lat @md-date @md-hour refresh-fire-names! user-id)}
+                     :on-click #(initiate-match-drop! @display-name @lon-lat @md-date @md-hour user-id)}
             "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event))))
