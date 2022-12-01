@@ -13,10 +13,10 @@
   [:div {:style {:display "flex" :padding ".25rem 0"}}
    (doall
     (map (fn [[key {:keys [allowed-org hover-text opt-label]}]]
-           (when (or (nil? allowed-org)
-                     (some (fn [{org-name :opt-label}]
-                             (= org-name allowed-org))
-                           user-org-list))
+           (when (or (nil? allowed-org)                ; Tab isn't organization-specific
+                     (some (fn [{org-name :opt-label}] ; Tab **is** organization-specific
+                             (= org-name allowed-org)) ; and the user is an admin or member of that org
+                           user-org-list))             ; (the organization name is in their org-list)
              ^{:key key}
              [tool-tip-wrapper
               hover-text
