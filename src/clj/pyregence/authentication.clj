@@ -57,6 +57,16 @@
   (call-sql "update_user_info" user-id settings)
   (data-response ""))
 
+;; TODO hook into UI
+(defn update-user-match-drop-access [user-id match-drop-access?]
+  (call-sql "update_user_match_drop_access" user-id match-drop-access?)
+  (data-response ""))
+
+(defn get-user-match-drop-access [user-id]
+  (if (sql-primitive (call-sql "get_user_match_drop_access" user-id))
+    (data-response "")
+    (data-response "" {:status 403})))
+
 (defn update-user-name [email new-name]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
     (do (call-sql "update_user_name" user-id new-name)
