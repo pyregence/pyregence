@@ -28,19 +28,22 @@
                              (<!)
                              (:body)
                              (edn/read-string)
-                             (sort-by :job-id #(> %1 %2))))))
+                             (sort-by :match-job-id #(> %1 %2))))))
 
-(defn- delete-match-drop! [job-id]
+(defn- delete-match-drop! [match-job-id]
   (go
-    (<! (u-async/call-clj-async! "delete-match-drop" job-id))
-    (get-user-match-drops @_user-id)
-    (toast-message! (str "Match drop " job-id " has been deleted."))))
+    (if (:success (<! (u-async/call-clj-async! "delete-match-drop" match-job-id))) ; issue the back-end deletion
+      (do
+        (toast-message! (str "Match drop " match-job-id " is queued to be deleted. "
+                             "Please click the 'Refresh' button."))
+        (get-user-match-drops @_user-id)) ; refresh the dashboard
+      (toast-message! (str "Something went wrong while deleting " match-job-id ".")))))
 
 ;; Helper
 
-(defn- show-job-log-modal! [job-id job-log]
+(defn- show-job-log-modal! [match-job-id job-log]
   (set-message-box-content!
-   {:title (str "Match Drop #" job-id)
+   {:title (str "Match Drop #" match-job-id)
     :body  [:div {:style {:max-height "300px"
                           :overflow-y "scroll"
                           :overflow-x "hidden"}}
@@ -54,14 +57,14 @@
       (subs 0 16)
       (str ":" (u-time/pad-zero (.getSeconds js-date)))))
 
-(defn- handle-delete-match-drop [job-id display-name]
+(defn- handle-delete-match-drop [match-job-id display-name]
   (let [message (str "Are you sure that you want to delete the Match Drop\n"
                      "with name \"%s\" and Job ID \"%s\"?\n"
                      "This action is irreversible.\n\n")]
     (set-message-box-content! {:mode   :confirm
                                :title  "Delete Match Drop"
-                               :body   (format message display-name job-id)
-                               :action #(delete-match-drop! job-id)})))
+                               :body   (format message display-name match-job-id)
+                               :action #(delete-match-drop! match-job-id)})))
 
 ;; Styles
 
@@ -79,27 +82,32 @@
    [:tr
     (doall (map-indexed (fn [i col] ^{:key i} [:th col]) cols))]])
 
-(defn- match-drop-item [{:keys [job-id display-name md-status message created-at updated-at request job-log]}]
+(defn- match-drop-item [{:keys [match-job-id runway-job-id display-name md-status message created-at updated-at request job-log]}]
   (let [{:keys [common-args]} (:script-args request)]
     [:tr
-     [:td job-id] ; "Job ID"
+     [:td match-job-id] ; "Job ID"
      [:td {:width "10%"} display-name] ; "Fire Name"
      [:td md-status] ; "Status"
      [:td {:width "25%"} message] ; "Message"
      [:td {:width "10%"} ; "Lon, Lat"
-      (->> (select-keys common-args [:lon :lat])
-         (vals)
-         (map #(-> % (str) (subs 0 6)))
-         (string/join ", "))]
-     [:td (subs (:ignition-time common-args) 0 16)] ; "Ignition Time (UTC)"
+      (if-let [lon-lat (some->> (select-keys common-args [:lon :lat])
+                                (vals)
+                                (map #(-> % (str) (subs 0 6)))
+                                (string/join ", "))]
+        lon-lat
+        "N/A")]
+     [:td ; "Ignition Time (UTC)"
+      (if (some? common-args)
+        (subs (:ignition-time common-args) 0 16)
+        "N/A")]
      [:td (fmt-datetime created-at)] ; "Time Started (UTC)"
      [:td (fmt-datetime updated-at)] ; "Last Updated (UTC)"
      [:td (u-time/ms->hhmmss (- updated-at created-at))] ; "Elapsed Time"
-     [:td [:a {:href "#" :on-click #(show-job-log-modal! job-id job-log)} "View Logs"]] ; "Logs"
+     [:td [:a {:href "#" :on-click #(show-job-log-modal! match-job-id job-log)} "View Logs"]] ; "Logs"
      [:td ; "Delete"
       [:div {:style {:display "flex" :justify-content "center"}}
        [icon-button :trash
-                    #(handle-delete-match-drop job-id display-name)
+                    #(handle-delete-match-drop match-job-id display-name)
                     nil
                     :btn-size :circle]]]]))
 
@@ -117,7 +125,7 @@
            "Logs"
            "Delete"]]
    [:tbody
-    (map (fn [{:keys [job-id] :as md}] ^{:key job-id}
+    (map (fn [{:keys [match-job-id] :as md}] ^{:key match-job-id}
            [match-drop-item md])
          @match-drops)]])
 

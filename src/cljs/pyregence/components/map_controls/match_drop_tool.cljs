@@ -41,17 +41,17 @@
 (defn- poll-status
   "Continually polls for updated information about the match drop run every 5 seconds.
    Stops polling on finish or error signal."
-  [job-id user-id]
+  [match-job-id user-id]
   (go
     (while @poll?
-      (let [{:keys [message md-status log]} (-> (u-async/call-clj-async! "get-md-status" job-id)
+      (let [{:keys [message md-status log]} (-> (u-async/call-clj-async! "get-md-status" match-job-id)
                                                 (<!)
                                                 (:body)
                                                 (edn/read-string))]
         (case md-status
           0 (do
               (refresh-fire-names! user-id)
-              (set-message-box-content! {:body (str "Finished running match-drop-" job-id ".")})
+              (set-message-box-content! {:body (str "Finished running match-drop-" match-job-id ".")})
               (reset! poll? false))
 
           2 (set-message-box-content! {:body message})
@@ -59,7 +59,7 @@
           (do
             (println message)
             (js/console.error log)
-            (set-message-box-content! {:body (str "Error running match-drop-" job-id ".\n\n" message)})
+            (set-message-box-content! {:body (str "Error running match-drop-" match-job-id ".\n\n" message)})
             (reset! poll? false))))
       (<! (timeout 5000)))))
 
@@ -78,11 +78,11 @@
                                  :body   "Initiating match drop run."
                                  :mode   :close
                                  :action #(reset! poll? false)}) ; TODO the close button is for dev, disable on final product
-      (let [{:keys [error job-id]} (edn/read-string (:body (<! match-chan)))]
+      (let [{:keys [error match-job-id]} (edn/read-string (:body (<! match-chan)))]
         (if error
           (set-message-box-content! {:body (str "Error: " error)})
           (do (reset! poll? true)
-              (poll-status job-id user-id)))))))
+              (poll-status match-job-id user-id)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
