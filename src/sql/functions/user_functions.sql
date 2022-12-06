@@ -144,6 +144,24 @@ CREATE OR REPLACE FUNCTION update_user_name(_user_id integer, _name text)
 
 $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION update_user_match_drop_access(_user_id integer, _match_drop_access boolean)
+ RETURNS void AS $$
+
+    UPDATE users
+    SET match_drop_access = _match_drop_access
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION get_user_match_drop_access(_user_id integer)
+ RETURNS boolean AS $$
+
+    SELECT match_drop_access
+    FROM users
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
 ---
 ---  Organizations
 ---

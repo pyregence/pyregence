@@ -11,6 +11,7 @@
                                               get-org-non-member-users
                                               get-org-member-users
                                               get-user-info
+                                              get-user-match-drop-access
                                               log-in
                                               log-out
                                               remove-org-user
@@ -19,6 +20,7 @@
                                               update-org-info
                                               update-org-user-role
                                               update-user-info
+                                              update-user-match-drop-access
                                               update-user-name
                                               verify-user-email]]
             [pyregence.cameras        :refer [get-cameras
@@ -36,37 +38,39 @@
             [pyregence.email          :refer [send-email]]
             [pyregence.views          :refer [data-response]]))
 
-(def name->fn {"add-org-user"             add-org-user
-               "add-new-user"             add-new-user
-               "get-all-layers"           get-all-layers
-               "get-cameras"              get-cameras
-               "get-current-image"        get-current-image
-               "get-fire-names"           get-fire-names
-               "get-layers"               get-layers
-               "get-layer-name"           get-layer-name
-               "get-match-drops"          get-match-drops
-               "get-md-status"            get-md-status
-               "get-organizations"        get-organizations
-               "get-org-non-member-users" get-org-non-member-users
-               "get-org-member-users"     get-org-member-users
-               "get-user-info"            get-user-info
-               "get-user-layers"          get-user-layers
-               "get-red-flag-layer"       get-red-flag-layer
-               "initiate-md"              initiate-md!
-               "log-in"                   log-in
-               "log-out"                  log-out
-               "remove-org-user"          remove-org-user
-               "send-email"               send-email
-               "set-capabilities"         set-capabilities!
-               "set-all-capabilities"     set-all-capabilities!
-               "set-user-password"        set-user-password
-               "remove-workspace"         remove-workspace!
-               "user-email-taken"         user-email-taken
-               "update-org-info"          update-org-info
-               "update-org-user-role"     update-org-user-role
-               "update-user-info"         update-user-info
-               "update-user-name"         update-user-name
-               "verify-user-email"        verify-user-email})
+(def name->fn {"add-org-user"                  add-org-user
+               "add-new-user"                  add-new-user
+               "get-all-layers"                get-all-layers
+               "get-cameras"                   get-cameras
+               "get-current-image"             get-current-image
+               "get-fire-names"                get-fire-names
+               "get-layers"                    get-layers
+               "get-layer-name"                get-layer-name
+               "get-match-drops"               get-match-drops
+               "get-md-status"                 get-md-status
+               "get-organizations"             get-organizations
+               "get-org-non-member-users"      get-org-non-member-users
+               "get-org-member-users"          get-org-member-users
+               "get-user-info"                 get-user-info
+               "get-user-layers"               get-user-layers
+               "get-user-match-drop-access"    get-user-match-drop-access
+               "get-red-flag-layer"            get-red-flag-layer
+               "initiate-md"                   initiate-md!
+               "log-in"                        log-in
+               "log-out"                       log-out
+               "remove-org-user"               remove-org-user
+               "send-email"                    send-email
+               "set-capabilities"              set-capabilities!
+               "set-all-capabilities"          set-all-capabilities!
+               "set-user-password"             set-user-password
+               "remove-workspace"              remove-workspace!
+               "user-email-taken"              user-email-taken
+               "update-org-info"               update-org-info
+               "update-org-user-role"          update-org-user-role
+               "update-user-info"              update-user-info
+               "update-user-name"              update-user-name
+               "update-user-match-drop-access" update-user-match-drop-access
+               "verify-user-email"             verify-user-email})
 
 (defn- fn->sym [f]
   (-> (str f)
