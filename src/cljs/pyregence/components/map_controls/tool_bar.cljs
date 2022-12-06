@@ -1,6 +1,5 @@
 (ns pyregence.components.map-controls.tool-bar
-  (:require [cljs.reader                                   :as edn]
-            [clojure.core.async                            :refer [<! go]]
+  (:require [clojure.core.async                            :refer [<! go]]
             [pyregence.components.common                   :refer [tool-tip-wrapper hs-str]]
             [pyregence.components.map-controls.tool-button :refer [tool-button]]
             [pyregence.components.mapbox                   :as mb]
@@ -96,7 +95,6 @@
   (get-match-drop-access user-id)
   (fn [_]
     [:div#tool-bar {:style ($/combine $/tool $/tool-bar {:top "16px"})}
-     (js/console.log "HELLO" @match-drop-access?)
      (->> [[:info
             (str (hs-str @!/show-info?) " point information")
             #(do (set-show-info! (not @!/show-info?))
