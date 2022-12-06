@@ -695,7 +695,7 @@
            "Accept"]]]]])))
 
 (defn- loading-modal []
-  [:div#message-modal {:style ($/modal)}
+  [:div#loading-modal {:style ($/modal)}
    [:div {:style ($message-modal true)}
     [:h3 {:style {:margin-bottom "0"
                   :padding       "1rem"
@@ -733,7 +733,10 @@
          [message-modal]
          [nav-bar {:capabilities         @!/capabilities
                    :current-forecast     @!/*forecast
-                   :is-admin?            (> (count @!/user-org-list) 0)
+                   :is-admin?            (->> @!/user-org-list
+                                              (filter #(= "admin" (:role %)))
+                                              (count)
+                                              (< 0)) ; admin of at least one org
                    :logged-in?           user-id
                    :mobile?              @!/mobile?
                    :user-org-list        @!/user-org-list
