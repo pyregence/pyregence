@@ -107,7 +107,9 @@
   (go
     (let [response (<! (u-async/call-clj-async! "get-organizations" user-id))]
       (reset! *orgs (if (:success response)
-                      (edn/read-string (:body response))
+                      (->> (:body response)
+                           (edn/read-string)
+                           (filter #(= "admin" (:role %)))) ; only show orgs user is an admin of
                       []))
       (reset! pending-get-organizations? false)
 

@@ -66,12 +66,13 @@
 
 (defn get-organizations
   "Given a user's id, returns the list of organizations that they belong to
-   and are an admin of."
+   and are an admin or a member of."
   [user-id]
   (->> (call-sql "get_organizations" user-id)
-       (mapv (fn [{:keys [org_id org_name email_domains auto_add auto_accept]}]
+       (mapv (fn [{:keys [org_id org_name role_id email_domains auto_add auto_accept]}]
                {:opt-id        org_id
                 :opt-label     org_name
+                :role          (if (= role_id 1) "admin" "member")
                 :email-domains email_domains
                 :auto-add?     auto_add
                 :auto-accept?  auto_accept}))
