@@ -4,17 +4,18 @@
 -- Retrieve match job with job_id
 CREATE OR REPLACE FUNCTION get_match_job(_job_id integer)
  RETURNS TABLE (
-    job_id           integer,
-    user_id          integer,
-    created_at       timestamp,
-    updated_at       timestamp,
-    md_status        integer,
-    display_name     varchar,
-    message          text,
-    job_log          text,
-    elmfire_done     boolean,
-    gridfire_done    boolean,
-    request          text
+    job_id              integer,
+    user_id             integer,
+    created_at          timestamp,
+    updated_at          timestamp,
+    md_status           integer,
+    display_name        varchar,
+    message             text,
+    job_log             text,
+    elmfire_done        boolean,
+    gridfire_done       boolean,
+    request             text,
+    geoserver_workspace text
  ) AS $$
 
     SELECT job_uid,
@@ -27,7 +28,8 @@ CREATE OR REPLACE FUNCTION get_match_job(_job_id integer)
         job_log,
         elmfire_done,
         gridfire_done,
-        request::text
+        request::text,
+        geoserver_workspace
     FROM match_jobs
     WHERE job_uid = _job_id
 
@@ -36,17 +38,18 @@ $$ LANGUAGE SQL;
 -- Retrieve all match drop jobs associated with user_rid
 CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
  RETURNS TABLE (
-    job_id           integer,
-    user_id          integer,
-    created_at       timestamp,
-    updated_at       timestamp,
-    md_status        integer,
-    display_name     varchar,
-    message          text,
-    job_log          text,
-    elmfire_done     boolean,
-    gridfire_done    boolean,
-    request          text
+    job_id              integer,
+    user_id             integer,
+    created_at          timestamp,
+    updated_at          timestamp,
+    md_status           integer,
+    display_name        varchar,
+    message             text,
+    job_log             text,
+    elmfire_done        boolean,
+    gridfire_done       boolean,
+    request             text,
+    geoserver_workspace text
  ) AS $$
 
     SELECT job_uid,
@@ -59,7 +62,8 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
         job_log,
         elmfire_done,
         gridfire_done,
-        request::text
+        request::text,
+        geoserver_workspace
     FROM match_jobs
     WHERE user_rid = _user_id
 
@@ -102,13 +106,14 @@ $$ LANGUAGE SQL;
 
 -- Update job message
 CREATE OR REPLACE FUNCTION update_match_job(
-    _job_id           integer,
-    _md_status        integer,
-    _display_name     varchar,
-    _message          text,
-    _elmfire_done     boolean,
-    _gridfire_done    boolean,
-    _request          text
+    _job_id              integer,
+    _md_status           integer,
+    _display_name        varchar,
+    _message             text,
+    _elmfire_done        boolean,
+    _gridfire_done       boolean,
+    _request             text,
+    _geoserver_workspace text
  ) RETURNS void AS $$
 
     UPDATE match_jobs
@@ -119,7 +124,8 @@ CREATE OR REPLACE FUNCTION update_match_job(
         elmfire_done = coalesce(_elmfire_done, elmfire_done),
         gridfire_done = coalesce(_gridfire_done, gridfire_done),
         request = coalesce(_request::jsonb, request),
-        updated_at = now()
+        updated_at = now(),
+        geoserver_workspace = coalesce(_geoserver_workspace, geoserver_workspace)
     WHERE job_uid = _job_id
 
 $$ LANGUAGE SQL;
@@ -135,5 +141,15 @@ CREATE OR REPLACE FUNCTION get_user_match_names(_user_rid integer)
     FROM match_jobs
     WHERE md_status = 0
         AND user_rid = _user_rid
+
+$$ LANGUAGE SQL;
+
+-- Delete the selected match job from the match_jobs table
+CREATE OR REPLACE FUNCTION delete_match_job(_job_rid integer)
+ RETURNS void AS $$
+
+   DELETE
+   FROM match_jobs
+   WHERE job_uid = _job_rid
 
 $$ LANGUAGE SQL;

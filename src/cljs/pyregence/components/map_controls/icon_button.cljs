@@ -42,6 +42,7 @@
       :close           [svg/close :height "20px" :width "20px"]
       :clock           [svg/clock :height "20px" :width "20px"]
       :dropdown-arrow  [svg/dropdown-arrow :height "20px" :width "20px"]
+      :exclamation     [svg/exclamation-point :height "20px" :width "20px"]
       :extent          [svg/extent :height "20px" :width "20px"]
       :flag            [svg/flag :height "20px" :width "20px"]
       :flame           [svg/flame :height "20px" :width "20px"]

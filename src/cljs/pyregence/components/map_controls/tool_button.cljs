@@ -32,6 +32,7 @@
        :close           [svg/close]
        :clock           [svg/clock]
        :dropdown-arrow  [svg/dropdown-arrow]
+       :exclamation     [svg/exclamation-point]
        :extent          [svg/extent]
        :flag            [svg/flag]
        :flame           [svg/flame]

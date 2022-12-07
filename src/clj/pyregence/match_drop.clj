@@ -1,5 +1,5 @@
 (ns pyregence.match-drop
-  (:import  [java.util TimeZone]
+  (:import  [java.util TimeZone UUID]
             [java.text SimpleDateFormat])
   (:require [clojure.data.json :as json]
             [clojure.string    :as str]
@@ -59,15 +59,16 @@
 
 (defn- sql-result->job [result]
   (-> result
-      (rename-keys {:job_id        :job-id
-                    :user_id       :user-id
-                    :created_at    :created-at
-                    :updated_at    :updated-at
-                    :md_status     :md-status
-                    :display_name  :display-name
-                    :job_log       :job-log
-                    :elmfire_done  :elmfire-done?
-                    :gridfire_done :gridfire-done?})
+      (rename-keys {:job_id              :job-id
+                    :user_id             :user-id
+                    :created_at          :created-at
+                    :updated_at          :updated-at
+                    :md_status           :md-status
+                    :display_name        :display-name
+                    :job_log             :job-log
+                    :elmfire_done        :elmfire-done?
+                    :gridfire_done       :gridfire-done?
+                    :geoserver_workspace :geoserver-workspace})
       (update :request json->clj)))
 
 (defn- get-match-job [job-id]
@@ -85,11 +86,11 @@
 (defn- initialize-match-job! [user-id]
   (sql-primitive (call-sql "initialize_match_job" user-id)))
 
-(defn- update-match-job! [job-id {:keys [md-status display-name message elmfire-done? gridfire-done? request]}]
-  (call-sql "update_match_job" job-id md-status display-name message elmfire-done? gridfire-done? (when request (clj->json request))))
+(defn- update-match-job! [job-id {:keys [md-status display-name message elmfire-done? gridfire-done? request geoserver-workspace]}]
+  (call-sql "update_match_job" job-id md-status display-name message elmfire-done? gridfire-done? (when request (clj->json request)) geoserver-workspace))
 
 (defn- send-to-server-wrapper!
-  [host port {:keys [job-id request] :as job} & [extra-payload]]
+  [host port {:keys [job-id request]} & [extra-payload]]
   (when-not (send-to-server! host
                              port
                              (-> request
@@ -120,12 +121,13 @@
                                              :geosync-args {:action              "add"
                                                             :data-dir            data-dir
                                                             :geoserver-workspace geoserver-workspace}}}
-        job                 {:display-name   (or display-name (str "Match Drop " job-id))
-                             :md-status      2
-                             :message        (str "Job " job-id " Initiated.")
-                             :elmfire-done?  false
-                             :gridfire-done? false
-                             :request        request}]
+        job                 {:display-name        (or display-name (str "Match Drop " job-id))
+                             :md-status           2
+                             :message             (str "Job " job-id " Initiated.")
+                             :elmfire-done?       false
+                             :gridfire-done?      false
+                             :request             request
+                             :geoserver-workspace geoserver-workspace}]
     (update-match-job! job-id job)
     (log-str "Initiating match drop job #" job-id)
     (send-to-server-wrapper! (get-md-config :dps-host)
@@ -158,6 +160,25 @@
   (->> (call-sql "get_user_match_jobs" user-id)
        (mapv sql-result->job)
        (data-response)))
+
+(defn delete-match-drop!
+  "Deletes the specified match drop from the DB and removes it from the GeoServer."
+  [job-id]
+  (let [{:keys [geoserver-workspace]} (get-match-job job-id)
+        geosync-host (get-md-config :geosync-host)
+        geosync-port (get-md-config :geosync-port)
+        request      {:job-id        (str (UUID/randomUUID))
+                      :response-host (get-md-config :app-host)
+                      :response-port (get-md-config :app-port)
+                      :script-args   {:geosync-args {:action "remove" :geoserver-workspace geoserver-workspace}}}]
+    ; Delete job from DB
+    (call-sql "delete_match_job" job-id)
+    ; Remove associated workspace from GeoServer
+    (if (send-to-server! geosync-host
+                         geosync-port
+                         (-> request (json/write-str :key-fn kebab->camel)))
+      (data-response (str "The " geoserver-workspace " workspace has been removed from " geosync-host "."))
+      (data-response (str "Connection to " geosync-host " failed.")))))
 
 ;;; Job queue progression
 
