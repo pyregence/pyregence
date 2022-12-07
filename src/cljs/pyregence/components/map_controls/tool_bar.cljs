@@ -15,7 +15,7 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^{:doc "Whether or not the currently logged in user has match drop access."}
+(defonce ^:private ^{:doc "Whether or not the currently logged in user has match drop access."}
   match-drop-access? (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -80,7 +80,7 @@
   (mb/set-visible-by-title! "fire-history-centroid" @!/show-fire-history?)
   (mb/clear-popup! "fire-history"))
 
-(defn- get-match-drop-access [user-id]
+(defn- set-match-drop-access! [user-id]
   (go
    (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access" user-id))]
      (if (:success response)
@@ -92,7 +92,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn tool-bar [set-show-info! get-any-level-key user-id]
-  (get-match-drop-access user-id)
+  (set-match-drop-access! user-id)
   (fn [_]
     [:div#tool-bar {:style ($/combine $/tool $/tool-bar {:top "16px"})}
      (->> [[:info

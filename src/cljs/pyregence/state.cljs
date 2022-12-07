@@ -1,8 +1,6 @@
 (ns pyregence.state
   (:require [reagent.core :as r]))
 
-; TODO: Add detailed docstrings to each of the state atoms.
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Forecast/Layer State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
