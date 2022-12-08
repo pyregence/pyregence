@@ -15,14 +15,18 @@
             [pyregence.utils.time-utils     :as u-time]
             [reagent.core                   :as r]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce ^:private _user-id    (r/atom nil))
 (defonce ^:private match-drops (r/atom []))
+(defonce ^:private ^{:doc "Whether or not the currently logged in user has match drop access."}
+  match-drop-access? (r/atom false))
 
 ;; API Requests
 
-(defn- get-user-match-drops [user-id]
+(defn- set-user-match-drops! [user-id]
   (go
     (reset! match-drops (->> (u-async/call-clj-async! "get-match-drops" user-id)
                              (<!)
@@ -36,8 +40,15 @@
       (do
         (toast-message! (str "Match drop " match-job-id " is queued to be deleted. "
                              "Please click the 'Refresh' button."))
-        (get-user-match-drops @_user-id)) ; refresh the dashboard
-      (toast-message! (str "Something went wrong while deleting " match-job-id ".")))))
+        (set-user-match-drops! @_user-id)) ; refresh the dashboard
+      (toast-message! (str "Something went wrong while deleting Match Drop " match-job-id ".")))))
+
+(defn- set-match-drop-access! [user-id]
+  (go
+   (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access" user-id))]
+     (if (:success response)
+       (reset! match-drop-access? true)
+       (reset! match-drop-access? false)))))
 
 ;; Helper
 
@@ -134,7 +145,7 @@
    [:h3 {:style {:margin-bottom "0"}}
     "Match Drop Dashboard"]
    [:div {:style {:position "absolute" :right "6%"}}
-    [icon-button :refresh #(get-user-match-drops user-id) "Refresh"]]])
+    [icon-button :refresh #(set-user-match-drops! user-id) "Refresh"]]])
 
 (defn- no-match-drops []
   [:div {:style {:border        (str "2px solid " ($/color-picker :brown))
@@ -149,20 +160,37 @@
     [:a {:href "/"} "home"]
     " and use the Match Drop Tool to start a job."]])
 
+(defn- no-access []
+  [:div {:style ($/root)}
+   [:div {:style {:border        (str "2px solid " ($/color-picker :brown))
+                  :border-radius "5px"
+                  :display       "flex"
+                  :fill          ($/color-picker :brown)
+                  :margin-top    "3rem"
+                  :padding       "1rem"}}
+     [svg/exclamation-point :height "20px" :width "20px"]
+     [:span {:style {:padding-left "0.5rem"}}
+      "It doesn't look like you have access to use Match Drop. Please contact "
+      [:a {:href "mailto:support@pyregence.org"} "support@pyregence.org"]
+      " for more information."]]])
+
 (defn root-component
   "The root component for the match drop /dashboard page.
    Displays a header, refresh button, and a table of a user's match drops "
   [{:keys [user-id]}]
   (reset! _user-id user-id)
-  (get-user-match-drops user-id)
+  (set-user-match-drops! user-id)
+  (set-match-drop-access! user-id)
   (fn [_]
     (cond
-      ; TODO need to make sure the user is logged in AND verified to use Match Drop
       (nil? user-id) ; User is not logged in
       (do (u-browser/redirect-to-login! "/dashboard")
           nil)
 
-      :else  ; User is logged in
+      (not @match-drop-access?) ; user doesn't have match drop access
+      [no-access]
+
+      :else  ; User is logged in and has match drop access
       [:div {:style ($/root)}
        [message-box-modal]
        [:div {:style ($/combine $/flex-col {:padding "2rem"})}
