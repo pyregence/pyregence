@@ -52,12 +52,12 @@
     (data-response user-info)
     (data-response "" {:status 403})))
 
-;; TODO hook into UI
+;; TODO hook into UI add success/failure branches
 (defn update-user-info [user-id settings]
   (call-sql "update_user_info" user-id settings)
   (data-response ""))
 
-;; TODO hook into UI
+;; TODO hook into UI and add success/failure branches
 (defn update-user-match-drop-access [user-id match-drop-access?]
   (call-sql "update_user_match_drop_access" user-id match-drop-access?)
   (data-response ""))
@@ -65,7 +65,8 @@
 (defn get-user-match-drop-access [user-id]
   (if (sql-primitive (call-sql "get_user_match_drop_access" user-id))
     (data-response "")
-    (data-response "" {:status 403})))
+    (data-response (str "There is no user with an id of " user-id)
+                   {:status 403})))
 
 (defn update-user-name [email new-name]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
