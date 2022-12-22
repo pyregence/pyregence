@@ -1,6 +1,5 @@
 (ns pyregence.match-drop
-  (:import  [java.util TimeZone UUID]
-            [java.text SimpleDateFormat])
+  (:import  [java.util UUID])
   (:require [clojure.data.json :as json]
             [clojure.string    :as str]
             [clojure.set       :refer [rename-keys]]
@@ -10,7 +9,7 @@
             [triangulum.sockets         :refer [send-to-server!]]
             [triangulum.type-conversion :refer [json->clj clj->json]]
             [pyregence.capabilities :refer [set-capabilities!]]
-            [pyregence.utils        :refer [nil-on-error]]
+            [pyregence.utils        :refer [nil-on-error convert-date-string]]
             [pyregence.views        :refer [data-response]]))
 
 ;;; Helper Functions
@@ -35,13 +34,7 @@
          (cons (first words))
          (str/join ""))))
 
-(defn- convert-date-string [date-str]
-  (let [in-format  (SimpleDateFormat. "yyyy-MM-dd HH:mm z")
-        out-format (doto (SimpleDateFormat. "yyyyMMdd_HHmmss")
-                     (.setTimeZone (TimeZone/getTimeZone "UTC")))]
-    (->> date-str
-         (.parse in-format)
-         (.format out-format))))
+
 
 (defn- get-md-config [k]
   (get-config :match-drop k))
@@ -156,6 +149,7 @@
                                                             :north-buffer        24}
                                              :geosync-args {:action              "add"
                                                             :data-dir            data-dir
+                                                            :geoserver-url       (get-config :geoserver :match-drop)
                                                             :geoserver-workspace geoserver-workspace}}}
         match-job           {:display-name        (or display-name (str "Match Drop " match-job-id))
                              :md-status           2

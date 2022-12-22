@@ -48,6 +48,16 @@ CREATE OR REPLACE FUNCTION get_user_id_by_email(_email text)
 
 $$ LANGUAGE SQL;
 
+-- Returns user email for a given user id
+CREATE OR REPLACE FUNCTION get_email_by_user_id(_user_id integer)
+ RETURNS text AS $$
+
+    SELECT email
+    FROM users
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
 -- Inserts a new user with its info
 CREATE OR REPLACE FUNCTION add_new_user(
     _email       text,

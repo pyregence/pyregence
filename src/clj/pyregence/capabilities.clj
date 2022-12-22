@@ -225,7 +225,9 @@
   [user-id]
   (let [match-drop-names (->> (call-sql "get_user_match_names" user-id)
                               (reduce (fn [acc row]
-                                        (assoc acc (:job_id row) (:display_name row)))
+                                        (assoc acc (:match_job_id row)
+                                                   (str (:display_name row)
+                                                        " (Match Drop)")))
                                       {}))]
     (->> (apply merge (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
@@ -233,13 +235,14 @@
          (map :fire-name)
          (distinct)
          (mapcat (fn [fire-name]
-                   (let [job-id (some-> fire-name
-                                        (str/split #"match-drop-")
-                                        (second)
-                                        (Integer/parseInt))]
-                     (when (or (nil? job-id) (contains? match-drop-names job-id))
+                   (let [match-job-id (some-> fire-name
+                                              (str/split #"match-drop-")
+                                              (second)
+                                              (Integer/parseInt))]
+                     (when (or (nil? match-job-id)
+                               (contains? match-drop-names match-job-id))
                        [(keyword fire-name)
-                        {:opt-label  (or (get match-drop-names job-id)
+                        {:opt-label  (or (get match-drop-names match-job-id)
                                          (fire-name-capitalization fire-name))
                          :filter     fire-name
                          :auto-zoom? true}]))))
