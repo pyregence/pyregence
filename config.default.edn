@@ -37,6 +37,9 @@
                      :dps-host       "wx.pyregence.org"
                      :dps-port       31337
                      :dps-name       "Data Provisioning Server"
+                     :weather-host       "wx.localhost"
+                     :weather-port       31342
+                     :weather-name       "wx Data Provisioning Server"
                      :max-queue-size 5
                      :data-dir       "/srv/gis/fire_spread_forecast"}
  :mail              {:host     "<host>"

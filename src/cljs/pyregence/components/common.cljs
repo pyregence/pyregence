@@ -192,6 +192,19 @@
                   :value hour}
          (str hour ":00 " timezone)])]]))
 
+(defn input-datetime
+  "Creates a labeled datetime input."
+  [label id value min-date max-date on-change]
+  [:div
+   [:label {:for id :style {:font-wieight "bold" :font-size "0.9rem"}} label]
+   [:input {:id        id
+            :style     {:width "100%"}
+            :type      "datetime-local"
+            :value     value
+            :min       min-date
+            :max       max-date
+            :on-change on-change}]])
+
 (defn simple-form
   "Simple form component. Adds input fields, an input button, and optionally a footer."
   ([title button-text fields on-click]

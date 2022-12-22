@@ -2,6 +2,7 @@
   (:import  [java.util TimeZone UUID]
             [java.text SimpleDateFormat])
   (:require [clojure.data.json :as json]
+            [clojure.edn       :as edn]
             [clojure.string    :as str]
             [clojure.set       :refer [rename-keys]]
             [triangulum.config          :refer [get-config]]
@@ -13,7 +14,15 @@
             [pyregence.utils        :refer [nil-on-error]]
             [pyregence.views        :refer [data-response]]))
 
-;;; Helper Functions
+;;-----------------------------------------------------------------------------
+;; State
+;;-----------------------------------------------------------------------------
+
+(def ^:private available-dates (atom {}))
+
+;;-----------------------------------------------------------------------------
+;;  Helper Functions
+;;-----------------------------------------------------------------------------
 ;; TODO these will be part of triangulum.utils
 
 (defn- camel->kebab
@@ -53,9 +62,12 @@
    (get-md-config :geosync-host)  (get-md-config :geosync-name)
    (get-md-config :elmfire-host)  (get-md-config :elmfire-name)
    (get-md-config :gridfire-host) (get-md-config :gridfire-name)
-   (get-md-config :dps-host)      (get-md-config :dps-name)})
+   (get-md-config :dps-host)      (get-md-config :dps-name)
+   (get-md-config :weather-host)  (get-md-config :weather-name)})
 
-;; SQL fns
+;;-----------------------------------------------------------------------------
+;; SQL Functions
+;;-----------------------------------------------------------------------------
 
 (defn- sql-result->job [result]
   (-> result
@@ -173,7 +185,9 @@
                              match-job)
     {:match-job-id match-job-id}))
 
-;;; Public API
+;;-----------------------------------------------------------------------------
+;; Public API
+;;-----------------------------------------------------------------------------
 
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
@@ -191,6 +205,12 @@
 
      :else
      (create-match-job! params))))
+
+(defn get-md-status
+  "Returns the current status of the given match drop run."
+  [match-job-id]
+  (data-response (-> (get-match-job-from-match-job-id match-job-id)
+                     (select-keys [:message :md-status :job-log]))))
 
 (defn get-match-drops
   "Returns the user's match drops"
@@ -226,13 +246,32 @@
       (data-response (str "Connection to " geosync-host " failed.")
                      {:status 403}))))
 
-;;; Job queue progression
+(defn get-available-dates []
+  (if (empty? @available-dates)
+    (data-response "No available dates found." {:status 403})
+    (data-response @available-dates)))
 
-(defn get-md-status
-  "Returns the current status of the given match drop run."
-  [match-job-id]
-  (data-response (-> (get-match-job-from-match-job-id match-job-id)
-                     (select-keys [:message :md-status :job-log]))))
+(defn initiate-available-dates!
+  "TODO."
+  []
+  ;; Send request to DPS for the dates
+  (let [runway-job-id (str (UUID/randomUUID))
+        weather-host  (get-md-config :weather-host)
+        weather-port  (get-md-config :weather-port)
+        request       {:job-id        runway-job-id
+                       :response-host (get-md-config :app-host)
+                       :response-port (get-md-config :app-port)
+                       :script-args   {}}]
+    (if (send-to-server! weather-host
+                         weather-port
+                         (-> request (json/write-str :key-fn kebab->camel)))
+      (data-response (str "get-available-dates request successfully sent to " weather-host ":" weather-port))
+      (data-response (str "Connection to " weather-host " failed.")
+                     {:status 403}))))
+
+;;-----------------------------------------------------------------------------
+;; Job queue progression
+;;-----------------------------------------------------------------------------
 
 (defn- get-model [message]
   (second (re-find #".*(elmfire|gridfire).*" (str/lower-case message))))
@@ -316,8 +355,10 @@
    From the above Runway `job-id` we can make a request to the SQL database to
    get the info about the match drop job that the initial `msg` is associated with."
   [msg]
+  (println "The msg is: " msg) ;TODO remove this line
   (if-let [{:keys [job-id ; Note that this is the `runway-job-id`
                    status
+                   message
                    response-host
                    response-port]
             :as   response} (nil-on-error
@@ -325,6 +366,17 @@
     ;; TODO: Use spec to validate the message
     (let [{:keys [request md-status match-job-id] :as job} (get-match-job-from-runway-id job-id)]
       (cond
+        ;; If the msg is from the weather-host, we just want to update `available-dates
+        (= response-host (get-md-config :weather-host))
+        (case status
+          0 (do                                                         ; Runway job DONE
+              (log-str (str "Available dates are: " (edn/read-string message)))
+              (reset! available-dates (edn/read-string message)))
+          1 (log-str (str "Something went wrong when trying to access " ; Runway job ERROR
+                          response-host ". The response from "
+                          response-host " is: " msg))
+          2 (log-str (str response-host " info: " message)))           ; Runway job INFO
+
         (nil? job)
         (error-response {:job-id job-id} response-host response-port
                         (format "The Match Job with runway-job-id %s could not be found in the Pyrecast database." job-id))

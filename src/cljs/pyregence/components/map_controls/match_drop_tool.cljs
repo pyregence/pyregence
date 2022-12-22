@@ -3,7 +3,10 @@
             [clojure.edn                           :as edn]
             [clojure.pprint                        :refer [cl-format]]
             [herb.core                             :refer [<class]]
-            [pyregence.components.common           :refer [labeled-input input-hour limited-date-picker]]
+            [pyregence.components.common           :refer [input-datetime
+                                                           input-hour
+                                                           labeled-input
+                                                           limited-date-picker]]
             [pyregence.components.mapbox           :as mb]
             [pyregence.components.messaging        :refer [set-message-box-content!]]
             [pyregence.components.resizable-window :refer [resizable-window]]
@@ -11,6 +14,7 @@
             [pyregence.state                       :as !]
             [pyregence.styles                      :as $]
             [pyregence.utils.async-utils           :as u-async]
+            [pyregence.utils.dom-utils             :as u-dom]
             [pyregence.utils.time-utils            :as u-time]
             [reagent.core                          :as r]))
 
@@ -18,11 +22,47 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def poll? (atom false))
+(def poll?           (atom false))
+(def available?      (r/atom false))
+(def available-dates (r/atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- initiate-available-dates!
+  "TODO"
+  []
+  (js/console.log "inside intiaite-available-dates")
+  (go
+    (if (-> (u-async/call-clj-async! "initiate-available-dates")
+            (<!)
+            (:success))
+      (do
+        (js/console.log "SUCCESS - available is true now")
+        (reset! available? true))
+      (do
+        (js/console.log "Error when calling initiate")
+        (println "Something went wrong when trying to call initiate-available-dates!")
+        (reset! available? false)))))
+
+
+(defn- set-available-dates!
+  "Populates the available-dates atom with the result from calling
+   get-available-dates on the back-end. Example:
+   {:max-date-str '2021-05-27T18:00'
+    :min-date-str '2022-12-02T18:00'}"
+  []
+  (js/console.log "inside set-available-dates")
+  (when @available?
+    (js/console.log "available is true")
+    (go
+      (js/console.log "Raw call: " (clj->js (edn/read-string (:body (<! (u-async/call-clj-async! "get-available-dates"))))))
+      (reset! available-dates
+              (-> (u-async/call-clj-async! "get-available-dates")
+                (<!)
+                (:body)
+                (edn/read-string))))))
 
 (defn- refresh-fire-names!
   "Updates the capabilities atom with all unique fires from the back-end
@@ -65,12 +105,11 @@
 
 (defn- initiate-match-drop!
   "Initiates the match drop run and initiates polling for updates."
-  [display-name [lon lat] md-date md-hour user-id]
+  [display-name [lon lat] md-datetime user-id]
   (go
-    (let [datetime   (.toString (js/Date. (+ md-date (* md-hour 3600000))))
-          match-chan (u-async/call-clj-async! "initiate-md"
+    (let [match-chan (u-async/call-clj-async! "initiate-md"
                                               {:display-name  (when-not (empty? display-name) display-name)
-                                               :ignition-time (u-time/time-zone-iso-date datetime true)
+                                               :ignition-time (u-time/time-zone-iso-date md-datetime true)
                                                :lon           lon
                                                :lat           lat
                                                :user-id       user-id})]
@@ -126,11 +165,13 @@
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular
    location and date/time."
   [parent-box close-fn! user-id]
-  (r/with-let [display-name (r/atom "")
-               lon-lat      (r/atom [0 0])
-               md-date      (r/atom (u-time/current-date-ms)) ; Stored in milliseconds
-               md-hour      (r/atom (.getHours (js/Date.))) ; hour (0-23) in the local timezone
-               click-event  (mb/enqueue-marker-on-click! #(reset! lon-lat (first %)))]
+  (r/with-let [local-time-zone (u-time/get-time-zone (new js/Date))
+               display-name    (r/atom "")
+               lon-lat         (r/atom [0 0])
+               md-datetime     (r/atom "")
+               click-event     (mb/enqueue-marker-on-click! #(reset! lon-lat (first %)))
+               _               (initiate-available-dates!)
+               _               (set-available-dates!)]
     [:div#match-drop-tool
      [resizable-window
       parent-box
@@ -145,21 +186,32 @@
            c/match-drop-instructions]
           [labeled-input "Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Location" @lon-lat]
-          [:div {:style {:display "flex"}}
-           [:div {:style {:flex "auto" :padding "0 0.5rem 0 0"}}
-            [limited-date-picker "Forecast Date:" "md-date" md-date 7 0]]
-           [:div {:style {:flex "auto" :padding "0 0 0 0.5rem"}}
-            [input-hour "Start Time:" "md-time" md-hour]]]
+          (if (empty? @available-dates)
+            (do
+              (set-available-dates!)
+              [:p "LOADING..."])
+            [input-datetime
+             (str "Date/Time (" local-time-zone ")")
+             "md-datetime"
+             @md-datetime
+             (:min-date-str @available-dates)
+             (:max-date-str @available-dates)
+             #(reset! md-datetime (u-dom/input-value %))])
           [:div {:style {:display         "flex"
                          :flex-shrink     0
                          :justify-content "space-between"
                          :margin          "0.75rem 0 2.5rem"}}
+           [:button {:class (<class $/p-themed-button)
+                     :on-click #(do
+                                  (set-available-dates!)
+                                  (js/console.log "available dates are: " (clj->js @available-dates)))}
+            "Get Dates"]
            [:button {:class    (<class $/p-themed-button)
                      :on-click #(js/window.open "/dashboard" "/dashboard")}
             "Dashboard"]
            [:button {:class    (<class $/p-button :bg-color :yellow :font-color :orange :white)
-                     :disabled (or (= [0 0] @lon-lat) (nil? @md-date) (nil? @md-hour))
-                     :on-click #(initiate-match-drop! @display-name @lon-lat @md-date @md-hour user-id)}
+                     :disabled (or (= [0 0] @lon-lat) (= "" @md-datetime))
+                     :on-click #(initiate-match-drop! @display-name @lon-lat @md-datetime user-id)}
             "Submit"]]]])]]
     (finally
       (mb/remove-event! click-event))))

@@ -13,7 +13,7 @@
       num-str
       (str "0" num-str))))
 
-(defn- get-time-zone
+(defn get-time-zone
   "Returns the string code for the local timezone."
   [js-date]
   (-> js-date
