@@ -41,17 +41,27 @@
 (defn- poll-status
   "Continually polls for updated information about the match drop run every 5 seconds.
    Stops polling on finish or error signal."
-  [match-job-id user-id]
+  [match-job-id user-id display-name ignition-time]
   (go
     (while @poll?
       (let [{:keys [message md-status log]} (-> (u-async/call-clj-async! "get-md-status" match-job-id)
                                                 (<!)
                                                 (:body)
-                                                (edn/read-string))]
+                                                (edn/read-string))
+            email (-> (u-async/call-clj-async! "get-email-by-user-id" user-id)
+                      (<!)
+                      (:body))]
         (case md-status
           0 (do
               (refresh-fire-names! user-id)
               (set-message-box-content! {:body (str "Finished running match-drop-" match-job-id ".")})
+              (<! (u-async/call-clj-async! "send-email"
+                                           email
+                                           :match-drop
+                                           {:match-job-id  match-job-id
+                                            :display-name  display-name
+                                            :fire-name     (str "match-drop-" match-job-id)
+                                            :ignition-time ignition-time}))
               (reset! poll? false))
 
           2 (set-message-box-content! {:body message})
@@ -67,13 +77,14 @@
   "Initiates the match drop run and initiates polling for updates."
   [display-name [lon lat] md-date md-hour user-id]
   (go
-    (let [datetime   (.toString (js/Date. (+ md-date (* md-hour 3600000))))
-          match-chan (u-async/call-clj-async! "initiate-md"
-                                              {:display-name  (when-not (empty? display-name) display-name)
-                                               :ignition-time (u-time/time-zone-iso-date datetime true)
-                                               :lon           lon
-                                               :lat           lat
-                                               :user-id       user-id})]
+    (let [datetime      (.toString (js/Date. (+ md-date (* md-hour 3600000))))
+          ignition-time (u-time/time-zone-iso-date datetime true)
+          match-chan    (u-async/call-clj-async! "initiate-md"
+                                                 {:display-name  (when-not (empty? display-name) display-name)
+                                                  :ignition-time ignition-time
+                                                  :lon           lon
+                                                  :lat           lat
+                                                  :user-id       user-id})]
       (set-message-box-content! {:title  "Processing Match Drop"
                                  :body   "Initiating match drop run."
                                  :mode   :close
@@ -82,7 +93,7 @@
         (if error
           (set-message-box-content! {:body (str "Error: " error)})
           (do (reset! poll? true)
-              (poll-status match-job-id user-id)))))))
+              (poll-status match-job-id user-id display-name ignition-time)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles

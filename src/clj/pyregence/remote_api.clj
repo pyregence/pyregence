@@ -35,7 +35,8 @@
                                               remove-workspace!]]
             [pyregence.match-drop     :refer [initiate-md! delete-match-drop! get-md-status get-match-drops]]
             [pyregence.red-flag       :refer [get-red-flag-layer]]
-            [pyregence.email          :refer [send-email]]
+            [pyregence.email          :refer [send-email!]]
+            [pyregence.utils          :refer [get-email-by-user-id]]
             [pyregence.views          :refer [data-response]]))
 
 (def name->fn {"add-org-user"                  add-org-user
@@ -44,6 +45,7 @@
                "get-all-layers"                get-all-layers
                "get-cameras"                   get-cameras
                "get-current-image"             get-current-image
+               "get-email-by-user-id"          get-email-by-user-id
                "get-fire-names"                get-fire-names
                "get-layers"                    get-layers
                "get-layer-name"                get-layer-name
@@ -60,7 +62,7 @@
                "log-in"                        log-in
                "log-out"                       log-out
                "remove-org-user"               remove-org-user
-               "send-email"                    send-email
+               "send-email"                    send-email!
                "set-capabilities"              set-capabilities!
                "set-all-capabilities"          set-all-capabilities!
                "set-user-password"             set-user-password

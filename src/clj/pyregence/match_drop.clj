@@ -1,6 +1,5 @@
 (ns pyregence.match-drop
-  (:import  [java.util TimeZone UUID]
-            [java.text SimpleDateFormat])
+  (:import  [java.util UUID])
   (:require [clojure.data.json :as json]
             [clojure.string    :as str]
             [clojure.set       :refer [rename-keys]]
@@ -10,7 +9,7 @@
             [triangulum.sockets         :refer [send-to-server!]]
             [triangulum.type-conversion :refer [json->clj clj->json]]
             [pyregence.capabilities :refer [set-capabilities!]]
-            [pyregence.utils        :refer [nil-on-error]]
+            [pyregence.utils        :refer [nil-on-error convert-date-string]]
             [pyregence.views        :refer [data-response]]))
 
 ;;; Helper Functions
@@ -35,13 +34,7 @@
          (cons (first words))
          (str/join ""))))
 
-(defn- convert-date-string [date-str]
-  (let [in-format  (SimpleDateFormat. "yyyy-MM-dd HH:mm z")
-        out-format (doto (SimpleDateFormat. "yyyyMMdd_HHmmss")
-                     (.setTimeZone (TimeZone/getTimeZone "UTC")))]
-    (->> date-str
-         (.parse in-format)
-         (.format out-format))))
+
 
 (defn- get-md-config [k]
   (get-config :match-drop k))
