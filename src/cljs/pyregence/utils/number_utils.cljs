@@ -5,6 +5,12 @@
 ;; Utility Functions - Numbers and Calculations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn between?
+  "Is minimum < x < maximum ?"
+  [x minimum maximum]
+  {:pre [(number? x) (number? minimum) (number? maximum)]}
+  (and (> x minimum) (< x maximum)))
+
 (defn clean-units
   "Cleans units by adding/not adding a space when needed for units."
   [units]

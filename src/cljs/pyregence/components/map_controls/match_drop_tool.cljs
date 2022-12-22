@@ -11,6 +11,7 @@
             [pyregence.state                       :as !]
             [pyregence.styles                      :as $]
             [pyregence.utils.async-utils           :as u-async]
+            [pyregence.utils.number-utils          :as u-num]
             [pyregence.utils.time-utils            :as u-time]
             [reagent.core                          :as r]))
 
@@ -77,23 +78,33 @@
   "Initiates the match drop run and initiates polling for updates."
   [display-name [lon lat] md-date md-hour user-id]
   (go
-    (let [datetime      (.toString (js/Date. (+ md-date (* md-hour 3600000))))
-          ignition-time (u-time/time-zone-iso-date datetime true)
-          match-chan    (u-async/call-clj-async! "initiate-md"
-                                                 {:display-name  (when-not (empty? display-name) display-name)
-                                                  :ignition-time ignition-time
-                                                  :lon           lon
-                                                  :lat           lat
-                                                  :user-id       user-id})]
-      (set-message-box-content! {:title  "Processing Match Drop"
-                                 :body   "Initiating match drop run."
-                                 :mode   :close
-                                 :action #(reset! poll? false)}) ; TODO the close button is for dev, disable on final product
-      (let [{:keys [error match-job-id]} (edn/read-string (:body (<! match-chan)))]
-        (if error
-          (set-message-box-content! {:body (str "Error: " error)})
-          (do (reset! poll? true)
-              (poll-status match-job-id user-id display-name ignition-time)))))))
+    ;; Lat and Lon must be within CONUS
+    (if (and (u-num/between? lon -125 -66)
+             (u-num/between? lat 25 50))
+      ;; Lat and Lon are valid, proceed
+      (let [datetime      (.toString (js/Date. (+ md-date (* md-hour 3600000))))
+            ignition-time (u-time/time-zone-iso-date datetime true)
+            match-chan    (u-async/call-clj-async! "initiate-md"
+                                                   {:display-name  (when-not (empty? display-name) display-name)
+                                                    :ignition-time ignition-time
+                                                    :lon           lon
+                                                    :lat           lat
+                                                    :user-id       user-id})]
+        (set-message-box-content! {:title  "Processing Match Drop"
+                                   :body   "Initiating match drop run."
+                                   :mode   :close
+                                   :action #(reset! poll? false)}) ; TODO the close button is for dev, disable on final product
+        (let [{:keys [error match-job-id]} (edn/read-string (:body (<! match-chan)))]
+          (if error
+            (set-message-box-content! {:body (str "Error: " error)})
+            (do (reset! poll? true)
+                (poll-status match-job-id user-id display-name ignition-time)))))
+      ;; Lat and Lon are invalid, let user know
+      (set-message-box-content! {:title "Lat/Lon Error"
+                                 :body  (str "Error: The Latitude of your ignition point must be between 25 and 50\n"
+                                             " and its Longitude must be between -125 and -66.\n\n"
+                                             "Please select another point and try again.")
+                                 :mode :close}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
