@@ -149,6 +149,7 @@
                                                             :north-buffer        24}
                                              :geosync-args {:action              "add"
                                                             :data-dir            data-dir
+                                                            :geoserver-url       (get-config :geoserver :match-drop)
                                                             :geoserver-workspace geoserver-workspace}}}
         match-job           {:display-name        (or display-name (str "Match Drop " match-job-id))
                              :md-status           2
