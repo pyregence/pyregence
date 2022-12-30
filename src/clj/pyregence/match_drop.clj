@@ -141,12 +141,16 @@
                              :response-port (get-md-config :app-port)
                              :script-args   {:common-args  (merge params {:ignition-time ignition-time
                                                                           :fire-name     fire-name})
-                                             :dps-args     {:add-to-active-fires "yes"
-                                                            :scp-input-deck      "both"
-                                                            :south-buffer        24
-                                                            :west-buffer         24
-                                                            :east-buffer         24
-                                                            :north-buffer        24}
+                                             :dps-args     {:add-to-active-fires  "yes"
+                                                            :scp-input-deck       "elmfire" ;TODO change this to "both" once GridFire is ready
+                                                            :south-buffer         12
+                                                            :west-buffer          12
+                                                            :east-buffer          12
+                                                            :north-buffer         12
+                                                            :run-hours            24
+                                                            :num-ensemble-members 200
+                                                            :initialization-type  "points_within_polygon"
+                                                            :ignition-radius      300}
                                              :geosync-args {:action              "add"
                                                             :data-dir            data-dir
                                                             :geoserver-url       (get-config :geoserver :match-drop)
