@@ -4,6 +4,7 @@
             [clojure.string                 :as string]
             [goog.string                    :refer [format]]
             [herb.core                      :refer [<class]]
+            [lambdaisland.ansi              :refer [text->hiccup]]
             [pyregence.components.messaging :refer [message-box-modal
                                                     set-message-box-content!
                                                     toast-message!]]
@@ -99,7 +100,9 @@
      [:td match-job-id] ; "Job ID"
      [:td {:width "10%"} display-name] ; "Fire Name"
      [:td md-status] ; "Status"
-     [:td {:width "25%"} message] ; "Message"
+     [:td {:width "25%"} ; "Message"
+      [:pre {:style {:max-width "550px"}}
+       (text->hiccup message)]]
      [:td {:width "10%"} ; "Lon, Lat"
       (if-let [lon-lat (some->> (select-keys common-args [:lon :lat])
                                 (vals)
