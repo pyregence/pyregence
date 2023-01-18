@@ -9,7 +9,7 @@
             [triangulum.sockets         :refer [send-to-server!]]
             [triangulum.type-conversion :refer [json->clj clj->json]]
             [pyregence.capabilities :refer [set-capabilities!]]
-            [pyregence.utils        :refer [nil-on-error convert-date-string]]
+            [pyregence.utils        :as u]
             [pyregence.views        :refer [data-response]]))
 
 ;;; Helper Functions
@@ -131,7 +131,7 @@
   [{:keys [display-name user-id ignition-time _lon _lat] :as params}]
   (let [runway-job-id       (str (UUID/randomUUID))
         match-job-id        (initialize-match-job! user-id)
-        model-time          (convert-date-string ignition-time)
+        model-time          (u/convert-date-string ignition-time)
         fire-name           (str "match-drop-" match-job-id)
         data-dir            (str (get-md-config :data-dir) "/match-drop-" match-job-id "/" model-time)
         geoserver-workspace (str "fire-spread-forecast_match-drop-" match-job-id "_" model-time)
@@ -139,22 +139,37 @@
         request             {:job-id        runway-job-id
                              :response-host (get-md-config :app-host)
                              :response-port (get-md-config :app-port)
-                             :script-args   {:common-args  (merge params {:ignition-time ignition-time
-                                                                          :fire-name     fire-name})
-                                             :dps-args     {:add-to-active-fires  "yes"
-                                                            :scp-input-deck       "elmfire" ;TODO change this to "both" once GridFire is ready
-                                                            :south-buffer         12
-                                                            :west-buffer          12
-                                                            :east-buffer          12
-                                                            :north-buffer         12
-                                                            :run-hours            24
-                                                            :num-ensemble-members 200
-                                                            :initialization-type  "points_within_polygon"
-                                                            :ignition-radius      300}
-                                             :geosync-args {:action              "add"
-                                                            :data-dir            data-dir
-                                                            :geoserver-url       (get-config :geoserver :match-drop)
-                                                            :geoserver-workspace geoserver-workspace}}}
+                             :script-args   {:common-args   (merge params {:ignition-time ignition-time
+                                                                           :fire-name     fire-name})
+                                             :dps-args      {:west-buffer          12
+                                                             :east-buffer          12
+                                                             :south-buffer         12
+                                                             :north-buffer         12
+                                                             :fuel-source          "landfire"
+                                                             :fuel-version         "2.2.0"
+                                                             :wx-start-time        (u/round-down-to-nearest-hour model-time)
+                                                             :num-ensemble-members 200
+                                                             :point-ignition       true
+                                                             :polygon-ignition     false
+                                                             :ignition-radius      300
+                                                             :lfmdate              (u/date-24-hours-behind model-time)
+                                                             :transfer-mode        "scp"
+                                                             :outdir               "TODO"} ;TODO need to decide on input deck directory
+                                             :elmfire-args  {:scp-input-deck       "both"
+                                                             :west-buffer          12
+                                                             :east-buffer          12
+                                                             :south-buffer         12
+                                                             :north-buffer         12
+                                                             :add-to-active-fires  "yes"
+                                                             :initialization-type  "points_within_polygon"
+                                                             :num-ensemble-members 200
+                                                             :ignition-radius      300
+                                                             :run-hours            24}
+                                             :gridfire-args {} ;TODO after GridFire script is completed and all args are known
+                                             :geosync-args  {:action              "add"
+                                                             :data-dir            data-dir
+                                                             :geoserver-url       (get-config :geoserver :match-drop)
+                                                             :geoserver-workspace geoserver-workspace}}}
         match-job           {:display-name        (or display-name (str "Match Drop " match-job-id))
                              :md-status           2
                              :message             (str "Job " match-job-id " Initiated.")
@@ -318,7 +333,7 @@
                    status
                    response-host
                    response-port]
-            :as   response} (nil-on-error
+            :as   response} (u/nil-on-error
                              (json/read-str msg :key-fn (comp keyword camel->kebab)))]
     ;; TODO: Use spec to validate the message
     (let [{:keys [request md-status match-job-id] :as job} (get-match-job-from-runway-id job-id)]
