@@ -101,7 +101,7 @@
      [:td {:width "10%"} display-name] ; "Fire Name"
      [:td md-status] ; "Status"
      [:td {:width "25%"} ; "Message"
-      [:pre {:style {:margin-bottom 0 :max-width "550px"}}
+      [:pre {:style {:line-height 1.0 :margin-bottom 0 :max-width "550px"}}
        (text->hiccup message)]]
      [:td {:width "10%"} ; "Lon, Lat"
       (if-let [lon-lat (some->> (select-keys common-args [:lon :lat])
