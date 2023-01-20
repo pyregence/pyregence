@@ -56,11 +56,13 @@
 (defn- show-job-log-modal! [match-job-id job-log]
   (set-message-box-content!
    {:title (str "Match Drop #" match-job-id)
-    :body  [:div {:style {:max-height "300px"
+    :body  [:div {:style {:max-height "400px"
                           :overflow-y "scroll"
-                          :overflow-x "hidden"}}
-            (doall (map-indexed (fn [i line] ^{:key i} [:div line])
-                                (string/split job-log #"\\n")))]
+                          :overflow-x "auto"}}
+            [:pre {:style {:line-height 1.0 :margin-bottom 0 :max-width "50vw"}}
+             (doall (map-indexed (fn [i line] ^{:key i}
+                                   (text->hiccup line))
+                                 (string/split job-log #"\\n")))]]
     :mode  :close}))
 
 (defn- fmt-datetime [js-date]
@@ -101,7 +103,7 @@
      [:td {:width "10%"} display-name] ; "Fire Name"
      [:td md-status] ; "Status"
      [:td {:width "25%"} ; "Message"
-      [:pre {:style {:line-height 1.0 :margin-bottom 0 :max-width "550px"}}
+      [:pre {:style {:line-height 1.0 :margin-bottom 0 :max-width "550px" :overflow "auto"}}
        (text->hiccup message)]]
      [:td {:width "10%"} ; "Lon, Lat"
       (if-let [lon-lat (some->> (select-keys common-args [:lon :lat])
