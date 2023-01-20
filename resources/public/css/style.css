@@ -197,7 +197,7 @@ samp {
 pre {
   margin-top: 0;
   margin-bottom: 1rem;
-  overflow: auto;
+  overflow: none;
   -ms-overflow-style: scrollbar;
 }
 
