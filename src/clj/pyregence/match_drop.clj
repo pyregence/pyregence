@@ -165,7 +165,10 @@
                                                              :num-ensemble-members 200
                                                              :ignition-radius      300
                                                              :run-hours            24}
-                                             :gridfire-args {} ;TODO after GridFire script is completed and all args are known
+                                             :gridfire-args {:num-ensemble-members 200
+                                                             :run-hours            24
+                                                             :wx-start-time        (u/round-down-to-nearest-hour model-time)
+                                                             :suppression          false}
                                              :geosync-args  {:action              "add"
                                                              :data-dir            data-dir
                                                              :geoserver-url       (get-config :geoserver :match-drop)
