@@ -143,7 +143,7 @@
                              :response-port (get-md-config :app-port)
                              :script-args   {:common-args   (merge params {:ignition-time ignition-time
                                                                            :fire-name     fire-name})
-                                             :dps-args      {:name                 fire-name
+                                             :dps-args      {:name                 (str fire-name "_" model-time)
                                                              :outdir               "/mnt/tahoe/pyrecast/fires/input_decks"
                                                              :center-lat           lat
                                                              :center-lon           lon
