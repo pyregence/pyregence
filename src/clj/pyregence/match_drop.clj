@@ -128,10 +128,12 @@
                         :message      (str "Connection to " host " failed.")})))
 
 (defn- create-match-job!
-  [{:keys [display-name user-id ignition-time _lon _lat] :as params}]
+  [{:keys [display-name user-id ignition-time lat lon] :as params}]
   (let [runway-job-id       (str (UUID/randomUUID))
         match-job-id        (initialize-match-job! user-id)
+        run-hours           24
         model-time          (u/convert-date-string ignition-time)
+        wx-start-time       (u/round-down-to-nearest-hour model-time)
         fire-name           (str "match-drop-" match-job-id)
         data-dir            (str (get-md-config :data-dir) "/match-drop-" match-job-id "/" model-time)
         geoserver-workspace (str "fire-spread-forecast_match-drop-" match-job-id "_" model-time)
@@ -141,20 +143,22 @@
                              :response-port (get-md-config :app-port)
                              :script-args   {:common-args   (merge params {:ignition-time ignition-time
                                                                            :fire-name     fire-name})
-                                             :dps-args      {:west-buffer          12
+                                             :dps-args      {:name                 fire-name
+                                                             :outdir               "/mnt/tahoe/pyrecast/fires/input_decks"
+                                                             :center-lat           lat
+                                                             :center-lon           lon
+                                                             :wx-start-time        wx-start-time
+                                                             :west-buffer          12
                                                              :east-buffer          12
                                                              :south-buffer         12
                                                              :north-buffer         12
+                                                             :do-fuel              true
                                                              :fuel-source          "landfire"
                                                              :fuel-version         "2.2.0"
-                                                             :wx-start-time        (u/round-down-to-nearest-hour model-time)
-                                                             :num-ensemble-members 200
+                                                             :do-wx                true
                                                              :point-ignition       true
                                                              :polygon-ignition     false
-                                                             :ignition-radius      300
-                                                             :lfmdate              (u/date-24-hours-behind model-time)
-                                                             :transfer-mode        "scp"
-                                                             :outdir               "TODO"} ;TODO need to decide on input deck directory
+                                                             :ignition-radius      300}
                                              :elmfire-args  {:scp-input-deck       "both"
                                                              :west-buffer          12
                                                              :east-buffer          12
@@ -164,10 +168,10 @@
                                                              :initialization-type  "points_within_polygon"
                                                              :num-ensemble-members 200
                                                              :ignition-radius      300
-                                                             :run-hours            24}
+                                                             :run-hours            run-hours}
                                              :gridfire-args {:num-ensemble-members 200
-                                                             :run-hours            24
-                                                             :wx-start-time        (u/round-down-to-nearest-hour model-time)
+                                                             :run-hours            (* run-hours 60) ; GridFire uses minutes as units under the hood
+                                                             :wx-start-time        wx-start-time
                                                              :suppression          false}
                                              :geosync-args  {:action              "add"
                                                              :data-dir            data-dir
@@ -184,6 +188,7 @@
                              :geoserver-workspace geoserver-workspace}]
     (update-match-job! match-job)
     (log-str "Initiating match drop job #" match-job-id)
+    ;; The Match Drop pipeline is started by sending a request to the DPS:
     (send-to-server-wrapper! (get-md-config :dps-host)
                              (get-md-config :dps-port)
                              match-job)
