@@ -156,7 +156,10 @@
                                                              :fuel-source          "landfire"
                                                              :fuel-version         "2.2.0"
                                                              :do-wx                true
+                                                             :do-ignition          true
                                                              :point-ignition       true
+                                                             :ignition-lat         lat
+                                                             :ignition-lon         lon
                                                              :polygon-ignition     false
                                                              :ignition-radius      300}
                                              :elmfire-args  {:scp-input-deck       "both"
