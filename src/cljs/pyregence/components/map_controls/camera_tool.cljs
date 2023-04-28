@@ -29,7 +29,7 @@
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $awf-logo-style []
+(defn- $alert-ca-logo-style []
   {:height    "auto"
    :left      "2rem"
    :min-width "100px"
@@ -101,7 +101,7 @@
                                     (reset! image-src nil)
                                     (let [image-chan (get-camera-image-chan @active-camera)]
                                       (reset! camera-age (-> (:update-time @active-camera)
-                                                             (u-time/camera-time->js-date)
+                                                             (js/Date.)
                                                              (u-time/get-time-difference)
                                                              (u-time/ms->hr)))
                                       (when (> 4 @camera-age)
@@ -119,20 +119,23 @@
                              (nil? @active-camera)
                              [:div {:style {:padding "1.2em"}}
                               "Click on a camera to view the most recent image. Powered by "
-                              [:a {:href   "http://www.alertwildfire.org/"
+                              [:a {:href   "https://alertca.live/"
                                    :ref    "noreferrer noopener"
                                    :target "_blank"}
-                               "Alert Wildfire"] "."]
+                               "ALERTCalifornia"] "."]
 
                              (>= @camera-age 4)
                              [:div {:style {:padding "1.2em"}}
-                              [:p (str "This camera has not been refreshed for " (u-num/to-precision 1 @camera-age) " hours. Please try again later.")]
-                              [:p "Click"
-                               [:a {:href   (str "https://www.alertwildfire.org/region/?camera=" (:name @active-camera))
-                                    :ref    "noreferrer noopener"
-                                    :target "_blank"}
-                                " here "]
-                               "for more information about the " (:name @active-camera) " camera."]]
+                              [:p (str "This camera has not been refreshed for " (u-num/to-precision 1 @camera-age) " hours. Please try again later.")]]
+                              ;; If we want to re-implement this, we'll have to point to a URL such as ttps://alertca.live/cam-console/2648
+                              ;; This means that we would need to parse out the camera ID from the image > url section of a cameras?name=Axis-LikelyMtn2
+                              ;; type request (the camera ID is hidden inside of that URL directly after "/img").
+                              ; [:p "Click"
+                              ;  [:a {:href   (str "https://www.alertwildfire.org/region/?camera=" (:name @active-camera))
+                              ;       :ref    "noreferrer noopener"
+                              ;       :target "_blank"}
+                              ;   " here "]
+                              ;  "for more information about the " (:name @active-camera) " camera."]]
 
                              @image-src
                              [:div
@@ -142,8 +145,8 @@
                                              :top             "2rem"
                                              :width           "100%"}}
                                [:label (str "Camera: " (:name @active-camera))]]
-                              [:img {:src   "images/awf_logo.png"
-                                     :style ($/combine $awf-logo-style)}]
+                              [:img {:src   "images/alert_ca_logo.png"
+                                     :style ($/combine $alert-ca-logo-style)}]
                               (when @!/terrain?
                                 [tool-tip-wrapper
                                  "Zoom Out to 2D"
@@ -174,8 +177,7 @@
 
                              :else
                              [:div {:style {:padding "1.2em"}}
-                              (str "Loading camera " (:name
-                                                      @active-camera) "...")]))]
+                              (str "Loading camera " (:name @active-camera) "...")]))]
       (if @!/mobile?
         [:div#wildfire-mobile-camera-tool
          {:style ($/combine $/tool $mobile-camera-tool)}

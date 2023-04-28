@@ -108,15 +108,6 @@
   [js-date]
   (str (+ 1 (.getMonth js-date)) "/" (.getDate js-date) "/" (.getFullYear js-date)))
 
-(defn camera-time->js-date
-  "Converts a time from the cameras API (YYYY-MM-DD HH:MM:SS.MFS) into a JS Date in UTC."
-  [camera-time]
-  (js/Date. (as-> camera-time %
-              (str/split % #" ")
-              (interpose "T" %)
-              (concat % "Z")
-              (apply str %))))
-
 (defn get-time-difference
   "Returns the difference in milliseconds between a JS Date object and the current time.
    Optionally returns the difference between two different JS Date objects."
