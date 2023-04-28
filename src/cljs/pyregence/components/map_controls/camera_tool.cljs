@@ -97,7 +97,7 @@
                                   (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
                                     (u-async/stop-refresh! @exit-chan)
                                     (reset! active-camera new-camera)
-                                    (reset! camera-age 0)
+                                    (reset! camera-age 0) ; in hours
                                     (reset! image-src nil)
                                     (let [image-chan (get-camera-image-chan @active-camera)]
                                       (reset! camera-age (-> (:update-time @active-camera)
@@ -126,7 +126,8 @@
 
                              (>= @camera-age 4)
                              [:div {:style {:padding "1.2em"}}
-                              [:p (str "This camera has not been refreshed for " (u-num/to-precision 1 @camera-age) " hours. Please try again later.")]]
+                              [:p (str "The " (:name @active-camera) " camera has not been refreshed for "
+                                       (u-num/to-precision 1 @camera-age) " hours. Please try again later.")]]
                               ;; If we want to re-implement this, we'll have to point to a URL such as ttps://alertca.live/cam-console/2648
                               ;; This means that we would need to parse out the camera ID from the image > url section of a cameras?name=Axis-LikelyMtn2
                               ;; type request (the camera ID is hidden inside of that URL directly after "/img").
