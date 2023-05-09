@@ -422,7 +422,7 @@
                                                  :hover-text "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label       "Active Fires"
-                  :filter          "fire-spread-forecast-dev"
+                  :filter          "fire-spread-forecast"
                   :geoserver-key   :trinity
                   :underlays       (merge common-underlays
                                           near-term-forecast-underlays
@@ -602,7 +602,7 @@
    associated metadata for the near term forecast.
 
    forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras and underlays."
-  {:fire-spread-forecast-dev  {:forecast-layer? true}
+  {:fire-spread-forecast  {:forecast-layer? true}
    :fire-active           {:forecast-layer? true}
    :fire-active-labels    {:forecast-layer? true}
    :fire-detections       {:forecast-layer? false}

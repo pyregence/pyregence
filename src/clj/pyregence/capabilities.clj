@@ -245,7 +245,7 @@
                                       {}))]
     (->> (:trinity @layers)
          (filter (fn [{:keys [forecast]}]
-                   (= "fire-spread-forecast-dev" forecast)))
+                   (= "fire-spread-forecast" forecast)))
          (map :fire-name)
          (distinct)
          (mapcat (fn [fire-name]
