@@ -29,8 +29,10 @@
 
 (defn time-slider [layer-full-time select-layer! select-time-zone!]
   (r/with-let [*speed          (r/atom 2)
+               step-count      #(count (or (:times (first @!/param-layers))
+                                           @!/param-layers))
                cycle-layer!    (fn [change]
-                                 (select-layer! (mod (+ change @!/*layer-idx) (count @!/param-layers))))
+                                 (select-layer! (mod (+ change @!/*layer-idx) (step-count))))
                loop-animation! (fn la []
                                  (when @!/animate?
                                    (cycle-layer! 1)
@@ -44,8 +46,8 @@
       [:input {:style {:width "12rem"}
                :type      "range"
                :min       "0"
-               :max       (dec (count @!/param-layers))
-               :value     (min (dec (count @!/param-layers)) (or @!/*layer-idx 0))
+               :max       (dec (step-count))
+               :value     (min (dec (step-count)) (or @!/*layer-idx 0))
                :on-change #(select-layer! (u-dom/input-int-value %))}]
       [:label layer-full-time]]
      [:span {:style {:display "flex" :margin "0 1rem"}}

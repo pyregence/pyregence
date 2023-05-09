@@ -523,10 +523,10 @@
 ;; WMS Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wms-source [layer-name geoserver-key style]
+(defn- wms-source [layer-name geoserver-key style & [layer-time]]
   {:type     "raster"
    :tileSize 256
-   :tiles    [(c/wms-layer-url layer-name geoserver-key style)]})
+   :tiles    [(c/wms-layer-url layer-name geoserver-key style layer-time)]})
 
 (defn- wms-layer [layer-name source-name opacity visible? & [z-index]]
   {:id       layer-name
@@ -540,10 +540,13 @@
 (defn- build-wms
   "Returns new WMS source and layer in the form `[source [layer]]`.
    `source` must be a valid WMS layer in the geoserver,
-   `opacity` must be a float between 0.0 and 1.0."
-  [id source geoserver-key opacity visibile? & {:keys [z-index style]}]
-  (let [new-source {id (wms-source source geoserver-key style)}
-        new-layer  (wms-layer id id opacity visibile? z-index)]
+   `opacity` must be a float between 0.0 and 1.0.
+   `layer-time` can be a timestamp or range with UTC timezone
+   (e.g. `'2009-11-01T00:00:00.000Z'`, `'2009-11-01T00:00:00.000Z/2009-12-01T00:00:00.000Z'`)."
+  [id source geoserver-key opacity visibile? & {:keys [z-index style layer-time]}]
+  (let [new-id     (str id layer-time)
+        new-source {new-id (wms-source source geoserver-key style layer-time)}
+        new-layer  (wms-layer new-id new-id opacity visibile? z-index)]
     [new-source [new-layer]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -707,11 +710,17 @@
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
-  [geo-layer geoserver-key opacity css-style]
+  [geo-layer geoserver-key opacity css-style & [layer-time]]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
         layers (hide-forecast-layers (get style "layers"))
-        [new-sources new-layers] (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style)]
+        [new-sources new-layers] (build-wms geo-layer
+                                            geo-layer
+                                            geoserver-key
+                                            opacity
+                                            true
+                                            :style css-style
+                                            :layer-time layer-time)]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
@@ -720,14 +729,20 @@
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
-  [geo-layer style-fn geoserver-key opacity css-style]
+  [geo-layer style-fn geoserver-key opacity css-style & [layer-time]]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (go
     (let [style                    (get-style)
           layers                   (hide-forecast-layers (get style "layers"))
           [new-sources new-layers] (if style-fn
                                      (<! (build-wfs fire-active geo-layer geoserver-key opacity))
-                                     (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style))]
+                                     (build-wms geo-layer
+                                                geo-layer
+                                                geoserver-key
+                                                opacity
+                                                true
+                                                :style css-style
+                                                :layer-time layer-time))]
       (update-style! style
                      :layers      layers
                      :new-sources new-sources
