@@ -4,11 +4,12 @@
             [clojure.string         :as str]
             [clojure.core.server    :refer [start-server]]
             [ring.adapter.jetty     :refer [run-jetty]]
+            [runway.simple-sockets  :as runway]
             [triangulum.cli         :refer [get-cli-options]]
             [triangulum.config      :refer [get-config]]
             [triangulum.notify      :as notify]
             [triangulum.logging     :refer [log-str set-log-path!]]
-            [triangulum.sockets     :refer [start-socket-server! stop-socket-server! socket-open? send-to-server!]]
+            [triangulum.sockets     :refer [socket-open? send-to-server!]]
             [pyregence.capabilities :refer [set-all-capabilities!]]
             [pyregence.handler      :refer [create-handler-stack]]
             [pyregence.match-drop   :refer [process-message]]))
@@ -88,13 +89,16 @@
         (reset! server (run-jetty handler config))
         (reset! clean-up-service (start-clean-up-service!))
         (set-log-path! log-dir)
-        (start-socket-server! (get-config :match-drop :app-port) process-message)
+        (when (get-config :features :match-drop)
+          (log-str "Starting Match Drop server on port " (get-config :match-drop :app-port))
+          (runway/start-server! (get-config :match-drop :app-port) process-message))
         (when (notify/available?) (notify/ready!))
         (set-all-capabilities!)))))
 
 (defn stop-server! []
   (set-log-path! "")
-  (stop-socket-server!)
+  ;; Stop the Match Drop server
+  (runway/stop-server!)
   (when @clean-up-service
     (future-cancel @clean-up-service)
     (reset! clean-up-service nil))

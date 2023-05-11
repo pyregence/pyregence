@@ -1,18 +1,23 @@
 (ns pyregence.match-drop
-  (:import  [java.util UUID])
-  (:require [clojure.data.json :as json]
+  (:import  java.util.UUID
+            javax.net.ssl.SSLSocket)
+  (:require [clojure.core.async :refer [thread]]
+            [clojure.data.json :as json]
             [clojure.string    :as str]
             [clojure.set       :refer [rename-keys]]
+            [runway.simple-sockets      :as runway]
+            [runway.utils               :refer [json-str->edn log-response!]]
             [triangulum.config          :refer [get-config]]
             [triangulum.database        :refer [call-sql sql-primitive]]
             [triangulum.logging         :refer [log-str]]
-            [triangulum.sockets         :refer [send-to-server!]]
             [triangulum.type-conversion :refer [json->clj clj->json]]
-            [pyregence.capabilities :refer [set-capabilities!]]
+            [pyregence.capabilities :refer [remove-workspace! set-capabilities!]]
             [pyregence.utils        :as u]
             [pyregence.views        :refer [data-response]]))
 
-;;; Helper Functions
+;;==============================================================================
+;; Helper Functions
+;;==============================================================================
 ;; TODO these will be part of triangulum.utils
 
 (defn- camel->kebab
@@ -34,21 +39,27 @@
          (cons (first words))
          (str/join ""))))
 
-
-
 (defn- get-md-config [k]
   (get-config :match-drop k))
 
-;;; Static data
+;; FIXME this is a bad way to determine the model from a Runway message
+(defn- get-model [message]
+  (second (re-find #".*(elmfire|gridfire).*" (str/lower-case message))))
+
+;;==============================================================================
+;; Static Data
+;;==============================================================================
 
 (def ^:private host-names
   {(get-md-config :app-host)      (get-md-config :app-name)
-   (get-md-config :geosync-host)  (get-md-config :geosync-name)
+   (get-md-config :dps-host)      (get-md-config :dps-name)
    (get-md-config :elmfire-host)  (get-md-config :elmfire-name)
    (get-md-config :gridfire-host) (get-md-config :gridfire-name)
-   (get-md-config :dps-host)      (get-md-config :dps-name)})
+   (get-md-config :geosync-host)  (get-md-config :geosync-name)})
 
-;; SQL fns
+;;==============================================================================
+;; SQL Functions
+;;==============================================================================
 
 (defn- sql-result->job [result]
   (-> result
@@ -116,26 +127,52 @@
             (when request (clj->json request))
             geoserver-workspace))
 
+;;==============================================================================
+;; Runway Communication Functions
+;;==============================================================================
+
 (defn- send-to-server-wrapper!
   [host port {:keys [match-job-id request]} & [extra-payload]]
-  (when-not (send-to-server! host
-                             port
-                             (-> request
-                                 (update :script-args #(merge % extra-payload))
-                                 (json/write-str :key-fn kebab->camel)))
-    (update-match-job! {:match-job-id match-job-id
-                        :md-status    1
-                        :message      (str "Connection to " host " failed.")})))
+  (with-open [client-socket (runway/create-ssl-client-socket host port)]
+    (if (runway/send-to-server! client-socket
+                                (-> request
+                                    (update :script-args merge extra-payload)
+                                    (json/write-str :key-fn kebab->camel)))
+      ;; TODO do something with this message
+      (do
+        (let [response (json-str->edn (runway/read-socket! client-socket))]
+          (log-str "Send-to-server was true")
+          (log-str "response:" response)
+          (log-response! response)))
+      (update-match-job! {:match-job-id match-job-id
+                          :md-status    1
+                          :message      (str "Connection to " host " failed.")}))))
+
+;; Think of other ways to handle these error responses
+(defn- error-response [request response-host response-port message]
+  (when (and response-host response-port) ; TODO: Use spec to validate these fields
+    (runway/send-to-server! response-host
+                     response-port
+                     (json/write-str
+                      (assoc-in request [:script-args :error-args] message)
+                      :key-fn (comp kebab->camel name)))))
+
+;;==============================================================================
+;; Create Match Job Functions
+;;==============================================================================
 
 (defn- create-match-job!
   [{:keys [display-name user-id ignition-time lat lon] :as params}]
   (let [runway-job-id       (str (UUID/randomUUID))
         match-job-id        (initialize-match-job! user-id)
+        west-buffer         12
+        east-buffer         12
+        south-buffer        12
+        north-buffer        12
         run-hours           24
         model-time          (u/convert-date-string ignition-time)
         wx-start-time       (u/round-down-to-nearest-hour model-time)
         fire-name           (str "match-drop-" match-job-id)
-        data-dir            (str (get-md-config :data-dir) "/match-drop-" match-job-id "/" model-time)
         geoserver-workspace (str "fire-spread-forecast_match-drop-" match-job-id "_" model-time)
         ;; TODO: consider different payloads per request instead of one large one.
         request             {:job-id        runway-job-id
@@ -143,43 +180,43 @@
                              :response-port (get-md-config :app-port)
                              :script-args   {:common-args   (merge params {:ignition-time ignition-time
                                                                            :fire-name     fire-name})
-                                             :dps-args      {:name                 (str fire-name "_" model-time)
-                                                             :outdir               "/mnt/tahoe/pyrecast/fires/input_decks"
+                                             :dps-args      {:name                 fire-name
+                                                             :outdir               "/mnt/tahoe/pyrecast/fires/datacubes"
                                                              :center-lat           lat
                                                              :center-lon           lon
-                                                             :wx-start-time        wx-start-time
-                                                             :west-buffer          12
-                                                             :east-buffer          12
-                                                             :south-buffer         12
-                                                             :north-buffer         12
+                                                             :west-buffer          west-buffer
+                                                             :east-buffer          east-buffer
+                                                             :south-buffer         south-buffer
+                                                             :north-buffer         north-buffer
                                                              :do-fuel              true
                                                              :fuel-source          "landfire"
                                                              :fuel-version         "2.2.0"
                                                              :do-wx                true
+                                                             :wx-start-time        wx-start-time
                                                              :do-ignition          true
                                                              :point-ignition       true
                                                              :ignition-lat         lat
                                                              :ignition-lon         lon
                                                              :polygon-ignition     false
                                                              :ignition-radius      300}
-                                             :elmfire-args  {:scp-input-deck       "both"
-                                                             :west-buffer          12
-                                                             :east-buffer          12
-                                                             :south-buffer         12
-                                                             :north-buffer         12
-                                                             :add-to-active-fires  "yes"
+                                             :elmfire-args  {:datacube            "TODO"
+                                                             :west-buffer          west-buffer
+                                                             :east-buffer          east-buffer
+                                                             :south-buffer         south-buffer
+                                                             :north-buffer         north-buffer
                                                              :initialization-type  "points_within_polygon"
                                                              :num-ensemble-members 200
                                                              :ignition-radius      300
                                                              :run-hours            run-hours}
-                                             :gridfire-args {:num-ensemble-members 200
-                                                             :run-hours            (* run-hours 60) ; GridFire uses minutes as units under the hood
+                                             :gridfire-args {:datacube            "TODO"
+                                                             :num-ensemble-members 200
+                                                             :run-hours            run-hours
                                                              :wx-start-time        wx-start-time
-                                                             :suppression          false}
-                                             :geosync-args  {:action              "add"
-                                                             :data-dir            data-dir
-                                                             :geoserver-url       (get-config :geoserver :match-drop)
-                                                             :geoserver-workspace geoserver-workspace}}}
+                                                             :initialization-type  "points_within_polygon"}
+                                             :geosync-args  {:action         "add"
+                                                             :geoserver-name "sierra"
+                                                             :elmfire-deck   "TODO"
+                                                             :gridfire-deck  "TODO"}}}
         match-job           {:display-name        (or display-name (str "Match Drop " match-job-id))
                              :md-status           2
                              :message             (str "Job " match-job-id " Initiated.")
@@ -197,7 +234,9 @@
                              match-job)
     {:match-job-id match-job-id}))
 
-;;; Public API
+;;==============================================================================
+;; Public API
+;;==============================================================================
 
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
@@ -233,7 +272,7 @@
         request       {:job-id        runway-job-id
                        :response-host (get-md-config :app-host)
                        :response-port (get-md-config :app-port)
-                       :script-args   {:geosync-args {:action "remove" :geoserver-workspace geoserver-workspace}}}
+                       :script-args   {:geosync-args {:action "remove"}}} ;; TODO include common-args
         match-job     {:match-job-id  match-job-id
                        :md-status     3 ; 3 indicates Match Drop is primed for deletion
                        :message       (str "Match Drop " match-job-id " is queued to be deleted.")
@@ -243,14 +282,12 @@
     (update-match-job! match-job)
     ; Remove associated workspace from the GeoServer
     (log-str "Initiating the deletion of match drop job #" match-job-id)
-    (if (send-to-server! geosync-host
+    (if (runway/send-to-server! geosync-host
                          geosync-port
                          (-> request (json/write-str :key-fn kebab->camel)))
       (data-response (str "The " geoserver-workspace " workspace is queued to be removed from " geosync-host "."))
       (data-response (str "Connection to " geosync-host " failed.")
                      {:status 403}))))
-
-;;; Job queue progression
 
 (defn get-md-status
   "Returns the current status of the given match drop run."
@@ -258,16 +295,18 @@
   (data-response (-> (get-match-job-from-match-job-id match-job-id)
                      (select-keys [:message :md-status :job-log]))))
 
-(defn- get-model [message]
-  (second (re-find #".*(elmfire|gridfire).*" (str/lower-case message))))
+;;==============================================================================
+;; Job Queue Progression
+;;==============================================================================
 
 (defn- process-complete!
   "The function called when a Runway status returns 0, thus indicating a completed
    Runway request. Depending on the `response-host` of the given Runway job,
    we need to initiate an appropriate next request to continue the Match Drop
    pipeline. For example, after a successful data provisioning server (DPS) Runway
-   job, we need to initiate calls to both the Elmfire and Gridfire servers."
-  [{:keys [match-job-id md-status] :as job} {:keys [response-host message]}]
+   job, we need to initiate calls to both the ELMFIRE and GridFire servers."
+  [{:keys [match-job-id md-status elmfire-done? gridfire-done? request geoserver-workspace] :as job}
+   {:keys [response-host message]}]
   (when message
     (update-match-job! {:match-job-id match-job-id :message message}))
   (condp = response-host
@@ -277,31 +316,39 @@
       (send-to-server-wrapper! (get-md-config :gridfire-host) (get-md-config :gridfire-port) job))
 
     ;; TODO launching two geosync calls for the same directory might break if we switch to image mosaics
-    (get-md-config :elmfire-host) ; After Elmfire job is completed, let GeoSync server know
-    (send-to-server-wrapper! (get-md-config :geosync-host) (get-md-config :geosync-port) job {:model "elmfire"})
+    ;; TODO we only need one call to the GeoSync service now
+    ;; (or (get-md-config :elmfire-host) (get-md-config :gridfire-host))
+    ;;
+    (get-md-config :elmfire-host) ; After ELMFIRE job is completed, let GeoSync server know
+    (send-to-server-wrapper! (get-md-config :geosync-host) (get-md-config :geosync-port) job {:model "elmfire"}) ;; FIXME, don't need model
 
-    (get-md-config :gridfire-host) ; After Gridfire job is completed, let GeoSync server know
-    (send-to-server-wrapper! (get-md-config :geosync-host) (get-md-config :geosync-port) job {:model "gridfire"})
+    (get-md-config :gridfire-host) ; After GridFire job is completed, let GeoSync server know
+    (send-to-server-wrapper! (get-md-config :geosync-host) (get-md-config :geosync-port) job {:model "gridfire"}) ;; FIXME, don't need model
 
     (get-md-config :geosync-host) ; After GeoSync job is completed, we either have a deletion request or an addition request
-    (if (= md-status 3)
-      (do ; Match drop is now safe to be deleted TODO might need to remove from capabilities
-        (log-str "Deleting match job " match-job-id " from the database.")
-        (call-sql "delete_match_job" match-job-id))
-      (let [{:keys [elmfire-done? gridfire-done? request]} job ; Match drop needs to be added to capabilties TODO turn this first part into a helper function
-            model     (get-model message)
-            elmfire?  (or elmfire-done?  (= "elmfire" model))
-            gridfire? (or gridfire-done? (= "gridfire" model))]
-        (if (and elmfire? gridfire?)
-          (do (update-match-job! {:match-job-id   match-job-id
-                                  :md-status      0
-                                  :gridfire-done? true
-                                  :elmfire-done?  true})
-              (set-capabilities! {"geoserver-key"  "match-drop"
-                                  "workspace-name" (get-in request [:script-args :geosync-args :geoserver-workspace])}))
-          (update-match-job! {:match-job-id   match-job-id
-                              :gridfire-done? gridfire?
-                              :elmfire-done?  elmfire?}))))))
+    (condp = md-status
+      ;; 2 indicates our Match Drop is still in progress. We check here to see if both
+      ;; ELMFIRE and GridFire have finished running ;; TODO they should have already finished running before GeoSync is called at all
+      2 (let [model     (get-model message)
+              elmfire?  (or elmfire-done?  (= "elmfire" model))
+              gridfire? (or gridfire-done? (= "gridfire" model))]
+          (if (and elmfire? gridfire?)
+            (do (update-match-job! {:match-job-id   match-job-id
+                                    :md-status      0
+                                    :gridfire-done? true
+                                    :elmfire-done?  true})
+                (set-capabilities! {"geoserver-key"  "match-drop"
+                                    "workspace-name" geoserver-workspace}))
+            (update-match-job! {:match-job-id   match-job-id
+                                :gridfire-done? gridfire?
+                                :elmfire-done?  elmfire?})))
+
+      ;; 3 indicates a deletion - the Match Drop is now safe to be deleted
+      3 (do
+          (log-str "Deleting match job " match-job-id " from the database.")
+          (call-sql "delete_match_job" match-job-id)
+          (remove-workspace! {"geoserver-key"  "match-drop"
+                              "workspace-name" geoserver-workspace})))))
 
 (defn- process-error! [match-job-id {:keys [message response-host]}]
   (let [db-message (str (get host-names response-host) ": " message)]
@@ -313,14 +360,6 @@
 (defn- process-message! [match-job-id {:keys [message response-host]}]
   (let [db-message (str (get host-names response-host) ": " message)]
     (update-match-job! {:match-job-id match-job-id :message db-message})))
-
-(defn- error-response [request response-host response-port message]
-  (when (and response-host response-port) ; TODO: Use spec to validate these fields
-    (send-to-server! response-host
-                     response-port
-                     (json/write-str
-                      (assoc-in request [:script-args :error-args] message)
-                      :key-fn (comp kebab->camel name)))))
 
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- do-processing
@@ -339,13 +378,13 @@
 
    From the above Runway `job-id` we can make a request to the SQL database to
    get the info about the match drop job that the initial `msg` is associated with."
-  [msg]
+  [response-msg]
+  (log-str "inside do-processing. the response-msg is: " response-msg)
   (if-let [{:keys [job-id ; Note that this is the `runway-job-id`
                    status
                    response-host
                    response-port]
-            :as   response} (u/nil-on-error
-                             (json/read-str msg :key-fn (comp keyword camel->kebab)))]
+            :as   response} response-msg]
     ;; TODO: Use spec to validate the message
     (let [{:keys [request md-status match-job-id] :as job} (get-match-job-from-runway-id job-id)]
       (cond
@@ -353,13 +392,13 @@
         (error-response {:job-id job-id} response-host response-port
                         (format "The Match Job with runway-job-id %s could not be found in the Pyrecast database." job-id))
 
-        (< md-status 2) ; 0 and 1 indicate the match job has exited (success, failure respectively)
-        (error-response request response-host response-port (format "Job %s has exited." job-id))
-
         (not (contains? #{0 1 2} status)) ; make sure the Runway job has a valid status code
         (error-response request response-host response-port (format "Invalid Runway status code: %s" status))
 
-        :else ; md-status is 2, indicates job still in-progess
+        (< md-status 2) ; 0 and 1 indicate the match job has exited (success, failure respectively)
+        (error-response request response-host response-port (format "Job %s has exited." job-id))
+
+        :else ; md-status is 2 or 3, indicates job is still in-progess or primed to be deleted
         (case status
           0 (process-complete! job response)             ; Runway job DONE
           1 (process-error!    match-job-id response)    ; Runway job ERROR
@@ -367,6 +406,24 @@
     (log-str "Invalid JSON.")))
 
 (defn process-message
-  "Accepts a message from the socket server and sends it to be processed."
-  [msg]
-  (do-processing msg))
+  "Accepts a message from the socket server and sends it to be processed.
+   The handler function for the :match-drop :app-host and :app-port from `config.edn`."
+  [^SSLSocket socket response-msg]
+  (try
+    (thread
+      (loop [response (json-str->edn response-msg)]
+        (log-response! (or response
+                           {:job-id -1 :status 1 :message "Invalid JSON"}))
+        (cond
+          (.isClosed socket)          (do
+                                        (log-str "socket is closed!!")
+                                        (.close socket))
+          (not= 3 (:status response)) (do
+                                        (log-str "the status is not equal to 3.")
+                                        (do-processing (json-str->edn response))) ;; TODO think about what to do for logging in progress (status 2)
+          :else                       (do
+                                        (log-str "Time to recur!")
+                                        (recur (runway/read-socket! socket))))))
+    (catch Exception e
+      (log-str "Exception on process-message thread: " (.getMessage e)))
+    (finally (.close socket))))
