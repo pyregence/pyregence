@@ -12,7 +12,7 @@
             [triangulum.sockets     :refer [socket-open? send-to-server!]]
             [pyregence.capabilities :refer [set-all-capabilities!]]
             [pyregence.handler      :refer [create-handler-stack]]
-            [pyregence.match-drop   :refer [process-message]]))
+            [pyregence.match-drop   :refer [match-drop-server-msg-handler]]))
 
 (defonce server           (atom nil))
 (defonce repl-server      (atom nil))
@@ -91,7 +91,10 @@
         (set-log-path! log-dir)
         (when (get-config :features :match-drop)
           (log-str "Starting Match Drop server on port " (get-config :match-drop :app-port))
-          (runway/start-server! (get-config :match-drop :app-port) process-message))
+          (let [match-drop-server (runway/start-server! (get-config :match-drop :app-port)
+                                                        match-drop-server-msg-handler)]
+            (when match-drop-server ;; Deref the match-drop-server future to keep it alive and blocking
+              @match-drop-server)))
         (when (notify/available?) (notify/ready!))
         (set-all-capabilities!)))))
 
