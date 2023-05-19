@@ -33,7 +33,7 @@
            :config           {:main-opts ["-m" "triangulum.config"]}
            :https            {:main-opts ["-m" "triangulum.https"]}
            :server           {:jvm-opts  ["-Djavax.net.ssl.keyStore=resources/runway.jks"
-                                          "-Djavax.net.ssl.keyStorePassword=RomeoUniformNovemberWhiskeyAlfaYankee"]
+                                          "-Djavax.net.ssl.keyStorePassword=RomeoUniformNovemberWhiskeyAlfaYankee"] ; NOTE if/when this repo goes public, we'll need to hide this password
                               :main-opts ["-m" "pyregence.server"]}
            :systemd          {:main-opts ["-m" "triangulum.systemd"]}
            :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}

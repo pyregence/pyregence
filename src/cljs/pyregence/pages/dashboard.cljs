@@ -53,6 +53,7 @@
 
 ;; Helper
 
+;; TODO make this bigger to reflect the long logs we have
 (defn- show-job-log-modal! [match-job-id job-log]
   (set-message-box-content!
    {:title (str "Match Drop #" match-job-id)
@@ -97,7 +98,6 @@
     (doall (map-indexed (fn [i col] ^{:key i} [:th col]) cols))]])
 
 (defn- match-drop-item [{:keys [match-job-id
-                                runway-job-id
                                 display-name
                                 md-status
                                 message
@@ -105,6 +105,7 @@
                                 updated-at
                                 dps-request
                                 job-log]}]
+  ;; NOTE if/when `common-args` is deprecated, we'll need to get these params from `dps-args` instead of `common-args`
   (let [{:keys [common-args]} (:script-args dps-request)]
     [:tr
      [:td match-job-id] ; "Job ID"

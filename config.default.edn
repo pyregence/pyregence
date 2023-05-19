@@ -18,7 +18,7 @@
                      :structures   true
                      :gridfire     false}
  :geoserver         {:match-drop  "https://sierra.pyregence.org/geoserver"
-                     ;:psps        "https://energy.pyregence.org:8443/geoserver"
+                     :psps        "https://energy.pyregence.org:8443/geoserver"
                      :pyreclimate "https://climate.pyregence.org/geoserver"
                      :shasta      "https://shasta.pyregence.org/geoserver"
                      :trinity     "https://trinity.pyregence.org/geoserver"}
@@ -37,8 +37,7 @@
                      :geosync-name   "GeoSync"
                      :geosync-host   "sierra.pyregence.org"
                      :geosync-port   31340
-                     :max-queue-size 5
-                     :data-dir       "/srv/gis/fire_spread_forecast"} ; TODO remove me
+                     :max-queue-size 5}
  :mail              {:host     "<host>"
                      :user     "<user>"
                      :pass     "<pass>"

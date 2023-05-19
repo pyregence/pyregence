@@ -162,7 +162,6 @@ CREATE OR REPLACE FUNCTION initialize_match_job(_user_id integer)
 
 $$ LANGUAGE SQL;
 
--- (integer, uuid, integer, character varying, character varying, boolean, boolean, character varying, character varying, character varying, character varying, character varying)
 -- Update job message
 CREATE OR REPLACE FUNCTION update_match_job(
     _match_job_id        integer,

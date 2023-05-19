@@ -10,7 +10,7 @@
             [runway.utils               :refer [json-str->edn log-response!]]
             [triangulum.config          :refer [get-config]]
             [triangulum.database        :refer [call-sql sql-primitive]]
-            [triangulum.logging         :refer [log log-str]]
+            [triangulum.logging         :refer [log-str]]
             [triangulum.type-conversion :refer [json->clj clj->json]]
             [pyregence.capabilities :refer [remove-workspace! set-capabilities!]]
             [pyregence.utils        :as u]
@@ -205,96 +205,99 @@
 
 (defn- create-match-job!
   [{:keys [display-name user-id ignition-time lat lon] :as params}]
-  (let [runway-job-id       (str (UUID/randomUUID))
-        match-job-id        (initialize-match-job! user-id)
-        west-buffer         12
-        east-buffer         12
-        south-buffer        12
-        north-buffer        12
-        run-hours           24
-        model-time          (u/convert-date-string ignition-time)
-        wx-start-time       (u/round-down-to-nearest-hour model-time)
-        fire-name           (str "match-drop-" match-job-id)
-        geoserver-workspace (str "fire-spread-forecast_match-drop-" match-job-id "_" model-time)
-        dps-request         {:job-id        (str "dps-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "dps" -- this is a temporary work-around
-                             :response-host (get-md-config :app-host)
-                             :response-port (get-md-config :app-port)
-                             :async?        false
-                             :priority?     false
-                             ;; TODO Now that each request is separate, we should get rid of `common-args`. The microservices will have to be updated to reflect this.
-                             :script-args   {:common-args   (merge params {:ignition-time ignition-time
-                                                                           :fire-name     fire-name})
-                                             :dps-args      {:name                 fire-name
-                                                             :outdir               "/mnt/tahoe/pyrecast/fires/datacubes"
-                                                             :center-lat           lat
-                                                             :center-lon           lon
-                                                             :west-buffer          west-buffer
-                                                             :east-buffer          east-buffer
-                                                             :south-buffer         south-buffer
-                                                             :north-buffer         north-buffer
-                                                             :do-fuel              true
-                                                             :fuel-source          "landfire"
-                                                             :fuel-version         "2.2.0"
-                                                             :do-wx                true
-                                                             :wx-start-time        wx-start-time
-                                                             :do-ignition          true
-                                                             :point-ignition       true
-                                                             :ignition-lat         lat
-                                                             :ignition-lon         lon
-                                                             :polygon-ignition     false
-                                                             :ignition-radius      300}}}
-        elmfire-request     {:job-id        (str "elmfire-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "elmfire" -- this is a temporary work-around
-                             :response-host (get-md-config :app-host)
-                             :response-port (get-md-config :app-port)
-                             :async?        true
-                             :priority?     true
-                             ;; TODO we should eventually get rid of common-args
-                             :script-args   {:common-args   (merge params {:ignition-time ignition-time
-                                                                           :fire-name     fire-name})
-                                             :elmfire-args  {:datacube            "TODO" ; NOTE: this will be filled in at a later point once the DPS has finished running
-                                                             :west-buffer          west-buffer
-                                                             :east-buffer          east-buffer
-                                                             :south-buffer         south-buffer
-                                                             :north-buffer         north-buffer
-                                                             :initialization-type  "points_within_polygon"
-                                                             :num-ensemble-members 200
-                                                             :ignition-radius      300
-                                                             :run-hours            run-hours}}}
-        gridfire-request    {:job-id        (str "gridfire-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "gridfire" -- this is a temporary work-around
-                             :response-host (get-md-config :app-host)
-                             :response-port (get-md-config :app-port)
-                             :async?        true ; FIXME this is not being run asynchronously? perhaps clj->json loses the question mark
-                             :priority?     true
-                             ;; TODO we should eventually get rid of common-args
-                             :script-args   {:common-args   (merge params {:ignition-time ignition-time
-                                                                           :fire-name     fire-name})
-                                             :gridfire-args {:datacube            "TODO" ; NOTE: this will be filled in at a later point once the DPS has finished running
-                                                             :num-ensemble-members 200
-                                                             :run-hours            run-hours
-                                                             :wx-start-time        wx-start-time
-                                                             :initialization-type  "points_within_polygon"}}}
-        geosync-request     {:job-id        (str "geosync-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "geosync" -- this is a temporary work-around
-                             :response-host (get-md-config :app-host)
-                             :response-port (get-md-config :app-port)
-                             :async?        false
-                             :priority?     false
-                             :script-args   {:geosync-args {:action              "add"
-                                                            :geoserver-name      "sierra"
-                                                            :geoserver-workspace geoserver-workspace
-                                                            :elmfire-deck        "TODO"    ; NOTE: this will be filled in at a later point once ELMFIRE has finished running
-                                                            :gridfire-deck       "TODO"}}} ; NOTE: this will be filled in at a later point once GridFire has finished running
-        match-job           {:display-name        (or display-name (str "Match Drop " match-job-id))
-                             :md-status           2
-                             :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.\n")
-                             :elmfire-done?       false
-                             :gridfire-done?      false
-                             :dps-request         dps-request
-                             :elmfire-request     elmfire-request
-                             :gridfire-request    gridfire-request
-                             :geosync-request     geosync-request
-                             :match-job-id        match-job-id
-                             :runway-job-id       runway-job-id
-                             :geoserver-workspace geoserver-workspace}]
+  (let [runway-job-id        (str (UUID/randomUUID))
+        match-job-id         (initialize-match-job! user-id)
+        west-buffer          12
+        east-buffer          12
+        south-buffer         12
+        north-buffer         12
+        num-ensemble-members 200
+        ignition-radius      300
+        run-hours            24
+        model-time           (u/convert-date-string ignition-time)
+        wx-start-time        (u/round-down-to-nearest-hour model-time)
+        fire-name            (str "match-drop-" match-job-id)
+        geoserver-workspace  (str "fire-spread-forecast_match-drop-" match-job-id "_" model-time)
+        dps-request          {:job-id        (str "dps-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "dps" -- this is a temporary work-around
+                              :response-host (get-md-config :app-host)
+                              :response-port (get-md-config :app-port)
+                              :async?        false
+                              :priority?     false
+                              ;; TODO Now that each request is separate, we should get rid of `common-args`. The microservices will have to be updated to reflect this.
+                              :script-args   {:common-args   (merge params {:ignition-time ignition-time
+                                                                            :fire-name     fire-name})
+                                              :dps-args      {:name                 fire-name
+                                                              :outdir               "/mnt/tahoe/pyrecast/fires/datacubes"
+                                                              :center-lat           lat
+                                                              :center-lon           lon
+                                                              :west-buffer          west-buffer
+                                                              :east-buffer          east-buffer
+                                                              :south-buffer         south-buffer
+                                                              :north-buffer         north-buffer
+                                                              :do-fuel              true
+                                                              :fuel-source          "landfire"
+                                                              :fuel-version         "2.2.0"
+                                                              :do-wx                true
+                                                              :wx-start-time        wx-start-time
+                                                              :wx-type              "forecast" ; FIXME TODO this should not be hard-coded: the DPS runway server should handle this on the fly
+                                                              :do-ignition          true
+                                                              :point-ignition       true
+                                                              :ignition-lat         lat
+                                                              :ignition-lon         lon
+                                                              :polygon-ignition     false
+                                                              :ignition-radius      ignition-radius}}}
+        elmfire-request      {:job-id        (str "elmfire-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "elmfire" -- this is a temporary work-around
+                              :response-host (get-md-config :app-host)
+                              :response-port (get-md-config :app-port)
+                              :async?        true
+                              :priority?     true
+                              ;; TODO we should eventually get rid of common-args
+                              :script-args   {:common-args   (merge params {:ignition-time ignition-time
+                                                                            :fire-name     fire-name})
+                                              :elmfire-args  {:datacube            "TODO" ; NOTE: this will be filled in at a later point once the DPS has finished running
+                                                              :west-buffer          west-buffer
+                                                              :east-buffer          east-buffer
+                                                              :south-buffer         south-buffer
+                                                              :north-buffer         north-buffer
+                                                              :initialization-type  "points_within_polygon"
+                                                              :num-ensemble-members num-ensemble-members
+                                                              :ignition-radius      ignition-radius
+                                                              :run-hours            run-hours}}}
+        gridfire-request     {:job-id        (str "gridfire-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "gridfire" -- this is a temporary work-around
+                              :response-host (get-md-config :app-host)
+                              :response-port (get-md-config :app-port)
+                              :async?        true ; FIXME this is not being run asynchronously? perhaps clj->json loses the question mark
+                              :priority?     true
+                              ;; TODO we should eventually get rid of common-args
+                              :script-args   {:common-args   (merge params {:ignition-time ignition-time
+                                                                            :fire-name     fire-name})
+                                              :gridfire-args {:datacube            "TODO" ; NOTE: this will be filled in at a later point once the DPS has finished running
+                                                              :num-ensemble-members num-ensemble-members
+                                                              :run-hours            run-hours
+                                                              :wx-start-time        wx-start-time
+                                                              :initialization-type  "points_within_polygon"}}}
+        geosync-request      {:job-id        (str "geosync-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "geosync" -- this is a temporary work-around
+                              :response-host (get-md-config :app-host)
+                              :response-port (get-md-config :app-port)
+                              :async?        false
+                              :priority?     false
+                              :script-args   {:geosync-args {:action              "add"
+                                                             :geoserver-name      "sierra"
+                                                             :geoserver-workspace geoserver-workspace
+                                                             :elmfire-deck        "TODO"    ; NOTE: this will be filled in at a later point once ELMFIRE has finished running
+                                                             :gridfire-deck       "TODO"}}} ; NOTE: this will be filled in at a later point once GridFire has finished running
+        match-job            {:display-name        (or display-name (str "Match Drop " match-job-id))
+                              :md-status           2
+                              :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.\n")
+                              :elmfire-done?       false
+                              :gridfire-done?      false
+                              :dps-request         dps-request
+                              :elmfire-request     elmfire-request
+                              :gridfire-request    gridfire-request
+                              :geosync-request     geosync-request
+                              :match-job-id        match-job-id
+                              :runway-job-id       runway-job-id
+                              :geoserver-workspace geoserver-workspace}]
     (update-match-job! match-job)
     (log-str "Initiating Match Drop #" match-job-id)
     ;; The Match Drop pipeline is started by sending a request to the DPS:
@@ -580,7 +583,7 @@
                                      {:job-id  job-id
                                       :message (format "The Match Job has finished running with a status of: %s" md-status)})
 
-        :else ; md-status is 2 or 3, indicates job is still in-progess or primed to be deleted
+        :else ; md-status is 2 or 3, indicates job is still in-progess or queued to be deleted
         (case status
           ;; Runway job DONE
           0 (runway-process-complete! job response-msg-edn)
