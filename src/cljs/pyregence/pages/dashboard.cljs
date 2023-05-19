@@ -204,13 +204,11 @@
       [no-access]
 
       :else  ; User is logged in and has match drop access
-      (do
-        (js/console.log "HELLO. Match drops are:" (clj->js @match-drops))
-        [:div {:style ($/root)}
-         [message-box-modal]
-         [:div {:style ($/combine $/flex-col {:padding "2rem"})}
-          [match-drop-header user-id]
-          [:div {:style {:padding "1rem" :width "100%"}}
-           (if (seq @match-drops)
-             [match-drop-table]
-             [no-match-drops])]]]))))
+      [:div {:style ($/root)}
+       [message-box-modal]
+       [:div {:style ($/combine $/flex-col {:padding "2rem"})}
+        [match-drop-header user-id]
+        [:div {:style {:padding "1rem" :width "100%"}}
+         (if (seq @match-drops)
+           [match-drop-table]
+           [no-match-drops])]]])))
