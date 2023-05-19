@@ -105,11 +105,16 @@
                                 updated-at
                                 dps-request
                                 job-log]}]
-  (let [{:keys [common-args]} dps-request]
+  (let [{:keys [common-args]} (:script-args dps-request)]
     [:tr
      [:td match-job-id] ; "Job ID"
      [:td {:width "10%"} (when-not (nil? display-name) display-name)] ; "Fire Name"
-     [:td md-status] ; "Status"
+     [:td ; "Match Drop Status"
+      (condp = md-status
+        0 "Completed!"
+        1 "Error"
+        2 "In progress..."
+        3 "Removing...")]
      [:td {:width "25%"} ; "Message"
       [:pre {:style {:line-height 1.0 :margin-bottom 0 :max-width "550px" :overflow "auto"}}
        (when-not (nil? message) (text->hiccup message))]]
