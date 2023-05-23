@@ -29,7 +29,7 @@
   "Updates the capabilities atom with all unique fires from the back-end
    layers atom, parsed into the proper format. An example value from
    get-fire-names can be seen below:
-   {:foo {:opt-label \"foo\", :filter \"foo\", :auto-zoom? true,
+   {:foo {:opt-label \"foo\", :filter \"foo\", :auto-zoom? true}
     :bar {:opt-label \"bar\", :filter \"bar\", :auto-zoom? true}}"
   [user-id]
   (go
