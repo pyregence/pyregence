@@ -42,7 +42,7 @@
 (defn- poll-status
   "Continually polls for updated information about the match drop run every 5 seconds.
    Stops polling on finish or error signal."
-  [match-job-id user-id display-name ignition-time]
+  [match-job-id user-id display-name ignition-time lat lon]
   (go
     (while @poll?
       (let [{:keys [message md-status log]} (-> (u-async/call-clj-async! "get-md-status" match-job-id)
@@ -62,7 +62,9 @@
                                            {:match-job-id  match-job-id
                                             :display-name  display-name
                                             :fire-name     (str "match-drop-" match-job-id)
-                                            :ignition-time ignition-time}))
+                                            :ignition-time ignition-time
+                                            :lat           lat
+                                            :lon           lon}))
               (reset! poll? false))
 
           2 (set-message-box-content! {:body message})
@@ -71,7 +73,7 @@
             (println message)
             (js/console.error log)
             (set-message-box-content! {:body (str "Error running match-drop-" match-job-id ".\n\n" message)})
-            (reset! poll? false))))
+            (reset! poll? false)))) ;; TODO make the close button available?
       (<! (timeout 5000)))))
 
 (defn- initiate-match-drop!
@@ -98,7 +100,7 @@
           (if error
             (set-message-box-content! {:body (str "Error: " error)})
             (do (reset! poll? true)
-                (poll-status match-job-id user-id display-name ignition-time)))))
+                (poll-status match-job-id user-id display-name ignition-time lat lon)))))
       ;; Lat and Lon are invalid, let user know
       (set-message-box-content! {:title "Lat/Lon Error"
                                  :body  (str "Error: The Latitude of your ignition point must be between 25 and 50\n"

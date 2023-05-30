@@ -19,13 +19,13 @@
        "  " base-url "/verify-email?email=" email "&reset-key=" reset-key "\n\n"
        "  - Pyregence Technical Support"))
 
-(defn- get-match-drop-message [base-url email {:keys [match-job-id display-name fire-name ignition-time]}]
+(defn- get-match-drop-message [base-url email {:keys [match-job-id display-name fire-name ignition-time lat lon]}]
   (str "Hi " email ",\n\n"
        "  Your Match Drop with ID \"" match-job-id "\" and display-name \"" display-name
        "\" has finished running. Please click the following link to view it "
-       "on Pyrcast:\n\n" base-url "/forecast?zoom=5.5&forecast=active-fire&fuel="
+       "on Pyrcast:\n\n" base-url "/forecast?zoom=10&burn-pct=50&forecast=active-fire&fuel="
        "landfire&output=burned&model-init=" (convert-date-string ignition-time)
-       "&layer-idx=0&lat=37.22&fire-name=" fire-name "&lng=-118.79&pattern=all&"
+       "&layer-idx=0&lat=" lat "&weather=hybrid&fire-name=" fire-name "&lng=" lon "&pattern=all&"
        "model=elmfire \n\n"
        "  - Pyregence Technical Support"))
 

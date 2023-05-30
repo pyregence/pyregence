@@ -53,7 +53,6 @@
 
 ;; Helper
 
-;; TODO make this bigger to reflect the long logs we have
 (defn- show-job-log-modal! [match-job-id job-log]
   (set-message-box-content!
    {:title (str "Match Drop #" match-job-id)
@@ -211,6 +210,7 @@
 
       :else  ; User is logged in and has match drop access
       [:div {:style ($/root)}
+       ;; TODO make this bigger to reflect the long logs we have
        [message-box-modal]
        [:div {:style ($/combine $/flex-col {:padding "2rem"})}
         [match-drop-header user-id]

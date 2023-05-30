@@ -190,14 +190,23 @@
 
 (defn- send-to-server-wrapper!
   [host port match-job-id request]
-  (with-open [client-socket (runway/create-ssl-client-socket host port)]
-    (when-not (runway/send-to-server! client-socket
-                                      (-> request
-                                          (json/write-str :key-fn kebab->camel)))
-      (log-str (str "Was not able to send a request to " host " on port " port "."))
+  (log-str (str "Inside send-to-server-wrapper!. host: " host " port: " port
+                " match-job-id: " match-job-id " request: " request))
+  (try
+    (with-open [client-socket (runway/create-ssl-client-socket host port)]
+      (log-str (str "Able to open a client-socket: " client-socket))
+      (when-not (runway/send-to-server! client-socket
+                                        (-> request
+                                            (json/write-str :key-fn kebab->camel)))
+        (log-str (str "Was not able to send a request to " host " on port " port "."))
+        (update-match-job! {:match-job-id match-job-id
+                            :md-status    1
+                            :message      (str "Connection to " host " failed.")})))
+    (catch Exception e
+      (log-str (str "Was not able to open an SSL client socket to host: " host " on por: " port))
       (update-match-job! {:match-job-id match-job-id
                           :md-status    1
-                          :message      (str "Connection to " host " failed.")}))))
+                          :message      (str "Connection to " host ":" port " failed.")}))))
 
 ;;==============================================================================
 ;; Create Match Job Functions
@@ -224,45 +233,45 @@
                               :async?        false
                               :priority?     false
                               ;; TODO Now that each request is separate, we should get rid of `common-args`. The microservices will have to be updated to reflect this.
-                              :script-args   {:common-args   (merge params {:ignition-time ignition-time
-                                                                            :fire-name     fire-name})
-                                              :dps-args      {:name                 fire-name
-                                                              :outdir               "/mnt/tahoe/pyrecast/fires/datacubes"
-                                                              :center-lat           lat
-                                                              :center-lon           lon
-                                                              :west-buffer          west-buffer
-                                                              :east-buffer          east-buffer
-                                                              :south-buffer         south-buffer
-                                                              :north-buffer         north-buffer
-                                                              :do-fuel              true
-                                                              :fuel-source          "landfire"
-                                                              :fuel-version         "2.2.0"
-                                                              :do-wx                true
-                                                              :wx-start-time        wx-start-time
-                                                              :wx-type              "forecast" ; FIXME TODO this should not be hard-coded: the DPS runway server should handle this on the fly
-                                                              :do-ignition          true
-                                                              :point-ignition       true
-                                                              :ignition-lat         lat
-                                                              :ignition-lon         lon
-                                                              :polygon-ignition     false
-                                                              :ignition-radius      ignition-radius}}}
+                              :script-args   {:common-args (merge params {:ignition-time ignition-time
+                                                                          :fire-name     fire-name})
+                                              :dps-args    {:name                 fire-name
+                                                            :outdir               "/mnt/tahoe/pyrecast/fires/datacubes"
+                                                            :center-lat           lat
+                                                            :center-lon           lon
+                                                            :west-buffer          west-buffer
+                                                            :east-buffer          east-buffer
+                                                            :south-buffer         south-buffer
+                                                            :north-buffer         north-buffer
+                                                            :do-fuel              true
+                                                            :fuel-source          "landfire"
+                                                            :fuel-version         "2.2.0"
+                                                            :do-wx                true
+                                                            :wx-start-time        wx-start-time
+                                                            :wx-type              "forecast" ; FIXME TODO this should not be hard-coded: the DPS runway server should handle this on the fly
+                                                            :do-ignition          true
+                                                            :point-ignition       true
+                                                            :ignition-lat         lat
+                                                            :ignition-lon         lon
+                                                            :polygon-ignition     false
+                                                            :ignition-radius      ignition-radius}}}
         elmfire-request      {:job-id        (str "elmfire-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "elmfire" -- this is a temporary work-around
                               :response-host (get-md-config :app-host)
                               :response-port (get-md-config :app-port)
                               :async?        true
                               :priority?     true
                               ;; TODO we should eventually get rid of common-args
-                              :script-args   {:common-args   (merge params {:ignition-time ignition-time
-                                                                            :fire-name     fire-name})
-                                              :elmfire-args  {:datacube            "TODO" ; NOTE: this will be filled in at a later point once the DPS has finished running
-                                                              :west-buffer          west-buffer
-                                                              :east-buffer          east-buffer
-                                                              :south-buffer         south-buffer
-                                                              :north-buffer         north-buffer
-                                                              :initialization-type  "points_within_polygon"
-                                                              :num-ensemble-members num-ensemble-members
-                                                              :ignition-radius      ignition-radius
-                                                              :run-hours            run-hours}}}
+                              :script-args   {:common-args  (merge params {:ignition-time ignition-time
+                                                                           :fire-name     fire-name})
+                                              :elmfire-args {:datacube            "TODO" ; NOTE: this will be filled in at a later point once the DPS has finished running
+                                                             :west-buffer          west-buffer
+                                                             :east-buffer          east-buffer
+                                                             :south-buffer         south-buffer
+                                                             :north-buffer         north-buffer
+                                                             :initialization-type  "points_within_polygon"
+                                                             :num-ensemble-members num-ensemble-members
+                                                             :ignition-radius      ignition-radius
+                                                             :run-hours            run-hours}}}
         gridfire-request     {:job-id        (str "gridfire-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "gridfire" -- this is a temporary work-around
                               :response-host (get-md-config :app-host)
                               :response-port (get-md-config :app-port)
@@ -335,6 +344,8 @@
        (mapv sql-result->job)
        (data-response)))
 
+;; TODO we don't need to send to server if we can tell that the GeoServer workspace doesn't exist in the layers atom
+;; we can instead just delete it from the DB. This handles the edge case where a run errored out.
 (defn delete-match-drop!
   "Deletes the specified match drop from the DB and removes it from the GeoServer
    via the 'remove' action passed to the GeoSync Runway server."
@@ -351,6 +362,10 @@
                              (get-md-config :geosync-port)
                              match-job-id
                              updated-geosync-request)))
+;; TODO need to provide `data-response`:
+      ; (data-response (str "The " geoserver-workspace " workspace is queued to be removed from " geosync-host "."))
+      ; (data-response (str "Connection to " geosync-host " failed.")
+      ;                {:status 403}))))
 
 (defn get-md-status
   "Returns the current status of the given match drop run."
@@ -477,16 +492,20 @@
   [match-job-id job-id md-status geoserver-workspace]
   (condp = md-status
     ;; NOTE: set-capabilities! might be handled by the GeoSync action hook already, but doesn't hurt to leave it in
-    2     (if (set-capabilities! {"geoserver-key"  "match-drop"
+    ; 2     (if (set-capabilities! {"geoserver-key"  "match-drop"
+    ;                               "workspace-name" geoserver-workspace})
+    2       (do
+              (log-str (str "Geoserver workspace is " geoserver-workspace))
+              (set-capabilities! {"geoserver-key"  "match-drop"
                                   "workspace-name" geoserver-workspace})
-            (do
               (log-str (str "Match Drop layers successfully added to Pyrecast! "
                             "Match Drop job #" match-job-id " is complete."))
-              (update-match-job! {:match-job-id   match-job-id
-                                  :md-status      0}))
-            (update-match-drop-on-error! match-job-id
-                                         {:job-id  job-id
-                                          :message "GeoSync finished running, but the call to set-capabilities failed."}))
+              (update-match-job! {:match-job-id match-job-id
+                                  :md-status    0
+                                  :message      (str "Match Drop job #" match-job-id " is complete!")}))
+            ; (update-match-drop-on-error! match-job-id
+            ;                              {:job-id  job-id
+            ;                               :message "GeoSync finished running, but the call to set-capabilities failed."}))
 
     3     (do
             (log-str "Deleting match job #" match-job-id " from the database.")

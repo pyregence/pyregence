@@ -263,10 +263,11 @@
                      (when (or (nil? match-job-id)
                                (contains? match-drop-names match-job-id))
                        [(keyword fire-name)
-                        {:opt-label  (or (get match-drop-names match-job-id)
-                                         (fire-name-capitalization fire-name))
-                         :filter     fire-name
-                         :auto-zoom? true}]))))
+                        {:opt-label      (or (get match-drop-names match-job-id)
+                                             (fire-name-capitalization fire-name))
+                         :filter        fire-name
+                         :auto-zoom?    true
+                         :geoserver-key (if match-job-id :match-drop :trinity)}]))))
          (apply array-map))))
 
 (defn get-user-layers [user-id]
