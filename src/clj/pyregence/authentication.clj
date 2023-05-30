@@ -64,9 +64,11 @@
 
 (defn get-user-match-drop-access [user-id]
   (if (sql-primitive (call-sql "get_user_match_drop_access" user-id))
-    (data-response "")
-    (data-response (str "There is no user with an id of " user-id)
-                   {:status 403})))
+    (data-response (str "The user with an id of " user-id " has Match Drop access."))
+    (let [response-msg (if (nil? user-id)
+                         "There is no user logged in. Match Drop will remain disabled."
+                         (str "The user with an id of " user-id " does not have Match Drop access."))]
+      (data-response response-msg {:status 403}))))
 
 (defn update-user-name [email new-name]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]

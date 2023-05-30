@@ -22,23 +22,22 @@
                      :pyreclimate "https://climate.pyregence.org/geoserver"
                      :shasta      "https://shasta.pyregence.org/geoserver"
                      :trinity     "https://trinity.pyregence.org/geoserver"}
- :match-drop        {:app-host       "app.pyregence.org"
+ :match-drop        {:app-name       "Pyrecast Web Server"
+                     :app-host       "localhost"
                      :app-port       31337
-                     :app-name       "Pyrecast Web Server"
-                     :geosync-host   "data.pyregence.org"
-                     :geosync-port   31337
-                     :geosync-name   "GeoSync"
-                     :elmfire-host   "elmfire.pyregence.org"
-                     :elmfire-port   31338
-                     :elmfire-name   "ELMFIRE"
-                     :gridfire-host  "gridfire.pyregence.org"
-                     :gridfire-port  31337
-                     :gridfire-name  "GridFire"
-                     :dps-host       "wx.pyregence.org"
-                     :dps-port       31337
                      :dps-name       "Data Provisioning Server"
-                     :max-queue-size 5
-                     :data-dir       "/srv/gis/fire_spread_forecast"}
+                     :dps-host       "sierra.pyregence.org"
+                     :dps-port       31337
+                     :elmfire-name   "ELMFIRE"
+                     :elmfire-host   "sierra.pyregence.org"
+                     :elmfire-port   31338
+                     :gridfire-name  "GridFire"
+                     :gridfire-host  "sierra.pyregence.org"
+                     :gridfire-port  31339
+                     :geosync-name   "GeoSync"
+                     :geosync-host   "sierra.pyregence.org"
+                     :geosync-port   31340
+                     :max-queue-size 5}
  :mail              {:host     "<host>"
                      :user     "<user>"
                      :pass     "<pass>"

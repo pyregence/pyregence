@@ -188,12 +188,11 @@
   "Given a specific geoserver-key and a specific workspace-name, removes any
    layers from that workspace from the layers atom."
   [{:strs [geoserver-key workspace-name]}]
-  (println workspace-name)
   (swap! layers
          update (keyword geoserver-key)
                 #(filterv (fn [{:keys [workspace]}]
                             (not= workspace workspace-name)) %))
-  (data-response (str workspace-name " removed.")))
+  (data-response (str workspace-name " removed from Pyrecast.")))
 
 (defn get-all-layers []
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
@@ -264,10 +263,11 @@
                      (when (or (nil? match-job-id)
                                (contains? match-drop-names match-job-id))
                        [(keyword fire-name)
-                        {:opt-label  (or (get match-drop-names match-job-id)
-                                         (fire-name-capitalization fire-name))
-                         :filter     fire-name
-                         :auto-zoom? true}]))))
+                        {:opt-label      (or (get match-drop-names match-job-id)
+                                             (fire-name-capitalization fire-name))
+                         :filter        fire-name
+                         :auto-zoom?    true
+                         :geoserver-key (if match-job-id :match-drop :trinity)}]))))
          (apply array-map))))
 
 (defn get-user-layers [user-id]

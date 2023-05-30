@@ -14,7 +14,10 @@ CREATE TABLE match_jobs (
     job_log             text DEFAULT '',
     elmfire_done        boolean DEFAULT FALSE,
     gridfire_done       boolean DEFAULT FALSE,
-    request             jsonb,
+    dps_request         jsonb,
+    elmfire_request     jsonb,
+    gridfire_request    jsonb,
+    geosync_request     jsonb,
     geoserver_workspace text
 );
 

@@ -96,15 +96,28 @@
    [:tr
     (doall (map-indexed (fn [i col] ^{:key i} [:th col]) cols))]])
 
-(defn- match-drop-item [{:keys [match-job-id runway-job-id display-name md-status message created-at updated-at request job-log]}]
-  (let [{:keys [common-args]} (:script-args request)]
+(defn- match-drop-item [{:keys [match-job-id
+                                display-name
+                                md-status
+                                message
+                                created-at
+                                updated-at
+                                dps-request
+                                job-log]}]
+  ;; NOTE if/when `common-args` is deprecated, we'll need to get these params from `dps-args` instead of `common-args`
+  (let [{:keys [common-args]} (:script-args dps-request)]
     [:tr
      [:td match-job-id] ; "Job ID"
-     [:td {:width "10%"} display-name] ; "Fire Name"
-     [:td md-status] ; "Status"
+     [:td {:width "10%"} (when-not (nil? display-name) display-name)] ; "Fire Name"
+     [:td ; "Match Drop Status"
+      (condp = md-status
+        0 "Completed!"
+        1 "Error"
+        2 "In progress..."
+        3 "Removing...")]
      [:td {:width "25%"} ; "Message"
       [:pre {:style {:line-height 1.0 :margin-bottom 0 :max-width "550px" :overflow "auto"}}
-       (text->hiccup message)]]
+       (when-not (nil? message) (text->hiccup message))]]
      [:td {:width "10%"} ; "Lon, Lat"
       (if-let [lon-lat (some->> (select-keys common-args [:lon :lat])
                                 (vals)
@@ -161,7 +174,7 @@
                  :padding       "1rem"}}
    [svg/exclamation-point :height "20px" :width "20px"]
    [:span {:style {:padding-left "0.5rem"}}
-    "It doesn't look like you have any Match Drops. Please return "
+    "You don't have any Match Drops. Please return "
     [:a {:href "/"} "home"]
     " and use the Match Drop Tool to start a job."]])
 
@@ -175,7 +188,7 @@
                   :padding       "1rem"}}
      [svg/exclamation-point :height "20px" :width "20px"]
      [:span {:style {:padding-left "0.5rem"}}
-      "It doesn't look like you have access to use Match Drop. Please contact "
+      "You don't have access to use Match Drop. Please contact "
       [:a {:href "mailto:support@pyregence.org"} "support@pyregence.org"]
       " for more information."]]])
 
@@ -197,6 +210,7 @@
 
       :else  ; User is logged in and has match drop access
       [:div {:style ($/root)}
+       ;; TODO make this bigger to reflect the long logs we have
        [message-box-modal]
        [:div {:style ($/combine $/flex-col {:padding "2rem"})}
         [match-drop-header user-id]
