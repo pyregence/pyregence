@@ -363,9 +363,10 @@
                              match-job-id
                              updated-geosync-request)))
 ;; TODO need to provide `data-response`:
-      ; (data-response (str "The " geoserver-workspace " workspace is queued to be removed from " geosync-host "."))
-      ; (data-response (str "Connection to " geosync-host " failed.")
-      ;                {:status 403}))))
+      ; (if send-send-to-server-wrapper!)
+      ;   (data-response (str "The " geoserver-workspace " workspace is queued to be removed from " geosync-host "."))
+      ;   (data-response (str "Connection to " geosync-host " failed.")
+      ;                 {:status 403}))))
 
 (defn get-md-status
   "Returns the current status of the given match drop run."

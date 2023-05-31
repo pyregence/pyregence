@@ -67,13 +67,14 @@
                                             :lon           lon}))
               (reset! poll? false))
 
-          2 (set-message-box-content! {:body message})
+          1 (do
+              (println message)
+              (js/console.error log)
+              (set-message-box-content! {:body (str "Error running match-drop-" match-job-id ".\n\n" message)})
+              (reset! poll? false)) ;; TODO make the close button available?
 
-          (do
-            (println message)
-            (js/console.error log)
-            (set-message-box-content! {:body (str "Error running match-drop-" match-job-id ".\n\n" message)})
-            (reset! poll? false)))) ;; TODO make the close button available?
+          (set-message-box-content! {:body message})))
+
       (<! (timeout 5000)))))
 
 (defn- initiate-match-drop!
