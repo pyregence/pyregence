@@ -362,7 +362,7 @@
                              (get-md-config :geosync-port)
                              match-job-id
                              updated-geosync-request)))
-;; TODO need to provide `data-response`:
+;; TODO need to provide `data-response` (check how the front end uses this and look at initiate-md! for reference)
       ; (if send-send-to-server-wrapper!)
       ;   (data-response (str "The " geoserver-workspace " workspace is queued to be removed from " geosync-host "."))
       ;   (data-response (str "Connection to " geosync-host " failed.")

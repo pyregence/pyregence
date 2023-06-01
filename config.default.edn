@@ -17,11 +17,11 @@
                      :fire-history true
                      :structures   true
                      :gridfire     false}
- :geoserver         {:match-drop  "https://sierra.pyregence.org/geoserver"
-                     :psps        "https://energy.pyregence.org:8443/geoserver"
-                     :pyreclimate "https://climate.pyregence.org/geoserver"
+ :geoserver         {:trinity     "https://trinity.pyregence.org/geoserver"
                      :shasta      "https://shasta.pyregence.org/geoserver"
-                     :trinity     "https://trinity.pyregence.org/geoserver"}
+                     :match-drop  "https://sierra.pyregence.org/geoserver"
+                     :pyreclimate "https://climate.pyregence.org/geoserver"
+                     :psps        "https://energy.pyregence.org:8443/geoserver"}
  :match-drop        {:app-name       "Pyrecast Web Server"
                      :app-host       "localhost"
                      :app-port       31337
