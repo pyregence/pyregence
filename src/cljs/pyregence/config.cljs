@@ -37,7 +37,7 @@
                              :z-index       107
                              :filter-set    #{"fire-detections" "us-transmission-lines"}
                              :geoserver-key :shasta}
-   :current-year-perimeters {:opt-label     "2022 fire perimeters"
+   :current-year-perimeters {:opt-label     "2023 fire perimeters"
                              :z-index       103
                              :filter-set    #{"fire-detections" "current-year-perimeters"}
                              :geoserver-key :shasta}
@@ -79,18 +79,18 @@
                                                                 :units           ""
                                                                 :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                 :reverse-legend? false
-                                                                :disabled-for    #{:cecs}}
+                                                                :disabled-for    #{:cecs :fire-factor}}
                                                        :slp    {:opt-label       "Slope (degrees)"
                                                                 :filter          "slp"
                                                                 :units           "\u00B0"
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cecs}}
+                                                                :disabled-for    #{:cecs :fire-factor}}
                                                        :dem    {:opt-label       "Elevation (ft)"
                                                                 :filter          "dem"
                                                                 :units           "ft"
                                                                 :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cecs}}
+                                                                :disabled-for    #{:cecs :fire-factor}}
                                                        :cc     {:opt-label       "Canopy Cover (%)"
                                                                 :filter          "cc"
                                                                 :units           "%"
@@ -144,6 +144,18 @@
                                                        "), 2022."
                                                        [:br]
                                                        [:br]
+                                                       [:strong "Fire Factor 2022\u2122"]
+                                                       " -  Data provided by "
+                                                       [:a {:href   "https://riskfactor.com/methodology/fire"
+                                                            :target "_blank"}
+                                                        "Fire Factor"]
+                                                       ", which uses the "
+                                                       [:a {:href   "https://www.mdpi.com/2571-6255/5/4/117"
+                                                            :target "_blank"}
+                                                        "First Street Foundation Wildfire Model"]
+                                                       "."
+                                                       [:br]
+                                                       [:br]
                                                        [:strong "California Ecosystem Climate Solutions"]
                                                        " - Data provided by the "
                                                        [:a {:href   "https://california-ecosystem-climate.solutions/"
@@ -156,6 +168,9 @@
                                                                        :filter    "cfo-2020"}
                                                        :ca-fuelscapes {:opt-label "2022 CA fuelscape"
                                                                        :filter    "ca-2022-fuelscape"}
+                                                       :fire-factor   {:opt-label   "Fire Factor 2022"
+                                                                       :filter      "fire-factor-2022"
+                                                                       :disabled-for #{:asp :slp :dem}}
                                                        :cecs          {:opt-label    "CA Ecosystem Climate Solutions"
                                                                        :filter       "cecs"
                                                                        :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
