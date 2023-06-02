@@ -91,10 +91,8 @@
         (set-log-path! log-dir)
         (when (get-config :features :match-drop)
           (log-str "Starting Match Drop server on port " (get-config :match-drop :app-port))
-          (let [match-drop-server (runway/start-server! (get-config :match-drop :app-port)
-                                                        match-drop-server-msg-handler)]
-            (when match-drop-server ;; Deref the match-drop-server future to keep it alive and blocking
-              @match-drop-server)))
+          (runway/start-server! (get-config :match-drop :app-port)
+                                match-drop-server-msg-handler))
         (when (notify/available?) (notify/ready!))
         (set-all-capabilities!)))))
 
