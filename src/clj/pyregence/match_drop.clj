@@ -18,6 +18,19 @@
             [pyregence.views        :refer [data-response]]))
 
 ;;==============================================================================
+;; Static Data
+;;==============================================================================
+
+(defn- get-md-config [k]
+  (get-config :match-drop k))
+
+(def ^:private runway-server-pretty-names
+  {"dps"      (get-md-config :dps-name)
+   "elmfire"  (get-md-config :elmfire-name)
+   "gridfire" (get-md-config :gridfire-name)
+   "geosync"  (get-md-config :geosync-name)})
+
+;;==============================================================================
 ;; Helper Functions
 ;;==============================================================================
 
@@ -32,21 +45,6 @@
     (->> (map str/capitalize (rest words))
          (cons (first words))
          (str/join ""))))
-
-(defn- get-md-config [k]
-  (get-config :match-drop k))
-
-;;==============================================================================
-;; Static Data
-;;==============================================================================
-
-(def ^:private runway-server-pretty-names
-  {"dps"      (get-md-config :dps-name)
-   "elmfire"  (get-md-config :elmfire-name)
-   "gridfire" (get-md-config :gridfire-name)
-   "geosync"  (get-md-config :geosync-name)})
-
-;; Helper functoins
 
 ;; FIXME this should eventually be removed -- read the dosctring for more details
 (defn- get-server-based-on-job-id
@@ -94,8 +92,8 @@
    Note that even though the above avaialable forecast weather times go out two
    weeks, at the time of writing this function the `fuel_wx_ign.py` script has a
    limitation in that you can only specify a weather start time that is the current
-   date. Thus, we manually change this portion of the response (\"2023-06-21\"
-   is changed to \"2023-06-07\").
+   date. Thus, we manually change the portion of the below response \"2023-06-21\"
+   to \"2023-06-07\".
 
    Example return:
    {:historical {:min-date-iso-str \"2011-01-30T00:00Z\"
@@ -103,7 +101,7 @@
     :forecast   {:min-date-iso-str \"2023-06-04T00:00Z\"
                  :max-date-iso-str \"2023-06-07T18:00Z\"}
 
-    NOTE: this function is dependent on the exact stdout that Chris provides.
+    NOTE: this function is dependent on the exact stdout that `fuel_wx_ign.py` provides.
     In the future, it would be better if the format was more standardized so
     we didn't have to use ugly Regex. For example, we assume that the times are
     always provided in UTC."
@@ -123,7 +121,7 @@
                     :max-date-iso-str forecast-max}})
     (catch Exception e
       (log-str (str "Exception in parse-available-wx-dates: " e ". "))
-      {})))
+      nil)))
 
 ;;==============================================================================
 ;; SQL Functions
@@ -249,7 +247,7 @@
                             :md-status    1
                             :message      (str "Connection to " host " failed.")})))
     (catch Exception e
-      (log-str (str "Exception in match-drop-server-msg-handler: " e ". "
+      (log-str (str "Exception in send-to-server-wrapper!: " e ". "
                     "Was not able to open an SSL client socket to host: " host " on por: " port))
       (update-match-job! {:match-job-id match-job-id
                           :md-status    1
