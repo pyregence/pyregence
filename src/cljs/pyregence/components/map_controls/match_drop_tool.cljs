@@ -108,7 +108,7 @@
               (println message)
               (js/console.error log)
               (set-message-box-content! {:body (str "Error running match-drop-" match-job-id ".\n\n" message)})
-              (reset! poll? false)) ;; TODO make the close button available?
+              (reset! poll? false))
 
           (set-message-box-content! {:body message})))
 
