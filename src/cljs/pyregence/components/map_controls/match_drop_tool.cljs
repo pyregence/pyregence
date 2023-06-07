@@ -136,8 +136,7 @@
                                                     :user-id       user-id})]
         (set-message-box-content! {:title  "Processing Match Drop"
                                    :body   "Initiating match drop run."
-                                   :mode   :close
-                                   :action #(reset! poll? false)}) ; TODO the close button is for dev, disable on final product
+                                   :mode   :close})
         (let [{:keys [error match-job-id]} (edn/read-string (:body (<! match-chan)))]
           (if error
             (set-message-box-content! {:body (str "Error: " error)})
