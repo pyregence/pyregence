@@ -108,7 +108,7 @@
               (println message)
               (js/console.error log)
               (set-message-box-content! {:body (str "Error running match-drop-" match-job-id ".\n\n" message)})
-              (reset! poll? false)) ;; TODO make the close button available?
+              (reset! poll? false))
 
           (set-message-box-content! {:body message})))
 
@@ -136,8 +136,7 @@
                                                     :user-id       user-id})]
         (set-message-box-content! {:title  "Processing Match Drop"
                                    :body   "Initiating match drop run."
-                                   :mode   :close
-                                   :action #(reset! poll? false)}) ; TODO the close button is for dev, disable on final product
+                                   :mode   :close})
         (let [{:keys [error match-job-id]} (edn/read-string (:body (<! match-chan)))]
           (if error
             (set-message-box-content! {:body (str "Error: " error)})
