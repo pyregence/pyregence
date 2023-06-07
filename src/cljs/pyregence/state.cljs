@@ -103,6 +103,8 @@ A browser more narrow than 800 pixels enables a special mobile styling across th
 (defonce ^{:doc "The GeoJSON response from pinging the AlertWildfire camera API.
 Returns all cameras currently available on AlertWildifre and is used to create the camera layer in mapbox.cljs."}
   the-cameras (r/atom nil))
+(defonce ^{:doc "The set of avialable weather dates for Match Drop."}
+  md-available-dates (r/atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; config.edn State

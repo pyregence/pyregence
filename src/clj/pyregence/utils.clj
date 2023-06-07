@@ -1,7 +1,9 @@
 (ns pyregence.utils
   (:import  [java.util TimeZone]
             [java.text SimpleDateFormat]
-            [java.time LocalDateTime])
+            [java.time LocalDateTime ZonedDateTime]
+            [java.time.format DateTimeFormatter]
+            [java.time.temporal ChronoUnit])
   (:require [triangulum.database :refer [call-sql sql-primitive]]
             [pyregence.views     :refer [data-response]]))
 
@@ -68,6 +70,16 @@
         month           (.getMonthValue sub-date)
         day             (.getDayOfMonth sub-date)]
     (str year (pad-zero month) (pad-zero day))))
+
+(defn get-current-date-time-iso-string
+  "Returns the current date and time as an ISO string rounded down to the nearest
+   hour. e.g. \"2023-06-07T15:00Z\""
+  []
+  (let [current-datetime (ZonedDateTime/now)
+        rounded-datetime (-> current-datetime
+                             (.truncatedTo ChronoUnit/HOURS))]
+    (.format (DateTimeFormatter/ofPattern "yyyy-MM-dd'T'HH:mm'Z'")
+             rounded-datetime)))
 
 (defn get-email-by-user-id [user-id]
   (if-let [email (sql-primitive (call-sql "get_email_by_user_id" user-id))]
