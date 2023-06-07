@@ -1019,16 +1019,6 @@
              {:opt-label "5x"   :delay 200}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Match Drop Configuration
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def match-drop-instructions
-  "Simulates a fire using real-time weather data from the Hybrid model,
-   which is a blend of the HRRR, NAM 3 km, and GFS 0.125\u00B0 models.
-   Click on a location to \"drop\" a match,
-   then set the date and time to begin the simulation.")
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mapbox Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

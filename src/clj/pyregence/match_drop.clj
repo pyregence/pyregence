@@ -2,10 +2,11 @@
   (:import  java.util.UUID
             javax.net.ssl.SSLSocket)
   (:require [clojure.core.async :refer [thread]]
-            [clojure.data.json :as json]
-            [clojure.edn       :as edn]
-            [clojure.string    :as str]
-            [clojure.set       :refer [rename-keys]]
+            [clojure.data.json  :as json]
+            [clojure.edn        :as edn]
+            [clojure.java.shell :refer [sh]]
+            [clojure.set        :refer [rename-keys]]
+            [clojure.string     :as str]
             [runway.simple-sockets      :as runway]
             [runway.utils               :refer [json-str->edn log-response!]]
             [triangulum.config          :refer [get-config]]
@@ -15,6 +16,19 @@
             [pyregence.capabilities :refer [remove-workspace! set-capabilities!]]
             [pyregence.utils        :as u]
             [pyregence.views        :refer [data-response]]))
+
+;;==============================================================================
+;; Static Data
+;;==============================================================================
+
+(defn- get-md-config [k]
+  (get-config :match-drop k))
+
+(def ^:private runway-server-pretty-names
+  {"dps"      (get-md-config :dps-name)
+   "elmfire"  (get-md-config :elmfire-name)
+   "gridfire" (get-md-config :gridfire-name)
+   "geosync"  (get-md-config :geosync-name)})
 
 ;;==============================================================================
 ;; Helper Functions
@@ -31,19 +45,6 @@
     (->> (map str/capitalize (rest words))
          (cons (first words))
          (str/join ""))))
-
-(defn- get-md-config [k]
-  (get-config :match-drop k))
-
-;;==============================================================================
-;; Static Data
-;;==============================================================================
-
-(def ^:private runway-server-pretty-names
-  {"dps"      (get-md-config :dps-name)
-   "elmfire"  (get-md-config :elmfire-name)
-   "gridfire" (get-md-config :gridfire-name)
-   "geosync"  (get-md-config :geosync-name)})
 
 ;; FIXME this should eventually be removed -- read the dosctring for more details
 (defn- get-server-based-on-job-id
@@ -78,6 +79,49 @@
         (str/split % #"-")
         (rest %)
         (str/join "-" %)))
+
+(defn- parse-available-wx-dates
+  "Pares the stdout from a call to `fuel_wx_ign.py`. The exact return structure of this
+   call (at the time of this writing in June of 2023) is the following:
+   ```
+   sig-app@goshawk:~$ ssh sig-app@sierra 'cd /mnt/tahoe/cloudfire/microservices/fuel_wx_ign && ./fuel_wx_ign.py --get_available_wx_times=True'
+   Currently available weather times:
+   historical- 2011-01-30 00:00 UTC to 2022-09-30 23:00 UTC
+   forecast-   2023-06-04 18:00 UTC to 2023-06-21 12:00 UTC
+   ```
+   Note that even though the above avaialable forecast weather times go out two
+   weeks, at the time of writing this function the `fuel_wx_ign.py` script has a
+   limitation in that you can only specify a weather start time that is the current
+   date. Thus, we manually change the portion of the below response \"2023-06-21\"
+   to \"2023-06-07\".
+
+   Example return:
+   {:historical {:min-date-iso-str \"2011-01-30T00:00Z\"
+                 :max-date-iso-str \"2022-09-30T23:00Z\"}
+    :forecast   {:min-date-iso-str \"2023-06-04T00:00Z\"
+                 :max-date-iso-str \"2023-06-07T18:00Z\"}
+
+    NOTE: this function is dependent on the exact stdout that `fuel_wx_ign.py` provides.
+    In the future, it would be better if the format was more standardized so
+    we didn't have to use ugly Regex. For example, we assume that the times are
+    always provided in UTC."
+  [stdout]
+  (try
+    (let [historical-regex #"historical-\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+UTC)\s+to\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+UTC)"
+          forecast-regex   #"forecast-\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+UTC)\s+to\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+UTC)"
+          [_ historical-min historical-max] (re-find historical-regex stdout)
+          [_ forecast-min _]                (re-find forecast-regex stdout)
+          forecast-max                      (u/get-current-date-time-iso-string)
+          ;; Turns a string of the format "2011-01-30 00:00 UTC" into an ISO string: "2011-01-30T00:00Z"
+          utc-string->iso-string #(let [[date hours-minutes _] (str/split % #" ")]
+                                    (str date "T" hours-minutes "Z"))]
+      {:historical {:min-date-iso-str (utc-string->iso-string historical-min)
+                    :max-date-iso-str (utc-string->iso-string historical-max)}
+       :forecast   {:min-date-iso-str (utc-string->iso-string forecast-min)
+                    :max-date-iso-str forecast-max}})
+    (catch Exception e
+      (log-str (str "Exception in parse-available-wx-dates: " e ". "))
+      nil)))
 
 ;;==============================================================================
 ;; SQL Functions
@@ -203,7 +247,8 @@
                             :md-status    1
                             :message      (str "Connection to " host " failed.")})))
     (catch Exception e
-      (log-str (str "Was not able to open an SSL client socket to host: " host " on por: " port))
+      (log-str (str "Exception in send-to-server-wrapper!: " e ". "
+                    "Was not able to open an SSL client socket to host: " host " on por: " port))
       (update-match-job! {:match-job-id match-job-id
                           :md-status    1
                           :message      (str "Connection to " host ":" port " failed.")}))))
@@ -213,7 +258,7 @@
 ;;==============================================================================
 
 (defn- create-match-job!
-  [{:keys [display-name user-id ignition-time lat lon] :as params}]
+  [{:keys [display-name user-id ignition-time lat lon wx-type] :as params}]
   (let [runway-job-id        (str (UUID/randomUUID))
         match-job-id         (initialize-match-job! user-id)
         west-buffer          12
@@ -223,7 +268,7 @@
         num-ensemble-members 200
         ignition-radius      300
         run-hours            24
-        model-time           (u/convert-date-string ignition-time)
+        model-time           (u/convert-date-string ignition-time) ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
         wx-start-time        (u/round-down-to-nearest-hour model-time)
         fire-name            (str "match-drop-" match-job-id)
         geoserver-workspace  (str "fire-spread-forecast_match-drop-" match-job-id "_" model-time)
@@ -248,7 +293,7 @@
                                                             :fuel-version         "2.2.0"
                                                             :do-wx                true
                                                             :wx-start-time        wx-start-time
-                                                            :wx-type              "forecast" ; FIXME TODO this should not be hard-coded: the DPS runway server should handle this on the fly
+                                                            :wx-type              wx-type
                                                             :do-ignition          true
                                                             :point-ignition       true
                                                             :ignition-lat         lat
@@ -373,6 +418,25 @@
   [match-job-id]
   (data-response (-> (get-match-job-from-match-job-id match-job-id)
                      (select-keys [:message :md-status :job-log]))))
+
+(defn get-md-available-dates
+  "Gets the available dates for Match Drops in UTC. Note that we're shelling out
+   to a script on `sierra` as the `sig-app` user.
+
+   Example return:
+   {:historical {:min-date-iso-str \"2011-01-30T00:00Z\"
+                 :max-date-iso-str \"2022-09-30T23:00Z\"}
+    :forecast   {:min-date-iso-str \"2023-06-04T00:00Z\"
+                 :max-date-iso-str \"2023-06-07T18:00Z\"}"
+  []
+  (let [{:keys [out err exit]} (sh "ssh" "sig-app@sierra"
+                                   "cd /mnt/tahoe/cloudfire/microservices/fuel_wx_ign && ./fuel_wx_ign.py" "--get_available_wx_times=True")]
+    (if (= exit 0)
+      (data-response (parse-available-wx-dates out))
+      (data-response (str "Something went wrong when calling "
+                          "/mnt/tahoe/cloudfire/microservices/fuel_wx_ign/fuel_wx_ign.py:"
+                          err)
+                     {:status 403}))))
 
 ;;==============================================================================
 ;; Runway Process Complete Functions

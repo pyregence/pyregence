@@ -117,10 +117,15 @@
 (defn radio
   "A component for radio button."
   [label state condition on-click]
-  [:div {:style    ($/flex-row)
+  [:div {:style    ($/combine $/flex-row {:cursor "pointer"})
          :on-click #(on-click condition)}
-   [:div {:style ($radio (= state condition))}]
-   [:label {:style {:font-size ".8rem" :margin "4px .5rem 0 0"}} label]])
+   [:div {:id    label
+          :style ($radio (= state condition))}]
+   [:label {:for   label
+            :style {:cursor    "pointer"
+                    :font-size ".8rem"
+                    :margin    "4px .5rem 0 0"}}
+    label]])
 
 (defn check-box
   "A component for check boxes."
@@ -191,6 +196,26 @@
         [:option {:key   hour
                   :value hour}
          (str hour ":00 " timezone)])]]))
+
+(defn input-datetime
+  "Creates a labeled datetime input. Note that datetime-local inputs must use the
+   local time zone of the caller. A local datetime string can only be in the
+   following format: '2022-12-02T08:50'. min-date-iso-str and max-date-iso-str
+   must be passed in as ISO strings (e.g. '2011-01-30T00:00Z'). value must be
+   passed in as a local datetime string (e.g. '2022-12-02T08:50')."
+  [label id value min-date-iso-str max-date-iso-str on-change]
+  [:div
+   [:label {:for id :style { :font-size "0.9rem" :font-wieight "bold"}} label]
+   ;; TODO it would be nice if when you click on any part of the datetime-local input
+   ;; the date picker pops up. For now, you have to click on the small calendar icon.
+   [:input {:id          id
+            :style       {:width "100%"}
+            :type        "datetime-local"
+            :value       value
+            :min         (u-time/iso-string->local-datetime-string min-date-iso-str)
+            :max         (u-time/iso-string->local-datetime-string max-date-iso-str)
+            :on-key-down #(.preventDefault %) ; This prevents any typing into the element which is error prone in the underlying implementation of the datetime-local element
+            :on-change   on-change}]])
 
 (defn simple-form
   "Simple form component. Adds input fields, an input button, and optionally a footer."

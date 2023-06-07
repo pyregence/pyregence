@@ -33,7 +33,11 @@
                                               set-capabilities!
                                               set-all-capabilities!
                                               remove-workspace!]]
-            [pyregence.match-drop     :refer [initiate-md! delete-match-drop! get-md-status get-match-drops]]
+            [pyregence.match-drop     :refer [delete-match-drop!
+                                              get-md-available-dates
+                                              get-md-status
+                                              get-match-drops
+                                              initiate-md!]]
             [pyregence.red-flag       :refer [get-red-flag-layer]]
             [pyregence.email          :refer [send-email!]]
             [pyregence.utils          :refer [get-email-by-user-id]]
@@ -43,6 +47,7 @@
                "add-new-user"                  add-new-user
                "delete-match-drop"             delete-match-drop!
                "get-all-layers"                get-all-layers
+               "get-md-available-dates"        get-md-available-dates
                "get-cameras"                   get-cameras
                "get-current-image"             get-current-image
                "get-email-by-user-id"          get-email-by-user-id

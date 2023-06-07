@@ -80,7 +80,7 @@
 (defn- get-current-layer-full-time []
   (if-let [sim-time (or (get-current-layer-time)
                         (:sim-time (current-layer)))]
-    (u-time/time-zone-iso-date sim-time @!/show-utc?)
+    (u-time/date-string->iso-string sim-time @!/show-utc?)
     ""))
 
 (defn- get-current-layer-extent []
@@ -153,7 +153,7 @@
   (let [processed-times (into (u-data/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
-                                      {:opt-label (u-time/time-zone-iso-date utc-time @!/show-utc?)
+                                      {:opt-label (u-time/date-string->iso-string utc-time @!/show-utc?)
                                        :utc-time  utc-time ; TODO is utc-time redundant?
                                        :filter    utc-time}])
                                    model-times))]
@@ -493,7 +493,7 @@
                                          (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
                                                        [k (assoc v
                                                                  :opt-label
-                                                                 (u-time/time-zone-iso-date utc-time @!/show-utc?))])
+                                                                 (u-time/date-string->iso-string utc-time @!/show-utc?))])
                                                  options)))))
 
 (defn- params->selected-options

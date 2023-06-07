@@ -2,15 +2,18 @@
   (:require [clojure.core.async                    :refer [<! go timeout]]
             [clojure.edn                           :as edn]
             [clojure.pprint                        :refer [cl-format]]
+            [clojure.string                        :as str]
             [herb.core                             :refer [<class]]
-            [pyregence.components.common           :refer [labeled-input input-hour limited-date-picker]]
+            [pyregence.components.common           :refer [input-datetime
+                                                           labeled-input
+                                                           radio]]
             [pyregence.components.mapbox           :as mb]
             [pyregence.components.messaging        :refer [set-message-box-content!]]
             [pyregence.components.resizable-window :refer [resizable-window]]
-            [pyregence.config                      :as c]
             [pyregence.state                       :as !]
             [pyregence.styles                      :as $]
             [pyregence.utils.async-utils           :as u-async]
+            [pyregence.utils.dom-utils             :as u-dom]
             [pyregence.utils.number-utils          :as u-num]
             [pyregence.utils.time-utils            :as u-time]
             [reagent.core                          :as r]))
@@ -21,9 +24,43 @@
 
 (def poll? (atom false))
 
+(defn- reset-local-time-zone!
+  [local-time-zone datetime]
+  (reset! local-time-zone (->> datetime
+                               (new js/Date)
+                               (u-time/get-time-zone))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Match Drop Configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def match-drop-instructions
+  "Simulates a 24 hour fire using real-time weather data from the Hybrid model,
+   which is a blend of the HRRR, NAM 3 km, and GFS 0.125\u00B0 models.
+   Click on a location to \"drop\" a match,
+   then set the date and time to begin the simulation.")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- set-md-available-dates!
+  "Populates the !/md-available-dates atom with the result from calling get-available-dates
+   on the back-end. Note that the date strings are populated in UTC using an ISO string.
+   Example value of the !/md-available-dates atom after calling this function:
+   {:historical {:min-date-iso-str \"2011-01-30T00:00Z\"
+                 :max-date-iso-str \"2022-09-30T23:00Z\"}
+    :forecast   {:min-date-iso-str \"2023-06-04T00:00Z\"
+                 :max-date-iso-str \"2023-06-07T18:00Z\"}"
+  []
+  (go
+    (let [get-md-available-dates (<! (u-async/call-clj-async! "get-md-available-dates"))]
+      (if (:success get-md-available-dates)
+        (reset! !/md-available-dates
+                (-> get-md-available-dates
+                    (:body)
+                    (edn/read-string)))
+        (reset! !/md-available-dates nil)))))
 
 (defn- refresh-fire-names!
   "Updates the capabilities atom with all unique fires from the back-end
@@ -78,20 +115,24 @@
       (<! (timeout 5000)))))
 
 (defn- initiate-match-drop!
-  "Initiates the match drop run and initiates polling for updates."
-  [display-name [lon lat] md-date md-hour user-id]
+  "Initiates the match drop run and initiates polling for updates.
+   Note that md-datetime-local is in local time and will be converted back
+   to UTC before being passed to the back-end as the ignition-time."
+  [display-name [lon lat] md-datetime-local forecast-weather? user-id]
   (go
     ;; Lat and Lon must be within CONUS
+    ;; TODO we should also add a separate check for md-datetime-local being within the available weather dates
     (if (and (u-num/between? lon -125 -66)
              (u-num/between? lat 25 50))
       ;; Lat and Lon are valid, proceed
-      (let [datetime      (.toString (js/Date. (+ md-date (* md-hour 3600000))))
-            ignition-time (u-time/time-zone-iso-date datetime true)
+      (let [;; The below converts the local-time md-datetime-local string to UTC (e.g. turns "2023-06-06T09:40" into "2023-06-06 14:40 UTC") where the first string is in CDT
+            ignition-time (u-time/date-string->iso-string md-datetime-local true)
             match-chan    (u-async/call-clj-async! "initiate-md"
                                                    {:display-name  (when-not (empty? display-name) display-name)
                                                     :ignition-time ignition-time
                                                     :lon           lon
                                                     :lat           lat
+                                                    :wx-type       (if forecast-weather? "forecast" "historical")
                                                     :user-id       user-id})]
         (set-message-box-content! {:title  "Processing Match Drop"
                                    :body   "Initiating match drop run."
@@ -132,7 +173,7 @@
 
 (defn- lon-lat-position [$class label lon-lat]
   [:div {:class (<class $class)}
-   [:div label]
+   [:div {:style {:font-size "1rem" :font-weight "bold"}} label]
    [:div#md-lonlat
     [:div#md-lon {:style {:display         "flex"
                           :flex            1
@@ -143,48 +184,129 @@
                           :justify-content "start"}}
      "Lon: " (cl-format nil "~,4f" (get lon-lat 0))]]])
 
+(defn- weather-info [forecast-weather?]
+  (let [pretty-date (fn [forecast? min?]
+                      (let [datetime-string (as-> @!/md-available-dates %
+                                                  (if forecast? (:forecast %) (:historical %))
+                                                  (if min? (:min-date-iso-str %) (:max-date-iso-str %))
+                                                  (u-time/iso-string->local-datetime-string %))]
+                        [:strong
+                         (str (str/replace datetime-string #"T" " ")
+                              " " (u-time/get-time-zone (js/Date. datetime-string)))]))]
+    [:div {:style {:font-size "0.85rem" :margin "0.5rem 0"}}
+     (if @forecast-weather?
+       [:p
+        "The available Forecast Weather dates are: "
+        [pretty-date true true]
+        " to "
+        [pretty-date true false]]
+       [:p
+        "The available Historical Weather dates are: "
+        [pretty-date false true]
+        " to "
+        [pretty-date false false]
+        "."])]))
+
+(defn- weather-radio-buttons [forecast-weather? md-datetime-local local-time-zone]
+  [:div {:style {:display "flex" :margin-bottom "0.8rem"}}
+   [radio
+    "Forecast Fire"
+    @forecast-weather?
+    true
+    #(do (reset! forecast-weather? true)
+         ;; When we switch to Forecast Weather data, default to the current date/time
+         (reset! md-datetime-local (u-time/get-current-local-datetime-string))
+         (reset-local-time-zone! local-time-zone @md-datetime-local))]
+   [radio
+    "Historical Fire"
+    @forecast-weather?
+    false
+    #(do (reset! forecast-weather? false)
+         ;; When we switch to Historical Weather data, default to the earliest historical weather date
+         (reset! md-datetime-local (-> @!/md-available-dates
+                                       (:historical)
+                                       (:min-date-iso-str)
+                                       (u-time/iso-string->local-datetime-string)))
+         (reset-local-time-zone! local-time-zone @md-datetime-local))]])
+
+(defn- datetime-local-picker [forecast-weather? md-datetime-local local-time-zone]
+  [input-datetime
+   (str (if @forecast-weather? "Forecast" "Historical")
+        " Date/Time (" @local-time-zone ")")
+   "md-datetime-local"
+   @md-datetime-local
+   (if @forecast-weather?
+     (:min-date-iso-str (:forecast @!/md-available-dates))
+     (:min-date-iso-str (:historical @!/md-available-dates)))
+   (if @forecast-weather?
+     (:max-date-iso-str (:forecast @!/md-available-dates))
+     (:max-date-iso-str (:historical @!/md-available-dates)))
+   #(do
+      (reset! md-datetime-local (u-dom/input-value %))
+      (reset-local-time-zone! local-time-zone (u-dom/input-value %)))])
+
+(defn- md-buttons [md-datetime-local forecast-weather? display-name lon-lat user-id]
+  [:div {:style {:display         "flex"
+                 :flex-shrink     0
+                 :justify-content "space-between"
+                 :margin          "0.75rem 0 2.5rem"}}
+   [:button {:class    (<class $/p-themed-button)
+             :on-click #(js/window.open "/dashboard" "/dashboard")}
+    "Dashboard"]
+   [:button {:class    (<class $/p-button :bg-color :yellow :font-color :orange :white)
+             :disabled (or (= [0 0] @lon-lat)
+                           (= "" @md-datetime-local)
+                           (empty? @!/md-available-dates))
+             :on-click #(initiate-match-drop! @display-name @lon-lat @md-datetime-local @forecast-weather? user-id)}
+    "Submit"]])
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn match-drop-tool
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular
    location and date/time."
   [parent-box close-fn! user-id]
-  (r/with-let [display-name (r/atom "")
-               lon-lat      (r/atom [0 0])
-               md-date      (r/atom (u-time/current-date-ms)) ; Stored in milliseconds
-               md-hour      (r/atom (.getHours (js/Date.))) ; hour (0-23) in the local timezone
-               click-event  (mb/enqueue-marker-on-click! #(reset! lon-lat (first %)))]
+  (r/with-let [display-name      (r/atom "")
+               lon-lat           (r/atom [0 0])
+               forecast-weather? (r/atom true) ; Whether or not we are using forecast or historical weather data, default to using forecast
+               md-datetime-local (r/atom (u-time/get-current-local-datetime-string)) ; Default to the current date/time
+               local-time-zone   (r/atom (u-time/get-time-zone (js/Date. @md-datetime-local))) ; Default to the user's current time zone
+               click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %)))
+               _                 (set-md-available-dates!)]
     [:div#match-drop-tool
      [resizable-window
       parent-box
+      515
       400
-      300
       "Match Drop Tool"
       close-fn!
       (fn [_ _]
         [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
          [:div {:style {:flex-grow 1 :font-size "0.9rem" :margin "0.5rem 1rem"}}
           [:div {:style {:font-size "0.85rem" :margin "0.5rem 0"}}
-           c/match-drop-instructions]
-          [labeled-input "Name:" display-name {:placeholder "New Fire"}]
-          [lon-lat-position $match-drop-location "Location" @lon-lat]
-          [:div {:style {:display "flex"}}
-           [:div {:style {:flex "auto" :padding "0 0.5rem 0 0"}}
-            [limited-date-picker "Forecast Date:" "md-date" md-date 7 0]]
-           [:div {:style {:flex "auto" :padding "0 0 0 0.5rem"}}
-            [input-hour "Start Time:" "md-time" md-hour]]]
-          [:div {:style {:display         "flex"
-                         :flex-shrink     0
-                         :justify-content "space-between"
-                         :margin          "0.75rem 0 2.5rem"}}
-           [:button {:class    (<class $/p-themed-button)
-                     :on-click #(js/window.open "/dashboard" "/dashboard")}
-            "Dashboard"]
-           [:button {:class    (<class $/p-button :bg-color :yellow :font-color :orange :white)
-                     :disabled (or (= [0 0] @lon-lat) (nil? @md-date) (nil? @md-hour))
-                     :on-click #(initiate-match-drop! @display-name @lon-lat @md-date @md-hour user-id)}
-            "Submit"]]]])]]
+           match-drop-instructions]
+          [:hr {:style {:background "white"}}]
+          [labeled-input "Fire Name:" display-name {:placeholder "New Fire"}]
+          [lon-lat-position $match-drop-location "Ignition Location:" @lon-lat]
+          [:hr {:style {:background "white"}}]
+          (cond
+            (nil? @!/md-available-dates)
+            [:p
+             "Something went wrong when loading the available weather dates. Please contact "
+             [:a {:href "mailto:support@pyregence.org"} "support@pyregence.org"]
+             "."]
+
+            (empty? @!/md-available-dates)
+            [:p "Loading available weather dates..."]
+
+            (seq @!/md-available-dates)
+            [:<>
+             [weather-info forecast-weather?]
+             [weather-radio-buttons forecast-weather? md-datetime-local local-time-zone]
+             [datetime-local-picker forecast-weather? md-datetime-local local-time-zone]])
+          [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-id]]])]]
     (finally
       (mb/remove-event! click-event))))
