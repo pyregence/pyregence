@@ -22,7 +22,8 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def poll? (atom false))
+(defonce ^{:doc "Whether or not we should continue polling get-md-status on the back-end."}
+  poll? (atom false))
 
 (defn- reset-local-time-zone!
   [local-time-zone datetime]
@@ -37,8 +38,8 @@
 (def match-drop-instructions
   "Simulates a 24 hour fire using real-time weather data from the Hybrid model,
    which is a blend of the HRRR, NAM 3 km, and GFS 0.125\u00B0 models.
-   Click on a location to \"drop\" a match,
-   then set the date and time to begin the simulation.")
+   Click on a location to \"drop\" a match, then set the date and time to begin
+   the simulation.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -64,17 +65,23 @@
 
 (defn- refresh-fire-names!
   "Updates the capabilities atom with all unique fires from the back-end
-   layers atom, parsed into the proper format. An example value from
-   get-fire-names can be seen below:
+   layers atom, parsed into the proper format. Alo updates the processed-params
+   atom, which deals with the options available in the collapsible panel (so that
+   a user can immediately select their fire without having to refresh the page
+   or switching tabs to get the Match Drop to show up as an option). This is currently
+   due to a limitation in state management (we seem to have some duplicated state
+   in capabilities and processed-params).
+   An example return value from get-fire-names can be seen below:
    {:foo {:opt-label \"foo\", :filter \"foo\", :auto-zoom? true}
     :bar {:opt-label \"bar\", :filter \"bar\", :auto-zoom? true}}"
   [user-id]
   (go
-    (as-> (u-async/call-clj-async! "get-fire-names" user-id) fire-names
-      (<! fire-names)
-      (:body fire-names)
-      (edn/read-string fire-names)
-      (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge fire-names))))
+    (let [fire-names (->> (u-async/call-clj-async! "get-fire-names" user-id)
+                          (<!)
+                          (:body)
+                          (edn/read-string))]
+      (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge fire-names)
+      (swap! !/processed-params update-in [:fire-name :options] merge fire-names))))
 
 (defn- poll-status
   "Continually polls for updated information about the match drop run every 5 seconds.
@@ -134,9 +141,12 @@
                                                     :lat           lat
                                                     :wx-type       (if forecast-weather? "forecast" "historical")
                                                     :user-id       user-id})]
-        (set-message-box-content! {:title  "Processing Match Drop"
-                                   :body   "Initiating match drop run."
-                                   :mode   :close})
+        (set-message-box-content! {:title         "Processing Match Drop"
+                                   :body          "Initiating match drop run."
+                                   :mode          :custom
+                                   :custom-button [:button {:class    (<class $/p-form-button)
+                                                            :on-click #(js/window.open "/dashboard" "/dashboard")}
+                                                   "Dashboard"]})
         (let [{:keys [error match-job-id]} (edn/read-string (:body (<! match-chan)))]
           (if error
             (set-message-box-content! {:body (str "Error: " error)})

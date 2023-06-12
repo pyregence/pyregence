@@ -4,7 +4,6 @@
             [clojure.string                 :as string]
             [goog.string                    :refer [format]]
             [herb.core                      :refer [<class]]
-            [lambdaisland.ansi              :refer [text->hiccup]]
             [pyregence.components.messaging :refer [message-box-modal
                                                     set-message-box-content!
                                                     toast-message!]]
@@ -60,8 +59,7 @@
                           :overflow-y "scroll"
                           :overflow-x "auto"}}
             [:pre {:style {:line-height 1.0 :margin-bottom 0 :max-width "50vw"}}
-             (doall (map-indexed (fn [i line] ^{:key i}
-                                   (text->hiccup line))
+             (doall (map-indexed (fn [i line] ^{:key i} line)
                                  (string/split job-log #"\\n")))]]
     :mode  :close}))
 
@@ -117,7 +115,7 @@
         3 "Removing...")]
      [:td {:width "25%"} ; "Message"
       [:pre {:style {:line-height 1.0 :margin-bottom 0 :max-width "550px" :overflow "auto"}}
-       (when-not (nil? message) (text->hiccup message))]]
+       (when-not (nil? message) message)]]
      [:td {:width "10%"} ; "Lon, Lat"
       (if-let [lon-lat (some->> (select-keys common-args [:lon :lat])
                                 (vals)

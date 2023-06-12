@@ -11,10 +11,12 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private blank-message-box {:title  ""
-                                  :body   ""
-                                  :mode   :none
-                                  :action nil})
+(def ^:private blank-message-box {:title         ""
+                                  :body          ""
+                                  :mode          :none ; :close, :confirm, or :custom
+                                  :action        nil
+                                  :custom-button nil
+                                  :cancel-fn     nil})
 (def ^:private message-box-content (r/atom blank-message-box))
 (def ^:private toast-message-text  (r/atom nil))
 (def ^:private toast-message-chan  (chan))
@@ -40,9 +42,11 @@
         (recur (<! toast-message-chan)))))
 
 (defn set-message-box-content!
-  "Sets message content map with merge. Content includes title, body, mode, and action.
+  "Sets message content map with merge. Content includes title, body, mode, action,
+   and custom-button If mode is :custom, then the custom-button key must have
+   the desired Reagent button that you want to render.
    The message box will show when title is not an empty string.
-   Mode can be either :close, :confirm, or nil.
+   Mode can be either :close, :confirm, :custom, or nil.
    Action is optional and will be executed when the mode button is clicked."
   [content]
   (swap! message-box-content merge content))
@@ -147,7 +151,7 @@
 (defn message-box-modal
   "Creates a message box modal component."
   []
-  (let [{:keys [title body mode action cancel-fn]} @message-box-content]
+  (let [{:keys [title body mode action custom-button cancel-fn]} @message-box-content]
     (when-not (= "" title)
       [:div {:style ($/combine $/modal {:position "fixed"})}
        [:div {:style ($/combine $message-box [$/align :text :left])}
@@ -161,9 +165,8 @@
              (show-line-break body)])
           (condp = mode
             :close   [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
-                      [button "Close" #(do
-                                         (when action (action))
-                                         (close-message-box!))]]
+                      [button "Close" #(do (when action (action))
+                                           (close-message-box!))]]
             :confirm [:div {:style {:align-content "space-between"
                                     :display       "flex"
                                     :margin-top    "4px"}}
@@ -173,4 +176,12 @@
                       [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
                        [button "Yes, Continue" #(do (action)
                                                     (close-message-box!))]]]
+            :custom  [:div {:style {:align-content "space-between"
+                                    :display       "flex"
+                                    :margin-top    "4px"}}
+                      [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
+                       custom-button]
+                      [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
+                       [button "Close" #(do (when action (action))
+                                            (close-message-box!))]]]
             [:<>])]]]])))
