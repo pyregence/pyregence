@@ -23,13 +23,13 @@ Ex: {:fuels {:layer :fbfm40, :model :landfire, :model-init :20210407_000000} ...
   active-opacity (r/atom 100.0))
 (defonce ^{:doc "A map that combines the values from the `options-config` and the processed output from a call to process-capabilities! in near_term_forecast.cljs.
 The `options-config`:
-holds the value of either the `near-term-forecast-options` or `long-term-forecast-options` map as defined in `config.cljs`.
-The toplevel keys correspond to a particular `Map Tab` and the values correspond to a nested structure containing configuration options for that tab.
+Holds the value of either the `near-term-forecast-options` or `long-term-forecast-options` map as defined in `config.cljs`.
+The top level keys correspond to a particular `Map Tab` and the values correspond to a nested structure containing configuration options for that tab.
 Important options include the `:opt-label` string (which describes the label of the tab on the front-end),
 the `:underlays` map (which defines the optional layers available on the given tab), and the `:params` map
 (which is used to define each input box and the options available in that input box on the side-panel for the given tab).
 The processed output from `process-capabilities!`:
-notably contains any fire names and/or user layers (obtained from the back-end) that are added to the capabilities atom
+Notably contains any fire names and/or user layers (obtained from the back-end) that are added to the capabilities atom
 (since the fire names and user layers are not defined initially in config.cljs."}
   capabilities (r/atom {}))
 (defonce ^{:doc "Contains the map associated with the :params key inside of the currently selected forecast in the capabilities atom.
