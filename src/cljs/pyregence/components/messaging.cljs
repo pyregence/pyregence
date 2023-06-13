@@ -102,7 +102,7 @@
                       :fill             ($/color-picker :white)}}}))
 
 (defn- $message-box []
-  {:margin    "15% auto"
+  {:margin    "10% auto"
    :min-width "35%"
    :width     "fit-content"})
 
