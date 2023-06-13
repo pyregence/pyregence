@@ -55,10 +55,11 @@
 (defn- show-job-log-modal! [match-job-id job-log]
   (set-message-box-content!
    {:title (str "Match Drop #" match-job-id)
-    :body  [:div {:style {:max-height "400px"
+    :body  [:div {:style {:max-height "500px"
                           :overflow-y "scroll"
-                          :overflow-x "auto"}}
-            [:pre {:style {:line-height 1.0 :margin-bottom 0 :max-width "50vw"}}
+                          :overflow-x "auto"
+                          :width      "75vw"}}
+            [:pre {:style {:line-height 1.0 :margin-bottom 0}}
              (doall (map-indexed (fn [i line] ^{:key i} line)
                                  (string/split job-log #"\\n")))]]
     :mode  :close}))
@@ -114,7 +115,10 @@
         2 "In progress..."
         3 "Removing...")]
      [:td {:width "25%"} ; "Message"
-      [:pre {:style {:line-height 1.0 :margin-bottom 0 :max-width "550px" :overflow "auto"}}
+      [:pre {:style {:line-height    1.0
+                     :margin-bottom  0
+                     :max-width      "550px"
+                     :overflow       "auto"}}
        (when-not (nil? message) message)]]
      [:td {:width "10%"} ; "Lon, Lat"
       (if-let [lon-lat (some->> (select-keys common-args [:lon :lat])

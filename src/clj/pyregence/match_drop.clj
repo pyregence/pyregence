@@ -223,9 +223,9 @@
 (defn- update-match-drop-message!
   "Updates the given match drop in the DB with the latest message."
   [match-job-id {:keys [message job-id]}]
-  (let [db-message (str "Message from the "
+  (let [db-message (str "{"
                         (get-server-based-on-job-id job-id true)
-                        " server: " message "\n")]
+                        "}: " message "\n")]
     (update-match-job! {:match-job-id match-job-id :message db-message})))
 
 ;;==============================================================================

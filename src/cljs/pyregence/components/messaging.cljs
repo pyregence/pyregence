@@ -103,7 +103,6 @@
 
 (defn- $message-box []
   {:margin    "15% auto"
-   :max-width "55%"
    :min-width "35%"
    :width     "fit-content"})
 
