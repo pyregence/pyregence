@@ -2,10 +2,10 @@
 <!-- Description of what has been added/changed -->
 
 ## Related Issues
-Closes PYR-###
+Closes PYR1-###
 
 ## Submission Checklist
-- [ ] Included Jira issue in the PR title (e.g. `PYR-### Did something here`)
+- [ ] Included Jira issue in the PR title (e.g. `PYR1-### Did something here`)
 - [ ] Code passes linter rules (`clj-kondo --lint src`)
 - [ ] Feature(s) work when compiled (`clojure -M:compile-cljs`)
 - [ ] No new reflection warnings (`clojure -M:check-reflection`)

@@ -18,6 +18,16 @@
 (defn java-date-from-string [date-str]
   (.parse (java.text.SimpleDateFormat. "yyyyMMdd_HHmmss") date-str))
 
+(defn layers-exist?
+  "Based on a given GeoServer key and workspace, checks to see if any layers
+   exist in the layers atom."
+  [geoserver-key geoserver-workspace]
+  (->> @layers
+       (geoserver-key)
+       (filter #(= geoserver-workspace (:workspace %)))
+       (count)
+       (pos?)))
+
 ;;; Layers
 
 (defn- split-fire-spread-forecast
