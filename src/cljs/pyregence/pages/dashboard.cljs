@@ -36,12 +36,16 @@
 
 (defn- delete-match-drop! [match-job-id]
   (go
-    (if (:success (<! (u-async/call-clj-async! "delete-match-drop" match-job-id))) ; issue the back-end deletion
-      (do
-        (toast-message! (str "Match drop " match-job-id " is queued to be deleted. "
-                             "Please click the 'Refresh' button."))
-        (set-user-match-drops! @_user-id)) ; refresh the dashboard
-      (toast-message! (str "Something went wrong while deleting Match Drop " match-job-id ".")))))
+    (let [response      (->> match-job-id
+                             (u-async/call-clj-async! "delete-match-drop")
+                             (<!))
+          response-body (-> response (:body) (edn/read-string))]
+      (if (:success response)
+        (do
+          (toast-message! response-body)
+          (set-user-match-drops! @_user-id)) ; refresh the dashboard
+        (toast-message! (str "Something went wrong while deleting Match Drop "
+                             match-job-id ": " response-body))))))
 
 (defn- set-match-drop-access! [user-id]
   (go

@@ -13,7 +13,9 @@
             [triangulum.database        :refer [call-sql sql-primitive]]
             [triangulum.logging         :refer [log-str]]
             [triangulum.type-conversion :refer [json->clj clj->json]]
-            [pyregence.capabilities :refer [remove-workspace! set-capabilities!]]
+            [pyregence.capabilities :refer [layers-exist?
+                                            remove-workspace!
+                                            set-capabilities!]]
             [pyregence.utils        :as u]
             [pyregence.views        :refer [data-response]]))
 
@@ -233,9 +235,10 @@
 ;;==============================================================================
 
 (defn- send-to-server-wrapper!
-  [host port match-job-id request]
-  (log-str (str "Inside send-to-server-wrapper!. host: " host " port: " port
-                " match-job-id: " match-job-id " request: " request))
+  "A wrapper to send a message to a Runway server. Optionally takes in
+   `deletion-request?`, which changes the way we update the Match Job
+   when issuing a deletion request."
+  [host port match-job-id request & [deletion-request?]]
   (try
     (with-open [client-socket (runway/create-ssl-client-socket host port)]
       (log-str (str "Able to open a client-socket: " client-socket))
@@ -243,15 +246,17 @@
                                         (-> request
                                             (json/write-str :key-fn kebab->camel)))
         (log-str (str "Was not able to send a request to " host " on port " port "."))
-        (update-match-job! {:match-job-id match-job-id
-                            :md-status    1
-                            :message      (str "Connection to " host " failed.")})))
+        (when-not deletion-request?
+          (update-match-job! {:match-job-id match-job-id
+                              :md-status    1
+                              :message      (str "Connection to " host ":" port " failed.")}))))
     (catch Exception e
       (log-str (str "Exception in send-to-server-wrapper!: " e ". "
-                    "Was not able to open an SSL client socket to host: " host " on por: " port))
-      (update-match-job! {:match-job-id match-job-id
-                          :md-status    1
-                          :message      (str "Connection to " host ":" port " failed.")}))))
+                    "Was not able to open an SSL client socket to host: " host " on port: " port))
+      (when-not deletion-request?
+        (update-match-job! {:match-job-id match-job-id
+                            :md-status    1
+                            :message      (str "Connection to " host ":" port " failed.")})))))
 
 ;;==============================================================================
 ;; Create Match Job Functions
@@ -390,29 +395,40 @@
        (mapv sql-result->job)
        (data-response)))
 
-;; TODO we don't need to send to server if we can tell that the GeoServer workspace doesn't exist in the layers atom
-;; we can instead just delete it from the DB. This handles the edge case where a run errored out.
 (defn delete-match-drop!
   "Deletes the specified match drop from the DB and removes it from the GeoServer
    via the 'remove' action passed to the GeoSync Runway server."
   [match-job-id]
-  (let [{:keys [geosync-request]} (get-match-job-from-match-job-id match-job-id)
-        updated-geosync-request   (-> geosync-request
-                                      (assoc-in [:script-args :geosync-args :action] "remove"))]
+  (let [{:keys [geosync-request geoserver-workspace]} (get-match-job-from-match-job-id match-job-id)
+        updated-geosync-request (-> geosync-request
+                                    (assoc-in [:script-args :geosync-args :action] "remove"))
+        geosync-host            (get-md-config :geosync-host)
+        geosync-port            (get-md-config :geosync-port)]
     (update-match-job! {:match-job-id    match-job-id
                         :md-status       3
                         :geosync-request updated-geosync-request
-                        :message         (format "Match Drop #%s is queued to be deleted.\n" match-job-id)})
+                        :message         (format "Match Drop #%s is queued to be deleted. Please click the \"Refresh\" button.\n" match-job-id)}) ; TODO test that \" works properly
     (log-str (str "Initiating the deletion of match drop job #" match-job-id))
-    (send-to-server-wrapper! (get-md-config :geosync-host)
-                             (get-md-config :geosync-port)
-                             match-job-id
-                             updated-geosync-request)))
-;; TODO need to provide `data-response` (check how the front end uses this and look at initiate-md! for reference)
-      ; (if send-send-to-server-wrapper!)
-      ;   (data-response (str "The " geoserver-workspace " workspace is queued to be removed from " geosync-host "."))
-      ;   (data-response (str "Connection to " geosync-host " failed.")
-      ;                 {:status 403}))))
+    (if (layers-exist? :match-drop geoserver-workspace)
+      ;; If the specified workspace exists in the layer atom, we need to use GeoSync to remove the workspace from the GeoSerer
+      (try
+        (send-to-server-wrapper! geosync-host
+                                 geosync-port
+                                 match-job-id
+                                 updated-geosync-request
+                                 true)
+        (data-response (str "The " geoserver-workspace " workspace is queued to be removed from "
+                            (get-config :geoserver :match-drop) "."))
+        (catch Exception _
+          (update-match-job! {:match-job-id match-job-id
+                              :md-status    1
+                              :message      (format "Connection to %s:%s failed.\n" geosync-host geosync-port)})
+          (data-response (str "Connection to " geosync-host ":" geosync-port " failed.")
+                         {:status 403})))
+      ;; Otherwise we can just remove the match drop from the database, it doesn't exist anywhere else (normally used for Match Drops that errored out)
+      (do (log-str "Deleting Match Job #" match-job-id " from the database.")
+          (call-sql "delete_match_job" match-job-id)
+          (data-response (str "Match Job #" match-job-id " was deleted from the database."))))))
 
 (defn get-md-status
   "Returns the current status of the given match drop run."
@@ -557,21 +573,16 @@
    the DB and `remove-workspace` so that the layers are removed from Pyrecast."
   [match-job-id job-id md-status geoserver-workspace]
   (condp = md-status
-    ;; NOTE: set-capabilities! might be handled by the GeoSync action hook already, but doesn't hurt to leave it in
-    ; 2     (if (set-capabilities! {"geoserver-key"  "match-drop"
-    ;                               "workspace-name" geoserver-workspace})
     2       (do
               (log-str (str "Geoserver workspace is " geoserver-workspace))
+              ;; NOTE: set-capabilities! might be handled by the GeoSync action hook already, but doesn't hurt to leave it in
               (set-capabilities! {"geoserver-key"  "match-drop"
                                   "workspace-name" geoserver-workspace})
               (log-str (str "Match Drop layers successfully added to Pyrecast! "
                             "Match Drop job #" match-job-id " is complete."))
               (update-match-job! {:match-job-id match-job-id
                                   :md-status    0
-                                  :message      (str "Match Drop job #" match-job-id " is complete!")}))
-            ; (update-match-drop-on-error! match-job-id
-            ;                              {:job-id  job-id
-            ;                               :message "GeoSync finished running, but the call to set-capabilities failed."}))
+                                  :message      (str "Match Drop job #" match-job-id " is complete!\n")}))
 
     3     (do
             (log-str "Deleting match job #" match-job-id " from the database.")
@@ -615,7 +626,7 @@
         "gridfire"
         (handle-steps-after-gridfire-finishes! match-job-id job-id geosync-request message)
 
-        "geosync"
+        "geosync" ; TODO make sure this is still true after a deletion request is issued
         (handle-steps-after-geosync-finishes! match-job-id job-id md-status geoserver-workspace)
 
         ;; The runway-server-that-finished wasn't dps, elmfire, gridfire, or geosync
