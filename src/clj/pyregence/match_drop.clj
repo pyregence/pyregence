@@ -36,7 +36,6 @@
 ;; Helper Functions
 ;;==============================================================================
 
-;; TODO This will be part of triangulum.utils
 (defn- kebab->camel
   "Converts kebab-string to camelString."
   [kebab-string]
@@ -236,8 +235,9 @@
 
 (defn- send-to-server-wrapper!
   "A wrapper to send a message to a Runway server. Optionally takes in
-   `deletion-request?`, which changes the way we update the Match Job
-   when issuing a deletion request."
+   `deletion-request?`, which throws an exception on error so that the
+   `delete-match-drop!` function is able to properly inform the front-end
+   as to the specific failure."
   [host port match-job-id request & [deletion-request?]]
   (try
     (with-open [client-socket (runway/create-ssl-client-socket host port)]
@@ -246,17 +246,17 @@
                                         (-> request
                                             (json/write-str :key-fn kebab->camel)))
         (log-str (str "Was not able to send a request to " host " on port " port "."))
-        (when-not deletion-request?
-          (update-match-job! {:match-job-id match-job-id
-                              :md-status    1
-                              :message      (str "Connection to " host ":" port " failed.")}))))
+        (update-match-job! {:match-job-id match-job-id
+                            :md-status    1
+                            :message      (str "Connection to " host ":" port " failed.\n")})
+        (when deletion-request? (throw (Exception. "Failed to remove Match Drop.")))))
     (catch Exception e
       (log-str (str "Exception in send-to-server-wrapper!: " e ". "
                     "Was not able to open an SSL client socket to host: " host " on port: " port))
-      (when-not deletion-request?
-        (update-match-job! {:match-job-id match-job-id
-                            :md-status    1
-                            :message      (str "Connection to " host ":" port " failed.")})))))
+      (update-match-job! {:match-job-id match-job-id
+                          :md-status    1
+                          :message      (str "Connection to " host ":" port " failed.\n")})
+      (when deletion-request? (throw (Exception. "Failed to remove Match Drop."))))))
 
 ;;==============================================================================
 ;; Create Match Job Functions
@@ -408,7 +408,7 @@
                         :md-status       3
                         :geosync-request updated-geosync-request
                         :message         (format "Match Drop #%s is queued to be deleted. Please click the \"Refresh\" button.\n" match-job-id)}) ; TODO test that \" works properly
-    (log-str (str "Initiating the deletion of match drop job #" match-job-id))
+    (log-str (str "Initiating the deletion of match drop job #" match-job-id "."))
     (if (layers-exist? :match-drop geoserver-workspace)
       ;; If the specified workspace exists in the layer atom, we need to use GeoSync to remove the workspace from the GeoSerer
       (try
@@ -422,7 +422,7 @@
         (catch Exception _
           (update-match-job! {:match-job-id match-job-id
                               :md-status    1
-                              :message      (format "Connection to %s:%s failed.\n" geosync-host geosync-port)})
+                              :message      (format "Something went wrong when trying to delete Match Drop #%s." match-job-id)})
           (data-response (str "Connection to " geosync-host ":" geosync-port " failed.")
                          {:status 403})))
       ;; Otherwise we can just remove the match drop from the database, it doesn't exist anywhere else (normally used for Match Drops that errored out)
@@ -588,6 +588,9 @@
             (log-str "Deleting match job #" match-job-id " from the database.")
             (call-sql "delete_match_job" match-job-id)
             ;; NOTE: remove-workspace! might be handled by the GeoSync action hook already, but doesn't hurt to leave it in
+            ;; TODO in the future we should make sure that the front-end is updated as soon as the workspace is removed.
+            ;; we will need to do something similar to the refresh-fire-names! fn in match_drop_tool.cljs, but only call
+            ;; it once this section of the code is hit.
             (remove-workspace! {"geoserver-key"  "match-drop"
                                 "workspace-name" geoserver-workspace}))
 
@@ -626,7 +629,7 @@
         "gridfire"
         (handle-steps-after-gridfire-finishes! match-job-id job-id geosync-request message)
 
-        "geosync" ; TODO make sure this is still true after a deletion request is issued
+        "geosync"
         (handle-steps-after-geosync-finishes! match-job-id job-id md-status geoserver-workspace)
 
         ;; The runway-server-that-finished wasn't dps, elmfire, gridfire, or geosync
