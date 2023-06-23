@@ -13,6 +13,8 @@
 
 (defonce layers (atom {}))
 
+(def site-url (get-config :mail :site-url))
+
 ;;; Helper Functions
 
 (defn java-date-from-string [date-str]
@@ -135,8 +137,8 @@
    in each entry map is generated based on the title of the layer. Different layer
    types have their information generated in different ways using the split-
    functions above."
-  [geoserver-key workspace-name]
-  (let [xml-response (-> (get-config :geoserver geoserver-key)
+  [geoserver-url workspace-name]
+  (let [xml-response (-> geoserver-url
                          (u/end-with "/")
                          (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
                               (when workspace-name
@@ -169,6 +171,7 @@
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-fire-spread-forecast full-name))
 
+                          ;; Either the layer is an isochrones layer or it matches a regex AND match drop is either enabled OR it's not a match drop
                           ;; TODO: Remove once fire forecasts are migrated to Image Mosiac format. Will still need isochrones to be read in properly.
                           (or (str/includes? full-name "isochrones")
                               (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
@@ -202,7 +205,7 @@
          update (keyword geoserver-key)
                 #(filterv (fn [{:keys [workspace]}]
                             (not= workspace workspace-name)) %))
-  (data-response (str workspace-name " removed from Pyrecast.")))
+  (data-response (str workspace-name " removed from " site-url ".")))
 
 (defn get-all-layers []
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
@@ -217,9 +220,10 @@
   (let [geoserver-key  (keyword geoserver-key)]
     (if (contains? (get-config :geoserver) geoserver-key)
       (try
-        (let [stdout?    (= 0 (count @layers))
-              new-layers (process-layers! geoserver-key workspace-name)
-              message    (str (count new-layers) " layers added to capabilities.")]
+        (let [stdout?       (= 0 (count @layers))
+              geoserver-url (get-config :geoserver geoserver-key)
+              new-layers    (process-layers! geoserver-url workspace-name)
+              message       (str (count new-layers) " layers from " geoserver-url " added to " site-url ".")]
           (if workspace-name
             (do
               (remove-workspace! {"geoserver-key"  (name geoserver-key)
@@ -238,7 +242,7 @@
   (doseq [geoserver-key (keys (get-config :geoserver))]
     (set-capabilities! {"geoserver-key" (name geoserver-key)}))
   (data-response (str (reduce + (map count (vals @layers)))
-                      " layers added to capabilities.")))
+                      " total layers added to " site-url ".")))
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]
