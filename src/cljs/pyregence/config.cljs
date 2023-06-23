@@ -79,18 +79,18 @@
                                                                 :units           ""
                                                                 :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                 :reverse-legend? false
-                                                                :disabled-for    #{:cecs :fire-factor}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor}}
                                                        :slp    {:opt-label       "Slope (degrees)"
                                                                 :filter          "slp"
                                                                 :units           "\u00B0"
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cecs :fire-factor}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor}}
                                                        :dem    {:opt-label       "Elevation (ft)"
                                                                 :filter          "dem"
                                                                 :units           "ft"
                                                                 :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cecs :fire-factor}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor}}
                                                        :cc     {:opt-label       "Canopy Cover (%)"
                                                                 :filter          "cc"
                                                                 :units           "%"
@@ -164,8 +164,9 @@
                                                        ", Wang et al. (2021)."]
                                           :options    {:landfire      {:opt-label "LANDFIRE 2.2.0"
                                                                        :filter    "landfire-2.2.0"}
-                                                       :cfo           {:opt-label "California Forest Obs."
-                                                                       :filter    "cfo-2020"}
+                                                       :cfo           {:opt-label    "California Forest Obs."
+                                                                       :filter       "cfo-2020"
+                                                                       :disabled-for #{:asp :slp :dem}}
                                                        :ca-fuelscapes {:opt-label "2022 CA fuelscape"
                                                                        :filter    "ca-2022-fuelscape"}
                                                        :fire-factor   {:opt-label   "Fire Factor 2022"
