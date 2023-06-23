@@ -30,10 +30,10 @@
  :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
            :config           {:main-opts ["-m" "triangulum.config"]}
            :https            {:main-opts ["-m" "triangulum.https"]}
-           :server           {:jvm-opts  ["-Djavax.net.ssl.keyStore=resources/runway.jks"
-                                          "-Djavax.net.ssl.keyStorePassword=RomeoUniformNovemberWhiskeyAlfaYankee"] ; NOTE if/when this repo goes public, we'll need to hide this password
-                              :main-opts ["-m" "pyregence.server"]}
-           :systemd          {:main-opts ["-m" "triangulum.systemd"]}
+           :default-ssl-opts {:jvm-opts  ["-Djavax.net.ssl.keyStore=resources/runway.jks"
+                                          "-Djavax.net.ssl.keyStorePassword=RomeoUniformNovemberWhiskeyAlfaYankee"]}
+           :server           {:main-opts ["-m" "pyregence.server"]}
+           :systemd          {:main-opts ["-m" "triangulum.systemd" ":default-ssl-opts"]}
            :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
            :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}}}
            :figwheel         {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}
