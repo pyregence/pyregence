@@ -5,7 +5,7 @@
             [goog.string                    :refer [format]]
             [herb.core                      :refer [<class]]
             [pyregence.components.common    :refer [check-box labeled-input simple-form]]
-            [pyregence.components.messaging :refer [confirmation-modal set-message-box-content! toast-message!]]
+            [pyregence.components.messaging :refer [message-box-modal set-message-box-content! toast-message!]]
             [pyregence.styles               :as $]
             [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.async-utils    :as u-async]
@@ -107,7 +107,9 @@
   (go
     (let [response (<! (u-async/call-clj-async! "get-organizations" user-id))]
       (reset! *orgs (if (:success response)
-                      (edn/read-string (:body response))
+                      (->> (:body response)
+                           (edn/read-string)
+                           (filter #(= "admin" (:role %)))) ; only show orgs user is an admin of
                       []))
       (reset! pending-get-organizations? false)
 
@@ -216,14 +218,16 @@
   (let [message (str "Are you sure that you want to add the following new user\n"
                      "as a Member of the \"%s\" organization?\n\n"
                      "%s <%s>")]
-    (set-message-box-content! {:title  "Add New User"
+    (set-message-box-content! {:mode   :confirm
+                               :title  "Add New User"
                                :body   (format message @*org-name @new-user-full-name @new-user-email)
                                :action #(register-new-user!)})))
 
 (defn- handle-add-existing-user [org-id email]
   (let [message "Are you sure that you want to add the user with email \"%s\" as a Member of the \"%s\" organization?"]
     (when-not (blank? email)
-      (set-message-box-content! {:title  "Add Existing User"
+      (set-message-box-content! {:mode   :confirm
+                                 :title  "Add Existing User"
                                  :body   (format message email @*org-name)
                                  :action #(do
                                             (add-existing-user! email)
@@ -234,7 +238,8 @@
   (go
     (let [message (str "Are you sure that you want to update the user's name from %s to %s?")]
       (when-not (blank? @updated-name-state)
-        (set-message-box-content! {:title     "Update Username"
+        (set-message-box-content! {:mode      :confirm
+                                   :title     "Update Username"
                                    :body      (format message prev-name @updated-name-state)
                                    :action    #(go
                                                  (<! (update-org-user! email @updated-name-state)))
@@ -242,7 +247,8 @@
 
 (defn- handle-remove-user [user-id user-name]
   (let [message "Are you sure that you want to remove user \"%s\" from the \"%s\" organization?"]
-    (set-message-box-content! {:title  "Delete User"
+    (set-message-box-content! {:mode   :confirm
+                               :title  "Delete User"
                                :body   (format message user-name @*org-name)
                                :action #(remove-org-user! user-id)})))
 
@@ -252,13 +258,15 @@
                        (filter (fn [role] (= rid (role :opt-id))))
                        (first)
                        (:opt-label))]
-    (set-message-box-content! {:title  "Update User Role"
+    (set-message-box-content! {:mode   :confirm
+                               :title  "Update User Role"
                                :body   (format message user-name role-name)
                                :action #(update-org-user-role! uid rid)})))
 
 (defn- handle-update-org-settings [oid org-name email-domains auto-add auto-accept]
   (let [message "Are you sure you wish to update the settings for the \"%s\" organization? Saving these changes will overwrite any previous settings."]
-    (set-message-box-content! {:title  "Update Settings"
+    (set-message-box-content! {:mode   :confirm
+                               :title  "Update Settings"
                                :body   (format message @*org-name)
                                :action #(update-org-info! oid org-name email-domains auto-add auto-accept)})))
 
@@ -414,7 +422,7 @@
     (cond
       (or (nil? user-id)                              ; User is not logged in OR
           (and (= (count @*orgs) 0)                   ; User is not an admin of any org AND
-               (false? @pending-get-organizations?))) ; The get-organizations call has finished 
+               (false? @pending-get-organizations?))) ; The get-organizations call has finished
       (do (u-browser/redirect-to-login! "/admin")
           nil)
 
@@ -424,7 +432,7 @@
 
       :else                           ; Logged-in user and admin of at least one org
       [:div {:style {:display "flex" :justify-content "center" :padding "2rem 8rem"}}
-       [confirmation-modal]
+       [message-box-modal]
        [:div {:style {:flex 1 :padding "1rem"}}
         [org-list @*orgs]]
        [:div {:style {:display        "flex"

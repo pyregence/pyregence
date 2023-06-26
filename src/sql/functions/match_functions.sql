@@ -1,23 +1,29 @@
 -- NAMESPACE: match
 -- REQUIRES: clear
 
--- Retrieve match job with job_id
-CREATE OR REPLACE FUNCTION get_match_job(_job_id integer)
+-- Retrieve the match job based on the runway_job_uid
+CREATE OR REPLACE FUNCTION get_match_job_runway(_runway_job_id text)
  RETURNS TABLE (
-    job_id           integer,
-    user_id          integer,
-    created_at       timestamp,
-    updated_at       timestamp,
-    md_status        integer,
-    display_name     varchar,
-    message          text,
-    job_log          text,
-    elmfire_done     boolean,
-    gridfire_done    boolean,
-    request          text
+    match_job_id        integer,
+    runway_job_id       text,
+    user_id             integer,
+    created_at          timestamp,
+    updated_at          timestamp,
+    md_status           integer,
+    display_name        varchar,
+    message             text,
+    job_log             text,
+    elmfire_done        boolean,
+    gridfire_done       boolean,
+    dps_request         text,
+    elmfire_request     text,
+    gridfire_request    text,
+    geosync_request     text,
+    geoserver_workspace text
  ) AS $$
 
-    SELECT job_uid,
+    SELECT match_job_uid,
+        runway_job_uid,
         user_rid,
         created_at,
         updated_at,
@@ -27,29 +33,81 @@ CREATE OR REPLACE FUNCTION get_match_job(_job_id integer)
         job_log,
         elmfire_done,
         gridfire_done,
-        request::text
+        dps_request::text,
+        elmfire_request::text,
+        gridfire_request::text,
+        geosync_request::text,
+        geoserver_workspace
     FROM match_jobs
-    WHERE job_uid = _job_id
+    WHERE runway_job_uid = _runway_job_id
+
+$$ LANGUAGE SQL;
+
+-- Retrieve the match job based on the match_job_uid
+CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
+ RETURNS TABLE (
+    match_job_id        integer,
+    runway_job_id       text,
+    user_id             integer,
+    created_at          timestamp,
+    updated_at          timestamp,
+    md_status           integer,
+    display_name        varchar,
+    message             text,
+    job_log             text,
+    elmfire_done        boolean,
+    gridfire_done       boolean,
+    dps_request         text,
+    elmfire_request     text,
+    gridfire_request    text,
+    geosync_request     text,
+    geoserver_workspace text
+ ) AS $$
+
+    SELECT match_job_uid,
+        runway_job_uid,
+        user_rid,
+        created_at,
+        updated_at,
+        md_status,
+        display_name,
+        message,
+        job_log,
+        elmfire_done,
+        gridfire_done,
+        dps_request::text,
+        elmfire_request::text,
+        gridfire_request::text,
+        geosync_request::text,
+        geoserver_workspace
+    FROM match_jobs
+    WHERE match_job_uid = _match_job_id
 
 $$ LANGUAGE SQL;
 
 -- Retrieve all match drop jobs associated with user_rid
 CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
  RETURNS TABLE (
-    job_id           integer,
-    user_id          integer,
-    created_at       timestamp,
-    updated_at       timestamp,
-    md_status        integer,
-    display_name     varchar,
-    message          text,
-    job_log          text,
-    elmfire_done     boolean,
-    gridfire_done    boolean,
-    request          text
+    match_job_id        integer,
+    runway_job_id       text,
+    user_id             integer,
+    created_at          timestamp,
+    updated_at          timestamp,
+    md_status           integer,
+    display_name        varchar,
+    message             text,
+    job_log             text,
+    elmfire_done        boolean,
+    gridfire_done       boolean,
+    dps_request         text,
+    elmfire_request     text,
+    gridfire_request    text,
+    geosync_request     text,
+    geoserver_workspace text
  ) AS $$
 
-    SELECT job_uid,
+    SELECT match_job_uid,
+        runway_job_uid,
         user_rid,
         created_at,
         updated_at,
@@ -59,7 +117,11 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
         job_log,
         elmfire_done,
         gridfire_done,
-        request::text
+        dps_request::text,
+        elmfire_request::text,
+        gridfire_request::text,
+        geosync_request::text,
+        geoserver_workspace
     FROM match_jobs
     WHERE user_rid = _user_id
 
@@ -96,44 +158,64 @@ CREATE OR REPLACE FUNCTION initialize_match_job(_user_id integer)
         (user_rid)
     VALUES
         (_user_id)
-    RETURNING job_uid
+    RETURNING match_job_uid
 
 $$ LANGUAGE SQL;
 
 -- Update job message
 CREATE OR REPLACE FUNCTION update_match_job(
-    _job_id           integer,
-    _md_status        integer,
-    _display_name     varchar,
-    _message          text,
-    _elmfire_done     boolean,
-    _gridfire_done    boolean,
-    _request          text
+    _match_job_id        integer,
+    _runway_job_id       text,
+    _md_status           integer,
+    _display_name        varchar,
+    _message             text,
+    _elmfire_done        boolean,
+    _gridfire_done       boolean,
+    _dps_request         text,
+    _elmfire_request     text,
+    _gridfire_request    text,
+    _geosync_request     text,
+    _geoserver_workspace text
  ) RETURNS void AS $$
 
     UPDATE match_jobs
-    SET md_status = coalesce(_md_status, md_status),
+    SET runway_job_uid = coalesce(_runway_job_id, runway_job_uid),
+        md_status = coalesce(_md_status, md_status),
         display_name = coalesce(_display_name, display_name),
         message = coalesce(_message, message),
         job_log = coalesce(job_log || to_char(now(), 'YYYY-MM-DD HH:MI.SS') || ': ' || _message || '\n', job_log),
         elmfire_done = coalesce(_elmfire_done, elmfire_done),
         gridfire_done = coalesce(_gridfire_done, gridfire_done),
-        request = coalesce(_request::jsonb, request),
-        updated_at = now()
-    WHERE job_uid = _job_id
+        dps_request = coalesce(_dps_request::jsonb, dps_request),
+        elmfire_request = coalesce(_elmfire_request::jsonb, elmfire_request),
+        gridfire_request = coalesce(_gridfire_request::jsonb, gridfire_request),
+        geosync_request = coalesce(_geosync_request::jsonb, geosync_request),
+        updated_at = now(),
+        geoserver_workspace = coalesce(_geoserver_workspace, geoserver_workspace)
+    WHERE match_job_uid = _match_job_id
 
 $$ LANGUAGE SQL;
 
 -- Retrieve the display names for user's completed match drops
 CREATE OR REPLACE FUNCTION get_user_match_names(_user_rid integer)
  RETURNS TABLE (
-    job_id          integer,
+    match_job_id    integer,
     display_name    varchar
  ) AS $$
 
-    SELECT job_uid, display_name
+    SELECT match_job_uid, display_name
     FROM match_jobs
     WHERE md_status = 0
         AND user_rid = _user_rid
+
+$$ LANGUAGE SQL;
+
+-- Delete the selected match job from the match_jobs table
+CREATE OR REPLACE FUNCTION delete_match_job(_match_job_rid integer)
+ RETURNS void AS $$
+
+   DELETE
+   FROM match_jobs
+   WHERE match_job_uid = _match_job_rid
 
 $$ LANGUAGE SQL;

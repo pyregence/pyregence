@@ -52,10 +52,23 @@
     (data-response user-info)
     (data-response "" {:status 403})))
 
-;; TODO hook into UI
+;; TODO hook into UI add success/failure branches
 (defn update-user-info [user-id settings]
   (call-sql "update_user_info" user-id settings)
   (data-response ""))
+
+;; TODO hook into UI and add success/failure branches
+(defn update-user-match-drop-access [user-id match-drop-access?]
+  (call-sql "update_user_match_drop_access" user-id match-drop-access?)
+  (data-response ""))
+
+(defn get-user-match-drop-access [user-id]
+  (if (sql-primitive (call-sql "get_user_match_drop_access" user-id))
+    (data-response (str "The user with an id of " user-id " has Match Drop access."))
+    (let [response-msg (if (nil? user-id)
+                         "There is no user logged in. Match Drop will remain disabled."
+                         (str "The user with an id of " user-id " does not have Match Drop access."))]
+      (data-response response-msg {:status 403}))))
 
 (defn update-user-name [email new-name]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
@@ -66,12 +79,13 @@
 
 (defn get-organizations
   "Given a user's id, returns the list of organizations that they belong to
-   and are an admin of."
+   and are an admin or a member of."
   [user-id]
   (->> (call-sql "get_organizations" user-id)
-       (mapv (fn [{:keys [org_id org_name email_domains auto_add auto_accept]}]
+       (mapv (fn [{:keys [org_id org_name role_id email_domains auto_add auto_accept]}]
                {:opt-id        org_id
                 :opt-label     org_name
+                :role          (if (= role_id 1) "admin" "member")
                 :email-domains email_domains
                 :auto-add?     auto_add
                 :auto-accept?  auto_accept}))

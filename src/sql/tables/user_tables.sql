@@ -8,14 +8,15 @@ CREATE TABLE roles (
 
 -- Stores information about users
 CREATE TABLE users (
-    user_uid       SERIAL PRIMARY KEY,
-    email          text NOT NULL UNIQUE,
-    name           text NOT NULL,
-    password       varchar(72) NOT NULL,
-    settings       text,
-    super_admin    boolean DEFAULT FALSE,
-    verified       boolean DEFAULT FALSE,
-    reset_key      text DEFAULT NULL
+    user_uid          SERIAL PRIMARY KEY,
+    email             text NOT NULL UNIQUE,
+    name              text NOT NULL,
+    password          varchar(72) NOT NULL,
+    settings          text,
+    super_admin       boolean DEFAULT FALSE,
+    verified          boolean DEFAULT FALSE,
+    reset_key         text DEFAULT NULL,
+    match_drop_access boolean DEFAULT FALSE
 );
 
 -- Stores information about organizations

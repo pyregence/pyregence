@@ -12,6 +12,7 @@
             [pyregence.components.map-controls.information-tool  :refer [information-tool]]
             [pyregence.components.map-controls.legend-box        :refer [legend-box]]
             [pyregence.components.map-controls.match-drop-tool   :refer [match-drop-tool]]
+            [pyregence.components.map-controls.measure-tool      :refer [measure-tool]]
             [pyregence.components.map-controls.mouse-lng-lat     :refer [mouse-lng-lat]]
             [pyregence.components.map-controls.scale-bar         :refer [scale-bar]]
             [pyregence.components.map-controls.time-slider       :refer [time-slider]]
@@ -60,17 +61,26 @@
   (get-in @!/capabilities [@!/*forecast key-name]))
 
 (defn- current-layer []
-  (get @!/param-layers @!/*layer-idx))
+  (if (= (count @!/param-layers) 1)
+    (first @!/param-layers)
+    (get @!/param-layers @!/*layer-idx)))
 
 (defn- get-current-layer-name []
   (:layer (current-layer) ""))
 
+(defn- get-current-layer-time []
+  (when (:times (current-layer))
+    (nth (:times (current-layer)) @!/*layer-idx)))
+
 (defn- get-current-layer-hour []
-  (:hour (current-layer) 0))
+  (if-let [current-layer-time (get-current-layer-time)]
+    (second (re-find #"[0-9]{4}-[0-9]{2}-[0-9]{2}T([0-9]{2})" current-layer-time))
+    (:hour (current-layer) 0)))
 
 (defn- get-current-layer-full-time []
-  (if-let [sim-time (:sim-time (current-layer))]
-    (u-time/time-zone-iso-date sim-time @!/show-utc?)
+  (if-let [sim-time (or (get-current-layer-time)
+                        (:sim-time (current-layer)))]
+    (u-time/date-string->iso-string sim-time @!/show-utc?)
     ""))
 
 (defn- get-current-layer-extent []
@@ -143,7 +153,7 @@
   (let [processed-times (into (u-data/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
-                                      {:opt-label (u-time/time-zone-iso-date utc-time @!/show-utc?)
+                                      {:opt-label (u-time/date-string->iso-string utc-time @!/show-utc?)
                                        :utc-time  utc-time ; TODO is utc-time redundant?
                                        :filter    utc-time}])
                                    model-times))]
@@ -172,7 +182,7 @@
                                                                                    (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
-      (swap! !/*layer-idx #(max 0 (min % (- (count @!/param-layers) 1))))
+      (swap! !/*layer-idx #(max 0 (min % (- (count (or (:times (first @!/param-layers)) @!/param-layers)) 1))))
       (when-not (seq @!/param-layers)
         (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
 
@@ -345,18 +355,19 @@
   "Called when you use the point information tool and click a point on the map.
    Processes the JSON result from GetFeatureInfo differently depending on whether or not
    the layer has single-point-info or timeline-point-info. This processing is used
-   to reset! the !/last-clicked-info atom for use in rendering the information-tool."
-  [point-info]
+   to reset! the !/last-clicked-info atom for use in rendering the information-tool.
+   Takes in one argument, the bounding box of the currently selected point."
+  [point-info-bbox]
   (let [layer-name          (get-current-layer-name)
         layer-group         (get-current-layer-group)
         single?             (str/blank? layer-group)
         layer               (if single? layer-name layer-group)
         process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
-    (when-not (u-data/missing-data? layer point-info)
+    (when-not (u-data/missing-data? layer point-info-bbox)
       (reset! !/point-info-loading? true)
       (get-data #(wrap-wms-errors "point information" % process-point-info!)
                 (c/point-info-url layer
-                                  (str/join "," point-info)
+                                  (str/join "," point-info-bbox)
                                   (if single? 1 50000)
                                   (get-any-level-key :geoserver-key)
                                   (when (= @!/*forecast :psps-zonal)
@@ -372,7 +383,8 @@
   (mb/swap-active-layer! (get-current-layer-name)
                          (get-any-level-key :geoserver-key)
                          (/ @!/active-opacity 100)
-                         (get-psps-layer-style)))
+                         (get-psps-layer-style)
+                         (get-current-layer-time)))
 
 (defn- select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -380,8 +392,9 @@
                                       @!/param-layers))))
 
 (defn- clear-info! []
-  (mb/clear-point!)
+  (mb/remove-markers!)
   (reset! !/last-clicked-info [])
+  (reset! !/show-measure-tool? false)
   (when (get-forecast-opt :block-info?)
     (reset! !/show-info? false)))
 
@@ -414,7 +427,8 @@
                                   style-fn
                                   (get-any-level-key :geoserver-key)
                                   (/ @!/active-opacity 100)
-                                  (get-psps-layer-style)))
+                                  (get-psps-layer-style)
+                                  (get-current-layer-time)))
       (mb/clear-popup!)
       ; When we have a style-fn (which indicates a WFS layer) add the feature highlight.
       ; For now, the only dropdown layer that is WFS is the *Active Fires layer.
@@ -479,7 +493,7 @@
                                          (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
                                                        [k (assoc v
                                                                  :opt-label
-                                                                 (u-time/time-zone-iso-date utc-time @!/show-utc?))])
+                                                                 (u-time/date-string->iso-string utc-time @!/show-utc?))])
                                                  options)))))
 
 (defn- params->selected-options
@@ -516,20 +530,12 @@
                                                   params))]))
                      options-config)))
 
-(defn- refresh-fire-names! [user-id]
-  (go
-    (as-> (u-async/call-clj-async! "get-fire-names" user-id) fire-names
-      (<! fire-names)
-      (:body fire-names)
-      (edn/read-string fire-names)
-      (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge fire-names))))
-
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
           user-layers-chan                (u-async/call-clj-async! "get-user-layers" user-id)
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
-          fire-cameras                    (u-async/call-clj-async! "get-cameras")]
+          fire-cameras-chan               (u-async/call-clj-async! "get-cameras")]
       (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast (or (keyword forecast)
                               (keyword (forecast-type @!/default-forecasts))))
@@ -541,7 +547,7 @@
                              (params->selected-options options-config @!/*forecast params))
       (<! (select-forecast! @!/*forecast))
       (reset! !/user-org-list (edn/read-string (:body (<! (u-async/call-clj-async! "get-organizations" user-id)))))
-      (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras))))
+      (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
       (reset! !/loading? false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -608,7 +614,9 @@
                (get-current-layer-hour)
                #(set-show-info! false)])
             (when @!/show-match-drop?
-              [match-drop-tool @my-box #(reset! !/show-match-drop? false) refresh-fire-names! user-id])
+              [match-drop-tool @my-box #(reset! !/show-match-drop? false) user-id])
+            (when @!/show-measure-tool?
+              [measure-tool @my-box #(reset! !/show-measure-tool? false)])
             (when @!/show-camera?
               [camera-tool @my-box #(reset! !/show-camera? false)])])
          [legend-box
@@ -639,9 +647,11 @@
 (defn- map-layer []
   (r/with-let [mouse-down? (r/atom false)
                cursor-fn   #(cond
-                              @mouse-down?                           "grabbing"
-                              (or @!/show-info? @!/show-match-drop?) "crosshair" ; TODO get custom cursor image from Ryan
-                              :else                                  "grab")]
+                              @mouse-down?               "grabbing"
+                              (or @!/show-info?
+                                  @!/show-match-drop?
+                                  @!/show-measure-tool?) "crosshair"
+                              :else                      "grab")]
     [:div#map {:class (<class $p-mb-cursor)
                :style {:cursor (cursor-fn) :height "100%" :position "absolute" :width "100%"}
                :on-mouse-down #(reset! mouse-down? true)
@@ -696,7 +706,7 @@
            "Accept"]]]]])))
 
 (defn- loading-modal []
-  [:div#message-modal {:style ($/modal)}
+  [:div#loading-modal {:style ($/modal)}
    [:div {:style ($message-modal true)}
     [:h3 {:style {:margin-bottom "0"
                   :padding       "1rem"
@@ -734,7 +744,10 @@
          [message-modal]
          [nav-bar {:capabilities         @!/capabilities
                    :current-forecast     @!/*forecast
-                   :is-admin?            (> (count @!/user-org-list) 0)
+                   :is-admin?            (->> @!/user-org-list
+                                              (filter #(= "admin" (:role %)))
+                                              (count)
+                                              (< 0)) ; admin of at least one org
                    :logged-in?           user-id
                    :mobile?              @!/mobile?
                    :user-org-list        @!/user-org-list

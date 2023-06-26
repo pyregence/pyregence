@@ -307,7 +307,7 @@
             [:<>
              (map (fn [[key {:keys [opt-label hover-text options sort? disabled]}]]
                     (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                      ^{:key hover-text}
+                      ^{:key (str (random-uuid))}
                       [:<>
                        [panel-dropdown
                         opt-label

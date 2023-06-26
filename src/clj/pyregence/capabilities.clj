@@ -13,12 +13,38 @@
 
 (defonce layers (atom {}))
 
+(def site-url (get-config :mail :site-url))
+
 ;;; Helper Functions
 
 (defn java-date-from-string [date-str]
   (.parse (java.text.SimpleDateFormat. "yyyyMMdd_HHmmss") date-str))
 
+(defn layers-exist?
+  "Based on a given GeoServer key and workspace, checks to see if any layers
+   exist in the layers atom."
+  [geoserver-key geoserver-workspace]
+  (->> @layers
+       (geoserver-key)
+       (filter #(= geoserver-workspace (:workspace %)))
+       (count)
+       (pos?)))
+
 ;;; Layers
+
+(defn- split-fire-spread-forecast
+  "Gets information about a fire spread layer based on the layer's name."
+  [name-string]
+  (let [[workspace layer]              (str/split name-string #":")
+        [forecast fire-name ts1 ts2]   (str/split workspace #"_")
+        [model fuel percentile output] (str/split layer #"_")
+        model-init                     (str ts1 "_" ts2)]
+    {:workspace   workspace
+     :fire-name   fire-name
+     :forecast    forecast
+     :filter-set  #{forecast fire-name model fuel percentile output model-init}
+     :model-init  model-init
+     :layer-group ""}))
 
 (defn- split-risk-weather-psps-layer-name
   "Gets information about a risk, weather, or PSPS layer based on the layer's name."
@@ -53,7 +79,7 @@
      :hour        0}))
 
 (defn- split-fire-detections
-  "Gets information about a fire risk layer based on its name."
+  "Gets information about a fire detections layer (e.g. MODIS or VIIRS) based on its name."
   [name-string]
   (let [[workspace layer]   (str/split name-string #":")
         [forecast type]     (str/split workspace #"_")
@@ -111,8 +137,8 @@
    in each entry map is generated based on the title of the layer. Different layer
    types have their information generated in different ways using the split-
    functions above."
-  [geoserver-key workspace-name]
-  (let [xml-response (-> (get-config :geoserver geoserver-key)
+  [geoserver-url workspace-name]
+  (let [xml-response (-> geoserver-url
                          (u/end-with "/")
                          (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
                               (when workspace-name
@@ -133,11 +159,20 @@
                                            (re-seq #"[\d|\.|-]+")
                                            (rest)
                                            (vec))
-                            merge-fn  #(merge % {:layer full-name :extent coords})]
+                            times     (some-> (re-find #"<Dimension .*>(.*)</Dimension>" layer) ; Times are used in ImageMosaic layers
+                                              (last)
+                                              (str/split #","))
+                            merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
+                          (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
+                               (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
+                          (merge-fn (split-fire-spread-forecast full-name))
+
+                          ;; Either the layer is an isochrones layer or it matches a regex AND match drop is either enabled OR it's not a match drop
+                          ;; TODO: Remove once fire forecasts are migrated to Image Mosiac format. Will still need isochrones to be read in properly.
                           (or (str/includes? full-name "isochrones")
                               (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
                                    (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop")))))
@@ -162,16 +197,17 @@
 
 ;;; Routes
 
+;; TODO note that calling this fn on a regex does not work properly. Passing in
+;; a workspace name as a regex is a GeoSync use case, so this should be updated to accept a regex
 (defn remove-workspace!
   "Given a specific geoserver-key and a specific workspace-name, removes any
    layers from that workspace from the layers atom."
   [{:strs [geoserver-key workspace-name]}]
-  (println workspace-name)
   (swap! layers
          update (keyword geoserver-key)
                 #(filterv (fn [{:keys [workspace]}]
                             (not= workspace workspace-name)) %))
-  (data-response (str workspace-name " removed.")))
+  (data-response (str workspace-name " removed from " site-url ".")))
 
 (defn get-all-layers []
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
@@ -186,9 +222,10 @@
   (let [geoserver-key  (keyword geoserver-key)]
     (if (contains? (get-config :geoserver) geoserver-key)
       (try
-        (let [stdout?    (= 0 (count @layers))
-              new-layers (process-layers! geoserver-key workspace-name)
-              message    (str (count new-layers) " layers added to capabilities.")]
+        (let [stdout?       (= 0 (count @layers))
+              geoserver-url (get-config :geoserver geoserver-key)
+              new-layers    (process-layers! geoserver-url workspace-name)
+              message       (str (count new-layers) " layers from " geoserver-url " added to " site-url ".")]
           (if workspace-name
             (do
               (remove-workspace! {"geoserver-key"  (name geoserver-key)
@@ -197,8 +234,8 @@
             (swap! layers assoc geoserver-key new-layers))
           (log message :force-stdout? stdout?)
           (data-response message))
-        (catch Exception _
-          (log-str "Failed to load capabilities.")))
+        (catch Exception e
+          (log-str "Failed to load capabilities.\n" (ex-message e))))
       (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn."))))
 
 (defn set-all-capabilities!
@@ -207,7 +244,7 @@
   (doseq [geoserver-key (keys (get-config :geoserver))]
     (set-capabilities! {"geoserver-key" (name geoserver-key)}))
   (data-response (str (reduce + (map count (vals @layers)))
-                      " layers added to capabilities.")))
+                      " total layers added to " site-url ".")))
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]
@@ -216,27 +253,37 @@
                     (map str/capitalize (rest parts))))))
 
 ; FIXME get user-id from session on backend
-(defn get-fire-names [user-id]
+(defn get-fire-names
+  "Returns all unique fires from the layers atom parsed into the format
+   needed on the front-end. Takes special care to deal with match drop fires.
+   An example return value can be seen below:
+   {:foo {:opt-label \"foo\", :filter \"foo\", :auto-zoom? true,
+    :bar {:opt-label \"bar\", :filter \"bar\", :auto-zoom? true}}"
+  [user-id]
   (let [match-drop-names (->> (call-sql "get_user_match_names" user-id)
                               (reduce (fn [acc row]
-                                        (assoc acc (:job_id row) (:display_name row)))
+                                        (assoc acc (:match_job_id row)
+                                                   (str (:display_name row)
+                                                        " (Match Drop)")))
                                       {}))]
-    (->> (:trinity @layers)
+    (->> (apply merge (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
                    (= "fire-spread-forecast" forecast)))
          (map :fire-name)
          (distinct)
          (mapcat (fn [fire-name]
-                   (let [job-id (some-> fire-name
-                                        (str/split #"match-drop-")
-                                        (second)
-                                        (Integer/parseInt))]
-                     (when (or (nil? job-id) (contains? match-drop-names job-id))
+                   (let [match-job-id (some-> fire-name
+                                              (str/split #"match-drop-")
+                                              (second)
+                                              (Integer/parseInt))]
+                     (when (or (nil? match-job-id)
+                               (contains? match-drop-names match-job-id))
                        [(keyword fire-name)
-                        {:opt-label  (or (get match-drop-names job-id)
-                                         (fire-name-capitalization fire-name))
-                         :filter     fire-name
-                         :auto-zoom? true}]))))
+                        {:opt-label      (or (get match-drop-names match-job-id)
+                                             (fire-name-capitalization fire-name))
+                         :filter        fire-name
+                         :auto-zoom?    true
+                         :geoserver-key (if match-job-id :match-drop :trinity)}]))))
          (apply array-map))))
 
 (defn get-user-layers [user-id]

@@ -48,6 +48,16 @@ CREATE OR REPLACE FUNCTION get_user_id_by_email(_email text)
 
 $$ LANGUAGE SQL;
 
+-- Returns user email for a given user id
+CREATE OR REPLACE FUNCTION get_email_by_user_id(_user_id integer)
+ RETURNS text AS $$
+
+    SELECT email
+    FROM users
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
 -- Inserts a new user with its info
 CREATE OR REPLACE FUNCTION add_new_user(
     _email       text,
@@ -144,29 +154,50 @@ CREATE OR REPLACE FUNCTION update_user_name(_user_id integer, _name text)
 
 $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION update_user_match_drop_access(_user_id integer, _match_drop_access boolean)
+ RETURNS void AS $$
+
+    UPDATE users
+    SET match_drop_access = _match_drop_access
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION get_user_match_drop_access(_user_id integer)
+ RETURNS boolean AS $$
+
+    SELECT match_drop_access
+    FROM users
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
 ---
 ---  Organizations
 ---
 
+-- Returns all organizations for a user that they are an admin or member of
 CREATE OR REPLACE FUNCTION get_organizations(_user_id integer)
  RETURNS TABLE (
     org_id           integer,
     org_name         text,
+    role_id          integer,
     email_domains    text,
     auto_add         boolean,
     auto_accept      boolean
  ) AS $$
 
-    SELECT organization_uid,
-        org_name,
-        email_domains,
-        auto_add,
-        auto_accept
-    FROM organizations, organization_users
-    WHERE organization_uid = organization_rid
-        AND user_rid = _user_id
-        AND role_rid = 1
-    ORDER BY org_name
+    SELECT o.organization_uid,
+        o.org_name,
+        ou.role_rid,
+        o.email_domains,
+        o.auto_add,
+        o.auto_accept
+    FROM organizations AS o, organization_users AS ou
+    WHERE (o.organization_uid = ou.organization_rid)
+        AND (ou.user_rid = _user_id)
+        AND (ou.role_rid = 1 OR ou.role_rid = 2)
+    ORDER BY o.org_name
 
 $$ LANGUAGE SQL;
 

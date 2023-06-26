@@ -79,18 +79,18 @@
                                                                 :units           ""
                                                                 :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                 :reverse-legend? false
-                                                                :disabled-for    #{:cecs :fire-factor}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor}}
                                                        :slp    {:opt-label       "Slope (degrees)"
                                                                 :filter          "slp"
                                                                 :units           "\u00B0"
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cecs :fire-factor}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor}}
                                                        :dem    {:opt-label       "Elevation (ft)"
                                                                 :filter          "dem"
                                                                 :units           "ft"
                                                                 :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cecs :fire-factor}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor}}
                                                        :cc     {:opt-label       "Canopy Cover (%)"
                                                                 :filter          "cc"
                                                                 :units           "%"
@@ -164,8 +164,9 @@
                                                        ", Wang et al. (2021)."]
                                           :options    {:landfire      {:opt-label "LANDFIRE 2.2.0"
                                                                        :filter    "landfire-2.2.0"}
-                                                       :cfo           {:opt-label "California Forest Obs."
-                                                                       :filter    "cfo-2020"}
+                                                       :cfo           {:opt-label    "California Forest Obs."
+                                                                       :filter       "cfo-2020"
+                                                                       :disabled-for #{:asp :slp :dem}}
                                                        :ca-fuelscapes {:opt-label "2022 CA fuelscape"
                                                                        :filter    "ca-2022-fuelscape"}
                                                        :fire-factor   {:opt-label   "Fire Factor 2022"
@@ -438,7 +439,7 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
-                  :geoserver-key   :trinity
+                  :geoserver-key   :trinity ; TODO might be able to uncomment this
                   :underlays       (merge common-underlays
                                           near-term-forecast-underlays
                                           {:isochrones {:opt-label        "Modeled perimeter"
@@ -448,7 +449,7 @@
                                                         :disabled-for     #{:active-fires :gridfire}
                                                         :geoserver-key    :trinity}})
                   :block-info?     true
-                  :reverse-legend? false
+                  :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "7-day forecasts of active fires with burning areas established from satellite-based heat detection."
                   :params          {:fire-name  {:opt-label      "Fire Name"
@@ -463,9 +464,19 @@
                                                                                     :geoserver-key :shasta}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
-                                                 :options    {:burned {:opt-label       "Forecasted fire location"
-                                                                       :filter          "hours-since-burned"
-                                                                       :units           ""}}}
+                                                 :options    {:burned       {:opt-label       "Forecasted fire location"
+                                                                             :filter          "hours-since-burned"
+                                                                             :units           ""
+                                                                             :reverse-legend? false}
+                                                              :crown-fire   {:opt-label "Crown Fire"
+                                                                             :filter    "crown-fire"
+                                                                             :units     ""}
+                                                              :flame-length {:opt-label "Flame Length"
+                                                                             :filter    "flame-length"
+                                                                             :units     "ft"}
+                                                              :spread-rate  {:opt-label "Spread Rate"
+                                                                             :filter    "spread-rate"
+                                                                             :units     "ft/min"}}}
                                     :burn-pct   {:opt-label      "Predicted Fire Size"
                                                  :default-option :50
                                                  :hover-text     "Each fire forecast is an ensemble of 1,000 separate simulations to account for uncertainty in model inputs. This leads to a range of predicted fire sizes, five of which can be selected from the dropdown menu."
@@ -479,7 +490,7 @@
                                                                        :filter    "30"}
                                                                   :10 {:opt-label "Smallest (10th percentile)"
                                                                        :filter    "10"}}}
-                                    :fuel       {:opt-label  "Fuel"
+                                    :fuel       {:opt-label  "Fuels"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
@@ -500,6 +511,11 @@
                                                               "), © Salo Sciences, Inc. 2020."]
                                                  :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.2.0"
                                                                          :filter    "landfire"}}}
+                                    :weather    {:opt-label  "Weather Model"
+                                                 :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "Hybrid"]
+                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."]
+                                                 :options    {:hybrid {:opt-label "Hybrid"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "ELMFIRE"]
@@ -1002,15 +1018,6 @@
              {:opt-label "1x"   :delay 1000}
              {:opt-label "2x"   :delay 500}
              {:opt-label "5x"   :delay 200}])
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Match Drop Configuration
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def match-drop-instructions
-  "Simulates a fire using real-time weather data.
-   Click on a location to \"drop\" a match,
-   then set the date and time to begin the simulation.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mapbox Configuration

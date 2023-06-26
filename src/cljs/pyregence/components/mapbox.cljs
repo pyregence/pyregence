@@ -31,13 +31,12 @@
 ;; Project layers (and their associated metadata) for a forecast as defined in `config.cljs`
 (defonce ^{:doc "Contains the project layers defined by forecast type."}
   project-layers (r/atom nil))
-
-(def ^{:private true :doc "A reference to the marker object created with `init-point!`."}
-  the-marker (r/atom nil))
 (def ^{:private true :doc "A reference to the popup object creaet with `init-popup!`."}
   the-popup (r/atom nil))
 (def ^{:private true :doc "A map of events to event listeners on an associated layer."}
   events (atom {}))
+(def ^{:private true :doc "A vector of marker objects to track a current set of displayed markers on the map."}
+  markers (r/atom []))
 (def ^{:private true :doc "A map to track the interactive state of a feature: i.e. hovered, clicked, etc."}
   feature-state (atom {}))
 
@@ -175,8 +174,10 @@
 (defn center-on-overlay!
   "Centers the map on the marker."
   []
-  (when @the-marker
-    (set-center! (.getLngLat @the-marker) 12.0)))
+  (when-let [the-marker (first @markers)]
+    (-> the-marker
+        :lnglat
+        (set-center! 12.0))))
 
 (defn set-center-my-location!
   "Sets the center of the map using a geo-location event."
@@ -245,41 +246,70 @@
 (defn get-overlay-center
   "Returns marker lng/lat coordinates in the form `[lng lat]`."
   []
-  (when @the-marker
-    (-> @the-marker .getLngLat .toArray (js->clj))))
+  (when-let [the-marker (first @markers)]
+    (:lnglat the-marker)))
 
 (defn get-overlay-bbox
   "Converts marker lng/lat coordinates to EPSG:3857, finds the current
    resolution and returns a bounding box."
   []
-  (when @the-marker
+  (when (and (seq @markers)
+             (first @markers))
     (let [[lng lat] (get-overlay-center)
           [x y]     (g/EPSG:4326->3857 [lng lat])
           zoom      (get (get-zoom-info) 0)
           res       (g/resolution zoom lat)]
       [x y (+ x res) (+ y res)])))
 
-(defn clear-point!
-  "Removes marker from the map."
-  []
-  (when @the-marker
-    (.remove @the-marker)
-    (reset! the-marker nil)))
-
-(defn- init-point!
-  "Creates a marker at `[lng lat]`"
-  [lng lat]
-  (clear-point!)
-  (let [marker (Marker. #js {:color "#FF0000"})]
-    (doto marker
-      (.setLngLat #js [lng lat])
-      (.addTo @the-map))
-    (reset! the-marker marker)))
-
-(defn- add-point-on-click!
-  "Callback for `click` listener."
+(defn- add-marker-to-map!
+  "Adds a marker at the lon-lat coordinates of the click event."
   [[lng lat]]
-  (init-point! lng lat))
+  (let [new-marker (Marker. #js {:color "#FF0000"})]
+    (doto new-marker
+      (.setLngLat #js [lng lat])
+      (.addTo @the-map))))
+
+(defn- remove-marker-from-map!
+  "Removes a marker from the map."
+  [{:keys [marker]}]
+  (.remove marker))
+
+(defn enqueue-marker
+  "Manages updates to the `markers` atom that is bound to a vector of \"Marker \" objects.
+   Insertions and removals follow the queueing behavior of either a `:lifo` queue,
+   \"Last In First Out\"; or a `:fifo` queue, \"First In First Out\".
+   The `:queue-type` in the options map designates the behavior.
+
+   Takes in `the-marker` to add to the markers atom and the desired queue-options."
+  [the-marker {:keys [queue-size queue-type]
+               :or   {queue-size 1
+                      queue-type :fifo}}]
+  (let [first-or-last-item (cond
+                             (= queue-type :fifo)
+                             (first @markers)
+
+                             (= queue-type :lifo)
+                             (peek @markers))
+        remaining-queue    (cond
+                             (= queue-type :fifo)
+                             (vec (rest @markers))
+
+                             (= queue-type :lifo)
+                             (vec (butlast @markers)))]
+    (cond
+      (< (count @markers) queue-size)
+      (swap! markers conj the-marker)
+
+      (>= (count @markers) queue-size)
+      (do
+        (remove-marker-from-map! first-or-last-item)
+        (reset! markers (conj remaining-queue the-marker))))))
+
+(defn remove-markers!
+  "Removes the collection of markers that were added to the map"
+  []
+  (run! #(.remove (% :marker)) @markers)
+  (reset! markers []))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popup
@@ -343,13 +373,15 @@
 (defn- event->lnglat [e]
   (-> e (aget "lngLat") .toArray (js->clj)))
 
-(defn add-single-click-popup!
-  "Creates a marker where clicked and passes xy bounding box to `f` a click event."
-  [f]
+(defn enqueue-marker-on-click!
+  "Tracks a queue of visible markers on the map."
+  [callback & [queue-options?]]
   (add-event! "click" (fn [e]
-                        (let [lnglat (event->lnglat e)]
-                          (add-point-on-click! lnglat)
-                          (f lnglat)))))
+                        (let [lnglat     (event->lnglat e)
+                              new-marker (add-marker-to-map! lnglat)]
+                          (enqueue-marker {:lnglat lnglat :marker new-marker} queue-options?)
+                          ;; apply callback to a vector of lng-lat coordinates
+                          (callback (mapv #(% :lnglat) @markers))))))
 
 (defn add-mouse-move-xy!
   "Passes `[lng lat]` to `f` on mousemove event."
@@ -491,10 +523,10 @@
 ;; WMS Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wms-source [layer-name geoserver-key style]
+(defn- wms-source [layer-name geoserver-key style & [layer-time]]
   {:type     "raster"
    :tileSize 256
-   :tiles    [(c/wms-layer-url layer-name geoserver-key style)]})
+   :tiles    [(c/wms-layer-url layer-name geoserver-key style layer-time)]})
 
 (defn- wms-layer [layer-name source-name opacity visible? & [z-index]]
   {:id       layer-name
@@ -508,10 +540,13 @@
 (defn- build-wms
   "Returns new WMS source and layer in the form `[source [layer]]`.
    `source` must be a valid WMS layer in the geoserver,
-   `opacity` must be a float between 0.0 and 1.0."
-  [id source geoserver-key opacity visibile? & {:keys [z-index style]}]
-  (let [new-source {id (wms-source source geoserver-key style)}
-        new-layer  (wms-layer id id opacity visibile? z-index)]
+   `opacity` must be a float between 0.0 and 1.0.
+   `layer-time` can be a timestamp or range with UTC timezone
+   (e.g. `'2009-11-01T00:00:00.000Z'`, `'2009-11-01T00:00:00.000Z/2009-12-01T00:00:00.000Z'`)."
+  [id source geoserver-key opacity visibile? & {:keys [z-index style layer-time]}]
+  (let [new-id     (str id layer-time)
+        new-source {new-id (wms-source source geoserver-key style layer-time)}
+        new-layer  (wms-layer new-id new-id opacity visibile? z-index)]
     [new-source [new-layer]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -675,11 +710,17 @@
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
-  [geo-layer geoserver-key opacity css-style]
+  [geo-layer geoserver-key opacity css-style & [layer-time]]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (let [style  (get-style)
         layers (hide-forecast-layers (get style "layers"))
-        [new-sources new-layers] (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style)]
+        [new-sources new-layers] (build-wms geo-layer
+                                            geo-layer
+                                            geoserver-key
+                                            opacity
+                                            true
+                                            :style css-style
+                                            :layer-time layer-time)]
     (update-style! style
                    :layers      layers
                    :new-sources new-sources
@@ -688,14 +729,20 @@
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
-  [geo-layer style-fn geoserver-key opacity css-style]
+  [geo-layer style-fn geoserver-key opacity css-style & [layer-time]]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (go
     (let [style                    (get-style)
           layers                   (hide-forecast-layers (get style "layers"))
           [new-sources new-layers] (if style-fn
                                      (<! (build-wfs fire-active geo-layer geoserver-key opacity))
-                                     (build-wms geo-layer geo-layer geoserver-key opacity true :style css-style))]
+                                     (build-wms geo-layer
+                                                geo-layer
+                                                geoserver-key
+                                                opacity
+                                                true
+                                                :style css-style
+                                                :layer-time layer-time))]
       (update-style! style
                      :layers      layers
                      :new-sources new-sources

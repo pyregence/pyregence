@@ -13,7 +13,7 @@
       num-str
       (str "0" num-str))))
 
-(defn- get-time-zone
+(defn get-time-zone
   "Returns the string code for the local timezone."
   [js-date]
   (-> js-date
@@ -66,10 +66,32 @@
   [js-date show-utc?]
   (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?)))
 
-(defn time-zone-iso-date
+(defn date-string->iso-string
   "Returns a ISO date-time string for a given date string in local or UTC timezone."
   [date-str show-utc?]
   (js-date->iso-string (js-date-from-string date-str) show-utc?))
+
+(defn iso-string->local-datetime-string
+  "Converts an ISO date string to a local datetime string. Note that this will
+   use the local time zone of the caller of the function at the time of calling
+   (as determined by JavaScript). e.g. '2021-05-27T18:00Z' is converted to
+   '2021-05-27T14:00' for a caller in the EDT time zone."
+  [iso-string]
+  (let [js-date (js/Date. iso-string)
+        year    (.getFullYear js-date)
+        month   (pad-zero (+ 1 (.getMonth js-date)))
+        day     (pad-zero (.getDate js-date))
+        hours   (pad-zero (.getHours js-date))
+        minutes (pad-zero (.getMinutes js-date))]
+    (str year "-" month "-" day "T" hours ":" minutes)))
+
+(defn get-current-local-datetime-string
+  "Returns a local-datetime string such as '2023-12-02T16:22' based on the
+   current date."
+  []
+  (-> (js/Date.)
+      (.toISOString)
+      (iso-string->local-datetime-string)))
 
 (defn ms->hhmmss
   "Converts milliseconds into 'hours:minutes:seconds'."

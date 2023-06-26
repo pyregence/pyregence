@@ -13,24 +13,33 @@
  :default-forecasts {:near-term :fire-weather
                      :long-term :fire-scenarios}
  :dev-mode          <true/false>
- :features          {:match-drop   true
-                     :fire-history true
-                     :structures   true
-                     :gridfire     false}
- :geoserver         {; :psps        "https://energy.pyregence.org:8443/geoserver"
-                     :pyreclimate "https://climate.pyregence.org/geoserver"
+ :features          {:match-drop       true
+                     :fire-history     true
+                     :structures       true
+                     :gridfire         false
+                     :image-mosaic-gwc true}
+ :geoserver         {:trinity     "https://trinity.pyregence.org/geoserver"
                      :shasta      "https://shasta.pyregence.org/geoserver"
-                     :trinity     "https://trinity.pyregence.org/geoserver"}
- :match-drop        {:app-host      "app.pyregence.org"
-                     :app-port      31337
-                     :data-host     "data.pyregence.org"
-                     :data-port     31337
-                     :elmfire-host  "elmfire.pyregence.org"
-                     :elmfire-port  31338
-                     :gridfire-host "gridfire.pyregence.org"
-                     :gridfire-port 31337
-                     :wx-host       "wx.pyregence.org"
-                     :wx-port       31337}
+                     :match-drop  "https://sierra.pyregence.org/geoserver"
+                     :pyreclimate "https://climate.pyregence.org/geoserver"
+                     :psps        "https://energy.pyregence.org:8443/geoserver"}
+ :match-drop        {:app-name       "Pyrecast Match Drop Server"
+                     :app-host       "localhost"
+                     :app-port       31337
+                     :dps-name       "Data Provisioning Server"
+                     :dps-host       "sierra.pyregence.org"
+                     :dps-port       31337
+                     :elmfire-name   "ELMFIRE"
+                     :elmfire-host   "sierra.pyregence.org"
+                     :elmfire-port   31338
+                     :gridfire-name  "GridFire"
+                     :gridfire-host  "sierra.pyregence.org"
+                     :gridfire-port  31339
+                     :geosync-name   "GeoSync"
+                     :geosync-host   "sierra.pyregence.org"
+                     :geosync-port   31340
+                     :max-queue-size 5
+                     :md-prefix      "<prod | dev | local>"}
  :mail              {:host     "<host>"
                      :user     "<user>"
                      :pass     "<pass>"
