@@ -166,7 +166,7 @@ directory and run:
 clojure -M:figwheel
 #+end_src
 
-This will start a web server on ~http://local.pyregence.org:8080~ (also
+This will start a web server on ~http://local.pyrecast.org:8080~ (also
 accessible from ~http://localhost:8080~), which serves up the website in
 dev mode. Any changes to CLJS files will be automatically pushed to
 the browser when the files are saved. Any changes to CLJ files will be

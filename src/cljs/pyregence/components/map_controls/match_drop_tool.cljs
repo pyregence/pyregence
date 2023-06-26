@@ -38,8 +38,8 @@
 (def match-drop-instructions
   "Simulates a 24 hour fire using real-time weather data from the Hybrid model,
    which is a blend of the HRRR, NAM 3 km, and GFS 0.125\u00B0 models.
-   Click on a location to \"drop\" a match, then set the date and time to begin
-   the simulation.")
+   Click on any CONUS location to \"drop\" a match, then set the date and time to begin
+   the simulation. Chrome is currently the only supported browser for Match Drop.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -288,7 +288,7 @@
     [:div#match-drop-tool
      [resizable-window
       parent-box
-      515
+      560
       400
       "Match Drop Tool"
       close-fn!
@@ -318,4 +318,5 @@
              [datetime-local-picker forecast-weather? md-datetime-local local-time-zone]])
           [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-id]]])]]
     (finally
+      (mb/remove-markers!)
       (mb/remove-event! click-event))))

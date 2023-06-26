@@ -197,6 +197,8 @@
 
 ;;; Routes
 
+;; TODO note that calling this fn on a regex does not work properly. Passing in
+;; a workspace name as a regex is a GeoSync use case, so this should be updated to accept a regex
 (defn remove-workspace!
   "Given a specific geoserver-key and a specific workspace-name, removes any
    layers from that workspace from the layers atom."
