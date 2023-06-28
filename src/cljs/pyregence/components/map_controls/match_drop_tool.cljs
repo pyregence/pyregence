@@ -86,13 +86,17 @@
 (defn- poll-status
   "Continually polls for updated information about the match drop run every 5 seconds.
    Stops polling on finish or error signal."
-  [match-job-id user-id display-name ignition-time lat lon]
+  [match-job-id user-id ignition-time lat lon]
   (go
     (while @poll?
-      (let [{:keys [message md-status log]} (-> (u-async/call-clj-async! "get-md-status" match-job-id)
-                                                (<!)
-                                                (:body)
-                                                (edn/read-string))
+      (let [{:keys [display-name
+                    geoserver-workspace
+                    message
+                    md-status
+                    log]} (-> (u-async/call-clj-async! "get-md-status" match-job-id)
+                              (<!)
+                              (:body)
+                              (edn/read-string))
             email (-> (u-async/call-clj-async! "get-email-by-user-id" user-id)
                       (<!)
                       (:body))]
@@ -105,7 +109,9 @@
                                            :match-drop
                                            {:match-job-id  match-job-id
                                             :display-name  display-name
-                                            :fire-name     (str "match-drop-" match-job-id)
+                                            :fire-name     (-> geoserver-workspace
+                                                               (str/split #"_")
+                                                               (second)) ;; NOTE: this assumes a geoserver-workspace in the format of "fire-spread-forecast_prod-match-drop-14_20110426_230000"
                                             :ignition-time ignition-time
                                             :lat           lat
                                             :lon           lon}))
@@ -151,7 +157,7 @@
           (if error
             (set-message-box-content! {:body (str "Error: " error)})
             (do (reset! poll? true)
-                (poll-status match-job-id user-id display-name ignition-time lat lon)))))
+                (poll-status match-job-id user-id ignition-time lat lon)))))
       ;; Lat and Lon are invalid, let user know
       (set-message-box-content! {:title "Lat/Lon Error"
                                  :body  (str "Error: The Latitude of your ignition point must be between 25 and 50\n"
