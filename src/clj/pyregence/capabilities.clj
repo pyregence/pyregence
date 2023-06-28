@@ -276,8 +276,14 @@
                                               (str/split #"match-drop-")
                                               (second)
                                               (Integer/parseInt))]
+                     ;; We either want to pass a fire name to the front end if the fire in question is
+                     ;; an active fire (nil? match-job-id) or it's a Match Drop that matches our deployment
+                     ;; environment. Since development and production Match Drops can have the same ID,
+                     ;; we have to make sure the fire-name starts with the specific md-prefix specified in config.edn
+                     ;; so that we don't double-count the Match Drops.
                      (when (or (nil? match-job-id)
-                               (contains? match-drop-names match-job-id))
+                               (and (contains? match-drop-names match-job-id)
+                                    (str/starts-with? fire-name (get-config :match-drop :md-prefix))))
                        [(keyword fire-name)
                         {:opt-label      (or (get match-drop-names match-job-id)
                                              (fire-name-capitalization fire-name))
