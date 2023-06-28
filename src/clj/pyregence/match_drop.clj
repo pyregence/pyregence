@@ -434,7 +434,7 @@
   "Returns the current status of the given match drop run."
   [match-job-id]
   (data-response (-> (get-match-job-from-match-job-id match-job-id)
-                     (select-keys [:message :md-status :job-log]))))
+                     (select-keys [:display-name :geoserver-workspace :message :md-status :job-log]))))
 
 (defn get-md-available-dates
   "Gets the available dates for Match Drops in UTC. Note that we're shelling out
