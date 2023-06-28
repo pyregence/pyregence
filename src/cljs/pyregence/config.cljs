@@ -233,12 +233,12 @@
                                                               :apcp   {:opt-label       "Accumulated precipitation (in)"
                                                                        :filter          "apcp"
                                                                        :units           "inches"
-                                                                       :disabled-for    #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :rtma-ru}
+                                                                       :disabled-for    #{:gfs0p125 :hybrid :rtma-ru}
                                                                        :reverse-legend? false}
                                                               :apcp01 {:opt-label       "1-hour precipitation (in)"
                                                                        :filter          "apcp01"
                                                                        :units           "inches"
-                                                                       :disabled-for    #{:gfs0p25 :nam-awip12 :nbm :rtma-ru}
+                                                                       :disabled-for    #{:nam-awip12 :nbm :rtma-ru}
                                                                        :reverse-legend? false}
                                                               :vpd    {:opt-label    "Vapor pressure deficit (hPa)"
                                                                        :filter       "vpd"
@@ -302,10 +302,10 @@
                                                                               :disabled-for #{:apcp :smoke :tcdc}}
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
-                                                                              :disabled-for #{:apcp :apcp01 :smoke :tcdc}}
+                                                                              :disabled-for #{:smoke :tcdc}}
                                                               :nam-awip12    {:opt-label    "NAM 12 km"
                                                                               :filter       "nam-awip12"
-                                                                              :disabled-for #{:apcp :apcp01 :smoke :tcdc}}
+                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
                                                               :nam-conusnest {:opt-label    "NAM 3 km"
                                                                               :filter       "nam-conusnest"
                                                                               :disabled-for #{:smoke :tcdc}}
