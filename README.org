@@ -15,7 +15,7 @@ behavior models:
 
 - [[https://www.oracle.com/java/technologies/downloads/#java17][Java Development Kit (version 17.0.3)]]
 - [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
-- [[https://www.postgresql.org/download][PostgreSQL (version 12)]]
+- [[https://www.postgresql.org/download][PostgreSQL (version 13)]]
 - [[https://postgis.net/][PostGIS (version 3)]]
 
 ** Application Configuration

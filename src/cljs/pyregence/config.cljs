@@ -205,15 +205,15 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
+                                                              :tmpf   {:opt-label "Temperature (\u00B0F)"
+                                                                       :filter    "tmpf"
+                                                                       :units     "\u00B0F"}
                                                               :rh     {:opt-label "Relative humidity (%)"
                                                                        :filter    "rh"
                                                                        :units     "%"}
                                                               :ffwi   {:opt-label "Fosberg Fire Weather Index"
                                                                        :filter    "ffwi"
                                                                        :units     ""}
-                                                              :tmpf   {:opt-label "Temperature (\u00B0F)"
-                                                                       :filter    "tmpf"
-                                                                       :units     "\u00B0F"}
                                                               :meq    {:opt-label "Fine dead fuel moisture (%)"
                                                                        :filter    "meq"
                                                                        :units     "%"}
@@ -233,22 +233,12 @@
                                                               :apcp   {:opt-label       "Accumulated precipitation (in)"
                                                                        :filter          "apcp"
                                                                        :units           "inches"
-                                                                       :disabled-for    #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :rtma-ru}
+                                                                       :disabled-for    #{:gfs0p125 :hybrid :rtma-ru}
                                                                        :reverse-legend? false}
                                                               :apcp01 {:opt-label       "1-hour precipitation (in)"
                                                                        :filter          "apcp01"
                                                                        :units           "inches"
-                                                                       :disabled-for    #{:gfs0p25 :nam-awip12 :nbm :rtma-ru}
-                                                                       :reverse-legend? false}
-                                                              :apcp03 {:opt-label       "3-hour precipitation (in)"
-                                                                       :filter          "apcp03"
-                                                                       :units           "inches"
-                                                                       :disabled-for    #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-conusnest :nbm :rtma-ru}
-                                                                       :reverse-legend? false}
-                                                              :apcp06 {:opt-label       "6-hour precipitation (in)"
-                                                                       :filter          "apcp06"
-                                                                       :units           "inches"
-                                                                       :disabled-for    #{:gfs0p125 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}
+                                                                       :disabled-for    #{:nam-awip12 :nbm :rtma-ru}
                                                                        :reverse-legend? false}
                                                               :vpd    {:opt-label    "Vapor pressure deficit (hPa)"
                                                                        :filter       "vpd"
@@ -298,30 +288,30 @@
                                                               [:br]
                                                               [:strong "RTMA"]
                                                               " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
-                                                 :options    {:nbm           {:opt-label    "NBM"
+                                                 :options    {:hrrr          {:opt-label    "HRRR"
+                                                                              :filter       "hrrr"
+                                                                              :disabled-for #{:tcdc}}
+                                                              :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
-                                                                              :disabled-for #{:apcp01 :apcp03 :apcp06 :hdw :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
-                                                                              :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
+                                                                              :disabled-for #{:apcp :smoke :tcdc}}
                                                               :gfs0p125      {:opt-label    "GFS 0.125\u00B0"
                                                                               :filter       "gfs0p125"
-                                                                              :disabled-for #{:apcp :apcp03 :apcp06 :smoke :tcdc}}
+                                                                              :disabled-for #{:apcp :smoke :tcdc}}
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
-                                                                              :disabled-for #{:apcp :apcp01 :apcp03 :smoke :tcdc}}
-                                                              :hrrr          {:opt-label    "HRRR"
-                                                                              :filter       "hrrr"
-                                                                              :disabled-for #{:apcp03 :apcp06 :tcdc}}
+                                                                              :disabled-for #{:smoke :tcdc}}
                                                               :nam-awip12    {:opt-label    "NAM 12 km"
                                                                               :filter       "nam-awip12"
-                                                                              :disabled-for #{:apcp :apcp01 :apcp06 :smoke :tcdc}}
+                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
                                                               :nam-conusnest {:opt-label    "NAM 3 km"
                                                                               :filter       "nam-conusnest"
-                                                                              :disabled-for #{:apcp03 :apcp06 :smoke :tcdc}}
+                                                                              :disabled-for #{:smoke :tcdc}}
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
-                                                                              :disabled-for #{:apcp :apcp01 :apcp03 :apcp06 :smoke}}}}
+                                                                              :disabled-for #{:apcp :apcp01 :smoke}}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
