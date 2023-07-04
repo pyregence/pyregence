@@ -238,7 +238,7 @@
                                                               :apcp01 {:opt-label       "1-hour precipitation (in)"
                                                                        :filter          "apcp01"
                                                                        :units           "inches"
-                                                                       :disabled-for    #{:nam-awip12 :nbm :rtma-ru}
+                                                                       :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru}
                                                                        :reverse-legend? false}
                                                               :vpd    {:opt-label    "Vapor pressure deficit (hPa)"
                                                                        :filter       "vpd"
@@ -251,13 +251,17 @@
                                                               :smoke  {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
                                                                        :filter       "smoke"
                                                                        :units        "\u00b5g/m\u00b3"
-                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}}
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru}}
                                                               :tcdc   {:opt-label    "Total cloud cover (%)"
                                                                        :filter       "tcdc"
                                                                        :units        "%"
-                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm}})}
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf}})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "HRRR"]
+                                                              " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "NBM"]
                                                               " - National Blend of Models at 2.5 km to 11 days."
                                                               [:br]
@@ -274,10 +278,6 @@
                                                               " - Global Forecast System at 0.250\u00B0 (approx 26 km) resolution to 16 days."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "HRRR"]
-                                                              " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
-                                                              [:br]
-                                                              [:br]
                                                               [:strong "NAM 12 km"]
                                                               " - North American Mesoscale Model at 12 km resolution to 84 hours."
                                                               [:br]
@@ -289,8 +289,7 @@
                                                               [:strong "RTMA"]
                                                               " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
                                                  :options    {:hrrr          {:opt-label    "HRRR"
-                                                                              :filter       "hrrr"
-                                                                              :disabled-for #{:tcdc}}
+                                                                              :filter       "hrrr"}
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
                                                                               :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
@@ -308,7 +307,10 @@
                                                                               :disabled-for #{:apcp01 :smoke :tcdc}}
                                                               :nam-conusnest {:opt-label    "NAM 3 km"
                                                                               :filter       "nam-conusnest"
-                                                                              :disabled-for #{:smoke :tcdc}}
+                                                                              :disabled-for #{:smoke}}
+                                                              :cansac-wrf    {:opt-label    "CANSAC WRF"
+                                                                              :filter       "cansac-wrf"
+                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
                                                                               :disabled-for #{:apcp :apcp01 :smoke}}}}
