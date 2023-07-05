@@ -288,7 +288,8 @@
                                                               [:br]
                                                               [:strong "RTMA"]
                                                               " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
-                                                 :options    {:hrrr          {:opt-label    "HRRR"
+                                                 :options    (array-map
+                                                              :hrrr          {:opt-label    "HRRR"
                                                                               :filter       "hrrr"}
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
@@ -313,7 +314,7 @@
                                                                               :disabled-for #{:apcp01 :smoke :tcdc}}
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
-                                                                              :disabled-for #{:apcp :apcp01 :smoke}}}}
+                                                                              :disabled-for #{:apcp :apcp01 :smoke}})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
