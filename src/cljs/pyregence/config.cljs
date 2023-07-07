@@ -286,6 +286,15 @@
                                                               " -  North American Mesoscale Model at 3 km resolution to 60 hours."
                                                               [:br]
                                                               [:br]
+                                                              [:strong "CANSAC WRF"]
+                                                              " - California and Nevada Smoke and Air Committee (CANSAC) Weather Research and Forecasting (WRF) forecast model from Desert Research Institute."
+                                                              " Two cycles per day (00z and 12z) at very high (1.33 km) resolution. See "
+                                                              [:a {:href   "https://cansac.dri.edu/"
+                                                                    :target "_blank"}
+                                                               "https://cansac.dri.edu/"]
+                                                              " for details."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "RTMA"]
                                                               " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
                                                  :options    (array-map
