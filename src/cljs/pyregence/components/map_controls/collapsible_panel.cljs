@@ -176,7 +176,7 @@
           [:br]
           [:br]
           [:strong "Modeled perimeter"]
-          " - Modeled fire perimeter after 5 days of spread."
+          " - Modeled fire perimeter after 14 days of spread."
           [:br]
           [:br]
           [:strong "Transmission lines"]

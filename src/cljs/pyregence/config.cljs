@@ -453,7 +453,7 @@
                   :block-info?     true
                   :reverse-legend? true
                   :time-slider?    true
-                  :hover-text      "7-day forecasts of active fires with burning areas established from satellite-based heat detection."
+                  :hover-text      "14-day forecasts of active fires with burning areas established from satellite-based heat detection."
                   :params          {:fire-name  {:opt-label      "Fire Name"
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
@@ -465,14 +465,15 @@
                                                                                     :time-slider?  false
                                                                                     :geoserver-key :shasta}}}
                                     :output     {:opt-label  "Output"
-                                                 :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
+                                                 :hover-text "Available outputs are fire location, crown fire type (surface fire, passive, or active), flame length (ft), and surface fire spread rate (ft/min). Time can be advanced with the slider centered below."
                                                  :options    {:burned       {:opt-label       "Forecasted fire location"
                                                                              :filter          "hours-since-burned"
                                                                              :units           ""
                                                                              :reverse-legend? false}
-                                                              :crown-fire   {:opt-label "Crown Fire"
-                                                                             :filter    "crown-fire"
-                                                                             :units     ""}
+                                                              :crown-fire   {:opt-label       "Crown Fire"
+                                                                             :filter          "crown-fire"
+                                                                             :units           ""
+                                                                             :reverse-legend? false}
                                                               :flame-length {:opt-label "Flame Length"
                                                                              :filter    "flame-length"
                                                                              :units     "ft"}
