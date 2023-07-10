@@ -11,8 +11,7 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def pending? (r/atom false))
-
+(defonce pending? (r/atom false))
 (defonce forgot?  (r/atom false))
 (defonce email    (r/atom ""))
 (defonce password (r/atom ""))

@@ -532,6 +532,7 @@
 
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
+    (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
           user-layers-chan                (u-async/call-clj-async! "get-user-layers" user-id)
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
@@ -545,10 +546,12 @@
                              (edn/read-string (:body (<! user-layers-chan)))
                              options-config
                              (params->selected-options options-config @!/*forecast params))
-      (<! (select-forecast! @!/*forecast))
       (reset! !/user-org-list (edn/read-string (:body (<! (u-async/call-clj-async! "get-organizations" user-id)))))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
-      (reset! !/loading? false))))
+      (<! (select-forecast! @!/*forecast))
+      (when (and (not-empty @!/capabilities)
+                 (not-empty @!/*params))
+        (reset! !/loading? false)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
