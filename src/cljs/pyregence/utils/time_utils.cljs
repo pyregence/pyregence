@@ -130,8 +130,8 @@
   [js-date]
   (str (+ 1 (.getMonth js-date)) "/" (.getDate js-date) "/" (.getFullYear js-date)))
 
-(defn camera-time->js-date
-  "Converts a time from the cameras API (YYYY-MM-DD HH:MM:SS.MFS) into a JS Date in UTC."
+(defn alert-wf-camera-time->js-date
+  "Converts a time from the Alert Wildfire cameras API (YYYY-MM-DD HH:MM:SS.MFS) into a JS Date in UTC."
   [camera-time]
   (js/Date. (as-> camera-time %
               (str/split % #" ")
