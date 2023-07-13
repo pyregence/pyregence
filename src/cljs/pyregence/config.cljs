@@ -238,7 +238,7 @@
                                                               :apcp01 {:opt-label       "1-hour precipitation (in)"
                                                                        :filter          "apcp01"
                                                                        :units           "inches"
-                                                                       :disabled-for    #{:nam-awip12 :nbm :rtma-ru}
+                                                                       :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru}
                                                                        :reverse-legend? false}
                                                               :vpd    {:opt-label    "Vapor pressure deficit (hPa)"
                                                                        :filter       "vpd"
@@ -251,13 +251,17 @@
                                                               :smoke  {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
                                                                        :filter       "smoke"
                                                                        :units        "\u00b5g/m\u00b3"
-                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :rtma-ru}}
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru}}
                                                               :tcdc   {:opt-label    "Total cloud cover (%)"
                                                                        :filter       "tcdc"
                                                                        :units        "%"
-                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hrrr :hybrid :nam-awip12 :nam-conusnest :nbm}})}
+                                                                       :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf}})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "HRRR"]
+                                                              " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "NBM"]
                                                               " - National Blend of Models at 2.5 km to 11 days."
                                                               [:br]
@@ -274,10 +278,6 @@
                                                               " - Global Forecast System at 0.250\u00B0 (approx 26 km) resolution to 16 days."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "HRRR"]
-                                                              " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
-                                                              [:br]
-                                                              [:br]
                                                               [:strong "NAM 12 km"]
                                                               " - North American Mesoscale Model at 12 km resolution to 84 hours."
                                                               [:br]
@@ -286,11 +286,20 @@
                                                               " -  North American Mesoscale Model at 3 km resolution to 60 hours."
                                                               [:br]
                                                               [:br]
+                                                              [:strong "CANSAC WRF"]
+                                                              " - California and Nevada Smoke and Air Committee (CANSAC) Weather Research and Forecasting (WRF) forecast model from Desert Research Institute."
+                                                              " Two cycles per day (00z and 12z) at very high (1.33 km) resolution. See "
+                                                              [:a {:href   "https://cansac.dri.edu/"
+                                                                    :target "_blank"}
+                                                               "https://cansac.dri.edu/"]
+                                                              " for details."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "RTMA"]
                                                               " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
-                                                 :options    {:hrrr          {:opt-label    "HRRR"
-                                                                              :filter       "hrrr"
-                                                                              :disabled-for #{:tcdc}}
+                                                 :options    (array-map
+                                                              :hrrr          {:opt-label    "HRRR"
+                                                                              :filter       "hrrr"}
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
                                                                               :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
@@ -308,10 +317,13 @@
                                                                               :disabled-for #{:apcp01 :smoke :tcdc}}
                                                               :nam-conusnest {:opt-label    "NAM 3 km"
                                                                               :filter       "nam-conusnest"
-                                                                              :disabled-for #{:smoke :tcdc}}
+                                                                              :disabled-for #{:smoke}}
+                                                              :cansac-wrf    {:opt-label    "CANSAC WRF"
+                                                                              :filter       "cansac-wrf"
+                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
-                                                                              :disabled-for #{:apcp :apcp01 :smoke}}}}
+                                                                              :disabled-for #{:apcp :apcp01 :smoke}})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
@@ -441,7 +453,7 @@
                   :block-info?     true
                   :reverse-legend? true
                   :time-slider?    true
-                  :hover-text      "7-day forecasts of active fires with burning areas established from satellite-based heat detection."
+                  :hover-text      "14-day forecasts of active fires with burning areas established from satellite-based heat detection."
                   :params          {:fire-name  {:opt-label      "Fire Name"
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
@@ -453,14 +465,15 @@
                                                                                     :time-slider?  false
                                                                                     :geoserver-key :shasta}}}
                                     :output     {:opt-label  "Output"
-                                                 :hover-text "This shows the areas where our models forecast the fire to spread over 3 days. Time can be advanced with the slider below, and the different colors on the map provide information about when an area is forecast to burn."
+                                                 :hover-text "Available outputs are fire location, crown fire type (surface fire, passive, or active), flame length (ft), and surface fire spread rate (ft/min). Time can be advanced with the slider centered below."
                                                  :options    {:burned       {:opt-label       "Forecasted fire location"
                                                                              :filter          "hours-since-burned"
                                                                              :units           ""
                                                                              :reverse-legend? false}
-                                                              :crown-fire   {:opt-label "Crown Fire"
-                                                                             :filter    "crown-fire"
-                                                                             :units     ""}
+                                                              :crown-fire   {:opt-label       "Crown Fire"
+                                                                             :filter          "crown-fire"
+                                                                             :units           ""
+                                                                             :reverse-legend? false}
                                                               :flame-length {:opt-label "Flame Length"
                                                                              :filter    "flame-length"
                                                                              :units     "ft"}

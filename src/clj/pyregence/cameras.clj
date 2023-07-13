@@ -13,10 +13,15 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private wildfire-camera-api-url "https://data.alertwildfire.org/api/firecams/v0")
-(def ^:private wildfire-camera-api-key (get-config :cameras :wildfire-camera-api-key))
-(def ^:private api-defaults            {:headers {"X-Api-Key" wildfire-camera-api-key}})
-(def ^:private cache-max-age           (* 24 60 1000)) ; Once a day
+(def ^:private alert-wildfire-api-url      "https://data.alertwildfire.org/api/firecams/v0")
+(def ^:private alert-wildfire-api-key      (get-config :cameras :alert-wildfire-api-key))
+(def ^:private alert-wildfire-api-defaults {:headers {"X-Api-Key" alert-wildfire-api-key}})
+
+(def ^:private alert-california-api-url      "https://data.alertcalifornia.org/api/firecams/v0")
+(def ^:private alert-california-api-key      (get-config :cameras :alert-california-api-key))
+(def ^:private alert-california-api-defaults {:headers {"X-Api-Key" alert-california-api-key}})
+
+(def ^:private cache-max-age            (* 24 60 1000)) ; Once a day
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Camera cache
@@ -37,17 +42,19 @@
 ;; API Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- api-request [path & [opts]]
-  (client/get (str wildfire-camera-api-url "/" path) ; URL
+(defn- api-request [path api-url api-defaults & [opts]]
+  (client/get (str api-url "/" path) ; URL
               (merge api-defaults opts)))
 
-(defn- api-all-cameras []
-  (let [{:keys [status body]} (api-request "cameras")]
+(defn- api-all-cameras [api-url api-defaults]
+  (let [{:keys [status body]} (api-request "cameras" api-url api-defaults)]
     (when (= 200 status)
       (json/read-str body :key-fn keyword))))
 
-(defn- api-current-image [camera-name]
+(defn- api-current-image [camera-name api-url api-defaults]
   (let [{:keys [status body]} (api-request (str "currentimage?name=" camera-name)
+                                           api-url
+                                           api-defaults
                                            {:as :byte-array})]
     (when (= 200 status) body)))
 
@@ -55,16 +62,19 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- site->feature [{:keys [name site position update_time]}]
+(defn- site->feature [api-name {:keys [name site position image update_time]}]
   {:type       "Feature"
    :geometry   {:type        "Point"
                 :coordinates [(:longitude site) (:latitude site)]}
-   :properties {:latitude    (:latitude site)
+   :properties {:api-name    api-name
+                :latitude    (:latitude site)
                 :longitude   (:longitude site)
                 :name        name
                 :pan         (:pan position)
+                :state       (:state site)
                 :tilt        (:tilt position)
-                :update-time update_time}})
+                :update-time update_time
+                :image-url   (:url image)}})
 
 (defn- ->feature-collection [features]
   {:type     "FeatureCollection"
@@ -79,15 +89,31 @@
   []
   (data-response (if (valid-cache?)
                    @camera-cache
-                   (let [new-cameras (->> (api-all-cameras)
-                                          (pmap site->feature)
-                                          (->feature-collection))]
+                   (let [alert-wildfire-cameras   (->> (api-all-cameras alert-wildfire-api-url
+                                                                        alert-wildfire-api-defaults)
+                                                       (pmap #(site->feature "alert-wildfire" %))
+                                                       ;; Alert Wildfire API does **not** work for California cameras
+                                                       (filter #(not= (get-in % [:properties :state]) "CA")))
+                         alert-california-cameras (->> (api-all-cameras alert-california-api-url
+                                                                        alert-california-api-defaults)
+                                                       (pmap #(site->feature "alert-california" %)))
+                         new-cameras              (-> alert-wildfire-cameras
+                                                      (concat alert-california-cameras)
+                                                      (->feature-collection))]
                      (reset-cache! new-cameras)
                      new-cameras))))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.
    Response type is an 'image/jpeg'"
-  [camera-name]
+  [camera-name api-name]
   {:pre [(string? camera-name)]}
-  (data-response (api-current-image camera-name) {:type "image/jpeg"}))
+  (let [[api-url api-defaults] (case api-name
+                                 "alert-wildfire"   [alert-wildfire-api-url alert-wildfire-api-defaults]
+                                 "alert-california" [alert-california-api-url alert-california-api-defaults]
+                                 nil)]
+    (if (and api-url api-defaults)
+      (data-response (api-current-image camera-name api-url api-defaults)
+                     {:type "image/jpeg"})
+      (data-response (str "Invalid cameras API name.")
+                     {:status 403}))))
