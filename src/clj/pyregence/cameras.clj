@@ -62,7 +62,7 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- site->feature [api-name {:keys [name site position update_time]}]
+(defn- site->feature [api-name {:keys [name site position image update_time]}]
   {:type       "Feature"
    :geometry   {:type        "Point"
                 :coordinates [(:longitude site) (:latitude site)]}
@@ -73,7 +73,8 @@
                 :pan         (:pan position)
                 :state       (:state site)
                 :tilt        (:tilt position)
-                :update-time update_time}})
+                :update-time update_time
+                :image-url   (:url image)}})
 
 (defn- ->feature-collection [features]
   {:type     "FeatureCollection"
