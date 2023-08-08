@@ -79,18 +79,18 @@
                                                                 :units           ""
                                                                 :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                 :reverse-legend? false
-                                                                :disabled-for    #{:cecs :cfo :fire-factor}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.3.0-2.2.0}}
                                                        :slp    {:opt-label       "Slope (degrees)"
                                                                 :filter          "slp"
                                                                 :units           "\u00B0"
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cecs :cfo :fire-factor}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.3.0-2.2.0}}
                                                        :dem    {:opt-label       "Elevation (ft)"
                                                                 :filter          "dem"
                                                                 :units           "ft"
                                                                 :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cecs :cfo :fire-factor}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.3.0-2.2.0}}
                                                        :cc     {:opt-label       "Canopy Cover (%)"
                                                                 :filter          "cc"
                                                                 :units           "%"
@@ -119,13 +119,16 @@
                                                                 :disabled-for    #{:cecs}})}
                                   :model {:opt-label  "Source"
                                           :hover-text [:p {:style {:margin-bottom "0"}}
-                                                       "Stock "
-                                                       [:strong "LANDFIRE 2.2.0"]
-                                                       " data ("
+                                                       [:strong "LANDFIRE"]
+                                                       " –  Stock data provided by "
                                                        [:a {:href   "https://landfire.gov"
                                                             :target "_blank"}
-                                                        "https://landfire.gov"]
-                                                       ") at 30 m resolution."
+                                                        "LANDFIRE"]
+                                                       " at 30 m resolution. For more detailed version descriptions, please visit "
+                                                       [:a {:href "https://landfire.gov/version_download.php"
+                                                            :target "_blank"}
+                                                        "this link"]
+                                                       " and click the \"LF Version Descriptions\" button."
                                                        [:br]
                                                        [:br]
                                                        [:strong "California Forest Observatory"]
@@ -162,19 +165,41 @@
                                                             :target "_blank"}
                                                         "California Ecosystem Climate Solutions"]
                                                        ", Wang et al. (2021)."]
-                                          :options    {:landfire      {:opt-label "LANDFIRE 2.2.0"
-                                                                       :filter    "landfire-2.2.0"}
-                                                       :cfo           {:opt-label    "California Forest Obs."
-                                                                       :filter       "cfo-2020"
-                                                                       :disabled-for #{:asp :slp :dem}}
-                                                       :ca-fuelscapes {:opt-label "2022 CA fuelscape"
-                                                                       :filter    "ca-2022-fuelscape"}
-                                                       :fire-factor   {:opt-label   "Fire Factor 2022"
-                                                                       :filter      "fire-factor-2022"
-                                                                       :disabled-for #{:asp :slp :dem}}
-                                                       :cecs          {:opt-label    "CA Ecosystem Climate Solutions"
-                                                                       :filter       "cecs"
-                                                                       :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}}}}
+                                          :options    (array-map
+                                                       :landfire-2.3.0-2.2.0 {:opt-label   "LANDFIRE 2.3.0/2.2.0 (2023/2021 capable)"
+                                                                              :filter      "landfire-2.3.0-2.2.0"
+                                                                              :diabled-for #{:asp :slp :dem}}
+                                                       :landfire-2.3.0       {:opt-label   "LANDFIRE 2.3.0 (2023 capable)"
+                                                                              :filter      "landfire-2.3.0"
+                                                                              :diabled-for #{:asp :slp :dem}}
+                                                       :landfire-2.2.0       {:opt-label "LANDFIRE 2.2.0 (2021 capable)"
+                                                                              :filter    "landfire-2.2.0"}
+                                                       :landfire-2.1.0       {:opt-label   "LANDFIRE 2.1.0 (2020 capable)"
+                                                                              :filter      "landfire-2.1.0"
+                                                                              :diabled-for #{:asp :slp :dem}}
+                                                       :landfire-2.0.0       {:opt-label   "LANDFIRE 2.0.0 (2019 capable)"
+                                                                              :filter      "landfire-2.0.0"
+                                                                              :diabled-for #{:asp :slp :dem}}
+                                                       :landfire-1.4.0       {:opt-label   "LANDFIRE 1.4.0 (2016 capable)"
+                                                                              :filter      "landfire-1.4.0"
+                                                                              :diabled-for #{:asp :slp :dem}}
+                                                       :landfire-1.3.0       {:opt-label   "LANDFIRE 1.3.0 (2014 capable)"
+                                                                              :filter      "landfire-1.3.0"
+                                                                              :diabled-for #{:asp :slp :dem}}
+                                                       :landfire-1.0.5       {:opt-label   "LANDFIRE 1.0.5 (~2008 capable)"
+                                                                              :filter      "landfire-1.0.5"
+                                                                              :diabled-for #{:asp :slp :dem}}
+                                                       :cfo                  {:opt-label    "California Forest Obs."
+                                                                              :filter       "cfo-2020"
+                                                                              :disabled-for #{:asp :slp :dem}}
+                                                       :ca-fuelscapes        {:opt-label "2022 CA fuelscape"
+                                                                              :filter    "ca-2022-fuelscape"}
+                                                       :fire-factor          {:opt-label   "Fire Factor 2022"
+                                                                              :filter      "fire-factor-2022"
+                                                                              :disabled-for #{:asp :slp :dem}}
+                                                       :cecs                 {:opt-label    "CA Ecosystem Climate Solutions"
+                                                                              :filter       "cecs"
+                                                                              :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}})}
                                   :model-init {:opt-label  "Model Creation Time"
                                                :hover-text "Time the data was created."
                                                :options    {:loading {:opt-label "Loading..."}}}}}
