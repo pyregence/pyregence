@@ -15,7 +15,7 @@ either :near-term or :long-term"}
 field associated with each layer from the `param-layers`, starts at 0, and is an integer."}
   *layer-idx (r/atom 0))
 (defonce ^{:doc "A map containing the selected parameters/inputs from each forecast tab.
-Ex: {:fuels {:layer :fbfm40, :model :landfire, :model-init :20210407_000000} ... }"}
+Ex: {:fuels {:layer :fbfm40, :model :landfire-2.2.0, :model-init :20210407_000000} ... }"}
   *params (r/atom {}))
 (defonce ^{:doc "A UTC keyword value, corresponding to the last selected \"Forecast Start Time\""}
   *last-start-time (r/atom nil))
