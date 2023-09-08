@@ -219,7 +219,7 @@
    passing in an optional workspace-name allows you to call GetCapabilities
    on just that workspace by passing it into process-layers!."
   [{:strs [geoserver-key workspace-name]}]
-  (let [geoserver-key  (keyword geoserver-key)]
+  (let [geoserver-key (keyword geoserver-key)]
     (if (contains? (get-config :geoserver) geoserver-key)
       (try
         (let [stdout?       (= 0 (count @layers))

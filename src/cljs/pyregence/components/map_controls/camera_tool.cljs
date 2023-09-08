@@ -102,7 +102,7 @@
    [:p "Click"
     [:a {:href   (if (= camera-api-name "alert-wildfire")
                    (str "https://www.alertwildfire.org/region/?camera=" camera-name)
-                   (str "https://alertca.live/cam-console/" (alert-ca-image-url->alert-ca-camera-id camera-image-url)))
+                   (str "https://ops.alertcalifornia.org/cam-console/" (alert-ca-image-url->alert-ca-camera-id camera-image-url)))
          :ref    "noreferrer noopener"
          :target "_blank"}
      " here "]
@@ -118,7 +118,7 @@
     [:label (str "Camera: " camera-name)]]
    [:a {:href   (if (= camera-api-name "alert-wildfire")
                   (str "https://www.alertwildfire.org/region/?camera=" camera-name)
-                  (str "https://alertca.live/cam-console/" (alert-ca-image-url->alert-ca-camera-id camera-image-url)))
+                  (str "https://ops.alertcalifornia.org/cam-console/" (alert-ca-image-url->alert-ca-camera-id camera-image-url)))
         :ref    "noreferrer noopener"
         :target "_blank"}
     [:img {:src   (if (= camera-api-name "alert-wildfire")

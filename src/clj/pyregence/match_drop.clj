@@ -575,7 +575,7 @@
   (condp = md-status
     2       (do
               (log-str (str "Geoserver workspace is " geoserver-workspace))
-              ;; NOTE: set-capabilities! might be handled by the GeoSync action hook already, but doesn't hurt to leave it in
+              ;; NOTE: set-capabilities! isn't handled by the GeoSync action hook since GeoSync is running in CLI mode in the GeoSync microservice (action hooks only work in server mode).
               (set-capabilities! {"geoserver-key"  "match-drop"
                                   "workspace-name" geoserver-workspace})
               (log-str (str "Match Drop layers successfully added to Pyrecast! "
@@ -587,7 +587,7 @@
     3     (do
             (log-str "Deleting match job #" match-job-id " from the database.")
             (call-sql "delete_match_job" match-job-id)
-            ;; NOTE: remove-workspace! might be handled by the GeoSync action hook already, but doesn't hurt to leave it in
+            ;; NOTE: remove-workspace! isn't handled by the GeoSync action hook since GeoSync is running in CLI mode in the GeoSync microservice (action hooks only work in server mode)
             ;; TODO in the future we should make sure that the front-end is updated as soon as the workspace is removed.
             ;; we will need to do something similar to the refresh-fire-names! fn in match_drop_tool.cljs, but only call
             ;; it once this section of the code is hit.
