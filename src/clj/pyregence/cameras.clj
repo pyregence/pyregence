@@ -23,6 +23,53 @@
 
 (def ^:private cache-max-age            (* 24 60 1000)) ; Once a day
 
+(def ^:private california-cameras-to-keep #{"Axis-AlderHill"
+                                            "Axis-Alpine"
+                                            "Axis-ArmstrongLookout1"
+                                            "Axis-ArmstrongLookout2"
+                                            "Axis-Babbitt"
+                                            "Axis-BaldCA"
+                                            "Axis-BaldCA2"
+                                            "Axis-BigHill"
+                                            "Axis-Bunker"
+                                            "Axis-Emerald"
+                                            "Axis-CTC"
+                                            "Axis-FallenLeaf"
+                                            "Axis-FortSage"
+                                            "Axis-GoldCountry"
+                                            "Axis-HawkinsPeak"
+                                            "Axis-Heavenly2"
+                                            "Axis-Homewood1"
+                                            "Axis-Homewood2"
+                                            "Axis-KennedyMine"
+                                            "Axis-Leek"
+                                            "Axis-Martis"
+                                            "Axis-MohawkEsmeralda"
+                                            "Axis-Montezuma"
+                                            "Axis-MtDanaher"
+                                            "Axis-MtZion1"
+                                            "Axis-MtZion2"
+                                            "Axis-NorthMok"
+                                            "Axis-Pepperwood1"
+                                            "Axis-QueenBee"
+                                            "Axis-RedCorral"
+                                            "Axis-RedCorral2"
+                                            "Axis-Rockland"
+                                            "Axis-Rockpile"
+                                            "Axis-Sagehen5"
+                                            "Axis-Sierra"
+                                            "Axis-TahoeDonner"
+                                            "Axis-TVHill"
+                                            "Axis-WestPoint"
+                                            "Axis-Winters1"
+                                            "Axis-Winters2"
+                                            "Axis-Konocti"
+                                            "Axis-StHelenaNorth"
+                                            "Axis-PrattMtn2"
+                                            "Axis-PrattMtn1"
+                                            "Axis-PierceMtn2"
+                                            "Axis-PierceMtn1"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Camera cache
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -92,8 +139,12 @@
                    (let [alert-wildfire-cameras   (->> (api-all-cameras alert-wildfire-api-url
                                                                         alert-wildfire-api-defaults)
                                                        (pmap #(site->feature "alert-wildfire" %))
-                                                       ;; Alert Wildfire API does **not** work for California cameras
-                                                       (filter #(not= (get-in % [:properties :state]) "CA")))
+                                                       ;; The Alert Wildfire API does **not** work for most California cameras so
+                                                       ;; we filter out all California Alert Wildfire cameras besides a predefined list
+                                                       (filter (fn [camera]
+                                                                 (let [camera-properites (:properties camera)]
+                                                                   (or (california-cameras-to-keep (:name camera-properites))
+                                                                       (not= (:state camera-properites) "CA"))))))
                          alert-california-cameras (->> (api-all-cameras alert-california-api-url
                                                                         alert-california-api-defaults)
                                                        (pmap #(site->feature "alert-california" %)))
