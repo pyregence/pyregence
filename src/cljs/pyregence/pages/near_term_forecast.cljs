@@ -242,22 +242,25 @@
     (js->clj %)
     (map (fn [rule]
            (let [label (get rule "title")]
-             {"label"    label
-              "quantity" (if (= label "nodata")
-                           "-9999" ; FIXME: if we end up having different nodata values later on, we will need to do regex on the "filter" key from the returned JSON
-                           label)
-              "color"    (if polygon-layer?
-                           (get-in rule ["symbolizers" 0 "Polygon" "fill"])
-                           (get-in rule ["symbolizers" 0 "Line" "stroke"]))
-              "opacity"  "1.0"}))
-         %)))
+             (if (= label "nolegend")
+               nil ; We don't add any nolegend values to the legend, those values are just there to add extra colors to the actual layer when previewing it on Pyrecast
+               {"label"    label
+                "quantity" (if (= label "nodata")
+                             "-9999" ; FIXME: if we end up having different nodata values later on, we will need to do regex on the "filter" key from the returned JSON
+                             label)
+                "color"    (if polygon-layer?
+                             (get-in rule ["symbolizers" 0 "Polygon" "fill"])
+                             (get-in rule ["symbolizers" 0 "Line" "stroke"]))
+                "opacity"  "1.0"})))
+         %)
+    (filter identity %)))
 
 (defn- process-raster-colormap-legend
   "Parses the JSON data from GetLegendGraphic from a layer using raster colormap styling."
   [rules]
   (as-> rules %
-      (u-misc/try-js-aget % 0 "symbolizers" 0 "Raster" "colormap" "entries")
-      (js->clj %)))
+        (u-misc/try-js-aget % 0 "symbolizers" 0 "Raster" "colormap" "entries")
+        (js->clj %)))
 
 (defn- process-legend!
   "Populates the legend-list atom with the result of the request from GetLegendGraphic.
