@@ -230,57 +230,57 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
-                                                              :tmpf     {:opt-label "Temperature (\u00B0F)"
-                                                                         :filter    "tmpf"
-                                                                         :units     "\u00B0F"}
-                                                              :rh       {:opt-label "Relative humidity (%)"
-                                                                         :filter    "rh"
-                                                                         :units     "%"}
-                                                              :ffwi     {:opt-label "Fosberg Fire Weather Index"
-                                                                         :filter    "ffwi"
-                                                                         :units     ""}
-                                                              :meq      {:opt-label "Fine dead fuel moisture (%)"
-                                                                         :filter    "meq"
-                                                                         :units     "%"}
-                                                              :pign     {:opt-label "Firebrand ignition probability (%)"
-                                                                         :filter    "pign"
-                                                                         :units     "%"}
-                                                              :wd       {:opt-label       "Wind direction (\u00B0)"
-                                                                         :filter          "wd"
-                                                                         :units           "\u00B0"
-                                                                         :reverse-legend? false}
-                                                              :ws       {:opt-label "Sustained wind speed (mph)"
-                                                                         :filter    "ws"
-                                                                         :units     "mph"}
-                                                              :wg       {:opt-label "Wind gust (mph)"
-                                                                         :filter    "wg"
-                                                                         :units     "mph"}
-                                                              :apcp-tot {:opt-label       "Accumulated precipitation (in)"
-                                                                         :filter          "apcp-tot"
-                                                                         :units           "inches"
-                                                                         :disabled-for    #{:gfs0p125 :hybrid :rtma-ru}
-                                                                         :reverse-legend? false}
-                                                              :apcp01   {:opt-label       "1-hour precipitation (in)"
-                                                                         :filter          "apcp01"
-                                                                         :units           "inches"
-                                                                         :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru}
-                                                                         :reverse-legend? false}
-                                                              :vpd      {:opt-label    "Vapor pressure deficit (hPa)"
-                                                                         :filter       "vpd"
-                                                                         :units        "hPa"
-                                                                         :disabled-for #{:nbm}}
-                                                              :hdw      {:opt-label    "Hot-Dry-Windy Index (hPa*m/s)"
-                                                                         :filter       "hdw"
-                                                                         :units        "hPa*m/s"
-                                                                         :disabled-for #{:nbm}}
-                                                              :smoke    {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
-                                                                         :filter       "smoke"
-                                                                         :units        "\u00b5g/m\u00b3"
-                                                                         :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru}}
-                                                              :tcdc     {:opt-label    "Total cloud cover (%)"
-                                                                         :filter       "tcdc"
-                                                                         :units        "%"
-                                                                         :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf}})}
+                                                              :tmpf    {:opt-label "Temperature (\u00B0F)"
+                                                                        :filter    "tmpf"
+                                                                        :units     "\u00B0F"}
+                                                              :rh      {:opt-label "Relative humidity (%)"
+                                                                        :filter    "rh"
+                                                                        :units     "%"}
+                                                              :ffwi    {:opt-label "Fosberg Fire Weather Index"
+                                                                        :filter    "ffwi"
+                                                                        :units     ""}
+                                                              :meq     {:opt-label "Fine dead fuel moisture (%)"
+                                                                        :filter    "meq"
+                                                                        :units     "%"}
+                                                              :pign    {:opt-label "Firebrand ignition probability (%)"
+                                                                        :filter    "pign"
+                                                                        :units     "%"}
+                                                              :wd      {:opt-label       "Wind direction (\u00B0)"
+                                                                        :filter          "wd"
+                                                                        :units           "\u00B0"
+                                                                        :reverse-legend? false}
+                                                              :ws      {:opt-label "Sustained wind speed (mph)"
+                                                                        :filter    "ws"
+                                                                        :units     "mph"}
+                                                              :wg      {:opt-label "Wind gust (mph)"
+                                                                        :filter    "wg"
+                                                                        :units     "mph"}
+                                                              :apcptot {:opt-label       "Accumulated precipitation (in)"
+                                                                        :filter          "apcptot"
+                                                                        :units           "inches"
+                                                                        :disabled-for    #{:gfs0p125 :hybrid :rtma-ru}
+                                                                        :reverse-legend? false}
+                                                              :apcp01  {:opt-label       "1-hour precipitation (in)"
+                                                                        :filter          "apcp01"
+                                                                        :units           "inches"
+                                                                        :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru}
+                                                                        :reverse-legend? false}
+                                                              :vpd     {:opt-label    "Vapor pressure deficit (hPa)"
+                                                                        :filter       "vpd"
+                                                                        :units        "hPa"
+                                                                        :disabled-for #{:nbm}}
+                                                              :hdw     {:opt-label    "Hot-Dry-Windy Index (hPa*m/s)"
+                                                                        :filter       "hdw"
+                                                                        :units        "hPa*m/s"
+                                                                        :disabled-for #{:nbm}}
+                                                              :smoke   {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
+                                                                        :filter       "smoke"
+                                                                        :units        "\u00b5g/m\u00b3"
+                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru}}
+                                                              :tcdc    {:opt-label    "Total cloud cover (%)"
+                                                                        :filter       "tcdc"
+                                                                        :units        "%"
+                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf}})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "HRRR"]
@@ -330,10 +330,10 @@
                                                                               :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
-                                                                              :disabled-for #{:apcp-tot :smoke :tcdc}}
+                                                                              :disabled-for #{:apcptot :smoke :tcdc}}
                                                               :gfs0p125      {:opt-label    "GFS 0.125\u00B0"
                                                                               :filter       "gfs0p125"
-                                                                              :disabled-for #{:apcp-tot :smoke :tcdc}}
+                                                                              :disabled-for #{:apcptot :smoke :tcdc}}
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
                                                                               :disabled-for #{:smoke :tcdc}}
@@ -348,7 +348,7 @@
                                                                               :disabled-for #{:apcp01 :smoke :tcdc}}
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
-                                                                              :disabled-for #{:apcp-tot :apcp01 :smoke}})}
+                                                                              :disabled-for #{:apcptot :apcp01 :smoke}})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
