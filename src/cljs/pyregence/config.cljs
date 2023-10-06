@@ -473,7 +473,7 @@
                                                         :z-index          125
                                                         :filter-set       #{"isochrones"}
                                                         :dependent-inputs [:fire-name :burn-pct :fuel :model :model-init]
-                                                        :disabled-for     #{:active-fires :gridfire}
+                                                        :disabled-for     #{:active-fires}
                                                         :geoserver-key    :trinity}})
                   :block-info?     true
                   :reverse-legend? true
