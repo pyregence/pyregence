@@ -296,7 +296,7 @@
                                                             :north-buffer         north-buffer
                                                             :do-fuel              true
                                                             :fuel-source          "landfire"
-                                                            :fuel-version         "2.2.0"
+                                                            :fuel-version         "2.3.0_2.2.0"
                                                             :do-wx                true
                                                             :wx-start-time        wx-start-time
                                                             :wx-type              wx-type
