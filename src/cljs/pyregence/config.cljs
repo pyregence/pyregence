@@ -577,6 +577,7 @@
                   :allowed-org     "NV Energy"
                   :reverse-legend? true
                   :time-slider?    true
+                  :auto-zoom?      true
                   :hover-text      "Public Safety Power Shutoffs (PSPS) zonal statistics."
                   :params          {:quantity   {:opt-label  "Zonal Quantity"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
@@ -587,12 +588,8 @@
                                                               " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "Hot Dry Windy Index"]
-                                                              " - Similar to FFWI, but based on Vapor Pressure Deficit (VPD)."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "Relative Burn Probability"]
-                                                              " - Relative likelihood that an area is burned by fires that have not yet ignited within the next six hours of time shown in time slider."
+                                                              [:strong "Firebrand Ignition Probability"]
+                                                              " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."
                                                               [:br]
                                                               [:br]
                                                               [:strong "Impacted Structures"]
@@ -606,21 +603,45 @@
                                                               [:strong "Fire Volume"]
                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
                                                  :options    (array-map
-                                                              :ws   {:opt-label "Sustained wind speed (mph)"
+                                                              :ws   {:opt-label    "Sustained wind speed (mph)"
+                                                                     :filter       "nve"
+                                                                     :units        "mph"
+                                                                     :disabled-for #{:l}}
+                                                              :wg   {:opt-label    "Wind gust (mph)"
+                                                                     :filter       "nve"
+                                                                     :units        "mph"
+                                                                     :disabled-for #{:l}}
+                                                              :wd   {:opt-label    "Wind direction (\u00B0)"
+                                                                     :filter       "nve"
+                                                                     :units        "\u00B0"
+                                                                     :disabled-for #{:l}}
+                                                              :ffwi {:opt-label    "Fosberg Fire Weather Index"
+                                                                     :filter       "nve"
+                                                                     :units        ""
+                                                                     :disabled-for #{:l}}
+                                                              :rh   {:opt-label    "Relative humidity (%)"
+                                                                     :filter       "nve"
+                                                                     :units        "%"
+                                                                     :disabled-for #{:l}}
+                                                              :tmpf {:opt-label    "Temperature (\u00B0F)"
+                                                                     :filter       "nve"
+                                                                     :units        "\u00B0F"
+                                                                     :disabled-for #{:l}}
+                                                              :pign {:opt-label "Firebrand ignition probability (%)"
                                                                      :filter    "nve"
-                                                                     :units     "mph"}
-                                                              :wg   {:opt-label "Wind gust (mph)"
-                                                                     :filter    "nve"
-                                                                     :units     "mph"}
-                                                              :area {:opt-label "Fire area (acres)"
-                                                                     :filter    "nve"
-                                                                     :units     "Acres"}
-                                                              :str  {:opt-label "Impacted structures"
-                                                                     :filter    "nve"
-                                                                     :units     "Structures"}
-                                                              :vol  {:opt-label "Fire volume (acre-ft)"
-                                                                     :filter    "nve"
-                                                                     :units     "Acre-ft"})}
+                                                                     :units     "%"}
+                                                              :str  {:opt-label    "Impacted structures"
+                                                                     :filter       "nve"
+                                                                     :units        "Structures"
+                                                                     :disabled-for #{:h :n1 :n2 :g1 :g2 :b}}
+                                                              :area {:opt-label    "Fire area (acres)"
+                                                                     :filter       "nve"
+                                                                     :units        "Acres"
+                                                                     :disabled-for #{:h :n1 :n2 :g1 :g2 :b}}
+                                                              :vol  {:opt-label    "Fire volume (acre-ft)"
+                                                                     :filter       "nve"
+                                                                     :units        "Acre-ft"
+                                                                     :disabled-for #{:h :n1 :n2 :g1 :g2 :b}})}
                                     :statistic  {:opt-label      "Statistic"
                                                  :hover-text     "Options are minimum, mean, or maximum."
                                                  :default-option :a
@@ -632,16 +653,53 @@
                                                                       :filter    "deenergization-zones"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "HRRR"]
+                                                              " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM 3 km"]
+                                                              " -  North American Mesoscale Model at 3 km resolution to 60 hours."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM 12 km"]
+                                                              " - North American Mesoscale Model at 12 km resolution to 84 hours."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "GFS 0.125\u00B0"]
+                                                              " - Global Forecast System at 0.125\u00B0 (approx 13 km) resolution to 16 days."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "GFS 0.250\u00B0"]
+                                                              " - Global Forecast System at 0.250\u00B0 (approx 26 km) resolution to 16 days."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NBM"]
+                                                              " - National Blend of Models at 2.5 km to 11 days."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "ELMFIRE"]
                                                               " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
                                                               [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
                                                                    :target "_blank"}
                                                                "https://doi.org/10.1016/j.firesaf.2013.08.014"]
                                                               ")."]
-                                                 :options    {:h {:opt-label    "HRRR"
-                                                                  :disabled-for #{:area :str :vol}}
-                                                              :l {:opt-label    "ELMFIRE"
-                                                                  :disabled-for #{:wg :ws}}}}
+                                                 :options    {;; TODO rename :h to :hrrr
+                                                              :h  {:opt-label    "HRRR"
+                                                                   :disabled-for #{:area :str :vol}}
+                                                              :n1 {:opt-label    "NAM 3 km"
+                                                                   :disabled-for #{:area :str :vol}}
+                                                              :n2 {:opt-label    "NAM 12 km"
+                                                                   :disabled-for #{:area :str :vol}}
+                                                              :g1 {:opt-label    "GFS 0.125\u00B0"
+                                                                   :disabled-for #{:area :str :vol}}
+                                                              :g2 {:opt-label    "GFS 0.250\u00B0"
+                                                                   :disabled-for #{:area :str :vol}}
+                                                              :b  {:opt-label    "NBM"
+                                                                   :disabled-for #{:area :str :vol}}
+                                                              ;; TODO no way to select ELMFIRE unless you go through :pign which is annoying because so little overlap
+                                                              ;; TODO rename :l to :elm
+                                                              :l  {:opt-label    "ELMFIRE"
+                                                                   :disabled-for #{:wg :ws :wd :ffwi :rh :tmpf}}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}})
@@ -917,25 +975,33 @@
        "&LAYER=" layer
        "&STYLE=" (or style "")))
 
+;; TODO rename ELMFIRE and HRRR columns
 (def all-psps-columns
   "A list of all PSPS column names. To be used as the input to the propertyName
    parameter for GetFeatureInfo in order to filter out extra info."
   (str/join ","
-            ["h_wg_a"
-             "h_wg_h"
-             "h_wg_l"
-             "h_ws_a"
-             "h_ws_h"
-             "h_ws_l"
-             "l_area_a"
-             "l_area_h"
-             "l_area_l"
-             "l_str_a"
-             "l_str_h"
-             "l_str_l"
-             "l_vol_a"
-             "l_vol_h"
-             "l_vol_l"]))
+            ["b_ffwi_a" "b_ffwi_h" "b_ffwi_l" "b_pign_a" "b_pign_h" "b_pign_l"
+             "b_rh_a" "b_rh_h" "b_rh_l" "b_tmpf_a" "b_tmpf_h" "b_tmpf_l" "b_wd_a"
+             "b_wd_h" "b_wd_l" "b_wg_a" "b_wg_h" "b_wg_l" "b_ws_a" "b_ws_h" "b_ws_l"
+             "g1_ffwi_a" "g1_ffwi_h" "g1_ffwi_l" "g1_pign_a" "g1_pign_h" "g1_pign_l"
+             "g1_rh_a" "g1_rh_h" "g1_rh_l" "g1_tmpf_a" "g1_tmpf_h" "g1_tmpf_l"
+             "g1_wd_a" "g1_wd_h" "g1_wd_l" "g1_wg_a" "g1_wg_h" "g1_wg_l" "g1_ws_a"
+             "g1_ws_h" "g1_ws_l" "g2_ffwi_a" "g2_ffwi_h" "g2_ffwi_l" "g2_pign_a"
+             "g2_pign_h" "g2_pign_l" "g2_rh_a" "g2_rh_h" "g2_rh_l" "g2_tmpf_a"
+             "g2_tmpf_h" "g2_tmpf_l" "g2_wd_a" "g2_wd_h" "g2_wd_l" "g2_wg_a"
+             "g2_wg_h" "g2_wg_l" "g2_ws_a" "g2_ws_h" "g2_ws_l" "h_ffwi_a"
+             "h_ffwi_h" "h_ffwi_l" "h_pign_a" "h_pign_h" "h_pign_l" "h_rh_a"
+             "h_rh_h" "h_rh_l" "h_tmpf_a" "h_tmpf_h" "h_tmpf_l" "h_wd_a" "h_wd_h"
+             "h_wd_l" "h_wg_a" "h_wg_h" "h_wg_l" "h_ws_a" "h_ws_h" "h_ws_l"
+             "l_area_a" "l_area_h" "l_area_l" ; "l_pign_a" "l_pign_h" "l_pign_l" TODO uncomment these once Chris fixes the underlying layers
+             "l_str_a" "l_str_h" "l_str_l" "l_vol_a" "l_vol_h" "l_vol_l" "n1_ffwi_a"
+             "n1_ffwi_h" "n1_ffwi_l" "n1_pign_a" "n1_pign_h" "n1_pign_l" "n1_rh_a"
+             "n1_rh_h" "n1_rh_l" "n1_tmpf_a" "n1_tmpf_h" "n1_tmpf_l" "n1_wd_a"
+             "n1_wd_h" "n1_wd_l" "n1_wg_a" "n1_wg_h" "n1_wg_l" "n1_ws_a" "n1_ws_h"
+             "n1_ws_l" "n2_ffwi_a" "n2_ffwi_h" "n2_ffwi_l" "n2_pign_a" "n2_pign_h"
+             "n2_pign_l" "n2_rh_a" "n2_rh_h" "n2_rh_l" "n2_tmpf_a" "n2_tmpf_h"
+             "n2_tmpf_l" "n2_wd_a" "n2_wd_h" "n2_wd_l" "n2_wg_a" "n2_wg_h"
+             "n2_wg_l" "n2_ws_a" "n2_ws_h" "n2_ws_l"]))
 
 (defn point-info-url
   "Generates a URL for the point information."
