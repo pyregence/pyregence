@@ -46,4 +46,5 @@
                      :pass     "<pass>"
                      :tls      <true/false>
                      :site-url "<url>"}
+ :psps              {:allowed-orgs nil}
  :ga-id             nil}

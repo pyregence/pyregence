@@ -68,6 +68,7 @@
                                :features          (get-config :features)
                                :geoserver         (get-config :geoserver)
                                :pyr-auth-token    (get-config :pyr-auth-token)
+                               :psps              (get-config :psps)
                                :announcement      (when (.exists (io/as-file "announcement.txt"))
                                                     (slurp "announcement.txt"))))
         "); };")])

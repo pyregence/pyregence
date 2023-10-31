@@ -574,7 +574,7 @@
                   :geoserver-key   :psps
                   :filter          "psps-zonal"
                   :underlays       (merge common-underlays near-term-forecast-underlays)
-                  :allowed-orgs    #{"nv-energy"}
+                  :allowed-orgs    @!/allowed-psps-orgs
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "Public Safety Power Shutoffs (PSPS) zonal statistics."
