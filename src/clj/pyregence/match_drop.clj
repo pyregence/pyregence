@@ -272,7 +272,7 @@
         north-buffer         12
         num-ensemble-members 200
         ignition-radius      300
-        run-hours            24
+        run-hours            72
         model-time           (u/convert-date-string ignition-time) ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
         wx-start-time        (u/round-down-to-nearest-hour model-time)
         fire-name            (str (get-md-config :md-prefix) "-match-drop-" match-job-id)
