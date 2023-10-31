@@ -68,13 +68,13 @@
 
 (defn- get-org-by-id [org-list org-id]
   (->> org-list
-       (filter #(= org-id (:opt-id %)))
+       (filter #(= org-id (:org-id %)))
        first))
 
 (defn- set-selected-org! [org]
   (reset! *org               org)
-  (reset! *org-id            (:opt-id        org))
-  (reset! *org-name          (:opt-label     org))
+  (reset! *org-id            (:org-id        org))
+  (reset! *org-name          (:org-name      org))
   (reset! *org-email-domains (:email-domains org))
   (reset! *org-auto-accept?  (:auto-accept?  org))
   (reset! *org-auto-add?     (:auto-add?     org)))
@@ -286,8 +286,8 @@
      [:label {:style ($/padding "1px" :l)} "Organization List"]]
     [:div {:style {:overflow "auto"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
-      (doall (map (fn [{:keys [opt-id opt-label]}]
-                    ^{:key opt-id} [org-item opt-id opt-label])
+      (doall (map (fn [{:keys [org-id org-name]}]
+                    ^{:key org-id} [org-item org-id org-name])
                   orgs))]]]])
 
 (defn- org-settings [_]
