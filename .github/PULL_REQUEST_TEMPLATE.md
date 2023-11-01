@@ -9,6 +9,7 @@ Closes PYR1-###
 - [ ] Code passes linter rules (`clj-kondo --lint src`)
 - [ ] Feature(s) work when compiled (`clojure -M:compile-cljs`)
 - [ ] No new reflection warnings (`clojure -M:check-reflection`)
+- [ ] For any large features/rearchitecting of the codebase, the relevant `docs` were updated (e.g. updating `docs/pyrecast-database.md` when adding a new DB table)
 
 ## Testing
 #### Module Impacted
