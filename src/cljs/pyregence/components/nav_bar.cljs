@@ -15,7 +15,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn nav-bar
-  "Defines the horizontal navigation component for the application"
+  "Defines the horizontal navigation component for the application."
   [props]
   [:nav {:style ($/combine $nav-bar {:background ($/color-picker :yellow)})}
    [forecast-tabs props]

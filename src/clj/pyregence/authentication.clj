@@ -82,9 +82,10 @@
    and are an admin or a member of."
   [user-id]
   (->> (call-sql "get_organizations" user-id)
-       (mapv (fn [{:keys [org_id org_name role_id email_domains auto_add auto_accept]}]
-               {:opt-id        org_id
-                :opt-label     org_name
+       (mapv (fn [{:keys [org_id org_name org_unique_id role_id email_domains auto_add auto_accept]}]
+               {:org-id        org_id
+                :org-name      org_name
+                :org-unique-id org_unique_id
                 :role          (if (= role_id 1) "admin" "member")
                 :email-domains email_domains
                 :auto-add?     auto_add

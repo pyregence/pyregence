@@ -69,6 +69,7 @@
     (reset! !/geoserver-urls (:geoserver cur-params))
     (reset! !/default-forecasts (get cur-params :default-forecasts))
     (reset! !/pyr-auth-token (get cur-params :pyr-auth-token))
+    (reset! !/allowed-psps-orgs (get-in cur-params [:psps :allowed-orgs]))
     (set-announcement-text! (:announcement cur-params))
     (render-root cur-params)))
 

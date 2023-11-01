@@ -181,6 +181,7 @@ CREATE OR REPLACE FUNCTION get_organizations(_user_id integer)
  RETURNS TABLE (
     org_id           integer,
     org_name         text,
+    org_unique_id    text,
     role_id          integer,
     email_domains    text,
     auto_add         boolean,
@@ -189,6 +190,7 @@ CREATE OR REPLACE FUNCTION get_organizations(_user_id integer)
 
     SELECT o.organization_uid,
         o.org_name,
+        o.org_unique_id,
         ou.role_rid,
         o.email_domains,
         o.auto_add,
@@ -197,7 +199,7 @@ CREATE OR REPLACE FUNCTION get_organizations(_user_id integer)
     WHERE (o.organization_uid = ou.organization_rid)
         AND (ou.user_rid = _user_id)
         AND (ou.role_rid = 1 OR ou.role_rid = 2)
-    ORDER BY o.org_name
+    ORDER BY o.org_unique_id
 
 $$ LANGUAGE SQL;
 
@@ -373,7 +375,7 @@ DECLARE
   _org_id     integer;
 BEGIN
     SELECT user_uid INTO _user_id FROM users WHERE email = _email;
- 
+
     SELECT organization_uid INTO _org_id FROM organizations WHERE org_name = _org_name;
 
     INSERT INTO organization_users
