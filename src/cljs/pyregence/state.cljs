@@ -124,8 +124,6 @@ California cameras. This atom is used to create the camera layer in mapbox.cljs.
   mapbox-access-token (atom nil))
 (defonce ^{:doc "The Pyrecast auth token for making API requests."}
   pyr-auth-token (r/atom nil))
-(defonce ^{:doc "The organizations that are allowed to view the PSPS tab. A set of unique org ids (strings)."}
-  allowed-psps-orgs (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State Setters
