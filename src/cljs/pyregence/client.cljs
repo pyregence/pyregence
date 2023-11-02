@@ -1,7 +1,6 @@
 (ns ^:figwheel-hooks pyregence.client
   (:require [goog.dom                           :as dom]
             [reagent.dom                        :refer [render]]
-            [pyregence.config                   :as c]
             [pyregence.state                    :as !]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.dashboard          :as dashboard]
@@ -69,7 +68,6 @@
     (reset! !/geoserver-urls (:geoserver cur-params))
     (reset! !/default-forecasts (get cur-params :default-forecasts))
     (reset! !/pyr-auth-token (get cur-params :pyr-auth-token))
-    (reset! !/allowed-psps-orgs (get-in cur-params [:psps :allowed-orgs]))
     (set-announcement-text! (:announcement cur-params))
     (render-root cur-params)))
 
