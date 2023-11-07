@@ -385,7 +385,7 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "Power Line Ignition Rate"]
-                                                              " - Estimated power line ignition rate."]
+                                                              " - Estimated power line ignition rate in ignitions per line-mile per hour."]
                                                  :options    {:times-burned    {:opt-label "Relative burn probability"
                                                                                 :filter    "times-burned"
                                                                                 :units     "Times"}
@@ -580,68 +580,79 @@
                   :auto-zoom?      true
                   :hover-text      "Public Safety Power Shutoffs (PSPS) zonal statistics."
                   :params          {:quantity   {:opt-label  "Zonal Quantity"
-                                                 :hover-text [:p {:style {:margin-bottom "0"}}
-                                                              "Public Safety Power Shutoffs (PSPS) Zonal Quantity. Options include:"
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "Fosberg Fire Weather Index (FFWI)"]
-                                                              " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "Firebrand Ignition Probability"]
-                                                              " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "Impacted Structures"]
-                                                              " - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "Fire Area"]
-                                                              " - Modeled fire size in acres by ignition location and time of ignition."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "Fire Volume"]
-                                                              " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."]
+                                                 :hover-text [:<>
+                                                              [:p {:style {:margin-bottom "0"}}
+                                                               "Public Safety Power Shutoffs (PSPS) Zonal Quantity. Options include:"
+                                                               [:br]
+                                                               [:br]
+                                                               [:strong "Fosberg Fire Weather Index (FFWI)"]
+                                                               " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
+                                                               [:br]
+                                                               [:br]
+                                                               [:strong "Firebrand Ignition Probability"]
+                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."
+                                                               [:br]
+                                                               [:br]
+                                                               [:strong "Impacted Structures"]
+                                                               " - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future."
+                                                               [:br]
+                                                               [:br]
+                                                               [:strong "Fire Area"]
+                                                               " - Modeled fire size in acres by ignition location and time of ignition."
+                                                               [:br]
+                                                               [:br]
+                                                               [:strong "Fire Volume"]
+                                                               " - Modeled fire volume (fire area in acres multiplied by flame length in feet) by ignition location and time of ignition."
+                                                               [:br]
+                                                               [:br]
+                                                               [:strong "Power Line Ignition Rate"]
+                                                               " - Estimated power line ignition rate in ignitions per line-mile per hour."]
+                                                              [:div {:style {:margin-top 10}}
+                                                               [:hr]
+                                                               [:strong "Note"]
+                                                               ": The impacted structrures, fire area, fire volume, and power line ignition rate quantities are only available with the ELMFIRE model."]]
                                                  :options    (array-map
-                                                              :ws   {:opt-label    "Sustained wind speed (mph)"
-                                                                     :filter       "nve"
-                                                                     :units        "mph"
-                                                                     :disabled-for #{:l}}
-                                                              :wg   {:opt-label    "Wind gust (mph)"
-                                                                     :filter       "nve"
-                                                                     :units        "mph"
-                                                                     :disabled-for #{:l}}
-                                                              :wd   {:opt-label    "Wind direction (\u00B0)"
-                                                                     :filter       "nve"
-                                                                     :units        "\u00B0"
-                                                                     :disabled-for #{:l}}
-                                                              :ffwi {:opt-label    "Fosberg Fire Weather Index"
-                                                                     :filter       "nve"
-                                                                     :units        ""
-                                                                     :disabled-for #{:l}}
-                                                              :rh   {:opt-label    "Relative humidity (%)"
-                                                                     :filter       "nve"
-                                                                     :units        "%"
-                                                                     :disabled-for #{:l}}
-                                                              :tmpf {:opt-label    "Temperature (\u00B0F)"
-                                                                     :filter       "nve"
-                                                                     :units        "\u00B0F"
-                                                                     :disabled-for #{:l}}
-                                                              :pign {:opt-label "Firebrand ignition probability (%)"
-                                                                     :filter    "nve"
-                                                                     :units     "%"}
-                                                              :str  {:opt-label    "Impacted structures"
-                                                                     :filter       "nve"
-                                                                     :units        "Structures"
-                                                                     :disabled-for #{:h :n1 :n2 :g1 :g2 :b}}
-                                                              :area {:opt-label    "Fire area (acres)"
-                                                                     :filter       "nve"
-                                                                     :units        "Acres"
-                                                                     :disabled-for #{:h :n1 :n2 :g1 :g2 :b}}
-                                                              :vol  {:opt-label    "Fire volume (acre-ft)"
-                                                                     :filter       "nve"
-                                                                     :units        "Acre-ft"
-                                                                     :disabled-for #{:h :n1 :n2 :g1 :g2 :b}})}
+                                                              :ws    {:opt-label    "Sustained wind speed (mph)"
+                                                                      :filter       "nve"
+                                                                      :units        "mph"}
+                                                              :wg    {:opt-label    "Wind gust (mph)"
+                                                                      :filter       "nve"
+                                                                      :units        "mph"}
+                                                              :wd    {:opt-label    "Wind direction (\u00B0)"
+                                                                      :filter       "nve"
+                                                                      :units        "\u00B0"}
+                                                              :ffwi  {:opt-label    "Fosberg Fire Weather Index"
+                                                                      :filter       "nve"
+                                                                      :units        ""}
+                                                              :rh    {:opt-label    "Relative humidity (%)"
+                                                                      :filter       "nve"
+                                                                      :units        "%"}
+                                                              :tmpf  {:opt-label    "Temperature (\u00B0F)"
+                                                                      :filter       "nve"
+                                                                      :units        "\u00B0F"}
+                                                              :pign  {:opt-label "Firebrand ignition probability (%)"
+                                                                      :filter    "nve"
+                                                                      :units     "%"}
+                                                              :str   {:opt-label    "Impacted structures"
+                                                                      :filter       "nve"
+                                                                      :units        "Structures"
+                                                                      ; TODO update :h to :r
+                                                                      :disabled-for #{:h :n1 :n2 :g1 :g2 :b}}
+                                                              :area  {:opt-label    "Fire area (acres)"
+                                                                      :filter       "nve"
+                                                                      :units        "Acres"
+                                                                      ; TODO update :h to :r
+                                                                      :disabled-for #{:h :n1 :n2 :g1 :g2 :b}}
+                                                              :vol   {:opt-label    "Fire volume (acre-ft)"
+                                                                      :filter       "nve"
+                                                                      :units        "Acre-ft"
+                                                                      ; TODO update :h to :r
+                                                                      :disabled-for #{:h :n1 :n2 :g1 :g2 :b}}
+                                                              :pligr {:opt-label "Power line ignition rate"
+                                                                      :filter    "nve"
+                                                                      :units     "Ignitions/line-mi/hr"
+                                                                      ; TODO update :h to :r
+                                                                      :disabled-for #{:h :n1 :n2 :g1 :g2 :b}})}
                                     :statistic  {:opt-label      "Statistic"
                                                  :hover-text     "Options are minimum, mean, or maximum."
                                                  :default-option :a
@@ -683,7 +694,7 @@
                                                                    :target "_blank"}
                                                                "https://doi.org/10.1016/j.firesaf.2013.08.014"]
                                                               ")."]
-                                                 :options    {;; TODO rename :h to :hrrr
+                                                 :options    {;; TODO rename :h to :r
                                                               :h  {:opt-label    "HRRR"
                                                                    :disabled-for #{:area :str :vol}}
                                                               :n1 {:opt-label    "NAM 3 km"
@@ -696,10 +707,8 @@
                                                                    :disabled-for #{:area :str :vol}}
                                                               :b  {:opt-label    "NBM"
                                                                    :disabled-for #{:area :str :vol}}
-                                                              ;; TODO no way to select ELMFIRE unless you go through :pign which is annoying because so little overlap
-                                                              ;; TODO rename :l to :elm
-                                                              :l  {:opt-label    "ELMFIRE"
-                                                                   :disabled-for #{:wg :ws :wd :ffwi :rh :tmpf}}}}
+                                                              ;; TODO rename :l to :e
+                                                              :l  {:opt-label    "ELMFIRE"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}})
@@ -993,7 +1002,7 @@
              "h_ffwi_h" "h_ffwi_l" "h_pign_a" "h_pign_h" "h_pign_l" "h_rh_a"
              "h_rh_h" "h_rh_l" "h_tmpf_a" "h_tmpf_h" "h_tmpf_l" "h_wd_a" "h_wd_h"
              "h_wd_l" "h_wg_a" "h_wg_h" "h_wg_l" "h_ws_a" "h_ws_h" "h_ws_l"
-             "l_area_a" "l_area_h" "l_area_l" ; "l_pign_a" "l_pign_h" "l_pign_l" TODO uncomment these once Chris fixes the underlying layers
+             "l_area_a" "l_area_h" "l_area_l" "l_pligr_a" "l_pligr_h" "l_pligr_l"
              "l_str_a" "l_str_h" "l_str_l" "l_vol_a" "l_vol_h" "l_vol_l" "n1_ffwi_a"
              "n1_ffwi_h" "n1_ffwi_l" "n1_pign_a" "n1_pign_h" "n1_pign_l" "n1_rh_a"
              "n1_rh_h" "n1_rh_l" "n1_tmpf_a" "n1_tmpf_h" "n1_tmpf_l" "n1_wd_a"
