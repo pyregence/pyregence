@@ -32,22 +32,11 @@
 
 ;;; Layers
 
-(defn- split-fire-spread-forecast
-  "Gets information about a fire spread layer based on the layer's name."
-  [name-string]
-  (let [[workspace layer]              (str/split name-string #":")
-        [forecast fire-name ts1 ts2]   (str/split workspace #"_")
-        [model fuel percentile output] (str/split layer #"_")
-        model-init                     (str ts1 "_" ts2)]
-    {:workspace   workspace
-     :fire-name   fire-name
-     :forecast    forecast
-     :filter-set  #{forecast fire-name model fuel percentile output model-init}
-     :model-init  model-init
-     :layer-group ""}))
-
-(defn- split-risk-weather-psps-layer-name
-  "Gets information about a risk, weather, or PSPS layer based on the layer's name."
+(defn- split-risk-weather-layer-name
+  "Gets information about a risk or weather layer based on the layer's name.
+   The layer is assumed to be in the format `forecast-type_forecast-start-time:layer-group_timestamp`
+   e.g. `fire-risk-forecast_20231031_12:elmfire_tlines_landfire_times-burned_20231105_060000`
+        `fire-weather-forecast_20231031_18:gfs0p125_tmpf_20231031_190000`"
   [name-string]
   (let [[workspace layer]           (str/split name-string #":")
         [forecast init-timestamp]   (str/split workspace   #"_(?=\d{8}_)")
@@ -62,12 +51,51 @@
                         (.getTime (java-date-from-string (str init-timestamp "0000"))))
                      1000.0 60 60)}))
 
-(defn- split-active-layer-name
-  "Gets information about an active fire layer based on its name."
+(defn- split-psps-layer-name
+  "Gets information about a PSPS layer based on the layer's name.
+   The layer is assumed to be in the format `forecast-type_utility-company_forecast-start-time:layer-group_timestamp`
+   e.g. `psps-zonal_nve_20231031_18:deenergization-zones_20231031_180000`"
+  [name-string]
+  (let [[workspace layer]                  (str/split name-string #":")
+        [forecast utility-company ts1 ts2] (str/split workspace #"_")
+        init-timestamp                     (str ts1 "_" ts2)
+        [deenergization sim-timestamp]     (str/split layer #"_(?=\d{8}_)")]
+    {:workspace   workspace
+     :layer-group (str workspace ":" deenergization)
+     :forecast    forecast
+     :filter-set  (into #{forecast utility-company init-timestamp deenergization})
+     :model-init  init-timestamp
+     :sim-time    sim-timestamp
+     :hour        (/ (- (.getTime (java-date-from-string sim-timestamp))
+                        (.getTime (java-date-from-string (str init-timestamp "0000"))))
+                     1000.0 60 60)}))
+
+(defn- split-fire-spread-forecast-layer-name
+  "Gets information about a fire spread layer based on the layer's name.
+   The layer is assumed to be in the format:
+   `fire-spread-forecast_fire-name_forecast-start-time:<elmfire|gridfire>_landfire_percentile_output-type
+   e.g. `fire-spread-forecast_ky-bradford-town_20231105_191700:elmfire_landfire_10_hours-since-burned`"
+  [name-string]
+  (let [[workspace layer]              (str/split name-string #":")
+        [forecast fire-name ts1 ts2]   (str/split workspace #"_")
+        [model fuel percentile output] (str/split layer #"_")
+        model-init                     (str ts1 "_" ts2)]
+    {:workspace   workspace
+     :fire-name   fire-name
+     :forecast    forecast
+     :filter-set  #{forecast fire-name model fuel percentile output model-init}
+     :model-init  model-init
+     :layer-group ""}))
+
+(defn- split-isochrones-layer-name
+  "Gets information about an active fire isochrones layer based on its name.
+   The layer is assumed to be in the format:
+   `fire-spread-forecast_fire-name_forecast-start-time:<elmfire|gridfire>_landfire_percentile_isochrones_fire-name_forecast-start-time_percentile`
+   e.g. `fire-spread-forecast_ky-bradford-town_20231105_191700:elmfire_landfire_10_isochrones_ky-bradford-town_20231105_191700_10`"
   [name-string]
   (let [[workspace layer]                      (str/split name-string #":")
         [forecast fire-name init-ts1 init-ts2] (str/split workspace   #"_")
-        [layer-group sim-timestamp]            (str/split layer       #"_(?=\d{8}_)")
+        [layer-group _]                        (str/split layer       #"_(?=\d{8}_)")
         init-timestamp                         (str init-ts1 "_" init-ts2)]
     {:workspace   workspace
      :layer-group ""
@@ -75,7 +103,6 @@
      :fire-name   fire-name
      :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
      :model-init  init-timestamp
-     :sim-time    sim-timestamp
      :hour        0}))
 
 (defn- split-fire-detections
@@ -165,18 +192,19 @@
                             merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
                           (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
-                          (merge-fn (split-risk-weather-psps-layer-name full-name))
+                          (merge-fn (split-risk-weather-layer-name full-name))
+
+                          (and (str/includes? full-name "psps-zonal")
+                               (re-matches #"([a-z|-]+_[a-z|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name))
+                          (merge-fn (split-psps-layer-name full-name))
 
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
-                          (merge-fn (split-fire-spread-forecast full-name))
+                          (merge-fn (split-fire-spread-forecast-layer-name full-name))
 
-                          ;; Either the layer is an isochrones layer or it matches a regex AND match drop is either enabled OR it's not a match drop
-                          ;; TODO: Remove once fire forecasts are migrated to Image Mosiac format. Will still need isochrones to be read in properly.
-                          (or (str/includes? full-name "isochrones")
-                              (and (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_([a-z|-]+_)\d{8}_\d{6}" full-name)
-                                   (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop")))))
-                          (merge-fn (split-active-layer-name full-name))
+                          (and (str/includes? full-name "isochrones")
+                               (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_isochrones_[a-z|\d|-]*_\d{8}_\d{6}_\d{2}" full-name))
+                          (merge-fn (split-isochrones-layer-name full-name))
 
                           (or (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
                               (re-matches #"fire-detections.*:(goes16-rgb|fire-history|conus-buildings|us-transmission-lines).*" full-name))
