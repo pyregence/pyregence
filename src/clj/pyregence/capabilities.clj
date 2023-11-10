@@ -53,17 +53,17 @@
 
 (defn- split-psps-layer-name
   "Gets information about a PSPS layer based on the layer's name.
-   The layer is assumed to be in the format `forecast-type_utility-company_forecast-start-time:layer-group_timestamp`
+   The layer is assumed to be in the format `forecast-type_utility-company_forecast-start-time:deenergization-zones_timestamp`
    e.g. `psps-zonal_nve_20231031_18:deenergization-zones_20231031_180000`"
   [name-string]
   (let [[workspace layer]                  (str/split name-string #":")
         [forecast utility-company ts1 ts2] (str/split workspace #"_")
         init-timestamp                     (str ts1 "_" ts2)
-        [deenergization sim-timestamp]     (str/split layer #"_(?=\d{8}_)")]
+        [layer-group sim-timestamp]        (str/split layer #"_(?=\d{8}_)")]
     {:workspace   workspace
-     :layer-group (str workspace ":" deenergization)
+     :layer-group (str workspace ":" layer-group)
      :forecast    forecast
-     :filter-set  (into #{forecast utility-company init-timestamp deenergization})
+     :filter-set  #{forecast init-timestamp utility-company}
      :model-init  init-timestamp
      :sim-time    sim-timestamp
      :hour        (/ (- (.getTime (java-date-from-string sim-timestamp))
