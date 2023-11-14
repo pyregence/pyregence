@@ -44,8 +44,8 @@
   [filter-set dependent-inputs geoserver-key z-index show?]
   (go
     (let [cleaned-filter-set (if (seq dependent-inputs)
-                               (merge-filter-set filter-set dependent-inputs)
-                               filter-set) ; add in dependent-inputs to the filter-set of an underlay that isn't static
+                               (merge-filter-set filter-set dependent-inputs) ; add in dependent-inputs to the filter-set of an underlay that isn't static
+                               filter-set)
           layer-id           (<! (get-layer-name geoserver-key cleaned-filter-set identity))]
       (when layer-id
         (when (not (mb/layer-exists? layer-id))
