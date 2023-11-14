@@ -636,23 +636,19 @@
                                                               :str   {:opt-label    "Impacted structures"
                                                                       :filter       "nve"
                                                                       :units        "Structures"
-                                                                      ; TODO update :h to :r
-                                                                      :disabled-for #{:h :n1 :n2 :g1 :g2 :b}}
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
                                                               :area  {:opt-label    "Fire area (acres)"
                                                                       :filter       "nve"
                                                                       :units        "Acres"
-                                                                      ; TODO update :h to :r
-                                                                      :disabled-for #{:h :n1 :n2 :g1 :g2 :b}}
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
                                                               :vol   {:opt-label    "Fire volume (acre-ft)"
                                                                       :filter       "nve"
                                                                       :units        "Acre-ft"
-                                                                      ; TODO update :h to :r
-                                                                      :disabled-for #{:h :n1 :n2 :g1 :g2 :b}}
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
                                                               :pligr {:opt-label "Power line ignition rate"
                                                                       :filter    "nve"
                                                                       :units     "Ignitions/line-mi/hr"
-                                                                      ; TODO update :h to :r
-                                                                      :disabled-for #{:h :n1 :n2 :g1 :g2 :b}})}
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}})}
                                     :statistic  {:opt-label      "Statistic"
                                                  :hover-text     "Options are minimum, mean, or maximum."
                                                  :default-option :a
@@ -694,8 +690,7 @@
                                                                    :target "_blank"}
                                                                "https://doi.org/10.1016/j.firesaf.2013.08.014"]
                                                               ")."]
-                                                 :options    {;; TODO rename :h to :r
-                                                              :h  {:opt-label    "HRRR"
+                                                 :options    {:r  {:opt-label    "HRRR"
                                                                    :disabled-for #{:area :str :vol}}
                                                               :n1 {:opt-label    "NAM 3 km"
                                                                    :disabled-for #{:area :str :vol}}
@@ -707,8 +702,7 @@
                                                                    :disabled-for #{:area :str :vol}}
                                                               :b  {:opt-label    "NBM"
                                                                    :disabled-for #{:area :str :vol}}
-                                                              ;; TODO rename :l to :e
-                                                              :l  {:opt-label    "ELMFIRE"}}}
+                                                              :m  {:opt-label    "ELMFIRE"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}})
@@ -984,7 +978,6 @@
        "&LAYER=" layer
        "&STYLE=" (or style "")))
 
-;; TODO rename ELMFIRE and HRRR columns
 (def all-psps-columns
   "A list of all PSPS column names. To be used as the input to the propertyName
    parameter for GetFeatureInfo in order to filter out extra info."
@@ -998,19 +991,19 @@
              "g1_ws_h" "g1_ws_l" "g2_ffwi_a" "g2_ffwi_h" "g2_ffwi_l" "g2_pign_a"
              "g2_pign_h" "g2_pign_l" "g2_rh_a" "g2_rh_h" "g2_rh_l" "g2_tmpf_a"
              "g2_tmpf_h" "g2_tmpf_l" "g2_wd_a" "g2_wd_h" "g2_wd_l" "g2_wg_a"
-             "g2_wg_h" "g2_wg_l" "g2_ws_a" "g2_ws_h" "g2_ws_l" "h_ffwi_a"
-             "h_ffwi_h" "h_ffwi_l" "h_pign_a" "h_pign_h" "h_pign_l" "h_rh_a"
-             "h_rh_h" "h_rh_l" "h_tmpf_a" "h_tmpf_h" "h_tmpf_l" "h_wd_a" "h_wd_h"
-             "h_wd_l" "h_wg_a" "h_wg_h" "h_wg_l" "h_ws_a" "h_ws_h" "h_ws_l"
-             "l_area_a" "l_area_h" "l_area_l" "l_pligr_a" "l_pligr_h" "l_pligr_l"
-             "l_str_a" "l_str_h" "l_str_l" "l_vol_a" "l_vol_h" "l_vol_l" "n1_ffwi_a"
+             "g2_wg_h" "g2_wg_l" "g2_ws_a" "g2_ws_h" "g2_ws_l"
+             "m_area_a" "m_area_h" "m_area_l" "m_pligr_a" "m_pligr_h" "m_pligr_l"
+             "m_str_a" "m_str_h" "m_str_l" "m_vol_a" "m_vol_h" "m_vol_l" "n1_ffwi_a"
              "n1_ffwi_h" "n1_ffwi_l" "n1_pign_a" "n1_pign_h" "n1_pign_l" "n1_rh_a"
              "n1_rh_h" "n1_rh_l" "n1_tmpf_a" "n1_tmpf_h" "n1_tmpf_l" "n1_wd_a"
              "n1_wd_h" "n1_wd_l" "n1_wg_a" "n1_wg_h" "n1_wg_l" "n1_ws_a" "n1_ws_h"
              "n1_ws_l" "n2_ffwi_a" "n2_ffwi_h" "n2_ffwi_l" "n2_pign_a" "n2_pign_h"
              "n2_pign_l" "n2_rh_a" "n2_rh_h" "n2_rh_l" "n2_tmpf_a" "n2_tmpf_h"
              "n2_tmpf_l" "n2_wd_a" "n2_wd_h" "n2_wd_l" "n2_wg_a" "n2_wg_h"
-             "n2_wg_l" "n2_ws_a" "n2_ws_h" "n2_ws_l"]))
+             "n2_wg_l" "n2_ws_a" "n2_ws_h" "n2_ws_l" "r_ffwi_a" "r_ffwi_h"
+             "r_ffwi_l" "r_pign_a" "r_pign_h" "r_pign_l" "r_rh_a" "r_rh_h"
+             "r_rh_l" "r_tmpf_a" "r_tmpf_h" "r_tmpf_l" "r_wd_a" "r_wd_h"
+             "r_wd_l" "r_wg_a" "r_wg_h" "r_wg_l" "r_ws_a" "r_ws_h" "r_ws_l"]))
 
 (defn point-info-url
   "Generates a URL for the point information."
