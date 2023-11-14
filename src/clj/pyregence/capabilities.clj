@@ -63,7 +63,7 @@
     {:workspace   workspace
      :layer-group (str workspace ":" layer-group)
      :forecast    forecast
-     :filter-set  #{forecast init-timestamp utility-company}
+     :filter-set  #{forecast init-timestamp utility-company layer-group}
      :model-init  init-timestamp
      :sim-time    sim-timestamp
      :hour        (/ (- (.getTime (java-date-from-string sim-timestamp))
@@ -146,15 +146,15 @@
      :hour        (- (Integer/parseInt year) 1954)}))
 
 (defn- split-psps-underlays
-  "Gets information about a PSPS static layer based on its name."
+  "Gets information about a PSPS static layer based on its name (e.g. `psps-static_nve:nve-trans`)."
   [name-string]
   (let [[workspace layer] (str/split name-string #":")
-        [forecast type]   (str/split workspace #"_")]
+        [forecast _]      (str/split workspace #"_")]
     {:workspace   workspace
      :layer-group ""
      :forecast    forecast
-     :type        type
-     :filter-set  #{forecast type}
+     :type        layer
+     :filter-set  #{forecast layer}
      :model-init  ""
      :hour        0}))
 
