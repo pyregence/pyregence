@@ -136,11 +136,11 @@
   "Returns the name of the point info column for a PSPS layer."
   []
   (when (= @!/*forecast :psps-zonal)
-      (str (name (get-in @!/*params [:psps-zonal :model]))
-           "_"
-           (name (get-in @!/*params [:psps-zonal :quantity]))
-           "_"
-           (name (get-in @!/*params [:psps-zonal :statistic])))))
+    (str (name (get-in @!/*params [:psps-zonal :model]))
+         "_"
+         (name (get-in @!/*params [:psps-zonal :quantity]))
+         "_"
+         (name (get-in @!/*params [:psps-zonal :statistic])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Processing Functions
