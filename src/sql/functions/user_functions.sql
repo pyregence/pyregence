@@ -172,6 +172,15 @@ CREATE OR REPLACE FUNCTION get_user_match_drop_access(_user_id integer)
 
 $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION get_user_psps_org(_user_id integer)
+ RETURNS text AS $$
+
+    SELECT psps_org
+    FROM users
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
 ---
 ---  Organizations
 ---

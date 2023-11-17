@@ -572,9 +572,8 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :psps-zonal   {:opt-label       "PSPS"
                   :geoserver-key   :psps
-                  :filter          "psps-zonal"
                   :underlays       (merge common-underlays near-term-forecast-underlays)
-                  :allowed-orgs    #{"nv-energy"}
+                  :allowed-orgs    #{"nve" "liberty"}
                   :reverse-legend? true
                   :time-slider?    true
                   :auto-zoom?      true
@@ -612,42 +611,31 @@
                                                                [:strong "Note"]
                                                                ": The impacted structrures, fire area, fire volume, and power line ignition rate quantities are only available with the ELMFIRE model."]]
                                                  :options    (array-map
-                                                              :ws    {:opt-label    "Sustained wind speed (mph)"
-                                                                      :filter       "nve"
-                                                                      :units        "mph"}
-                                                              :wg    {:opt-label    "Wind gust (mph)"
-                                                                      :filter       "nve"
-                                                                      :units        "mph"}
-                                                              :wd    {:opt-label    "Wind direction (\u00B0)"
-                                                                      :filter       "nve"
-                                                                      :units        "\u00B0"}
-                                                              :ffwi  {:opt-label    "Fosberg Fire Weather Index"
-                                                                      :filter       "nve"
-                                                                      :units        ""}
-                                                              :rh    {:opt-label    "Relative humidity (%)"
-                                                                      :filter       "nve"
-                                                                      :units        "%"}
-                                                              :tmpf  {:opt-label    "Temperature (\u00B0F)"
-                                                                      :filter       "nve"
-                                                                      :units        "\u00B0F"}
+                                                              :ws    {:opt-label "Sustained wind speed (mph)"
+                                                                      :units     "mph"}
+                                                              :wg    {:opt-label "Wind gust (mph)"
+                                                                      :units     "mph"}
+                                                              :wd    {:opt-label "Wind direction (\u00B0)"
+                                                                      :units     "\u00B0"}
+                                                              :ffwi  {:opt-label "Fosberg Fire Weather Index"
+                                                                      :units     ""}
+                                                              :rh    {:opt-label "Relative humidity (%)"
+                                                                      :units     "%"}
+                                                              :tmpf  {:opt-label "Temperature (\u00B0F)"
+                                                                      :units     "\u00B0F"}
                                                               :pign  {:opt-label "Firebrand ignition probability (%)"
-                                                                      :filter    "nve"
                                                                       :units     "%"}
                                                               :str   {:opt-label    "Impacted structures"
-                                                                      :filter       "nve"
                                                                       :units        "Structures"
                                                                       :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
                                                               :area  {:opt-label    "Fire area (acres)"
-                                                                      :filter       "nve"
                                                                       :units        "Acres"
                                                                       :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
                                                               :vol   {:opt-label    "Fire volume (acre-ft)"
-                                                                      :filter       "nve"
                                                                       :units        "Acre-ft"
                                                                       :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
-                                                              :pligr {:opt-label "Power line ignition rate"
-                                                                      :filter    "nve"
-                                                                      :units     "Ignitions/line-mi/hr"
+                                                              :pligr {:opt-label    "Power line ignition rate"
+                                                                      :units        "Ignitions/line-mi/hr"
                                                                       :disabled-for #{:r :n1 :n2 :g1 :g2 :b}})}
                                     :statistic  {:opt-label      "Statistic"
                                                  :hover-text     "Options are minimum, mean, or maximum."
@@ -691,18 +679,25 @@
                                                                "https://doi.org/10.1016/j.firesaf.2013.08.014"]
                                                               ")."]
                                                  :options    {:r  {:opt-label    "HRRR"
-                                                                   :disabled-for #{:area :str :vol}}
+                                                                   :filter       "psps-zonal"
+                                                                   :disabled-for #{:area :str :vol :pligr}}
                                                               :n1 {:opt-label    "NAM 3 km"
-                                                                   :disabled-for #{:area :str :vol}}
+                                                                   :filter       "psps-zonal"
+                                                                   :disabled-for #{:area :str :vol :pligr}}
                                                               :n2 {:opt-label    "NAM 12 km"
-                                                                   :disabled-for #{:area :str :vol}}
+                                                                   :filter       "psps-zonal"
+                                                                   :disabled-for #{:area :str :vol :pligr}}
                                                               :g1 {:opt-label    "GFS 0.125\u00B0"
-                                                                   :disabled-for #{:area :str :vol}}
+                                                                   :filter       "psps-zonal"
+                                                                   :disabled-for #{:area :str :vol :pligr}}
                                                               :g2 {:opt-label    "GFS 0.250\u00B0"
-                                                                   :disabled-for #{:area :str :vol}}
+                                                                   :filter       "psps-zonal"
+                                                                   :disabled-for #{:area :str :vol :pligr}}
                                                               :b  {:opt-label    "NBM"
-                                                                   :disabled-for #{:area :str :vol}}
-                                                              :m  {:opt-label    "ELMFIRE"}}}
+                                                                   :filter       "psps-zonal"
+                                                                   :disabled-for #{:area :str :vol :pligr}}
+                                                              :m  {:opt-label "ELMFIRE"
+                                                                   :filter    "psps-zonal"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}})
