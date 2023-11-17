@@ -70,6 +70,14 @@
                          (str "The user with an id of " user-id " does not have Match Drop access."))]
       (data-response response-msg {:status 403}))))
 
+(defn get-user-psps-org [user-id]
+  (if-let [psps-org (sql-primitive (call-sql "get_user_psps_org" user-id))]
+    (data-response psps-org)
+    (let [response-msg (if (nil? user-id)
+                         "There is no user logged in. The PSPS tab will remain disabled."
+                         (str "The user with an id of " user-id " does not have PSPS access."))]
+      (data-response response-msg {:status 403}))))
+
 (defn update-user-name [email new-name]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
     (do (call-sql "update_user_name" user-id new-name)

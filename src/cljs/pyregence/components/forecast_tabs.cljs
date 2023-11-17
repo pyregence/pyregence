@@ -13,10 +13,10 @@
   [:div {:style {:display "flex" :padding ".25rem 0"}}
    (doall
     (map (fn [[key {:keys [allowed-orgs hover-text opt-label]}]]
-           (when (or (nil? allowed-orgs)                         ; Tab isn't organization-specific
-                     (some (fn [{org-unique-id :org-unique-id}]  ; Tab **is** organization-specific
-                             (allowed-orgs org-unique-id))       ; and the user is an admin or member of that org
-                           user-org-list))                       ; (the organization unique id is in their org-list)
+           (when (or (nil? allowed-orgs)                        ; Tab isn't organization-specific, so show it
+                     (some (fn [{org-unique-id :org-unique-id}] ; If tab **is** organization-specific
+                             (allowed-orgs org-unique-id))      ; the user must be an admin or member of one of the allowed orgs
+                           user-org-list))
              ^{:key key}
              [tool-tip-wrapper
               hover-text

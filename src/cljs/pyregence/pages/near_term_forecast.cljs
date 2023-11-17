@@ -509,7 +509,7 @@
               (u-data/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
 ;;; Capabilities
-(defn- process-capabilities! [fire-names user-layers options-config & [selected-options]]
+(defn- process-capabilities! [fire-names user-layers user-psps-org options-config & [selected-options]]
   (reset! !/capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
@@ -522,7 +522,8 @@
                       user-layers)
               (update-in [:active-fire :params :fire-name :options]
                          merge
-                         fire-names)))
+                         fire-names)
+              (assoc-in [:psps-zonal :filter] user-psps-org)))
   (reset! !/*params (u-data/mapm
                      (fn [[forecast _]]
                        (let [params (get-in @!/capabilities [forecast :params])]
@@ -539,7 +540,8 @@
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
           user-layers-chan                (u-async/call-clj-async! "get-user-layers" user-id)
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
-          fire-cameras-chan               (u-async/call-clj-async! "get-cameras")]
+          fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
+          user-psps-org-chan              (u-async/call-clj-async! "get-user-psps-org" user-id)]
       (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast (or (keyword forecast)
                               (keyword (forecast-type @!/default-forecasts))))
@@ -547,6 +549,10 @@
       (mb/init-map! "map" layers (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
+                             (let [response (<! user-psps-org-chan)]
+                               (if (:success response)
+                                 (edn/read-string (:body response))
+                                 nil))
                              options-config
                              (params->selected-options options-config @!/*forecast params))
       (reset! !/user-org-list (edn/read-string (:body (<! (u-async/call-clj-async! "get-organizations" user-id)))))
