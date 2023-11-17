@@ -11,7 +11,7 @@ WHERE email = 'demo@nvenergy.com';
 
 UPDATE users
 set email = 'demo@liberty.com'
-WHERE name = 'Liberty';
+WHERE name = 'Liberty Demo Account';
 
 UPDATE users
 set psps_org = 'liberty'
