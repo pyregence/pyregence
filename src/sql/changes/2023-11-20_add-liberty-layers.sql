@@ -14,5 +14,9 @@ VALUES
     ((SELECT organization_uid FROM liberty), '[:psps-zonal :underlays :dist-liberty]', '{:opt-label "Distribution Lines (Liberty)", :z-index 105, :filter-set #{"liberty-dist" "psps-static"}, :geoserver-key :psps}');
 
 UPDATE organization_layers
-SET layer_config = '{:opt-label "Liberty Distribution Lines", :filter "liberty", :geoserver-key :psps}'
+SET layer_config = '{:opt-label "Liberty Distribution Lines", :filter "liberty", :geoserver-key :psps, :disabled-for #{:crown-fire-area}}'
 WHERE org_layer_uid = 1;
+
+UPDATE organization_layers
+SET layer_config = '{:opt-label "NV Energy Distribution Lines", :filter "nve", :geoserver-key :psps, :disabled-for #{:crown-fire-area}}'
+WHERE org_layer_uid = 3;
