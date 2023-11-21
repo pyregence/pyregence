@@ -519,7 +519,7 @@
                             (assoc-in acc layer-path layer-config)
                             acc)))
                       options-config
-                      user-layers)
+                      user-layers) ; TODO the resulting array map gets turned into a hash map when we have > than 9 items
               (update-in [:active-fire :params :fire-name :options]
                          merge
                          fire-names)
