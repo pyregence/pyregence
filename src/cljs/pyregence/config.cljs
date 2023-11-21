@@ -401,7 +401,7 @@
                                                               :crown-fire-area {:opt-label    "Crown fire area"
                                                                                 :filter       "crown-fire-area"
                                                                                 :units        "Acres"
-                                                                                :disabled-for #{:tlines :nve}}
+                                                                                :disabled-for #{:tlines :nve :liberty}}
                                                               :plignrate       {:opt-label    "Power line ignition rate"
                                                                                 :filter       "plignrate"
                                                                                 :units        "Ignitions/line-mi/hr"
@@ -466,7 +466,6 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
-                  :geoserver-key   :trinity ; TODO might be able to uncomment this
                   :underlays       (merge common-underlays
                                           near-term-forecast-underlays
                                           {:isochrones {:opt-label        "Modeled perimeter"
