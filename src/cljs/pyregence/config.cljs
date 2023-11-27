@@ -230,12 +230,12 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
-                                                              :tmpf    {:opt-label "Temperature (\u00B0F)"
-                                                                        :filter    "tmpf"
-                                                                        :units     "\u00B0F"}
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
                                                                         :units     "%"}
+                                                              :tmpf    {:opt-label "Temperature (\u00B0F)"
+                                                                        :filter    "tmpf"
+                                                                        :units     "\u00B0F"}
                                                               :ffwi    {:opt-label "Fosberg Fire Weather Index"
                                                                         :filter    "ffwi"
                                                                         :units     ""}
@@ -323,11 +323,11 @@
                                                               [:strong "RTMA"]
                                                               " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
                                                  :options    (array-map
-                                                              :hrrr          {:opt-label    "HRRR"
-                                                                              :filter       "hrrr"}
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
                                                                               :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
+                                                              :hrrr          {:opt-label    "HRRR"
+                                                                              :filter       "hrrr"}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
                                                                               :disabled-for #{:apcptot :smoke :tcdc}}
