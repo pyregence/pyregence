@@ -429,25 +429,16 @@
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
                                                               [:br]
-                                                              [:strong "- 2022 California fuelscape"]
-                                                              " prepared by Pyrologix, LLC ("
-                                                              [:a {:href   "https://pyrologix.com"
+                                                              [:a {:href   "https://landfire.gov"
                                                                    :target "_blank"}
-                                                               "https://pyrologix.com"]
-                                                              "), 2022."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "- California Forest Observatory"]
-                                                              " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
-                                                              [:a {:href   "https://forestobservatory.com"
+                                                               "LANDFIRE"]
+                                                              " 2.3.0/2.2.0 at 30 m resolution. For more detailed version descriptions, please visit "
+                                                              [:a {:href "https://landfire.gov/version_download.php"
                                                                    :target "_blank"}
-                                                               "https://forestobservatory.com"]
-                                                              "), © Salo Sciences, Inc. 2020."]
-                                                 :options    {:landfire {:opt-label "2022 CA fuelscape"
-                                                                         :filter    "landfire"}
-                                                              :cfo      {:opt-label    "2020 CA Forest Obs."
-                                                                         :filter       "cfo"
-                                                                         :disabled-for #{:times-burned :impacted :fire-area :fire-volume :plignrate :crown-fire-area}}}}
+                                                               "this link"]
+                                                              " and click the \"LF Version Descriptions\" button."]
+                                                 :options    {:landfire {:opt-label "LANDFIRE 2.3.0/2.2.0"
+                                                                         :filter    "landfire"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Computer fire spread model used to generate active fire and risk forecasts."
