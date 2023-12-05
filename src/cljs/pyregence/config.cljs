@@ -258,29 +258,29 @@
                                                               :apcptot {:opt-label       "Accumulated precipitation (in)"
                                                                         :filter          "apcptot"
                                                                         :units           "inches"
-                                                                        :disabled-for    #{:gfs0p125 :hybrid :rtma-ru :ecmwf :adswrf} ; TODO change :adswrf to :nve
+                                                                        :disabled-for    #{:gfs0p125 :hybrid :rtma-ru :ecmwf :nve}
                                                                         :reverse-legend? false}
                                                               :apcp01  {:opt-label       "1-hour precipitation (in)"
                                                                         :filter          "apcp01"
                                                                         :units           "inches"
-                                                                        :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru :ecmwf :adswrf} ; TODO change :adswrf to :nve
+                                                                        :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru :ecmwf :nve}
                                                                         :reverse-legend? false}
                                                               :vpd     {:opt-label    "Vapor pressure deficit (hPa)"
                                                                         :filter       "vpd"
                                                                         :units        "hPa"
-                                                                        :disabled-for #{:nbm :ecmwf :adswrf}} ; TODO change :adswrf to :nve
+                                                                        :disabled-for #{:nbm :ecmwf :nve}}
                                                               :hdw     {:opt-label    "Hot-Dry-Windy Index (hPa*m/s)"
                                                                         :filter       "hdw"
                                                                         :units        "hPa*m/s"
-                                                                        :disabled-for #{:nbm :ecmwf :adswrf}} ; TODO change :adswrf to :nve
+                                                                        :disabled-for #{:nbm :ecmwf}}
                                                               :smoke   {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
                                                                         :filter       "smoke"
                                                                         :units        "\u00b5g/m\u00b3"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :adswrf}} ; TODO change :adswrf to :nve
+                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve}}
                                                               :tcdc    {:opt-label    "Total cloud cover (%)"
                                                                         :filter       "tcdc"
                                                                         :units        "%"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :adswrf}})} ; TODO change :adswrf to :nve
+                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve}})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "HRRR"]

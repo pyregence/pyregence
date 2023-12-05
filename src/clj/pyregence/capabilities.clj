@@ -32,38 +32,21 @@
 
 ;;; Layers
 
-(defn- split-risk-weather-layer-name
-  "Gets information about a risk or weather layer based on the layer's name.
-   The layer is assumed to be in the format `forecast-type_forecast-start-time:layer-group_timestamp`
-   e.g. `fire-risk-forecast_20231031_12:elmfire_tlines_landfire_times-burned_20231105_060000`
-        `fire-weather-forecast_20231031_18:gfs0p125_tmpf_20231031_190000`"
+(defn- split-risk-weather-psps-layer-name
+  "Gets information about a risk, weather, or PSPS layer based on the layer's name.
+   The layer is assumed to be in the format `forecast-type_model-name_forecast-start-time:layer-group_timestamp`
+   e.g. `fire-risk-forecast_tlines_20231031_12:elmfire_landfire_times-burned_20231105_060000`
+        `fire-weather-forecast_hrrr_20231031_18:tmpf_20231031_190000`
+        `psps-zonal_nve_20231031_18:deenergization-zones_20231031_180000`"
   [name-string]
-  (let [[workspace layer]           (str/split name-string #":")
-        [forecast init-timestamp]   (str/split workspace   #"_(?=\d{8}_)")
-        [layer-group sim-timestamp] (str/split layer       #"_(?=\d{8}_)")]
+  (let [[workspace layer]             (str/split name-string #":")
+        [forecast model-name ts1 ts2] (str/split workspace #"_")
+        init-timestamp                (str ts1 "_" ts2)
+        [layer-group sim-timestamp]   (str/split layer #"_(?=\d{8}_)")]
     {:workspace   workspace
      :layer-group (str workspace ":" layer-group)
      :forecast    forecast
-     :filter-set  (into #{forecast init-timestamp} (str/split layer-group #"_"))
-     :model-init  init-timestamp
-     :sim-time    sim-timestamp
-     :hour        (/ (- (.getTime (java-date-from-string sim-timestamp))
-                        (.getTime (java-date-from-string (str init-timestamp "0000"))))
-                     1000.0 60 60)}))
-
-(defn- split-psps-layer-name
-  "Gets information about a PSPS layer based on the layer's name.
-   The layer is assumed to be in the format `forecast-type_utility-company_forecast-start-time:deenergization-zones_timestamp`
-   e.g. `psps-zonal_nve_20231031_18:deenergization-zones_20231031_180000`"
-  [name-string]
-  (let [[workspace layer]                  (str/split name-string #":")
-        [forecast utility-company ts1 ts2] (str/split workspace #"_")
-        init-timestamp                     (str ts1 "_" ts2)
-        [layer-group sim-timestamp]        (str/split layer #"_(?=\d{8}_)")]
-    {:workspace   workspace
-     :layer-group (str workspace ":" layer-group)
-     :forecast    forecast
-     :filter-set  #{forecast init-timestamp utility-company layer-group}
+     :filter-set  (into #{forecast init-timestamp model-name} (str/split layer-group #"_"))
      :model-init  init-timestamp
      :sim-time    sim-timestamp
      :hour        (/ (- (.getTime (java-date-from-string sim-timestamp))
@@ -191,12 +174,8 @@
                                               (str/split #","))
                             merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
-                          (re-matches #"([a-z|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
-                          (merge-fn (split-risk-weather-layer-name full-name))
-
-                          (and (str/includes? full-name "psps-zonal")
-                               (re-matches #"([a-z|-]+_[a-z|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name))
-                          (merge-fn (split-psps-layer-name full-name))
+                          (re-matches #"([a-z|-]+_[a-z0-9|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
+                          (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
                                (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
