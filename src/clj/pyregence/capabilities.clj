@@ -174,7 +174,7 @@
                                               (str/split #","))
                             merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
-                          (re-matches #"([a-z|-]+_[a-z|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
+                          (re-matches #"([a-z|-]+_[a-z0-9|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
