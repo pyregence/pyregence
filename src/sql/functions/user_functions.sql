@@ -188,18 +188,20 @@ $$ LANGUAGE SQL;
 -- Returns all organizations for a user that they are an admin or member of
 CREATE OR REPLACE FUNCTION get_organizations(_user_id integer)
  RETURNS TABLE (
-    org_id           integer,
-    org_name         text,
-    org_unique_id    text,
-    role_id          integer,
-    email_domains    text,
-    auto_add         boolean,
-    auto_accept      boolean
+    org_id                integer,
+    org_name              text,
+    org_unique_id         text,
+    geoserver_credentials text,
+    role_id               integer,
+    email_domains         text,
+    auto_add              boolean,
+    auto_accept           boolean
  ) AS $$
 
     SELECT o.organization_uid,
         o.org_name,
         o.org_unique_id,
+        o.geoserver_credentials,
         ou.role_rid,
         o.email_domains,
         o.auto_add,

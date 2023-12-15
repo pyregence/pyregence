@@ -90,14 +90,15 @@
    and are an admin or a member of."
   [user-id]
   (->> (call-sql "get_organizations" user-id)
-       (mapv (fn [{:keys [org_id org_name org_unique_id role_id email_domains auto_add auto_accept]}]
-               {:org-id        org_id
-                :org-name      org_name
-                :org-unique-id org_unique_id
-                :role          (if (= role_id 1) "admin" "member")
-                :email-domains email_domains
-                :auto-add?     auto_add
-                :auto-accept?  auto_accept}))
+       (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials role_id email_domains auto_add auto_accept]}]
+               {:org-id                org_id
+                :org-name              org_name
+                :org-unique-id         org_unique_id
+                :geoserver-credentials geoserver_credentials
+                :role                  (if (= role_id 1) "admin" "member")
+                :email-domains         email_domains
+                :auto-add?             auto_add
+                :auto-accept?          auto_accept}))
        (data-response)))
 
 (defn get-org-member-users
