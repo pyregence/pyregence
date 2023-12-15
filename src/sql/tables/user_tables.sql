@@ -22,15 +22,16 @@ CREATE TABLE users (
 
 -- Stores information about organizations
 CREATE TABLE organizations (
-    organization_uid    SERIAL PRIMARY KEY,
-    org_name            text NOT NULL,
-    org_unique_id       text NOT NULL UNIQUE,
-    email_domains       text,
-    auto_add            boolean,
-    auto_accept         boolean,
-    archived            boolean DEFAULT FALSE,
-    created_date        date DEFAULT NOW(),
-    archived_date       date
+    organization_uid      SERIAL PRIMARY KEY,
+    org_name              text NOT NULL,
+    org_unique_id         text NOT NULL UNIQUE,
+    geoserver_credentials varchar(72),
+    email_domains         text,
+    auto_add              boolean,
+    auto_accept           boolean,
+    archived              boolean DEFAULT FALSE,
+    created_date          date DEFAULT NOW(),
+    archived_date         date
 );
 
 -- Creates a relationship between users and organizations
