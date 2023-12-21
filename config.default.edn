@@ -24,6 +24,8 @@
                      :match-drop  "https://sierra.pyregence.org/geoserver"
                      :pyreclimate "https://climate.pyregence.org/geoserver"
                      :psps        "https://energy.pyregence.org:8443/geoserver"}
+ :psps              {:geoserver-admin-username "admin"
+                     :geoserver-admin-password "password"}
  :match-drop        {:app-name       "Pyrecast Match Drop Server"
                      :app-host       "localhost"
                      :app-port       31337

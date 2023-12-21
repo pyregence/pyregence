@@ -14,6 +14,8 @@
 (defonce layers (atom {}))
 
 (def site-url (get-config :mail :site-url))
+(def psps-geoserver-admin-username (get-config :psps :geoserver-admin-username))
+(def psps-geoserver-admin-password (get-config :psps :geoserver-admin-password))
 (def private-layer-geoservers #{:psps})
 
 ;;; Helper Functions
@@ -147,14 +149,17 @@
    to generate a vector of layer entries where each entry is a map. The info
    in each entry map is generated based on the title of the layer. Different layer
    types have their information generated in different ways using the split-
-   functions above."
-  [geoserver-url workspace-name]
-  (let [xml-response (-> geoserver-url
+   functions above. Optionally can provide `basic-auth`, which is used for password
+   protected workspaces. `basic-auth` must be either a string of the form
+   \"username:password\" or a tuple of the form `[username passwords]`."
+  [geoserver-url workspace-name & [basic-auth]]
+  (let [base-url     (-> geoserver-url
                          (u/end-with "/")
                          (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
                               (when workspace-name
-                                (str "&NAMESPACE=" workspace-name)))
-                         (client/get)
+                                (str "&NAMESPACE=" workspace-name))))
+        xml-response (-> base-url
+                         (client/get (when basic-auth {:basic-auth basic-auth}))
                          (:body))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
@@ -223,16 +228,16 @@
 (defn set-capabilities!
   "Populates the layers atom with all of the layers that are returned
    from a call to GetCapabilities on a specific GeoServer. Passing in a
-   geoserver-key specifies which GeoServer to call GetCapabilities on and
-   passing in an optional workspace-name allows you to call GetCapabilities
-   on just that workspace by passing it into process-layers!."
-  [{:strs [geoserver-key workspace-name]}]
+   `geoserver-key` specifies which GeoServer to call GetCapabilities on and
+   passing in an optional `workspace-name` allows you to call GetCapabilities
+   on just that workspace by passing it into `process-layers!`."
+  [{:strs [geoserver-key workspace-name basic-auth]}]
   (let [geoserver-key (keyword geoserver-key)]
     (if (contains? (get-config :geoserver) geoserver-key)
       (try
         (let [stdout?       (= 0 (count @layers))
               geoserver-url (get-config :geoserver geoserver-key)
-              new-layers    (process-layers! geoserver-url workspace-name)
+              new-layers    (process-layers! geoserver-url workspace-name basic-auth)
               message       (str (count new-layers) " layers from " geoserver-url " added to " site-url ".")]
           (if workspace-name
             (do
@@ -251,7 +256,11 @@
    for those that relate to private layers."
   []
   (doseq [geoserver-key (keys (get-config :geoserver))]
-    (when-not (private-layer-geoservers geoserver-key)
+    (if (private-layer-geoservers geoserver-key)
+      (set-capabilities! {"geoserver-key" (name geoserver-key)
+                          "basic-auth"    (str psps-geoserver-admin-username
+                                               ":"
+                                               psps-geoserver-admin-password)})
       (set-capabilities! {"geoserver-key" (name geoserver-key)})))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " site-url ".")))
