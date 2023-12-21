@@ -13,7 +13,6 @@
                                               get-psps-organizations
                                               get-user-info
                                               get-user-match-drop-access
-                                              get-user-psps-org
                                               log-in
                                               log-out
                                               remove-org-user
@@ -65,7 +64,6 @@
                "get-user-info"                 get-user-info
                "get-user-layers"               get-user-layers
                "get-user-match-drop-access"    get-user-match-drop-access
-               "get-user-psps-org"             get-user-psps-org
                "get-red-flag-layer"            get-red-flag-layer
                "initiate-md"                   initiate-md!
                "log-in"                        log-in
