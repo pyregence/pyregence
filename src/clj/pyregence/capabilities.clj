@@ -1,19 +1,20 @@
 (ns pyregence.capabilities
-  (:require [clj-http.client              :as client]
-            [clojure.edn                  :as edn]
-            [clojure.set                  :as set]
-            [clojure.string               :as str]
-            [pyregence.views              :refer [data-response]]
-            [triangulum.config            :refer [get-config]]
-            [triangulum.database          :refer [call-sql]]
-            [triangulum.logging           :refer [log log-str]]
-            [triangulum.utils             :as u]))
+  (:require [clj-http.client     :as client]
+            [clojure.edn         :as edn]
+            [clojure.set         :as set]
+            [clojure.string      :as str]
+            [pyregence.views     :refer [data-response]]
+            [triangulum.config   :refer [get-config]]
+            [triangulum.database :refer [call-sql]]
+            [triangulum.logging  :refer [log log-str]]
+            [triangulum.utils    :as u]))
 
 ;;; State
 
 (defonce layers (atom {}))
 
 (def site-url (get-config :mail :site-url))
+(def private-layer-geoservers #{:psps})
 
 ;;; Helper Functions
 
@@ -246,10 +247,12 @@
       (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn."))))
 
 (defn set-all-capabilities!
-  "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
+  "Calls set-capabilities! on all GeoServer URLs provided in config.edn except
+   for those that relate to private layers."
   []
   (doseq [geoserver-key (keys (get-config :geoserver))]
-    (set-capabilities! {"geoserver-key" (name geoserver-key)}))
+    (when-not (private-layer-geoservers geoserver-key)
+      (set-capabilities! {"geoserver-key" (name geoserver-key)})))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " site-url ".")))
 

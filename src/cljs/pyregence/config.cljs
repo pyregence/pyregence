@@ -563,7 +563,6 @@
    :psps-zonal   {:opt-label       "PSPS"
                   :geoserver-key   :psps
                   :underlays       (merge common-underlays near-term-forecast-underlays)
-                  :allowed-orgs    #{"nve" "liberty"}
                   :reverse-legend? true
                   :time-slider?    true
                   :auto-zoom?      true

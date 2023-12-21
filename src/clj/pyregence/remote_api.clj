@@ -10,6 +10,7 @@
                                               get-organizations
                                               get-org-non-member-users
                                               get-org-member-users
+                                              get-psps-organizations
                                               get-user-info
                                               get-user-match-drop-access
                                               get-user-psps-org
@@ -60,6 +61,7 @@
                "get-organizations"             get-organizations
                "get-org-non-member-users"      get-org-non-member-users
                "get-org-member-users"          get-org-member-users
+               "get-psps-organizations"        get-psps-organizations
                "get-user-info"                 get-user-info
                "get-user-layers"               get-user-layers
                "get-user-match-drop-access"    get-user-match-drop-access

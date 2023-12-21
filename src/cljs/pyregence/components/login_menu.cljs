@@ -25,6 +25,7 @@
         [:label {:style    {:cursor "pointer" :margin ".16rem .2rem 0 0"}
                  :on-click (fn []
                              (go (<! (u-async/call-clj-async! "log-out"))
+                                 ;; TODO also remove workspace for PSPS orgs??
                                  (-> js/window .-location .reload)))}
          "Log Out"]]
        ;; [:label {:style {:margin-right "1rem" :cursor "pointer"}

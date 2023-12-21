@@ -90,7 +90,11 @@ Each entry in the legend contains the legend's label, value, color, and opacity.
 (defonce ^{:doc "For the currently logged in user, stores a list of all of the organizations
 that they belong to as an Admin or a Member. Will be bound to an empty vector if
 the user is not an Admin or Member of at least one organization."}
-  user-org-list (r/atom []))
+  user-orgs-list (r/atom []))
+(defonce ^{:doc "Stores a list of all organizations that have PSPS data."}
+  psps-orgs-list (r/atom []))
+(defonce ^{:doc "Stores a list of all PSPS organizations that a user belongs to."}
+  user-psps-orgs-list (r/atom []))
 (defonce ^{:doc "A boolean that enables time-step animation for the Time Slider when true."}
   animate? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the loading modal dialog."}
