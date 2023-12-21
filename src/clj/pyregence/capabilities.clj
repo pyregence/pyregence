@@ -252,8 +252,7 @@
       (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn."))))
 
 (defn set-all-capabilities!
-  "Calls set-capabilities! on all GeoServer URLs provided in config.edn except
-   for those that relate to private layers."
+  "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
   []
   (doseq [geoserver-key (keys (get-config :geoserver))]
     (if (private-layer-geoservers geoserver-key)
