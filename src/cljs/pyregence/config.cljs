@@ -561,6 +561,7 @@
                                                                      #{:active-fires}))
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :psps-zonal   {:opt-label       "PSPS"
+                  :filter          "psps-zonal"
                   :geoserver-key   :psps
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
@@ -668,25 +669,21 @@
                                                                "https://doi.org/10.1016/j.firesaf.2013.08.014"]
                                                               ")."]
                                                  :options    {:r  {:opt-label    "HRRR"
-                                                                   :filter       "psps-zonal"
                                                                    :disabled-for #{:area :str :vol :pligr}}
                                                               :n1 {:opt-label    "NAM 3 km"
-                                                                   :filter       "psps-zonal"
                                                                    :disabled-for #{:area :str :vol :pligr}}
                                                               :n2 {:opt-label    "NAM 12 km"
-                                                                   :filter       "psps-zonal"
                                                                    :disabled-for #{:area :str :vol :pligr}}
                                                               :g1 {:opt-label    "GFS 0.125\u00B0"
-                                                                   :filter       "psps-zonal"
                                                                    :disabled-for #{:area :str :vol :pligr}}
                                                               :g2 {:opt-label    "GFS 0.250\u00B0"
-                                                                   :filter       "psps-zonal"
                                                                    :disabled-for #{:area :str :vol :pligr}}
                                                               :b  {:opt-label    "NBM"
-                                                                   :filter       "psps-zonal"
                                                                    :disabled-for #{:area :str :vol :pligr}}
-                                                              :m  {:opt-label "ELMFIRE"
-                                                                   :filter    "psps-zonal"}}}
+                                                              :m  {:opt-label "ELMFIRE"}}}
+                                    :utility    {:opt-label  "Utility Company"
+                                                 :hover-text "The utility company associated with the displayed zonal statistics."
+                                                 :options    {:loading {:opt-label "Loading..."}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}})

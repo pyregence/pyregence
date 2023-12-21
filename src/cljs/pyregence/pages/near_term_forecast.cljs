@@ -509,7 +509,7 @@
               (u-data/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
 ;;; Capabilities
-(defn- process-capabilities! [fire-names user-layers user-psps-org options-config psps-orgs-list & [selected-options]]
+(defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list & [selected-options]]
   (reset! !/capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
@@ -524,7 +524,15 @@
                          merge
                          fire-names)
               (assoc-in [:psps-zonal :allowed-orgs] (into #{} psps-orgs-list))
-              (assoc-in [:psps-zonal :filter] user-psps-org)))
+              (assoc-in [:psps-zonal :params :utility :options]
+                        (reduce (fn [acc {:keys [org-unique-id org-name]}]
+                                  (assoc acc
+                                         (keyword org-unique-id)
+                                         {:opt-label  org-name
+                                          :filter     org-unique-id
+                                          :auto-zoom? true}))
+                                {}
+                                user-psps-orgs-list))))
   (reset! !/*params (u-data/mapm
                      (fn [[forecast _]]
                        (let [params (get-in @!/capabilities [forecast :params])]
@@ -542,10 +550,12 @@
           user-layers-chan                (u-async/call-clj-async! "get-user-layers" user-id)
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
-          user-psps-org-chan              (u-async/call-clj-async! "get-user-psps-org" user-id)
           user-orgs-list-chan             (u-async/call-clj-async! "get-organizations" user-id)
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")]
+      (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
       (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
+      (reset! !/user-psps-orgs-list (filter (fn [org] (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
+                                            @!/user-orgs-list))
       (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast (or (keyword forecast)
                               (keyword (forecast-type @!/default-forecasts))))
@@ -553,16 +563,10 @@
       (mb/init-map! "map" layers (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
-                             (let [response (<! user-psps-org-chan)]
-                               (if (:success response)
-                                 (edn/read-string (:body response))
-                                 nil))
                              options-config
                              @!/psps-orgs-list
+                             @!/user-psps-orgs-list
                              (params->selected-options options-config @!/*forecast params))
-      (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
-      (reset! !/user-psps-orgs-list (filter (fn [org] (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
-                                            @!/user-orgs-list))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
       (<! (select-forecast! @!/*forecast))
       (when (and (not-empty @!/capabilities)
