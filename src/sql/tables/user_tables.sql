@@ -25,7 +25,7 @@ CREATE TABLE organizations (
     organization_uid      SERIAL PRIMARY KEY,
     org_name              text NOT NULL,
     org_unique_id         text NOT NULL UNIQUE,
-    geoserver_credentials varchar(72),
+    geoserver_credentials text,
     email_domains         text,
     auto_add              boolean,
     auto_accept           boolean,

@@ -135,3 +135,11 @@
 (defn remove-org-user [org-user-id]
   (call-sql "remove_org_user" org-user-id)
   (data-response ""))
+
+(defn get-psps-organizations
+  "Returns the list of all organizations that have PSPS layers (currently denoted
+   by the presence of a value in the `geoserver_credentials` column)."
+  []
+  (->> (call-sql "get_psps_organizations")
+       (mapv #(:org_unique_id %))
+       (data-response)))

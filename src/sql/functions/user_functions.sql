@@ -214,6 +214,16 @@ CREATE OR REPLACE FUNCTION get_organizations(_user_id integer)
 
 $$ LANGUAGE SQL;
 
+-- Returns all organizations that have PSPS data (denoted by presence of geoserver_credentials)
+CREATE OR REPLACE FUNCTION get_psps_organizations()
+RETURNS TABLE (org_unique_id text) AS $$
+
+    SELECT org_unique_id
+    FROM organizations
+    WHERE geoserver_credentials IS NOT NULL;
+
+$$ LANGUAGE SQL;
+
 CREATE OR REPLACE FUNCTION update_org_info(
     _org_id           integer,
     _org_name         text,

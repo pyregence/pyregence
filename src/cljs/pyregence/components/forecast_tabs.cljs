@@ -9,14 +9,14 @@
 
 (defn forecast-tabs
   "Declares a component that displayes interactive tabs for selecting distinct forecasts."
-  [{:keys [capabilities current-forecast select-forecast! user-org-list]}]
+  [{:keys [capabilities current-forecast select-forecast! user-orgs-list]}]
   [:div {:style {:display "flex" :padding ".25rem 0"}}
    (doall
     (map (fn [[key {:keys [allowed-orgs hover-text opt-label]}]]
            (when (or (nil? allowed-orgs)                        ; Tab isn't organization-specific, so show it
                      (some (fn [{org-unique-id :org-unique-id}] ; If tab **is** organization-specific
                              (allowed-orgs org-unique-id))      ; the user must be an admin or member of one of the allowed orgs
-                           user-org-list))
+                           user-orgs-list))
              ^{:key key}
              [tool-tip-wrapper
               hover-text
