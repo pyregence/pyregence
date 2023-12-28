@@ -589,7 +589,10 @@
       (reset! !/*forecast (or (keyword forecast)
                               (keyword (forecast-type @!/default-forecasts))))
       (reset! !/*layer-idx (if layer-idx (js/parseInt layer-idx) 0))
-      (mb/init-map! "map" layers (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
+      (mb/init-map! "map"
+                    layers
+                    get-current-layer-geoserver-credentials
+                    (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
                              (edn/read-string (:body (<! user-layers-chan)))
                              options-config
