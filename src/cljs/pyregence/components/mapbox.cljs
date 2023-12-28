@@ -860,7 +860,7 @@
 (defn init-map!
   "Initializes the Mapbox map inside of `container` (e.g. \"map\").
    Specifies the proper project layers based on the forecast type."
-  [container-id layers & [opts]]
+  [container-id layers get-current-layer-geoserver-credentials & [opts]]
   (set! (.-accessToken mapbox) @!/mapbox-access-token)
   (when-not (.supported mapbox)
     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
@@ -869,13 +869,19 @@
   (reset! the-map
           (Map.
            (clj->js (merge {:container   container-id
-                            :dragRotate  false
-                            :maxZoom     20
-                            :minZoom     3
-                            :style       (-> (c/base-map-options) c/base-map-default :source)
-                            :touchPitch  false
-                            :trackResize true
-                            :transition  {:duration 500 :delay 0}}
+                            :dragRotate       false
+                            :maxZoom          20
+                            :minZoom          3
+                            :style            (-> (c/base-map-options) c/base-map-default :source)
+                            :touchPitch       false
+                            :trackResize      true
+                            ;; For PSPS layers, we need to add basic auth to the GetTile requests
+                            :transformRequest (fn [url resource-type]
+                                                (when (and (str/starts-with? url (:psps @!/geoserver-urls))
+                                                           (= resource-type "Tile"))
+                                                  #js {:url     url
+                                                       :headers #js {:authorization (str "Basic " (js/window.btoa (get-current-layer-geoserver-credentials)))}}))
+                            :transition       {:duration 500 :delay 0}}
                            (when-not (:zoom opts)
                              {:bounds c/california-extent})
                            opts)))))
