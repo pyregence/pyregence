@@ -212,15 +212,19 @@
    channel containing the result of calling process-fn on the response
    or nil if an error occurred. Takes in a loading-atom which should be true when
    passed in. The loading-atom is set to false after the resource has been fetched."
-  [process-fn url & [loading-atom]]
+  [process-fn url & {:keys [loading-atom basic-auth]}]
   (go
-   (<! (u-async/fetch-and-process url
-                                  {:method "get"
-                                   :headers {"Accept" "application/json, text/xml"
-                                             "Content-Type" "application/json"}}
-                                  process-fn))
-   (when loading-atom
-     (reset! loading-atom false))))
+   (let [base-headers    {"Accept"       "application/json, text/xml"
+                          "Content-Type" "application/json"}
+         request-headers (if basic-auth
+                           (assoc base-headers "Authorization" (str "Basic " (js/window.btoa basic-auth)))
+                           base-headers)]
+     (<! (u-async/fetch-and-process url
+                                    {:method "get"
+                                     :headers request-headers}
+                                    process-fn))
+     (when loading-atom
+       (reset! loading-atom false)))))
 
 (defn- wrap-wms-errors [type response success-fn]
   (go
@@ -283,6 +287,29 @@
                                 (remove (fn [leg] (nil? (get leg "label"))) %)
                                 (doall %)))))
 
+(defn- get-current-layer-geoserver-credentials
+  "Returns the GeoServer credentials associated with a specific layer for
+   users that are a part of at least one PSPS organization. Determines the credentials
+   by first finding the utility company associated with the selected layer and then
+   looking up that utility company's credentials using the `!/user-psps-orgs-list` atom.
+   Note that this assumes that the keys in associated with a specific utility company
+   are **exactly** the same as the `org-unique-id` set in the organizations DB table.
+   The Euro forecast (associated with the `:ecmwf` key on the weather tab) is an edge
+   case because each PSPS company has access to it. Returns `nil` if the user does
+   not belong to a PSPS organization."
+  []
+  (when-not (empty? @!/user-psps-orgs-list)
+    (let [utility-company (condp = @!/*forecast
+                            :fire-weather (name (get-in @!/*params [:fire-weather :model]))
+                            :fire-risk    (name (get-in @!/*params [:fire-risk :pattern]))
+                            :psps-zonal   (name (get-in @!/*params [:psps-zonal :utility]))
+                            nil)]
+      (->> @!/user-psps-orgs-list
+           (filter #(or (= (:org-unique-id %) utility-company)
+                        (= utility-company "ecmwf"))) ; "ecmwf" is the Euro weather forecast which all utility companies have access to
+           (first) ; There should only be one matching entry because each `:org-unique-id` is unique
+           (:geoserver-credentials)))))
+
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn- get-legend!
   "Makes a call to GetLegendGraphic and passes the resulting JSON to process-legend!"
@@ -291,7 +318,8 @@
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url layer
                             (get-any-level-key :geoserver-key)
-                            (get-psps-layer-style)))))
+                            (get-psps-layer-style))
+              :basic-auth (get-current-layer-geoserver-credentials))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Point Information Functions
@@ -375,7 +403,8 @@
                                   (get-any-level-key :geoserver-key)
                                   (when (= @!/*forecast :psps-zonal)
                                     c/all-psps-columns))
-                !/point-info-loading?))))
+                :loading-atom !/point-info-loading?
+                :basic-auth (get-current-layer-geoserver-credentials)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; More Data Processing Functions
