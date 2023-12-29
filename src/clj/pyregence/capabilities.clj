@@ -152,7 +152,7 @@
    functions above. Optionally can provide `basic-auth`, which is used for password
    protected workspaces. `basic-auth` must be either a string of the form
    \"username:password\" or a tuple of the form `[username passwords]`."
-  [geoserver-url workspace-name & [basic-auth]]
+  [geoserver-url workspace-name basic-auth]
   (let [base-url     (-> geoserver-url
                          (u/end-with "/")
                          (str "wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
@@ -231,8 +231,10 @@
    `geoserver-key` specifies which GeoServer to call GetCapabilities on and
    passing in an optional `workspace-name` allows you to call GetCapabilities
    on just that workspace by passing it into `process-layers!`."
-  [{:strs [geoserver-key workspace-name basic-auth]}]
-  (let [geoserver-key (keyword geoserver-key)]
+  [{:strs [geoserver-key workspace-name]}]
+  (let [geoserver-key (keyword geoserver-key)
+        basic-auth    (when (private-layer-geoservers geoserver-key)
+                        (str psps-geoserver-admin-username ":" psps-geoserver-admin-password))]
     (if (contains? (get-config :geoserver) geoserver-key)
       (try
         (let [stdout?       (= 0 (count @layers))
@@ -255,12 +257,7 @@
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
   []
   (doseq [geoserver-key (keys (get-config :geoserver))]
-    (if (private-layer-geoservers geoserver-key)
-      (set-capabilities! {"geoserver-key" (name geoserver-key)
-                          "basic-auth"    (str psps-geoserver-admin-username
-                                               ":"
-                                               psps-geoserver-admin-password)})
-      (set-capabilities! {"geoserver-key" (name geoserver-key)})))
+    (set-capabilities! {"geoserver-key" (name geoserver-key)}))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " site-url ".")))
 
