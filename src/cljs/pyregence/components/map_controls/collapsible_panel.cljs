@@ -115,7 +115,8 @@
                    :visibility   (if (and @!/show-panel? @!/mobile?) "visible" "hidden")}}
     [tool-button :close #(reset! !/show-panel? false)]]])
 
-(defn- optional-layer [opt-label filter-set id z-index geoserver-key dependent-inputs disabled-for]
+(defn- optional-layer [{:keys [id opt-label filter-set z-index geoserver-key dependent-inputs disabled-for geoserver-key]
+                        :as optional-layer-map}]
   (r/with-let [show?               (r/atom false)
                watcher-id          (keyword (str "watch-" opt-label))
                add-params-watch    (fn []
@@ -124,7 +125,7 @@
                                                   (let [old-param-map    (@!/*forecast old-params)
                                                         new-param-map    (@!/*forecast new-params)
                                                         changed-keys     (u-data/get-changed-keys old-param-map new-param-map)
-                                                        underlay         (get-in c/near-term-forecast-options [@!/*forecast :underlays id])
+                                                        underlay         (get-in @!/capabilities [@!/*forecast :underlays id])
                                                         update-underlay? (seq (set/intersection changed-keys (set (:dependent-inputs underlay))))]
                                                     (when (filter-set "isochrones")
                                                       (mb/set-multiple-layers-visibility! #"isochrones" false))
@@ -134,8 +135,7 @@
                                                                         (:geoserver-key underlay)
                                                                         (:z-index underlay)
                                                                         true))))))
-               remove-params-watch (fn []
-                                     (remove-watch !/*params watcher-id))]
+               remove-params-watch (fn [] (remove-watch !/*params watcher-id))]
     [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
      [:div#optional-layer-checkbox {:style {:display "flex"}}
       [:input {:id        id
@@ -150,8 +150,14 @@
                :on-change #(do
                              (swap! show? not)
                              (if @show?
-                               (add-params-watch)
-                               (remove-params-watch))
+                               (do
+                                 (add-params-watch)
+                                 (swap! !/*optional-layers assoc id optional-layer-map)
+                                 (reset! !/most-recent-optional-layer optional-layer-map))
+                               (do
+                                 (remove-params-watch)
+                                 (swap! !/*optional-layers dissoc id)
+                                 (reset! !/most-recent-optional-layer {})))
                              (toggle-underlay! filter-set
                                                dependent-inputs
                                                geoserver-key
@@ -213,17 +219,11 @@
                                   :fill   ($/color-picker :font-color)})}
          [svg/help]]]]
       (doall
-       (map (fn [{:keys [id opt-label filter-set z-index enabled? geoserver-key dependent-inputs disabled-for]}]
+       (map (fn [{:keys [id opt-label filter-set z-index enabled? geoserver-key dependent-inputs disabled-for geoserver-key]
+                  :as optional-layer-map}]
               (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
                 ^{:key id}
-                [optional-layer
-                 opt-label
-                 filter-set
-                 id
-                 z-index
-                 geoserver-key
-                 dependent-inputs
-                 disabled-for]))
+                [optional-layer optional-layer-map]))
             sorted-underlays))]]))
 
 (defn- collapsible-button []

@@ -134,13 +134,13 @@
 (defn- split-psps-underlays
   "Gets information about a PSPS static layer based on its name (e.g. `psps-static_nve:nve-trans`)."
   [name-string]
-  (let [[workspace layer] (str/split name-string #":")
-        [forecast _]      (str/split workspace #"_")]
+  (let [[workspace layer]  (str/split name-string #":")
+        [forecast utility] (str/split workspace #"_")]
     {:workspace   workspace
      :layer-group ""
      :forecast    forecast
      :type        layer
-     :filter-set  #{forecast layer}
+     :filter-set  #{forecast layer utility}
      :model-init  ""
      :hour        0}))
 

@@ -36,7 +36,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def match-drop-instructions
-  "Simulates a 24 hour fire using real-time weather data from the Hybrid model,
+  "Simulates a 72 hour fire using real-time weather data from the Hybrid model,
    which is a blend of the HRRR, NAM 3 km, and GFS 0.125\u00B0 models.
    Click on any CONUS location to \"drop\" a match, then set the date and time to begin
    the simulation. Chrome is currently the only supported browser for Match Drop.")
