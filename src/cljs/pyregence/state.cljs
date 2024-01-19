@@ -17,6 +17,12 @@ field associated with each layer from the `param-layers`, starts at 0, and is an
 (defonce ^{:doc "A map containing the selected parameters/inputs from each forecast tab.
 Ex: {:fuels {:layer :fbfm40, :model :landfire-2.2.0, :model-init :20210407_000000} ... }"}
   *params (r/atom {}))
+(defonce ^{:doc "A map containing the selected optional layers.
+Ex: {:us-trans-lines {:opt-label \"Transmission lines\", :z-index 107, ...},
+     :conus-buildings {:opt-label \"Structures\", :z-index 104, ...}}"}
+  *optional-layers (r/atom {}))
+(defonce ^{:doc "The most recently enabled optional layer."}
+  most-recent-optional-layer (r/atom {}))
 (defonce ^{:doc "A UTC keyword value, corresponding to the last selected \"Forecast Start Time\""}
   *last-start-time (r/atom nil))
 (defonce ^{:doc "An integer value, from 0 to 100, that designates the opacity for the active layer. Defaults to 100"}

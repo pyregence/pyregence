@@ -290,25 +290,28 @@
 (defn- get-current-layer-geoserver-credentials
   "Returns the GeoServer credentials associated with a specific layer for
    users that are a part of at least one PSPS organization. Determines the credentials
-   by first finding the utility company associated with the selected layer and then
+   by finding the utility company associated with the currently selected layer (via the values in the *params atom) and then
    looking up that utility company's credentials using the `!/user-psps-orgs-list` atom.
-   Note that this assumes that the keys in associated with a specific utility company
-   are **exactly** the same as the `org-unique-id` set in the organizations DB table.
+   Note that this assumes that the key associated with a specific utility company
+   is **exactly** the same as the `org-unique-id` set in the organizations DB table.
    The Euro forecast (associated with the `:ecmwf` key on the weather tab) is an edge
    case because each PSPS company has access to it. Returns `nil` if the user does
-   not belong to a PSPS organization."
+   not belong to a PSPS organization or the current layer doesn't require GeoServer credentials."
   []
-  (when-not (empty? @!/user-psps-orgs-list)
-    (let [utility-company (condp = @!/*forecast
-                            :fire-weather (name (get-in @!/*params [:fire-weather :model]))
-                            :fire-risk    (name (get-in @!/*params [:fire-risk :pattern]))
-                            :psps-zonal   (name (get-in @!/*params [:psps-zonal :utility]))
-                            nil)]
-      (->> @!/user-psps-orgs-list
-           (filter #(or (= (:org-unique-id %) utility-company)
-                        (= utility-company "ecmwf"))) ; "ecmwf" is the Euro weather forecast which all utility companies have access to
-           (first) ; There should only be one matching entry because each `:org-unique-id` is unique
-           (:geoserver-credentials)))))
+  (when (seq @!/user-psps-orgs-list)
+    (when-some [keypath (case @!/*forecast
+                          :fire-weather [:fire-weather :model]
+                          :fire-risk    [:fire-risk :pattern]
+                          :psps-zonal   [:psps-zonal :utility]
+                          nil)]
+      (let [selected-org-id   (name (get-in @!/*params keypath))
+            matching-psps-org (if (= selected-org-id "ecmwf")
+                                (first @!/user-psps-orgs-list) ; "ecmwf" is the Euro weather forecast which all utility companies have access to
+                                (first (filter #(or (= selected-org-id (:org-unique-id %)) ; There should only be one matching entry because each `:org-unique-id` is unique
+                                                    (and (seq @!/most-recent-optional-layer)
+                                                         ((:filter-set @!/most-recent-optional-layer) (:org-unique-id %)))) ; We're dealing with an optional layer that's associated with a utility company
+                                               @!/user-psps-orgs-list)))]
+        (:geoserver-credentials matching-psps-org)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn- get-legend!
