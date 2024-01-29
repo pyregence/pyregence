@@ -1,8 +1,8 @@
 (ns pyregence.red-flag
-  (:require [clojure.string    :refer [lower-case]]
-            [clojure.data.json :as json]
-            [clj-http.client   :as client]
-            [pyregence.views   :refer [data-response]]))
+  (:require [clojure.string      :refer [lower-case]]
+            [clojure.data.json   :as json]
+            [clj-http.client     :as client]
+            [triangulum.response :refer [data-response]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; NOAA Red Flag Warning

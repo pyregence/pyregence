@@ -12,19 +12,19 @@
             [triangulum.config          :refer [get-config]]
             [triangulum.database        :refer [call-sql sql-primitive]]
             [triangulum.logging         :refer [log-str]]
+            [triangulum.response        :refer [data-response]]
             [triangulum.type-conversion :refer [json->clj clj->json]]
-            [pyregence.capabilities :refer [layers-exist?
-                                            remove-workspace!
-                                            set-capabilities!]]
-            [pyregence.utils        :as u]
-            [pyregence.views        :refer [data-response]]))
+            [pyregence.capabilities     :refer [layers-exist?
+                                                remove-workspace!
+                                                set-capabilities!]]
+            [pyregence.utils            :as u]))
 
 ;;==============================================================================
 ;; Static Data
 ;;==============================================================================
 
 (defn- get-md-config [k]
-  (get-config :match-drop k))
+  (get-config :pyregence.match-drop/match-drop k))
 
 (def ^:private runway-server-pretty-names
   {"dps"      (get-md-config :dps-name)
@@ -376,7 +376,7 @@
   [{:keys [user-id] :as params}]
   (data-response
    (cond
-     (not (get-config :features :match-drop))
+     (not (get-config :triangulum.views/client-keys :features :match-drop))
      {:error "Match drop is currently disabled. Please contact your system administrator to enable it."}
 
      (pos? (count-running-user-match-jobs user-id))
@@ -418,7 +418,7 @@
                                  updated-geosync-request
                                  true)
         (data-response (str "The " geoserver-workspace " workspace is queued to be removed from "
-                            (get-config :geoserver :match-drop) "."))
+                            (get-config :triangulum.views/client-keys :geoserver :match-drop) "."))
         (catch Exception _
           (update-match-job! {:match-job-id match-job-id
                               :md-status    1

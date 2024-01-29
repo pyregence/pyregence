@@ -3,19 +3,19 @@
             [clojure.edn         :as edn]
             [clojure.set         :as set]
             [clojure.string      :as str]
-            [pyregence.views     :refer [data-response]]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql]]
             [triangulum.logging  :refer [log log-str]]
+            [triangulum.response :refer [data-response]]
             [triangulum.utils    :as u]))
 
 ;;; State
 
 (defonce layers (atom {}))
 
-(def site-url (get-config :mail :site-url))
-(def psps-geoserver-admin-username (get-config :psps :geoserver-admin-username))
-(def psps-geoserver-admin-password (get-config :psps :geoserver-admin-password))
+(def site-url (get-config :triangulum.email/base-url))
+(def psps-geoserver-admin-username (get-config :pyregence.capabilities/psps :geoserver-admin-username))
+(def psps-geoserver-admin-password (get-config :pyregence.capabilities/psps :geoserver-admin-password))
 (def private-layer-geoservers #{:psps})
 
 ;;; Helper Functions
@@ -184,7 +184,7 @@
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
-                               (or (get-config :features :match-drop) (not (str/includes? full-name "match-drop"))))
+                               (or (get-config :triangulum.views/client-keys :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-fire-spread-forecast-layer-name full-name))
 
                           (and (str/includes? full-name "isochrones")
@@ -235,10 +235,10 @@
   (let [geoserver-key (keyword geoserver-key)
         basic-auth    (when (private-layer-geoservers geoserver-key)
                         (str psps-geoserver-admin-username ":" psps-geoserver-admin-password))]
-    (if (contains? (get-config :geoserver) geoserver-key)
+    (if (contains? (get-config :triangulum.views/client-keys :geoserver) geoserver-key)
       (try
         (let [stdout?       (= 0 (count @layers))
-              geoserver-url (get-config :geoserver geoserver-key)
+              geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
               new-layers    (process-layers! geoserver-url workspace-name basic-auth)
               message       (str (count new-layers) " layers from " geoserver-url " added to " site-url ".")]
           (if workspace-name
@@ -256,7 +256,7 @@
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
   []
-  (doseq [geoserver-key (keys (get-config :geoserver))]
+  (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
     (set-capabilities! {"geoserver-key" (name geoserver-key)}))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " site-url ".")))
@@ -298,7 +298,7 @@
                      ;; so that we don't double-count the Match Drops.
                      (when (or (nil? match-job-id)
                                (and (contains? match-drop-names match-job-id)
-                                    (str/starts-with? fire-name (get-config :match-drop :md-prefix))))
+                                    (str/starts-with? fire-name (get-config :pyregence.match-drop/match-drop :md-prefix))))
                        [(keyword fire-name)
                         {:opt-label      (or (get match-drop-names match-job-id)
                                              (fire-name-capitalization fire-name))

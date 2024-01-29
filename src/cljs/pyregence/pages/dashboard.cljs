@@ -207,12 +207,13 @@
   (set-match-drop-access! user-id)
   (fn [_]
     (cond
-      (nil? user-id) ; User is not logged in
-      (do (u-browser/redirect-to-login! "/dashboard")
-          nil)
-
-      (not @match-drop-access?) ; user doesn't have match drop access
-      [no-access]
+      ;; TODO remove this
+      ; (nil? user-id) ; User is not logged in
+      ; (do (u-browser/redirect-to-login! "/dashboard")
+      ;     nil)
+      ; 
+      ; (not @match-drop-access?) ; user doesn't have match drop access
+      ; [no-access]
 
       :else  ; User is logged in and has match drop access
       [:div {:style ($/root)}

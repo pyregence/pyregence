@@ -48,6 +48,7 @@
                :style {:height "1.25rem"
                        :width  "auto"}}]])]))
 
+;; TODO remove this
 (defn- announcement-banner []
   (go
     (<! (timeout 7500))
@@ -110,7 +111,7 @@
     [:<>
      [header]
      [toast-message]
-     [announcement-banner]
+     ; [announcement-banner]
      [root-component]
      (when footer?
        [footer])]))

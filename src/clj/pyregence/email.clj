@@ -2,7 +2,7 @@
   (:import java.util.UUID)
   (:require [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql]]
-            [pyregence.views     :refer [data-response]]
+            [triangulum.response :refer [data-response]]
             [pyregence.utils     :refer [convert-date-string]]
             [postal.core         :refer [send-message]]))
 
@@ -29,43 +29,39 @@
        "model=elmfire \n\n"
        "  - Pyregence Technical Support"))
 
-(defn- send-reset-key-email! [mail-config email subject message-fn]
+(defn- send-reset-key-email! [email subject message-fn]
   (let [reset-key (str (UUID/randomUUID))
         result    (send-message
-                   (dissoc mail-config :site-url)
-                   {:from    (mail-config :user)
+                   {:host (get-config :triangulum.email/host)}
+                   {:from    (get-config :triangulum.email/user)
                     :to      email
                     :subject subject
-                    :body    (message-fn (:site-url mail-config) email reset-key)})]
+                    :body    (message-fn (get-config :triangulum.email/base-url) email reset-key)})]
     (call-sql "set_reset_key" email reset-key)
     (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
 
-(defn- send-match-drop-email! [mail-config email subject message-fn match-drop-args]
+(defn- send-match-drop-email! [email subject message-fn match-drop-args]
   (let [result (send-message
-                (dissoc mail-config :site-url)
-                {:from    (mail-config :user)
+                {:host (get-config :triangulum.email/host)}
+                {:from    (get-config :triangulum.email/user)
                  :to      email
                  :subject subject
-                 :body    (message-fn (:site-url mail-config) email match-drop-args)})]
+                 :body    (message-fn (get-config :triangulum.email/base-url) email match-drop-args)})]
     (if (= :SUCCESS (:error result))
       (data-response "Match Drop email successfully sent.")
       (data-response "There was an issue sending the Match Drop email." {:status 400}))))
 
 (defn send-email! [email email-type & [match-drop-args]]
-  (let [mail-config (get-config :mail)]
-    (condp = email-type
-      :reset      (send-reset-key-email! mail-config
-                                         email
-                                         "Pyregence Password Reset"
-                                         get-password-reset-message)
-      :new-user   (send-reset-key-email! mail-config
-                                         email
-                                         "Pyregence New User"
-                                         get-new-user-message)
-      :match-drop (send-match-drop-email! mail-config
-                                          email
-                                          "Match Drop Finished Running"
-                                          get-match-drop-message
-                                          match-drop-args)
-      (data-response "Invalid email type. Options are `:reset`, `:new-user`, or `:match-drop.`"
-                     {:status 400}))))
+  (condp = email-type
+    :reset      (send-reset-key-email! email
+                                       "Pyregence Password Reset"
+                                       get-password-reset-message)
+    :new-user   (send-reset-key-email! email
+                                       "Pyregence New User"
+                                       get-new-user-message)
+    :match-drop (send-match-drop-email! email
+                                        "Match Drop Finished Running"
+                                        get-match-drop-message
+                                        match-drop-args)
+    (data-response "Invalid email type. Options are `:reset`, `:new-user`, or `:match-drop.`"
+                   {:status 400})))

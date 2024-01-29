@@ -420,11 +420,12 @@
   (get-organizations user-id)
   (fn [_]
     (cond
-      (or (nil? user-id)                              ; User is not logged in OR
-          (and (= (count @*orgs) 0)                   ; User is not an admin of any org AND
-               (false? @pending-get-organizations?))) ; The get-organizations call has finished
-      (do (u-browser/redirect-to-login! "/admin")
-          nil)
+      ;; TODO remove this
+      ; (or (nil? user-id)                              ; User is not logged in OR
+      ;     (and (= (count @*orgs) 0)                   ; User is not an admin of any org AND
+      ;          (false? @pending-get-organizations?))) ; The get-organizations call has finished
+      ; (do (u-browser/redirect-to-login! "/admin")
+      ;     nil)
 
       @pending-get-organizations?
       [:div {:style {:display "flex" :justify-content "center"}}

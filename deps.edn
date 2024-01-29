@@ -26,14 +26,14 @@
         sig-gis/runway             {:git/url "https://gitlab.sig-gis.com/sig-gis/runway"
                                     :git/sha "dab2012202935f0982f05f18fc43ab297be09e45"}
         sig-gis/triangulum         {:git/url "https://github.com/sig-gis/triangulum"
-                                    :git/sha "934b35fc2b29dd25e5feb28844a42854afb11387"}}
+                                    :git/sha "3d41dab63e1bc8ebe046f64db44ae3df986f5bdf"}}
  :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
            :config           {:main-opts ["-m" "triangulum.config"]}
            :https            {:main-opts ["-m" "triangulum.https"]}
+           :server           {:main-opts ["-m" "triangulum.server"]}
+           :systemd          {:main-opts ["-m" "triangulum.systemd"]}
            :default-ssl-opts {:jvm-opts  ["-Djavax.net.ssl.keyStore=resources/runway.jks"
                                           "-Djavax.net.ssl.keyStorePassword=RomeoUniformNovemberWhiskeyAlfaYankee"]}
-           :server           {:main-opts ["-m" "pyregence.server"]}
-           :systemd          {:main-opts ["-m" "triangulum.systemd"]}
            :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
            :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}}}
            :figwheel         {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}

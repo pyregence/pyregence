@@ -13,8 +13,7 @@
             [pyregence.pages.reset-password     :as reset-password]
             [pyregence.pages.terms-of-use       :as terms]
             [pyregence.pages.verify-email       :as verify-email]
-            [pyregence.components.page-layout   :refer [set-announcement-text!
-                                                        wrap-page]]))
+            [pyregence.components.page-layout   :refer [wrap-page]]))
 
 (defonce ^:private original-params (atom {}))
 
@@ -68,7 +67,6 @@
     (reset! !/geoserver-urls (:geoserver cur-params))
     (reset! !/default-forecasts (get cur-params :default-forecasts))
     (reset! !/pyr-auth-token (get cur-params :pyr-auth-token))
-    (set-announcement-text! (:announcement cur-params))
     (render-root cur-params)))
 
 (defn- ^:after-load mount-root!

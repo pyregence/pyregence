@@ -205,6 +205,17 @@ CREATE OR REPLACE FUNCTION get_organizations(_user_id integer)
 
 $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION get_user_admin_access(_user_id integer)
+ RETURNS boolean AS $$
+
+    SELECT CASE WHEN COUNT(o.organization_uid) > 0 THEN TRUE ELSE FALSE END
+    FROM organizations AS o, organization_users AS ou
+    WHERE (o.organization_uid = ou.organization_rid)
+        AND (ou.user_rid = _user_id)
+        AND (ou.role_rid = 1);
+
+$$ LANGUAGE SQL;
+
 -- Returns all organizations that have PSPS data (denoted by presence of geoserver_credentials)
 CREATE OR REPLACE FUNCTION get_psps_organizations()
 RETURNS TABLE (org_unique_id text) AS $$

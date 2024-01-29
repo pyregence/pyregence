@@ -1,8 +1,8 @@
 (ns pyregence.cameras
-  (:require [clj-http.client    :as client]
-            [clojure.data.json  :as json]
-            [pyregence.views    :refer [data-response]]
-            [triangulum.config  :refer [get-config]]))
+  (:require [clj-http.client     :as client]
+            [clojure.data.json   :as json]
+            [triangulum.config   :refer [get-config]]
+            [triangulum.response :refer [data-response]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AlertWildfire Cameras
@@ -14,11 +14,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private alert-wildfire-api-url      "https://data.alertwildfire.org/api/firecams/v0")
-(def ^:private alert-wildfire-api-key      (get-config :cameras :alert-wildfire-api-key))
+(def ^:private alert-wildfire-api-key      (get-config :pyregence.cameras/alert-wildfire-api-key))
 (def ^:private alert-wildfire-api-defaults {:headers {"X-Api-Key" alert-wildfire-api-key}})
 
 (def ^:private alert-california-api-url      "https://data.alertcalifornia.org/api/firecams/v0")
-(def ^:private alert-california-api-key      (get-config :cameras :alert-california-api-key))
+(def ^:private alert-california-api-key      (get-config :pyregence.cameras/alert-california-api-key))
 (def ^:private alert-california-api-defaults {:headers {"X-Api-Key" alert-california-api-key}})
 
 (def ^:private cache-max-age            (* 24 60 1000)) ; Once a day

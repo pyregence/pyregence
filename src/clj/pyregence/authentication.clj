@@ -1,7 +1,7 @@
 (ns pyregence.authentication
   (:require [triangulum.database :refer [call-sql sql-primitive]]
-            [pyregence.utils     :refer [nil-on-error]]
-            [pyregence.views     :refer [data-response]]))
+            [triangulum.response :refer [data-response]]
+            [pyregence.utils     :refer [nil-on-error]]))
 
 (defn log-in [email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
@@ -46,13 +46,19 @@
           (data-response ""))
       (data-response "" {:status 403}))))
 
+(defn get-email-by-user-id [user-id]
+  (if-let [email (sql-primitive (call-sql "get_email_by_user_id" user-id))]
+    (data-response email)
+    (data-response (str "There is no user with the id " user-id)
+                   {:status 403})))
+
 ;; TODO hook into UI
 (defn get-user-info [user-id]
   (if-let [user-info (first (call-sql "get_user_info" user-id))]
     (data-response user-info)
     (data-response "" {:status 403})))
 
-;; TODO hook into UI add success/failure branches
+;; TODO hook into UI add success/failure branches, add auth to route in routing.clj
 (defn update-user-info [user-id settings]
   (call-sql "update_user_info" user-id settings)
   (data-response ""))
@@ -69,6 +75,9 @@
                          "There is no user logged in. Match Drop will remain disabled."
                          (str "The user with an id of " user-id " does not have Match Drop access."))]
       (data-response response-msg {:status 403}))))
+
+(defn has-match-drop-access? [user-id]
+  (sql-primitive (call-sql "get_user_match_drop_access" user-id)))
 
 (defn update-user-name [email new-name]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
@@ -92,6 +101,11 @@
                 :auto-add?             auto_add
                 :auto-accept?          auto_accept}))
        (data-response)))
+
+(defn is-admin?
+  "Returns true if the user is admin of at least one orgzniation."
+  [user-id]
+  (sql-primitive (call-sql "get_user_admin_access" user-id)))
 
 (defn get-org-member-users
   "Returns a vector of member users by the given org-id."
