@@ -1,4 +1,4 @@
-(ns pyregence.handler
+(ns pyregence.handlers
   (:require [pyregence.authentication :refer [has-match-drop-access? is-admin?]]
             [ring.util.codec          :refer [url-encode]]
             [ring.util.response       :refer [redirect]]
