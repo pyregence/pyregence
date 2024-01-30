@@ -2,6 +2,7 @@
   (:require [pyregence.authentication :refer [has-match-drop-access? is-admin?]]
             [ring.util.codec          :refer [url-encode]]
             [ring.util.response       :refer [redirect]]
+            [triangulum.config        :refer [get-config]]
             [triangulum.response      :refer [no-cross-traffic?]]
             [triangulum.views         :refer [render-page]]))
 
@@ -17,11 +18,13 @@
                      "&flash_message=You must login to see "
                      full-url)))))
 
-(defn route-authenticator [{:keys [session headers] :as _request} auth-type]
-  (let [user-id (:userId session -1)]
+(defn route-authenticator [{:keys [session headers params] :as _request} auth-type]
+  (let [user-id        (:userId session -1)
+        authenticated? (= (:auth-token params)
+                          (get-config :triangulum.views/client-keys :pyrAuthToken))]
     (condp = auth-type
-      :admin      (is-admin? user-id)
-      :match-drop (has-match-drop-access? user-id)
+      :admin      (and authenticated? (is-admin? user-id))
+      :match-drop (and authenticated? (has-match-drop-access? user-id))
       :no-cross   (no-cross-traffic? headers)
-      :user       (pos? user-id)
-      true)))
+      :user       (and authenticated? (pos? user-id))
+      authenticated?)))
