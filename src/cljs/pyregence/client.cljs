@@ -15,7 +15,8 @@
             [pyregence.pages.verify-email       :as verify-email]
             [pyregence.components.page-layout   :refer [wrap-page]]))
 
-(defonce ^:private original-params (atom {}))
+(defonce ^:private original-params  (atom {}))
+(defonce ^:private original-session (atom {}))
 
 (def ^:private uri->root-component-ha
   "All root-components for URIs that should have a header and announcement-banner."
@@ -55,22 +56,24 @@
 
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."
-  [params]
-  (let [clj-params (js->clj params :keywordize-keys true)
-        cur-params (if (seq clj-params)
-                     (reset! original-params
-                             (js->clj params :keywordize-keys true))
-                     @original-params)]
-    (reset! !/dev-mode? (:dev-mode cur-params))
-    (reset! !/feature-flags (:features cur-params))
-    (reset! !/mapbox-access-token (get-in cur-params [:mapbox :access-token]))
-    (reset! !/geoserver-urls (:geoserver cur-params))
-    (reset! !/default-forecasts (get cur-params :default-forecasts))
-    (reset! !/pyr-auth-token (get cur-params :pyr-auth-token))
-    (render-root cur-params)))
+  [params session]
+  (let [clj-params    (if (seq params)
+                        (reset! original-params (js->clj params :keywordize-keys true))
+                        @original-params)
+        clj-session   (if (seq session)
+                        (reset! original-session (js->clj session :keywordize-keys true))
+                        @original-session)
+        merged-params (merge clj-params clj-session)]
+    (reset! !/dev-mode?           (get clj-session :dev-mode))
+    (reset! !/feature-flags       (get clj-session :features))
+    (reset! !/mapbox-access-token (get-in clj-session [:mapbox :access-token]))
+    (reset! !/geoserver-urls      (get clj-session :geoserver))
+    (reset! !/default-forecasts   (get clj-session :default-forecasts))
+    (reset! !/pyr-auth-token      (get clj-session :pyr-auth-token))
+    (render-root merged-params)))
 
 (defn- ^:after-load mount-root!
   "A hook for figwheel to call the init function again."
   []
   (println "Rerunning init function for figwheel.")
-  (init {}))
+  (init {} {}))

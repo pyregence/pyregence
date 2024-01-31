@@ -48,9 +48,9 @@
 ;; Match Drop server
 
 (defn start-match-drop-server! []
-  (when (get-config :features :match-drop)
-    (log-str "Starting Match Drop server on port " (get-config :match-drop :app-port))
-    (runway/start-server! (get-config :match-drop :app-port)
+  (when (get-config :triangulum.views/client-keys :features :match-drop)
+    (log-str "Starting Match Drop server on port " (get-config :pyregence.match-drop/match-drop :app-port))
+    (runway/start-server! (get-config :pyregence.match-drop/match-drop :app-port)
                           match-drop-server-msg-handler)))
 
 (defn stop-match-drop-server! [_]

@@ -1,14 +1,18 @@
-(ns pyregece.routing
+(ns pyregence.routing
   (:require [pyregence.authentication :as authentication]
             [pyregence.cameras        :as cameras]
             [pyregence.capabilities   :as capabilities]
             [pyregence.email          :as email]
+            [pyregence.handlers       :refer [clj-handler]]
             [pyregence.match-drop     :as match-drop]
             [pyregence.red-flag       :as red-flag]
             [triangulum.views         :refer [render-page]]))
 
 (def routes
   {;; Page Routes
+   [:get "/foo"]                {:handler     (fn [_] {:status  200
+                                                       :headers {"Content-Type" "text/plain"}
+                                                       :body    "Hello world!"})}
    [:get "/"]                   {:handler     (render-page "/")}
    [:get "/admin"]              {:handler     (render-page "/admin")
                                  :auth-type   :admin
@@ -28,80 +32,124 @@
    [:get "/verify-email"]       {:handler     (render-page "/verify-email")}
 
    ;; Users API
-   [:post "/add-new-user"]                  {:handler     authentication/add-new-user}
-   [:post "/add-org-user"]                  {:handler     authentication/add-org-user
-                                             :auth-type   :admin
-                                             :auth-action :block}
-   [:get  "/get-email-by-user-id"]          {:handler     authentication/get-email-by-user-id}
-   [:get  "/get-organizations"]             {:handler     authentication/get-organizations}
-   [:get  "/get-org-non-member-users"]      {:handler     authentication/get-org-non-member-users}
-   [:get  "/get-org-member-users"]          {:handler     authentication/get-org-member-users}
-   [:get  "/get-psps-organizations"]        {:handler     authentication/get-psps-organizations}
-   [:get  "/get-user-info"]                 {:handler     authentication/get-user-info
-                                             :auth-type   :user
-                                             :auth-action :block}
-   [:get  "/get-user-match-drop-access"]    {:handler     authentication/get-user-match-drop-access
-                                             :auth-type   :user
-                                             :auth-action :block}
-   [:post "/log-in"]                        {:handler     authentication/log-in}
-   [:post "/log-out"]                       {:handler     authentication/log-out}
-   [:post "/remove-org-user"]               {:handler     authentication/remove-org-user
-                                             :auth-type   :admin
-                                             :auth-action :block}
-   [:post "/set-user-password"]             {:handler     authentication/set-user-password}
-   [:get  "/user-email-taken"]              {:handler     authentication/user-email-taken}
-   [:post "/update-org-info"]               {:handler     authentication/update-org-info
-                                             :auth-type   :admin
-                                             :auth-action :block}
-   [:post "/update-org-user-role"]          {:handler     authentication/update-org-user-role
-                                             :auth-type   :admin
-                                             :auth-action :block}
-   [:post "/update-user-info"]              {:handler     authentication/update-user-info
-                                             :auth-type   :admin
-                                             :auth-action :block}
-   [:post "/update-user-match-drop-access"] {:handler     authentication/update-user-match-drop-access
-                                             :auth-type   :admin
-                                             :auth-action :block}
-   [:post "/update-user-name"]              {:handler     authentication/update-user-name
-                                             :auth-type   :admin
-                                             :auth-action :block}
-   [:post "/verify-user-email"]             {:handler     authentication/verify-user-email}
+   [:post "/clj/add-new-user"]                  {:handler     (clj-handler authentication/add-new-user)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:post "/clj/add-org-user"]                  {:handler     (clj-handler authentication/add-org-user)
+                                                 :auth-type   #{:admin :token}
+                                                 :auth-action :block}
+   [:get  "/clj/get-email-by-user-id"]          {:handler     (clj-handler authentication/get-email-by-user-id)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:get  "/clj/get-organizations"]             {:handler     (clj-handler authentication/get-organizations)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:get  "/clj/get-org-non-member-users"]      {:handler     (clj-handler authentication/get-org-non-member-users)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:get  "/clj/get-org-member-users"]          {:handler     (clj-handler authentication/get-org-member-users)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:get  "/clj/get-psps-organizations"]        {:handler     (clj-handler authentication/get-psps-organizations)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:get  "/clj/get-user-info"]                 {:handler     (clj-handler authentication/get-user-info)
+                                                 :auth-type   #{:user :token}
+                                                 :auth-action :block}
+   [:get  "/clj/get-user-match-drop-access"]    {:handler     (clj-handler authentication/get-user-match-drop-access)
+                                                 :auth-type   #{:user :token}
+                                                 :auth-action :block}
+   [:post "/clj/log-in"]                        {:handler     (clj-handler authentication/log-in)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:post "/clj/log-out"]                       {:handler     (clj-handler authentication/log-out)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:post "/clj/remove-org-user"]               {:handler     (clj-handler authentication/remove-org-user)
+                                                 :auth-type   #{:admin :token}
+                                                 :auth-action :block}
+   [:post "/clj/set-user-password"]             {:handler     (clj-handler authentication/set-user-password)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:get  "/clj/user-email-taken"]              {:handler     (clj-handler authentication/user-email-taken)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:post "/clj/update-org-info"]               {:handler     (clj-handler authentication/update-org-info)
+                                                 :auth-type   #{:admin :token}
+                                                 :auth-action :block}
+   [:post "/clj/update-org-user-role"]          {:handler     (clj-handler authentication/update-org-user-role)
+                                                 :auth-type   #{:admin :token}
+                                                 :auth-action :block}
+   [:post "/clj/update-user-info"]              {:handler     (clj-handler authentication/update-user-info)
+                                                 :auth-type   #{:admin :token}
+                                                 :auth-action :block}
+   [:post "/clj/update-user-match-drop-access"] {:handler     (clj-handler authentication/update-user-match-drop-access)
+                                                 :auth-type   #{:admin :token}
+                                                 :auth-action :block}
+   [:post "/clj/update-user-name"]              {:handler     (clj-handler authentication/update-user-name)
+                                                 :auth-type   #{:admin :token}
+                                                 :auth-action :block}
+   [:post "/clj/verify-user-email"]             {:handler     (clj-handler authentication/verify-user-email)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
 
    ;; Cameras API
-   [:get "/get-cameras"]       {:handler cameras/get-cameras}
-   [:get "/get-current-image"] {:handler cameras/get-current-image}
+   [:get "/clj/get-cameras"]       {:handler     (clj-handler cameras/get-cameras)
+                                    :auth-type   :token
+                                    :auth-action :block}
+   [:get "/clj/get-current-image"] {:handler     (clj-handler cameras/get-current-image)
+                                    :auth-type   :token
+                                    :auth-action :block}
 
    ;; Capabilities API
-   [:get "/get-all-layers"]       {:handler     capabilities/get-all-layers}
-   [:get "/get-fire-names"]       {:handler     capabilities/get-fire-names}
-   [:get "/get-layers"]           {:handler     capabilities/get-layers}
-   [:get "/get-layer-name"]       {:handler     capabilities/get-layer-name}
-   [:get "/get-user-layers"]      {:handler     capabilities/get-user-layers
-                                   :auth-type   :user
-                                   :auth-action :block}
-   [:get "/set-capabilities"]     {:handler     capabilities/set-capabilities!}
-   [:get "/set-all-capabilities"] {:handler     capabilities/set-all-capabilities!}
-   [:get "/remove-workspace"]     {:handler     capabilities/remove-workspace!}
+   [:get "/clj/get-all-layers"]       {:handler     (clj-handler capabilities/get-all-layers)
+                                       :auth-type   :token
+                                       :auth-action :block}
+   [:get "/clj/get-fire-names"]       {:handler     (clj-handler capabilities/get-fire-names)
+                                       :auth-type   :token
+                                       :auth-action :block}
+   [:get "/clj/get-layers"]           {:handler     (clj-handler capabilities/get-layers)
+                                       :auth-type   :token
+                                       :auth-action :block}
+   [:get "/clj/get-layer-name"]       {:handler     (clj-handler capabilities/get-layer-name)
+                                       :auth-type   :token
+                                       :auth-action :block}
+   [:get "/clj/get-user-layers"]      {:handler     (clj-handler capabilities/get-user-layers)
+                                       :auth-type   #{:user :token}
+                                       :auth-action :block}
+   [:get "/clj/set-capabilities"]     {:handler     (clj-handler capabilities/set-capabilities!)
+                                       :auth-type   :token
+                                       :auth-action :block}
+   [:get "/clj/set-all-capabilities"] {:handler     (clj-handler capabilities/set-all-capabilities!)
+                                       :auth-type   :token
+                                       :auth-action :block}
+   [:get "/clj/remove-workspace"]     {:handler     (clj-handler capabilities/remove-workspace!)
+                                       :auth-type   :token
+                                       :auth-action :block}
 
    ;; Email API
-   [:get "/send-email"] {:handler email/send-email!}
+   [:get "/clj/send-email"] {:handler     (clj-handler email/send-email!)
+                             :auth-type   :token
+                             :auth-action :block}
 
    ;; Match Drop API
-   [:post "/delete-match-drop"]      {:handler     match-drop/delete-match-drop!
-                                      :auth-type   :match-drop
-                                      :auth-action :block}
-   [:get  "/get-md-available-dates"] {:handler     match-drop/get-md-available-dates
-                                      :auth-type   :match-drop
-                                      :auth-action :block}
-   [:get  "/get-md-status"]          {:handler     match-drop/get-md-status
-                                      :auth-type   :match-drop
-                                      :auth-action :block}
-   [:get  "/get-match-drops"]        {:handler     match-drop/get-match-drops
-                                      :auth-type   :match-drop
-                                      :auth-action :block}
-   [:get  "/initiate-md"]            {:handler     match-drop/initiate-md!
-                                      :auth-type   :match-drop
-                                      :auth-action :block}
+   [:post "/clj/delete-match-drop"]      {:handler     (clj-handler match-drop/delete-match-drop!)
+                                          :auth-type   #{:match-drop :token}
+                                          :auth-action :block}
+   [:get  "/clj/get-md-available-dates"] {:handler     (clj-handler match-drop/get-md-available-dates)
+                                          :auth-type   #{:match-drop :token}
+                                          :auth-action :block}
+   [:get  "/clj/get-md-status"]          {:handler     (clj-handler match-drop/get-md-status)
+                                          :auth-type   #{:match-drop :token}
+                                          :auth-action :block}
+   [:get  "/clj/get-match-drops"]        {:handler     (clj-handler match-drop/get-match-drops)
+                                          :auth-type   #{:match-drop :token}
+                                          :auth-action :block}
+   [:get  "/clj/initiate-md"]            {:handler     (clj-handler match-drop/initiate-md!)
+                                          :auth-type   #{:match-drop :token}
+                                          :auth-action :block}
 
    ;; Red Flag API
-   [:get "/get-red-flag-layer"] {:handler red-flag/get-red-flag-layer}})
+   [:get "/clj/get-red-flag-layer"] {:handler     (clj-handler red-flag/get-red-flag-layer)
+                                     :auth-type   :token
+                                     :auth-action :block}})
