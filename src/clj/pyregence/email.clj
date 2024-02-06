@@ -32,7 +32,11 @@
 (defn- send-reset-key-email! [email subject message-fn]
   (let [reset-key (str (UUID/randomUUID))
         result    (send-message
-                   {:host (get-config :triangulum.email/host)}
+                   {:host (get-config :triangulum.email/host)
+                    :user (get-config :triangulum.email/user)
+                    :pass (get-config :triangulum.email/pass)
+                    :tls  (get-config :triangulum.email/tls)
+                    :port (get-config :triangulum.email/port)}
                    {:from    (get-config :triangulum.email/user)
                     :to      email
                     :subject subject
@@ -42,7 +46,11 @@
 
 (defn- send-match-drop-email! [email subject message-fn match-drop-args]
   (let [result (send-message
-                {:host (get-config :triangulum.email/host)}
+                {:host (get-config :triangulum.email/host)
+                 :user (get-config :triangulum.email/user)
+                 :pass (get-config :triangulum.email/pass)
+                 :tls  (get-config :triangulum.email/tls)
+                 :port (get-config :triangulum.email/port)}
                 {:from    (get-config :triangulum.email/user)
                  :to      email
                  :subject subject

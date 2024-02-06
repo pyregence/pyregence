@@ -10,9 +10,12 @@
 
 ;; Set Capabilities
 
-(defn set-all-capabilties-job! []
+(defn set-all-capabilities-job! []
   (log-str "Calling pyregence.capabilities/set-all-capabilities!")
   (set-all-capabilities!))
+
+(defn stop-set-all-capabilities-job! []
+  (log-str "Calling stop-set-all-capabilities-job!"))
 
 ;; Clean up service
 
@@ -23,7 +26,7 @@
     (> (- current-time last-mod-time) expiration-time)))
 
 (defn- delete-tmp []
-  (log-str "Removing temp files.")
+  (log-str "Removing temp files")
   (let [tmp-dir (System/getProperty "java.io.tmpdir")
         dirs    (filter (fn [^File file]
                           (and (.isDirectory file)
@@ -32,10 +35,11 @@
                         (.listFiles (io/file tmp-dir)))]
     (doseq [dir  dirs
             file (reverse (file-seq dir))]
-      (io/delete-file file))))
+      (io/delete-file file)))
+  (log-str "Temp files removed"))
 
 (defn start-clean-up-service! []
-  (log-str "Starting temp file removal service.")
+  (log-str "Starting temp file removal service")
   (future
     (while true
       (Thread/sleep expiration-time)

@@ -1,7 +1,9 @@
 (ns ^:figwheel-hooks pyregence.client
-  (:require [goog.dom                           :as dom]
+  (:require [clojure.core.async                 :refer [go <!]]
+            [clojure.edn                        :as edn]
+            [goog.dom                           :as dom]
             [reagent.dom                        :refer [render]]
-            [pyregence.state                    :as !]
+            [pyregence.components.page-layout   :refer [wrap-page]]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.dashboard          :as dashboard]
             [pyregence.pages.help               :as help]
@@ -13,13 +15,14 @@
             [pyregence.pages.reset-password     :as reset-password]
             [pyregence.pages.terms-of-use       :as terms]
             [pyregence.pages.verify-email       :as verify-email]
-            [pyregence.components.page-layout   :refer [wrap-page]]))
+            [pyregence.state                    :as !]
+            [pyregence.utils.async-utils        :as u-async]))
 
 (defonce ^:private original-params  (atom {}))
 (defonce ^:private original-session (atom {}))
 
-(def ^:private uri->root-component-ha
-  "All root-components for URIs that should have a header and announcement-banner."
+(def ^:private uri->root-component-h
+  "All root-components for URIs that should have just a header."
   {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/admin"              admin/root-component
    "/dashboard"          dashboard/root-component
@@ -42,8 +45,8 @@
   [params]
   (let [uri (-> js/window .-location .-pathname)]
     (render (cond
-              (uri->root-component-ha uri)
-              (wrap-page #((uri->root-component-ha uri) params))
+              (uri->root-component-h uri)
+              (wrap-page #((uri->root-component-h uri) params))
 
               (uri->root-component-hf uri)
               (wrap-page #((uri->root-component-hf uri) params)
@@ -57,23 +60,24 @@
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."
   [params session]
-  (let [clj-params    (if (seq params)
-                        (reset! original-params (js->clj params :keywordize-keys true))
-                        @original-params)
-        clj-session   (if (seq session)
-                        (reset! original-session (js->clj session :keywordize-keys true))
-                        @original-session)
-        merged-params (merge clj-params clj-session)]
-    (reset! !/dev-mode?           (get clj-session :dev-mode))
-    (reset! !/feature-flags       (get clj-session :features))
-    (reset! !/mapbox-access-token (get-in clj-session [:mapbox :access-token]))
-    (reset! !/geoserver-urls      (get clj-session :geoserver))
-    (reset! !/default-forecasts   (get clj-session :default-forecasts))
-    (reset! !/pyr-auth-token      (get clj-session :pyr-auth-token))
-    (render-root merged-params)))
+  (go
+    (let [clj-params    (if params
+                          (reset! original-params (js->clj params :keywordize-keys true))
+                          @original-params)
+          clj-session   (if session
+                          (reset! original-session (js->clj session :keywordize-keys true))
+                          @original-session)
+          merged-params (merge clj-params clj-session)]
+      (reset! !/dev-mode?           (get clj-session :dev-mode))
+      (reset! !/feature-flags       (get clj-session :features))
+      (reset! !/geoserver-urls      (get clj-session :geoserver))
+      (reset! !/default-forecasts   (get clj-session :default-forecasts))
+      (reset! !/pyr-auth-token      (edn/read-string (:body (<! (u-async/call-clj-async! "get-pyr-auth-token")))))
+      (reset! !/mapbox-access-token (edn/read-string (:body (<! (u-async/call-clj-async! "get-mapbox-access-token")))))
+      (render-root merged-params))))
 
 (defn- ^:after-load mount-root!
   "A hook for figwheel to call the init function again."
   []
   (println "Rerunning init function for figwheel.")
-  (init {} {}))
+  (init nil nil))

@@ -66,14 +66,12 @@
                                      [:meta {:name "msapplication-TileColor" :content "#da532c"}]
                                      [:meta {:name "msapplication-config" :content "/favicon/browserconfig.xml"}]
                                      [:meta {:name "theme-color" :content "#ffffff"}]]
- :triangulum.views/gtag-id          nil
  :triangulum.views/static-css-files ["/css/style.css" "/css/mapbox-gl-v2.10.0.css"]
  :triangulum.views/static-js-files  ["/js/mapbox-gl-v2.10.0.js"]
- :triangulum.views/cljs-init        pyregence.client.init
+ :triangulum.views/cljs-init        pyregence.client/init
  :triangulum.views/client-keys      {:default-forecasts {:near-term :fire-weather
                                                          :long-term :fire-scenarios}
                                      :dev-mode          true
-                                     :mapbox            {:access-token "pk.eyJ1IjoibXNwZW5jZXItc2lnIiwiYSI6ImNrYThsbHN4dTAzcGMyeG14MWY0d3U3dncifQ.TB_ZdQPDkyzHHAZ1FfYahw"}
                                      :features          {:match-drop       true
                                                          :fire-history     true
                                                          :structures       true
@@ -89,7 +87,8 @@
 
  ;;; workers (server)
  :triangulum.worker/workers [{:triangulum.worker/name "set-all-capabilities"
-                              :triangulum.worker/start pyregence.jobs/set-all-capabilities-job!}
+                              :triangulum.worker/start pyregence.jobs/set-all-capabilities-job!
+                              :triangulum.worker/stop  pyregence.jobs/stop-set-all-capabilities-job!}
                              {:triangulum.worker/name  "clean-up-service"
                               :triangulum.worker/start pyregence.jobs/start-clean-up-service!
                               :triangulum.worker/stop  pyregence.jobs/stop-clean-up-service!}
@@ -100,6 +99,8 @@
  ;; Pyrecast
  :pyregence.cameras/alert-wildfire-api-key   "<api-key>"
  :pyregence.cameras/alert-california-api-key "<api-key>"
+ :pyregence.capabilities/psps                {:geoserver-admin-username "admin"
+                                              :geoserver-admin-password "password"}
  :pyregence.match-drop/match-drop            {:app-name       "Pyrecast Match Drop Server"
                                               :app-host       "localhost"
                                               :app-port       31337
@@ -117,5 +118,5 @@
                                               :geosync-port   31340
                                               :max-queue-size 5
                                               :md-prefix      "<prod | dev | local>"}
- :pyregence.capabilities/psps                {:geoserver-admin-username "admin"
-                                              :geoserver-admin-password "password"}}
+ :pyregence.secrets/mapbox-access-token      "<access-token>"
+ :pyregence.secrets/pyr-auth-token           "<changeme123456789>"}

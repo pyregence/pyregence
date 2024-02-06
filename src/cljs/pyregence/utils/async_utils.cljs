@@ -81,8 +81,7 @@
                         :headers {"Accept" "application/edn"
                                   "Content-Type" "application/edn"}}
           edn-string   (<! (fetch-and-process (str url
-                                                   "?auth-token="
-                                                   @!/pyr-auth-token
+                                                   (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token))
                                                    (when (not= query-string "") (str "&" query-string)))
                                               fetch-params
                                               (fn [response] (.text response))))]
@@ -99,7 +98,7 @@
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
+          response     (<! (fetch (str url (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token)))
                                   fetch-params))]
       (if response
         {:success (.-ok response)
@@ -119,7 +118,7 @@
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
+          response     (<! (fetch (str url (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token)))
                                   fetch-params))]
       (if response
         {:success (.-ok response)
@@ -139,7 +138,7 @@
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
+          response     (<! (fetch (str url (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token)))
                                   fetch-params))]
       (if response
         {:success (.-ok response)
