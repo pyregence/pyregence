@@ -10,7 +10,6 @@
             [pyregence.components.map-controls.icon-button :refer [icon-button]]
             [pyregence.components.svg-icons :as svg]
             [pyregence.styles               :as $]
-            [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.time-utils     :as u-time]
             [reagent.core                   :as r]))
@@ -206,22 +205,12 @@
   (set-user-match-drops! user-id)
   (set-match-drop-access! user-id)
   (fn [_]
-    (cond
-      ;; TODO remove this
-      ; (nil? user-id) ; User is not logged in
-      ; (do (u-browser/redirect-to-login! "/dashboard")
-      ;     nil)
-      ; 
-      ; (not @match-drop-access?) ; user doesn't have match drop access
-      ; [no-access]
-
-      :else  ; User is logged in and has match drop access
-      [:div {:style ($/root)}
-       ;; TODO make this bigger to reflect the long logs we have
-       [message-box-modal]
-       [:div {:style ($/combine $/flex-col {:padding "2rem"})}
-        [match-drop-header user-id]
-        [:div {:style {:padding "1rem" :width "100%"}}
-         (if (seq @match-drops)
-           [match-drop-table]
-           [no-match-drops])]]])))
+    [:div {:style ($/root)}
+     ;; TODO make this bigger to reflect the long logs we have
+     [message-box-modal]
+     [:div {:style ($/combine $/flex-col {:padding "2rem"})}
+      [match-drop-header user-id]
+      [:div {:style {:padding "1rem" :width "100%"}}
+       (if (seq @match-drops)
+         [match-drop-table]
+         [no-match-drops])]]]))
