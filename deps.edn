@@ -26,7 +26,7 @@
         sig-gis/runway             {:git/url "https://gitlab.sig-gis.com/sig-gis/runway"
                                     :git/sha "dab2012202935f0982f05f18fc43ab297be09e45"}
         sig-gis/triangulum         {:git/url "https://github.com/sig-gis/triangulum"
-                                    :git/sha "15e4fba4fb58a3d3825d1ec8b6656ee2a641f557"}}  ;; TODO use newest Triangulum version after flash message PR is merged
+                                    :git/sha "01617fc378b5922ae3b67d0ffb8c0a859625a2f7"}}
  :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
            :config           {:main-opts ["-m" "triangulum.config"]}
            :https            {:main-opts ["-m" "triangulum.https"]}
