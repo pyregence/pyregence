@@ -212,7 +212,7 @@ clojure -M:build-db build-all --dev-data
 4. Make sure your ~/etc/hosts~ file has a line for ~127.0.0.1 local.pyrecast.org~ and that you're hitting ~http://local.pyrecast.org:8080~ (make sure the port matches up to whatever you've set in ~config.edn~) in your web browser.
 
 If none of the above fix your problem, you should look at your Figwheel
-console and web browser dev tools console after running ~clojure -M:figwheel~
+console and web browser dev tools console after running ~clojure -M:default-ssl-opts:figwheel~
 for more information.
 
 ** Production Web Server

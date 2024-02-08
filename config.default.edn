@@ -44,7 +44,6 @@
  :triangulum.views/description      {:en "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}
  :triangulum.views/keywords         {:en "Pyrecast, Pyregence, wildfires, fire risk, fire weather, fuels, open source, fire modeling, California"}
  :triangulum.views/extra-head-tags  [[:meta {:name "robots" :content "index, follow"}]
-                                     [:meta {:charset "utf-8"}]
                                      [:meta {:name "viewport"
                                              :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
                                      [:meta {:property "og:title" :content "Pyrecast"}]

@@ -1,8 +1,8 @@
 (ns pyregence.handlers
-  (:require [clojure.data.json        :as    json]
+  (:require [cider.nrepl              :refer [cider-nrepl-handler]]
+            [clojure.data.json        :as    json]
             [clojure.repl             :refer [demunge]]
             [clojure.string           :as    str]
-            [cider.nrepl              :refer [cider-nrepl-handler]]
             [nrepl.server             :as    nrepl-server]
             [pyregence.authentication :refer [has-match-drop-access? is-admin?]]
             [ring.util.codec          :refer [url-encode]]
