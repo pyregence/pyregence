@@ -2,6 +2,8 @@
   (:require [clojure.data.json        :as    json]
             [clojure.repl             :refer [demunge]]
             [clojure.string           :as    str]
+            [cider.nrepl              :refer [cider-nrepl-handler]]
+            [nrepl.server             :as    nrepl-server]
             [pyregence.authentication :refer [has-match-drop-access? is-admin?]]
             [ring.util.codec          :refer [url-encode]]
             [ring.util.response       :refer [redirect]]
@@ -12,7 +14,7 @@
             [triangulum.views         :refer [render-page]]
             [triangulum.worker        :refer [start-workers!]]))
 
-(def not-found-handler (render-page "/not-found"))
+(def not-found-handler (comp #(assoc % :status 404) (render-page "/not-found")))
 
 (defn redirect-handler [{:keys [session query-string uri] :as _request}]
   (let [full-url (url-encode (str uri (when query-string (str "?" query-string))))]
@@ -54,6 +56,27 @@
 
 ;; Figwheel
 
+(defonce nrepl-server (atom nil))
+
+(defonce nrepl-delay
+  (delay
+    (let [{:keys [nrepl cider-nrepl nrepl-bind nrepl-port]
+           :or   {nrepl-bind "127.0.0.1"
+                  nrepl-port 5555}}
+          (get-config :server)]
+      (cond nrepl
+            (do
+              (println "Starting nREPL server on" (str nrepl-bind ":" nrepl-port))
+              (reset! nrepl-server (nrepl-server/start-server :bind nrepl-bind
+                                                              :port nrepl-port)))
+
+            cider-nrepl
+            (do
+              (println "Starting CIDER nREPL server on" (str nrepl-bind ":" nrepl-port))
+              (reset! nrepl-server (nrepl-server/start-server :bind nrepl-bind
+                                                              :port nrepl-port
+                                                              :handler cider-nrepl-handler)))))))
+
 (defonce workers-delay
   (delay
    (let [workers (get-config :triangulum.worker/workers)]
@@ -69,6 +92,7 @@
 (defn development-app-wrapper
   "Funky wrap-a-doodler"
   [request]
+  @nrepl-delay
   @workers-delay
   @log-dir-delay
   (development-app request))

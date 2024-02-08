@@ -89,7 +89,7 @@
 
  ;; workers (server)
  :triangulum.worker/workers [{:triangulum.worker/name  "set-all-capabilities"
-                              :triangulum.worker/start pyregence.jobs/set-all-capabilities-job!
+                              :triangulum.worker/start pyregence.jobs/start-set-all-capabilities-job!
                               :triangulum.worker/stop  pyregence.jobs/stop-set-all-capabilities-job!}
                              {:triangulum.worker/name  "clean-up-service"
                               :triangulum.worker/start pyregence.jobs/start-clean-up-service!

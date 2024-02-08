@@ -2,20 +2,19 @@
   (:import java.io.File)
   (:require [clojure.java.io        :as io]
             [clojure.string         :as str]
+            [pyregence.capabilities :refer [set-all-capabilities!]]
+            [pyregence.match-drop   :refer [match-drop-server-msg-handler]]
             [runway.simple-sockets  :as runway]
             [triangulum.config      :refer [get-config]]
-            [triangulum.logging     :refer [log-str]]
-            [pyregence.capabilities :refer [set-all-capabilities!]]
-            [pyregence.match-drop   :refer [match-drop-server-msg-handler]]))
+            [triangulum.logging     :refer [log-str]]))
 
 ;; Set Capabilities
 
-(defn set-all-capabilities-job! []
+(defn start-set-all-capabilities-job! []
   (log-str "Calling pyregence.capabilities/set-all-capabilities!")
   (set-all-capabilities!))
 
-(defn stop-set-all-capabilities-job! []
-  (log-str "Calling stop-set-all-capabilities-job!"))
+(def stop-set-all-capabilities-job! (constantly nil))
 
 ;; Clean up service
 
@@ -47,6 +46,7 @@
            (catch Exception _)))))
 
 (defn stop-clean-up-service! [future-thread]
+  (log-str "Stopping temp file removal service")
   (future-cancel future-thread))
 
 ;; Match Drop server
@@ -58,4 +58,5 @@
                           match-drop-server-msg-handler)))
 
 (defn stop-match-drop-server! [_]
+  (log-str "Stopping Match Drop server on port " (get-config :pyregence.match-drop/match-drop :app-port))
   (runway/stop-server!))
