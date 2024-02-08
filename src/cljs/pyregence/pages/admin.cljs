@@ -418,12 +418,11 @@
   (reset! _user-id user-id)
   (get-organizations user-id)
   (fn [_]
-    (cond
-      @pending-get-organizations?
+    (if @pending-get-organizations?
+      ;; Organizations are still loading
       [:div {:style {:display "flex" :justify-content "center"}}
        [:h1 "Loading..."]]
-
-      :else
+      ;; Organizations have been loaded
       [:div {:style {:display "flex" :justify-content "center" :padding "2rem 8rem"}}
        [message-box-modal]
        [:div {:style {:flex 1 :padding "1rem"}}

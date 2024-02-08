@@ -205,12 +205,16 @@
   (set-user-match-drops! user-id)
   (set-match-drop-access! user-id)
   (fn [_]
-    [:div {:style ($/root)}
-     ;; TODO make this bigger to reflect the long logs we have
-     [message-box-modal]
-     [:div {:style ($/combine $/flex-col {:padding "2rem"})}
-      [match-drop-header user-id]
-      [:div {:style {:padding "1rem" :width "100%"}}
-       (if (seq @match-drops)
-         [match-drop-table]
-         [no-match-drops])]]]))
+    (if-not @match-drop-access?
+      ;; user doesn't have match drop access
+      [no-access]
+      ;; user has match-drop access
+      [:div {:style ($/root)}
+       ;; TODO make this bigger to reflect the long logs we have
+       [message-box-modal]
+       [:div {:style ($/combine $/flex-col {:padding "2rem"})}
+        [match-drop-header user-id]
+        [:div {:style {:padding "1rem" :width "100%"}}
+         (if (seq @match-drops)
+           [match-drop-table]
+           [no-match-drops])]]])))

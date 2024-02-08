@@ -16,7 +16,7 @@
                                  :auth-type   :admin
                                  :auth-action :redirect}
    [:get "/dashboard"]          {:handler     (render-page "/dashboard")
-                                 :auth-type   #{:user :match-drop}
+                                 :auth-type   :user
                                  :auth-action :redirect}
    [:get "/help"]               {:handler     (render-page "/help")}
    [:get "/login"]              {:handler     (render-page "/login")}
