@@ -1,8 +1,8 @@
 {:paths ["src/clj" "src/cljs" "resources" "target"]
 
  :deps {bk/ring-gzip               {:mvn/version "0.3.0"}
-        clj-tagsoup/clj-tagsoup    {:mvn/version "0.3.0" :exclusions [org.clojure/data.xml org.clojure/clojure]}
         clj-http/clj-http          {:mvn/version "3.10.1"}
+        clj-tagsoup/clj-tagsoup    {:mvn/version "0.3.0" :exclusions [org.clojure/data.xml org.clojure/clojure]}
         cljsjs/vega-embed          {:mvn/version "6.0.0-0"}
         com.cognitect/transit-clj  {:mvn/version "1.0.324"}
         com.cognitect/transit-cljs {:mvn/version "0.8.264"}
@@ -20,32 +20,33 @@
         reagent/reagent            {:mvn/version "0.10.0"}
         ring/ring                  {:mvn/version "1.9.4"}
         ring/ring-headers          {:mvn/version "0.3.0"}
-        ring/ring-ssl              {:mvn/version "0.3.0"}
         ring/ring-json             {:mvn/version "0.5.0"}
+        ring/ring-ssl              {:mvn/version "0.3.0"}
         seancorfield/next.jdbc     {:mvn/version "1.1.569"}
         sig-gis/runway             {:git/url "https://gitlab.sig-gis.com/sig-gis/runway"
                                     :git/sha "dab2012202935f0982f05f18fc43ab297be09e45"}
         sig-gis/triangulum         {:git/url "https://github.com/sig-gis/triangulum"
                                     :git/sha "01617fc378b5922ae3b67d0ffb8c0a859625a2f7"}}
+
  :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
-           :config           {:main-opts ["-m" "triangulum.config"]}
-           :https            {:main-opts ["-m" "triangulum.https"]}
-           :server           {:main-opts ["-m" "triangulum.server"]}
-           :systemd          {:main-opts ["-m" "triangulum.systemd"]}
-           :default-ssl-opts {:jvm-opts  ["-Djavax.net.ssl.keyStore=resources/runway.jks"
-                                          "-Djavax.net.ssl.keyStorePassword=RomeoUniformNovemberWhiskeyAlfaYankee"]}
-           :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
-           :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}}}
-           :figwheel         {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}
-                                           com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}}
-                              :main-opts ["-m" "figwheel.main" "-b" "compile-dev" "-r"]}
-           :rebel            {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
-                              :main-opts  ["-m" "rebel-readline.main"]}
-           :production       {:jvm-opts ["-XX:MaxRAMPercentage=90" "-XX:+PrintFlagsFinal"]}
+           :check-deps       {:deps      {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+                              :main-opts ["-m" "antq.core"]}
            :check-reflection {:main-opts ["-e" "(do,(set!,*warn-on-reflection*,true),nil)"
                                           "-e" "(require,'pyregence.routing)"
                                           "-e" "(require,'pyregence.jobs)"
                                           "-e" "(require,'pyregence.handlers)"
                                           "-e" "(require,'pyregence.compile-cljs)"]}
-           :check-deps       {:deps      {com.github.liquidz/antq {:mvn/version "RELEASE"}}
-                              :main-opts ["-m" "antq.core"]}}}
+           :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
+           :config           {:main-opts ["-m" "triangulum.config"]}
+           :default-ssl-opts {:jvm-opts  ["-Djavax.net.ssl.keyStore=resources/runway.jks"
+                                          "-Djavax.net.ssl.keyStorePassword=RomeoUniformNovemberWhiskeyAlfaYankee"]}
+           :https            {:main-opts ["-m" "triangulum.https"]}
+           :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}}}
+           :figwheel         {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}
+                                           com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}}
+                              :main-opts ["-m" "figwheel.main" "-b" "compile-dev" "-r"]}
+           :production       {:jvm-opts ["-XX:MaxRAMPercentage=90" "-XX:+PrintFlagsFinal"]}
+           :rebel            {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
+                              :main-opts  ["-m" "rebel-readline.main"]}
+           :server           {:main-opts ["-m" "triangulum.server"]}
+           :systemd          {:main-opts ["-m" "triangulum.systemd"]}}}

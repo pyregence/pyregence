@@ -1,25 +1,25 @@
-{;; Triangulum
- ;;; database (database)
+{;;; Triangulum
+ ;; database (database)
  :triangulum.database/host     "localhost"
  :triangulum.database/port     5432
  :triangulum.database/dbname   "pyregence"
  :triangulum.database/user     "pyregence"
  :triangulum.database/password "pyregence"
 
- ;;; build-db (database)
+ ;; build-db (database)
  :triangulum.build-db/admin-pass "<password>"
  :triangulum.build-db/dev-data   false
  :triangulum.build-db/verbose    true
 
- ;;; email
+ ;; email
  :triangulum.email/host     "<host"
  :triangulum.email/user     "<user>"
  :triangulum.email/pass     "<pass>"
  :triangulum.email/tls      <true/false>
- :triangulum.email/port     <pport-number>
+ :triangulum.email/port     <port-number>
  :triangulum.email/base-url "<url>"
 
- ;;; server
+ ;; server
  :triangulum.server/http-port  8080
  :triangulum.server/mode       "<prod/dev>"
  :triangulum.server/log-dir    "logs"
@@ -27,10 +27,10 @@
  :triangulum.server/nrepl      true
  :triangulum.server/nrepl-port 5555
 
- ;;; response (server)
+ ;; response (server)
  :triangulum.response/response-type :edn
 
- ;;; handler (server)
+ ;; handler (server)
  :triangulum.handler/not-found-handler     pyregence.handlers/not-found-handler
  :triangulum.handler/redirect-handler      pyregence.handlers/redirect-handler
  :triangulum.handler/route-authenticator   pyregence.handlers/route-authenticator
@@ -39,11 +39,13 @@
  :triangulum.handler/private-request-keys  #{:auth-token :password :re-password}
  :triangulum.handler/private-response-keys #{}
 
- ;;; views (app)
+ ;; views (app)
  :triangulum.views/title            {:en "Wildfire Forecasts"}
  :triangulum.views/description      {:en "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}
  :triangulum.views/keywords         {:en "Pyrecast, Pyregence, wildfires, fire risk, fire weather, fuels, open source, fire modeling, California"}
- :triangulum.views/extra-head-tags  [[:meta {:name "viewport"
+ :triangulum.views/extra-head-tags  [[:meta {:name "robots" :content "index, follow"}]
+                                     [:meta {:charset "utf-8"}]
+                                     [:meta {:name "viewport"
                                              :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
                                      [:meta {:property "og:title" :content "Pyrecast"}]
                                      [:meta {:property "og:description"
@@ -78,15 +80,15 @@
                                                          :gridfire         true
                                                          :image-mosaic-gwc true}
                                      :geoserver         {:trinity     "https://trinity.pyregence.org/geoserver"
-                                                         ; :trinity     "https://swift.sig-gis.com/geoserver"
+                                                         ;; :trinity     "https://swift.sig-gis.com/geoserver"
                                                          :shasta      "https://shasta.pyregence.org/geoserver"
-                                                         ; :shasta      "https://solitaire.sig-gis.com/geoserver"
+                                                         ;; :shasta      "https://solitaire.sig-gis.com/geoserver"
                                                          :match-drop  "https://sierra.pyregence.org/geoserver"
                                                          :psps        "https://energy.pyregence.org/geoserver"
                                                          :pyreclimate "https://climate.pyregence.org/geoserver"}}
 
- ;;; workers (server)
- :triangulum.worker/workers [{:triangulum.worker/name "set-all-capabilities"
+ ;; workers (server)
+ :triangulum.worker/workers [{:triangulum.worker/name  "set-all-capabilities"
                               :triangulum.worker/start pyregence.jobs/set-all-capabilities-job!
                               :triangulum.worker/stop  pyregence.jobs/stop-set-all-capabilities-job!}
                              {:triangulum.worker/name  "clean-up-service"
@@ -96,7 +98,7 @@
                               :triangulum.worker/start pyregence.jobs/start-match-drop-server!
                               :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}]
 
- ;; Pyrecast
+ ;;; Pyrecast
  :pyregence.cameras/alert-wildfire-api-key   "<api-key>"
  :pyregence.cameras/alert-california-api-key "<api-key>"
  :pyregence.capabilities/psps                {:geoserver-admin-username "admin"
