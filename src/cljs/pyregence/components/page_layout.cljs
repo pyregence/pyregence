@@ -1,5 +1,5 @@
 (ns pyregence.components.page-layout
-  (:require [clojure.string     :as str]
+  (:require [clojure.string                 :as str]
             [pyregence.components.messaging :refer [toast-message
                                                     process-toast-messages!]]))
 

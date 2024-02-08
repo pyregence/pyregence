@@ -1,23 +1,24 @@
 (ns pyregence.match-drop
   (:import  java.util.UUID
             javax.net.ssl.SSLSocket)
-  (:require [clojure.core.async :refer [thread]]
-            [clojure.data.json  :as json]
-            [clojure.edn        :as edn]
-            [clojure.java.shell :refer [sh]]
-            [clojure.set        :refer [rename-keys]]
-            [clojure.string     :as str]
+  (:require [clojure.core.async         :refer [thread]]
+            [clojure.data.json          :as json]
+            [clojure.edn                :as edn]
+            [clojure.java.shell         :refer [sh]]
+            [clojure.set                :refer [rename-keys]]
+            [clojure.string             :as str]
+            [pyregence.capabilities     :refer [layers-exist?
+                                                remove-workspace!
+                                                set-capabilities!]]
+            [pyregence.utils            :as u]
+
             [runway.simple-sockets      :as runway]
             [runway.utils               :refer [json-str->edn log-response!]]
             [triangulum.config          :refer [get-config]]
             [triangulum.database        :refer [call-sql sql-primitive]]
             [triangulum.logging         :refer [log-str]]
             [triangulum.response        :refer [data-response]]
-            [triangulum.type-conversion :refer [json->clj clj->json]]
-            [pyregence.capabilities     :refer [layers-exist?
-                                                remove-workspace!
-                                                set-capabilities!]]
-            [pyregence.utils            :as u]))
+            [triangulum.type-conversion :refer [json->clj clj->json]]))
 
 ;;==============================================================================
 ;; Static Data

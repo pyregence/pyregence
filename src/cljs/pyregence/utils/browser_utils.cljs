@@ -74,7 +74,3 @@
    (if window-name
      (.open js/window url window-name)
      (jump-to-url! url))))
-
-(defn redirect-to-login! [from-page]
-  (set-session-storage! {:redirect-from from-page})
-  (jump-to-url! "/login"))
