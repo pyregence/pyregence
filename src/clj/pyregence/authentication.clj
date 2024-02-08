@@ -1,7 +1,7 @@
 (ns pyregence.authentication
-  (:require [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.response :refer [data-response]]
-            [pyregence.utils     :refer [nil-on-error]]))
+  (:require [pyregence.utils     :refer [nil-on-error]]
+            [triangulum.database :refer [call-sql sql-primitive]]
+            [triangulum.response :refer [data-response]]))
 
 (defn log-in [email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
@@ -103,7 +103,7 @@
        (data-response)))
 
 (defn is-admin?
-  "Returns true if the user is admin of at least one orgzniation."
+  "Returns true if the user is admin of at least one organization."
   [user-id]
   (sql-primitive (call-sql "get_user_admin_access" user-id)))
 
