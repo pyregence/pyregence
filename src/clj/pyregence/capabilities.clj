@@ -250,7 +250,9 @@
           (log message :force-stdout? stdout?)
           (data-response message))
         (catch Exception e
-          (log-str "Failed to load capabilities.\n" (ex-message e))))
+          (log-str "Failed to load capabilities for "
+                   (get-config :triangulum.views/client-keys :geoserver geoserver-key)
+                   "\n" (ex-message e))))
       (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn."))))
 
 (defn set-all-capabilities!
