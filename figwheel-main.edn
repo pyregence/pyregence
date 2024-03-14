@@ -1,7 +1,7 @@
 {:watch-dirs ["src/cljs"]
  :css-dirs ["resources/public/css"]
  :ring-server-options {:port 8080 :join? false}
- :ring-handler pyregence.handler/development-app
+ :ring-handler pyregence.handlers/development-app-wrapper
  :open-url false
  :clean-outputs true
  :post-build-hooks [pyregence.compile-cljs/post-figwheel-hook]}

@@ -3,9 +3,7 @@
             [java.text SimpleDateFormat]
             [java.time LocalDateTime ZonedDateTime]
             [java.time.format DateTimeFormatter]
-            [java.time.temporal ChronoUnit])
-  (:require [triangulum.database :refer [call-sql sql-primitive]]
-            [pyregence.views     :refer [data-response]]))
+            [java.time.temporal ChronoUnit]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions
@@ -80,9 +78,3 @@
                              (.truncatedTo ChronoUnit/HOURS))]
     (.format (DateTimeFormatter/ofPattern "yyyy-MM-dd'T'HH:mm'Z'")
              rounded-datetime)))
-
-(defn get-email-by-user-id [user-id]
-  (if-let [email (sql-primitive (call-sql "get_email_by_user_id" user-id))]
-    (data-response email)
-    (data-response (str "There is no user with the id " user-id)
-                   {:status 403})))

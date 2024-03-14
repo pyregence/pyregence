@@ -7,7 +7,6 @@
             [pyregence.components.common    :refer [check-box labeled-input simple-form]]
             [pyregence.components.messaging :refer [message-box-modal set-message-box-content! toast-message!]]
             [pyregence.styles               :as $]
-            [pyregence.utils.browser-utils  :as u-browser]
             [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.data-utils     :as u-data]
             [pyregence.utils.dom-utils      :as u-dom]
@@ -419,18 +418,11 @@
   (reset! _user-id user-id)
   (get-organizations user-id)
   (fn [_]
-    (cond
-      (or (nil? user-id)                              ; User is not logged in OR
-          (and (= (count @*orgs) 0)                   ; User is not an admin of any org AND
-               (false? @pending-get-organizations?))) ; The get-organizations call has finished
-      (do (u-browser/redirect-to-login! "/admin")
-          nil)
-
-      @pending-get-organizations?
+    (if @pending-get-organizations?
+      ;; Organizations are still loading
       [:div {:style {:display "flex" :justify-content "center"}}
        [:h1 "Loading..."]]
-
-      :else                           ; Logged-in user and admin of at least one org
+      ;; Organizations have been loaded
       [:div {:style {:display "flex" :justify-content "center" :padding "2rem 8rem"}}
        [message-box-modal]
        [:div {:style {:flex 1 :padding "1rem"}}

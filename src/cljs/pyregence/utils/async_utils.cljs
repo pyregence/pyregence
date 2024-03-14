@@ -81,8 +81,7 @@
                         :headers {"Accept" "application/edn"
                                   "Content-Type" "application/edn"}}
           edn-string   (<! (fetch-and-process (str url
-                                                   "?auth-token="
-                                                   @!/pyr-auth-token
+                                                   (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token))
                                                    (when (not= query-string "") (str "&" query-string)))
                                               fetch-params
                                               (fn [response] (.text response))))]
@@ -99,7 +98,7 @@
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
+          response     (<! (fetch (str url (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token)))
                                   fetch-params))]
       (if response
         {:success (.-ok response)
@@ -112,14 +111,14 @@
 (defmethod call-remote! :post-text [_ url data]
   (go
     (let [fetch-params {:method  "post"
-                        :headers (merge {"Accept" "application/transit+json"}
+                        :headers (merge {"Accept" "application/edn"}
                                         (when-not (= (type data) js/FormData)
                                           {"Content-Type" "application/edn"}))
                         :body    (cond
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
+          response     (<! (fetch (str url (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token)))
                                   fetch-params))]
       (if response
         {:success (.-ok response)
@@ -132,14 +131,14 @@
 (defmethod call-remote! :post-blob [_ url data]
   (go
     (let [fetch-params {:method  "post"
-                        :headers (merge {"Accept" "application/transit+json"}
+                        :headers (merge {"Accept" "application/edn"}
                                         (when-not (= (type data) js/FormData)
                                           {"Content-Type" "application/edn"}))
                         :body    (cond
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url "?auth-token=" @!/pyr-auth-token)
+          response     (<! (fetch (str url (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token)))
                                   fetch-params))]
       (if response
         {:success (.-ok response)

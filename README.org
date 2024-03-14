@@ -163,7 +163,7 @@ To start the Figwheel server, navigate to the top-level project
 directory and run:
 
 #+begin_src sh
-clojure -M:figwheel
+clojure -M:default-ssl-opts:figwheel
 #+end_src
 
 This will start a web server on ~http://local.pyrecast.org:8080~ (also
@@ -212,7 +212,7 @@ clojure -M:build-db build-all --dev-data
 4. Make sure your ~/etc/hosts~ file has a line for ~127.0.0.1 local.pyrecast.org~ and that you're hitting ~http://local.pyrecast.org:8080~ (make sure the port matches up to whatever you've set in ~config.edn~) in your web browser.
 
 If none of the above fix your problem, you should look at your Figwheel
-console and web browser dev tools console after running ~clojure -M:figwheel~
+console and web browser dev tools console after running ~clojure -M:default-ssl-opts:figwheel~
 for more information.
 
 ** Production Web Server
@@ -248,7 +248,7 @@ project directory and run:
 
 #+begin_src sh
 clojure -M:build-db functions
-clojure -M:server start -m [dev|prod] [-p 8080] [-P 8443] [-r/--repl]
+clojure -M:default-ssl-opts:server start -m [dev|prod] [-p 8080] [-P 8443] [-r/--repl]
 #+end_src
 
 The website will then be available at ~http://localhost:8080~ unless a
