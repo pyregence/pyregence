@@ -24,7 +24,7 @@
         sig-gis/runway             {:git/url "https://gitlab.sig-gis.com/sig-gis/runway"
                                     :git/sha "dab2012202935f0982f05f18fc43ab297be09e45"}
         sig-gis/triangulum         {:git/url "https://github.com/sig-gis/triangulum"
-                                    :git/sha "2f58c7c4d07dee37964e369553c464b68c4bdb82"}}
+                                    :git/sha "36083a6c5c8d8f03eb3e7d944d7d24f015adc889"}}
 
  :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
            :check-deps       {:deps      {com.github.liquidz/antq {:mvn/version "RELEASE"}}
