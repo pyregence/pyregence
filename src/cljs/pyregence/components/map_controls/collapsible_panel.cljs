@@ -193,7 +193,7 @@
           " - Microsoft building footprints."
           [:br]
           [:br]
-          [:strong "2023 fire perimeters"]
+          [:strong "2024 fire perimeters"]
           " - Current season fires to date."
           [:br]
           [:br]
