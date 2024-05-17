@@ -11,10 +11,12 @@
 ;; Set Capabilities
 
 (defn start-set-all-capabilities-job! []
-  (log-str "Calling pyregence.capabilities/set-all-capabilities!")
-  (set-all-capabilities!))
+  (future
+    (log-str "Calling pyregence.capabilities/set-all-capabilities!")
+    (set-all-capabilities!)))
 
-(def stop-set-all-capabilities-job! (constantly nil))
+(defn stop-set-all-capabilities-job! [fut]
+  (future-cancel fut))
 
 ;; Clean up service
 

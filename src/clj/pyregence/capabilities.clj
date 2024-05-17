@@ -235,25 +235,31 @@
   (let [geoserver-key (keyword geoserver-key)
         basic-auth    (when (private-layer-geoservers geoserver-key)
                         (str psps-geoserver-admin-username ":" psps-geoserver-admin-password))]
-    (if (contains? (get-config :triangulum.views/client-keys :geoserver) geoserver-key)
-      (try
-        (let [stdout?       (= 0 (count @layers))
-              geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
-              new-layers    (process-layers! geoserver-url workspace-name basic-auth)
-              message       (str (count new-layers) " layers from " geoserver-url " added to " site-url ".")]
-          (if workspace-name
-            (do
-              (remove-workspace! {"geoserver-key"  (name geoserver-key)
-                                  "workspace-name" workspace-name})
-              (swap! layers update geoserver-key concat new-layers))
-            (swap! layers assoc geoserver-key new-layers))
-          (log message :force-stdout? stdout?)
-          (data-response message))
-        (catch Exception e
-          (log-str "Failed to load capabilities for "
-                   (get-config :triangulum.views/client-keys :geoserver geoserver-key)
-                   "\n" (ex-message e))))
-      (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn."))))
+    (if-not (contains? (get-config :triangulum.views/client-keys :geoserver) geoserver-key)
+      (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn.")
+      (let [timeout-ms    (* 2.5 60 1000) ; 2.5 minutes
+            future-result (future
+                            (try
+                              (let [stdout?       (= 0 (count @layers))
+                                    geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
+                                    new-layers    (process-layers! geoserver-url workspace-name basic-auth)
+                                    message       (str (count new-layers) " layers from " geoserver-url " added to " site-url ".")]
+                                (if workspace-name
+                                  (do
+                                    (remove-workspace! {"geoserver-key"  (name geoserver-key)
+                                                        "workspace-name" workspace-name})
+                                    (swap! layers update geoserver-key concat new-layers))
+                                  (swap! layers assoc geoserver-key new-layers))
+                                (log message :force-stdout? stdout?)
+                                (data-response message))
+                              (catch Exception e
+                                (log-str "Failed to load capabilities for "
+                                         (get-config :triangulum.views/client-keys :geoserver geoserver-key)
+                                         "\n" (ex-message e)))))]
+        (if-let [result (deref future-result timeout-ms nil)]
+          result
+          (log-str (quot timeout-ms 1000) " seconds timeout occurred while loading capabilities for "
+                   (get-config :triangulum.views/client-keys :geoserver geoserver-key)))))))
 
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
