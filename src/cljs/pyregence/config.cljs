@@ -79,18 +79,18 @@
                                                                 :units           ""
                                                                 :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                 :reverse-legend? false
-                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.3.0-2.2.0}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
                                                        :slp    {:opt-label       "Slope (degrees)"
                                                                 :filter          "slp"
                                                                 :units           "\u00B0"
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.3.0-2.2.0}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
                                                        :dem    {:opt-label       "Elevation (ft)"
                                                                 :filter          "dem"
                                                                 :units           "ft"
                                                                 :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                 :reverse-legend? true
-                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.3.0-2.2.0}}
+                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
                                                        :cc     {:opt-label       "Canopy Cover (%)"
                                                                 :filter          "cc"
                                                                 :units           "%"
@@ -166,29 +166,32 @@
                                                         "California Ecosystem Climate Solutions"]
                                                        ", Wang et al. (2021)."]
                                           :options    (array-map
-                                                       :landfire-2.3.0-2.2.0 {:opt-label   "LANDFIRE 2.3.0/2.2.0 (2023/2021 capable)"
-                                                                              :filter      "landfire-2.3.0-2.2.0"
-                                                                              :diabled-for #{:asp :slp :dem}}
-                                                       :landfire-2.3.0       {:opt-label   "LANDFIRE 2.3.0 (2023 capable)"
-                                                                              :filter      "landfire-2.3.0"
-                                                                              :diabled-for #{:asp :slp :dem}}
+                                                       :landfire-2.4.0-2.3.0 {:opt-label    "LANDFIRE 2.4.0/2.3.0 (2024/2023 capable)"
+                                                                              :filter       "landfire-2.4.0-2.3.0"
+                                                                              :disabled-for #{:asp :slp :dem}}
+                                                       :landfire-2.4.0       {:opt-label    "LANDFIRE 2.4.0 (2023 capable)"
+                                                                              :filter       "landfire-2.3.0"
+                                                                              :disabled-for #{:asp :slp :dem}}
+                                                       :landfire-2.3.0       {:opt-label    "LANDFIRE 2.3.0 (2022 capable)"
+                                                                              :filter       "landfire-2.3.0"
+                                                                              :disabled-for #{:asp :slp :dem}}
                                                        :landfire-2.2.0       {:opt-label "LANDFIRE 2.2.0 (2021 capable)"
                                                                               :filter    "landfire-2.2.0"}
-                                                       :landfire-2.1.0       {:opt-label   "LANDFIRE 2.1.0 (2020 capable)"
-                                                                              :filter      "landfire-2.1.0"
-                                                                              :diabled-for #{:asp :slp :dem}}
-                                                       :landfire-2.0.0       {:opt-label   "LANDFIRE 2.0.0 (2019 capable)"
-                                                                              :filter      "landfire-2.0.0"
-                                                                              :diabled-for #{:asp :slp :dem}}
-                                                       :landfire-1.4.0       {:opt-label   "LANDFIRE 1.4.0 (2016 capable)"
-                                                                              :filter      "landfire-1.4.0"
-                                                                              :diabled-for #{:asp :slp :dem}}
-                                                       :landfire-1.3.0       {:opt-label   "LANDFIRE 1.3.0 (2014 capable)"
-                                                                              :filter      "landfire-1.3.0"
-                                                                              :diabled-for #{:asp :slp :dem}}
-                                                       :landfire-1.0.5       {:opt-label   "LANDFIRE 1.0.5 (~2008 capable)"
-                                                                              :filter      "landfire-1.0.5"
-                                                                              :diabled-for #{:asp :slp :dem}}
+                                                       :landfire-2.1.0       {:opt-label    "LANDFIRE 2.1.0 (2020 capable)"
+                                                                              :filter       "landfire-2.1.0"
+                                                                              :disabled-for #{:asp :slp :dem}}
+                                                       :landfire-2.0.0       {:opt-label    "LANDFIRE 2.0.0 (2019 capable)"
+                                                                              :filter       "landfire-2.0.0"
+                                                                              :disabled-for #{:asp :slp :dem}}
+                                                       :landfire-1.4.0       {:opt-label    "LANDFIRE 1.4.0 (2016 capable)"
+                                                                              :filter       "landfire-1.4.0"
+                                                                              :disabled-for #{:asp :slp :dem}}
+                                                       :landfire-1.3.0       {:opt-label    "LANDFIRE 1.3.0 (2014 capable)"
+                                                                              :filter       "landfire-1.3.0"
+                                                                              :disabled-for #{:asp :slp :dem}}
+                                                       :landfire-1.0.5       {:opt-label    "LANDFIRE 1.0.5 (~2008 capable)"
+                                                                              :filter       "landfire-1.0.5"
+                                                                              :disabled-for #{:asp :slp :dem}}
                                                        :cfo                  {:opt-label    "California Forest Obs."
                                                                               :filter       "cfo-2020"
                                                                               :disabled-for #{:asp :slp :dem}}
@@ -407,6 +410,7 @@
                                                                                 :units        "Ignitions/line-mi/hr"
                                                                                 :disabled-for #{:all :tlines}}}}
                                     :pattern    {:opt-label  "Ignition Pattern"
+                                                 :auto-zoom? true
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Fires are ignited randomly across California at various times in the future so their impacts can be modeled. Patterns include:"
                                                               [:br]
@@ -417,7 +421,7 @@
                                                               [:br]
                                                               [:strong "Transmission Lines"]
                                                               " - Fires ignited in close proximity to overhead electrical transmission lines."]
-                                                 :options    {:all        {:opt-label    "Human-caused ignitions"
+                                                 :options    {:all        {:opt-label    "All-cause fires"
                                                                            :filter       "all"
                                                                            :disabled-for #{:plignrate}}
                                                               :tlines     {:opt-label    "Transmission lines"
