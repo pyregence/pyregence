@@ -603,34 +603,34 @@
                                                                [:strong "Note"]
                                                                ": The impacted structrures, fire area, fire volume, and power line ignition rate quantities are only available with the ELMFIRE model."]]
                                                  :options    (array-map
-                                                              :str   {:opt-label    "Impacted structures"
-                                                                      :units        "Structures"}
-                                                              :area  {:opt-label    "Fire area (acres)"
-                                                                      :units        "Acres"}
-                                                              :vol   {:opt-label    "Fire volume (acre-ft)"
-                                                                      :units        "Acre-ft"}
-                                                              :pligr {:opt-label    "Power line ignition rate"
-                                                                      :units        "Ignitions/line-mi/hr"}
-                                                              :ws    {:opt-label "Sustained wind speed (mph)"
-                                                                      :units     "mph"
+                                                              :str   {:opt-label "Impacted structures"
+                                                                      :units     "Structures"}
+                                                              :area  {:opt-label "Fire area (acres)"
+                                                                      :units     "Acres"}
+                                                              :vol   {:opt-label "Fire volume (acre-ft)"
+                                                                      :units     "Acre-ft"}
+                                                              :pligr {:opt-label "Power line ignition rate"
+                                                                      :units     "Ignitions/line-mi/hr"}
+                                                              :ws    {:opt-label    "Sustained wind speed (mph)"
+                                                                      :units        "mph"
                                                                       :disabled-for #{:m}}
-                                                              :wg    {:opt-label "Wind gust (mph)"
-                                                                      :units     "mph"
+                                                              :wg    {:opt-label    "Wind gust (mph)"
+                                                                      :units        "mph"
                                                                       :disabled-for #{:m}}
-                                                              :wd    {:opt-label "Wind direction (\u00B0)"
-                                                                      :units     "\u00B0"
+                                                              :wd    {:opt-label    "Wind direction (\u00B0)"
+                                                                      :units        "\u00B0"
                                                                       :disabled-for #{:m}}
-                                                              :ffwi  {:opt-label "Fosberg Fire Weather Index"
-                                                                      :units     ""
+                                                              :ffwi  {:opt-label    "Fosberg Fire Weather Index"
+                                                                      :units        ""
                                                                       :disabled-for #{:m}}
-                                                              :rh    {:opt-label "Relative humidity (%)"
-                                                                      :units     "%"
+                                                              :rh    {:opt-label    "Relative humidity (%)"
+                                                                      :units        "%"
                                                                       :disabled-for #{:m}}
-                                                              :tmpf  {:opt-label "Temperature (\u00B0F)"
-                                                                      :units     "\u00B0F"
+                                                              :tmpf  {:opt-label    "Temperature (\u00B0F)"
+                                                                      :units        "\u00B0F"
                                                                       :disabled-for #{:m}}
-                                                              :pign  {:opt-label "Firebrand ignition probability (%)"
-                                                                      :units     "%"
+                                                              :pign  {:opt-label    "Firebrand ignition probability (%)"
+                                                                      :units        "%"
                                                                       :disabled-for #{:m}})}
 
                                     :statistic  {:opt-label      "Statistic"
@@ -674,14 +674,14 @@
                                                               [:br]
                                                               [:strong "NBM"]
                                                               " - National Blend of Models at 2.5 km to 11 days."]
-                                                 :options    {:m  {:opt-label "ELMFIRE"
+                                                 :options    {:m  {:opt-label    "ELMFIRE"
                                                                    :disabled-for #{:ws}}
-                                                              :r  {:opt-label    "HRRR"}
-                                                              :n1 {:opt-label    "NAM 3 km"}
-                                                              :n2 {:opt-label    "NAM 12 km"}
-                                                              :g1 {:opt-label    "GFS 0.125\u00B0"}
-                                                              :g2 {:opt-label    "GFS 0.250\u00B0"}
-                                                              :b  {:opt-label    "NBM"}}}
+                                                              :r  {:opt-label "HRRR"}
+                                                              :n1 {:opt-label "NAM 3 km"}
+                                                              :n2 {:opt-label "NAM 12 km"}
+                                                              :g1 {:opt-label "GFS 0.125\u00B0"}
+                                                              :g2 {:opt-label "GFS 0.250\u00B0"}
+                                                              :b  {:opt-label "NBM"}}}
                                     :utility    {:opt-label  "Utility Company"
                                                  :hover-text "The utility company associated with the displayed zonal statistics."
                                                  :options    {:loading {:opt-label "Loading..."}}}
