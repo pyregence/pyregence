@@ -531,7 +531,7 @@
                                                                    :target "_blank"}
                                                                "https://forestobservatory.com"]
                                                               "), © Salo Sciences, Inc. 2020."]
-                                                 :options    {:landfire {:opt-label "CA fuelscape / LANDFIRE 2.2.0"
+                                                 :options    {:landfire {:opt-label "LANDFIRE 2.4.0/2.3.0"
                                                                          :filter    "landfire"}}}
                                     :weather    {:opt-label  "Weather Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
@@ -578,14 +578,6 @@
                                                                "Public Safety Power Shutoffs (PSPS) Zonal Quantity. Options include:"
                                                                [:br]
                                                                [:br]
-                                                               [:strong "Fosberg Fire Weather Index (FFWI)"]
-                                                               " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
-                                                               [:br]
-                                                               [:br]
-                                                               [:strong "Firebrand Ignition Probability"]
-                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."
-                                                               [:br]
-                                                               [:br]
                                                                [:strong "Impacted Structures"]
                                                                " - Approximate number of residential structures within fire perimeter for fires starting at specific location and time in the future."
                                                                [:br]
@@ -599,38 +591,48 @@
                                                                [:br]
                                                                [:br]
                                                                [:strong "Power Line Ignition Rate"]
-                                                               " - Estimated power line ignition rate in ignitions per line-mile per hour."]
+                                                               " - Estimated power line ignition rate in ignitions per line-mile per hour."
+                                                               [:strong "Fosberg Fire Weather Index (FFWI)"]
+                                                               " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
+                                                               [:br]
+                                                               [:br]
+                                                               [:strong "Firebrand Ignition Probability"]
+                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                               [:div {:style {:margin-top 10}}
                                                                [:hr]
                                                                [:strong "Note"]
                                                                ": The impacted structrures, fire area, fire volume, and power line ignition rate quantities are only available with the ELMFIRE model."]]
                                                  :options    (array-map
-                                                              :ws    {:opt-label "Sustained wind speed (mph)"
-                                                                      :units     "mph"}
-                                                              :wg    {:opt-label "Wind gust (mph)"
-                                                                      :units     "mph"}
-                                                              :wd    {:opt-label "Wind direction (\u00B0)"
-                                                                      :units     "\u00B0"}
-                                                              :ffwi  {:opt-label "Fosberg Fire Weather Index"
-                                                                      :units     ""}
-                                                              :rh    {:opt-label "Relative humidity (%)"
-                                                                      :units     "%"}
-                                                              :tmpf  {:opt-label "Temperature (\u00B0F)"
-                                                                      :units     "\u00B0F"}
-                                                              :pign  {:opt-label "Firebrand ignition probability (%)"
-                                                                      :units     "%"}
                                                               :str   {:opt-label    "Impacted structures"
-                                                                      :units        "Structures"
-                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                                      :units        "Structures"}
                                                               :area  {:opt-label    "Fire area (acres)"
-                                                                      :units        "Acres"
-                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                                      :units        "Acres"}
                                                               :vol   {:opt-label    "Fire volume (acre-ft)"
-                                                                      :units        "Acre-ft"
-                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                                      :units        "Acre-ft"}
                                                               :pligr {:opt-label    "Power line ignition rate"
-                                                                      :units        "Ignitions/line-mi/hr"
-                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}})}
+                                                                      :units        "Ignitions/line-mi/hr"}
+                                                              :ws    {:opt-label "Sustained wind speed (mph)"
+                                                                      :units     "mph"
+                                                                      :disabled-for #{:m}}
+                                                              :wg    {:opt-label "Wind gust (mph)"
+                                                                      :units     "mph"
+                                                                      :disabled-for #{:m}}
+                                                              :wd    {:opt-label "Wind direction (\u00B0)"
+                                                                      :units     "\u00B0"
+                                                                      :disabled-for #{:m}}
+                                                              :ffwi  {:opt-label "Fosberg Fire Weather Index"
+                                                                      :units     ""
+                                                                      :disabled-for #{:m}}
+                                                              :rh    {:opt-label "Relative humidity (%)"
+                                                                      :units     "%"
+                                                                      :disabled-for #{:m}}
+                                                              :tmpf  {:opt-label "Temperature (\u00B0F)"
+                                                                      :units     "\u00B0F"
+                                                                      :disabled-for #{:m}}
+                                                              :pign  {:opt-label "Firebrand ignition probability (%)"
+                                                                      :units     "%"
+                                                                      :disabled-for #{:m}})}
+
                                     :statistic  {:opt-label      "Statistic"
                                                  :hover-text     "Options are minimum, mean, or maximum."
                                                  :default-option :a
@@ -642,6 +644,14 @@
                                                                       :filter    "deenergization-zones"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
+                                                              [:strong "ELMFIRE"]
+                                                              " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
+                                                              [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
+                                                                   :target "_blank"}
+                                                               "https://doi.org/10.1016/j.firesaf.2013.08.014"]
+                                                              ")."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "HRRR"]
                                                               " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
                                                               [:br]
@@ -663,28 +673,15 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "NBM"]
-                                                              " - National Blend of Models at 2.5 km to 11 days."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "ELMFIRE"]
-                                                              " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
-                                                              [:a {:href   "https://doi.org/10.1016/j.firesaf.2013.08.014"
-                                                                   :target "_blank"}
-                                                               "https://doi.org/10.1016/j.firesaf.2013.08.014"]
-                                                              ")."]
-                                                 :options    {:r  {:opt-label    "HRRR"
-                                                                   :disabled-for #{:area :str :vol :pligr}}
-                                                              :n1 {:opt-label    "NAM 3 km"
-                                                                   :disabled-for #{:area :str :vol :pligr}}
-                                                              :n2 {:opt-label    "NAM 12 km"
-                                                                   :disabled-for #{:area :str :vol :pligr}}
-                                                              :g1 {:opt-label    "GFS 0.125\u00B0"
-                                                                   :disabled-for #{:area :str :vol :pligr}}
-                                                              :g2 {:opt-label    "GFS 0.250\u00B0"
-                                                                   :disabled-for #{:area :str :vol :pligr}}
-                                                              :b  {:opt-label    "NBM"
-                                                                   :disabled-for #{:area :str :vol :pligr}}
-                                                              :m  {:opt-label "ELMFIRE"}}}
+                                                              " - National Blend of Models at 2.5 km to 11 days."]
+                                                 :options    {:m  {:opt-label "ELMFIRE"
+                                                                   :disabled-for #{:ws}}
+                                                              :r  {:opt-label    "HRRR"}
+                                                              :n1 {:opt-label    "NAM 3 km"}
+                                                              :n2 {:opt-label    "NAM 12 km"}
+                                                              :g1 {:opt-label    "GFS 0.125\u00B0"}
+                                                              :g2 {:opt-label    "GFS 0.250\u00B0"}
+                                                              :b  {:opt-label    "NBM"}}}
                                     :utility    {:opt-label  "Utility Company"
                                                  :hover-text "The utility company associated with the displayed zonal statistics."
                                                  :options    {:loading {:opt-label "Loading..."}}}
