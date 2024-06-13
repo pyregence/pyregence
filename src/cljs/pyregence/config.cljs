@@ -169,10 +169,10 @@
                                                        :landfire-2.4.0-2.3.0 {:opt-label    "LANDFIRE 2.4.0/2.3.0 (2024/2023 capable)"
                                                                               :filter       "landfire-2.4.0-2.3.0"
                                                                               :disabled-for #{:asp :slp :dem}}
-                                                       :landfire-2.4.0       {:opt-label    "LANDFIRE 2.4.0 (2023 capable)"
-                                                                              :filter       "landfire-2.3.0"
+                                                       :landfire-2.4.0       {:opt-label    "LANDFIRE 2.4.0 (2024 capable)"
+                                                                              :filter       "landfire-2.4.0"
                                                                               :disabled-for #{:asp :slp :dem}}
-                                                       :landfire-2.3.0       {:opt-label    "LANDFIRE 2.3.0 (2022 capable)"
+                                                       :landfire-2.3.0       {:opt-label    "LANDFIRE 2.3.0 (2023 capable)"
                                                                               :filter       "landfire-2.3.0"
                                                                               :disabled-for #{:asp :slp :dem}}
                                                        :landfire-2.2.0       {:opt-label "LANDFIRE 2.2.0 (2021 capable)"
