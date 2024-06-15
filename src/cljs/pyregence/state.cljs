@@ -26,7 +26,7 @@ Ex: {:us-trans-lines {:opt-label \"Transmission lines\", :z-index 107, ...},
 (defonce ^{:doc "A UTC keyword value, corresponding to the last selected \"Forecast Start Time\""}
   *last-start-time (r/atom nil))
 (defonce ^{:doc "An integer value, from 0 to 100, that designates the opacity for the active layer. Defaults to 100"}
-  active-opacity (r/atom 100.0))
+  active-opacity (r/atom 70.0))
 (defonce ^{:doc "A map that combines the values from the `options-config` and the processed output from a call to process-capabilities! in near_term_forecast.cljs.
 The `options-config`:
 Holds the value of either the `near-term-forecast-options` or `long-term-forecast-options` map as defined in `config.cljs`.
