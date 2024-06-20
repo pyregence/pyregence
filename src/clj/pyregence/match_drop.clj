@@ -241,7 +241,11 @@
    as to the specific failure."
   [host port match-job-id request & [deletion-request?]]
   (try
-    (with-open [client-socket (runway/create-ssl-client-socket host port)]
+    (with-open [client-socket (runway/create-ssl-client-socket host
+                                                               port
+                                                               (System/getProperty "javax.net.ssl.keyStore")
+                                                               (System/getProperty "javax.net.ssl.keyStorePassword")
+                                                               false)]
       (log-str (str "Able to open a client-socket: " client-socket))
       (when-not (runway/send-to-server! client-socket
                                         (-> request
