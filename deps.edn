@@ -37,7 +37,7 @@
                                           "-e" "(require,'pyregence.compile-cljs)"]}
            :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
            :config           {:main-opts ["-m" "triangulum.config"]}
-           :default-ssl-opts {:jvm-opts  ["-Djavax.net.ssl.keyStore=resources/runway.jks"
+           :default-ssl-opts {:jvm-opts ["-Djavax.net.ssl.keyStore=resources/runway.pkcs12"
                                           "-Djavax.net.ssl.keyStorePassword=RomeoUniformNovemberWhiskeyAlfaYankee"]}
            :https            {:main-opts ["-m" "triangulum.https"]}
            :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}}}
