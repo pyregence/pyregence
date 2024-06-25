@@ -16,3 +16,5 @@
 /config.edn
 announcement.txt
 /resources/runway.jks
+/.clj-kondo
+.lsp/*
