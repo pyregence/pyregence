@@ -15,6 +15,6 @@
 # Configuration files
 /config.edn
 announcement.txt
-/resources/runway.jks
+/resources/runway.pkcs12
 /.clj-kondo
 .lsp/*
