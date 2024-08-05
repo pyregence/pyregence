@@ -233,12 +233,12 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
-                                                              :rh      {:opt-label "Relative humidity (%)"
-                                                                        :filter    "rh"
-                                                                        :units     "%"}
                                                               :tmpf    {:opt-label "Temperature (\u00B0F)"
                                                                         :filter    "tmpf"
                                                                         :units     "\u00B0F"}
+                                                              :rh      {:opt-label "Relative humidity (%)"
+                                                                        :filter    "rh"
+                                                                        :units     "%"}
                                                               :ffwi    {:opt-label "Fosberg Fire Weather Index"
                                                                         :filter    "ffwi"
                                                                         :units     ""}
