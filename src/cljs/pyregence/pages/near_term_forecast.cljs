@@ -300,18 +300,32 @@
   []
   (when (seq @!/user-psps-orgs-list)
     (when-some [keypath (case @!/*forecast
+                          :fuels        :only-underlays
                           :fire-weather [:fire-weather :model]
                           :fire-risk    [:fire-risk :pattern]
+                          :active-fire  :only-underlays
                           :psps-zonal   [:psps-zonal :utility]
                           nil)]
-      (let [selected-org-id   (name (get-in @!/*params keypath))
-            matching-psps-org (if (= selected-org-id "ecmwf")
-                                (first @!/user-psps-orgs-list) ; "ecmwf" is the Euro weather forecast which all utility companies have access to
+      (let [selected-org-id   (if (= keypath :only-underlays)
+                                keypath
+                                (name (get-in @!/*params keypath)))
+            matching-psps-org (cond
+                                (= selected-org-id "ecmwf") ; "ecmwf" is the Euro weather forecast which all utility companies have access to
+                                (first @!/user-psps-orgs-list)
+
+                                (= selected-org-id :only-underlays) ; The fuels and active fire tabs don't have any utility-specific layers, so only underlays are an option here
+                                (first (filter #(and (seq @!/most-recent-optional-layer)
+                                                     ((:filter-set @!/most-recent-optional-layer) (:org-unique-id %)))
+                                               @!/user-psps-orgs-list))
+
+                                :else
                                 (first (filter #(or (= selected-org-id (:org-unique-id %)) ; There should only be one matching entry because each `:org-unique-id` is unique
-                                                    (and (seq @!/most-recent-optional-layer)
-                                                         ((:filter-set @!/most-recent-optional-layer) (:org-unique-id %)))) ; We're dealing with an optional layer that's associated with a utility company
+                                                    (and (seq @!/most-recent-optional-layer) ; We're dealing with an optional layer that's associated with a utility company
+                                                         ((:filter-set @!/most-recent-optional-layer) (:org-unique-id %))))
                                                @!/user-psps-orgs-list)))]
-        (:geoserver-credentials matching-psps-org)))))
+        (if (some? matching-psps-org)
+          (:geoserver-credentials matching-psps-org)
+          nil)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn- get-legend!
@@ -322,7 +336,8 @@
               (c/legend-url layer
                             (get-any-level-key :geoserver-key)
                             (get-psps-layer-style))
-              :basic-auth (get-current-layer-geoserver-credentials))))
+              :basic-auth (when (= :psps (get-any-level-key :geoserver-key))
+                            (get-current-layer-geoserver-credentials)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Point Information Functions
@@ -407,7 +422,8 @@
                                   (when (= @!/*forecast :psps-zonal)
                                     c/all-psps-columns))
                 :loading-atom !/point-info-loading?
-                :basic-auth (get-current-layer-geoserver-credentials)))))
+                :basic-auth   (when (= :psps (get-any-level-key :geoserver-key))
+                                (get-current-layer-geoserver-credentials))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; More Data Processing Functions
@@ -624,8 +640,8 @@
    :flex-direction   "column"
    :margin           (cond
                        (and @!/mobile? loading-message?) "10rem 4rem .5rem 4rem"
-                       @!/mobile?                ".25rem"
-                       :else                  "8rem auto")
+                       @!/mobile?                        ".25rem"
+                       :else                             "8rem auto")
    :max-height       (if @!/mobile? "calc(100% - .5rem)" "50%")
    :overflow         "hidden"
    :width            (if @!/mobile? "unset" "25rem")})

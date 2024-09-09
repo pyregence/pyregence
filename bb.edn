@@ -1,0 +1,31 @@
+{:tasks
+ {-project  "cljweb-pyregence"
+  reload    (shell "systemctl --user daemon-reload")
+  status    {:depends [-project]
+             :task (shell (format "systemctl --user status %s" -project))}
+  start     {:depends [-project]
+             :task (shell (format "systemctl --user start %s" -project))}
+  stop      {:depends [-project]
+             :task (shell (format "systemctl --user stop %s" -project))}
+  restart   (do
+              (run 'stop)
+              (run 'start))
+  build-js  (clojure "-M:compile-cljs")
+  pull      (shell "git pull")
+  migrate   (clojure "-M:build-db migrate")
+  functions (clojure "-M:build-db functions")
+  prod         (do
+                 (run 'functions)
+                 (run 'clean)
+                 (run 'compile)
+                 (run 'server-start))
+  dev          (do
+                 (run 'functions)
+                 (shell "clojure -M:default-ssl-opts:figwheel"))
+  deploy    (do
+              (run 'stop)
+              (run 'pull)
+              (run 'build-js)
+              #_(run 'migrate)
+              (run 'functions)
+              (run 'start))}}
