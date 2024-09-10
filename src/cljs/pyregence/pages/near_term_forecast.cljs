@@ -323,9 +323,7 @@
                                                     (and (seq @!/most-recent-optional-layer) ; We're dealing with an optional layer that's associated with a utility company
                                                          ((:filter-set @!/most-recent-optional-layer) (:org-unique-id %))))
                                                @!/user-psps-orgs-list)))]
-        (if (some? matching-psps-org)
-          (:geoserver-credentials matching-psps-org)
-          nil)))))
+        (:geoserver-credentials matching-psps-org)))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn- get-legend!
