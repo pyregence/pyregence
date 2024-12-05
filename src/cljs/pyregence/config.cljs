@@ -233,12 +233,12 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
-                                                              :tmpf    {:opt-label "Temperature (\u00B0F)"
-                                                                        :filter    "tmpf"
-                                                                        :units     "\u00B0F"}
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
                                                                         :units     "%"}
+                                                              :tmpf    {:opt-label "Temperature (\u00B0F)"
+                                                                        :filter    "tmpf"
+                                                                        :units     "\u00B0F"}
                                                               :ffwi    {:opt-label "Fosberg Fire Weather Index"
                                                                         :filter    "ffwi"
                                                                         :units     ""}
@@ -286,12 +286,12 @@
                                                                         :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve}})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
-                                                              [:strong "HRRR"]
-                                                              " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
-                                                              [:br]
-                                                              [:br]
                                                               [:strong "NBM"]
                                                               " - National Blend of Models at 2.5 km to 11 days."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "HRRR"]
+                                                              " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
                                                               [:br]
                                                               [:br]
                                                               [:strong "Hybrid"]
