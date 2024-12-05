@@ -2,13 +2,13 @@
 
 -- Adds an organization called "Development"
 INSERT INTO organizations
-    (organization_uid, org_name, email_domains, auto_add, auto_accept)
+    (organization_uid, org_unique_id, org_name, email_domains, auto_add, auto_accept)
 VALUES
-    (1, 'Development', '@pyr.dev', TRUE, TRUE),
-    (2, 'Delete Me Inc.', '@deleteme.com,@remove.com', TRUE, FALSE),
-    (3, 'Update My Setttings and Company', '@updateme.com', FALSE, TRUE),
-    (4, 'Acme Labs', '@acme.com,@acmelabs.org', TRUE, TRUE),
-    (5, 'Skunk Works', '@topsecret.net,@seentoomuch.us,@zzyzx.gov,', FALSE, FALSE);
+    (1, 'development', 'Development', '@pyr.dev', TRUE, TRUE),
+    (2, 'delete-me', 'Delete Me Inc.', '@deleteme.com,@remove.com', TRUE, FALSE),
+    (3, 'update-me', 'Update My Setttings and Company', '@updateme.com', FALSE, TRUE),
+    (4, 'acme-labs', 'Acme Labs', '@acme.com,@acmelabs.org', TRUE, TRUE),
+    (5, 'skunk-works', 'Skunk Works', '@topsecret.net,@seentoomuch.us,@zzyzx.gov,', FALSE, FALSE);
 -- Adds an admin and a user
 INSERT INTO users
     (user_uid, email, name, password, verified, settings)
