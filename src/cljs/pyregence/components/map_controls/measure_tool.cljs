@@ -3,7 +3,6 @@
             [herb.core                             :refer [<class]]
             [pyregence.components.mapbox           :as mb]
             [pyregence.components.resizable-window :refer [resizable-window]]
-            [pyregence.components.common           :refer [radio]]
             [pyregence.geo-utils                   :as geo]
             [pyregence.styles                      :as $]
             [reagent.core                          :as r]))
@@ -33,7 +32,6 @@
   (r/with-let [distance-between-points (r/atom 0)
                point-one               (r/atom nil)
                point-two               (r/atom nil)
-               miles                   (r/atom true)
                click-event             (mb/enqueue-marker-on-click!
                                         #(do (reset! point-one (first %))
                                              (reset! point-two (second %)))
@@ -59,38 +57,13 @@
                          :margin-top      ".2rem"}}
            (when (> @distance-between-points 0)
              [:label {:style ($/padding "1px" :1)}
-
-               ;; -- show both option
               (let [format #(str (cl-format nil "~,1f" %1) " " %2)
                     m->mi #(* 0.00062137 %)
                     m->km #(/ % 1000)
                     meters @distance-between-points]
                 [:p
                  [:span (str (format (m->mi meters) "miles"))]
-                 [:span (str " / " (format  (m->km meters) "kilometers"))]])
-               ;; -- Radio button option
-               ;; this is what was orginal discussed.
-               ;;TODO css classes md-lonlat and md-lon are from the long-lat functionality and
-               ;; though they stylistically in lining things up, the names are confusing here. so
-               ;; consider changing something.
-              #_[:div#md-lonlat {:style {:display "flex"
-                                         :column-gap "10px"}}
-                 [:div#md-lon {:style {:display "flex"
-                                       :align-items "center"}}
-                  (let [format-distance (fn [label distance]
-                                          (str label ": "
-                                               (cl-format nil
-                                                          "~,1f"
-                                                          distance)))]
-                    (if @miles
-                      (format-distance "Miles" (* 0.00062137 @distance-between-points))
-                      (format-distance "Kilometers" (/ @distance-between-points 1000))))]
-                 [:div {:style {:display "flex"
-                                :flex-direction "column"}}
-                  [:<>
-                   [radio "mi" @miles true #(reset! miles true)]
-                   [radio "km" @miles false #(reset! miles false)]]]]])
-
+                 [:span (str " / " (format  (m->km meters) "kilometers"))]])])
            [:button {:class    (<class $/p-themed-button)
                      :style    {:margin-bottom "1rem"}
                      :disabled (or (not @point-one)
