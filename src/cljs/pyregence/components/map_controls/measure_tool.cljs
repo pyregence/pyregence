@@ -57,12 +57,10 @@
                          :flex-direction  "column"
                          :margin-top      ".2rem"}}
            (when (> @distance-between-points 0)
-             [:label {:style ($/padding "1px" :1)}
-              [:p
-               (->>  [[@distance-between-points "miles" #(* 0.00062137 %)]
-                      [@distance-between-points "kilometers" #(/ % 1000)]]
-                     (map (fn [[m l f]] (str (cl-format nil "~,1f" (f m)) " " l)))
-                     (str/join " / "))]])
+             [:p (->>  [[@distance-between-points "miles" #(* 0.00062137 %)]
+                        [@distance-between-points "kilometers" #(/ % 1000)]]
+                       (map (fn [[m l f]] (str (cl-format nil "~,1f" (f m)) " " l)))
+                       (str/join " / "))])
            [:button {:class    (<class $/p-themed-button)
                      :style    {:margin-bottom "1rem"}
                      :disabled (or (not @point-one)
