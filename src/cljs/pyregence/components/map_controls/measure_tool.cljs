@@ -53,14 +53,18 @@
            [:p "Note: There is a +/- 0.5% Great-Circle calculation error."]]
           [lon-lat-position "Point One Location" (if @point-one @point-one [0 0])]
           [lon-lat-position "Point Two Location" (if @point-two @point-two [0 0])]
+          (when (> @distance-between-points 0)
+            [:strong {:style {:display         "flex"
+                              :justify-content "center"
+                              :margin          ".4rem"
+                              :font-size       "1.2rem"}}
+             (->>  [[@distance-between-points "miles" #(* 0.00062137 %)]
+                    [@distance-between-points "kilometers" #(/ % 1000)]]
+                   (map (fn [[m l f]] (str (cl-format nil "~,1f" (f m)) " " l)))
+                   (str/join " / "))])
           [:div {:style {:display         "flex"
                          :flex-direction  "column"
                          :margin-top      ".2rem"}}
-           (when (> @distance-between-points 0)
-             [:p (->>  [[@distance-between-points "miles" #(* 0.00062137 %)]
-                        [@distance-between-points "kilometers" #(/ % 1000)]]
-                       (map (fn [[m l f]] (str (cl-format nil "~,1f" (f m)) " " l)))
-                       (str/join " / "))])
            [:button {:class    (<class $/p-themed-button)
                      :style    {:margin-bottom "1rem"}
                      :disabled (or (not @point-one)
