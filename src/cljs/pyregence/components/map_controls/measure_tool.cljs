@@ -1,5 +1,6 @@
 (ns pyregence.components.map-controls.measure-tool
   (:require [clojure.pprint                        :refer [cl-format]]
+            [clojure.string                        :as str]
             [herb.core                             :refer [<class]]
             [pyregence.components.mapbox           :as mb]
             [pyregence.components.resizable-window :refer [resizable-window]]
@@ -57,13 +58,11 @@
                          :margin-top      ".2rem"}}
            (when (> @distance-between-points 0)
              [:label {:style ($/padding "1px" :1)}
-              (let [format #(str (cl-format nil "~,1f" %1) " " %2)
-                    m->mi #(* 0.00062137 %)
-                    m->km #(/ % 1000)
-                    meters @distance-between-points]
-                [:p
-                 [:span (str (format (m->mi meters) "miles"))]
-                 [:span (str " / " (format  (m->km meters) "kilometers"))]])])
+              [:p
+               (->>  [[@distance-between-points "miles" #(* 0.00062137 %)]
+                      [@distance-between-points "kilometers" #(/ % 1000)]]
+                     (map (fn [[m l f]] (str (cl-format nil "~,1f" (f m)) " " l)))
+                     (str/join " / "))]])
            [:button {:class    (<class $/p-themed-button)
                      :style    {:margin-bottom "1rem"}
                      :disabled (or (not @point-one)
