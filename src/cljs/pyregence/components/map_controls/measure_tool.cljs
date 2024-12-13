@@ -1,6 +1,5 @@
 (ns pyregence.components.map-controls.measure-tool
   (:require [clojure.pprint                        :refer [cl-format]]
-            [clojure.string                        :as str]
             [herb.core                             :refer [<class]]
             [pyregence.components.mapbox           :as mb]
             [pyregence.components.resizable-window :refer [resizable-window]]
