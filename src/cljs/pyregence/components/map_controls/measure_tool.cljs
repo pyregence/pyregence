@@ -58,9 +58,6 @@
                               :justify-content "center"
                               :margin          ".4rem"
                               :font-size       "1.2rem"}}
-             ;; Below we convert distance-between-points, which is in meters,
-             ;; to both miles and kilometers which is ideal for larger distances
-             ;; and for the majority of our U.S based users.
              (let [[mi km] (->>  [[@distance-between-points "miles" #(* 0.00062137 %)]
                                   [@distance-between-points "kilometers" #(/ % 1000)]]
                                  (map (fn [[m l f]] (str (cl-format nil "~,1f" (f m)) " " l))))]
