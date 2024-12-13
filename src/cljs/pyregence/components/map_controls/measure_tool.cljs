@@ -63,7 +63,7 @@
                    kilometers (* meters 0.001)
                    mi (format miles "miles")
                    km (format kilometers "kilometers")]
-               (str mi " (" km ")" ))])
+               (str mi " (" km ")"))])
           [:div {:style {:display        "flex"
                          :flex-direction "column"
                          :margin-top     ".2rem"}}
