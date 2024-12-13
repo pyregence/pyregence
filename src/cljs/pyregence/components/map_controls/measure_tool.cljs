@@ -54,9 +54,9 @@
           [lon-lat-position "Point Two Location" (if @point-two @point-two [0 0])]
           (when (> @distance-between-points 0)
             [:strong {:style {:display         "flex"
+                              :font-size       "1.2rem"
                               :justify-content "center"
-                              :margin          ".4rem"
-                              :font-size       "1.2rem"}}
+                              :margin          ".4rem"}}
              (let [format (fn [number label] (str (cl-format nil "~,1f" number) " " label))
                    meters  @distance-between-points
                    miles (* meters 0.00062137)
