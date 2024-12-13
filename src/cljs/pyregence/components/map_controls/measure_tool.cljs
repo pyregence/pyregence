@@ -57,12 +57,12 @@
                               :font-size       "1.2rem"
                               :justify-content "center"
                               :margin          ".4rem"}}
-             (let [format (fn [number label] (str (cl-format nil "~,1f" number) " " label))
-                   meters  @distance-between-points
-                   miles (* meters 0.00062137)
+             (let [format     (fn [number label] (str (cl-format nil "~,1f" number) " " label))
+                   meters     @distance-between-points
+                   miles      (* meters 0.00062137)
                    kilometers (* meters 0.001)
-                   mi (format miles "miles")
-                   km (format kilometers "kilometers")]
+                   mi         (format miles "miles")
+                   km         (format kilometers "kilometers")]
                (str mi " (" km ")"))])
           [:div {:style {:display        "flex"
                          :flex-direction "column"
