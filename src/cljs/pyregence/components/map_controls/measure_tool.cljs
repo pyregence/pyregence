@@ -58,9 +58,12 @@
                               :justify-content "center"
                               :margin          ".4rem"
                               :font-size       "1.2rem"}}
-             (let [[mi km] (->>  [[@distance-between-points "miles" #(* 0.00062137 %)]
-                                  [@distance-between-points "kilometers" #(/ % 1000)]]
-                                 (map (fn [[m l f]] (str (cl-format nil "~,1f" (f m)) " " l))))]
+             (let [format (fn [number label] (str (cl-format nil "~,1f" number) " " label))
+                   meters  @distance-between-points
+                   miles (* 0.00062137 meters)
+                   kilometers (/ meters 1000)
+                   mi (format miles "miles")
+                   km (format kilometers "kilometers")]
                (str mi " (" km ")" ))])
           [:div {:style {:display        "flex"
                          :flex-direction "column"
