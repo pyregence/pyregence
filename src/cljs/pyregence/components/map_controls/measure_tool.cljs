@@ -35,7 +35,10 @@
                click-event             (mb/enqueue-marker-on-click!
                                         #(do (reset! point-one (first %))
                                              (reset! point-two (second %)))
-                                        {:queue-type :lifo :queue-size 2})]
+                                        {:queue-type :lifo :queue-size 2})
+               format                  (fn [number label] (str (cl-format nil "~,1f" number) " " label))
+               meters->miles           #(-> % (* 0.00062137) (format "miles"))
+               meters->kilometers      #(-> % (* 0.001) (format "kilometers"))]
     [:div#measure-tool
      [resizable-window
       parent-box
@@ -57,13 +60,7 @@
                               :font-size       "1.2rem"
                               :justify-content "center"
                               :margin          ".4rem"}}
-             (let [format     (fn [number label] (str (cl-format nil "~,1f" number) " " label))
-                   meters     @distance-between-points
-                   miles      (* meters 0.00062137)
-                   kilometers (* meters 0.001)
-                   mi         (format miles "miles")
-                   km         (format kilometers "kilometers")]
-               (str mi " (" km ")"))])
+             (str (meters->miles @distance-between-points) " (" (meters->kilometers @distance-between-points) ")")])
           [:div {:style {:display        "flex"
                          :flex-direction "column"
                          :margin-top     ".2rem"}}
