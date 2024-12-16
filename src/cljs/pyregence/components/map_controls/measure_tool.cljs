@@ -35,7 +35,10 @@
                click-event             (mb/enqueue-marker-on-click!
                                         #(do (reset! point-one (first %))
                                              (reset! point-two (second %)))
-                                        {:queue-type :lifo :queue-size 2})]
+                                        {:queue-type :lifo :queue-size 2})
+               format                  (fn [number label] (str (cl-format nil "~,1f" number) " " label))
+               meters->miles           #(-> % (* 0.00062137) (format "miles"))
+               meters->kilometers      #(-> % (* 0.001) (format "kilometers"))]
     [:div#measure-tool
      [resizable-window
       parent-box
@@ -52,13 +55,16 @@
            [:p "Note: There is a +/- 0.5% Great-Circle calculation error."]]
           [lon-lat-position "Point One Location" (if @point-one @point-one [0 0])]
           [lon-lat-position "Point Two Location" (if @point-two @point-two [0 0])]
-          [:div {:style {:display         "flex"
-                         :flex-direction  "column"
-                         :margin-top      ".2rem"}}
-           (when (> @distance-between-points 0)
-             [:div {:style {:height 30 :margin ".2rem"}}
-              [:label {:style ($/padding "1px" :1)}
-               (str (cl-format nil "~,4f" @distance-between-points) " meters")]])
+          (when (> @distance-between-points 0)
+            [:strong {:style {:display         "flex"
+                              :font-size       "1.2rem"
+                              :justify-content "center"
+                              :margin          ".4rem"}}
+             (str (meters->miles @distance-between-points)
+                  " (" (meters->kilometers @distance-between-points) ")")])
+          [:div {:style {:display        "flex"
+                         :flex-direction "column"
+                         :margin-top     ".2rem"}}
            [:button {:class    (<class $/p-themed-button)
                      :style    {:margin-bottom "1rem"}
                      :disabled (or (not @point-one)
