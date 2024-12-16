@@ -60,7 +60,8 @@
                               :font-size       "1.2rem"
                               :justify-content "center"
                               :margin          ".4rem"}}
-             (str (meters->miles @distance-between-points) " (" (meters->kilometers @distance-between-points) ")")])
+             (str (meters->miles @distance-between-points)
+                  " (" (meters->kilometers @distance-between-points) ")")])
           [:div {:style {:display        "flex"
                          :flex-direction "column"
                          :margin-top     ".2rem"}}
