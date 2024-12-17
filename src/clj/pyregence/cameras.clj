@@ -130,9 +130,79 @@
   {:type     "FeatureCollection"
    :features features})
 
+;; Timestamp functions
+
+(defn- valid-timezoneless-iso8601-timestamp?
+  "returns true if timezoneless timestamp is valid"
+  [timezoneless-iso8601-timestamp]
+  (try
+    (let [formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm:ss.SSSSSS")]
+      (LocalDateTime/parse timezoneless-iso8601-timestamp formatter)
+      true)
+    (catch DateTimeParseException e
+      false)))
+
+;; The Alert Wildfire API non-californa camera api sends timestamps without a timezone. However
+;; we have high confidence they are UTC time and mark them as such here so they
+;; have the same format as the california timestamps which are marked as UTC.
+(defn- timezoneless-iso8601-timestamp->utc-timestamp
+  "reformats the timezonless timestamp so that it's in the utc/zulu format"
+  [timezoneless-timestamp]
+  (as-> timezoneless-timestamp %
+    (str/split % #" ")
+    (interpose "T" %)
+    (concat % "Z")
+    (apply str %)))
+
+(defn- utc-timestamp->four-hours-old?
+  "returns true if the utc timestamp is older then four hours"
+  [timestamp]
+  (let [timestamp      (Instant/parse timestamp)
+        now            (Instant/now)
+        four-hours-ago (.minus now (Duration/ofHours 4))]
+    (.isBefore timestamp four-hours-ago)))
+
+;; Camera functions
+
+(defn- get-wildfire-cameras!
+  []
+  (api-all-cameras alert-wildfire-api-url alert-wildfire-api-defaults))
+
+;; The Alert Wildfire API does **not** work for most California cameras so
+;; we filter out all California Alert Wildfire cameras besides a predefined list
+(defn- is-wildfire-camera-in-list-or-cali?
+  "returns true if camera is in 'the list' or isn't from California"
+  [camera]
+  (let [camera-properites (:properties camera)]
+    (or (california-cameras-to-keep (:name camera-properites))
+        (not= (:state camera-properites) "CA"))))
+
+(defn- get-and-conform-wildfire-cameras!
+  "fetches non-California wildfire cameras, filters and reformats them."
+  []
+  (->> (get-wildfire-cameras!)
+       (pmap #(site->feature "alert-wildfire" %))
+       (filter is-wildfire-camera-in-list-or-cali?)
+       (filter (fn [{{update-time :update-time} :properties}]
+                 (valid-timezoneless-iso8601-timestamp? update-time)))
+       (map (fn [camera]
+              (update-in camera [:properties :update-time]
+                         timezoneless-iso8601-timestamp->utc-timestamp)))))
+
+(defn- get-california-cameras!
+  []
+  (api-all-cameras alert-california-api-url alert-california-api-defaults))
+
+(defn- get-and-conform-california-cameras!
+  "fetches California wildfire cameras, filters and reformats them."
+  []
+  (->> (get-california-cameras!)
+       (pmap #(site->feature "alert-california" %))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn get-cameras
   "Builds a GeoJSON response of the current wildfire cameras."
@@ -140,59 +210,12 @@
   (data-response
     (if (valid-cache?)
       @camera-cache
-      (let [valid-timezoneless-iso8601-timestamp?
-            (fn [timezoneless-iso8601-timestamp]
-              (try
-                (let [formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm:ss.SSSSSS")]
-                  (LocalDateTime/parse timezoneless-iso8601-timestamp formatter)
-                  true)
-                (catch DateTimeParseException e
-                  false)))
-
-            timezoneless-iso8601-timestamp->utc-timestamp
-            (fn [timezoneless-timestamp]
-              (as-> timezoneless-timestamp %
-                (str/split % #" ")
-                (interpose "T" %)
-                (concat % "Z")
-                (apply str %)))
-
-            utc-timestamp->four-hours-old?
-            (fn [timestamp]
-              (let [timestamp      (Instant/parse timestamp)
-                    now            (Instant/now)
-                    four-hours-ago (.minus now (Duration/ofHours 4))]
-                (.isBefore timestamp four-hours-ago)))
-
-            alert-wildfire-cameras   (->> (api-all-cameras alert-wildfire-api-url
-                                                           alert-wildfire-api-defaults)
-                                          (pmap #(site->feature "alert-wildfire" %))
-                                          ;; The Alert Wildfire API does **not** work for most California cameras so
-                                          ;; we filter out all California Alert Wildfire cameras besides a predefined list
-                                          (filter (fn [camera]
-                                                    (let [camera-properites (:properties camera)]
-                                                      (or (california-cameras-to-keep (:name camera-properites))
-                                                          (not= (:state camera-properites) "CA")))))
-                                          ;; Keep cameras with valid timezoneless timestamps.
-                                          (filter (fn [camera]
-                                                    (-> camera
-                                                        :properties
-                                                        :update-time
-                                                        valid-timezoneless-iso8601-timestamp?)))
-                                          ;; The Alert Wildfire API non-californa camera api sends timestamps without a timezone. However
-                                          ;; we have high confidence they are UTC time and mark them as such here so they
-                                          ;; have the same format as the california timestamps which are marked as UTC.
-                                          (map (fn [camera]
-                                                 (update-in camera [:properties :update-time] timezoneless-iso8601-timestamp->utc-timestamp))))
-            alert-california-cameras (->> (api-all-cameras alert-california-api-url
-                                                           alert-california-api-defaults)
-                                          (pmap #(site->feature "alert-california" %)))
-            new-cameras              (->> alert-wildfire-cameras
-                                          (concat alert-california-cameras)
-                                          ;; remove inactive cameras. Inactive here meaning the camera hasn't sent new data in four hours.
-                                          (remove (fn [camera] (-> camera :properties :update-time utc-timestamp->four-hours-old?)))
-                                          (->feature-collection))]
-
+      (let [new-cameras (->> (concat (get-and-conform-wildfire-cameras!)
+                                     (get-and-conform-california-cameras!))
+                             ;; remove inactive cameras
+                             (remove (fn [{{timestamp :update-time} :properties}]
+                                       (utc-timestamp->four-hours-old? timestamp)))
+                             (->feature-collection))]
         (reset-cache! new-cameras)
         new-cameras))))
 
@@ -210,3 +233,76 @@
                      {:type "image/jpeg"})
       (data-response (str "Invalid cameras API name.")
                      {:status 403}))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Scratch Space
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; In this comment block we explore how many cameras are inactive
+;; The conclusion is we lose about 100 total 90% of which
+;; aren't California base.
+(comment
+
+  ;; to start how many cali and non cali cameras do we have?
+
+  (def cali (get-and-conform-wildfire-cameras!))
+
+  (count cali)
+  ;; => 1141
+
+  (def wildfire (get-wildfire-cameras!))
+
+  (count wildfire)
+  ;; => 1184
+
+  ;; how many of wildfire cameras do we have left after we filter out those not
+  ;; in our list or actually in cali?
+
+  ;; first we format.
+  (def wildfire-f
+    (->> wildfire
+      (pmap #(site->feature "alert-wildfire" %))))
+
+  (->> wildfire-f
+       (filter is-wildfire-camera-in-list-or-cali?)
+       count)
+  ;; => 199
+
+  ;; only 200, so we lose about a 1000
+  (- 1184 199)
+  ;; => 985
+
+  ;; of the remaining 200, how many do we lose to being inactive? before we
+  ;; check we have to reformat the timestamps... TODO maybe this should be part
+  ;; of site->feature?
+
+  (->> wildfire-f
+       (filter is-wildfire-camera-in-list-or-cali?)
+       (filter (fn [{{update-time :update-time} :properties}]
+                 (valid-timezoneless-iso8601-timestamp? update-time)))
+       (map (fn [camera]
+              (update-in camera [:properties :update-time]
+                         timezoneless-iso8601-timestamp->utc-timestamp)))
+       (remove (fn [camera] (-> camera :properties :update-time utc-timestamp->four-hours-old?)))
+       count)
+  ;; => 115
+
+  ;; so we lose about half of the non cali cameras
+  (- 199 115)
+  ;; => 84
+
+  ;; how many cali cameras do we lose?
+
+  (->> (get-and-conform-california-cameras!)
+       (remove (fn [camera] (-> camera :properties :update-time utc-timestamp->four-hours-old?)))
+       count)
+
+  ;; => 1132
+  ;; so we had 1141
+  (- 1141 1132)
+  ;; => 9
+
+  ;; about 10 so in total we lose about 94 or 100 cameras to activity 90% of
+  ;; them the non-cali ones
+
+  )
