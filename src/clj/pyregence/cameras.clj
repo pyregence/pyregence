@@ -142,9 +142,6 @@
     (catch DateTimeParseException _
       false)))
 
-;; The Alert Wildfire API non-californa camera api sends timestamps without a timezone. However
-;; we have high confidence they are UTC time and mark them as such here so they
-;; have the same format as the california timestamps which are marked as UTC.
 (defn- timezoneless-iso8601-timestamp->utc-timestamp
   "reformats the timezonless timestamp so that it's in the utc/zulu format"
   [timezoneless-timestamp]
@@ -168,8 +165,6 @@
   []
   (api-all-cameras alert-wildfire-api-url alert-wildfire-api-defaults))
 
-;; The Alert Wildfire API does **not** work for most California cameras so
-;; we filter out all California Alert Wildfire cameras besides a predefined list
 (defn- is-wildfire-camera-in-list-or-cali?
   "returns true if camera is in 'the list' or isn't from California"
   [camera]
@@ -182,7 +177,12 @@
   []
   (->> (get-wildfire-cameras!)
        (pmap #(site->feature "alert-wildfire" %))
+       ;; The Alert Wildfire API does **not** work for most California cameras so
+       ;; we filter out all California Alert Wildfire cameras besides a predefined list
        (filter is-wildfire-camera-in-list-or-cali?)
+       ;; The Alert Wildfire API non-californa camera api sends timestamps without a timezone. However
+       ;; we have high confidence they are UTC time and mark them as such here so they
+       ;; have the same format as the california timestamps which are marked as UTC.
        (filter (fn [{{update-time :update-time} :properties}]
                  (valid-timezoneless-iso8601-timestamp? update-time)))
        (map (fn [camera]
