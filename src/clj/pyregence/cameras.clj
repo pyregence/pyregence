@@ -139,7 +139,7 @@
     (let [formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm:ss.SSSSSS")]
       (LocalDateTime/parse timezoneless-iso8601-timestamp formatter)
       true)
-    (catch DateTimeParseException e
+    (catch DateTimeParseException _
       false)))
 
 ;; The Alert Wildfire API non-californa camera api sends timestamps without a timezone. However
