@@ -174,7 +174,11 @@
                                     (u-async/stop-refresh! @exit-chan)
                                     (reset! active-camera new-camera)
                                     (reset! image-src nil)
-                                    )))
+                                    (let [image-chan (get-camera-image-chan @active-camera)]
+                                      (reset! image-src (<! image-chan))
+                                      (reset! exit-chan
+                                              (u-async/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
+                                                                            60000))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _              (take! (mb/create-camera-layer! "fire-cameras")
                                      #(mb/add-feature-highlight!
