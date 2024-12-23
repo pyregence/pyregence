@@ -556,14 +556,14 @@
 
 ;;; Capabilities
 (defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list & [selected-options]]
+  ;;TODO remove these development defs
+  (def user-layers user-layers)
+  (def options-config options-config)
   (reset! !/capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
                               layer-config (edn/read-string layer_config)]
-                          (if (and (s/valid? ::layer-path   layer-path)
-                                   (s/valid? ::layer-config layer-config))
-                            (assoc-in acc layer-path layer-config)
-                            acc)))
+                          (update-in acc layer-path merge layer-config)))
                       options-config
                       user-layers) ; TODO the resulting array map gets turned into a hash map when we have > than 9 items
               (update-in [:active-fire :params :fire-name :options]
@@ -588,6 +588,75 @@
                                                                (ffirst (:options v)))])
                                                   params))]))
                      options-config)))
+
+
+(comment
+  ;; the idea here is to use the :default-option in the cljs/pyregence/config.cljs
+  ;; which, if set, would select the ignition pattern as desired. The only
+  ;; issue is that we have to configure this on a per utility company basis.
+
+  (def id->org
+    (->> user-layers
+         (group-by :org_layer_id)))
+
+  ;; NOTE org_layer_id 72 was add to the local dev db, it would need to be added
+  ;; to prod for this feature to work
+
+  (id->org 72)
+  ;; actual company omitted
+  ;; => [{:layer_config "{:default-option :UtilityCompany}",
+  ;;      :layer_path "[:fire-risk :params :pattern]",
+  ;;      :org_layer_id 72}]
+
+  ;; with this layer-path-if we `update-in` instead of assoc
+  ;; we still don't get the desired effect..
+
+  (->>
+   (reduce (fn [acc {:keys [layer_path layer_config]}]
+             (let [layer-path   (edn/read-string layer_path)
+                   layer-config (edn/read-string layer_config)]
+               (if (and (s/valid? ::layer-path   layer-path)
+                        (s/valid? ::layer-config layer-config))
+                 (update-in acc layer-path merge layer-config)
+                 acc)))
+           options-config
+           user-layers)
+   :fire-risk
+   :params
+   :pattern
+   keys)
+  ;; => (:opt-label :auto-zoom? :hover-text :options)
+
+  ;; this is because the spec validation on layer paths prevent
+  ;; we see it if removed
+  (->>
+   (reduce (fn [acc {:keys [layer_path layer_config]}]
+             (let [layer-path   (edn/read-string layer_path)
+                   layer-config (edn/read-string layer_config)]
+               (update-in acc layer-path merge layer-config)))
+           options-config
+           user-layers)
+   :fire-risk
+   :params
+   :pattern
+   :default-option)
+  ;; => :UtilityCompany
+
+;; both parts are invalid as is,
+  (s/valid? ::layer-config {:default-option :UtilityCompany})
+  ;; => false
+
+  (s/valid? ::layer-path [:fire-risk :params :pattern])
+  ;; => true
+
+  ;; this can be fixed by validating the tree that results from the reduce of user-layers into options
+  ;;config. thats a slightly large TODO though...
+
+  ;; alternatively we can remove the spec validations, I'm not clear why we need them in the first place.
+
+;;
+  )
+
 
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
