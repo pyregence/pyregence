@@ -410,7 +410,6 @@
                                                                                 :units        "Ignitions/line-mi/hr"
                                                                                 :disabled-for #{:all :tlines}}}}
                                     :pattern    {:opt-label  "Ignition Pattern"
-                                                 :auto-zoom? true
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Fires are ignited randomly across California at various times in the future so their impacts can be modeled. Patterns include:"
                                                               [:br]
