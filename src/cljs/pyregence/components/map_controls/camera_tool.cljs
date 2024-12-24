@@ -11,8 +11,6 @@
             [pyregence.state                               :as !]
             [pyregence.styles                              :as $]
             [pyregence.utils.async-utils                   :as u-async]
-            [pyregence.utils.number-utils                  :as u-num]
-            [pyregence.utils.time-utils                    :as u-time]
             [reagent.core                                  :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -95,19 +93,6 @@
     "ALERTCalifornia"]
    "."])
 
-(defn- camera-too-old [camera-name camera-api-name camera-image-url camera-age]
-  [:div {:style {:padding "1.2em"}}
-   [:p (str "The " camera-name " camera has not been refreshed for "
-            (u-num/to-precision 1 camera-age) " hours. Please try again later.")]
-   [:p "Click"
-    [:a {:href   (if (= camera-api-name "alert-wildfire")
-                   (str "https://www.alertwildfire.org/region/?camera=" camera-name)
-                   (str "https://ops.alertcalifornia.org/cam-console/" (alert-ca-image-url->alert-ca-camera-id camera-image-url)))
-         :ref    "noreferrer noopener"
-         :target "_blank"}
-     " here "]
-    "for more information about the " camera-name " camera."]])
-
 (defn- camera-image [camera-name camera-api-name camera-image-url reset-view zoom-camera image-src]
   [:div
    [:div {:style {:display         "flex"
@@ -164,7 +149,6 @@
 
 (defn camera-tool [parent-box close-fn!]
   (r/with-let [active-camera  (r/atom nil)
-               camera-age     (r/atom 0) ; in hours
                image-src      (r/atom nil)
                exit-chan      (r/atom nil)
                zoom-camera    (fn []
@@ -187,21 +171,12 @@
                                   (when-let [new-camera (js->clj (aget features "properties") :keywordize-keys true)]
                                     (u-async/stop-refresh! @exit-chan)
                                     (reset! active-camera new-camera)
-                                    (reset! camera-age 0)
                                     (reset! image-src nil)
                                     (let [image-chan (get-camera-image-chan @active-camera)]
-                                      (reset! camera-age (as-> (:update-time @active-camera) %
-                                                               ;; Alert Wildfire and Alert California have differently formatted `:update-time` values
-                                                               (if (= (:api-name @active-camera) "alert-wildfire")
-                                                                 (u-time/alert-wf-camera-time->js-date %)
-                                                                 (js/Date. %))
-                                                               (u-time/get-time-difference %)
-                                                               (u-time/ms->hr %)))
-                                      (when (> 4 @camera-age)
-                                        (reset! image-src (<! image-chan))
-                                        (reset! exit-chan
-                                                (u-async/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
-                                                                              60000)))))))
+                                      (reset! image-src (<! image-chan))
+                                      (reset! exit-chan
+                                              (u-async/refresh-on-interval! #(go (reset! image-src (<! (get-camera-image-chan @active-camera))))
+                                                                            60000))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _              (take! (mb/create-camera-layer! "fire-cameras")
                                      #(mb/add-feature-highlight!
@@ -214,9 +189,6 @@
                                (cond
                                  (nil? @active-camera)
                                  [camera-tool-intro]
-
-                                 (>= @camera-age 4)
-                                 [camera-too-old camera-name camera-api-name camera-image-url @camera-age]
 
                                  @image-src
                                  [camera-image
