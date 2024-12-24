@@ -11,8 +11,6 @@
             [pyregence.state                               :as !]
             [pyregence.styles                              :as $]
             [pyregence.utils.async-utils                   :as u-async]
-            [pyregence.utils.number-utils                  :as u-num]
-            [pyregence.utils.time-utils                    :as u-time]
             [reagent.core                                  :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
