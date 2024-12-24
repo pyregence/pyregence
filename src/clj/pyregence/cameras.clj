@@ -133,7 +133,7 @@
 ;; Timestamp functions
 
 (defn- valid-timezoneless-iso8601-timestamp?
-  "returns true if timezoneless timestamp is valid"
+  "Returns true if the timezoneless timestamp is valid."
   [timezoneless-iso8601-timestamp]
   (try
     (let [formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm:ss.SSSSSS")]
@@ -143,7 +143,7 @@
       false)))
 
 (defn- timezoneless-iso8601-timestamp->utc-timestamp
-  "reformats the timezonless timestamp so that it's in the utc/zulu format"
+  "Reformats the timezoneless timestamp so that it's in the UTC/Zulu format."
   [timezoneless-timestamp]
   (as-> timezoneless-timestamp %
     (str/split % #" ")
@@ -152,7 +152,7 @@
     (apply str %)))
 
 (defn- utc-timestamp->four-hours-old?
-  "returns true if the utc timestamp is older then four hours"
+  "Returns true if the UTC timestamp is older than four hours."
   [timestamp]
   (let [timestamp      (Instant/parse timestamp)
         now            (Instant/now)
@@ -166,14 +166,14 @@
   (api-all-cameras alert-wildfire-api-url alert-wildfire-api-defaults))
 
 (defn- is-wildfire-camera-in-list-or-cali?
-  "returns true if camera is in 'the list' or isn't from California"
+  "Returns true if the camera is in 'the list' or isn't from California."
   [camera]
   (let [camera-properites (:properties camera)]
     (or (california-cameras-to-keep (:name camera-properites))
         (not= (:state camera-properites) "CA"))))
 
 (defn- get-and-conform-wildfire-cameras!
-  "fetches non-California wildfire cameras, filters and reformats them."
+  "Fetches non-California wildfire cameras, filters, and reformats them."
   []
   (->> (get-wildfire-cameras!)
        (pmap #(site->feature "alert-wildfire" %))
@@ -194,7 +194,7 @@
   (api-all-cameras alert-california-api-url alert-california-api-defaults))
 
 (defn- get-and-conform-california-cameras!
-  "fetches California wildfire cameras, filters and reformats them."
+  "Fetches California wildfire cameras, filters and reformats them."
   []
   (->> (get-california-cameras!)
        (pmap #(site->feature "alert-california" %))))
@@ -202,7 +202,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defn get-cameras
   "Builds a GeoJSON response of the current wildfire cameras."
