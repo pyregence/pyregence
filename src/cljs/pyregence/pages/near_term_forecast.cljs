@@ -575,8 +575,7 @@
                                   (assoc acc
                                          (keyword org-unique-id)
                                          {:opt-label  org-name
-                                          :filter     org-unique-id
-                                          :auto-zoom? true}))
+                                          :filter     org-unique-id}))
                                 {}
                                 user-psps-orgs-list))))
   (reset! !/*params (u-data/mapm

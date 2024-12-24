@@ -570,7 +570,6 @@
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
-                  :auto-zoom?      true
                   :hover-text      "Public Safety Power Shutoffs (PSPS) zonal statistics."
                   :params          {:quantity   {:opt-label  "Zonal Quantity"
                                                  :hover-text [:<>
