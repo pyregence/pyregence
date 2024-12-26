@@ -557,6 +557,7 @@
 ;;; Capabilities
 (defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list & [selected-options]]
   (reset! !/capabilities
+          ;; Add in all layers from the organiation_layers DB table
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
                               layer-config (edn/read-string layer_config)]
@@ -566,10 +567,16 @@
                             acc)))
                       options-config
                       user-layers) ; TODO the resulting array map gets turned into a hash map when we have > than 9 items
+              ;; Add in available active fire names
               (update-in [:active-fire :params :fire-name :options]
                          merge
                          fire-names)
+              ;; Set the default risk tab ignition pattern option to the logged in user's organization (when applicable)
+              ;; Note that we default to using the first organization in the case where a user belongs to more than one org
+              (assoc-in [:fire-risk :params :pattern :default-option] (:org-unique-id (first user-psps-orgs-list)))
+              ;; Add in the PSPS tab for all organizations that are permitted to see it
               (assoc-in [:psps-zonal :allowed-orgs] (into #{} psps-orgs-list))
+              ;; Add in the specific PSPS layer options for the user's organization
               (assoc-in [:psps-zonal :params :utility :options]
                         (reduce (fn [acc {:keys [org-unique-id org-name]}]
                                   (assoc acc
