@@ -2,7 +2,6 @@
   (:require [cljs.core.async.interop                             :refer-macros [<p!]]
             [clojure.core.async                                  :refer [go <!]]
             [clojure.edn                                         :as edn]
-            [clojure.spec.alpha                                  :as s]
             [clojure.string                                      :as str]
             [cognitect.transit                                   :as t]
             [herb.core                                           :refer [<class]]
@@ -33,25 +32,6 @@
             [pyregence.utils.time-utils                          :as u-time]
             [reagent.core                                        :as r]
             [reagent.dom                                         :as rd]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Spec
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(s/def ::clear-point?  boolean?)
-(s/def ::filter        string?)
-(s/def ::filter-set    set?)
-(s/def ::geoserver-key keyword?)
-(s/def ::opt-label     string?)
-(s/def ::units         string?)
-(s/def ::z-index       int?)
-(s/def ::layer-config  (s/keys :req-un [::opt-label (or ::filter ::filter-set)]
-                               :opt-un [::clear-point? ::geoserver-key ::units ::z-index]))
-(s/def ::layer-path    (s/and (s/coll-of keyword? :kind vector? :min-count 2)
-                              (s/cat :forecast #{:fuels :fire-weather :fire-risk :active-fire :psps-zonal}
-                                     :second   #(or (= % :params)
-                                                    (= % :underlays))
-                                     :etc      (s/+ keyword?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
