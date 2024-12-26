@@ -561,10 +561,10 @@
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
                               layer-config (edn/read-string layer_config)]
-                            (if (and (s/valid? ::layer-path   layer-path)
-                                     (s/valid? ::layer-config layer-config))
-                              (assoc-in acc layer-path layer-config)
-                              acc)))
+                          (if (and (s/valid? ::layer-path   layer-path)
+                                   (s/valid? ::layer-config layer-config))
+                            (assoc-in acc layer-path layer-config)
+                            acc)))
                       options-config
                       user-layers) ; TODO the resulting array map gets turned into a hash map when we have > than 9 items
               ;; Add in available active fire names
