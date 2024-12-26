@@ -421,9 +421,11 @@
                                                               [:strong "Transmission Lines"]
                                                               " - Fires ignited in close proximity to overhead electrical transmission lines."]
                                                  :options    {:all        {:opt-label    "All-cause fires"
+                                                                           :auto-zoom?   true
                                                                            :filter       "all"
                                                                            :disabled-for #{:plignrate}}
                                                               :tlines     {:opt-label    "Transmission lines"
+                                                                           :auto-zoom?   true
                                                                            :filter       "tlines"
                                                                            :clear-point? true
                                                                            :disabled-for #{:plignrate :crown-fire-area}}}}
