@@ -573,7 +573,7 @@
                          fire-names)
               ;; Set the default risk tab ignition pattern option to the logged in user's organization (when applicable)
               ;; Note that we default to using the first organization in the case where a user belongs to more than one org
-              (assoc-in [:fire-risk :params :pattern :default-option] (:org-unique-id (first user-psps-orgs-list)))
+              (assoc-in [:fire-risk :params :pattern :default-option] (keyword (:org-unique-id (first user-psps-orgs-list))))
               ;; Add in the PSPS tab for all organizations that are permitted to see it
               (assoc-in [:psps-zonal :allowed-orgs] (into #{} psps-orgs-list))
               ;; Add in the specific PSPS layer options for the user's organization
