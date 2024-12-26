@@ -410,7 +410,6 @@
                                                                                 :units        "Ignitions/line-mi/hr"
                                                                                 :disabled-for #{:all :tlines}}}}
                                     :pattern    {:opt-label  "Ignition Pattern"
-                                                 :auto-zoom? true
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Fires are ignited randomly across California at various times in the future so their impacts can be modeled. Patterns include:"
                                                               [:br]
@@ -422,9 +421,11 @@
                                                               [:strong "Transmission Lines"]
                                                               " - Fires ignited in close proximity to overhead electrical transmission lines."]
                                                  :options    {:all        {:opt-label    "All-cause fires"
+                                                                           :auto-zoom?   true
                                                                            :filter       "all"
                                                                            :disabled-for #{:plignrate}}
                                                               :tlines     {:opt-label    "Transmission lines"
+                                                                           :auto-zoom?   true
                                                                            :filter       "tlines"
                                                                            :clear-point? true
                                                                            :disabled-for #{:plignrate :crown-fire-area}}}}
@@ -570,7 +571,6 @@
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
-                  :auto-zoom?      true
                   :hover-text      "Public Safety Power Shutoffs (PSPS) zonal statistics."
                   :params          {:quantity   {:opt-label  "Zonal Quantity"
                                                  :hover-text [:<>
