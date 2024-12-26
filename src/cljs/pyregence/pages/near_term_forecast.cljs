@@ -536,9 +536,6 @@
 
 ;;; Capabilities
 (defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list & [selected-options]]
-  ;;TODO remove these development defs
-  (def user-layers user-layers)
-  (def options-config options-config)
   (reset! !/capabilities
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
                         (let [layer-path   (edn/read-string layer_path)
