@@ -1,5 +1,8 @@
 (ns pyregence.components.forecast-tabs
-  (:require [pyregence.components.common :refer [tool-tip-wrapper]]))
+  (:require
+   [pyregence.components.common    :refer [tool-tip-wrapper]]
+   [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.state                :as !]))
 
 (defn- $forecast-label [selected?]
   (merge
@@ -22,6 +25,14 @@
               hover-text
               :top
               [:label {:style    ($forecast-label (= current-forecast key))
-                       :on-click #(select-forecast! key)}
+                       :on-click
+                       (fn []
+                         (when (= key :active-fire)
+                           (when (and
+                                  (zero? @!/active-fire-count)
+                                  (zero? @!/active-fire-tab-click-count))
+                             (toast-message! "No active fires."))
+                           (swap! !/active-fire-tab-click-count inc))
+                         (select-forecast! key))}
                opt-label]]))
          capabilities))])
