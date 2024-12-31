@@ -28,7 +28,7 @@
                        :on-click
                        (fn []
                          (when (and (= key :active-fire) @!/show-no-active-fires?)
-                           (toast-message! "No active fires"))
+                           (toast-message! "No active fires."))
                          (select-forecast! key))}
                opt-label]]))
          capabilities))])
