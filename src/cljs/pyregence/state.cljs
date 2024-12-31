@@ -70,6 +70,8 @@ that there are 145 different time steps in this specific forecast."}
   show-red-flag? (r/atom false))
 (defonce ^{:doc "A boolean that maintains UTC or local time display preference."}
   show-utc? (r/atom false))
+(defonce ^{:doc "A boolean that maintains the hide/show of the 'No active fire-toast'"}
+  show-no-active-fires? (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Point Information State

@@ -27,14 +27,7 @@
               [:label {:style    ($forecast-label (= current-forecast key))
                        :on-click
                        (fn []
-                         (when (and
-                                (= key :active-fire)
-                                (zero? (->> @!/processed-params
-                                            :fire-name
-                                            :options
-                                            count
-                                            ;; dec to remove "active fires"
-                                            dec)))
+                         (when (and (= key :active-fire) @!/show-no-active-fires?)
                            (toast-message! "No active fires"))
                          (select-forecast! key))}
                opt-label]]))

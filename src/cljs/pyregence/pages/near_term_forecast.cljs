@@ -603,7 +603,9 @@
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
           user-orgs-list-chan             (u-async/call-clj-async! "get-organizations" user-id)
-          psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")]
+          psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
+          fire-names                      (edn/read-string (:body (<! fire-names-chan)))]
+      (reset! !/show-no-active-fires? (-> fire-names count zero?))
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
       (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
       (reset! !/user-psps-orgs-list (filter (fn [org] (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
@@ -616,7 +618,7 @@
                     layers
                     get-current-layer-geoserver-credentials
                     (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
-      (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
+      (process-capabilities! fire-names
                              (edn/read-string (:body (<! user-layers-chan)))
                              options-config
                              @!/psps-orgs-list
