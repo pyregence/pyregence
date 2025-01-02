@@ -23,7 +23,7 @@
               (run 'server-start))
   dev       (do
               (run 'functions)
-              (shell "clojure -M:default-ssl-opts:figwheel"))
+              (clojure "-M:default-ssl-opts:figwheel"))
   deploy    (do
               (run 'stop)
               (run 'pull)
