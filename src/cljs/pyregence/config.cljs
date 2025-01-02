@@ -352,9 +352,10 @@
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
                                                                               :disabled-for #{:apcptot :apcp01 :smoke}})}
-                                    :model-init {:opt-label  "Forecast Start Time"
-                                                 :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
-                                                 :options    {:loading {:opt-label "Loading..."}}}}}
+                                    :model-init {:opt-label         "Forecast Start Time"
+                                                 :hover-text        "Start time for the forecast cycle, new data comes every 6 hours."
+                                                 :default-show-utc? true
+                                                 :options           {:loading {:opt-label "Loading..."}}}}}
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
                   :geoserver-key   :shasta
@@ -457,9 +458,10 @@
                                                               ")."]
                                                  :options    {:elmfire {:opt-label "ELMFIRE"
                                                                         :filter    "elmfire"}}}
-                                    :model-init {:opt-label  "Forecast Start Time"
-                                                 :hover-text "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
-                                                 :options    {:loading {:opt-label "Loading..."}}}}}
+                                    :model-init {:opt-label         "Forecast Start Time"
+                                                 :default-show-utc? true
+                                                 :hover-text        "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
+                                                 :options           {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
                   :underlays       (merge common-underlays

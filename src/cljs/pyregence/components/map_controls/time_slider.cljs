@@ -40,8 +40,8 @@
     [:div#time-slider {:style ($/combine $/tool $time-slider)}
      (when-not @!/mobile?
        [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
-        [radio "UTC"   @!/show-utc? true  select-time-zone! true]
-        [radio "Local" @!/show-utc? false select-time-zone! true]])
+        [radio "UTC"   @!/show-time-slider-utc? true  select-time-zone! true]
+        [radio "Local" @!/show-time-slider-utc? false select-time-zone! true]])
      [:div {:style ($/flex-col)}
       [:input {:style {:width "12rem"}
                :type      "range"
