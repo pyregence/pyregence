@@ -105,8 +105,8 @@
 (defn distance
   "This uses the haversine formula to calculate the great-circle distance between two points."
   [p1 p2]
-  (let [[lat1 lng1] p1
-        [lat2 lng2] p2
+  (let [[lng1 lat1] p1
+        [lng2 lat2] p2
         phi1        (* lat1 radians-per-degree)
         lambda1     (* lng1 radians-per-degree)
         phi2        (* lat2 radians-per-degree)
