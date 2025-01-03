@@ -63,13 +63,14 @@
 
 (defn js-date->iso-string
   "Returns a ISO date-time string for a given JS date object in local or UTC timezone."
-  [js-date show-utc?]
-  (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?)))
+  [js-date timezone]
+  (let [show-utc? (= :utc timezone)]
+    (str (get-date-from-js js-date show-utc?) " " (get-time-from-js js-date show-utc?))))
 
 (defn date-string->iso-string
   "Returns a ISO date-time string for a given date string in local or UTC timezone."
-  [date-str show-utc?]
-  (js-date->iso-string (js-date-from-string date-str) show-utc?))
+  [date-str timezone]
+  (js-date->iso-string (js-date-from-string date-str) timezone))
 
 (defn iso-string->local-datetime-string
   "Converts an ISO date string to a local datetime string. Note that this will
