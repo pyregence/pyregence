@@ -68,8 +68,7 @@ that there are 145 different time steps in this specific forecast."}
   show-panel? (r/atom true))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Red Flag Warning Tool."}
   show-red-flag? (r/atom false))
-(defonce ^{:doc "A boolean that maintains UTC or local time display preference."}
-  show-utc? (r/atom false))
+(defonce timezone (r/atom :local))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Point Information State

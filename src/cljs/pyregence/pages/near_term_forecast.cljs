@@ -80,7 +80,7 @@
 (defn- get-current-layer-full-time []
   (if-let [sim-time (or (get-current-layer-time)
                         (:sim-time (current-layer)))]
-    (u-time/date-string->iso-string sim-time @!/show-utc?)
+    (u-time/date-string->iso-string sim-time @!/timezone)
     ""))
 
 (defn- get-current-layer-extent []
@@ -153,7 +153,12 @@
   (let [processed-times (into (u-data/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
-                                      {:opt-label (u-time/date-string->iso-string utc-time @!/show-utc?)
+                                      {:opt-label (u-time/date-string->iso-string utc-time
+                                                                                  (or
+                                                                                   (->> @!/processed-params
+                                                                                        :model-init
+                                                                                        :default-timezone)
+                                                                                   @!/timezone))
                                        :utc-time  utc-time ; TODO is utc-time redundant?
                                        :filter    utc-time}])
                                    model-times))]
@@ -378,8 +383,8 @@
                              (let [js-time (u-time/js-date-from-string sim-time)]
                                  (assoc pi-layer
                                         :js-time js-time
-                                        :date    (u-time/get-date-from-js js-time @!/show-utc?)
-                                        :time    (u-time/get-time-from-js js-time @!/show-utc?)
+                                        :date    (u-time/get-date-from-js js-time @!/timezone)
+                                        :time    (u-time/get-time-from-js js-time @!/timezone)
                                         :hour    hour)))
                            @!/param-layers)))))))
 
@@ -529,21 +534,26 @@
     (do (reset! !/show-info? show?)
         (clear-info!))))
 
-(defn- select-time-zone! [utc?]
-  (reset! !/show-utc? utc?)
+(defn- select-time-zone! [timezone]
+  (reset! !/timezone timezone)
   (swap! !/last-clicked-info #(mapv (fn [{:keys [js-time] :as layer}]
                                       (assoc layer
-                                             :date (u-time/get-date-from-js js-time @!/show-utc?)
-                                             :time (u-time/get-time-from-js js-time @!/show-utc?)))
+                                             :date (u-time/get-date-from-js js-time @!/timezone)
+                                             :time (u-time/get-time-from-js js-time @!/timezone)))
                                     @!/last-clicked-info))
   (swap! !/processed-params  #(update-in %
-                                       [:model-init :options]
-                                       (fn [options]
-                                         (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
-                                                       [k (assoc v
-                                                                 :opt-label
-                                                                 (u-time/date-string->iso-string utc-time @!/show-utc?))])
-                                                 options)))))
+                                         [:model-init :options]
+                                         (fn [options]
+                                           (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
+                                                          [k (assoc v
+                                                                    :opt-label
+                                                                    (u-time/date-string->iso-string utc-time
+                                                                                                    ((or (-> @!/processed-params
+                                                                                                          :model-init
+                                                                                                          :change-timezone)
+                                                                                                         identity)
+                                                                                                     @!/timezone)))])
+                                                        options)))))
 
 (defn- params->selected-options
   "Parses url query parameters into the selected options"
