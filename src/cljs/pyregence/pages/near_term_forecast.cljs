@@ -153,12 +153,16 @@
   (let [processed-times (into (u-data/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
-                                      {:opt-label (u-time/date-string->iso-string utc-time
-                                                                                  (or
-                                                                                   (->> @!/processed-params
-                                                                                        :model-init
-                                                                                        :default-timezone)
-                                                                                   @!/timezone))
+                                      {:opt-label (u-time/date-string->iso-string
+                                                   utc-time
+                                                   ;; This is the timezone that displays on first load where we
+                                                    ;; want to load the default-timezone attached to the model directly
+                                                    ;; before we the !/timezone which is shared across all models.
+                                                   (or
+                                                    (->> @!/processed-params
+                                                         :model-init
+                                                         :default-timezone)
+                                                    @!/timezone))
                                        :utc-time  utc-time ; TODO is utc-time redundant?
                                        :filter    utc-time}])
                                    model-times))]
