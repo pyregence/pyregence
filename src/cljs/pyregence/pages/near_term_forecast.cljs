@@ -551,8 +551,8 @@
                                                                     :opt-label
                                                                     (u-time/date-string->iso-string utc-time
                                                                                                     ((or (-> @!/processed-params
-                                                                                                          :model-init
-                                                                                                          :change-timezone)
+                                                                                                             :model-init
+                                                                                                             :change-timezone)
                                                                                                          identity)
                                                                                                      @!/timezone)))])
                                                         options)))))
