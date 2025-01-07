@@ -68,7 +68,7 @@ that there are 145 different time steps in this specific forecast."}
   show-panel? (r/atom true))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Red Flag Warning Tool."}
   show-red-flag? (r/atom false))
-(defonce timezone (r/atom :local))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Point Information State
@@ -116,6 +116,8 @@ California cameras. This atom is used to create the camera layer in mapbox.cljs.
   the-cameras (r/atom nil))
 (defonce ^{:doc "The set of avialable weather dates for Match Drop."}
   md-available-dates (r/atom {}))
+(defonce timezone ^{:doc "The current selected timezone"}
+  (r/atom :local))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; config.edn State
