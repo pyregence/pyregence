@@ -205,7 +205,6 @@
                                                                               :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}})}
                                   :model-init {:opt-label        "Model Creation Time"
                                                :default-timezone :local
-                                               :valid-timezones  #{:local :utc}
                                                :change-timezone  identity
                                                :hover-text       "Time the data was created."
                                                :options          {:loading {:opt-label "Loading..."}}}}}
@@ -357,7 +356,6 @@
                                                                               :disabled-for #{:apcptot :apcp01 :smoke}})}
                                     :model-init {:opt-label        "Forecast Start Time"
                                                  :default-timezone :utc
-                                                 :valid-timezones  #{:utc}
                                                  :change-timezone  (constantly :utc)
                                                  :hover-text       "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options          {:loading {:opt-label "Loading..."}}}}}
@@ -465,7 +463,6 @@
                                                                         :filter    "elmfire"}}}
                                     :model-init {:opt-label        "Forecast Start Time"
                                                  :default-timezone :local
-                                                 :valid-timezones  #{:utc :local}
                                                  :change-timezone  identity
                                                  :hover-text       "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
                                                  :options          {:loading {:opt-label "Loading..."}}}}}
@@ -567,7 +564,6 @@
                                                                          :filter    "gridfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :default-timezone :local
-                                                 :valid-timezones  #{:utc :local}
                                                  :change-timezone  identity
                                                  :hover-text       "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :disabled         (fn [selected-set]
@@ -699,7 +695,6 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}
                                     :model-init {:opt-label        "Forecast Start Time"
                                                  :default-timezone :local
-                                                 :valid-timezones  #{:local :utc}
                                                  :change-timezone  identity
                                                  :hover-text       "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options          {:loading {:opt-label "Loading..."}}}}}})
