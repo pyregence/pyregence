@@ -119,8 +119,6 @@ California cameras. This atom is used to create the camera layer in mapbox.cljs.
   md-available-dates (r/atom {}))
 (defonce ^{:doc "An integer that keeps track of the number of active fires."}
  active-fire-count (r/atom 0))
-(defonce ^{:doc "An Integer that keeps track of the number of times the active fires tab has been clicked."}
- active-fire-tab-click-count (r/atom 0))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; config.edn State

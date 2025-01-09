@@ -184,8 +184,11 @@
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count (or (:times (first @!/param-layers)) @!/param-layers)) 1))))
       (when-not (seq @!/param-layers)
-        (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
-
+        (toast-message! "There are no layers available for the selected parameters. Please try another combination."))
+      (when
+          (and (= :active-fire @!/*forecast)
+               (zero? @!/active-fire-count))
+          (toast-message! "No active fires.")))))
 (defn- create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
   []
