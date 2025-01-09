@@ -204,10 +204,10 @@
                                                                               :filter       "cecs"
                                                                               :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}})}
                                   :model-init {:opt-label        "Model Creation Time"
-                                               :default-timezone :local
-                                               :change-timezone  identity
                                                :hover-text       "Time the data was created."
-                                               :options          {:loading {:opt-label "Loading..."}}}}}
+                                               :options          {:loading {:opt-label "Loading..."}}}
+                                  :timezone   {:default            :local
+                                               :change identity}}}
    :fire-weather {:opt-label       "Weather"
                   :filter          "fire-weather-forecast"
                   :geoserver-key   :shasta
@@ -355,10 +355,10 @@
                                                                               :filter       "rtma-ru"
                                                                               :disabled-for #{:apcptot :apcp01 :smoke}})}
                                     :model-init {:opt-label        "Forecast Start Time"
-                                                 :default-timezone :utc
-                                                 :change-timezone  (constantly :utc)
                                                  :hover-text       "Start time for the forecast cycle, new data comes every 6 hours."
-                                                 :options          {:loading {:opt-label "Loading..."}}}}}
+                                                 :options          {:loading {:opt-label "Loading..."}}}
+                                    :timezone   {:default :utc
+                                                 :change  (constantly :utc)}}}
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
                   :geoserver-key   :shasta
@@ -461,11 +461,11 @@
                                                               ")."]
                                                  :options    {:elmfire {:opt-label "ELMFIRE"
                                                                         :filter    "elmfire"}}}
-                                    :model-init {:opt-label        "Forecast Start Time"
-                                                 :default-timezone :local
-                                                 :change-timezone  identity
-                                                 :hover-text       "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
-                                                 :options          {:loading {:opt-label "Loading..."}}}}}
+                                    :model-init {:opt-label  "Forecast Start Time"
+                                                 :hover-text "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
+                                                 :options    {:loading {:opt-label "Loading..."}}}
+                                    :timezone   {:default :local
+                                                 :change  identity}}}
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
                   :underlays       (merge common-underlays
@@ -563,8 +563,6 @@
                                                                          :opt-label "GridFire"
                                                                          :filter    "gridfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
-                                                 :default-timezone :local
-                                                 :change-timezone  identity
                                                  :hover-text       "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :disabled         (fn [selected-set]
                                                                      (some (->> selected-set
@@ -572,7 +570,9 @@
                                                                                 (filter keyword?)
                                                                                 (set))
                                                                            #{:active-fires}))
-                                                 :options          {:loading {:opt-label "Loading..."}}}}}
+                                                 :options          {:loading {:opt-label "Loading..."}}}
+                                    :timezone   {:default :local
+                                                 :change identity}}}
    :psps-zonal   {:opt-label       "PSPS"
                   :filter          "psps-zonal"
                   :geoserver-key   :psps
@@ -694,10 +694,10 @@
                                                  :hover-text "The utility company associated with the displayed zonal statistics."
                                                  :options    {:loading {:opt-label "Loading..."}}}
                                     :model-init {:opt-label        "Forecast Start Time"
-                                                 :default-timezone :local
-                                                 :change-timezone  identity
                                                  :hover-text       "Start time for forecast cycle, new data comes every 6 hours."
-                                                 :options          {:loading {:opt-label "Loading..."}}}}}})
+                                                 :options          {:loading {:opt-label "Loading..."}}}
+                                    :timezone   {:default             :local
+                                                 :change  identity}}}})
 
 (def near-term-forecast-layers
   "All layers added in addition to the default Mapbox layers and their

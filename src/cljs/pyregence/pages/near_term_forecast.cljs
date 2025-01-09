@@ -156,11 +156,11 @@
                                       {:opt-label (u-time/date-string->iso-string
                                                    utc-time
                                                    (or
-                                                     ((->> @!/processed-params :model-init :change-timezone)
+                                                     ((->> @!/processed-params :timezone :change)
                                                       @!/timezone)
                                                     (->> @!/processed-params
-                                                         :model-init
-                                                         :default-timezone)))
+                                                         :timezone
+                                                         :default)))
                                        :utc-time  utc-time ; TODO is utc-time redundant?
                                        :filter    utc-time}])
                                    model-times))]
@@ -551,8 +551,8 @@
                                                                     :opt-label
                                                                     (u-time/date-string->iso-string utc-time
                                                                                                     ((or (-> @!/processed-params
-                                                                                                             :model-init
-                                                                                                             :change-timezone)
+                                                                                                             :timezone
+                                                                                                             :change)
                                                                                                          identity)
                                                                                                      @!/timezone)))])
                                                         options)))))
