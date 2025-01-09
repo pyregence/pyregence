@@ -150,20 +150,19 @@
   "Updates the necessary atoms based on the given model-times. This updates the
    :model-init values for each tab in config.cljs that are initially set to 'Loading...'"
   [model-times]
-  (let [processed-times (into (u-data/reverse-sorted-map)
-                              (map (fn [utc-time]
-                                     [(keyword utc-time)
-                                      {:opt-label (u-time/date-string->iso-string
-                                                   utc-time
-                                                   (or
-                                                     ((->> @!/processed-params :timezone :change)
-                                                      @!/timezone)
-                                                    (->> @!/processed-params
-                                                         :timezone
-                                                         :default)))
-                                       :utc-time  utc-time ; TODO is utc-time redundant?
-                                       :filter    utc-time}])
-                                   model-times))]
+  (let [{{change-timezone  :change
+          default-timezone :default} :timezone} (get @!/capabilities @!/*forecast)
+        processed-times                         (into (u-data/reverse-sorted-map)
+                                                      (map (fn [utc-time]
+                                                             [(keyword utc-time)
+                                                              {:opt-label (u-time/date-string->iso-string
+                                                                            utc-time
+                                                                            (or
+                                                                              (change-timezone @!/timezone)
+                                                                              default-timezone))
+                                                               :utc-time  utc-time ; TODO is utc-time redundant?
+                                                               :filter    utc-time}])
+                                                           model-times))]
     (reset! !/processed-params
             (assoc-in (get-forecast-opt :params)
                       [:model-init :options]
@@ -549,12 +548,10 @@
                                            (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
                                                           [k (assoc v
                                                                     :opt-label
-                                                                    (u-time/date-string->iso-string utc-time
-                                                                                                    ((or (-> @!/processed-params
-                                                                                                             :timezone
-                                                                                                             :change)
-                                                                                                         identity)
-                                                                                                     @!/timezone)))])
+                                                                    (u-time/date-string->iso-string
+                                                                      utc-time
+                                                                      ((get-in @!/capabilities [@!/*forecast :timezone :change])
+                                                                       @!/timezone)))])
                                                         options)))))
 
 (defn- params->selected-options
