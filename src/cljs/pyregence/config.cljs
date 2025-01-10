@@ -694,7 +694,7 @@
                                                  :hover-text "The utility company associated with the displayed zonal statistics."
                                                  :options    {:loading {:opt-label "Loading..."}}}
                                     :model-init {:opt-label  "Forecast Start Time"
-                                                :hover-text "Start time for forecast cycle, new data comes every 6 hours."
+                                                 :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}
                   :timezone       {:default :local
                                    :change  identity}}})
