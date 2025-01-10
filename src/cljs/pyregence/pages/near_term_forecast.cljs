@@ -180,7 +180,7 @@
                                                (:body (<! (u-async/call-clj-async! "get-layers"
                                                                                    (get-any-level-key :geoserver-key)
                                                                                    (pr-str selected-set)))))
-          no-param-layers? (empty? (seq @!/param-layers))]
+          no-param-layers? (empty? @!/param-layers)]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count (or (:times (first @!/param-layers)) @!/param-layers)) 1))))
