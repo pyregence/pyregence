@@ -69,7 +69,6 @@ that there are 145 different time steps in this specific forecast."}
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Red Flag Warning Tool."}
   show-red-flag? (r/atom false))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Point Information State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
