@@ -183,8 +183,16 @@
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count (or (:times (first @!/param-layers)) @!/param-layers)) 1))))
-      (when-not (seq @!/param-layers)
-        (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
+      (let [no-param-layers? (not (seq @!/param-layers))]
+        (cond
+          (and
+            no-param-layers?
+            (= :active-fire @!/*forecast)
+            (zero? @!/active-fire-count))
+          (toast-message! "There are currently no active fires in the system.")
+
+          no-param-layers?
+          (toast-message! "There are no layers available for the selected parameters. Please try another combination."))))))
 
 (defn- create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
@@ -603,7 +611,9 @@
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
           user-orgs-list-chan             (u-async/call-clj-async! "get-organizations" user-id)
-          psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")]
+          psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
+          fire-names                      (edn/read-string (:body (<! fire-names-chan)))]
+      (reset! !/active-fire-count (count fire-names))
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
       (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
       (reset! !/user-psps-orgs-list (filter (fn [org] (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
@@ -616,7 +626,7 @@
                     layers
                     get-current-layer-geoserver-credentials
                     (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
-      (process-capabilities! (edn/read-string (:body (<! fire-names-chan)))
+      (process-capabilities! fire-names
                              (edn/read-string (:body (<! user-layers-chan)))
                              options-config
                              @!/psps-orgs-list
