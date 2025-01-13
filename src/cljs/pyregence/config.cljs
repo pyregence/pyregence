@@ -571,8 +571,8 @@
                                                                           (set))
                                                                      #{:active-fires}))
                                                  :options    {:loading {:opt-label "Loading..."}}}}
-                  :timezone       {:default :local
-                                   :change  identity}}
+                  :timezone        {:default :local
+                                    :change  identity}}
    :psps-zonal   {:opt-label       "PSPS"
                   :filter          "psps-zonal"
                   :geoserver-key   :psps
