@@ -696,8 +696,8 @@
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}
-                  :timezone       {:default :local
-                                   :change  identity}}})
+                  :timezone        {:default :local
+                                    :change  identity}}})
 
 (def near-term-forecast-layers
   "All layers added in addition to the default Mapbox layers and their
