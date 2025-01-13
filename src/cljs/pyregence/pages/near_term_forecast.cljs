@@ -184,8 +184,6 @@
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count (or (:times (first @!/param-layers)) @!/param-layers)) 1))))
-      (when-not (seq @!/param-layers)
-        (toast-message! "There are no layers available for the selected parameters. Please try another combination."))
       (cond
         (and
           no-param-layers?
