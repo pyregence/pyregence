@@ -179,20 +179,20 @@
           {:keys [layers model-times]} (t/read (t/reader :json)
                                                (:body (<! (u-async/call-clj-async! "get-layers"
                                                                                    (get-any-level-key :geoserver-key)
-                                                                                   (pr-str selected-set)))))
-          no-param-layers?             (empty? @!/param-layers)]
+                                                                                   (pr-str selected-set)))))]
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count (or (:times (first @!/param-layers)) @!/param-layers)) 1))))
-      (cond
-        (and
-          no-param-layers?
-          (= :active-fire @!/*forecast)
-          (zero? @!/active-fire-count))
-        (toast-message! "No active fires.")
+      (let [no-param-layers? (not (seq @!/param-layers))]
+        (cond
+          (and
+            no-param-layers?
+            (= :active-fire @!/*forecast)
+            (zero? @!/active-fire-count))
+          (toast-message! "There are currently no active fires in the system.")
 
-        no-param-layers?
-        (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
+          no-param-layers?
+          (toast-message! "There are no layers available for the selected parameters. Please try another combination."))))))
 
 (defn- create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
