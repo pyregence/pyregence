@@ -205,7 +205,8 @@
                                                                               :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}})}
                                   :model-init {:opt-label  "Model Creation Time"
                                                :hover-text "Time the data was created."
-                                               :options    {:loading {:opt-label "Loading..."}}}}}
+                                               :options    {:loading {:opt-label "Loading..."}}}}
+                  :timezone      {:change identity}}
    :fire-weather {:opt-label       "Weather"
                   :filter          "fire-weather-forecast"
                   :geoserver-key   :shasta
@@ -354,7 +355,8 @@
                                                                               :disabled-for #{:apcptot :apcp01 :smoke}})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
-                                                 :options    {:loading {:opt-label "Loading..."}}}}}
+                                                 :options    {:loading {:opt-label "Loading..."}}}}
+                  :timezone        {:change (constantly :utc)}}
    :fire-risk    {:opt-label       "Risk"
                   :filter          "fire-risk-forecast"
                   :geoserver-key   :shasta
@@ -459,7 +461,8 @@
                                                                         :filter    "elmfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
-                                                 :options    {:loading {:opt-label "Loading..."}}}}}
+                                                 :options    {:loading {:opt-label "Loading..."}}}}
+                  :timezone        {:change (constantly :utc)}}
    :active-fire  {:opt-label       "Active Fires"
                   :filter          "fire-spread-forecast"
                   :underlays       (merge common-underlays
@@ -564,7 +567,8 @@
                                                                           (filter keyword?)
                                                                           (set))
                                                                      #{:active-fires}))
-                                                 :options    {:loading {:opt-label "Loading..."}}}}}
+                                                 :options    {:loading {:opt-label "Loading..."}}}}
+                  :timezone        {:change  identity}}
    :psps-zonal   {:opt-label       "PSPS"
                   :filter          "psps-zonal"
                   :geoserver-key   :psps
@@ -687,7 +691,8 @@
                                                  :options    {:loading {:opt-label "Loading..."}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for forecast cycle, new data comes every 6 hours."
-                                                 :options    {:loading {:opt-label "Loading..."}}}}}})
+                                                 :options    {:loading {:opt-label "Loading..."}}}}
+                  :timezone        {:change identity}}})
 
 (def near-term-forecast-layers
   "All layers added in addition to the default Mapbox layers and their
