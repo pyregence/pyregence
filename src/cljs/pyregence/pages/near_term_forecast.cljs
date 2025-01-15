@@ -142,6 +142,13 @@
          "_"
          (name (get-in @!/*params [:psps-zonal :statistic])))))
 
+(defn- utc-time->opt-label
+  [utc-time]
+  (u-time/date-string->iso-string
+   utc-time
+   (or (get-in @!/capabilities [@!/*forecast :always-utc?])
+        @!/show-utc?)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Processing Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -153,7 +160,7 @@
   (let [processed-times (into (u-data/reverse-sorted-map)
                               (map (fn [utc-time]
                                      [(keyword utc-time)
-                                      {:opt-label (u-time/date-string->iso-string utc-time @!/show-utc?)
+                                      {:opt-label (utc-time->opt-label utc-time)
                                        :utc-time  utc-time ; TODO is utc-time redundant?
                                        :filter    utc-time}])
                                    model-times))]
@@ -550,7 +557,7 @@
                                          (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
                                                        [k (assoc v
                                                                  :opt-label
-                                                                 (u-time/date-string->iso-string utc-time @!/show-utc?))])
+                                                                 (utc-time->opt-label utc-time))])
                                                  options)))))
 
 (defn- params->selected-options
