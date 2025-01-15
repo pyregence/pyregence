@@ -624,7 +624,7 @@
   (go
     (let [new-source {id (wfs-source source geoserver-key)}
           new-layers [(<! (incident-layer id id opacity))]]
-     [new-source new-layers])))
+      [new-source new-layers])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Terrain and 3D Viewing
@@ -690,9 +690,9 @@
           cur-style   (get-style)
           cur-sources (->> (get cur-style "sources")
                            (u-data/filterm (fn [[k _]]
-                                            (let [sname (name k)]
-                                              (or (is-terrain? sname)
-                                                  (get-layer-metadata (get-layer sname) "type"))))))
+                                             (let [sname (name k)]
+                                               (or (is-terrain? sname)
+                                                   (get-layer-metadata (get-layer sname) "type"))))))
           cur-layers  (->> (get cur-style "layers")
                            (filter #(get-layer-metadata % "type")))
           new-style   (-> (<! style-chan)
@@ -834,9 +834,9 @@
                      :layout       {:text-allow-overlap false
                                     :text-anchor        "top"
                                     :text-field         ["concat" ["to-string" ["get" "incidentna"]]
-                                                                  " ("
-                                                                  ["to-string" ["get" "fireyear"]]
-                                                                  ")"]
+                                                         " ("
+                                                         ["to-string" ["get" "fireyear"]]
+                                                         ")"]
                                     :text-font          ["Open Sans Semibold" "Arial Unicode MS Regular"]
                                     :text-size          12
                                     :visibility         "visible"}

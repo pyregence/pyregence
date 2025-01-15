@@ -79,10 +79,10 @@
 
 (defonce workers-delay
   (delay
-   (let [workers (get-config :triangulum.worker/workers)]
-     (when (seq workers)
-       (println "Starting worker jobs")
-       (start-workers! workers)))))
+    (let [workers (get-config :triangulum.worker/workers)]
+      (when (seq workers)
+        (println "Starting worker jobs")
+        (start-workers! workers)))))
 
 (defonce log-dir-delay
   (delay

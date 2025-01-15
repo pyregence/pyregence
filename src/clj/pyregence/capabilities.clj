@@ -218,8 +218,8 @@
   [{:strs [geoserver-key workspace-name]}]
   (swap! layers
          update (keyword geoserver-key)
-                #(filterv (fn [{:keys [workspace]}]
-                            (not= workspace workspace-name)) %))
+         #(filterv (fn [{:keys [workspace]}]
+                     (not= workspace workspace-name)) %))
   (data-response (str workspace-name " removed from " site-url ".")))
 
 (defn get-all-layers []
@@ -286,8 +286,8 @@
   (let [match-drop-names (->> (call-sql "get_user_match_names" user-id)
                               (reduce (fn [acc row]
                                         (assoc acc (:match_job_id row)
-                                                   (str (:display_name row)
-                                                        " (Match Drop)")))
+                                               (str (:display_name row)
+                                                    " (Match Drop)")))
                                       {}))]
     (->> (apply merge (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]

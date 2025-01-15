@@ -202,9 +202,9 @@
 (defn- weather-info [forecast-weather?]
   (let [pretty-date (fn [forecast? min?]
                       (let [datetime-string (as-> @!/md-available-dates %
-                                                  (if forecast? (:forecast %) (:historical %))
-                                                  (if min? (:min-date-iso-str %) (:max-date-iso-str %))
-                                                  (u-time/iso-string->local-datetime-string %))]
+                                              (if forecast? (:forecast %) (:historical %))
+                                              (if min? (:min-date-iso-str %) (:max-date-iso-str %))
+                                              (u-time/iso-string->local-datetime-string %))]
                         [:strong
                          (str (str/replace datetime-string #"T" " ")
                               " " (u-time/get-time-zone (js/Date. datetime-string)))]))]
@@ -278,7 +278,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defn match-drop-tool
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular

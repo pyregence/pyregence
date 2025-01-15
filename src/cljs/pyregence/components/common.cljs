@@ -205,7 +205,7 @@
    passed in as a local datetime string (e.g. '2022-12-02T08:50')."
   [label id value min-date-iso-str max-date-iso-str on-change]
   [:div
-   [:label {:for id :style { :font-size "0.9rem" :font-wieight "bold"}} label]
+   [:label {:for id :style {:font-size "0.9rem" :font-wieight "bold"}} label]
    ;; TODO it would be nice if when you click on any part of the datetime-local input
    ;; the date picker pops up. For now, you have to click on the small calendar icon.
    [:input {:id          id

@@ -319,7 +319,7 @@
                                                               " - California and Nevada Smoke and Air Committee (CANSAC) Weather Research and Forecasting (WRF) forecast model from Desert Research Institute."
                                                               " Two cycles per day (00z and 12z) at very high (1.33 km) resolution. See "
                                                               [:a {:href   "https://cansac.dri.edu/"
-                                                                    :target "_blank"}
+                                                                   :target "_blank"}
                                                                "https://cansac.dri.edu/"]
                                                               " for details."
                                                               [:br]

@@ -152,21 +152,21 @@
     (reset! pending-new-user-submission? true)
     (let [email-chan (u-async/call-clj-async! "user-email-taken" @new-user-email)
           errors     (remove nil?
-                            [(when (u-data/missing-data? @new-user-email @new-user-full-name @new-user-password @new-user-re-password)
-                               "You must fill in all required information to continue.")
+                             [(when (u-data/missing-data? @new-user-email @new-user-full-name @new-user-password @new-user-re-password)
+                                "You must fill in all required information to continue.")
 
-                             (when (< (count @new-user-password) 8)
-                               "Your password must be at least 8 charactors long.")
+                              (when (< (count @new-user-password) 8)
+                                "Your password must be at least 8 charactors long.")
 
-                             (when-not (= @new-user-password @new-user-re-password)
-                               "The passwords you have entered do not match.")
+                              (when-not (= @new-user-password @new-user-re-password)
+                                "The passwords you have entered do not match.")
 
-                             (when (:success (<! email-chan))
-                               (str "A user with the email '" @new-user-email "' has already been created."))])]
-        (if (pos? (count errors))
-          (do (toast-message! errors)
-              (reset! pending-new-user-submission? false))
-          (add-new-user!)))))
+                              (when (:success (<! email-chan))
+                                (str "A user with the email '" @new-user-email "' has already been created."))])]
+      (if (pos? (count errors))
+        (do (toast-message! errors)
+            (reset! pending-new-user-submission? false))
+        (add-new-user!)))))
 
 (defn- update-org-user! [email new-name]
   (go
@@ -406,7 +406,7 @@
                                              :type     "button"
                                              :value    "Link User"
                                              :on-click #(do (reset! email-search "")
-                                                         (handle-add-existing-user org-id email))}]
+                                                            (handle-add-existing-user org-id email))}]
                                     [:div {:style {:display "flex" :flex-direction "column"}}
                                      [:label full-name]
                                      [:label email]]]))))]]]]))

@@ -82,10 +82,10 @@
 
 (defn- set-match-drop-access! [user-id]
   (go
-   (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access" user-id))]
-     (if (:success response)
-       (reset! match-drop-access? true)
-       (reset! match-drop-access? false)))))
+    (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access" user-id))]
+      (if (:success response)
+        (reset! match-drop-access? true)
+        (reset! match-drop-access? false)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component

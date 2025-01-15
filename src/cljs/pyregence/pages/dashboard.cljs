@@ -48,10 +48,10 @@
 
 (defn- set-match-drop-access! [user-id]
   (go
-   (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access" user-id))]
-     (if (:success response)
-       (reset! match-drop-access? true)
-       (reset! match-drop-access? false)))))
+    (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access" user-id))]
+      (if (:success response)
+        (reset! match-drop-access? true)
+        (reset! match-drop-access? false)))))
 
 ;; Helper
 
@@ -141,9 +141,9 @@
      [:td ; "Delete"
       [:div {:style {:display "flex" :justify-content "center"}}
        [icon-button :trash
-                    #(handle-delete-match-drop match-job-id display-name)
-                    nil
-                    :btn-size :circle]]]]))
+        #(handle-delete-match-drop match-job-id display-name)
+        nil
+        :btn-size :circle]]]]))
 
 (defn- match-drop-table []
   [:table {:class (<class $table) :style {:width "100%"}}
@@ -191,11 +191,11 @@
                   :fill          ($/color-picker :brown)
                   :margin-top    "3rem"
                   :padding       "1rem"}}
-     [svg/exclamation-point :height "20px" :width "20px"]
-     [:span {:style {:padding-left "0.5rem"}}
-      "You don't have access to use Match Drop. Please contact "
-      [:a {:href "mailto:support@pyregence.org"} "support@pyregence.org"]
-      " for more information."]]])
+    [svg/exclamation-point :height "20px" :width "20px"]
+    [:span {:style {:padding-left "0.5rem"}}
+     "You don't have access to use Match Drop. Please contact "
+     [:a {:href "mailto:support@pyregence.org"} "support@pyregence.org"]
+     " for more information."]]])
 
 (defn root-component
   "The root component for the match drop /dashboard page.

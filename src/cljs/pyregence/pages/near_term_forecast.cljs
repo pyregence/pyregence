@@ -124,13 +124,13 @@
   "Returns the name of the CSS style for a PSPS layer."
   []
   (when (= @!/*forecast :psps-zonal)
-      (str "poly-"
-           (name (get-in @!/*params [:psps-zonal :model]))
-           "-"
-           (name (get-in @!/*params [:psps-zonal :quantity]))
-           "-"
-           (name (get-in @!/*params [:psps-zonal :statistic]))
-           "-css")))
+    (str "poly-"
+         (name (get-in @!/*params [:psps-zonal :model]))
+         "-"
+         (name (get-in @!/*params [:psps-zonal :quantity]))
+         "-"
+         (name (get-in @!/*params [:psps-zonal :statistic]))
+         "-css")))
 
 (defn- get-psps-column-name
   "Returns the name of the point info column for a PSPS layer."
@@ -147,7 +147,7 @@
   (u-time/date-string->iso-string
    utc-time
    (or (get-in @!/capabilities [@!/*forecast :always-utc?])
-        @!/show-utc?)))
+       @!/show-utc?)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Processing Functions
@@ -193,9 +193,9 @@
       (let [no-param-layers? (not (seq @!/param-layers))]
         (cond
           (and
-            no-param-layers?
-            (= :active-fire @!/*forecast)
-            (zero? @!/active-fire-count))
+           no-param-layers?
+           (= :active-fire @!/*forecast)
+           (zero? @!/active-fire-count))
           (toast-message! "There are currently no active fires in the system.")
 
           no-param-layers?
@@ -229,17 +229,17 @@
    passed in. The loading-atom is set to false after the resource has been fetched."
   [process-fn url & {:keys [loading-atom basic-auth]}]
   (go
-   (let [base-headers    {"Accept"       "application/json, text/xml"
-                          "Content-Type" "application/json"}
-         request-headers (if basic-auth
-                           (assoc base-headers "Authorization" (str "Basic " (js/window.btoa basic-auth)))
-                           base-headers)]
-     (<! (u-async/fetch-and-process url
-                                    {:method "get"
-                                     :headers request-headers}
-                                    process-fn))
-     (when loading-atom
-       (reset! loading-atom false)))))
+    (let [base-headers    {"Accept"       "application/json, text/xml"
+                           "Content-Type" "application/json"}
+          request-headers (if basic-auth
+                            (assoc base-headers "Authorization" (str "Basic " (js/window.btoa basic-auth)))
+                            base-headers)]
+      (<! (u-async/fetch-and-process url
+                                     {:method "get"
+                                      :headers request-headers}
+                                     process-fn))
+      (when loading-atom
+        (reset! loading-atom false)))))
 
 (defn- wrap-wms-errors [type response success-fn]
   (go
@@ -278,8 +278,8 @@
   "Parses the JSON data from GetLegendGraphic from a layer using raster colormap styling."
   [rules]
   (as-> rules %
-        (u-misc/try-js-aget % 0 "symbolizers" 0 "Raster" "colormap" "entries")
-        (js->clj %)))
+    (u-misc/try-js-aget % 0 "symbolizers" 0 "Raster" "colormap" "entries")
+    (js->clj %)))
 
 (defn- process-legend!
   "Populates the legend-list atom with the result of the request from GetLegendGraphic.
@@ -391,11 +391,11 @@
                      (filter (fn [pi-layer] (= (:vec-id pi-layer) vec-id-max)))
                      (mapv (fn [{:keys [sim-time hour]} pi-layer]
                              (let [js-time (u-time/js-date-from-string sim-time)]
-                                 (assoc pi-layer
-                                        :js-time js-time
-                                        :date    (u-time/get-date-from-js js-time @!/show-utc?)
-                                        :time    (u-time/get-time-from-js js-time @!/show-utc?)
-                                        :hour    hour)))
+                               (assoc pi-layer
+                                      :js-time js-time
+                                      :date    (u-time/get-date-from-js js-time @!/show-utc?)
+                                      :time    (u-time/get-time-from-js js-time @!/show-utc?)
+                                      :hour    hour)))
                            @!/param-layers)))))))
 
 (defn- process-single-point-info!
@@ -552,13 +552,13 @@
                                              :time (u-time/get-time-from-js js-time @!/show-utc?)))
                                     @!/last-clicked-info))
   (swap! !/processed-params  #(update-in %
-                                       [:model-init :options]
-                                       (fn [options]
-                                         (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
-                                                       [k (assoc v
-                                                                 :opt-label
-                                                                 (utc-time->opt-label utc-time))])
-                                                 options)))))
+                                         [:model-init :options]
+                                         (fn [options]
+                                           (u-data/mapm (fn [[k {:keys [utc-time] :as v}]]
+                                                          [k (assoc v
+                                                                    :opt-label
+                                                                    (utc-time->opt-label utc-time))])
+                                                        options)))))
 
 (defn- params->selected-options
   "Parses url query parameters into the selected options"
@@ -604,10 +604,10 @@
                      (fn [[forecast _]]
                        (let [params (get-in @!/capabilities [forecast :params])]
                          [forecast (merge (u-data/mapm (fn [[k v]]
-                                                        [k (or (get-in selected-options [forecast k])
-                                                               (:default-option v)
-                                                               (ffirst (:options v)))])
-                                                  params))]))
+                                                         [k (or (get-in selected-options [forecast k])
+                                                                (:default-option v)
+                                                                (ffirst (:options v)))])
+                                                       params))]))
                      options-config)))
 
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
