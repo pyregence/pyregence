@@ -41,16 +41,21 @@
 
 (defn- toggle-underlay!
   "Toggles an underlay on the map based on the value of `show?`"
-  [filter-set dependent-inputs geoserver-key z-index show?]
+  [filter-set dependent-inputs geoserver-key z-index id show?]
   (go
     (let [cleaned-filter-set (if (seq dependent-inputs)
                                (merge-filter-set filter-set dependent-inputs) ; add in dependent-inputs to the filter-set of an underlay that isn't static
                                filter-set)
           layer-id           (<! (get-layer-name geoserver-key cleaned-filter-set identity))]
-      (when layer-id
-        (when (not (mb/layer-exists? layer-id))
-          (mb/create-wms-layer! layer-id layer-id geoserver-key false z-index))
-        (mb/set-visible-by-title! layer-id show?)))))
+      (if show?
+        (when layer-id
+          (swap! !/*optional-layers assoc-in [id :layer-id] layer-id)
+          (when (not (mb/layer-exists? layer-id))
+            (mb/create-wms-layer! layer-id layer-id geoserver-key false z-index))
+          (mb/set-visible-by-title! layer-id show?))
+        (do
+          (mb/set-visible-by-title! (get-in @!/*optional-layers [id :layer-id]) show?)
+          (swap! !/*optional-layers dissoc id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -134,6 +139,7 @@
                                                                         (:dependent-inputs underlay)
                                                                         (:geoserver-key underlay)
                                                                         (:z-index underlay)
+                                                                        id
                                                                         true))))))
                remove-params-watch (fn [] (remove-watch !/*params watcher-id))]
     [:div {:style {:margin-top ".5rem" :padding "0 .5rem"}}
@@ -156,12 +162,12 @@
                                  (reset! !/most-recent-optional-layer optional-layer-map))
                                (do
                                  (remove-params-watch)
-                                 (swap! !/*optional-layers dissoc id)
                                  (reset! !/most-recent-optional-layer {})))
                              (toggle-underlay! filter-set
                                                dependent-inputs
                                                geoserver-key
                                                z-index
+                                               id
                                                @show?))}]
       [:label {:for id} opt-label]]]
     (finally
