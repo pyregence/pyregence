@@ -286,7 +286,8 @@
   [user-id]
   (let [match-drop-names (->> (call-sql "get_user_match_names" user-id)
                               (reduce (fn [acc row]
-                                        (assoc acc (:match_job_id row)
+                                        (assoc acc
+                                               (:match_job_id row)
                                                (str (:display_name row)
                                                     " (Match Drop)")))
                                       {}))]
