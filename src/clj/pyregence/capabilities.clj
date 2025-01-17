@@ -217,7 +217,8 @@
    layers from that workspace from the layers atom."
   [{:strs [geoserver-key workspace-name]}]
   (swap! layers
-         update (keyword geoserver-key)
+         update
+         (keyword geoserver-key)
          #(filterv (fn [{:keys [workspace]}]
                      (not= workspace workspace-name)) %))
   (data-response (str workspace-name " removed from " site-url ".")))
