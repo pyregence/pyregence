@@ -125,8 +125,8 @@
                         (let [[low high] (u-data/find-boundary-values @!/last-clicked-info legend-keys)]
                           (when (and high low)
                             (u-misc/interp-color (get-in legend-map [low "color"])
-                                            (get-in legend-map [high "color"])
-                                            (/ (- @!/last-clicked-info low) (- high low))))))
+                                                 (get-in legend-map [high "color"])
+                                                 (/ (- @!/last-clicked-info low) (- high low))))))
         *inputs     (->> @!/*params
                          (@!/*forecast)
                          (vals)
@@ -182,63 +182,63 @@
    close-fn!]
   (r/with-let [click-event (mb/enqueue-marker-on-click! #(get-point-info! (mb/get-overlay-bbox)))]
     (let [render-content (fn [box-height box-width mobile?]
-                          (let [has-point?    (mb/get-overlay-center)
-                                single-point? (number? @!/last-clicked-info)
-                                no-info?      (if single-point?
-                                                (contains? @!/no-data-quantities (str @!/last-clicked-info))
-                                                (or (empty? @!/last-clicked-info)
-                                                    (->> @!/last-clicked-info
-                                                         (map (fn [entry]
-                                                                (contains? @!/no-data-quantities (str (:band entry)))))
-                                                         (every? true?))))]
-                            (cond
-                              (not has-point?)
-                              [loading-cover
-                               box-height
-                               box-width
-                               "Click on the map to view the value(s) of particular point."]
+                           (let [has-point?    (mb/get-overlay-center)
+                                 single-point? (number? @!/last-clicked-info)
+                                 no-info?      (if single-point?
+                                                 (contains? @!/no-data-quantities (str @!/last-clicked-info))
+                                                 (or (empty? @!/last-clicked-info)
+                                                     (->> @!/last-clicked-info
+                                                          (map (fn [entry]
+                                                                 (contains? @!/no-data-quantities (str (:band entry)))))
+                                                          (every? true?))))]
+                             (cond
+                               (not has-point?)
+                               [loading-cover
+                                box-height
+                                box-width
+                                "Click on the map to view the value(s) of particular point."]
 
-                              @!/point-info-loading?
-                              [loading-cover
-                               box-height
-                               box-width
-                               "Loading..."]
+                               @!/point-info-loading?
+                               [loading-cover
+                                box-height
+                                box-width
+                                "Loading..."]
 
-                              (and (nil? @!/last-clicked-info) (empty? @!/legend-list))
-                              [loading-cover
-                               box-height
-                               box-width
-                               "There was an issue getting point information for this layer."]
+                               (and (nil? @!/last-clicked-info) (empty? @!/legend-list))
+                               [loading-cover
+                                box-height
+                                box-width
+                                "There was an issue getting point information for this layer."]
 
-                              (and @!/last-clicked-info (empty? @!/legend-list))
-                              [loading-cover
-                               box-height
-                               box-width
-                               "There was an issue getting the legend for this layer."]
+                               (and @!/last-clicked-info (empty? @!/legend-list))
+                               [loading-cover
+                                box-height
+                                box-width
+                                "There was an issue getting the legend for this layer."]
 
-                              no-info?
-                              [loading-cover
-                               box-height
-                               box-width
-                               "This point does not have any information."]
+                               no-info?
+                               [loading-cover
+                                box-height
+                                box-width
+                                "This point does not have any information."]
 
-                              single-point?
-                              [single-point-info
-                               box-height
-                               box-width
-                               units
-                               convert
-                               no-convert]
+                               single-point?
+                               [single-point-info
+                                box-height
+                                box-width
+                                units
+                                convert
+                                no-convert]
 
-                              :else
-                              [vega-information
-                               box-height
-                               box-width
-                               select-layer!
-                               units
-                               cur-hour
-                               convert
-                               mobile?])))]
+                               :else
+                               [vega-information
+                                box-height
+                                box-width
+                                select-layer!
+                                units
+                                cur-hour
+                                convert
+                                mobile?])))]
       (if @!/mobile?
         [:div#info-tool
          {:style ($/combine $/tool $mobile-info-tool)}

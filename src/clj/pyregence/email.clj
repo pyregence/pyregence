@@ -43,7 +43,6 @@
       (data-response "Match Drop email successfully sent.")
       (data-response "There was an issue sending the Match Drop email." {:status 400}))))
 
-
 (defn- send-match-drop-email! [email subject message-fn match-drop-args]
   (let [body   (message-fn (get-config :triangulum.email/base-url) email match-drop-args)
         result (send-mail email nil nil subject body :text)]

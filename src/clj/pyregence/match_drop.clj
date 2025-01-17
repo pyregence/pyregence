@@ -11,7 +11,6 @@
                                                 remove-workspace!
                                                 set-capabilities!]]
             [pyregence.utils            :as u]
-
             [runway.simple-sockets      :as runway]
             [runway.utils               :refer [json-str->edn log-response!]]
             [triangulum.config          :refer [get-config]]
@@ -62,11 +61,11 @@
    :message   '(stdout) Some message for an in progress Runway server here...'}"
   [runway-job-id & [pretty?]]
   (as-> runway-job-id %
-        (str/split % #"-")
-        (first %)
-        (if pretty?
-          (get runway-server-pretty-names %)
-          %)))
+    (str/split % #"-")
+    (first %)
+    (if pretty?
+      (get runway-server-pretty-names %)
+      %)))
 
 ;; FIXME this should eventually be removed -- read the dosctring for more details
 (defn- extract-base-runway-job-id
@@ -78,9 +77,9 @@
    sending the message (something like `server-name`)."
   [full-runway-job-id]
   (as-> full-runway-job-id %
-        (str/split % #"-")
-        (rest %)
-        (str/join "-" %)))
+    (str/split % #"-")
+    (rest %)
+    (str/join "-" %)))
 
 (defn- parse-available-wx-dates
   "Pares the stdout from a call to `fuel_wx_ign.py`. The exact return structure of this

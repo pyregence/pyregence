@@ -207,16 +207,16 @@
   "Builds a GeoJSON response of the current wildfire cameras."
   []
   (data-response
-    (if (valid-cache?)
-      @camera-cache
-      (let [new-cameras (->> (concat (get-and-conform-wildfire-cameras!)
-                                     (get-and-conform-california-cameras!))
-                             ;; remove inactive cameras
-                             (remove (fn [{{timestamp :update-time} :properties}]
-                                       (utc-timestamp->four-hours-old? timestamp)))
-                             (->feature-collection))]
-        (reset-cache! new-cameras)
-        new-cameras))))
+   (if (valid-cache?)
+     @camera-cache
+     (let [new-cameras (->> (concat (get-and-conform-wildfire-cameras!)
+                                    (get-and-conform-california-cameras!))
+                            ;; remove inactive cameras
+                            (remove (fn [{{timestamp :update-time} :properties}]
+                                      (utc-timestamp->four-hours-old? timestamp)))
+                            (->feature-collection))]
+       (reset-cache! new-cameras)
+       new-cameras))))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.

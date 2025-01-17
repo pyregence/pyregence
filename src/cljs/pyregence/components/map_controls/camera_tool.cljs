@@ -138,7 +138,6 @@
    [:img {:src   @image-src
           :style {:height "auto" :width "100%"}}]])
 
-
 (defn- loading-camera [camera-name]
   [:div {:style {:padding "1.2em"}}
    (str "Loading camera " camera-name "...")])

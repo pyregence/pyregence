@@ -36,9 +36,9 @@
   (let [range      (. js/document createRange)
         _          (. range selectNodeContents text-area)
         selection  (. js/window getSelection)]
-      (. selection removeAllRanges)
-      (. selection addRange range)
-      (. text-area setSelectionRange 0 999999)))
+    (. selection removeAllRanges)
+    (. selection addRange range)
+    (. text-area setSelectionRange 0 999999)))
 
 (defn copy-input-clipboard! [element-id]
   (let [input      (.getElementById js/document element-id)

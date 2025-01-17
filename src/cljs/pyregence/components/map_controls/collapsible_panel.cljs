@@ -33,11 +33,11 @@
    vector with the filter-set of a layer into a new set."
   [init-filter-set dep-inputs]
   (as-> (@!/*forecast @!/*params) %
-        (select-keys % dep-inputs)
-        (vals %)
-        (map name %)
-        (set %)
-        (set/union init-filter-set %)))
+    (select-keys % dep-inputs)
+    (vals %)
+    (map name %)
+    (set %)
+    (set/union init-filter-set %)))
 
 (defn- toggle-underlay!
   "Toggles an underlay on the map based on the value of `show?`"

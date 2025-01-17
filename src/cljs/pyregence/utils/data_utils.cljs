@@ -37,10 +37,10 @@
    with nil."
   [last-clicked-info no-data-quantities]
   (mapv (fn [entry]
-         (let [band-val (:band entry)]
-           (assoc entry :band (if (contains? no-data-quantities (str band-val))
-                                nil
-                                band-val))))
+          (let [band-val (:band entry)]
+            (assoc entry :band (if (contains? no-data-quantities (str band-val))
+                                 nil
+                                 band-val))))
         last-clicked-info))
 
 (defn filterm
@@ -74,9 +74,9 @@
    containing the keys associated with the changed values."
   [old-map new-map]
   (reduce (fn [acc k]
-             (if (not= (get old-map k) (get new-map k))
-               (conj acc k)
-               acc))
+            (if (not= (get old-map k) (get new-map k))
+              (conj acc k)
+              acc))
           #{}
           (keys old-map)))
 
