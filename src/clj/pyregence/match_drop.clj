@@ -11,7 +11,6 @@
                                                 remove-workspace!
                                                 set-capabilities!]]
             [pyregence.utils            :as u]
-
             [runway.simple-sockets      :as runway]
             [runway.utils               :refer [json-str->edn log-response!]]
             [triangulum.config          :refer [get-config]]
