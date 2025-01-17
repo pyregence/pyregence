@@ -140,7 +140,8 @@
      [:td [:a {:href "#" :on-click #(show-job-log-modal! match-job-id job-log)} "View Logs"]] ; "Logs"
      [:td ; "Delete"
       [:div {:style {:display "flex" :justify-content "center"}}
-       [icon-button :trash
+       [icon-button
+        :trash
         #(handle-delete-match-drop match-job-id display-name)
         nil
         :btn-size :circle]]]]))
