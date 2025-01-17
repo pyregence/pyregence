@@ -211,7 +211,7 @@
      @camera-cache
      (let [new-cameras (->> (concat (get-and-conform-wildfire-cameras!)
                                     (get-and-conform-california-cameras!))
-                             ;; remove inactive cameras
+                            ;; remove inactive cameras
                             (remove (fn [{{timestamp :update-time} :properties}]
                                       (utc-timestamp->four-hours-old? timestamp)))
                             (->feature-collection))]
