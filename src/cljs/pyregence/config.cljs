@@ -1103,19 +1103,28 @@
 ;; Mapbox Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def mapbox-public-user-name
+  "This is global for all the standard mapbox basemap styles.
+   See documentation at https://docs.mapbox.com/api/maps/styles/#classic-mapbox-styles"
+  "mapbox")
+
 (defn- style-url [id]
-  (str "https://api.mapbox.com/styles/v1/mspencer-sig/" id "?access_token=" @!/mapbox-access-token))
+  (str "https://api.mapbox.com/styles/v1/" mapbox-public-user-name "/" id "?access_token=" @!/mapbox-access-token))
 
 (defn base-map-options
   "Provides the configuration for the different Mapbox map view options."
   []
-  {:mapbox-topo       {:opt-label "Mapbox Street Topo"
-                       :source    (style-url "cka8jaky90i9m1iphwh79wr04")}
-   :mapbox-satellite  {:opt-label "Mapbox Satellite"
-                       :source    (style-url "ckm3suyjm0u6z17nx1t7udnvd")}
-   :mapbox-sat-street {:opt-label "Mapbox Satellite Street"
-                       :source    (style-url "ckm2hgkx04xuw17pahpins029")}})
+  {:mapbox-streets           {:opt-label "Mapbox Streets"
+                              :source    (style-url "streets-v11")}
+   :mapbox-satellite-streets {:opt-label "Mapbox Satellite Streets"
+                              :source    (style-url "satellite-streets-v11")}
+   :mapbox-outdoors          {:opt-label "Mapbox Outdoors"
+                              :source    (style-url "outdoors-v11")}
+   :mapbox-light             {:opt-label "Mapbox Light"
+                              :source    (style-url "light-v11")}
+   :mapbox-dark              {:opt-label "Mapbox Dark"
+                              :source    (style-url "dark-v11")}})
 
-(def base-map-default :mapbox-topo)
+(def base-map-default :mapbox-streets)
 
 (def mapbox-dem-url "mapbox://mapbox.mapbox-terrain-dem-v1")
