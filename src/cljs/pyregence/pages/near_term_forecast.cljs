@@ -632,6 +632,7 @@
       (mb/init-map! "map"
                     layers
                     get-current-layer-geoserver-credentials
+                    #(go (<! (select-forecast! @!/*forecast)))
                     (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! fire-names
                              (edn/read-string (:body (<! user-layers-chan)))
@@ -640,7 +641,6 @@
                              @!/user-psps-orgs-list
                              (params->selected-options options-config @!/*forecast params))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
-      (<! (select-forecast! @!/*forecast))
       (when (and (not-empty @!/capabilities)
                  (not-empty @!/*params))
         (reset! !/loading? false)))))
