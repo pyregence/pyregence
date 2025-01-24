@@ -632,7 +632,7 @@
       (mb/init-map! "map"
                     layers
                     get-current-layer-geoserver-credentials
-                    #(go (<! (select-forecast! @!/*forecast)))
+                    #(select-forecast! @!/*forecast)
                     (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! fire-names
                              (edn/read-string (:body (<! user-layers-chan)))
