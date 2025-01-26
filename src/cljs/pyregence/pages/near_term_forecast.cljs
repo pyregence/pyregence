@@ -617,15 +617,15 @@
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
           user-orgs-list-chan             (u-async/call-clj-async! "get-organizations" user-id)
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
-          fire-names                      (edn/read-string (:body (<! fire-names-chan)))]
-      (reset! !/active-fire-count (count fire-names))
+          fire-names                      (edn/read-string (:body (<! fire-names-chan)))
+          active-fire-count               (count fire-names)]
+      (reset! !/active-fire-count active-fire-count)
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
       (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
       (reset! !/user-psps-orgs-list (filter (fn [org] (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
                                             @!/user-orgs-list))
       (reset! !/*forecast-type forecast-type)
-      (reset! !/*forecast (or (keyword forecast)
-                              (keyword (forecast-type @!/default-forecasts))))
+      (reset! !/*forecast (if (zero? active-fire-count) :fire-weather :active-fire))
       (reset! !/*layer-idx (if layer-idx (js/parseInt layer-idx) 0))
       (mb/init-map! "map"
                     layers
