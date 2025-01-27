@@ -190,16 +190,14 @@
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count (or (:times (first @!/param-layers)) @!/param-layers)) 1))))
-      (let [no-param-layers? (not (seq @!/param-layers))]
-        (cond
-          (and
-           no-param-layers?
-           (= :active-fire @!/*forecast)
-           (zero? @!/active-fire-count))
-          (toast-message! "There are currently no active fires in the system.")
+      (cond
+        (and
+         (= :active-fire @!/*forecast)
+         (zero? @!/active-fire-count))
+        (toast-message! "There are currently no active fire forecasts in the system.")
 
-          no-param-layers?
-          (toast-message! "There are no layers available for the selected parameters. Please try another combination."))))))
+        (not (seq @!/param-layers))
+        (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
 
 (defn- create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
