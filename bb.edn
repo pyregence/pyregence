@@ -16,7 +16,6 @@
   restart      (do
                  (run 'stop)
                  (run 'start))
-  build-js     (clojure "-M:compile-cljs") ;; FIXME replace with `compile`
   pull         (shell "git pull")
   migrate      (clojure "-M:build-db migrate")
   build-all    (clojure "-M:build-db build-all")
@@ -37,7 +36,7 @@
   deploy       (do
                  (run 'stop)
                  (run 'pull)
-                 (run 'build-js)
+                 (run 'compile)
                  (run 'migrate)
                  (run 'functions)
                  (run 'start))
