@@ -1,5 +1,13 @@
 {:tasks
- {-project     "cljweb-pyregence"
+ {:init        (def log (Object.))
+  :enter       (locking log
+                 (println (str "Running "
+                               "'"
+                               (:name (current-task))
+                               "'"
+                               ":"
+                               (java.util.Date.))))
+  -project     "cljweb-pyregence"
   reload       (shell "systemctl --user daemon-reload")
   status       {:depends [-project]
                 :task    (shell (format "systemctl --user status %s" -project))}
