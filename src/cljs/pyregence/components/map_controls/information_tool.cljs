@@ -68,7 +68,6 @@
                     (rd/dom-node)
                     (.getBoundingClientRect)
                     (aget "height")))))
-
     :render
     (fn [_]
       (let [cleaned-last-clicked-info (u-data/replace-no-data-nil @!/last-clicked-info
@@ -89,7 +88,9 @@
            :bottom
            [tool-button :center-on-point #(mb/center-on-overlay!)]]]]))}))
 
+;; FIXME!!! get weather and then click the point!
 (defn- vega-information [box-height box-width select-layer! units cur-hour convert mobile?]
+  (prn "box-height:" box-height)
   (r/with-let [info-height (if mobile?
                              (r/atom box-height)
                              (r/atom 0))]
