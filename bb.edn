@@ -16,10 +16,10 @@
   restart      (do
                  (run 'stop)
                  (run 'start))
+  compile      (clojure "-M:compile-cljs")
   pull         (shell "git pull")
   migrate      (clojure "-M:build-db migrate")
   build-all    (clojure "-M:build-db build-all")
-  compile      (clojure "-M:compile-cljs")
   dev-data     (clojure "-M:build-db build-all --dev-data")
   functions    (clojure "-M:build-db functions")
   prod         (do
