@@ -1,10 +1,7 @@
 {:tasks
- {:init        (def log (Object.))
-  :enter       (locking log
-                 (println (str
-                           (java.util.Date.)
-                           " task " "'" (:name (current-task)) "'"
-                           " running... ")))
+ {:enter       (println (str (java.util.Date.)
+                             " task " "'" (:name (current-task)) "'"
+                             " running... "))
   :leave       (println (str (java.util.Date.)
                              " task " "'" (:name (current-task)) "'"
                              " done."))
