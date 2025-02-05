@@ -35,5 +35,5 @@
                  #_(run 'migrate)
                  (run 'functions)
                  (run 'start))
-  clean        (shell "rm -rfv target")
+  clean        (shell "rm -rf target")
   server-start (shell "clojure -M:server start")}}
