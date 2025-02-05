@@ -1,25 +1,19 @@
 (ns pyregence.components.mapbox
-  (:require [clojure.core.async          :refer [chan go >! <!]]
-            [clojure.string              :as str]
-            [goog.dom                    :as dom]
-            [pyregence.config            :as c]
-            [pyregence.geo-utils         :as g]
-            [pyregence.state             :as !]
-            [pyregence.utils.async-utils :as u-async]
-            [pyregence.utils.data-utils  :as u-data]
-            [pyregence.utils.misc-utils  :as u-misc]
-            [reagent.core                :as r]
-            [reagent.dom                 :refer [render]]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mapbox Aliases
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:private mapbox       js/mapboxgl)
-(def ^:private Map          js/mapboxgl.Map)
-(def ^:private LngLatBounds js/mapboxgl.LngLatBounds)
-(def ^:private Marker       js/mapboxgl.Marker)
-(def ^:private Popup        js/mapboxgl.Popup)
+  (:require
+   ["mapbox-gl"                          :as mapbox :refer [LngLatBounds Map
+                                                            Marker Popup]]
+   [clojure.core.async                   :refer [<! >! chan go]]
+   [clojure.string                       :as str]
+   [goog.dom                             :as dom]
+   [goog.object                          :as goog]
+   [pyregence.config                     :as c]
+   [pyregence.geo-utils                  :as g]
+   [pyregence.state                      :as !]
+   [pyregence.utils.async-utils          :as u-async]
+   [pyregence.utils.data-utils           :as u-data]
+   [pyregence.utils.misc-utils           :as u-misc]
+   [reagent.core                         :as r]
+   [reagent.dom                          :refer [render]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -54,7 +48,7 @@
 (defn- get-layer
   "Gets a specific layer object by id."
   [id]
-  (.getLayer @the-map id))
+  (js-invoke @the-map "getLayer" id))
 
 (defn- get-layer-type
   "Returns the layer's type from its id string. Example:
@@ -85,7 +79,9 @@
   "Returns the Mapbox style object."
   []
   (when @the-map
-    (-> @the-map .getStyle (js->clj))))
+    (-> @the-map
+        (js-invoke "getStyle")
+        (js->clj))))
 
 (defn- index-of
   "Returns first index of item in collection that matches predicate."
@@ -103,9 +99,9 @@
   "Get zoom information. Returns [zoom min-zoom max-zoom]."
   []
   (let [m @the-map]
-    [(.getZoom m)
-     (.getMinZoom m)
-     (.getMaxZoom m)]))
+    [(js-invoke m "getZoom")
+     (js-invoke m "getMinZoom")
+     (js-invoke m "getMaxZoom")]))
 
 (defn layer-exists?
   "Returns true if the layer with matching id exists."
@@ -116,15 +112,18 @@
   "Returns distance in meters between center of the map and 100px to the right.
    Used to define the scale-bar map control."
   []
-  (let [y     (-> @the-map .getContainer .-clientHeight (/ 2.0))
-        left  (.unproject @the-map #js [0.0 y])
-        right (.unproject @the-map #js [100.0 y])]
-    (.distanceTo left right)))
+  (let [y (-> @the-map
+              (js-invoke "getContainer")
+              .-clientHeight
+              (/ 2.0))
+        left (js-invoke @the-map "unproject" #js [0.0 y])
+        right (js-invoke @the-map "unproject" #js [100.0 y])]
+    (js-invoke left "distanceTo" right)))
 
 (defn get-center
   "Retrieves center as `{:lat ## :lon ##}`"
   []
-  (let [center (.getCenter @the-map)]
+  (let [center (js-invoke @the-map "getCenter")]
     {:lat (aget center "lat")
      :lng (aget center "lng")}))
 
@@ -135,25 +134,26 @@
 (defn set-zoom!
   "Sets the zoom level of the map to `zoom`."
   [zoom]
-  (.easeTo @the-map (clj->js {:zoom zoom :animate true})))
+  (js-invoke @the-map "easeTo" (clj->js {:zoom zoom :animate true})))
 
 (defn zoom-to-extent!
   "Pans/zooms the map to the provided extents."
   [[minx miny maxx maxy] current-layer & [max-zoom]]
-  (.fitBounds @the-map
-              (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
-              (-> {:linear  true
-                   :padding (if (#{"fire-active" "fire-risk-forecast" "fire-detections"} (get-layer-type (:layer current-layer)))
-                              {:top 150 :bottom 150 :left 150 :right 150}
-                              0)}
-                  (merge (when max-zoom {:maxZoom max-zoom}))
-                  (clj->js))))
+  (let [config (-> {:linear  true
+                    :padding (if (#{"fire-active" "fire-risk-forecast" "fire-detections"} (get-layer-type (:layer current-layer)))
+                               {:top 150 :bottom 150 :left 150 :right 150}
+                               0)}
+                   (merge (when max-zoom {:maxZoom max-zoom})))]
+    (js-invoke @the-map
+               "fitBounds"
+               (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
+               (clj->js config))))
 
 (defn set-center!
   "Centers the map on `center` with a minimum zoom value of `min-zoom`."
   [center min-zoom]
   (let [zoom (max (first (get-zoom-info)) min-zoom)]
-    (.easeTo @the-map (clj->js {:zoom zoom :center center :animate true}))))
+    (js-invoke @the-map "easeTo" (clj->js {:zoom zoom :center center :animate true}))))
 
 (defn ease-to!
   "Changes the position of the map to `center` given `zoom`, `pitch`, and `bearing`.
@@ -161,15 +161,15 @@
   [{:keys [zoom min-zoom] :as location}]
   (let [new-zoom (or zoom
                      (max (first (get-zoom-info)) (or min-zoom 0)))]
-    (.easeTo @the-map (clj->js (-> location
-                                   (assoc :zoom new-zoom)
-                                   (assoc :animate (or (:animate location) true))
-                                   (dissoc :min-zoom))))))
+    (js-invoke @the-map "easeTo" (clj->js (-> location
+                                              (assoc :zoom new-zoom)
+                                              (assoc :animate (or (:animate location) true))
+                                              (dissoc :min-zoom))))))
 
 (defn fly-to!
   "Flies the map view to `center` at `zoom` with `bearing` and `pitch`."
   [new-location]
-  (.flyTo @the-map (clj->js (merge {:bearing 0 :pitch 0 :zoom 0 :center [0 0]} new-location))))
+  (js-invoke @the-map "flyTo" (clj->js (merge {:bearing 0 :pitch 0 :zoom 0 :center [0 0]} new-location))))
 
 (defn center-on-overlay!
   "Centers the map on the marker."
@@ -191,7 +191,7 @@
   "Resizes the map."
   []
   (when @the-map
-    (.resize @the-map)))
+    (js-invoke @the-map "resize")))
 
 (defn- upsert-layer
   "Inserts `new-layer` into `v` if the 'id' does not already exist, or updates
@@ -221,23 +221,24 @@
                     new-layers  (update "layers" merge-layers new-layers)
                     :always     (update "layers" process-layer-order!)
                     :always     (clj->js))]
-    (-> @the-map (.setStyle new-style))))
+    (js-invoke @the-map "setStyle" new-style)))
 
 (defn- add-icon! [icon-chan icon-id url & [colorize?]]
   (go
-    (if (.hasImage @the-map icon-id)
+    (if (js-invoke @the-map "hasImage" icon-id)
       (>! icon-chan icon-id)
-      (.loadImage @the-map
-                  url
-                  (fn [_ img]
-                    (go
-                      (.addImage @the-map
-                                 icon-id
-                                 img
-                                 (if colorize?
-                                   #js {:sdf true}
-                                   #js {}))
-                      (>! icon-chan icon-id)))))))
+      (js-invoke @the-map
+                 "loadImage"
+                 url
+                 (fn [_ img]
+                   (go
+                     (js-invoke @the-map "addImage"
+                                icon-id
+                                img
+                                (if colorize?
+                                  #js {:sdf true}
+                                  #js {}))
+                     (>! icon-chan icon-id)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
@@ -266,13 +267,13 @@
   [[lng lat]]
   (let [new-marker (Marker. #js {:color "#FF0000"})]
     (doto new-marker
-      (.setLngLat #js [lng lat])
-      (.addTo @the-map))))
+      (js-invoke "setLngLat" #js [lng lat])
+      (js-invoke "addTo" @the-map))))
 
 (defn- remove-marker-from-map!
   "Removes a marker from the map."
   [{:keys [marker]}]
-  (.remove marker))
+  (js-invoke marker "remove"))
 
 (defn enqueue-marker
   "Manages updates to the `markers` atom that is bound to a vector of \"Marker \" objects.
@@ -331,9 +332,9 @@
   (clear-popup!)
   (let [popup (Popup. #js {:className classname :maxWidth width :type popup-type})]
     (doto popup
-      (.setLngLat #js [lng lat])
-      (.setHTML "<div id='mb-popup'></div>")
-      (.addTo @the-map))
+      (js-invoke "setLngLat" #js [lng lat])
+      (js-invoke "setHTML" "<div id='mb-popup'></div>")
+      (js-invoke "addTo" @the-map))
     (render body (dom/getElement "mb-popup"))
     (reset! the-popup popup)))
 
@@ -348,8 +349,8 @@
   [event f & {:keys [layer]}]
   (swap! events assoc (hash f) {:event event :layer layer :func f})
   (if layer
-    (.on @the-map event layer f)
-    (.on @the-map event f))
+    (js-invoke @the-map "on" event layer f)
+    (js-invoke @the-map "on" event f))
   f)
 
 (defn remove-event!
@@ -357,8 +358,8 @@
   [f]
   (let [{:keys [event layer func]} (get @events (hash f))]
     (if layer
-      (.off @the-map event layer func)
-      (.off @the-map event func))
+      (js-invoke @the-map "off" event layer func)
+      (js-invoke @the-map "off" event func))
     (swap! events dissoc (hash f))))
 
 (defn- remove-events!
@@ -392,10 +393,11 @@
   "Clears the appropriate highlight of WFS features."
   [source state-tag & [source-layer]]
   (when-let [id (get-in @feature-state [source state-tag])]
-    (.setFeatureState @the-map
-                      (clj->js (merge {:source source :id id}
-                                      (when source-layer {:sourceLayer source-layer})))
-                      (clj->js {state-tag false}))
+    (js-invoke @the-map
+               "setFeatureState"
+               (clj->js (merge {:source source :id id}
+                               (when source-layer {:sourceLayer source-layer})))
+               (clj->js {state-tag false}))
     (swap! feature-state assoc-in [source state-tag] nil)))
 
 (defn- feature-highlight!
@@ -403,10 +405,11 @@
   [source feature-id state-tag & [source-layer]]
   (clear-highlight! source state-tag source-layer)
   (swap! feature-state assoc-in [source state-tag] feature-id)
-  (.setFeatureState @the-map
-                    (clj->js (merge {:source source :id feature-id}
-                                    (when source-layer {:sourceLayer source-layer})))
-                    (clj->js {state-tag true})))
+  (js-invoke @the-map
+             "setFeatureState"
+             (clj->js (merge {:source source :id feature-id}
+                             (when source-layer {:sourceLayer source-layer})))
+             (clj->js {state-tag true})))
 
 (defn add-feature-highlight!
   "Adds events to highlight WFS features. Optionally can provide a function `click-fn`,
@@ -652,23 +655,32 @@
 (defn- toggle-rotation!
   "Toggles whether the map can be rotated via right-click or touch."
   [enabled?]
-  (let [toggle-drag-rotate-fn  (if enabled? #(.enable %) #(.disable %))
-        toggle-touch-rotate-fn (if enabled? #(.enableRotation %) #(.disableRotation %))]
-    (doto @the-map
-      (-> .-dragRotate (toggle-drag-rotate-fn))
-      (-> .-touchZoomRotate (toggle-touch-rotate-fn)))))
+  (let [drag-rotate       (aget @the-map "dragRotate")
+        touch-zoom-rotate (aget @the-map "touchZoomRotate")]
+    (if enabled?
+      (do
+        (js-invoke drag-rotate "enable")
+        (js-invoke touch-zoom-rotate "enableRotation"))
+      (do
+        (js-invoke drag-rotate "disable")
+        (js-invoke touch-zoom-rotate "disableRotation")))))
 
 (defn- toggle-pitch!
   "Toggles whether changing pitch via touch is enabled."
   [enabled?]
-  (let [toggle-fn (if enabled? #(.enable %) #(.disable %))]
-    (-> @the-map .-touchPitch (toggle-fn))))
+  (let [touch-pitch (aget @the-map "touchPitch")]
+    (if enabled?
+      (js-invoke touch-pitch "enable")
+      (js-invoke touch-pitch "disable"))))
 
 (defn- toggle-terrain!
   "Toggles terrain DEM source, sky atmosphere layers."
   [enabled?]
   (update-style! (get-style) :new-sources terrain-source :new-layers [sky-source])
-  (-> @the-map (.setTerrain (when enabled? (clj->js terrain-layer)))))
+  (js-invoke @the-map
+             "setTerrain"
+             (when enabled?
+               (clj->js terrain-layer))))
 
 (defn toggle-dimensions!
   "Toggles whether the map is in 2D or 3D mode. When `three-dimensions?` is true,
@@ -861,7 +873,7 @@
   "Initializes the Mapbox map inside of `container` (e.g. \"map\").
    Specifies the proper project layers based on the forecast type."
   [container-id layers get-current-layer-geoserver-credentials on-load-fn & [opts]]
-  (set! (.-accessToken mapbox) @!/mapbox-access-token)
+  (goog/set mapbox "accessToken" @!/mapbox-access-token)
   (when-not (.supported mapbox)
     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
                    "Please use the latest version of Chrome, Safari, or Firefox.")))
@@ -885,8 +897,10 @@
                          (when-not (:zoom opts)
                            {:bounds c/california-extent})
                          opts)))]
-    (.on the-map*
-         "load"
-         (fn []
-           (reset! the-map the-map*)
-           (on-load-fn)))))
+    (js-invoke
+     the-map*
+     "on"
+     "load"
+     (fn []
+       (reset! the-map the-map*)
+       (on-load-fn)))))
