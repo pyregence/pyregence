@@ -42,4 +42,4 @@
                  (run 'functions)
                  (run 'start))
   clean        (shell "rm -rf target")
-  server-start (shell "clojure -M:server start")}}
+  server-start (clojure "-M:server start")}}
