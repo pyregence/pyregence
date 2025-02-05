@@ -84,8 +84,8 @@
 (defn- parse-available-wx-dates
   "Pares the stdout from a call to `fuel_wx_ign.py`. The exact return structure of this
    call (at the time of this writing in June of 2023) is the following:
-   ```
-   sig-app@goshawk:~$ ssh sig-app@sierra 'cd /mnt/tahoe/cloudfire/microservices/fuel_wx_ign && ./fuel_wx_ign.py --get_available_wx_times=True'
+
+   sig-app@goshawk:~$ ssh sig-app@sierra 'cd /mnt/tahoe/elmfire/cloudfire && ./fuel_wx_ign.py --get_available_wx_times=True'
    Currently available weather times:
    historical- 2011-01-30 00:00 UTC to 2022-09-30 23:00 UTC
    forecast-   2023-06-04 18:00 UTC to 2023-06-21 12:00 UTC
@@ -300,7 +300,7 @@
                                                             :north-buffer         north-buffer
                                                             :do-fuel              true
                                                             :fuel-source          "landfire"
-                                                            :fuel-version         "2.4.0_2.3.0"
+                                                            :fuel-version         "2.4.0"
                                                             :do-wx                true
                                                             :wx-start-time        wx-start-time
                                                             :wx-type              wx-type
@@ -451,11 +451,11 @@
                  :max-date-iso-str \"2023-06-07T18:00Z\"}"
   []
   (let [{:keys [out err exit]} (sh "ssh" "sig-app@sierra"
-                                   "cd /mnt/tahoe/cloudfire/microservices/fuel_wx_ign && ./fuel_wx_ign.py" "--get_available_wx_times=True")]
+                                   "cd /mnt/tahoe/elmfire/cloudfire && ./fuel_wx_ign.py" "--get_available_wx_times=True")]
     (if (= exit 0)
       (data-response (parse-available-wx-dates out))
       (data-response (str "Something went wrong when calling "
-                          "/mnt/tahoe/cloudfire/microservices/fuel_wx_ign/fuel_wx_ign.py:"
+                          "/mnt/tahoe/elmfire/cloudfire/fuel_wx_ign.py:"
                           err)
                      {:status 403}))))
 
