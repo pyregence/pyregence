@@ -325,9 +325,9 @@
   (clear-popup!)
   (let [popup (Popup. #js {:className classname :maxWidth width :type popup-type})]
     (doto popup
-      (.setLngLat #js [lng lat])
-      (.setHTML "<div id='mb-popup'></div>")
-      (.addTo @the-map))
+      (js-invoke "setLngLat" #js [lng lat])
+      (js-invoke "setHTML" "<div id='mb-popup'></div>")
+      (js-invoke "addTo" @the-map))
     (render body (dom/getElement "mb-popup"))
     (reset! the-popup popup)))
 
