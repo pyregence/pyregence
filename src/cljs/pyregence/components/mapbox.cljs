@@ -133,14 +133,15 @@
 (defn zoom-to-extent!
   "Pans/zooms the map to the provided extents."
   [[minx miny maxx maxy] current-layer & [max-zoom]]
-  (.fitBounds @the-map
-              (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
-              (-> {:linear  true
-                   :padding (if (#{"fire-active" "fire-risk-forecast" "fire-detections"} (get-layer-type (:layer current-layer)))
-                              {:top 150 :bottom 150 :left 150 :right 150}
-                              0)}
-                  (merge (when max-zoom {:maxZoom max-zoom}))
-                  (clj->js))))
+  (js-invoke @the-map
+             "fitBounds"
+             (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
+             (-> {:linear  true
+                  :padding (if (#{"fire-active" "fire-risk-forecast" "fire-detections"} (get-layer-type (:layer current-layer)))
+                             {:top 150 :bottom 150 :left 150 :right 150}
+                             0)}
+                 (merge (when max-zoom {:maxZoom max-zoom}))
+                 (clj->js))))
 
 (defn set-center!
   "Centers the map on `center` with a minimum zoom value of `min-zoom`."
@@ -259,8 +260,8 @@
   [[lng lat]]
   (let [new-marker (Marker. #js {:color "#FF0000"})]
     (doto new-marker
-      (.setLngLat #js [lng lat])
-      (.addTo @the-map))))
+      (js-invoke "setLngLat" #js [lng lat])
+      (js-invoke "addTo" @the-map))))
 
 (defn- remove-marker-from-map!
   "Removes a marker from the map."
