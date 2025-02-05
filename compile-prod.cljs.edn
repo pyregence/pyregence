@@ -1,9 +1,10 @@
 {:main            "pyregence.client"
  :output-dir      "target/public/cljs"
  :output-to       "target/public/cljs/app.js"
- :source-map      "target/public/cljs/app.js.map"
- :fingerprint     true
- :externs         ["resources/mapboxgl_externs.js"]
+ :bundle-cmd      {:default ["npx" "webpack"]}
  :optimizations   :advanced
+ :source-map      "target/public/cljs/app.js.map"
  :pretty-print    false
- :closure-defines {"goog.DEBUG" false}}
+ :target          :bundle
+ :closure-defines {"goog.DEBUG"       false
+                   cljs.core/*global* "window"}}
