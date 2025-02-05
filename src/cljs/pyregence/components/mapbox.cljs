@@ -1,25 +1,18 @@
 (ns pyregence.components.mapbox
-  (:require [clojure.core.async          :refer [chan go >! <!]]
-            [clojure.string              :as str]
-            [goog.dom                    :as dom]
-            [pyregence.config            :as c]
-            [pyregence.geo-utils         :as g]
-            [pyregence.state             :as !]
-            [pyregence.utils.async-utils :as u-async]
-            [pyregence.utils.data-utils  :as u-data]
-            [pyregence.utils.misc-utils  :as u-misc]
-            [reagent.core                :as r]
-            [reagent.dom                 :refer [render]]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mapbox Aliases
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:private mapbox       js/mapboxgl)
-(def ^:private Map          js/mapboxgl.Map)
-(def ^:private LngLatBounds js/mapboxgl.LngLatBounds)
-(def ^:private Marker       js/mapboxgl.Marker)
-(def ^:private Popup        js/mapboxgl.Popup)
+  (:require
+   ["mapbox-gl"                          :as mapbox :refer [LngLatBounds Map
+                                                            Marker Popup]]
+   [clojure.core.async                   :refer [<! >! chan go]]
+   [clojure.string                       :as str]
+   [goog.dom                             :as dom]
+   [pyregence.config                     :as c]
+   [pyregence.geo-utils                  :as g]
+   [pyregence.state                      :as !]
+   [pyregence.utils.async-utils          :as u-async]
+   [pyregence.utils.data-utils           :as u-data]
+   [pyregence.utils.misc-utils           :as u-misc]
+   [reagent.core                         :as r]
+   [reagent.dom                          :refer [render]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
