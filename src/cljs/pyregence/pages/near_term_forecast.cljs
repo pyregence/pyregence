@@ -625,7 +625,19 @@
       (reset! !/user-psps-orgs-list (filter (fn [org] (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
                                             @!/user-orgs-list))
       (reset! !/*forecast-type forecast-type)
-      (reset! !/*forecast (if (zero? active-fire-count) :fire-weather :active-fire))
+
+      (reset! !/*forecast
+              (cond
+                (= :long-term forecast-type)
+                (or (keyword forecast)
+                    (keyword (forecast-type @!/default-forecasts)))
+
+                ;; other wise it's near term
+                (zero? active-fire-count)
+                :fire-weather
+
+                :else
+                :active-fire))
       (reset! !/*layer-idx (if layer-idx (js/parseInt layer-idx) 0))
       (mb/init-map! "map"
                     layers
