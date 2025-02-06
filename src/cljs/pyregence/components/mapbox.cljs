@@ -896,8 +896,10 @@
                          (when-not (:zoom opts)
                            {:bounds c/california-extent})
                          opts)))]
-    (.on the-map*
-         "load"
-         (fn []
-           (reset! the-map the-map*)
-           (on-load-fn)))))
+    (js-invoke
+     the-map*
+     "on"
+     "load"
+     (fn []
+       (reset! the-map the-map*)
+       (on-load-fn)))))
