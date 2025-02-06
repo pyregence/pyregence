@@ -138,15 +138,15 @@
 (defn zoom-to-extent!
   "Pans/zooms the map to the provided extents."
   [[minx miny maxx maxy] current-layer & [max-zoom]]
-  (js-invoke @the-map
-             "fitBounds"
-             (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
-             (-> {:linear  true
-                  :padding (if (#{"fire-active" "fire-risk-forecast" "fire-detections"} (get-layer-type (:layer current-layer)))
-                             {:top 150 :bottom 150 :left 150 :right 150}
-                             0)}
-                 (merge (when max-zoom {:maxZoom max-zoom}))
-                 (clj->js))))
+  (let [config (-> {:linear  true
+                    :padding (if (#{"fire-active" "fire-risk-forecast" "fire-detections"} (get-layer-type (:layer current-layer)))
+                               {:top 150 :bottom 150 :left 150 :right 150}
+                               0)}
+                   (merge (when max-zoom {:maxZoom max-zoom})))]
+    (js-invoke @the-map
+               "fitBounds"
+               (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
+               (clj->js config))))
 
 (defn set-center!
   "Centers the map on `center` with a minimum zoom value of `min-zoom`."
