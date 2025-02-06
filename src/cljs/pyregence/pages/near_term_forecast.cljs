@@ -847,7 +847,8 @@
          [message-box-modal]
          (when @!/loading? [loading-modal])
          [message-modal]
-         [nav-bar {:capabilities         @!/capabilities
+         [:div#map]
+         #_#_[nav-bar {:capabilities         @!/capabilities
                    :current-forecast     @!/*forecast
                    :is-admin?            (->> @!/user-orgs-list
                                               (filter #(= "admin" (:role %)))
