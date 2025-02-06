@@ -609,7 +609,6 @@
                      options-config)))
 
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
-  (prn "params:" params)
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
