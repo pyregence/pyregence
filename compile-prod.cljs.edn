@@ -4,7 +4,7 @@
  :bundle-cmd      {:default ["npx" "webpack"]}
  :optimizations   :advanced
  :source-map      "target/public/cljs/app.js.map"
- :pretty-print    true
+ :pretty-print    false
  :target          :bundle
  :closure-defines {"goog.DEBUG"       false
                    cljs.core/*global* "window"}}
