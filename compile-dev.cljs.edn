@@ -1,6 +1,9 @@
+^{:auto-bundle :webpack}
 {:main          "pyregence.client"
  :output-dir    "target/public/cljs"
  :output-to     "target/public/cljs/app.js"
+ :target        :bundle
+ :bundle-freq   :always
  :asset-path    "/cljs"
  :source-map    true
  :optimizations :none

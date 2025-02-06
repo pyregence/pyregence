@@ -18,3 +18,4 @@ announcement.txt
 /resources/runway.pkcs12
 /.clj-kondo
 .lsp/*
+/node_modules/

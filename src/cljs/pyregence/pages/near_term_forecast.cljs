@@ -839,7 +839,6 @@
           (-> js/window (.addEventListener "resize"   update-fn))
           (initialize! params)
           (update-fn)))
-
       :reagent-render
       (fn [_]
         [:div#near-term-forecast
@@ -847,17 +846,17 @@
          [message-box-modal]
          (when @!/loading? [loading-modal])
          [message-modal]
-         [nav-bar {:capabilities         @!/capabilities
-                   :current-forecast     @!/*forecast
-                   :is-admin?            (->> @!/user-orgs-list
-                                              (filter #(= "admin" (:role %)))
-                                              (count)
-                                              (< 0)) ; admin of at least one org
-                   :logged-in?           user-id
-                   :mobile?              @!/mobile?
-                   :user-orgs-list       @!/user-orgs-list
-                   :select-forecast!     select-forecast!
-                   :user-id              user-id}]
+         [nav-bar {:capabilities     @!/capabilities
+                   :current-forecast @!/*forecast
+                   :is-admin?        (->> @!/user-orgs-list
+                                          (filter #(= "admin" (:role %)))
+                                          (count)
+                                          (< 0)) ; admin of at least one org
+                   :logged-in?       user-id
+                   :mobile?          @!/mobile?
+                   :user-orgs-list   @!/user-orgs-list
+                   :select-forecast! select-forecast!
+                   :user-id          user-id}]
          [:div {:style {:height "100%" :position "relative" :width "100%"}}
           (when (and @mb/the-map
                      (not-empty @!/capabilities)

@@ -1,7 +1,9 @@
 (ns pyregence.compile-cljs
-  (:require [clojure.java.io :as io]
-            [clojure.edn     :as edn]
-            [cljs.main       :as compiler]))
+  (:require
+   [cljs.main       :as compiler]
+   [clojure.edn     :as edn]
+   [clojure.java.io :as io]
+   [clojure.string  :as str]))
 
 (defn- delete-folder
   "Delete a folder and all of its contents recursively."
@@ -19,10 +21,12 @@
     (str opts-file-name " is missing :output-dir.")))
 
 (defn post-figwheel-hook [config]
-  (if-let [output-to (get-in config [:options :output-to])]
-    (spit (io/file (get-in config [:options :output-dir]) "manifest.edn")
-          {output-to output-to})
-    (println "Error reading figwheel config.")))
+  (let [output-to (get-in config [:options :output-to])
+        bundle?   (= (get-in config [:options :target]) :bundle)]
+    (if output-to
+      (spit (io/file (get-in config [:options :output-dir]) "manifest.edn")
+            {output-to (if bundle? (str/replace output-to #"(\.js)$" "_bundle$1") output-to)})
+      (println "Error reading figwheel config."))))
 
 (defn -main
   "A custom wrapper for compilation that allows pre-compile actions."
@@ -31,7 +35,11 @@
     (println "A compiler options file is required to compile.\n\n   Usage: clojure -M:compile-cljs compile-prod.cljs.edn")
     (if-not (.exists (io/file opts-file-name))
       (println "The supplied compiler options file does not exist.")
-      (if-let [error-msg (pre-compile-hook opts-file-name)]
-        (println error-msg)
-        (compiler/-main "-co" opts-file-name "-c"))))
+      (let [config    (read-string (slurp opts-file-name))
+            output-to (:output-to config)]
+        (if-let [error-msg (pre-compile-hook opts-file-name)]
+          (println error-msg)
+          (do (compiler/-main "-co" opts-file-name "-c")
+              (spit (io/file (:output-dir config) "manifest.edn")
+                    {output-to output-to}))))))
   (shutdown-agents))

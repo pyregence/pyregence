@@ -1,6 +1,6 @@
 (ns pyregence.components.vega
   (:require [cljs.core.async.interop      :refer-macros [<p!]]
-            [cljsjs.vega-embed]
+            ["vega-embed"                 :as vega-embed :refer [embed]]
             [clojure.core.async           :refer [go]]
             [pyregence.state              :as !]
             [pyregence.utils.data-utils   :as u-data]
@@ -101,10 +101,10 @@
   (when (and spec (seq (get-in spec [:data :values])))
     (go
       (try
-        (let [result (<p! (js/vegaEmbed elem
-                                        (clj->js spec)
-                                        (clj->js {:renderer "canvas"
-                                                  :mode     "vega-lite"})))]
+        (let [result (<p! (embed elem
+                                 (clj->js spec)
+                                 (clj->js {:renderer "canvas"
+                                           :mode     "vega-lite"})))]
           (-> result .-view (.addEventListener
                              "click"
                              (fn [_ data]

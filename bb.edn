@@ -1,33 +1,46 @@
 {:tasks
- {-project  "cljweb-pyregence"
-  reload    (shell "systemctl --user daemon-reload")
-  status    {:depends [-project]
-             :task    (shell (format "systemctl --user status %s" -project))}
-  start     {:depends [-project]
-             :task    (shell (format "systemctl --user start %s" -project))}
-  stop      {:depends [-project]
-             :task    (shell (format "systemctl --user stop %s" -project))}
-  restart   (do
-              (run 'stop)
-              (run 'start))
-  build-js  (clojure "-M:compile-cljs")
-  pull      (shell "git pull")
-  migrate   (clojure "-M:build-db migrate")
-  build-all (clojure "-M:build-db build-all")
-  dev-data  (clojure "-M:build-db build-all --dev-data")
-  functions (clojure "-M:build-db functions")
-  prod      (do
-              (run 'functions)
-              (run 'clean)
-              (run 'compile)
-              (run 'server-start))
-  dev       (do
-              (run 'functions)
-              (clojure "-M:default-ssl-opts:figwheel"))
-  deploy    (do
-              (run 'stop)
-              (run 'pull)
-              (run 'build-js)
-              #_(run 'migrate)
-              (run 'functions)
-              (run 'start))}}
+ {:enter       (println (str (java.util.Date.)
+                             " task " "'" (:name (current-task)) "'"
+                             " running... "))
+  :leave       (println (str (java.util.Date.)
+                             " task " "'" (:name (current-task)) "'"
+                             " done."))
+  -project     "cljweb-pyregence"
+  reload       (shell "systemctl --user daemon-reload")
+  status       {:depends [-project]
+                :task    (shell (format "systemctl --user status %s" -project))}
+  start        {:depends [-project]
+                :task    (shell (format "systemctl --user start %s" -project))}
+  stop         {:depends [-project]
+                :task    (shell (format "systemctl --user stop %s" -project))}
+  restart      (do
+                 (run 'stop)
+                 (run 'start))
+  compile      (clojure "-M:compile-cljs")
+  pull         (shell "git pull")
+  migrate      (clojure "-M:build-db migrate")
+  build-all    (clojure "-M:build-db build-all")
+  dev-data     (clojure "-M:build-db build-all --dev-data")
+  functions    (clojure "-M:build-db functions")
+  prod         (do
+                 (run 'install)
+                 (run 'functions)
+                 (run 'clean)
+                 (run 'compile)
+                 (run 'server-start))
+  dev          (do
+                 (run 'install)
+                 (run 'functions)
+                 (clojure "-M:default-ssl-opts:figwheel"))
+  install      (shell "npm install")
+  deploy       (do
+                 (run 'stop)
+                 (run 'pull)
+                 (run 'install)
+                 (run 'clean)
+                 (run 'compile)
+                 #_(run 'migrate)
+                 (run 'functions)
+                 (run 'start))
+  clean        (shell "rm -rf target")
+  server-start (clojure "-M:server start")}}

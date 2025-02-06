@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "mapbox-gl": "^3.9.3",
+    "vega-embed": "^6.0.0",
+    "react": "^16.13.0",
+    "react-dom": "^16.13.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

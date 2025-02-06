@@ -68,7 +68,6 @@
                     (rd/dom-node)
                     (.getBoundingClientRect)
                     (aget "height")))))
-
     :render
     (fn [_]
       (let [cleaned-last-clicked-info (u-data/replace-no-data-nil @!/last-clicked-info
