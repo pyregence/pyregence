@@ -47,7 +47,7 @@
 (defn- get-layer
   "Gets a specific layer object by id."
   [id]
-  (.getLayer @the-map id))
+  (js-invoke @the-map "getLayer" id))
 
 (defn- get-layer-type
   "Returns the layer's type from its id string. Example:
@@ -78,7 +78,9 @@
   "Returns the Mapbox style object."
   []
   (when @the-map
-    (-> @the-map .getStyle (js->clj))))
+    (-> @the-map
+        (js-invoke "getStyle")
+        js->clj)))
 
 (defn- index-of
   "Returns first index of item in collection that matches predicate."
@@ -96,9 +98,9 @@
   "Get zoom information. Returns [zoom min-zoom max-zoom]."
   []
   (let [m @the-map]
-    [(.getZoom m)
-     (.getMinZoom m)
-     (.getMaxZoom m)]))
+    [(js-invoke m "getZoom")
+     (js-invoke m "getMinZoom")
+     (js-invoke m "getMaxZoom")]))
 
 (defn layer-exists?
   "Returns true if the layer with matching id exists."
@@ -109,15 +111,18 @@
   "Returns distance in meters between center of the map and 100px to the right.
    Used to define the scale-bar map control."
   []
-  (let [y     (-> @the-map .getContainer .-clientHeight (/ 2.0))
-        left  (.unproject @the-map #js [0.0 y])
-        right (.unproject @the-map #js [100.0 y])]
-    (.distanceTo left right)))
+  (let [y (-> @the-map
+              (js-invoke "getContainer")
+              .-clientHeight
+              (/ 2.0))
+        left (js-invoke @the-map "unproject" #js [0.0 y])
+        right (js-invoke @the-map "unproject" #js [100.0 y])]
+    (js-invoke left "distanceTo" right)))
 
 (defn get-center
   "Retrieves center as `{:lat ## :lon ##}`"
   []
-  (let [center (.getCenter @the-map)]
+  (let [center (js-invoke @the-map "getCenter")]
     {:lat (aget center "lat")
      :lng (aget center "lng")}))
 
@@ -128,7 +133,7 @@
 (defn set-zoom!
   "Sets the zoom level of the map to `zoom`."
   [zoom]
-  (.easeTo @the-map (clj->js {:zoom zoom :animate true})))
+  (js-invoke @the-map "easeTo" (clj->js {:zoom zoom :animate true})))
 
 (defn zoom-to-extent!
   "Pans/zooms the map to the provided extents."
@@ -147,7 +152,7 @@
   "Centers the map on `center` with a minimum zoom value of `min-zoom`."
   [center min-zoom]
   (let [zoom (max (first (get-zoom-info)) min-zoom)]
-    (.easeTo @the-map (clj->js {:zoom zoom :center center :animate true}))))
+    (js-invoke @the-map "easeTo" (clj->js {:zoom zoom :center center :animate true}))))
 
 (defn ease-to!
   "Changes the position of the map to `center` given `zoom`, `pitch`, and `bearing`.
@@ -155,15 +160,15 @@
   [{:keys [zoom min-zoom] :as location}]
   (let [new-zoom (or zoom
                      (max (first (get-zoom-info)) (or min-zoom 0)))]
-    (.easeTo @the-map (clj->js (-> location
-                                   (assoc :zoom new-zoom)
-                                   (assoc :animate (or (:animate location) true))
-                                   (dissoc :min-zoom))))))
+    (js-invoke @the-map "easeTo" (clj->js (-> location
+                                              (assoc :zoom new-zoom)
+                                              (assoc :animate (or (:animate location) true))
+                                              (dissoc :min-zoom))))))
 
 (defn fly-to!
   "Flies the map view to `center` at `zoom` with `bearing` and `pitch`."
   [new-location]
-  (.flyTo @the-map (clj->js (merge {:bearing 0 :pitch 0 :zoom 0 :center [0 0]} new-location))))
+  (js-invoke @the-map "flyTo" (clj->js (merge {:bearing 0 :pitch 0 :zoom 0 :center [0 0]} new-location))))
 
 (defn center-on-overlay!
   "Centers the map on the marker."
@@ -185,7 +190,7 @@
   "Resizes the map."
   []
   (when @the-map
-    (.resize @the-map)))
+    (js-invoke @the-map "resize")))
 
 (defn- upsert-layer
   "Inserts `new-layer` into `v` if the 'id' does not already exist, or updates
@@ -215,23 +220,24 @@
                     new-layers  (update "layers" merge-layers new-layers)
                     :always     (update "layers" process-layer-order!)
                     :always     (clj->js))]
-    (-> @the-map (.setStyle new-style))))
+    (js-invoke @the-map "setStyle" new-style)))
 
 (defn- add-icon! [icon-chan icon-id url & [colorize?]]
   (go
-    (if (.hasImage @the-map icon-id)
+    (if (js-invoke @the-map "hasImage" icon-id)
       (>! icon-chan icon-id)
-      (.loadImage @the-map
-                  url
-                  (fn [_ img]
-                    (go
-                      (.addImage @the-map
-                                 icon-id
-                                 img
-                                 (if colorize?
-                                   #js {:sdf true}
-                                   #js {}))
-                      (>! icon-chan icon-id)))))))
+      (js-invoke @the-map
+                 "loadImage"
+                 url
+                 (fn [_ img]
+                   (go
+                     (js-invoke @the-map "addImage"
+                                icon-id
+                                img
+                                (if colorize?
+                                  #js {:sdf true}
+                                  #js {}))
+                     (>! icon-chan icon-id)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markers
@@ -266,7 +272,7 @@
 (defn- remove-marker-from-map!
   "Removes a marker from the map."
   [{:keys [marker]}]
-  (.remove marker))
+  (js-invoke marker "remove"))
 
 (defn enqueue-marker
   "Manages updates to the `markers` atom that is bound to a vector of \"Marker \" objects.
@@ -342,8 +348,8 @@
   [event f & {:keys [layer]}]
   (swap! events assoc (hash f) {:event event :layer layer :func f})
   (if layer
-    (.on @the-map event layer f)
-    (.on @the-map event f))
+    (js-invoke @the-map "on" event layer f)
+    (js-invoke @the-map "on" event f))
   f)
 
 (defn remove-event!
@@ -351,8 +357,8 @@
   [f]
   (let [{:keys [event layer func]} (get @events (hash f))]
     (if layer
-      (.off @the-map event layer func)
-      (.off @the-map event func))
+      (js-invoke @the-map "off" event layer func)
+      (js-invoke @the-map "off" event func))
     (swap! events dissoc (hash f))))
 
 (defn- remove-events!
@@ -386,10 +392,11 @@
   "Clears the appropriate highlight of WFS features."
   [source state-tag & [source-layer]]
   (when-let [id (get-in @feature-state [source state-tag])]
-    (.setFeatureState @the-map
-                      (clj->js (merge {:source source :id id}
-                                      (when source-layer {:sourceLayer source-layer})))
-                      (clj->js {state-tag false}))
+    (js-invoke @the-map
+               "setFeatureState"
+               (clj->js (merge {:source source :id id}
+                               (when source-layer {:sourceLayer source-layer})))
+               (clj->js {state-tag false}))
     (swap! feature-state assoc-in [source state-tag] nil)))
 
 (defn- feature-highlight!
@@ -397,10 +404,11 @@
   [source feature-id state-tag & [source-layer]]
   (clear-highlight! source state-tag source-layer)
   (swap! feature-state assoc-in [source state-tag] feature-id)
-  (.setFeatureState @the-map
-                    (clj->js (merge {:source source :id feature-id}
-                                    (when source-layer {:sourceLayer source-layer})))
-                    (clj->js {state-tag true})))
+  (js-invoke @the-map
+             "setFeatureState"
+             (clj->js (merge {:source source :id feature-id}
+                             (when source-layer {:sourceLayer source-layer})))
+             (clj->js {state-tag true})))
 
 (defn add-feature-highlight!
   "Adds events to highlight WFS features. Optionally can provide a function `click-fn`,
@@ -646,11 +654,15 @@
 (defn- toggle-rotation!
   "Toggles whether the map can be rotated via right-click or touch."
   [enabled?]
-  (let [toggle-drag-rotate-fn  (if enabled? #(.enable %) #(.disable %))
-        toggle-touch-rotate-fn (if enabled? #(.enableRotation %) #(.disableRotation %))]
-    (doto @the-map
-      (-> .-dragRotate (toggle-drag-rotate-fn))
-      (-> .-touchZoomRotate (toggle-touch-rotate-fn)))))
+  (let [drag-rotate       (aget @the-map "dragRotate")
+        touch-zoom-rotate (aget @the-map "touchZoomRotate")]
+    (if enabled?
+      (do
+        (js-invoke drag-rotate "enable")
+        (js-invoke touch-zoom-rotate "enableRotation"))
+      (do
+        (js-invoke drag-rotate "disable")
+        (js-invoke touch-zoom-rotate "disableRotation")))))
 
 (defn- toggle-pitch!
   "Toggles whether changing pitch via touch is enabled."
