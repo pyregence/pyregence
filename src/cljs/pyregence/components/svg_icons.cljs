@@ -71,7 +71,7 @@
                s21.332031 9.535156 21.332031 21.332031v129.835938l100.417969 100.414062c8.339844 8.34375 8.339844 21.824219 0 30.164062zm0 0"}]])
 
 (defn dropdown-arrow [stroke-color & {:keys [height width]}]
-  [:svg {:eight   height
+  [:svg {:height  height
          :width   width
          :xmlns   "http://www.w3.org/2000/svg"
          :viewBox "0 0 16 16"}
