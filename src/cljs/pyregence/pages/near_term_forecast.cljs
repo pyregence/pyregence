@@ -645,16 +645,16 @@
                     get-current-layer-geoserver-credentials
                     #(select-forecast! @!/*forecast)
                     (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
-      #_(process-capabilities! fire-names
-                               (edn/read-string (:body (<! user-layers-chan)))
-                               options-config
-                               @!/psps-orgs-list
-                               @!/user-psps-orgs-list
-                               (params->selected-options options-config @!/*forecast params))
-      #_(reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
-      #_(when (and (not-empty @!/capabilities)
-                   (not-empty @!/*params))
-          (reset! !/loading? false)))))
+      (process-capabilities! fire-names
+                             (edn/read-string (:body (<! user-layers-chan)))
+                             options-config
+                             @!/psps-orgs-list
+                             @!/user-psps-orgs-list
+                             (params->selected-options options-config @!/*forecast params))
+      (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
+      (when (and (not-empty @!/capabilities)
+                 (not-empty @!/*params))
+        (reset! !/loading? false)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -827,42 +827,41 @@
      {:component-did-mount
       (fn [_]
         (let [update-fn (fn [& _]
-                          #_(-> js/window (.scrollTo 0 0))
-                          #_(reset! !/mobile? (> 800.0 (.-innerWidth js/window)))
-                          #_(reset! height  (str (- (.-innerHeight js/window)
-                                                    (-> js/document
-                                                        (.getElementById "header")
-                                                        .getBoundingClientRect
-                                                        (aget "height")))
-                                                 "px"))
-                          #_(js/setTimeout mb/resize-map! 50))]
-          #_(-> js/window (.addEventListener "touchend" update-fn))
-          #_(-> js/window (.addEventListener "resize"   update-fn))
+                          (-> js/window (.scrollTo 0 0))
+                          (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))
+                          (reset! height  (str (- (.-innerHeight js/window)
+                                                  (-> js/document
+                                                      (.getElementById "header")
+                                                      .getBoundingClientRect
+                                                      (aget "height")))
+                                               "px"))
+                          (js/setTimeout mb/resize-map! 50))]
+          (-> js/window (.addEventListener "touchend" update-fn))
+          (-> js/window (.addEventListener "resize"   update-fn))
           (initialize! params)
-          #_(update-fn)))
+          (update-fn)))
       :reagent-render
       (fn [_]
         [:div#near-term-forecast
          {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
-         #_#_[message-box-modal]
-           (when @!/loading? [loading-modal])
-         #_[message-modal]
-         [:div#map]
-         #_#_[nav-bar {:capabilities     @!/capabilities
-                       :current-forecast @!/*forecast
-                       :is-admin?        (->> @!/user-orgs-list
-                                              (filter #(= "admin" (:role %)))
-                                              (count)
-                                              (< 0)) ; admin of at least one org
-                       :logged-in?       user-id
-                       :mobile?          @!/mobile?
-                       :user-orgs-list   @!/user-orgs-list
-                       :select-forecast! select-forecast!
-                       :user-id          user-id}]
-           [:div {:style {:height "100%" :position "relative" :width "100%"}}
-            (when (and @mb/the-map
-                       (not-empty @!/capabilities)
-                       (not-empty @!/*params))
-              [control-layer user-id])
-            [map-layer]
-            [pop-up]]])})))
+         [message-box-modal]
+         (when @!/loading? [loading-modal])
+         [message-modal]
+         [nav-bar {:capabilities     @!/capabilities
+                   :current-forecast @!/*forecast
+                   :is-admin?        (->> @!/user-orgs-list
+                                          (filter #(= "admin" (:role %)))
+                                          (count)
+                                          (< 0)) ; admin of at least one org
+                   :logged-in?       user-id
+                   :mobile?          @!/mobile?
+                   :user-orgs-list   @!/user-orgs-list
+                   :select-forecast! select-forecast!
+                   :user-id          user-id}]
+         [:div {:style {:height "100%" :position "relative" :width "100%"}}
+          (when (and @mb/the-map
+                     (not-empty @!/capabilities)
+                     (not-empty @!/*params))
+            [control-layer user-id])
+          [map-layer]
+          [pop-up]]])})))
