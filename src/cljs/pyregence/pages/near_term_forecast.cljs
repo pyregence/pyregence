@@ -609,6 +609,7 @@
                      options-config)))
 
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
+  (prn "params:" params)
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
@@ -644,16 +645,16 @@
                     get-current-layer-geoserver-credentials
                     #(select-forecast! @!/*forecast)
                     (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
-      (process-capabilities! fire-names
-                             (edn/read-string (:body (<! user-layers-chan)))
-                             options-config
-                             @!/psps-orgs-list
-                             @!/user-psps-orgs-list
-                             (params->selected-options options-config @!/*forecast params))
-      (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
-      (when (and (not-empty @!/capabilities)
-                 (not-empty @!/*params))
-        (reset! !/loading? false)))))
+      #_(process-capabilities! fire-names
+                               (edn/read-string (:body (<! user-layers-chan)))
+                               options-config
+                               @!/psps-orgs-list
+                               @!/user-psps-orgs-list
+                               (params->selected-options options-config @!/*forecast params))
+      #_(reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
+      #_(when (and (not-empty @!/capabilities)
+                   (not-empty @!/*params))
+          (reset! !/loading? false)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -837,7 +838,7 @@
                           #_(js/setTimeout mb/resize-map! 50))]
           #_(-> js/window (.addEventListener "touchend" update-fn))
           #_(-> js/window (.addEventListener "resize"   update-fn))
-          #_(initialize! params)
+          (initialize! params)
           #_(update-fn)))
       :reagent-render
       (fn [_]
