@@ -80,7 +80,7 @@
   (when @the-map
     (-> @the-map
         (js-invoke "getStyle")
-        js->clj)))
+        (js->clj))))
 
 (defn- index-of
   "Returns first index of item in collection that matches predicate."
@@ -667,14 +667,19 @@
 (defn- toggle-pitch!
   "Toggles whether changing pitch via touch is enabled."
   [enabled?]
-  (let [toggle-fn (if enabled? #(.enable %) #(.disable %))]
-    (-> @the-map .-touchPitch (toggle-fn))))
+  (let [touch-pitch (aget @the-map "touchPitch")]
+    (if enabled?
+      (js-invoke touch-pitch "enable")
+      (js-invoke touch-pitch "disable"))))
 
 (defn- toggle-terrain!
   "Toggles terrain DEM source, sky atmosphere layers."
   [enabled?]
   (update-style! (get-style) :new-sources terrain-source :new-layers [sky-source])
-  (-> @the-map (.setTerrain (when enabled? (clj->js terrain-layer)))))
+  (js-invoke @the-map
+             "setTerrain"
+             (when enabled?
+               (clj->js terrain-layer))))
 
 (defn toggle-dimensions!
   "Toggles whether the map is in 2D or 3D mode. When `three-dimensions?` is true,
