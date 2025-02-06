@@ -1,0 +1,11 @@
+Error: layers[111]: missing required property "source"
+    at Le (mapbox-gl.js:35:43789)
+    at fo (mapbox-gl.js:35:235171)
+    at bo.setState (mapbox-gl.js:35:257589)
+    at s (mapbox-gl.js:35:238549)
+    at bo._diffStyle (mapbox-gl.js:35:238798)
+    at Map.setStyle (mapbox-gl.js:35:775774)
+    at Function.cljs$core$IFn$_invoke$arity$variadic (core.cljs:538:30)
+    at cljs$core$js_invoke (core.cljs:534:1)
+    at Function.cljs$core$IFn$_invoke$arity$variadic (mapbox.cljs:223:6)
+    at pyregence$components$mapbox$update_style_BANG_ (mapbox.cljs:212:1)
