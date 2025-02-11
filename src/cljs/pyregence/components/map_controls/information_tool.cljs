@@ -1,20 +1,21 @@
 (ns pyregence.components.map-controls.information-tool
-  (:require [clojure.set                                   :as set]
-            [pyregence.components.common                   :refer [tool-tip-wrapper]]
-            [pyregence.components.map-controls.tool-button :refer [tool-button]]
-            [pyregence.components.mapbox                   :as mb]
-            [pyregence.components.resizable-window         :refer [resizable-window]]
-            [pyregence.components.svg-icons                :as svg]
-            [pyregence.components.vega                     :refer [vega-box]]
-            [pyregence.config                              :as c]
-            [pyregence.state                               :as !]
-            [pyregence.styles                              :as $]
-            [pyregence.utils.data-utils                    :as u-data]
-            [pyregence.utils.misc-utils                    :as u-misc]
-            [pyregence.utils.number-utils                  :as u-num]
-            [pyregence.utils.string-utils                  :as u-str]
-            [reagent.core                                  :as r]
-            [reagent.dom                                   :as rd]))
+  (:require
+   [clojure.set                                              :as set]
+   [pyregence.components.common                              :refer [tool-tip-wrapper]]
+   [pyregence.components.map-controls.tool-button            :refer [tool-button]]
+   [pyregence.components.mapbox                              :as mb]
+   [pyregence.components.resizable-window                    :refer [resizable-window]]
+   [pyregence.components.svg-icons                           :as svg]
+   [pyregence.components.vega                                :refer [vega-box]]
+   [pyregence.config                                         :as c]
+   [pyregence.state                                          :as !]
+   [pyregence.styles                                         :as $]
+   [pyregence.utils.data-utils                               :as u-data]
+   [pyregence.utils.misc-utils                               :as u-misc]
+   [pyregence.utils.number-utils                             :as u-num]
+   [pyregence.utils.string-utils                             :as u-str]
+   [react                                                    :as react]
+   [reagent.core                                             :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -59,34 +60,35 @@
    [:label message]])
 
 (defn- information-div [units info-height convert mobile?]
-  (r/create-class
-   {:component-did-mount
-    (fn [this]
-      (when-not mobile?
-        (reset! info-height
-                (-> this
-                    (rd/dom-node)
-                    (.getBoundingClientRect)
-                    (aget "height")))))
-    :render
-    (fn [_]
-      (let [cleaned-last-clicked-info (u-data/replace-no-data-nil @!/last-clicked-info
-                                                                  @!/no-data-quantities)
-            current-point             (get cleaned-last-clicked-info @!/*layer-idx)]
-        [:div {:style ($/combine {:display "flex" :justify-content "space-between"}
-                                 (when mobile? {:background-color ($/color-picker :bg-color)}))}
-         [:label {:style {:margin-top ".6rem" :text-align "center" :width "100%"}}
-          (if-let [value (:band current-point)]
-            (str (if (fn? convert)
-                   (u-num/round-last-clicked-info (convert value))
-                   (u-num/round-last-clicked-info value))
-                 (u-num/clean-units units))
-            "No info available for this timestep.")]
-         [:div
-          [tool-tip-wrapper
-           "Center on selected point"
-           :bottom
-           [tool-button :center-on-point #(mb/center-on-overlay!)]]]]))}))
+  (let [ref (react/createRef)]
+    (r/create-class
+     {:component-did-mount
+      (fn [this]
+        (when-not mobile?
+          (reset! info-height
+                  (-> (.-current ref)
+                      (.getBoundingClientRect)
+                      (aget "height")))))
+      :render
+      (fn [_]
+        (let [cleaned-last-clicked-info (u-data/replace-no-data-nil @!/last-clicked-info
+                                                                    @!/no-data-quantities)
+              current-point             (get cleaned-last-clicked-info @!/*layer-idx)]
+          [:div {:ref   ref
+                 :style ($/combine {:display "flex" :justify-content "space-between"}
+                                   (when mobile? {:background-color ($/color-picker :bg-color)}))}
+           [:label {:style {:margin-top ".6rem" :text-align "center" :width "100%"}}
+            (if-let [value (:band current-point)]
+              (str (if (fn? convert)
+                     (u-num/round-last-clicked-info (convert value))
+                     (u-num/round-last-clicked-info value))
+                   (u-num/clean-units units))
+              "No info available for this timestep.")]
+           [:div
+            [tool-tip-wrapper
+             "Center on selected point"
+             :bottom
+             [tool-button :center-on-point #(mb/center-on-overlay!)]]]]))})))
 
 (defn- vega-information [box-height box-width select-layer! units cur-hour convert mobile?]
   (r/with-let [info-height (if mobile?
