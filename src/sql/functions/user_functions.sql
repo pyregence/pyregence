@@ -348,7 +348,7 @@ CREATE OR REPLACE FUNCTION get_user_layers_list(_user_id integer)
 $$ LANGUAGE SQL;
 
 -- This simplifies adding a new layer even though it's not hooked in the UI
-CREATE OR REPLACE FUNCTION add_org_layer(
+CREATE OR REPLACE FUNCTION add_org_layer( -- <-- !!!
     _org_id          integer,
     _layer_path      text,
     _layer_config    text
