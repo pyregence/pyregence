@@ -134,6 +134,7 @@
         [:div#vega-canvas
          {:ref   ref
           :style {:height (:box-height (r/props this))
+                  :background-color "white"
                   :width  (:box-width  (r/props this))}}])})))
 
 (defn vega-box
