@@ -134,7 +134,10 @@
          {:ref   ref
           :style {:height (:box-height (r/props this))
                   :background-color "white"
-                  :padding "16px"
+                  :padding-left "16px"
+                  :padding-bottom "16px"
+                  :padding-top "16px"
+                  :padding-right "32px"
                   :width  (:box-width  (r/props this))}}])})))
 
 (defn vega-box
