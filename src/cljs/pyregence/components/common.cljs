@@ -1,13 +1,14 @@
 (ns pyregence.components.common
   (:require-macros [pyregence.herb-patch :refer [style->class]])
-  (:require [clojure.core.async           :refer [go <! timeout]]
-            [herb.core                    :refer [<class]]
-            [pyregence.styles             :as $]
-            [pyregence.utils.dom-utils    :as u-dom]
-            [pyregence.utils.string-utils :as u-str]
-            [pyregence.utils.time-utils   :as u-time]
-            [reagent.core                 :as r]
-            [reagent.dom                  :as rd]))
+  (:require
+   [clojure.core.async                   :refer [<! go timeout]]
+   [herb.core                            :refer [<class]]
+   [pyregence.styles                     :as $]
+   [pyregence.utils.dom-utils            :as u-dom]
+   [pyregence.utils.string-utils         :as u-str]
+   [pyregence.utils.time-utils           :as u-time]
+   [react                                :as react]
+   [reagent.core                         :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -50,12 +51,14 @@
     [-1000 -1000 -1000 -1000]))
 
 (defn- sibling-wrapper [sibling sibling-ref]
-  (r/create-class
-   {:component-did-mount
-    (fn [this] (reset! sibling-ref (rd/dom-node this)))
-
-    :reagent-render
-    (fn [sibling _] sibling)}))
+  (let [ref (react/createRef)]
+    (r/create-class
+     {:component-did-mount
+      (fn [this] (reset! sibling-ref (.-current ref)))
+      :reagent-render
+      (fn [sibling _]
+        [:div {:ref ref}
+         sibling])})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -245,26 +248,26 @@
 
 (defn- tool-tip []
   (let [tool-ref (atom nil)
-        position (r/atom [-1000 -1000 -1000 -1000])]
+        position (r/atom [-1000 -1000 -1000 -1000])
+        ref      (react/createRef)]
     (r/create-class
      {:component-did-mount
       (fn [this]
         (let [{:keys [sibling-ref arrow-position show?]} (r/props this)]
-          (reset! tool-ref (rd/dom-node this))
+          (reset! tool-ref (.-current ref))
           (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?))))
-
       :component-did-update
       (fn [this [_ prev-props]]
         (let [{:keys [tool-tip-text sibling-ref arrow-position show?]} (r/props this)]
           (when (or (not= tool-tip-text (:tool-tip-text prev-props))
                     (not= show?         (:show? prev-props)))
             (reset! position (calc-tool-position sibling-ref @tool-ref arrow-position show?)))))
-
       :render
       (fn [this]
         (let [{:keys [tool-tip-text arrow-position show?]} (r/props this)
-              [tip-x tip-y arrow-x arrow-y] @position]
-          [:div {:style ($tool-tip tip-x tip-y arrow-position show?)}
+              [tip-x tip-y arrow-x arrow-y]                @position]
+          [:div {:style ($tool-tip tip-x tip-y arrow-position show?)
+                 :ref   ref}
            [:div {:style ($arrow arrow-x arrow-y arrow-position show?)}]
            [:div {:style {:position "relative" :width "fit-content" :z-index 203}}
             tool-tip-text]]))})))

@@ -1,38 +1,40 @@
 (ns pyregence.pages.near-term-forecast
-  (:require [cljs.core.async.interop                             :refer-macros [<p!]]
-            [clojure.core.async                                  :refer [go <!]]
-            [clojure.edn                                         :as edn]
-            [clojure.spec.alpha                                  :as s]
-            [clojure.string                                      :as str]
-            [cognitect.transit                                   :as t]
-            [herb.core                                           :refer [<class]]
-            [pyregence.components.nav-bar                        :refer [nav-bar]]
-            [pyregence.components.map-controls.camera-tool       :refer [camera-tool]]
-            [pyregence.components.map-controls.collapsible-panel :refer [collapsible-panel]]
-            [pyregence.components.map-controls.information-tool  :refer [information-tool]]
-            [pyregence.components.map-controls.legend-box        :refer [legend-box]]
-            [pyregence.components.map-controls.match-drop-tool   :refer [match-drop-tool]]
-            [pyregence.components.map-controls.measure-tool      :refer [measure-tool]]
-            [pyregence.components.map-controls.mouse-lng-lat     :refer [mouse-lng-lat]]
-            [pyregence.components.map-controls.scale-bar         :refer [scale-bar]]
-            [pyregence.components.map-controls.time-slider       :refer [time-slider]]
-            [pyregence.components.map-controls.tool-bar          :refer [tool-bar]]
-            [pyregence.components.map-controls.zoom-bar          :refer [zoom-bar]]
-            [pyregence.components.mapbox                         :as mb]
-            [pyregence.components.messaging                      :refer [message-box-modal toast-message!]]
-            [pyregence.components.popups                         :refer [fire-popup]]
-            [pyregence.components.svg-icons                      :as svg]
-            [pyregence.config                                    :as c]
-            [pyregence.state                                     :as !]
-            [pyregence.styles                                    :as $]
-            [pyregence.utils.async-utils                         :as u-async]
-            [pyregence.utils.browser-utils                       :as u-browser]
-            [pyregence.utils.data-utils                          :as u-data]
-            [pyregence.utils.misc-utils                          :as u-misc]
-            [pyregence.utils.number-utils                        :as u-num]
-            [pyregence.utils.time-utils                          :as u-time]
-            [reagent.core                                        :as r]
-            [reagent.dom                                         :as rd]))
+  (:require
+   [cljs.core.async.interop                             :refer-macros [<p!]]
+   [clojure.core.async                                  :refer [<! go]]
+   [clojure.edn                                         :as edn]
+   [clojure.spec.alpha                                  :as s]
+   [clojure.string                                      :as str]
+   [cognitect.transit                                   :as t]
+   [herb.core                                           :refer [<class]]
+   [pyregence.components.map-controls.camera-tool       :refer [camera-tool]]
+   [pyregence.components.map-controls.collapsible-panel :refer [collapsible-panel]]
+   [pyregence.components.map-controls.information-tool  :refer [information-tool]]
+   [pyregence.components.map-controls.legend-box        :refer [legend-box]]
+   [pyregence.components.map-controls.match-drop-tool   :refer [match-drop-tool]]
+   [pyregence.components.map-controls.measure-tool      :refer [measure-tool]]
+   [pyregence.components.map-controls.mouse-lng-lat     :refer [mouse-lng-lat]]
+   [pyregence.components.map-controls.scale-bar         :refer [scale-bar]]
+   [pyregence.components.map-controls.time-slider       :refer [time-slider]]
+   [pyregence.components.map-controls.tool-bar          :refer [tool-bar]]
+   [pyregence.components.map-controls.zoom-bar          :refer [zoom-bar]]
+   [pyregence.components.mapbox                         :as mb]
+   [pyregence.components.messaging                      :refer [message-box-modal
+                                                                toast-message!]]
+   [pyregence.components.nav-bar                        :refer [nav-bar]]
+   [pyregence.components.popups                         :refer [fire-popup]]
+   [pyregence.components.svg-icons                      :as svg]
+   [pyregence.config                                    :as c]
+   [pyregence.state                                     :as !]
+   [pyregence.styles                                    :as $]
+   [pyregence.utils.async-utils                         :as u-async]
+   [pyregence.utils.browser-utils                       :as u-browser]
+   [pyregence.utils.data-utils                          :as u-data]
+   [pyregence.utils.misc-utils                          :as u-misc]
+   [pyregence.utils.number-utils                        :as u-num]
+   [pyregence.utils.time-utils                          :as u-time]
+   [react                                               :as react]
+   [reagent.core                                        :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec
@@ -687,21 +689,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- control-layer [user-id]
-  (let [my-box (r/atom #js {})]
+  (let [my-box (r/atom #js {})
+        ref    (react/createRef)]
     (r/create-class
      {:component-did-mount
       (fn [this]
-        (let [this-node      (rd/dom-node this)
+        (let [this-node      (.-current ref)
               update-my-box! (fn [& _] (reset! my-box (.getBoundingClientRect this-node)))]
           (update-my-box!)
           (if (nil? (.-ResizeObserver js/window)) ;; Handle older mobile browsers
             (.addEventListener js/document "resize" update-my-box!)
             (-> (js/ResizeObserver. update-my-box!)
                 (.observe this-node)))))
-
       :render
       (fn []
-        [:div {:style ($control-layer)}
+        [:div {:ref   ref
+               :style ($control-layer)}
          [collapsible-panel
           (get @!/*params @!/*forecast)
           select-param!
