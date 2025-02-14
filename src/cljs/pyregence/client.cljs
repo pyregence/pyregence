@@ -1,22 +1,20 @@
 (ns ^:figwheel-hooks pyregence.client
-  (:require [clojure.core.async                 :refer [go <!]]
-            [clojure.edn                        :as edn]
-            [goog.dom                           :as dom]
-            [reagent.dom                        :refer [render]]
-            [pyregence.components.page-layout   :refer [wrap-page]]
-            [pyregence.pages.admin              :as admin]
-            [pyregence.pages.dashboard          :as dashboard]
-            [pyregence.pages.help               :as help]
-            [pyregence.pages.login              :as login]
-            [pyregence.pages.near-term-forecast :as ntf]
-            [pyregence.pages.not-found          :as not-found]
-            [pyregence.pages.privacy-policy     :as privacy]
-            [pyregence.pages.register           :as register]
-            [pyregence.pages.reset-password     :as reset-password]
-            [pyregence.pages.terms-of-use       :as terms]
-            [pyregence.pages.verify-email       :as verify-email]
-            [pyregence.state                    :as !]
-            [pyregence.utils.async-utils        :as u-async]))
+  (:require
+   [goog.dom                           :as dom]
+   [pyregence.components.page-layout   :refer [wrap-page]]
+   [pyregence.components.vega          :as vega]
+   [pyregence.pages.admin              :as admin]
+   [pyregence.pages.dashboard          :as dashboard]
+   [pyregence.pages.help               :as help]
+   [pyregence.pages.login              :as login]
+   [pyregence.pages.near-term-forecast :as ntf]
+   [pyregence.pages.not-found          :as not-found]
+   [pyregence.pages.privacy-policy     :as privacy]
+   [pyregence.pages.register           :as register]
+   [pyregence.pages.reset-password     :as reset-password]
+   [pyregence.pages.terms-of-use       :as terms]
+   [pyregence.pages.verify-email       :as verify-email]
+   [reagent.dom                        :refer [render]]))
 
 (defonce ^:private original-params  (atom {}))
 (defonce ^:private original-session (atom {}))
@@ -60,25 +58,9 @@
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."
   [params session]
-  (go
-    (let [clj-params    (if params
-                          (reset! original-params (js->clj params :keywordize-keys true))
-                          @original-params)
-          clj-session   (if session
-                          (reset! original-session (js->clj session :keywordize-keys true))
-                          @original-session)
-          merged-params (merge clj-params clj-session)]
-      (def merged-params merged-params)
-      (reset! !/dev-mode?           (get clj-session :dev-mode))
-      (reset! !/feature-flags       (get clj-session :features))
-      (reset! !/geoserver-urls      (get clj-session :geoserver))
-      (reset! !/default-forecasts   (get clj-session :default-forecasts))
-      (reset! !/pyr-auth-token      (edn/read-string (:body (<! (u-async/call-clj-async! "get-pyr-auth-token")))))
-      (reset! !/mapbox-access-token (edn/read-string (:body (<! (u-async/call-clj-async! "get-mapbox-access-token")))))
-      (render-root merged-params))))
-
-(comment
-  (render-root {}))
+  (render
+   [vega/lol]
+   (dom/getElement "app")))
 
 (defn- ^:after-load mount-root!
   "A hook for figwheel to call the init function again."
