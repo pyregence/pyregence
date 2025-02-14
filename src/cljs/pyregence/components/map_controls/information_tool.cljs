@@ -192,14 +192,54 @@
                                                           (map (fn [entry]
                                                                  (contains? @!/no-data-quantities (str (:band entry)))))
                                                           (every? true?))))]
-                             [vega-information
-                              box-height
-                              box-width
-                              select-layer!
-                              units
-                              cur-hour
-                              convert
-                              mobile?]))]
+                             (cond
+                               (not has-point?)
+                               [loading-cover
+                                box-height
+                                box-width
+                                "Click on the map to view the value(s) of particular point."]
+
+                               @!/point-info-loading?
+                               [loading-cover
+                                box-height
+                                box-width
+                                "Loading..."]
+
+                               (and (nil? @!/last-clicked-info) (empty? @!/legend-list))
+                               [loading-cover
+                                box-height
+                                box-width
+                                "There was an issue getting point information for this layer."]
+
+                               (and @!/last-clicked-info (empty? @!/legend-list))
+                               [loading-cover
+                                box-height
+                                box-width
+                                "There was an issue getting the legend for this layer."]
+
+                               no-info?
+                               [loading-cover
+                                box-height
+                                box-width
+                                "This point does not have any information."]
+
+                               single-point?
+                               [single-point-info
+                                box-height
+                                box-width
+                                units
+                                convert
+                                no-convert]
+
+                               :else
+                               [vega-information
+                                box-height
+                                box-width
+                                select-layer!
+                                units
+                                cur-hour
+                                convert
+                                mobile?])))]
       (if @!/mobile?
         [:div#info-tool
          {:style ($/combine $/tool $mobile-info-tool)}

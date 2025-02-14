@@ -98,17 +98,6 @@
                              :encoding  {:size {:condition {:selection :point-hover :value 150}
                                                 :value     75}}}]}]}))
 
-(defn- hack-it! []
-  (let [summary (.querySelector js/document ".vega-embed summary")]
-    (set! (.-transform (.-style summary)) "translate(-20%, 20%)")
-    #_(.-style summary)
-    #_(.setAttribute summary "style" "transform: translate(-20%, 20%)")))
-
-(comment (def bla
-           (hack-it!)))
-
-;; => #object[CSS2Properties [object CSS2Properties]]
-
 (defn- render-vega [spec layer-click! elem]
   (when (and spec (seq (get-in spec [:data :values])))
     (go
@@ -117,7 +106,6 @@
                                  (clj->js spec)
                                  (clj->js {:renderer "canvas"
                                            :mode     "vega-lite"})))]
-          (hack-it!)
           (-> result .-view (.addEventListener
                              "click"
                              (fn [_ data]
