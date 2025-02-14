@@ -4,7 +4,9 @@
    [cljs.core.async.interop                 :refer-macros [<p!]]
    [clojure.core.async                      :refer [go]]
    [pyregence.state                         :as !]
+   [pyregence.utils.data-utils              :as u-data]
    [pyregence.utils.misc-utils              :as u-misc]
+   [pyregence.utils.number-utils            :as u-num]
    [react                                   :as react]
    [reagent.core                            :as r]))
 
@@ -146,13 +148,7 @@
   "A function to create a Vega line plot."
   [box-height box-width layer-click! units current-hour convert]
   (prn "box-width:" box-width)
-  [vega-canvas {:spec             (layer-line-plot units current-hour convert)
-                :box-height       #_box-height 227
-                :box-width        #_box-width  460
-                #_#_:layer-click! layer-click!}])
-(defn lol
-  []
-  [vega-canvas {:spec             (layer-line-plot nil nil nil)
-                :box-height       #_box-height 227
-                :box-width        #_box-width  460
-                #_#_:layer-click! layer-click!}])
+  [vega-canvas {:spec         (layer-line-plot units current-hour convert)
+                :box-height   box-height
+                :box-width    box-width
+                :layer-click! layer-click!}])
