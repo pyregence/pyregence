@@ -1,13 +1,14 @@
 (ns pyregence.components.vega
-  (:require [cljs.core.async.interop      :refer-macros [<p!]]
-            ["vega-embed"                 :as vega-embed :refer [embed]]
-            [clojure.core.async           :refer [go]]
-            [pyregence.state              :as !]
-            [pyregence.utils.data-utils   :as u-data]
-            [pyregence.utils.misc-utils   :as u-misc]
-            [pyregence.utils.number-utils :as u-num]
-            [reagent.core                 :as r]
-            [reagent.dom                  :as rd]))
+  (:require
+   ["vega-embed"                 :as vega-embed :refer [embed]]
+   [cljs.core.async.interop      :refer-macros [<p!]]
+   [clojure.core.async           :refer [go]]
+   [pyregence.state              :as !]
+   [pyregence.utils.data-utils   :as u-data]
+   [pyregence.utils.misc-utils   :as u-misc]
+   [pyregence.utils.number-utils :as u-num]
+   [react                        :as react]
+   [reagent.core                 :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -51,8 +52,7 @@
         x-axis-units         ({:near-term "Hour" :long-term "Year"} @!/*forecast-type)]
     {:width    "container"
      :height   "container"
-     :autosize {:type "fit" :resize true}
-     :padding  {:left "16" :top "16" :right "16" :bottom "16"}
+     :autosize {:type "fit" :resize true :contains "content"}
      :data     {:values processed-point-info}
      :layer    [{:encoding {:x       {:field "hour"
                                       :type  "quantitative"
@@ -118,22 +118,27 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- vega-canvas []
-  (r/create-class
-   {:component-did-mount
-    (fn [this]
-      (let [{:keys [spec layer-click!]} (r/props this)]
-        (render-vega spec layer-click! (rd/dom-node this))))
-
-    :component-did-update
-    (fn [this _]
-      (let [{:keys [spec layer-click!]} (r/props this)]
-        (render-vega spec layer-click! (rd/dom-node this))))
-
-    :render
-    (fn [this]
-      [:div#vega-canvas
-       {:style {:height (:box-height (r/props this))
-                :width  (:box-width  (r/props this))}}])}))
+  (let [ref (react/createRef)]
+    (r/create-class
+     {:component-did-mount
+      (fn [this]
+        (let [{:keys [spec layer-click!]} (r/props this)]
+          (render-vega spec layer-click! (.-current ref))))
+      :component-did-update
+      (fn [this _]
+        (let [{:keys [spec layer-click!]} (r/props this)]
+          (render-vega spec layer-click! (.-current ref))))
+      :render
+      (fn [this]
+        [:div#vega-canvas
+         {:ref   ref
+          :style {:background-color "white"
+                  :height           (:box-height (r/props this))
+                  :padding-left     "10px"
+                  :padding-bottom   "16px"
+                  :padding-top      "16px"
+                  :padding-right    "32px"
+                  :width            (:box-width (r/props this))}}])})))
 
 (defn vega-box
   "A function to create a Vega line plot."

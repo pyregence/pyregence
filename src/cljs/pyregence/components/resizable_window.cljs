@@ -1,9 +1,10 @@
 (ns pyregence.components.resizable-window
-  (:require [reagent.core     :as r]
-            [reagent.dom      :as rd]
-            [herb.core :refer [<class]]
-            [pyregence.styles :as $]
-            [pyregence.components.svg-icons :refer [close]]))
+  (:require
+   [herb.core                            :refer [<class]]
+   [pyregence.components.svg-icons       :refer [close]]
+   [pyregence.styles                     :as $]
+   [react                                :as react]
+   [reagent.core                         :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -69,23 +70,23 @@
                       :margin-right "2px"}}]]]))
 
 (defn- title-div [title title-height on-click]
-  (r/create-class
-   {:component-did-mount
-    (fn [this]
-      (reset! title-height
-              (-> this
-                  (rd/dom-node)
-                  (.getBoundingClientRect)
-                  (aget "height"))))
-
-    :render
-    (fn [_]
-      [:div {:style {:border-bottom (str "1px solid " ($/color-picker :border-color)) :width "100%"}}
-       [:label {:style {:margin-left ".5rem" :margin-top ".25rem"}} title]
-       [:span {:class    (<class $/p-add-hover)
-               :style    ($close-button @title-height)
-               :on-click on-click}
-        [close]]])}))
+  (let [ref (react/createRef)]
+    (r/create-class
+     {:component-did-mount
+      (fn [this]
+        (reset! title-height
+                (-> (.-current ref)
+                    (.getBoundingClientRect)
+                    (aget "height"))))
+      :render
+      (fn [_]
+        [:div {:ref   ref
+               :style {:border-bottom (str "1px solid " ($/color-picker :border-color)) :width "100%"}}
+         [:label {:style {:margin-left ".5rem" :margin-top ".25rem"}} title]
+         [:span {:class    (<class $/p-add-hover)
+                 :style    ($close-button @title-height)
+                 :on-click on-click}
+          [close]]])})))
 
 (defn resizable-window
   "A component for a resizable window. Takes in the window's parent, initial dimensions,

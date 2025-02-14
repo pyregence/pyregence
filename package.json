@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "mapbox-gl": "^3.9.3",
-    "vega-embed": "^6.0.0",
+    "vega-embed": "^6.29.0",
     "react": "^16.13.0",
     "react-dom": "^16.13.0"
   },
