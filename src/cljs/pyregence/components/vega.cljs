@@ -52,8 +52,8 @@
         x-axis-units         ({:near-term "Hour" :long-term "Year"} @!/*forecast-type)]
     {:width    "container"
      :height   "container"
-     :autosize {:type "fit" :resize true}
-     :padding  {:left "16" :top "16" :right "16" :bottom "16"}
+     :autosize {:type "fit" :resize true :contains "content"}
+     :padding  {:left "16" :top "16" :bottom "16"}
      :data     {:values processed-point-info}
      :layer    [{:encoding {:x       {:field "hour"
                                       :type  "quantitative"
