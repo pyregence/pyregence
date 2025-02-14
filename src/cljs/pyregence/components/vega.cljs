@@ -53,7 +53,6 @@
     {:width    "container"
      :height   "container"
      :autosize {:type "fit" :resize true :contains "content"}
-     :padding  {:left "16" :top "16" :bottom "16"}
      :data     {:values processed-point-info}
      :layer    [{:encoding {:x       {:field "hour"
                                       :type  "quantitative"
@@ -135,6 +134,7 @@
          {:ref   ref
           :style {:height (:box-height (r/props this))
                   :background-color "white"
+                  :padding "16px"
                   :width  (:box-width  (r/props this))}}])})))
 
 (defn vega-box
