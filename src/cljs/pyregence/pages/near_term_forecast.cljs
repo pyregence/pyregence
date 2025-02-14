@@ -627,19 +627,8 @@
       (reset! !/user-psps-orgs-list (filter (fn [org] (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
                                             @!/user-orgs-list))
       (reset! !/*forecast-type forecast-type)
-
       (reset! !/*forecast
-              (cond
-                (= :long-term forecast-type)
-                (or (keyword forecast)
-                    (keyword (forecast-type @!/default-forecasts)))
-
-                ;; other wise it's near term
-                (zero? active-fire-count)
-                :fire-weather
-
-                :else
-                :active-fire))
+              :fire-risk)
       (reset! !/*layer-idx (if layer-idx (js/parseInt layer-idx) 0))
       (mb/init-map! "map"
                     layers
@@ -727,10 +716,10 @@
               [measure-tool @my-box #(reset! !/show-measure-tool? false)])
             (when @!/show-camera?
               [camera-tool @my-box #(reset! !/show-camera? false)])])
-         [legend-box
-          (get-any-level-key :reverse-legend?)
-          (get-any-level-key :time-slider?)
-          (get-current-layer-key :units)]
+         #_[legend-box
+            (get-any-level-key :reverse-legend?)
+            (get-any-level-key :time-slider?)
+            (get-current-layer-key :units)]
          [tool-bar
           set-show-info!
           get-any-level-key
