@@ -108,8 +108,15 @@
 (defn- hack-it! []
   (let [summary (.querySelector js/document ".vega-embed summary")]
     (set! (.-transform (.-style summary)) "translate(-20%, 20%)")
-    #_(.-style summary)
-    #_(.setAttribute summary "style" "transform: translate(-20%, 20%)")))
+    #_(.-style detail)
+    #_(.setAttribute detail "style" "transform: translate(-20%, 20%)")))
+
+(defn- unhack-it! []
+  (prn "unhack-it!:" unhack-it!)
+  (let [summary (.querySelector js/document ".vega-embed summary")]
+    (set! (.-transform (.-style summary)) "")
+    #_(.-style detail)
+    #_(.setAttribute detail "style" "transform: translate(-20%, 20%)")))
 
 (comment (def bla
            (hack-it!)))
@@ -140,7 +147,10 @@
 (defn- vega-canvas []
   (let [ref (react/createRef)]
     (r/create-class
-     {:component-did-mount
+     {:component-will-unmount
+      (fn [this]
+        (unhack-it!))
+      :component-did-mount
       (fn [this]
         (let [{:keys [spec layer-click!]} (r/props this)]
           (render-vega spec layer-click! (.-current ref))))
@@ -165,7 +175,7 @@
 
 ;; document.querySelectorAll('input[type=text]')
 
-;; .vega-embed summary {
+;; .vega-embed detail {
 ;; transform: translate(-50%, 25%);
 ;; transform: translate(-25%);
 ;; transform: translate(-20%, 20%);
