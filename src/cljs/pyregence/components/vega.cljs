@@ -1,14 +1,14 @@
 (ns pyregence.components.vega
   (:require
-   ["vega-embed"                            :as vega-embed :refer [embed]]
-   [cljs.core.async.interop                 :refer-macros [<p!]]
-   [clojure.core.async                      :refer [go]]
-   [pyregence.state                         :as !]
-   [pyregence.utils.data-utils              :as u-data]
-   [pyregence.utils.misc-utils              :as u-misc]
-   [pyregence.utils.number-utils            :as u-num]
-   [react                                   :as react]
-   [reagent.core                            :as r]))
+   ["vega-embed"                 :as vega-embed :refer [embed]]
+   [cljs.core.async.interop      :refer-macros [<p!]]
+   [clojure.core.async           :refer [go]]
+   [pyregence.state              :as !]
+   [pyregence.utils.data-utils   :as u-data]
+   [pyregence.utils.misc-utils   :as u-misc]
+   [pyregence.utils.number-utils :as u-num]
+   [react                        :as react]
+   [reagent.core                 :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -132,13 +132,13 @@
       (fn [this]
         [:div#vega-canvas
          {:ref   ref
-          :style {:height (:box-height (r/props this))
-                  :background-color "white"
-                  :padding-left "16px"
-                  :padding-bottom "16px"
-                  :padding-top "16px"
-                  :padding-right "32px"
-                  :width  (:box-width  (r/props this))}}])})))
+          :style {:background-color "white"
+                  :height           (:box-height (r/props this))
+                  :padding-left     "10px"
+                  :padding-bottom   "16px"
+                  :padding-top      "16px"
+                  :padding-right    "32px"
+                  :width            (:box-width (r/props this))}}])})))
 
 (defn vega-box
   "A function to create a Vega line plot."
