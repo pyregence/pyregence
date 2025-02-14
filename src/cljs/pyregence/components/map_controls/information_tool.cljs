@@ -94,15 +94,17 @@
   (r/with-let [info-height (if mobile?
                              (r/atom box-height)
                              (r/atom 0))]
-    [vega-box
-     (if mobile?
-       @info-height
-       (- box-height @info-height))
-     box-width
-     select-layer!
-     units
-     cur-hour
-     convert]))
+    [:div {:style {:display "flex" :flex-direction "column"}}
+     [vega-box
+      (if mobile?
+        @info-height
+        (- box-height @info-height))
+      box-width
+      select-layer!
+      units
+      cur-hour
+      convert]
+     [information-div units info-height convert mobile?]]))
 
 (defn- fbfm40-info []
   [:div {:style {:margin "0.125rem 0.75rem"}}
@@ -190,14 +192,54 @@
                                                           (map (fn [entry]
                                                                  (contains? @!/no-data-quantities (str (:band entry)))))
                                                           (every? true?))))]
-                             [vega-information
-                              box-height
-                              box-width
-                              select-layer!
-                              units
-                              cur-hour
-                              convert
-                              mobile?]))]
+                             (cond
+                               (not has-point?)
+                               [loading-cover
+                                box-height
+                                box-width
+                                "Click on the map to view the value(s) of particular point."]
+
+                               @!/point-info-loading?
+                               [loading-cover
+                                box-height
+                                box-width
+                                "Loading..."]
+
+                               (and (nil? @!/last-clicked-info) (empty? @!/legend-list))
+                               [loading-cover
+                                box-height
+                                box-width
+                                "There was an issue getting point information for this layer."]
+
+                               (and @!/last-clicked-info (empty? @!/legend-list))
+                               [loading-cover
+                                box-height
+                                box-width
+                                "There was an issue getting the legend for this layer."]
+
+                               no-info?
+                               [loading-cover
+                                box-height
+                                box-width
+                                "This point does not have any information."]
+
+                               single-point?
+                               [single-point-info
+                                box-height
+                                box-width
+                                units
+                                convert
+                                no-convert]
+
+                               :else
+                               [vega-information
+                                box-height
+                                box-width
+                                select-layer!
+                                units
+                                cur-hour
+                                convert
+                                mobile?])))]
       (if @!/mobile?
         [:div#info-tool
          {:style ($/combine $/tool $mobile-info-tool)}
