@@ -49,7 +49,7 @@
 
 (def processed-point-info dataaa)
 
-(defn- layer-line-plot [units current-hour convert]
+(defn- layer-line-plot [units current-hour convert box-height]
   (let [#_#_processed-legend     (cond->> (u-data/filter-no-data @!/legend-list)
                                    (fn? convert) (mapv #(update % "quantity" (comp str convert))))
         #_#_processed-point-info (cond->> (u-data/replace-no-data-nil @!/last-clicked-info @!/no-data-quantities)
@@ -58,8 +58,7 @@
                                    :else         (mapv #(update % :band u-num/round-last-clicked-info)))
         #_#_x-axis-units         ({:near-term "Hour" :long-term "Year"} @!/*forecast-type)]
     {:width    "container"
-     :height   "container"
-     :autosize {:type "fit" :contains "padding"}
+     :autosize {:type "fit" :contains "content"}
      :data     {:values processed-point-info}
      :layer    [{:encoding {:x       {:field "hour"
                                       :type  "quantitative"
@@ -139,6 +138,7 @@
         [:div#vega-canvas
          {:ref   ref
           :style {:height           (:box-height (r/props this))
+                  :border           "solid"
                   :background-color "white"
                   :width            (:box-width  (r/props this))}}])})))
 
@@ -146,13 +146,13 @@
   "A function to create a Vega line plot."
   [box-height box-width layer-click! units current-hour convert]
   (prn "box-width:" box-width)
-  [vega-canvas {:spec             (layer-line-plot units current-hour convert)
+  [vega-canvas {:spec             (layer-line-plot units current-hour convert 227)
                 :box-height       #_box-height 227
                 :box-width        #_box-width  460
                 #_#_:layer-click! layer-click!}])
 (defn lol
   []
-  [vega-canvas {:spec             (layer-line-plot nil nil nil)
+  [vega-canvas {:spec             (layer-line-plot nil nil nil 227)
                 :box-height       #_box-height 227
                 :box-width        #_box-width  460
                 #_#_:layer-click! layer-click!}])
