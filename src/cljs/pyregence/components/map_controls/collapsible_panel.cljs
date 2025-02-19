@@ -178,6 +178,8 @@
                               (map (fn [[id v]] (assoc v :id id)))
                               (sort-by :z-index)
                               (reverse))]
+    (def one-sorted-underlays (first sorted-underlays))
+;; => {:opt-label "Transmission lines", :z-index 107, :filter-set #{"us-transmission-lines" "fire-detections"}, :geoserver-key :shasta, :id :us-trans-lines}
     [:<>
      [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
       [:div {:style {:display "flex" :justify-content "space-between"}}
