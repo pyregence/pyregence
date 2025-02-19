@@ -1,0 +1,2 @@
+/home/danielhabib/sig/pyregence/src/cljs/pyregence/components/mapbox.cljs
+`reset-active-layer`! fn -> `wfms`
