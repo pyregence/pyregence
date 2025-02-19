@@ -25,11 +25,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def common-underlays
-  {:conus-buildings    {:enabled?      #(feature-enabled? :structures)
-                        :opt-label     "Structures"
-                        :z-index       104
-                        :filter-set    #{"fire-detections" "conus-buildings"}
-                        :geoserver-key :shasta}})
+  {:conus-buildings                      {:enabled?      #(feature-enabled? :structures)
+                                          :opt-label     "Structures"
+                                          :z-index       104
+                                          :filter-set    #{"fire-detections" "conus-buildings"}
+                                          :geoserver-key :shasta}
+   :transmission-lines-from-some-utility {:opt-label     "Transmission lines FROM SOME STUFF",
+                                          :z-index       107,
+                                          :filter-set    #{"us-transmission-lines" "fire-detections"},
+                                          :geoserver-key :shasta,
+                                          :id            :us-trans-lines-bla-bla-bla}})
 
 (def near-term-forecast-underlays
   (array-map
