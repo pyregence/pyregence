@@ -903,4 +903,5 @@
      "load"
      (fn []
        (reset! the-map the-map*)
+       (resize-map!)
        (on-load-fn)))))
