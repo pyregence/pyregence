@@ -317,6 +317,40 @@
                          :geoserver-key (if match-job-id :match-drop :trinity)}]))))
          (apply array-map))))
 
+(comment (get-user-layers 1))
+
+[{:org_layer_id 26, :layer_path "[:fire-risk :params :pattern :options :liberty]", :layer_config "{:opt-label \"Liberty lines\", :filter \"liberty\", :geoserver-key :psps, :disabled-for #{:crown-fire-area}}"} {:org_layer_id 27, :layer_path "[:psps-zonal :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 28, :layer_path "[:psps-zonal :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 29, :layer_path "[:fuels :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 30, :layer_path "[:fire-weather :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 31, :layer_path "[:fire-risk :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 32, :layer_path "[:active-fire :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 33, :layer_path "[:fuels :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 34, :layer_path "[:fire-weather :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 35, :layer_path "[:fire-risk :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 36, :layer_path "[:active-fire :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 37, :layer_path "[:fire-risk :params :pattern :options :liberty]", :layer_config "{:opt-label \"Liberty lines\", :filter \"liberty\", :geoserver-key :psps, :disabled-for #{:crown-fire-area}}"} {:org_layer_id 38, :layer_path "[:psps-zonal :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 39, :layer_path "[:psps-zonal :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 40, :layer_path "[:fuels :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 41, :layer_path "[:fire-weather :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 42, :layer_path "[:fire-risk :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 43, :layer_path "[:active-fire :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 44, :layer_path "[:fuels :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 45, :layer_path "[:fire-weather :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 46, :layer_path "[:fire-risk :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 47, :layer_path "[:active-fire :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 48, :layer_path "[:fire-risk :params :pattern :options :liberty]", :layer_config "{:opt-label \"Liberty lines\", :filter \"liberty\", :geoserver-key :psps, :disabled-for #{:crown-fire-area}}"}
+ {:org_layer_id 49, :layer_path "[:psps-zonal :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 50, :layer_path "[:psps-zonal :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 51, :layer_path "[:fuels :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 52, :layer_path "[:fire-weather :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 53, :layer_path "[:fire-risk :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 54, :layer_path "[:active-fire :underlays :liberty-trans]", :layer_config "{:opt-label \"Transmission Lines (Liberty)\", :z-index 106, :filter-set #{\"liberty\" \"liberty-trans\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 55, :layer_path "[:fuels :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 56, :layer_path "[:fire-weather :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 57, :layer_path "[:fire-risk :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}
+ {:org_layer_id 58, :layer_path "[:active-fire :underlays :liberty-dist]", :layer_config "{:opt-label \"Distribution Lines (Liberty)\", :z-index 105, :filter-set #{\"liberty\" \"liberty-dist\" \"psps-static\"}, :geoserver-key :psps}"}]
+
 (defn get-user-layers [user-id]
   ; TODO get user-id from session on backend
   (data-response (call-sql "get_user_layers_list" user-id)))
