@@ -550,7 +550,7 @@
                                       (assoc layer
                                              :date (u-time/get-date-from-js js-time @!/show-utc?)
                                              :time (u-time/get-time-from-js js-time @!/show-utc?)))
-                                    @!/last-clicked-info))
+                                    %))
   (swap! !/processed-params  #(update-in %
                                          [:model-init :options]
                                          (fn [options]
