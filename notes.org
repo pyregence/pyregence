@@ -1,2 +1,5 @@
 /home/danielhabib/sig/pyregence/src/cljs/pyregence/components/mapbox.cljs
 `reset-active-layer`! fn -> `wfms`
+
+/home/danielhabib/sig/pyregence/src/cljs/pyregence/pages/near_term_forecast.cljs
+defn select-forecast!
