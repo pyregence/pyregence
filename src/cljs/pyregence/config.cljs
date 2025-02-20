@@ -36,6 +36,13 @@
                      :filter-set    #{"fire-detections" "conus-buildings"}
                      :geoserver-key :shasta}})
 
+(def common-psps
+  {:common-psps {:enabled?      (constantly true)
+                 :opt-label     "Common PSPS"
+                 :z-index       108
+                 :filter-set    #{"fire-detections" "conus-buildings"}
+                 :geoserver-key :psps}})
+
 (def near-term-forecast-underlays
   (array-map
    :us-trans-lines          {:opt-label     "Transmission lines"
@@ -575,7 +582,7 @@
    :psps-zonal   {:opt-label       "PSPS"
                   :filter          "psps-zonal"
                   :geoserver-key   :psps
-                  :underlays       (merge common-underlays near-term-forecast-underlays)
+                  :underlays       (merge common-underlays near-term-forecast-underlays common-psps)
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "Public Safety Power Shutoffs (PSPS) zonal statistics."
