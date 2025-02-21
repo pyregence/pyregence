@@ -201,7 +201,7 @@
                           (re-matches #"climate_FireSim.*_\d{4}" full-name)
                           (merge-fn (split-wg4-scenarios full-name))
 
-                          (str/starts-with? full-name "psps-static")
+                          (str/starts-with? full-name "psps-static") ;; so I don't need to add anything... since this new layer is also a psps-static one...
                           (merge-fn (split-psps-underlays full-name))))))
                    (vec)))
             xml)
