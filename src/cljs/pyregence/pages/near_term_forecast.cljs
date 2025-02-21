@@ -875,6 +875,7 @@
           (when (and @mb/the-map
                      (not-empty @!/capabilities)
                      (not-empty @!/*params))
-            [control-layer user-id])
-          [map-layer]
+            [:div
+             [control-layer user-id]
+             [map-layer]])
           [pop-up]]])})))
