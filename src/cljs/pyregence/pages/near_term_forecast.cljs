@@ -823,6 +823,13 @@
                   :text-align    "center"}}
      "Loading..."]]])
 
+(defn the-whole-map-component [user-id map]
+  [:div
+   ;;  pass map in: [control-layer user-id map] because control-layer is the only top level component that uses `the-map`
+   ;; inside of it there are other components that uses `the-map` so we could just pass the value around.
+   [control-layer user-id]
+   [map-layer]])
+
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
   [{:keys [user-id] :as params}]
@@ -875,6 +882,7 @@
           (when (and @mb/the-map
                      (not-empty @!/capabilities)
                      (not-empty @!/*params))
+            #_[the-whole-map-component user-id @mb/the-map]
             [:div
              [control-layer user-id]
              [map-layer]])
