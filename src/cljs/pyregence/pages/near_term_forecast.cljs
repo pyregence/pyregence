@@ -611,6 +611,8 @@
                      options-config)))
 
 (defn init-map! [{:keys [forecast-type  lat lng zoom] :as params}]
+  (prn "forecast-type:" forecast-type)
+  (prn "init-map!:       TEEEEE")
   (let [{:keys [layers]} (c/get-forecast forecast-type)]
     (mb/init-map! "map"
                   layers
@@ -619,6 +621,7 @@
                   (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))))
 
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
+  (prn "initialize!:" "initialize!...")
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
@@ -835,7 +838,8 @@ clock
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
   [{:keys [user-id] :as params}]
-  (let [height (r/atom "100%")]
+  (let [height      (r/atom "100%")
+        initialized (atom false)]
     (r/create-class
      {:component-did-mount
       (fn [_]
@@ -851,8 +855,13 @@ clock
                           (prn "did mount: update.... will resize ... height:" height))]
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
-          (initialize! params)
-          (update-fn)))
+          (update-fn)
+          (initialize! params)))
+      :component-did-update
+      (fn [_]
+        (when (not @initialized)
+          (init-map! params)
+          (swap! initialized not)))
       :reagent-render
       (fn [_]
         [:div#near-term-forecast
