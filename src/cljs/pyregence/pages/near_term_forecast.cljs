@@ -611,8 +611,7 @@
                      options-config)))
 
 (defn init-map! [{:keys [forecast-type  lat lng zoom] :as params}]
-  (prn "forecast-type:" forecast-type)
-  (prn "init-map!:       TEEEEE")
+  (prn "init-map!")
   (let [{:keys [layers]} (c/get-forecast forecast-type)]
     (mb/init-map! "map"
                   layers
@@ -621,7 +620,7 @@
                   (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))))
 
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
-  (prn "initialize!:" "initialize!...")
+  (prn "initialize!")
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
@@ -852,21 +851,22 @@ clock
                                                       .getBoundingClientRect
                                                       (aget "height")))
                                                "px"))
-                          (prn "did mount: update.... will resize ... height:" height))]
+                          (prn ":component-did-mount" " height " @height))]
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
-          (update-fn)
-          (initialize! params)))
+          (update-fn)))
       :component-did-update
       (fn [_]
+        (prn ":component-did-update:" " height " @height)
         (when (not @initialized)
+          (initialize! params)
           (init-map! params)
           (swap! initialized not)))
       :reagent-render
       (fn [_]
         [:div#near-term-forecast
          {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
-         (println "render @height:" @height)
+         (prn ":reagent-render" " height " @height)
          [message-box-modal]
          (when @!/loading? [loading-modal])
          [message-modal]
