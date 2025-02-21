@@ -875,7 +875,6 @@
    Specifies the proper project layers based on the forecast type."
   [container-id layers get-current-layer-geoserver-credentials on-load-fn & [opts]]
   (goog/set mapbox "accessToken" @!/mapbox-access-token)
-  (prn "init-map!:" "init-map!")
   (when-not (.supported mapbox)
     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
                    "Please use the latest version of Chrome, Safari, or Firefox.")))
