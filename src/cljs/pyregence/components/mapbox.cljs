@@ -190,6 +190,7 @@
 (defn resize-map!
   "Resizes the map."
   []
+  (println "resize-map! @the-map:" @the-map)
   (when @the-map
     (js-invoke @the-map "resize")))
 

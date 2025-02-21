@@ -610,7 +610,17 @@
                                                        params))]))
                      options-config)))
 
+(defn init-map! [{:keys [forecast-type  lat lng zoom] :as params}]
+  (prn "init-map!")
+  (let [{:keys [layers]} (c/get-forecast forecast-type)]
+    (mb/init-map! "map"
+                  layers
+                  get-current-layer-geoserver-credentials
+                  #(select-forecast! @!/*forecast)
+                  (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))))
+
 (defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
+  (prn "initialize!")
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
@@ -627,25 +637,17 @@
       (reset! !/user-psps-orgs-list (filter (fn [org] (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
                                             @!/user-orgs-list))
       (reset! !/*forecast-type forecast-type)
-
       (reset! !/*forecast
               (cond
                 (= :long-term forecast-type)
                 (or (keyword forecast)
                     (keyword (forecast-type @!/default-forecasts)))
-
                 ;; other wise it's near term
                 (zero? active-fire-count)
                 :fire-weather
-
                 :else
                 :active-fire))
       (reset! !/*layer-idx (if layer-idx (js/parseInt layer-idx) 0))
-      (mb/init-map! "map"
-                    layers
-                    get-current-layer-geoserver-credentials
-                    #(select-forecast! @!/*forecast)
-                    (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (process-capabilities! fire-names
                              (edn/read-string (:body (<! user-layers-chan)))
                              options-config
@@ -824,7 +826,8 @@
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
   [{:keys [user-id] :as params}]
-  (let [height (r/atom "100%")]
+  (let [height      (r/atom "100%")
+        initialized (atom false)]
     (r/create-class
      {:component-did-mount
       (fn [_]
@@ -837,15 +840,23 @@
                                                       .getBoundingClientRect
                                                       (aget "height")))
                                                "px"))
-                          (js/setTimeout mb/resize-map! 50))]
+                          (js/setTimeout mb/resize-map! 50)
+                          (prn ":component-did-mount" " height " @height))]
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
-          (initialize! params)
           (update-fn)))
+      :component-did-update
+      (fn [_]
+        (prn ":component-did-update:" " height " @height)
+        (when (not @initialized)
+          (initialize! params)
+          (init-map! params)
+          (reset! initialized true)))
       :reagent-render
       (fn [_]
         [:div#near-term-forecast
          {:style ($/combine $/root {:height @height :padding 0 :position "relative"})}
+         (prn ":reagent-render" " height " @height)
          [message-box-modal]
          (when @!/loading? [loading-modal])
          [message-modal]
