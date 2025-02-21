@@ -851,6 +851,7 @@ clock
                                                       .getBoundingClientRect
                                                       (aget "height")))
                                                "px"))
+                          (js/setTimeout mb/resize-map! 50)
                           (prn ":component-did-mount" " height " @height))]
           (-> js/window (.addEventListener "touchend" update-fn))
           (-> js/window (.addEventListener "resize"   update-fn))
