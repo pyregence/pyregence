@@ -2,7 +2,7 @@
   (:require
    ["mapbox-gl"                          :as mapbox :refer [LngLatBounds Map
                                                             Marker Popup]]
-   [clojure.core.async                   :refer [<! >! chan go]]
+   [clojure.core.async                   :as async :refer [<! >! chan go]]
    [clojure.string                       :as str]
    [goog.dom                             :as dom]
    [goog.object                          :as goog]
@@ -20,7 +20,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mapbox map JS instance. See: https://docs.mapbox.com/mapbox-gl-js/api/map/
-(defonce ^{:doc "A reference to the mapbox object rendered on the \"map\" element by `init-map` function below."}
+(def ^{:doc "A reference to the mapbox object rendered on the \"map\" element by `init-map` function below."}
   the-map (r/atom nil))
 ;; Project layers (and their associated metadata) for a forecast as defined in `config.cljs`
 (defonce ^{:doc "Contains the project layers defined by forecast type."}
@@ -190,6 +190,7 @@
 (defn resize-map!
   "Resizes the map."
   []
+  (println "resize-map! @the-map:" @the-map)
   (when @the-map
     (js-invoke @the-map "resize")))
 
@@ -874,6 +875,7 @@
    Specifies the proper project layers based on the forecast type."
   [container-id layers get-current-layer-geoserver-credentials on-load-fn & [opts]]
   (goog/set mapbox "accessToken" @!/mapbox-access-token)
+  (prn "init-map!:" "init-map!")
   (when-not (.supported mapbox)
     (js/alert (str "Your browser does not support Pyregence Forecast.\n"
                    "Please use the latest version of Chrome, Safari, or Firefox.")))
