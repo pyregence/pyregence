@@ -25,23 +25,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def common-underlays
-  {:common-psps     {:enabled?      #(feature-enabled? :structures)
-                     :opt-label     "Common PSPS"
-                     :z-index       108
-                     :filter-set    #{"fire-detections" "conus-buildings"}
-                     :geoserver-key :psps}
-   :conus-buildings {:enabled?      #(feature-enabled? :structures)
+  {:conus-buildings {:enabled?      #(feature-enabled? :structures)
                      :opt-label     "Structures"
                      :z-index       104
                      :filter-set    #{"fire-detections" "conus-buildings"}
                      :geoserver-key :shasta}})
-
-(def common-psps
-  {:common-psps {:enabled?      (constantly true)
-                 :opt-label     "Common PSPS"
-                 :z-index       108
-                 :filter-set    #{"fire-detections" "conus-buildings"}
-                 :geoserver-key :psps}})
 
 (def utility-psps-common-underlays
   {:psps-static-zones {:enabled?      (constantly true)
