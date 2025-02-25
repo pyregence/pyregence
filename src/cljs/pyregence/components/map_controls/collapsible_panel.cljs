@@ -340,6 +340,9 @@
              (c/base-map-options)
              false
              select-base-map!]]]
-          [collapsible-panel-section
-           "help"
-           [help-section]]]]))))
+          [:div {:style {:position "absolute"
+                         :width    "100%"
+                         :bottom   "65px"}}
+           [collapsible-panel-section
+            "help"
+            [help-section]]]]]))))

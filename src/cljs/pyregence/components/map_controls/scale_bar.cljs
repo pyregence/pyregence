@@ -12,7 +12,7 @@
 (defn- $scale-line [time-slider?]
   {:background-color ($/color-picker :bg-color)
    :padding          ".2rem 0"
-   :bottom           (if (and @!/mobile? time-slider?) "90px" "36px")
+   :bottom           (if (and @!/mobile? time-slider?) "90px" "85px")
    :left             "auto"
    :right            "70px"
    :user-select      "none"})

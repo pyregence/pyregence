@@ -69,7 +69,7 @@
       (reset! minZoom min)
       (reset! maxZoom max))
     (mb/add-map-zoom-end! #(reset! *zoom %))
-    [:div#zoom-bar {:style ($/combine $/tool $/tool-bar {:bottom (if (and @!/mobile? time-slider?) "90px" "36px")})}
+    [:div#zoom-bar {:style ($/combine $/tool $/tool-bar {:bottom (if (and @!/mobile? time-slider?) "90px" "85px")})}
      (map-indexed (fn [i [icon hover-text on-click]]
                     ^{:key i} [tool-tip-wrapper
                                hover-text

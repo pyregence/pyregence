@@ -187,12 +187,6 @@
         lat    (.-latitude  coords)]
     (set-center! [lng lat] 12.0)))
 
-(defn resize-map!
-  "Resizes the map."
-  []
-  (when @the-map
-    (js-invoke @the-map "resize")))
-
 (defn- upsert-layer
   "Inserts `new-layer` into `v` if the 'id' does not already exist, or updates
    the matching row if it does exist."
@@ -903,4 +897,5 @@
      "load"
      (fn []
        (reset! the-map the-map*)
-       (on-load-fn)))))
+       (on-load-fn)
+       (.resize ^js the-map*)))))

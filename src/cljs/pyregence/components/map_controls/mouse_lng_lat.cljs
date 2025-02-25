@@ -10,7 +10,7 @@
 
 (defn- $mouse-lng-lat []
   {:background-color ($/color-picker :bg-color)
-   :bottom           "84px"
+   :bottom           "135px"
    :left             "auto"
    :padding          ".2rem"
    :right            "70px"})

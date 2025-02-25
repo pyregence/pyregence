@@ -14,7 +14,7 @@
 (defn- $time-slider []
   {:align-items   "center"
    :border-radius "5px 5px 0 0"
-   :bottom        "0"
+   :bottom        "45px"
    :display       "flex"
    :left          "0"
    :margin-left   "auto"
