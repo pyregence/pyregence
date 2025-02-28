@@ -33,6 +33,14 @@
 
 (def near-term-forecast-underlays
   (array-map
+   :state-boundaries        {:opt-label     "U.S. States"
+                             :z-index       108
+                             :filter-set    #{"fire-detections" "state-boundaries"}
+                             :geoserver-key :shasta}
+   :county-boundaries       {:opt-label     "U.S. Counties"
+                             :z-index       108
+                             :filter-set    #{"fire-detections" "county-boundaries"}
+                             :geoserver-key :shasta}
    :us-trans-lines          {:opt-label     "Transmission lines"
                              :z-index       107
                              :filter-set    #{"fire-detections" "us-transmission-lines"}
