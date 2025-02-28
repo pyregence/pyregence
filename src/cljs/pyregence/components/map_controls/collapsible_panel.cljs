@@ -94,7 +94,7 @@
   (with-meta
     {:display         "flex"
      :flex-direction  "column"
-     :height          "calc(100% - 3.25rem)"
+     :height          "100%"
      :justify-content "space-between"
      :overflow-y      "auto"}
     {:pseudo {:last-child {:padding-bottom "0.75rem"}}}))
@@ -304,42 +304,49 @@
     (fn [*params select-param! underlays]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @!/show-panel?)}
-         [collapsible-panel-toggle]
-         [collapsible-panel-header]
-         [:div#collapsible-panel-body {:class (<class $collapsible-panel-body)}
-          [:div#section-wrapper
+         [:div {:style {:display "flex"
+                        :flex-direction "column"
+                        :justify-content "space-between"
+                        :overflow-y "auto"
+                        :height "100%"}}
+          [:div
+           [collapsible-panel-toggle]
+           [collapsible-panel-header]
+           [:div#collapsible-panel-body {:class (<class $collapsible-panel-body)}
+            [:div#section-wrapper
+             [collapsible-panel-section
+              "layer-selection"
+              [:<>
+               (map (fn [[key {:keys [opt-label hover-text options sort? disabled]}]]
+                      (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                        ^{:key (str (random-uuid))}
+                        [:<>
+                         [panel-dropdown
+                          opt-label
+                          hover-text
+                          (get *params key)
+                          sorted-options
+                          (cond (ifn? disabled)     (disabled *params)
+                                (boolean? disabled) disabled
+                                :else               (= 1 (count sorted-options)))
+                          #(select-param! % key)
+                          selected-param-set]]))
+                    @!/processed-params)
+               [opacity-input]]]
+             [collapsible-panel-section
+              "optional-layers"
+              [optional-layers
+               underlays]]
+             [collapsible-panel-section
+              "base-map"
+              [panel-dropdown
+               "Base Map"
+               "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
+               @*base-map
+               (c/base-map-options)
+               false
+               select-base-map!]]]]]
+          [:div {:style {:padding-bottom "0.75rem"}}
            [collapsible-panel-section
-            "layer-selection"
-            [:<>
-             (map (fn [[key {:keys [opt-label hover-text options sort? disabled]}]]
-                    (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                      ^{:key (str (random-uuid))}
-                      [:<>
-                       [panel-dropdown
-                        opt-label
-                        hover-text
-                        (get *params key)
-                        sorted-options
-                        (cond (ifn? disabled)     (disabled *params)
-                              (boolean? disabled) disabled
-                              :else               (= 1 (count sorted-options)))
-                        #(select-param! % key)
-                        selected-param-set]]))
-                  @!/processed-params)
-             [opacity-input]]]
-           [collapsible-panel-section
-            "optional-layers"
-            [optional-layers
-             underlays]]
-           [collapsible-panel-section
-            "base-map"
-            [panel-dropdown
-             "Base Map"
-             "Provided courtesy of Mapbox, we offer three map views. Select from the dropdown menu according to your preference."
-             @*base-map
-             (c/base-map-options)
-             false
-             select-base-map!]]]
-          [collapsible-panel-section
-           "help"
-           [help-section]]]]))))
+            "help"
+            [help-section]]]]]))))
