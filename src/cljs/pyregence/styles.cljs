@@ -63,7 +63,8 @@
 (defglobal body-and-content-divs
   [:body {:background-color (color-picker :white)
           :height           "100%"
-          :position         "relative"}]
+          :position         "relative"
+          :overflow         "hidden"}]
   [:#app {:height "100%"}]
   [:#near-term-forecast {:display        "flex"
                          :flex-direction "column"
