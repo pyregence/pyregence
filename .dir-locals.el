@@ -1,3 +1,4 @@
-((nil . ((cider-default-cljs-repl . figwheel-main)
+((nil . ((cider-preferred-build-tool . clojure-cli)
+         (cider-default-cljs-repl . figwheel-main)
          (cider-figwheel-main-default-options . "compile-dev")
-         (cider-clojure-cli-global-options . "-A:figwheel-lib"))))
+         (cider-clojure-cli-aliases . "figwheel-lib"))))
