@@ -3,7 +3,7 @@
             [pyregence.cameras        :as cameras]
             [pyregence.capabilities   :as capabilities]
             [pyregence.email          :as email]
-            [pyregence.handlers       :refer [clj-handler]]
+            [pyregence.handlers       :refer [clj-handler clj-handler-v2]]
             [pyregence.match-drop     :as match-drop]
             [pyregence.red-flag       :as red-flag]
             [pyregence.secrets        :as secrets]
@@ -39,7 +39,10 @@
    [:post "/clj/get-email-by-user-id"]          {:handler     (clj-handler authentication/get-email-by-user-id)
                                                  :auth-type   :token
                                                  :auth-action :block}
-   [:post "/clj/get-organizations"]             {:handler     (clj-handler authentication/get-organizations)
+   [:post "/clj/get-organizations"]             {:handler     (clj-handler-v2
+                                                                (fn [user-id-from-session]
+                                                                  (fn [user-id-from-params]
+                                                                    (authentication/get-organizations user-id-from-session))))
                                                  :auth-type   :token
                                                  :auth-action :block}
    [:post "/clj/get-org-non-member-users"]      {:handler     (clj-handler authentication/get-org-non-member-users)

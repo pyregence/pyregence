@@ -44,11 +44,28 @@
       (symbol)))
 
 (defn clj-handler [function]
-  (fn [{:keys [params content-type]}]
+  (fn [{:keys [params content-type session] :as request}]
     (let [clj-args   (if (= content-type "application/edn")
                        (:clj-args params [])
                        (json/read-str (:clj-args params "[]")))
           clj-result (apply function clj-args)]
+
+
+      (log-str "CLJ Call: " (cons (fn->sym function) clj-args))
+      (if (:status clj-result)
+        clj-result
+        (data-response clj-result {:type (if (= content-type "application/edn") :edn :json)})))))
+
+(defn clj-handler-v2 [function]
+  (fn [{:keys [params content-type session] :as request}]
+    (let [clj-args   (if (= content-type "application/edn")
+                       (:clj-args params [])
+                       (json/read-str (:clj-args params "[]")))
+          clj-result (apply
+                       (function (:user-id session))
+                       clj-args)]
+
+
       (log-str "CLJ Call: " (cons (fn->sym function) clj-args))
       (if (:status clj-result)
         clj-result
