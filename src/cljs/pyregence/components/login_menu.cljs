@@ -17,11 +17,10 @@
           [tool-tip-wrapper
            "Visit the admin page"
            :top
-           [:a {:style      ($/combine ($/fixed-size "1.5rem")
-                                       {:cursor "pointer" :margin-right "1rem"})
+           [:a {:style      {:cursor "pointer" :margin-right "1rem"}
                 :aria-label "Visit the admin page"
                 :href       "/admin"}
-            [svg/admin-user]]])
+            [svg/admin-user :height "25px"]]])
         [:label {:style    {:cursor "pointer" :margin ".16rem .2rem 0 0"}
                  :on-click (fn []
                              (go (<! (u-async/call-clj-async! "log-out"))
