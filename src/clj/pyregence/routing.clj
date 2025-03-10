@@ -36,7 +36,11 @@
    [:post "/clj/add-org-user"]                  {:handler     (clj-handler authentication/add-org-user)
                                                  :auth-type   #{:admin :token}
                                                  :auth-action :block}
-   [:post "/clj/get-email-by-user-id"]          {:handler     (clj-handler authentication/get-email-by-user-id)
+   [:post "/clj/get-email-by-user-id"]          {:handler     (clj-handler-v2
+                                                                (clj-handler-v2
+                                                                  (fn [user-id-from-session]
+                                                                    (fn [user-id-from-params]
+                                                                      (authentication/get-email-by-user-id user-id-from-session)))))
                                                  :auth-type   :token
                                                  :auth-action :block}
    [:post "/clj/get-organizations"]             {:handler     (clj-handler-v2
