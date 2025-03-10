@@ -205,6 +205,8 @@
                                                                               :disabled-for #{:asp :slp :dem}}
                                                        :ca-fuelscapes        {:opt-label "2022 CA fuelscape"
                                                                               :filter    "ca-2022-fuelscape"}
+                                                       :ca-fuelscapes-2021   {:opt-label "2021 CA fuelscape"
+                                                                              :filter    "ca-2021-fuelscape"}
                                                        :fire-factor          {:opt-label   "Fire Factor 2022"
                                                                               :filter      "fire-factor-2022"
                                                                               :disabled-for #{:asp :slp :dem}}
