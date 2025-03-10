@@ -39,7 +39,7 @@
           [arrow-y tip-y] (condp #(%1 %2) arrow-position
                             #{:left :right}
                             (let [sibling-y (+ (aget sibling-box "y") (/ (aget sibling-box "height") 2))]
-                              [(- sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 4.7)])
+                              [(+ sibling-y 4.7) (+ (- sibling-y (/ tool-height 2)) 9.4)])
 
                             #{:top}
                             (let [sibling-y (+ (aget sibling-box "y") (aget sibling-box "height"))]
