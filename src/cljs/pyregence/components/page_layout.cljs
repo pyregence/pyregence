@@ -60,7 +60,9 @@
   [root-component & {:keys [footer?]}]
   (process-toast-messages!)
   (fn [_]
-    [:<>
+    [:div {:style {:display        :flex
+                   :flex-direction :column
+                   :height         "100%"}}
      [header]
      [toast-message]
      [root-component]

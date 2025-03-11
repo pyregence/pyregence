@@ -824,46 +824,39 @@
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
   [{:keys [user-id] :as params}]
-  (let [height (r/atom "100%")]
-    (r/create-class
-     {:component-did-mount
-      (fn [_]
-        (let [update-fn (fn [& _]
-                          (-> js/window (.scrollTo 0 0))
-                          (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))
-                          (reset! height  (str (- (.-innerHeight js/window)
-                                                  (-> js/document
-                                                      (.getElementById "header")
-                                                      .getBoundingClientRect
-                                                      (aget "height")))
-                                               "px"))
-                          (js/setTimeout mb/resize-map! 50))]
-          (-> js/window (.addEventListener "touchend" update-fn))
-          (-> js/window (.addEventListener "resize"   update-fn))
-          (initialize! params)
-          (update-fn)))
-      :reagent-render
-      (fn [_]
-        [:div#near-term-forecast
-         {:style ($/combine $/root {:height @height :padding 0 :position "relative" :overflow :hidden})}
-         [message-box-modal]
-         (when @!/loading? [loading-modal])
-         [message-modal]
-         [nav-bar {:capabilities     @!/capabilities
-                   :current-forecast @!/*forecast
-                   :is-admin?        (->> @!/user-orgs-list
-                                          (filter #(= "admin" (:role %)))
-                                          (count)
-                                          (< 0)) ; admin of at least one org
-                   :logged-in?       user-id
-                   :mobile?          @!/mobile?
-                   :user-orgs-list   @!/user-orgs-list
-                   :select-forecast! select-forecast!
-                   :user-id          user-id}]
-         [:div {:style {:height "100%" :position "relative" :width "100%"}}
-          (when (and @mb/the-map
-                     (not-empty @!/capabilities)
-                     (not-empty @!/*params))
-            [control-layer user-id])
-          [map-layer]
-          [pop-up]]])})))
+  (r/create-class
+   {:component-did-mount
+    (fn [_]
+      (let [update-fn (fn [& _]
+                        (-> js/window (.scrollTo 0 0))
+                        (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))
+                        (js/setTimeout mb/resize-map! 50))]
+        (-> js/window (.addEventListener "touchend" update-fn))
+        (-> js/window (.addEventListener "resize"   update-fn))
+        (initialize! params)
+        (update-fn)))
+    :reagent-render
+    (fn [_]
+      [:div#near-term-forecast
+       {:style ($/combine $/root {:height "100%" :padding 0 :position "relative" :overflow :hidden})}
+       [message-box-modal]
+       (when @!/loading? [loading-modal])
+       [message-modal]
+       [nav-bar {:capabilities     @!/capabilities
+                 :current-forecast @!/*forecast
+                 :is-admin?        (->> @!/user-orgs-list
+                                        (filter #(= "admin" (:role %)))
+                                        (count)
+                                        (< 0)) ; admin of at least one org
+                 :logged-in?       user-id
+                 :mobile?          @!/mobile?
+                 :user-orgs-list   @!/user-orgs-list
+                 :select-forecast! select-forecast!
+                 :user-id          user-id}]
+       [:div {:style {:height "100%" :position "relative" :width "100%"}}
+        (when (and @mb/the-map
+                   (not-empty @!/capabilities)
+                   (not-empty @!/*params))
+          [control-layer user-id])
+        [map-layer]
+        [pop-up]]])}))

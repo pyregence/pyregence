@@ -56,6 +56,7 @@
 (defglobal general
   [:* {:box-sizing "border-box"}]
 
+  [:html {:height "100%"}]
   [:label {:font-size     "1rem"
            :font-weight   "bold"
            :margin-bottom "0"}])
@@ -65,6 +66,7 @@
           :height           "100%"
           :position         "relative"
           :overflow         "hidden"}]
+  [:body>section {:height "100%"}]
   [:#app {:height "100%"}]
   [:#near-term-forecast {:display        "flex"
                          :flex-direction "column"
