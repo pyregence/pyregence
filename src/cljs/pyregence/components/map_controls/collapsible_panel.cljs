@@ -304,6 +304,7 @@
     (fn [*params select-param! underlays]
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @!/show-panel?)}
+         [collapsible-panel-header]
          [:div {:style {:display "flex"
                         :flex-direction "column"
                         :justify-content "space-between"
@@ -311,7 +312,6 @@
                         :height "100%"}}
           [:div
            [collapsible-panel-toggle]
-           [collapsible-panel-header]
            [:div#collapsible-panel-body {:class (<class $collapsible-panel-body)}
             [:div#section-wrapper
              [collapsible-panel-section
