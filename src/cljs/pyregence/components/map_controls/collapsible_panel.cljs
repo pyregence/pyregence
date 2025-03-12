@@ -310,7 +310,7 @@
                         :justify-content "space-between"
                         :overflow-y "auto"
                         :height "100%"}}
-          [:div
+          [:<>
            [collapsible-panel-toggle]
            [:div#collapsible-panel-body {:class (<class $collapsible-panel-body)}
             [:div#section-wrapper
