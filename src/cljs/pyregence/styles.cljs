@@ -64,8 +64,7 @@
 (defglobal body-and-content-divs
   [:body {:background-color (color-picker :white)
           :height           "100%"
-          :position         "relative"
-          :overflow         "hidden"}]
+          :position         "relative"}]
   [:body>section {:height "100%"}]
   [:#app {:height "100%"}]
   [:#near-term-forecast {:display        "flex"
