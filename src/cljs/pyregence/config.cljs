@@ -69,148 +69,150 @@
                   :underlays     (merge common-underlays near-term-forecast-underlays)
                   :time-slider?  false
                   :hover-text    "Layers related to fuel and potential fire behavior."
-                  :params        {:layer {:opt-label  "Layer"
-                                          :hover-text [:p {:style {:margin-bottom "0"}}
-                                                       "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
-                                                       [:br]
-                                                       [:br]
-                                                       "Use the "
-                                                       [:strong "Point Information"]
-                                                       " tool for more detailed information about a selected point."]
-                                          :options    (array-map
-                                                       :fbfm40 {:opt-label       "Fire Behavior Fuel Model 40"
-                                                                :filter          "fbfm40"
-                                                                :units           ""
-                                                                :reverse-legend? false}
-                                                       :asp    {:opt-label       "Aspect"
-                                                                :filter          "asp"
-                                                                :units           ""
-                                                                :convert         #(str (u-misc/direction %) " (" % "°)")
-                                                                :reverse-legend? false
-                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
-                                                       :slp    {:opt-label       "Slope (degrees)"
-                                                                :filter          "slp"
-                                                                :units           "\u00B0"
-                                                                :reverse-legend? true
-                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
-                                                       :dem    {:opt-label       "Elevation (ft)"
-                                                                :filter          "dem"
-                                                                :units           "ft"
-                                                                :convert         #(u-num/to-precision 1 (* % 3.28084))
-                                                                :reverse-legend? true
-                                                                :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
-                                                       :cc     {:opt-label       "Canopy Cover (%)"
-                                                                :filter          "cc"
-                                                                :units           "%"
-                                                                :reverse-legend? true
-                                                                :disabled-for    #{:cecs}}
-                                                       :ch     {:opt-label       "Canopy Height (m)"
-                                                                :filter          "ch"
-                                                                :units           "m"
-                                                                :no-convert      #{:cfo}
-                                                                :convert         #(u-num/to-precision 1 (/ % 10))
-                                                                :reverse-legend? true
-                                                                :disabled-for    #{:cecs}}
-                                                       :cbh    {:opt-label       "Canopy Base Height (m)"
-                                                                :filter          "cbh"
-                                                                :units           "m"
-                                                                :no-convert      #{:cfo}
-                                                                :convert         #(u-num/to-precision 1 (/ % 10))
-                                                                :reverse-legend? true
-                                                                :disabled-for    #{:cecs}}
-                                                       :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
-                                                                :filter          "cbd"
-                                                                :units           "kg/m\u00b3"
-                                                                :convert         #(u-num/to-precision 2 (/ % 100))
-                                                                :no-convert      #{:cfo}
-                                                                :reverse-legend? true
-                                                                :disabled-for    #{:cecs}})}
-                                  :model {:opt-label  "Source"
-                                          :hover-text [:p {:style {:margin-bottom "0"}}
-                                                       [:strong "LANDFIRE"]
-                                                       " –  Stock data provided by "
-                                                       [:a {:href   "https://landfire.gov"
-                                                            :target "_blank"}
-                                                        "LANDFIRE"]
-                                                       " at 30 m resolution. For more detailed version descriptions, please visit "
-                                                       [:a {:href "https://landfire.gov/version_download.php"
-                                                            :target "_blank"}
-                                                        "this link"]
-                                                       " and click the \"LF Version Descriptions\" button."
-                                                       [:br]
-                                                       [:br]
-                                                       [:strong "California Forest Observatory"]
-                                                       " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
-                                                       [:a {:href   "https://forestobservatory.com"
-                                                            :target "_blank"}
-                                                        "https://forestobservatory.com"]
-                                                       "), © Salo Sciences, Inc. 2020."
-                                                       [:br]
-                                                       [:br]
-                                                       [:strong "2022 California fuelscape"]
-                                                       " prepared by Pyrologix, LLC ("
-                                                       [:a {:href   "https://pyrologix.com"
-                                                            :target "_blank"}
-                                                        "https://pyrologix.com"]
-                                                       "), 2022."
-                                                       [:br]
-                                                       [:br]
-                                                       [:strong "Fire Factor 2022\u2122"]
-                                                       " -  Data provided by "
-                                                       [:a {:href   "https://riskfactor.com/methodology/fire"
-                                                            :target "_blank"}
-                                                        "Fire Factor"]
-                                                       ", which uses the "
-                                                       [:a {:href   "https://www.mdpi.com/2571-6255/5/4/117"
-                                                            :target "_blank"}
-                                                        "First Street Foundation Wildfire Model"]
-                                                       "."
-                                                       [:br]
-                                                       [:br]
-                                                       [:strong "California Ecosystem Climate Solutions"]
-                                                       " - Data provided by the "
-                                                       [:a {:href   "https://california-ecosystem-climate.solutions/"
-                                                            :target "_blank"}
-                                                        "California Ecosystem Climate Solutions"]
-                                                       ", Wang et al. (2021)."]
-                                          :options    (array-map
-                                                       :landfire-2.4.0-2.3.0 {:opt-label    "LANDFIRE 2.4.0/2.3.0 (2024/2023 capable)"
-                                                                              :filter       "landfire-2.4.0-2.3.0"
-                                                                              :disabled-for #{:asp :slp :dem}}
-                                                       :landfire-2.4.0       {:opt-label    "LANDFIRE 2.4.0 (2024 capable)"
-                                                                              :filter       "landfire-2.4.0"
-                                                                              :disabled-for #{:asp :slp :dem}}
-                                                       :landfire-2.3.0       {:opt-label    "LANDFIRE 2.3.0 (2023 capable)"
-                                                                              :filter       "landfire-2.3.0"
-                                                                              :disabled-for #{:asp :slp :dem}}
-                                                       :landfire-2.2.0       {:opt-label "LANDFIRE 2.2.0 (2021 capable)"
-                                                                              :filter    "landfire-2.2.0"}
-                                                       :landfire-2.1.0       {:opt-label    "LANDFIRE 2.1.0 (2020 capable)"
-                                                                              :filter       "landfire-2.1.0"
-                                                                              :disabled-for #{:asp :slp :dem}}
-                                                       :landfire-2.0.0       {:opt-label    "LANDFIRE 2.0.0 (2019 capable)"
-                                                                              :filter       "landfire-2.0.0"
-                                                                              :disabled-for #{:asp :slp :dem}}
-                                                       :landfire-1.4.0       {:opt-label    "LANDFIRE 1.4.0 (2016 capable)"
-                                                                              :filter       "landfire-1.4.0"
-                                                                              :disabled-for #{:asp :slp :dem}}
-                                                       :landfire-1.3.0       {:opt-label    "LANDFIRE 1.3.0 (2014 capable)"
-                                                                              :filter       "landfire-1.3.0"
-                                                                              :disabled-for #{:asp :slp :dem}}
-                                                       :landfire-1.0.5       {:opt-label    "LANDFIRE 1.0.5 (~2008 capable)"
-                                                                              :filter       "landfire-1.0.5"
-                                                                              :disabled-for #{:asp :slp :dem}}
-                                                       :cfo                  {:opt-label    "California Forest Obs."
-                                                                              :filter       "cfo-2020"
-                                                                              :disabled-for #{:asp :slp :dem}}
-                                                       :ca-fuelscapes        {:opt-label "2022 CA fuelscape"
-                                                                              :filter    "ca-2022-fuelscape"}
-                                                       :fire-factor          {:opt-label   "Fire Factor 2022"
-                                                                              :filter      "fire-factor-2022"
-                                                                              :disabled-for #{:asp :slp :dem}}
-                                                       :cecs                 {:opt-label    "CA Ecosystem Climate Solutions"
-                                                                              :filter       "cecs"
-                                                                              :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}})}
+                  :params        {:layer      {:opt-label  "Layer"
+                                               :hover-text [:p {:style {:margin-bottom "0"}}
+                                                            "Geospatial surface and canopy fuel inputs, forecasted ember ignition probability and head fire spread rate & flame length."
+                                                            [:br]
+                                                            [:br]
+                                                            "Use the "
+                                                            [:strong "Point Information"]
+                                                            " tool for more detailed information about a selected point."]
+                                               :options    (array-map
+                                                            :fbfm40 {:opt-label       "Fire Behavior Fuel Model 40"
+                                                                     :filter          "fbfm40"
+                                                                     :units           ""
+                                                                     :reverse-legend? false}
+                                                            :asp    {:opt-label       "Aspect"
+                                                                     :filter          "asp"
+                                                                     :units           ""
+                                                                     :convert         #(str (u-misc/direction %) " (" % "°)")
+                                                                     :reverse-legend? false
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
+                                                            :slp    {:opt-label       "Slope (degrees)"
+                                                                     :filter          "slp"
+                                                                     :units           "\u00B0"
+                                                                     :reverse-legend? true
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
+                                                            :dem    {:opt-label       "Elevation (ft)"
+                                                                     :filter          "dem"
+                                                                     :units           "ft"
+                                                                     :convert         #(u-num/to-precision 1 (* % 3.28084))
+                                                                     :reverse-legend? true
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
+                                                            :cc     {:opt-label       "Canopy Cover (%)"
+                                                                     :filter          "cc"
+                                                                     :units           "%"
+                                                                     :reverse-legend? true
+                                                                     :disabled-for    #{:cecs}}
+                                                            :ch     {:opt-label       "Canopy Height (m)"
+                                                                     :filter          "ch"
+                                                                     :units           "m"
+                                                                     :no-convert      #{:cfo}
+                                                                     :convert         #(u-num/to-precision 1 (/ % 10))
+                                                                     :reverse-legend? true
+                                                                     :disabled-for    #{:cecs}}
+                                                            :cbh    {:opt-label       "Canopy Base Height (m)"
+                                                                     :filter          "cbh"
+                                                                     :units           "m"
+                                                                     :no-convert      #{:cfo}
+                                                                     :convert         #(u-num/to-precision 1 (/ % 10))
+                                                                     :reverse-legend? true
+                                                                     :disabled-for    #{:cecs}}
+                                                            :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
+                                                                     :filter          "cbd"
+                                                                     :units           "kg/m\u00b3"
+                                                                     :convert         #(u-num/to-precision 2 (/ % 100))
+                                                                     :no-convert      #{:cfo}
+                                                                     :reverse-legend? true
+                                                                     :disabled-for    #{:cecs}})}
+                                  :model      {:opt-label  "Source"
+                                               :hover-text [:p {:style {:margin-bottom "0"}}
+                                                            [:strong "LANDFIRE"]
+                                                            " –  Stock data provided by "
+                                                            [:a {:href   "https://landfire.gov"
+                                                                 :target "_blank"}
+                                                             "LANDFIRE"]
+                                                            " at 30 m resolution. For more detailed version descriptions, please visit "
+                                                            [:a {:href   "https://landfire.gov/version_download.php"
+                                                                 :target "_blank"}
+                                                             "this link"]
+                                                            " and click the \"LF Version Descriptions\" button."
+                                                            [:br]
+                                                            [:br]
+                                                            [:strong "California Forest Observatory"]
+                                                            " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
+                                                            [:a {:href   "https://forestobservatory.com"
+                                                                 :target "_blank"}
+                                                             "https://forestobservatory.com"]
+                                                            "), © Salo Sciences, Inc. 2020."
+                                                            [:br]
+                                                            [:br]
+                                                            [:strong "2022 California fuelscape"]
+                                                            " prepared by Pyrologix, LLC ("
+                                                            [:a {:href   "https://pyrologix.com"
+                                                                 :target "_blank"}
+                                                             "https://pyrologix.com"]
+                                                            "), 2022."
+                                                            [:br]
+                                                            [:br]
+                                                            [:strong "Fire Factor 2022\u2122"]
+                                                            " -  Data provided by "
+                                                            [:a {:href   "https://riskfactor.com/methodology/fire"
+                                                                 :target "_blank"}
+                                                             "Fire Factor"]
+                                                            ", which uses the "
+                                                            [:a {:href   "https://www.mdpi.com/2571-6255/5/4/117"
+                                                                 :target "_blank"}
+                                                             "First Street Foundation Wildfire Model"]
+                                                            "."
+                                                            [:br]
+                                                            [:br]
+                                                            [:strong "California Ecosystem Climate Solutions"]
+                                                            " - Data provided by the "
+                                                            [:a {:href   "https://california-ecosystem-climate.solutions/"
+                                                                 :target "_blank"}
+                                                             "California Ecosystem Climate Solutions"]
+                                                            ", Wang et al. (2021)."]
+                                               :options    (array-map
+                                                            :landfire-2.4.0-2.3.0 {:opt-label    "LANDFIRE 2.4.0/2.3.0 (2024/2023 capable)"
+                                                                                   :filter       "landfire-2.4.0-2.3.0"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-2.4.0       {:opt-label    "LANDFIRE 2.4.0 (2024 capable)"
+                                                                                   :filter       "landfire-2.4.0"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-2.3.0       {:opt-label    "LANDFIRE 2.3.0 (2023 capable)"
+                                                                                   :filter       "landfire-2.3.0"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-2.2.0       {:opt-label "LANDFIRE 2.2.0 (2021 capable)"
+                                                                                   :filter    "landfire-2.2.0"}
+                                                            :landfire-2.1.0       {:opt-label    "LANDFIRE 2.1.0 (2020 capable)"
+                                                                                   :filter       "landfire-2.1.0"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-2.0.0       {:opt-label    "LANDFIRE 2.0.0 (2019 capable)"
+                                                                                   :filter       "landfire-2.0.0"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-1.4.0       {:opt-label    "LANDFIRE 1.4.0 (2016 capable)"
+                                                                                   :filter       "landfire-1.4.0"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-1.3.0       {:opt-label    "LANDFIRE 1.3.0 (2014 capable)"
+                                                                                   :filter       "landfire-1.3.0"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-1.0.5       {:opt-label    "LANDFIRE 1.0.5 (~2008 capable)"
+                                                                                   :filter       "landfire-1.0.5"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :cfo                  {:opt-label    "California Forest Obs."
+                                                                                   :filter       "cfo-2020"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :ca-fuelscapes-2022   {:opt-label "2022 CA fuelscape"
+                                                                                   :filter    "ca-2022-fuelscape"}
+                                                            :ca-fuelscapes-2021   {:opt-label "2021 CA fuelscape"
+                                                                                   :filter    "ca-2021-fuelscape"}
+                                                            :fire-factor          {:opt-label    "Fire Factor 2022"
+                                                                                   :filter       "fire-factor-2022"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :cecs                 {:opt-label    "CA Ecosystem Climate Solutions"
+                                                                                   :filter       "cecs"
+                                                                                   :disabled-for #{:asp :slp :dem :cc :ch :cbh :cbd}})}
                                   :model-init {:opt-label  "Model Creation Time"
                                                :hover-text "Time the data was created."
                                                :options    {:loading {:opt-label "Loading..."}}}}}
@@ -338,8 +340,8 @@
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
                                                                               :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
-                                                              :hrrr          {:opt-label    "HRRR"
-                                                                              :filter       "hrrr"}
+                                                              :hrrr          {:opt-label "HRRR"
+                                                                              :filter    "hrrr"}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
                                                                               :disabled-for #{:apcptot :smoke :tcdc}}
@@ -430,15 +432,15 @@
                                                               [:br]
                                                               [:strong "Transmission Lines"]
                                                               " - Fires ignited in close proximity to overhead electrical transmission lines."]
-                                                 :options    {:all        {:opt-label    "All-cause fires"
-                                                                           :auto-zoom?   true
-                                                                           :filter       "all"
-                                                                           :disabled-for #{:plignrate}}
-                                                              :tlines     {:opt-label    "Transmission lines"
-                                                                           :auto-zoom?   true
-                                                                           :filter       "tlines"
-                                                                           :clear-point? true
-                                                                           :disabled-for #{:plignrate :crown-fire-area}}}}
+                                                 :options    {:all    {:opt-label    "All-cause fires"
+                                                                       :auto-zoom?   true
+                                                                       :filter       "all"
+                                                                       :disabled-for #{:plignrate}}
+                                                              :tlines {:opt-label    "Transmission lines"
+                                                                       :auto-zoom?   true
+                                                                       :filter       "tlines"
+                                                                       :clear-point? true
+                                                                       :disabled-for #{:plignrate :crown-fire-area}}}}
                                     :fuel       {:opt-label  "Fuel"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
@@ -448,7 +450,7 @@
                                                                    :target "_blank"}
                                                                "LANDFIRE"]
                                                               " 2.3.0/2.2.0 at 30 m resolution. For more detailed version descriptions, please visit "
-                                                              [:a {:href "https://landfire.gov/version_download.php"
+                                                              [:a {:href   "https://landfire.gov/version_download.php"
                                                                    :target "_blank"}
                                                                "this link"]
                                                               " and click the \"LF Version Descriptions\" button."]
@@ -488,12 +490,12 @@
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
                                                  :default-option :active-fires
-                                                 :options        {:active-fires    {:opt-label     "*All Active Fires"
-                                                                                    :style-fn      :default
-                                                                                    :filter-set    #{"fire-detections" "active-fires"}
-                                                                                    :auto-zoom?    true
-                                                                                    :time-slider?  false
-                                                                                    :geoserver-key :shasta}}}
+                                                 :options        {:active-fires {:opt-label     "*All Active Fires"
+                                                                                 :style-fn      :default
+                                                                                 :filter-set    #{"fire-detections" "active-fires"}
+                                                                                 :auto-zoom?    true
+                                                                                 :time-slider?  false
+                                                                                 :geoserver-key :shasta}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "Available outputs are fire location, crown fire type (surface fire, passive, or active), flame length (ft), and surface fire spread rate (ft/min). Time can be advanced with the slider centered below."
                                                  :options    {:burned       {:opt-label       "Forecasted fire location"
@@ -642,7 +644,6 @@
                                                               :pign  {:opt-label    "Firebrand ignition probability (%)"
                                                                       :units        "%"
                                                                       :disabled-for #{:m}})}
-
                                     :statistic  {:opt-label      "Statistic"
                                                  :hover-text     "Options are minimum, mean, or maximum."
                                                  :default-option :a
