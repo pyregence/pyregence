@@ -203,7 +203,7 @@
                                                        :cfo                  {:opt-label    "California Forest Obs."
                                                                               :filter       "cfo-2020"
                                                                               :disabled-for #{:asp :slp :dem}}
-                                                       :ca-fuelscapes        {:opt-label "2022 CA fuelscape"
+                                                       :ca-fuelscapes-2022        {:opt-label "2022 CA fuelscape"
                                                                               :filter    "ca-2022-fuelscape"}
                                                        :ca-fuelscapes-2021   {:opt-label "2021 CA fuelscape"
                                                                               :filter    "ca-2021-fuelscape"}
