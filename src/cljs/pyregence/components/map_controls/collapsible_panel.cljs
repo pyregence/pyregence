@@ -74,7 +74,9 @@
    :position         "absolute"
    :transition       "all 200ms ease-in"
    :width            (if @!/mobile? "100%" "18rem")
-   :z-index          "110"})
+   :z-index          "110"
+   :display          "flex"
+   :flex-direction   "column"})
 
 (defn- $collapsible-button []
   {:background-color           ($/color-picker :bg-color)
@@ -94,9 +96,7 @@
   (with-meta
     {:display         "flex"
      :flex-direction  "column"
-     :height          "100%"
-     :justify-content "space-between"
-     :overflow-y      "auto"}
+     :justify-content "space-between"}
     {:pseudo {:last-child {:padding-bottom "0.75rem"}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
