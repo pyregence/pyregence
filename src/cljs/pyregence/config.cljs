@@ -207,11 +207,11 @@
                                                                                    :filter    "ca-2022-fuelscape"}
                                                             :ca-fuelscapes-2021   {:opt-label "2021 CA fuelscape"
                                                                                    :filter    "ca-2021-fuelscape"}
-                                                            :fire-factor-2022     {:opt-label    "Fire Factor 2022"
-                                                                                   :filter       "fire-factor-2022"
-                                                                                   :disabled-for #{:asp :slp :dem}}
                                                             :fire-factor-2023     {:opt-label    "Fire Factor 2023"
                                                                                    :filter       "fire-factor-2023"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :fire-factor-2022     {:opt-label    "Fire Factor 2022"
+                                                                                   :filter       "fire-factor-2022"
                                                                                    :disabled-for #{:asp :slp :dem}}
                                                             :cecs                 {:opt-label    "CA Ecosystem Climate Solutions"
                                                                                    :filter       "cecs"
