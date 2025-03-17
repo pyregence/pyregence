@@ -165,10 +165,10 @@
          @match-drops)]])
 
 (defn- match-drop-header [user-id]
-  [:div {:style {:display "flex" :justify-content "center"}}
-   [:h3 {:style {:margin-bottom "0"}}
+  [:div {:style {:display "grid" :grid-template-columns "1fr 1fr 1fr" :align-items "center" :width "100%"}}
+   [:h3 {:style {:margin "0" :grid-column "2" :justify-self "center"}}
     "Match Drop Dashboard"]
-   [:div {:style {:position "absolute" :right "6%"}}
+   [:div {:style {:grid-column "3" :justify-self "end"}}
     [icon-button :refresh #(set-user-match-drops! user-id) "Refresh"]]])
 
 (defn- no-match-drops []
