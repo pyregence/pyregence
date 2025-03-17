@@ -13,7 +13,7 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private hazards-url   "https://www.wrh.noaa.gov/map/json/WR_All_Hazards.json")
+(def ^:private hazards-url   "https://www.weather.gov/source/wrh/hazards/json/WR_All_Hazards.json")
 (def ^:private cache-max-age (* 60 1000)) ; Once an hour
 (def ^:private keep-hazards  #{"FW" "Fire Weather"})
 
