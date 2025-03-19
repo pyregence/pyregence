@@ -530,6 +530,7 @@
   (go
     (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
+    (js/gtag "select-forecast" (str key))
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
