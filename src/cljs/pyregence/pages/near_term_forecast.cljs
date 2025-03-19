@@ -530,7 +530,6 @@
   (go
     (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
-    #_(js/gtag "event" "select-forecast" (str key))
     (js/gtag "event" "select-forecast" (clj->js {:forecast-type (str key)}))
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
