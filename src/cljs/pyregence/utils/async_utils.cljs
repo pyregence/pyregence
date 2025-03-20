@@ -77,12 +77,15 @@
                             (map (fn [[k v]] (str (pr-str k) "=" (pr-str v))))
                             (str/join "&")
                             (js/encodeURIComponent))
+          ;; Add token to Authorization header
+          headers      (cond-> {"Accept" "application/edn"
+                                "Content-Type" "application/edn"}
+                         @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token)))
           fetch-params {:method  "get"
-                        :headers {"Accept" "application/edn"
-                                  "Content-Type" "application/edn"}}
-          edn-string   (<! (fetch-and-process (str url
-                                                   (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token))
-                                                   (when (not= query-string "") (str "&" query-string)))
+                        :headers headers}
+          ;; Remove token from URL
+          full-url     (str url (when (not= query-string "") (str "?" query-string)))
+          edn-string   (<! (fetch-and-process full-url
                                               fetch-params
                                               (fn [response] (.text response))))]
       (or (edn/read-string edn-string) :no-data))))
@@ -90,16 +93,16 @@
 ;; Combines status and error message into return value
 (defmethod call-remote! :post [_ url data]
   (go
-    (let [fetch-params {:method  "post"
-                        :headers (merge {"Accept" "application/edn"}
-                                        (when-not (= (type data) js/FormData)
-                                          {"Content-Type" "application/edn"}))
+    (let [headers (cond-> {"Accept" "application/edn"}
+                    @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token))
+                    (not= (type data) js/FormData) (assoc "Content-Type" "application/edn"))
+          fetch-params {:method  "post"
+                        :headers headers
                         :body    (cond
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token)))
-                                  fetch-params))]
+          response     (<! (fetch url fetch-params))]
       (if response
         {:success (.-ok response)
          :status  (.-status response)
@@ -110,16 +113,16 @@
 
 (defmethod call-remote! :post-text [_ url data]
   (go
-    (let [fetch-params {:method  "post"
-                        :headers (merge {"Accept" "application/edn"}
-                                        (when-not (= (type data) js/FormData)
-                                          {"Content-Type" "application/edn"}))
+    (let [headers (cond-> {"Accept" "application/edn"}
+                    @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token))
+                    (not= (type data) js/FormData) (assoc "Content-Type" "application/edn"))
+          fetch-params {:method  "post"
+                        :headers headers
                         :body    (cond
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token)))
-                                  fetch-params))]
+          response     (<! (fetch url fetch-params))]
       (if response
         {:success (.-ok response)
          :status  (.-status response)
@@ -130,16 +133,16 @@
 
 (defmethod call-remote! :post-blob [_ url data]
   (go
-    (let [fetch-params {:method  "post"
-                        :headers (merge {"Accept" "application/edn"}
-                                        (when-not (= (type data) js/FormData)
-                                          {"Content-Type" "application/edn"}))
+    (let [headers (cond-> {"Accept" "application/edn"}
+                    @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token))
+                    (not= (type data) js/FormData) (assoc "Content-Type" "application/edn"))
+          fetch-params {:method  "post"
+                        :headers headers
                         :body    (cond
                                    (= js/FormData (type data)) data
                                    data                        (pr-str data)
                                    :else                       nil)}
-          response     (<! (fetch (str url (when @!/pyr-auth-token (str "?auth-token=" @!/pyr-auth-token)))
-                                  fetch-params))]
+          response     (<! (fetch url fetch-params))]
       (if response
         {:success (.-ok response)
          :status  (.-status response)

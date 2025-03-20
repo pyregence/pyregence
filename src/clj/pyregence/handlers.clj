@@ -24,15 +24,25 @@
       (redirect (str "/login?flash_message=You must login to see "
                      full-url)))))
 
-(defn route-authenticator [{:keys [session params] :as _request} auth-type]
-  (let [user-id (:user-id session -1)]
+(defn route-authenticator [{:keys [headers session] :as request} auth-type]
+  (let [user-id      (:user-id session -1)
+        ;; Extract Bearer token from Authorization header
+        bearer-token (some->> (get headers "authorization")
+                              (re-find #"(?i)^Bearer\s+(.+)$")
+                              second)
+        valid-token? (= bearer-token (get-config :triangulum.views/client-keys :auth-token))]
+
     (every? (fn [auth-type]
               (case auth-type
-                :admin      (is-admin? user-id)
+                :admin (is-admin? user-id)
                 :match-drop (has-match-drop-access? user-id)
-                :token      (= (:auth-token params)
-                               (get-config :pyregence.secrets/pyr-auth-token))
-                :user       (pos? user-id)
+                ;; TODO: token generated per user specifically and validated cryptographically
+                :token (do
+                         #_(when (and (nil? bearer-token) (contains? (:params request) :auth-token))
+                             (log-str "Token in URL params detected"))
+                         valid-token?)
+                :user  (or (pos? user-id)
+                           (get-config :triangulum.views/client-keys :dev-mode))
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))
 
