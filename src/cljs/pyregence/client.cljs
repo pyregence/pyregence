@@ -72,8 +72,8 @@
       (reset! !/feature-flags       (get clj-session :features))
       (reset! !/geoserver-urls      (get clj-session :geoserver))
       (reset! !/default-forecasts   (get clj-session :default-forecasts))
-      (reset! !/pyr-auth-token      (edn/read-string (:body (<! (u-async/call-clj-async! "get-pyr-auth-token")))))
-      (reset! !/mapbox-access-token (edn/read-string (:body (<! (u-async/call-clj-async! "get-mapbox-access-token")))))
+      (reset! !/pyr-auth-token      (edn/read-string (get clj-session :auth-token)))
+      (reset! !/mapbox-access-token (edn/read-string (get clj-session :mapbox-access-token)))
       (render-root merged-params))))
 
 (defn- ^:after-load mount-root!
