@@ -6,8 +6,8 @@
 
 (defn log-in [email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-    (data-response "" {:session (-> {:user-id (:user_id user)}
-                                    (merge (get-config :app :client-keys)))})
+    (data-response "" {:session (merge {:user-id (:user_id user)}
+                                       (get-config :app :client-keys))})
     (data-response "" {:status 403})))
 
 (defn log-out [] (data-response "" {:session nil}))
