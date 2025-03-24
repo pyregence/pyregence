@@ -24,7 +24,7 @@
                                        :git/tag "2024.06.05-a3a2b21"}
            sig-gis/triangulum         {:git/url "https://github.com/sig-gis/triangulum"
                                        :git/sha "edbb7dac5770278741f0985f5b67ed17aa9dea93"}}
- :aliases {:build-uberjar    {:exec-fn   triangulum.packaging/build-uberjar
+ :aliases {:build-uberjar    {:exec-fn   pyregence.jobs/build-server-uberjar
                               :exec-args {:app-name  'pyregence
                                           ;;TODO the main-ns will probably
                                           ;;call something which wraps the
