@@ -27,7 +27,6 @@
  :aliases {:build-uberjar    {:exec-fn   pyregence.jobs/build-server-uberjar
                               :exec-args {:app-name  'pyregence
                                           :main-ns   'triangulum.server}}
-
            :build-db         {:main-opts ["-m" "triangulum.build-db"]}
            :check-deps       {:deps      {com.github.liquidz/antq {:mvn/version "RELEASE"}}
                               :main-opts ["-m" "antq.core"]}
