@@ -25,7 +25,8 @@
     (if (:success (<! (u-async/call-clj-async! "log-in" @email @password)))
       (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
         (u-browser/clear-session-storage!)
-        (u-browser/jump-to-url! url))
+        (u-browser/jump-to-url! url)
+        (js/gtag "event" "log-in" (clj->js {})))
       ;; TODO, it would be helpful to show the user which of the two errors it actually is.
       (toast-message! ["Invalid login credentials. Please try again."
                        "If you feel this is an error, check your email for the verification email."]))))
