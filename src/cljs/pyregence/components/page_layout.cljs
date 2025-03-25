@@ -57,7 +57,11 @@
 (defn wrap-page
   "Specifies the content to go inside of the [:body [:div#app]] for a page.
    By default, a page does not include a footer unless specified."
-  [root-component & {:keys [footer?]}]
+  [root-component & {:keys [footer? gtag-pages]}]
+  (def gtag-pages gtag-pages)
+  (prn "gtag-pages:" gtag-pages)
+  #_(run! #(js/gtag "event" "visited-page" (clj->js {:page-name %}))
+          gtag-pages)
   (process-toast-messages!)
   (fn [_]
     [:div {:style {:display        :flex
