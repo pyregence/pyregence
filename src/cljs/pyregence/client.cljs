@@ -1,22 +1,24 @@
 (ns ^:figwheel-hooks pyregence.client
-  (:require [clojure.core.async                 :refer [go <!]]
-            [clojure.edn                        :as edn]
-            [goog.dom                           :as dom]
-            [reagent.dom                        :refer [render]]
-            [pyregence.components.page-layout   :refer [wrap-page]]
-            [pyregence.pages.admin              :as admin]
-            [pyregence.pages.dashboard          :as dashboard]
-            [pyregence.pages.help               :as help]
-            [pyregence.pages.login              :as login]
-            [pyregence.pages.near-term-forecast :as ntf]
-            [pyregence.pages.not-found          :as not-found]
-            [pyregence.pages.privacy-policy     :as privacy]
-            [pyregence.pages.register           :as register]
-            [pyregence.pages.reset-password     :as reset-password]
-            [pyregence.pages.terms-of-use       :as terms]
-            [pyregence.pages.verify-email       :as verify-email]
-            [pyregence.state                    :as !]
-            [pyregence.utils.async-utils        :as u-async]))
+  (:require
+   [clojure.core.async                    :refer [<! go]]
+   [clojure.edn                           :as edn]
+   [goog.dom                              :as dom]
+   [pyregence.components.page-layout      :refer [wrap-page]]
+   [pyregence.pages.admin                 :as admin]
+   [pyregence.pages.dashboard             :as dashboard]
+   [pyregence.pages.help                  :as help]
+   [pyregence.pages.login                 :as login]
+   [pyregence.pages.near-term-forecast    :as ntf]
+   [pyregence.pages.not-found             :as not-found]
+   [pyregence.pages.privacy-policy        :as privacy]
+   [pyregence.pages.register              :as register]
+   [pyregence.pages.reset-password        :as reset-password]
+   [pyregence.pages.terms-of-use          :as terms]
+   [pyregence.pages.verify-email          :as verify-email]
+   [pyregence.state                       :as !]
+   [pyregence.utils.async-utils           :as u-async]
+   [pyregence.utils.browser-utils         :as u-browser]
+   [reagent.dom                           :refer [render]]))
 
 (defonce ^:private original-params  (atom {}))
 (defonce ^:private original-session (atom {}))
@@ -46,12 +48,14 @@
   (let [uri (-> js/window .-location .-pathname)]
     (render (cond
               (uri->root-component-h uri)
-              (wrap-page #((uri->root-component-h uri) params))
-
+              (wrap-page #((uri->root-component-h uri) params)
+                         ::uri uri
+                         ::gtag-pages u-browser/gtag-urls)
               (uri->root-component-hf uri)
               (wrap-page #((uri->root-component-hf uri) params)
-                         :footer? true)
-
+                         :footer? true
+                         ::uri uri
+                         ::gtag-pages u-browser/gtag-urls)
               :else
               (wrap-page not-found/root-component
                          :footer? true))
@@ -67,7 +71,7 @@
           clj-session   (if session
                           (reset! original-session (js->clj session :keywordize-keys true))
                           @original-session)
-          merged-params (merge clj-params clj-session {:gtag-pages #{"/register"}})]
+          merged-params (merge clj-params clj-session)]
       (reset! !/dev-mode?           (get clj-session :dev-mode))
       (reset! !/feature-flags       (get clj-session :features))
       (reset! !/geoserver-urls      (get clj-session :geoserver))
