@@ -81,4 +81,6 @@
        reset-link])]
    [:div {:style ($/align "flex" "center")}
     "Don't have an account?  "
-    [:a {:href "/register" :style {:margin-left "0.2rem"}} "Register here."]]])
+    [:a {:href     "javascript:void(0);"
+         :on-click #(u-browser/jump-to-url! "/register")
+         :style    {:margin-left "0.2rem"}} "Register here."]]])
