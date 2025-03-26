@@ -29,6 +29,7 @@
              (:success (<! (u-async/call-clj-async! "send-email" @email :new-user))))
       (do (toast-message! ["Your account has been created successfully."
                            "Please check your email for a link to complete registration."])
+          (js/gtag "event" "registered-user" (clj->js {}))
           (<! (timeout 4000))
           (u-browser/jump-to-url! "/forecast"))
       (toast-message! ["An error occurred while registering."
