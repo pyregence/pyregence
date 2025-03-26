@@ -7,7 +7,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def session-key "pyregence")
-(def gtag-urls #{"/register"})
 
 (defn- save-session-storage! [data]
   (.setItem (.-sessionStorage js/window) session-key (pr-str data)))
@@ -70,10 +69,7 @@
   ([url]
    (let [origin  (.-origin (.-location js/window))
          cur-url (str/replace (.-href (.-location js/window)) origin "")]
-     (when-not (= cur-url url)
-       (set! (.-location js/window) url)
-       (when (gtag-urls url)
-         (js/gtag "event" "visited-page" (clj->js {:page-name url}))))))
+     (when-not (= cur-url url) (set! (.-location js/window) url))))
   ([url window-name]
    (if window-name
      (.open js/window url window-name)
