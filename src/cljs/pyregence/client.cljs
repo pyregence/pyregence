@@ -67,7 +67,7 @@
           clj-session   (if session
                           (reset! original-session (js->clj session :keywordize-keys true))
                           @original-session)
-          merged-params (merge clj-params clj-session {:gtag-pages #{"/register"}})]
+          merged-params (merge clj-params clj-session)]
       (reset! !/dev-mode?           (get clj-session :dev-mode))
       (reset! !/feature-flags       (get clj-session :features))
       (reset! !/geoserver-urls      (get clj-session :geoserver))
