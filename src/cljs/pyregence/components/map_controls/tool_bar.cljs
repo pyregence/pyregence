@@ -1,15 +1,19 @@
 (ns pyregence.components.map-controls.tool-bar
-  (:require [clojure.core.async                            :refer [<! go]]
-            [pyregence.components.common                   :refer [tool-tip-wrapper hs-str]]
-            [pyregence.components.map-controls.tool-button :refer [tool-button]]
-            [pyregence.components.mapbox                   :as mb]
-            [pyregence.components.messaging                :refer [toast-message!]]
-            [pyregence.components.popups                   :refer [red-flag-popup fire-history-popup]]
-            [pyregence.config                              :as c]
-            [pyregence.state                               :as !]
-            [pyregence.styles                              :as $]
-            [pyregence.utils.async-utils                   :as u-async]
-            [reagent.core                                  :as r]))
+  (:require
+   [clojure.core.async                            :refer [<! go]]
+   [pyregence.analytics                           :refer [gtag-tool]]
+   [pyregence.components.common                   :refer [hs-str
+                                                          tool-tip-wrapper]]
+   [pyregence.components.map-controls.tool-button :refer [tool-button]]
+   [pyregence.components.mapbox                   :as mb]
+   [pyregence.components.messaging                :refer [toast-message!]]
+   [pyregence.components.popups                   :refer [fire-history-popup
+                                                          red-flag-popup]]
+   [pyregence.config                              :as c]
+   [pyregence.state                               :as !]
+   [pyregence.styles                              :as $]
+   [pyregence.utils.async-utils                   :as u-async]
+   [reagent.core                                  :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -21,14 +25,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn gtag-tool [show? tool-name]
-  (let [event-name (str (if show? "show-" "hide-") tool-name)]
-    (js/gtag "event" "registered-user" (clj->js {:tool-clicked event-name}))))
-
 (defn- init-red-flag-popup! [feature lnglat]
-  (let [properties (-> feature (aget "properties") (js->clj))
+  (let [properties                         (-> feature (aget "properties") (js->clj))
         {:strs [url prod_type onset ends]} properties
-        body       (red-flag-popup url prod_type onset ends)]
+        body                               (red-flag-popup url prod_type onset ends)]
     (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
 
 (defn- init-fire-history-popup! [feature lnglat]
