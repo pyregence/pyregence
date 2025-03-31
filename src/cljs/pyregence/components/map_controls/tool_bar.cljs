@@ -21,6 +21,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn gtag-tool [show? tool-name]
+  (let [event-name (str (if show? "show-" "hide-") tool-name)]
+    (js/gtag "event" "registered-user" (clj->js {:tool-clicked event-name}))))
 
 (defn- init-red-flag-popup! [feature lnglat]
   (let [properties (-> feature (aget "properties") (js->clj))
@@ -38,11 +41,10 @@
   "Toggles the red-flag warning layer."
   []
   (swap! !/show-red-flag? not)
+  (gtag-tool @!/show-red-flag? "red-flag")
   (if @!/show-red-flag?
-    (do (mb/add-feature-highlight! "red-flag" "red-flag" :click-fn init-red-flag-popup!)
-        (js/gtag "event" "registered-user" (clj->js {:tool-clicked :show-red-flag})))
-    (do (mb/clear-highlight! "red-flag" :selected)
-        (js/gtag "event" "registered-user" (clj->js {:tool-clicked :hide-red-flag}))))
+    (mb/add-feature-highlight! "red-flag" "red-flag" :click-fn init-red-flag-popup!)
+    (mb/clear-highlight! "red-flag" :selected))
   (go
     (let [data (-> (<! (u-async/call-clj-async! "get-red-flag-layer"))
                    (:body)
@@ -60,6 +62,7 @@
   "Toggles the fire history layer."
   []
   (swap! !/show-fire-history? not)
+  (gtag-tool @!/show-fire-history? "fire-history-layer")
   (if @!/show-fire-history?
     (do
       (mb/add-feature-highlight! "fire-history" "fire-history"
@@ -67,12 +70,10 @@
                                  :source-layer "fire-history")
       (mb/add-feature-highlight! "fire-history-centroid" "fire-history-centroid"
                                  :click-fn init-fire-history-popup!
-                                 :source-layer "fire-history-centroid")
-      (js/gtag "event" "registered-user" (clj->js {:tool-clicked :show-fire-history-layer})))
+                                 :source-layer "fire-history-centroid"))
     (do
       (mb/clear-highlight! "fire-history" :selected)
-      (mb/clear-highlight! "fire-history-centroid" :selected)
-      (js/gtag "event" "registered-user" (clj->js {:tool-clicked :hide-fire-history-layer}))))
+      (mb/clear-highlight! "fire-history-centroid" :selected)))
   (when (and @!/show-fire-history? (not (mb/layer-exists? "fire-history")))
     (mb/create-fire-history-layer! "fire-history"
                                    "fire-detections_fire-history%3Afire-history"
@@ -105,9 +106,7 @@
                  (reset! !/show-measure-tool? false)
                  (reset! !/show-match-drop? false)
                  (reset! !/show-camera? false)
-                 (if @!/show-info?
-                   (js/gtag "event" "registered-user" (clj->js {:tool-clicked :show-point-information}))
-                   (js/gtag "event" "registered-user" (clj->js {:tool-clicked :hide-point-information}))))
+                 (gtag-tool @!/show-info? "point-information"))
             @!/show-info?]
            (when (and (c/feature-enabled? :match-drop) ; enabled in `config.edn`
                       (number? user-id)                ; logged in user
@@ -119,9 +118,7 @@
                    (reset! !/show-measure-tool? false)
                    (set-show-info! false)
                    (reset! !/show-camera? false)
-                   (if @!/show-match-drop?
-                     (js/gtag "event" "registered-user" (clj->js {:tool-clicked :show-match-drop}))
-                     (js/gtag "event" "registered-user" (clj->js {:tool-clicked :hide-match-drop}))))
+                   (gtag-tool @!/show-match-drop? "match-drop"))
               @!/show-match-drop?])
            (when-not (get-any-level-key :disable-camera?)
              [:camera
@@ -130,9 +127,7 @@
                    (set-show-info! false)
                    (reset! !/show-match-drop? false)
                    (reset! !/show-measure-tool? false)
-                   (if @!/show-camera?
-                     (js/gtag "event" "registered-user" (clj->js {:tool-clicked :show-camera}))
-                     (js/gtag "event" "registered-user" (clj->js {:tool-clicked :hide-camera}))))
+                   (gtag-tool @!/show-camera? "camera"))
               @!/show-camera?])
            (when-not (get-any-level-key :disable-flag?)
              [:flag
@@ -148,15 +143,11 @@
                  (reset! !/show-camera? false)
                  (reset! !/show-match-drop? false)
                  (swap! !/show-measure-tool? not)
-                 (if @!/show-measure-tool?
-                   (js/gtag "event" "registered-user" (clj->js {:tool-clicked :show-measure-distance}))
-                   (js/gtag "event" "registered-user" (clj->js {:tool-clicked :hide-measure-distance}))))]
+                 (gtag-tool @!/show-measure-tool? "measure-distance"))]
            [:legend
             (str (hs-str @!/show-legend?) " legend")
             #(do (swap! !/show-legend? not)
-                 (if @!/show-legend?
-                   (js/gtag "event" "registered-user" (clj->js {:tool-clicked :show-legend}))
-                   (js/gtag "event" "registered-user" (clj->js {:tool-clicked :hide-legend}))))
+                 (gtag-tool @!/show-legend? "legend"))
             false]]
           (remove nil?)
           (map-indexed (fn [i [icon hover-text on-click active?]]
