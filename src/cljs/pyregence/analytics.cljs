@@ -3,7 +3,7 @@
 (defn gtag
   "Call `gtag` with a given `info` (a clojure map with the info we want to track)"
   [info]
-  (js/gtag "event" "registered-user" (clj->js info)))
+  (js/gtag "event" "tool-usage" (clj->js info)))
 
 (defn gtag-tool-clicked
   "Call `gtag` for a specific togglable tool named `tool-name`
