@@ -1,7 +1,7 @@
 (ns pyregence.components.map-controls.tool-bar
   (:require
    [clojure.core.async                            :refer [<! go]]
-   [pyregence.analytics                           :refer [gtag-tool]]
+   [pyregence.analytics                           :refer [gtag-tool-clicked]]
    [pyregence.components.common                   :refer [hs-str
                                                           tool-tip-wrapper]]
    [pyregence.components.map-controls.tool-button :refer [tool-button]]
@@ -41,7 +41,7 @@
   "Toggles the red-flag warning layer."
   []
   (swap! !/show-red-flag? not)
-  (gtag-tool @!/show-red-flag? "red-flag")
+  (gtag-tool-clicked @!/show-red-flag? "red-flag")
   (if @!/show-red-flag?
     (mb/add-feature-highlight! "red-flag" "red-flag" :click-fn init-red-flag-popup!)
     (mb/clear-highlight! "red-flag" :selected))
@@ -62,7 +62,7 @@
   "Toggles the fire history layer."
   []
   (swap! !/show-fire-history? not)
-  (gtag-tool @!/show-fire-history? "fire-history-layer")
+  (gtag-tool-clicked @!/show-fire-history? "fire-history-layer")
   (if @!/show-fire-history?
     (do
       (mb/add-feature-highlight! "fire-history" "fire-history"
@@ -106,7 +106,7 @@
                  (reset! !/show-measure-tool? false)
                  (reset! !/show-match-drop? false)
                  (reset! !/show-camera? false)
-                 (gtag-tool @!/show-info? "point-information"))
+                 (gtag-tool-clicked @!/show-info? "point-information"))
             @!/show-info?]
            (when (and (c/feature-enabled? :match-drop) ; enabled in `config.edn`
                       (number? user-id)                ; logged in user
@@ -118,7 +118,7 @@
                    (reset! !/show-measure-tool? false)
                    (set-show-info! false)
                    (reset! !/show-camera? false)
-                   (gtag-tool @!/show-match-drop? "match-drop"))
+                   (gtag-tool-clicked @!/show-match-drop? "match-drop"))
               @!/show-match-drop?])
            (when-not (get-any-level-key :disable-camera?)
              [:camera
@@ -127,7 +127,7 @@
                    (set-show-info! false)
                    (reset! !/show-match-drop? false)
                    (reset! !/show-measure-tool? false)
-                   (gtag-tool @!/show-camera? "camera"))
+                   (gtag-tool-clicked @!/show-camera? "camera"))
               @!/show-camera?])
            (when-not (get-any-level-key :disable-flag?)
              [:flag
@@ -143,11 +143,11 @@
                  (reset! !/show-camera? false)
                  (reset! !/show-match-drop? false)
                  (swap! !/show-measure-tool? not)
-                 (gtag-tool @!/show-measure-tool? "measure-distance"))]
+                 (gtag-tool-clicked @!/show-measure-tool? "measure-distance"))]
            [:legend
             (str (hs-str @!/show-legend?) " legend")
             #(do (swap! !/show-legend? not)
-                 (gtag-tool @!/show-legend? "legend"))
+                 (gtag-tool-clicked @!/show-legend? "legend"))
             false]]
           (remove nil?)
           (map-indexed (fn [i [icon hover-text on-click active?]]
