@@ -530,6 +530,7 @@
   (go
     (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
+    (js/gtag "event" "select-forecast" (clj->js {:forecast-type (str key)}))
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
@@ -550,7 +551,7 @@
                                       (assoc layer
                                              :date (u-time/get-date-from-js js-time @!/show-utc?)
                                              :time (u-time/get-time-from-js js-time @!/show-utc?)))
-                                    @!/last-clicked-info))
+                                    %))
   (swap! !/processed-params  #(update-in %
                                          [:model-init :options]
                                          (fn [options]
