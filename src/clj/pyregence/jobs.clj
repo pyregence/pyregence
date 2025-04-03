@@ -7,8 +7,7 @@
             [runway.simple-sockets  :as runway]
             [triangulum.config      :refer [get-config]]
             [triangulum.logging     :refer [log-str]]
-            [triangulum.packaging]
-            [pyregence.compile-cljs]))
+            ))
 
 ;; Set Capabilities
 
@@ -67,8 +66,3 @@
 (defn stop-match-drop-server! [_]
   (log-str "Stopping Match Drop server on port " (get-config :pyregence.match-drop/match-drop :app-port))
   (runway/stop-server!))
-
-(defn build-server-uberjar
-  [m]
-  (pyregence.compile-cljs/-main "compile-prod.cljs.edn")
-  (triangulum.packaging/build-uberjar m))
