@@ -7,6 +7,7 @@
    [clojure.string                                      :as str]
    [cognitect.transit                                   :as t]
    [herb.core                                           :refer [<class]]
+   [pyregence.analytics                                 :refer [gtag]]
    [pyregence.components.map-controls.camera-tool       :refer [camera-tool]]
    [pyregence.components.map-controls.collapsible-panel :refer [collapsible-panel]]
    [pyregence.components.map-controls.information-tool  :refer [information-tool]]
@@ -530,7 +531,7 @@
   (go
     (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
-    (js/gtag "event" "select-forecast" (clj->js {:forecast-type (str key)}))
+    (gtag "select-forecast" {:forecast-type (str key)})
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs

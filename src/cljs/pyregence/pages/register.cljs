@@ -1,12 +1,14 @@
 (ns pyregence.pages.register
-  (:require [clojure.core.async             :refer [go <! timeout]]
-            [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]
-            [pyregence.styles               :as $]
-            [pyregence.utils.async-utils    :as u-async]
-            [pyregence.utils.browser-utils  :as u-browser]
-            [pyregence.utils.data-utils     :as u-data]
-            [reagent.core                   :as r]))
+  (:require
+   [clojure.core.async             :refer [<! go timeout]]
+   [pyregence.analytics            :refer [gtag]]
+   [pyregence.components.common    :refer [simple-form]]
+   [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.styles               :as $]
+   [pyregence.utils.async-utils    :as u-async]
+   [pyregence.utils.browser-utils  :as u-browser]
+   [pyregence.utils.data-utils     :as u-data]
+   [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -29,7 +31,7 @@
              (:success (<! (u-async/call-clj-async! "send-email" @email :new-user))))
       (do (toast-message! ["Your account has been created successfully."
                            "Please check your email for a link to complete registration."])
-          (js/gtag "event" "registered-user" (clj->js {}))
+          (gtag "registered-user" {})
           (<! (timeout 4000))
           (u-browser/jump-to-url! "/forecast"))
       (toast-message! ["An error occurred while registering."

@@ -1,11 +1,13 @@
 (ns pyregence.pages.login
-  (:require [clojure.core.async             :refer [go <! timeout]]
-            [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]
-            [pyregence.styles               :as $]
-            [pyregence.utils.async-utils    :as u-async]
-            [pyregence.utils.browser-utils  :as u-browser]
-            [reagent.core                   :as r]))
+  (:require
+   [clojure.core.async             :refer [<! go timeout]]
+   [pyregence.analytics            :refer [gtag]]
+   [pyregence.components.common    :refer [simple-form]]
+   [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.styles               :as $]
+   [pyregence.utils.async-utils    :as u-async]
+   [pyregence.utils.browser-utils  :as u-browser]
+   [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -26,7 +28,7 @@
       (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
         (u-browser/clear-session-storage!)
         (u-browser/jump-to-url! url)
-        (js/gtag "event" "log-in" (clj->js {})))
+        (gtag "log-in" {}))
       ;; TODO, it would be helpful to show the user which of the two errors it actually is.
       (toast-message! ["Invalid login credentials. Please try again."
                        "If you feel this is an error, check your email for the verification email."]))))
