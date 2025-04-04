@@ -41,5 +41,6 @@
           (println error-msg)
           (do (compiler/-main "-co" opts-file-name "-c")
               (spit (io/file (:output-dir config) "manifest.edn")
-                    {output-to output-to}))))))
+                    {"public/cljs/app.js" "public/cljs/app.js"}
+                    #_{output-to output-to}))))))
   (shutdown-agents))

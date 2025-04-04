@@ -22,11 +22,14 @@
            sig-gis/runway             {:git/url "https://gitlab.sig-gis.com/sig-gis/runway"
                                        :git/sha "a3a2b218e15e9144af5e9064f686d253198f0c85"
                                        :git/tag "2024.06.05-a3a2b21"}
-           sig-gis/triangulum         {:git/url "https://github.com/sig-gis/triangulum"
-                                       :git/sha "edbb7dac5770278741f0985f5b67ed17aa9dea93"}}
- :aliases {:build-uberjar    {:exec-fn   pyregence.jobs/build-server-uberjar
-                              :exec-args {:app-name  'pyregence
-                                          :main-ns   'triangulum.server}}
+           sig-gis/triangulum         {#_#_:git/url "https://github.com/sig-gis/triangulum"
+                                       #_#_:git/sha"affdf8858854cd9a018cfe1fc6d02980f977bc07"
+                                       :local/root "../triangulum/" }}
+ :aliases {:build-uberjar    {:exec-fn   pyregence.packaging/build-uberjar
+                              :exec-args {:app-name      pyregence
+                                          :src-dirs      ["src/clj"]
+                                          :main-ns       pyregence.cli
+                                          :resource-dirs ["resources" "target" "src/cljs"]}}
            :build-db         {:main-opts ["-m" "triangulum.build-db"]}
            :check-deps       {:deps      {com.github.liquidz/antq {:mvn/version "RELEASE"}}
                               :main-opts ["-m" "antq.core"]}
