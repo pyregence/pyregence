@@ -1,15 +1,19 @@
 (ns pyregence.components.map-controls.tool-bar
-  (:require [clojure.core.async                            :refer [<! go]]
-            [pyregence.components.common                   :refer [tool-tip-wrapper hs-str]]
-            [pyregence.components.map-controls.tool-button :refer [tool-button]]
-            [pyregence.components.mapbox                   :as mb]
-            [pyregence.components.messaging                :refer [toast-message!]]
-            [pyregence.components.popups                   :refer [red-flag-popup fire-history-popup]]
-            [pyregence.config                              :as c]
-            [pyregence.state                               :as !]
-            [pyregence.styles                              :as $]
-            [pyregence.utils.async-utils                   :as u-async]
-            [reagent.core                                  :as r]))
+  (:require
+   [clojure.core.async                            :refer [<! go]]
+   [pyregence.analytics                           :refer [gtag-tool-clicked]]
+   [pyregence.components.common                   :refer [hs-str
+                                                          tool-tip-wrapper]]
+   [pyregence.components.map-controls.tool-button :refer [tool-button]]
+   [pyregence.components.mapbox                   :as mb]
+   [pyregence.components.messaging                :refer [toast-message!]]
+   [pyregence.components.popups                   :refer [fire-history-popup
+                                                          red-flag-popup]]
+   [pyregence.config                              :as c]
+   [pyregence.state                               :as !]
+   [pyregence.styles                              :as $]
+   [pyregence.utils.async-utils                   :as u-async]
+   [reagent.core                                  :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -21,11 +25,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn- init-red-flag-popup! [feature lnglat]
-  (let [properties (-> feature (aget "properties") (js->clj))
+  (let [properties                         (-> feature (aget "properties") (js->clj))
         {:strs [url prod_type onset ends]} properties
-        body       (red-flag-popup url prod_type onset ends)]
+        body                               (red-flag-popup url prod_type onset ends)]
     (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
 
 (defn- init-fire-history-popup! [feature lnglat]
@@ -38,6 +41,7 @@
   "Toggles the red-flag warning layer."
   []
   (swap! !/show-red-flag? not)
+  (gtag-tool-clicked @!/show-red-flag? "red-flag")
   (if @!/show-red-flag?
     (mb/add-feature-highlight! "red-flag" "red-flag" :click-fn init-red-flag-popup!)
     (mb/clear-highlight! "red-flag" :selected))
@@ -58,6 +62,7 @@
   "Toggles the fire history layer."
   []
   (swap! !/show-fire-history? not)
+  (gtag-tool-clicked @!/show-fire-history? "fire-history-layer")
   (if @!/show-fire-history?
     (do
       (mb/add-feature-highlight! "fire-history" "fire-history"
@@ -100,7 +105,8 @@
             #(do (set-show-info! (not @!/show-info?))
                  (reset! !/show-measure-tool? false)
                  (reset! !/show-match-drop? false)
-                 (reset! !/show-camera? false))
+                 (reset! !/show-camera? false)
+                 (gtag-tool-clicked @!/show-info? "point-information"))
             @!/show-info?]
            (when (and (c/feature-enabled? :match-drop) ; enabled in `config.edn`
                       (number? user-id)                ; logged in user
@@ -111,7 +117,8 @@
               #(do (swap! !/show-match-drop? not)
                    (reset! !/show-measure-tool? false)
                    (set-show-info! false)
-                   (reset! !/show-camera? false))
+                   (reset! !/show-camera? false)
+                   (gtag-tool-clicked @!/show-match-drop? "match-drop"))
               @!/show-match-drop?])
            (when-not (get-any-level-key :disable-camera?)
              [:camera
@@ -119,7 +126,8 @@
               #(do (swap! !/show-camera? not)
                    (set-show-info! false)
                    (reset! !/show-match-drop? false)
-                   (reset! !/show-measure-tool? false))
+                   (reset! !/show-measure-tool? false)
+                   (gtag-tool-clicked @!/show-camera? "camera"))
               @!/show-camera?])
            (when-not (get-any-level-key :disable-flag?)
              [:flag
@@ -134,10 +142,12 @@
             #(do (set-show-info! false)
                  (reset! !/show-camera? false)
                  (reset! !/show-match-drop? false)
-                 (swap! !/show-measure-tool? not))]
+                 (swap! !/show-measure-tool? not)
+                 (gtag-tool-clicked @!/show-measure-tool? "measure-distance"))]
            [:legend
             (str (hs-str @!/show-legend?) " legend")
-            #(swap! !/show-legend? not)
+            #(do (swap! !/show-legend? not)
+                 (gtag-tool-clicked @!/show-legend? "legend"))
             false]]
           (remove nil?)
           (map-indexed (fn [i [icon hover-text on-click active?]]
