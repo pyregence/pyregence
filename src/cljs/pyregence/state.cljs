@@ -126,8 +126,8 @@ California cameras. This atom is used to create the camera layer in mapbox.cljs.
 
 (defonce ^{:doc "A map that defines the default tab to display for the near-term and long-term forecast pages."}
   default-forecasts (atom {}))
-(defonce ^{:doc "A boolean that dictates the development or production mode of the application."}
-  dev-mode? (atom nil))
+(defonce ^{:doc "A boolean that dictates whether to show the disclaimer message or not."}
+  show-disclaimer? (atom nil))
 (defonce ^{:doc "A boolean map describing what features are enabled or disabled."}
   feature-flags (atom nil))
 (defonce ^{:doc "A map of Geoserver URLs that are used to query layer data from."}

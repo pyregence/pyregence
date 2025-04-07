@@ -75,7 +75,7 @@
                                                          :long-term :fire-scenarios}
                                      :mapbox-access-token "<access-token>"
                                      :auth-token          "<changeme123456789>"
-                                     :dev-mode          true
+                                     :show-disclaimer   true
                                      :features          {:match-drop       true
                                                          :fire-history     true
                                                          :structures       true
