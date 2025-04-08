@@ -25,7 +25,8 @@
         bundle?   (= (get-in config [:options :target]) :bundle)]
     (if output-to
       (spit (io/file (get-in config [:options :output-dir]) "manifest.edn")
-            {output-to (if bundle? (str/replace output-to #"(\.js)$" "_bundle$1") output-to)})
+            {"public/cljs/app.js" "public/cljs/app_bundle.js"}
+            #_{output-to (if bundle? (str/replace output-to #"(\.js)$" "_bundle$1") output-to)})
       (println "Error reading figwheel config."))))
 
 (defn -main
