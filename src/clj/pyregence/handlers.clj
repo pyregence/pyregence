@@ -41,8 +41,7 @@
                          #_(when (and (nil? bearer-token) (contains? (:params request) :auth-token))
                              (log-str "Token in URL params detected"))
                          valid-token?)
-                :user  (or (pos? user-id)
-                           (get-config :triangulum.views/client-keys :dev-mode))
+                :user  (pos? user-id)
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))
 
