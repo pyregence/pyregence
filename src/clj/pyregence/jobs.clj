@@ -6,8 +6,7 @@
             [pyregence.match-drop   :refer [match-drop-server-msg-handler]]
             [runway.simple-sockets  :as runway]
             [triangulum.config      :refer [get-config]]
-            [triangulum.logging     :refer [log-str]]
-            ))
+            [triangulum.logging     :refer [log-str]]))
 
 ;; Set Capabilities
 
