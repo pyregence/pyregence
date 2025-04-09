@@ -29,7 +29,7 @@
                               :exec-args {:app-name      pyregence
                                           :src-dirs      ["src/clj"]
                                           :main-ns       pyregence.cli
-                                          :resource-dirs ["resources" "target" "src/cljs"]}}
+                                          :resource-dirs ["resources" "target" "src/cljs" "src/sql"]}}
            :build-db         {:main-opts ["-m" "triangulum.build-db"]}
            :check-deps       {:deps      {com.github.liquidz/antq {:mvn/version "RELEASE"}}
                               :main-opts ["-m" "antq.core"]}
