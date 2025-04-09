@@ -768,7 +768,7 @@
                :on-mouse-up   #(reset! mouse-down? false)}]))
 
 (defn- message-modal []
-  (r/with-let [show-me? (r/atom (not @!/show-disclaimer?))]
+  (r/with-let [show-me? (r/atom @!/show-disclaimer?)]
     (when @show-me?
       [:div#message-modal {:style ($/modal)}
        [:div {:style ($message-modal false)}
