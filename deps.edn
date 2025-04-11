@@ -38,6 +38,7 @@
                                           "-e" "(require,'pyregence.jobs)"
                                           "-e" "(require,'pyregence.handlers)"
                                           "-e" "(require,'pyregence.compile-cljs)"]}
+           :cli              {:main-opts ["-m" "pyregence.cli"]}
            :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
            :config           {:main-opts ["-m" "triangulum.config"]}
            :default-ssl-opts {:jvm-opts ["-Djavax.net.ssl.keyStore=resources/runway.pkcs12"
