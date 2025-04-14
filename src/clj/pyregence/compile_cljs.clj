@@ -25,7 +25,7 @@
         bundle?   (= (get-in config [:options :target]) :bundle)]
     (if output-to
       (spit (io/file (get-in config [:options :output-dir]) "manifest.edn")
-            {"public/cljs/app.js" (-> output-to (str/split #"/") last)})
+            {output-to (if bundle? (str/replace output-to #"(\.js)$" "_bundle$1") output-to)})
       (println "Error reading figwheel config."))))
 
 (defn -main
@@ -41,11 +41,5 @@
           (println error-msg)
           (do (compiler/-main "-co" opts-file-name "-c")
               (spit (io/file (:output-dir config) "manifest.edn")
-                    ;;NOTE The key below has to match the value in triangulum/views find-cljs-app-js
-                    ;;That key is determined by the project using Triangulum (e.g pyregence )
-                    ;;This means the caller and the sender are coupled on that key
-                    ;;Meanwhile, the only thing thats used, at least by Pyregence is the
-                    ;;output of triangulum/views/find-cljs-app-js and that only cares about the
-                    ;;file name (not the path) because it hands that to triangulum.
-                    {"public/cljs/app.js" (-> output-to (str/split #"/") last)}))))))
+                    {output-to output-to}))))))
   (shutdown-agents))
