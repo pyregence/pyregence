@@ -25,7 +25,7 @@
            sig-gis/triangulum         {#_#_:git/url "https://github.com/sig-gis/triangulum"
                                        #_#_:git/sha"affdf8858854cd9a018cfe1fc6d02980f977bc07"
                                        :local/root "../triangulum/" }}
- :aliases {:build-uberjar    {:exec-fn   pyregence.packaging/build-uberjar
+ :aliases {:build-uberjar    {:exec-fn   pyregence.packaging/build-uberjar!
                               :exec-args {:app-name      pyregence
                                           :src-dirs      ["src/clj"]
                                           :main-ns       pyregence.cli
