@@ -1,9 +1,9 @@
 (ns pyregence.cli
   (:gen-class)
   (:require
-   [triangulum.cli      :refer [get-cli-options]]
    [triangulum.build-db :as build-db]
-   [triangulum.server :as server]))
+   [triangulum.cli      :refer [get-cli-options]]
+   [triangulum.server   :as server]))
 
 (def cli-actions {:server   {:description "Manage web-server"}
                   :build-db {:description "Manage database"}})
