@@ -32,6 +32,16 @@
       slurp
       edn/read-string))
 
+(defn collect-keys [m]
+  (let [root-keys (set (keys m))]
+    root-keys))
+(comment (collect-keys {:x 3}))
+
+(defn collect-maps [v]
+  (filter map? v))
+(comment
+  (collect-maps [1 2 3 {:x {:y [1 2 3 {:r 4}]}} 4]))
+
 (defn config-diffs []
   (data/diff
    (set (keys (read-config
