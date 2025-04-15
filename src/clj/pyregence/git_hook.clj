@@ -38,9 +38,10 @@
   (collect-maps [1 2 3 {:x {:y [1 2 3 {:r 4}]}} 4]))
 
 ;; not perfect but hey
+;; idea: process as a vector instead... so "map" the "map" to get the tuples etc.
 (defn collect-keys [m]
   (let [root-keys (set (keys m))]
-    (set (for [k    root-keys
+    (vec (for [k    root-keys
                :let [the-val (k m)]]
            (if (coll? the-val)
              (cond (vector? the-val)
@@ -51,14 +52,18 @@
 (comment (collect-keys {:x 3}))
 (comment (collect-keys {:x 3 :z {:y 4}}))
 (comment (collect-keys {:x 3 :z {:y 4} :w [1 2 3]}))
-(comment (collect-keys {:x 3 :z {:y 4} :w [1 2 3 {:o 23}]}))
+(comment (collect-keys {:x 3 :z {:y 4} :w [1 2 3 {:o 23} ["a" "b" {:innnner 42}]]}))
 
 (defn config-diffs []
   (data/diff
-   (set (keys (read-config
-               "/home/danielhabib/sig/pyregence/config.default.edn")))
-   (set (keys (read-config
-               "/home/danielhabib/sig/pyregence/config.edn")))))
+   (collect-keys (read-config
+                  "/home/danielhabib/sig/pyregence/config.default.edn"))
+   (collect-keys (read-config
+                  "/home/danielhabib/sig/pyregence/config.edn"))))
+
+#_(difftastic-files
+   "/home/danielhabib/sig/pyregence/config.edn"
+   "/home/danielhabib/sig/pyregence/config.default.edn")
 
 (defn -main
   [args]
