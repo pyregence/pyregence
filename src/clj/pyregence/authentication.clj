@@ -109,6 +109,13 @@
   [user-id]
   (sql-primitive (call-sql "get_user_admin_access" user-id)))
 
+(defn verify-2fa
+  "Verifies a 2FA code"
+  [email token]
+  (if-let [user (first (call-sql "verify_user_2fa" email token))]
+    (data-response "" {:session {:user-id (:user_id user)}})
+    (data-response "" {:status 403})))
+
 (defn get-org-member-users
   "Returns a vector of member users by the given org-id."
   [org-id]

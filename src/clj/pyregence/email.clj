@@ -29,19 +29,40 @@
        "model=elmfire \n\n"
        "  - Pyregence Technical Support"))
 
-(defn- send-verification-email! [email subject message-fn]
+(defn- generate-numeric-token
+  "Generate a 6-digit numeric token for verification purposes"
+  []
+  (format "%06d" (rand-int 1000000)))
+
+(defn- send-verification-email! 
+  "Send verification email with a token."
+  [email subject message-fn]
   (let [verification-token (str (UUID/randomUUID))
         body               (message-fn (get-config :triangulum.email/base-url) email verification-token)
         result             (send-mail email nil nil subject body :text)]
-    (call-sql "set_verification_token" email verification-token)
+    (call-sql "set_verification_token" email verification-token nil)
     (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
 
-(defn- send-match-drop-email! [email subject message-fn match-drop-args]
-  (let [body   (message-fn (get-config :triangulum.email/base-url) email match-drop-args)
-        result (send-mail email nil nil subject body :text)]
-    (if (= :SUCCESS (:error result))
-      (data-response "Match Drop email successfully sent.")
-      (data-response "There was an issue sending the Match Drop email." {:status 400}))))
+(defn- get-2fa-message 
+  "Generate message for 2FA verification"
+  [_ email token]
+  (str "Hi " email ",\n\n"
+       "  Your verification code for Pyregence login is: " token "\n\n"
+       "  This code will expire in 15 minutes.\n\n"
+       "  - Pyregence Technical Support"))
+
+(defn send-2fa-code
+  "Sends a time-limited 2FA code to the user's email"
+  [email]
+  (let [token         (generate-numeric-token)
+        expiration    (-> (java.time.LocalDateTime/now)
+                          (.plusMinutes 15)
+                          (.atZone (java.time.ZoneId/systemDefault))
+                          (.toInstant))
+        body          (get-2fa-message nil email token)
+        result        (send-mail email nil nil "Pyregence Login Verification Code" body :text)]
+    (call-sql "set_verification_token" email token expiration)
+    (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
 
 (defn- send-match-drop-email! [email subject message-fn match-drop-args]
   (let [body   (message-fn (get-config :triangulum.email/base-url) email match-drop-args)
@@ -58,9 +79,10 @@
     :new-user   (send-verification-email! email
                                          "Pyregence New User"
                                          get-new-user-message)
+    :2fa        (send-2fa-code email)
     :match-drop (send-match-drop-email! email
                                         "Match Drop Finished Running"
                                         get-match-drop-message
                                         match-drop-args)
-    (data-response "Invalid email type. Options are `:reset`, `:new-user`, or `:match-drop.`"
+    (data-response "Invalid email type. Options are `:reset`, `:new-user`, `:2fa`, or `:match-drop.`"
                    {:status 400})))

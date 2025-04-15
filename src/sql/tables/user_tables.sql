@@ -16,6 +16,7 @@ CREATE TABLE users (
     super_admin       boolean DEFAULT FALSE,
     verified          boolean DEFAULT FALSE,
     verification_token text DEFAULT NULL,
+    token_expiration  TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     match_drop_access boolean DEFAULT FALSE
 );
 

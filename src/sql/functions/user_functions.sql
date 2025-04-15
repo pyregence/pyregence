@@ -79,11 +79,12 @@ CREATE OR REPLACE FUNCTION add_new_user(
 $$ LANGUAGE SQL;
 
 -- Sets a verification token for a user (used for email verification and password reset)
-CREATE OR REPLACE FUNCTION set_verification_token(_email text, _token text)
+CREATE OR REPLACE FUNCTION set_verification_token(_email text, _token text, _expiration TIMESTAMP WITH TIME ZONE DEFAULT NULL)
  RETURNS void AS $$
 
     UPDATE users
-    SET verification_token = _token
+    SET verification_token = _token,
+        token_expiration = _expiration
     WHERE email = lower_trim(_email)
 
 $$ LANGUAGE SQL;
@@ -95,15 +96,13 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _token
     UPDATE users
     SET password = crypt(_password, gen_salt('bf')),
         verified = TRUE,
-        verification_token = NULL
+        verification_token = NULL,
+        token_expiration = NULL
     WHERE email = lower_trim(_email)
         AND verification_token = _token
-        AND verification_token IS NOT NULL;
-
-    SELECT user_uid
-    FROM users
-    WHERE email = lower_trim(_email)
-        AND verified = TRUE;
+        AND verification_token IS NOT NULL
+        AND (token_expiration IS NULL OR token_expiration > NOW())
+    RETURNING user_uid;
 
 $$ LANGUAGE SQL;
 
@@ -113,15 +112,29 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
 
     UPDATE users
     SET verified = TRUE,
-        verification_token = NULL
+        verification_token = NULL,
+        token_expiration = NULL
     WHERE email = lower_trim(_email)
         AND verification_token = _token
-        AND verification_token IS NOT NULL;
+        AND verification_token IS NOT NULL
+        AND (token_expiration IS NULL OR token_expiration > NOW())
+    RETURNING user_uid;
 
-    SELECT user_uid
-    FROM users
+$$ LANGUAGE SQL;
+
+-- Verifies a 2FA token without changing verified status
+CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
+ RETURNS TABLE (user_id integer) AS $$
+
+    UPDATE users
+    SET verification_token = NULL,
+        token_expiration = NULL
     WHERE email = lower_trim(_email)
-        AND verified = TRUE;
+        AND verification_token = _token
+        AND verification_token IS NOT NULL
+        AND token_expiration > NOW()
+        AND verified = TRUE
+    RETURNING user_uid;
 
 $$ LANGUAGE SQL;
 
