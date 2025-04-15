@@ -32,15 +32,26 @@
       slurp
       edn/read-string))
 
-(defn collect-keys [m]
-  (let [root-keys (set (keys m))]
-    root-keys))
-(comment (collect-keys {:x 3}))
-
 (defn collect-maps [v]
   (filter map? v))
 (comment
   (collect-maps [1 2 3 {:x {:y [1 2 3 {:r 4}]}} 4]))
+
+;; not perfect but hey
+(defn collect-keys [m]
+  (let [root-keys (set (keys m))]
+    (set (for [k    root-keys
+               :let [the-val (k m)]]
+           (if (coll? the-val)
+             (cond (vector? the-val)
+                   (map  collect-keys (collect-maps the-val))
+                   (map? the-val)
+                   (collect-keys the-val))
+             k)))))
+(comment (collect-keys {:x 3}))
+(comment (collect-keys {:x 3 :z {:y 4}}))
+(comment (collect-keys {:x 3 :z {:y 4} :w [1 2 3]}))
+(comment (collect-keys {:x 3 :z {:y 4} :w [1 2 3 {:o 23}]}))
 
 (defn config-diffs []
   (data/diff
