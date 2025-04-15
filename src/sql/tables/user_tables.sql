@@ -15,7 +15,7 @@ CREATE TABLE users (
     settings          text,
     super_admin       boolean DEFAULT FALSE,
     verified          boolean DEFAULT FALSE,
-    reset_key         text DEFAULT NULL,
+    verification_token text DEFAULT NULL,
     match_drop_access boolean DEFAULT FALSE
 );
 

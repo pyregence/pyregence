@@ -20,13 +20,13 @@
      (data-response "")
      (data-response "" {:status 403}))))
 
-(defn set-user-password [email password reset-key]
-  (if-let [user (first (call-sql "set_user_password" {:log? false} email password reset-key))]
+(defn set-user-password [email password token]
+  (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
     (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
-(defn verify-user-email [email reset-key]
-  (if-let [user (first (call-sql "verify_user_email" email reset-key))]
+(defn verify-user-email [email token]
+  (if-let [user (first (call-sql "verify_user_email" email token))]
     (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 

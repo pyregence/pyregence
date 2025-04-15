@@ -78,27 +78,27 @@ CREATE OR REPLACE FUNCTION add_new_user(
 
 $$ LANGUAGE SQL;
 
--- Adds a password reset key to the user
-CREATE OR REPLACE FUNCTION set_reset_key(_email text, _reset_key text)
+-- Sets a verification token for a user (used for email verification and password reset)
+CREATE OR REPLACE FUNCTION set_verification_token(_email text, _token text)
  RETURNS void AS $$
 
     UPDATE users
-    SET reset_key = _reset_key
+    SET verification_token = _token
     WHERE email = lower_trim(_email)
 
 $$ LANGUAGE SQL;
 
--- Sets the password for a user, if the reset key is valid
-CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset_key text)
+-- Sets the password for a user, if the verification token is valid
+CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _token text)
  RETURNS TABLE (user_id integer) AS $$
 
     UPDATE users
     SET password = crypt(_password, gen_salt('bf')),
         verified = TRUE,
-        reset_key = NULL
+        verification_token = NULL
     WHERE email = lower_trim(_email)
-        AND reset_key = _reset_key
-        AND reset_key IS NOT NULL;
+        AND verification_token = _token
+        AND verification_token IS NOT NULL;
 
     SELECT user_uid
     FROM users
@@ -107,16 +107,16 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset
 
 $$ LANGUAGE SQL;
 
--- Sets verified to true, if the reset key is valid
-CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
+-- Sets verified to true, if the verification token is valid
+CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
  RETURNS TABLE (user_id integer) AS $$
 
     UPDATE users
     SET verified = TRUE,
-        reset_key = NULL
+        verification_token = NULL
     WHERE email = lower_trim(_email)
-        AND reset_key = _reset_key
-        AND reset_key IS NOT NULL;
+        AND verification_token = _token
+        AND verification_token IS NOT NULL;
 
     SELECT user_uid
     FROM users
