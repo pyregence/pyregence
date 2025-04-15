@@ -34,10 +34,10 @@
 
 (defn config-diffs []
   (data/diff
-   (read-config
-    "/home/danielhabib/sig/pyregence/config.default.edn")
-   (read-config
-    "/home/danielhabib/sig/pyregence/config.edn")))
+   (set (keys (read-config
+               "/home/danielhabib/sig/pyregence/config.default.edn")))
+   (set (keys (read-config
+               "/home/danielhabib/sig/pyregence/config.edn")))))
 
 (defn -main
   [args]
