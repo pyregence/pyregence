@@ -66,7 +66,7 @@
 (comment (collect-keys {:x 3 :z {:y 4}
                         :w [1 2 3 {:o 23} ["a" "b" {:innnner 42}]]}))
 
-(defn- build-key [index m]
+(defn- update-map-keys-with-index [index m]
   (update-keys m
                #(keyword (str index "." (name %)))))
 
@@ -79,7 +79,6 @@
            (merge acc (deep-merge-maps item))))
    {}
    coll))
-
 (comment (deep-merge-maps (normalize-vector [{:x 2}
                                              [[{:x 3}]]
                                              [2 [[[{:innie 42}]]]]]
@@ -87,19 +86,20 @@
 (comment (deep-merge-maps (normalize-vector [{:x 2}] 0))) ;; {:0-x 2}
 
 (defn normalize-vector [v index]
-  (map (fn [the-value]
-         (cond (map? the-value)
-               (build-key index the-value)
-               (vector? the-value)
-               (normalize-vector the-value (inc index))
-               :else
-               {(keyword (str index)) the-value}))
-       v))
+  (map-indexed (fn [the-index the-value]
+                 (cond (map? the-value)
+                       (update-map-keys-with-index (str "pyr-cfg-vec-" the-index "." index) the-value)
+                       (vector? the-value)
+                       (normalize-vector the-value (inc index))
+                       :else
+                       {(keyword (str "." index)) the-value}))
+               v))
 (comment (normalize-vector [1] 0)) ;; {}
-(comment (normalize-vector [{:x 2}] 0)) ;; {:0-x 2}
-(comment (deep-merge-maps (normalize-vector [{:x [1]}] 0)))
-(comment (deep-merge-maps (normalize-vector [{:x [[[{:inner 42}]]]}]
+(comment (deep-merge-maps (normalize-vector [[[{:x 1 :y 2}]]
+                                             {:x 1 :y 2}]
                                             0))) ;; {:0-x 2}
+(comment (deep-merge-maps (normalize-vector [[2]] 0)))
+(comment (deep-merge-maps (normalize-vector [{:x [[[{:inner 42}]]]}] 0))) ;; {:0-x 2}
 
 (defn normalize [m]
   (reduce (fn [acc [k the-value]]
