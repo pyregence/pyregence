@@ -68,19 +68,36 @@
 
 (defn- build-key [index m]
   (update-keys m
-               #(keyword (str index "-" (name %)))))
+               #(keyword (str index "." (name %)))))
 
-(defn normalize-vector [v first-index]
+(defn deep-merge-maps [coll]
+  (reduce
+   (fn [acc item]
+     (cond (map? item)
+           (merge acc item)
+           :else
+           (merge acc (deep-merge-maps item))))
+   {}
+   coll))
+
+(comment (deep-merge-maps (normalize-vector [{:x 2}
+                                             [[{:x 3}]]
+                                             [2]]
+                                            0)))
+(comment (deep-merge-maps (normalize-vector [{:x 2}] 0))) ;; {:0-x 2}
+
+(defn normalize-vector [v index]
   (map (fn [the-value]
          (cond (map? the-value)
-               (build-key first-index the-value)
+               (build-key index the-value)
                (vector? the-value)
-               (normalize-vector the-value (inc first-index))
+               (normalize-vector the-value (inc index))
                :else
-               {(keyword (str first-index)) the-value}))
+               {(keyword (str index)) the-value}))
        v))
 (comment (normalize-vector [1] 0)) ;; {}
 (comment (normalize-vector [{:x 2}] 0)) ;; {:0-x 2}
+(comment (deep-merge-maps (normalize-vector [{:x [1]}] 0)))
 (comment (normalize-vector [{:x 2}
                             [[{:x 3}]]
                             [2]]
@@ -88,17 +105,18 @@
 
 (defn normalize [m]
   (reduce (fn [acc [k the-value]]
-            (cond #_(map? the-value)
-             #_(conj acc collect-keys the-value)
-             #_#_(vector? the-value)
-               (conj acc (map collect-keys (collect-maps the-value)))
-             :else
+            (cond (map? the-value)
+                  ;; ???
+                  (merge acc (deep-merge-maps (normalize-vector [{k the-value}] 0)))
+                  (vector? the-value)
+                  (merge acc (deep-merge-maps (normalize-vector [{k the-value}] 0)))
+                  :else
                   (assoc acc k the-value)))
           {}
           m))
 
 (comment (normalize {:x 3})) ;; = {:x 3}
-(comment (normalize {:x [1]})) ;; = {:x [1]}
+(comment (normalize {:x [1 {:y 0}]})) ;; = {:x [1]}
 
 (defn config-diffs []
   (data/diff
