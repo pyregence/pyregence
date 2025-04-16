@@ -3,10 +3,7 @@
 ;; NOTE this file must be self-contained - it will be executed as a standalone script.
 
 (ns pyregence.git-hook
-  "A custom git-credential executable friendly to our Gitlab-Kubernetes combination,
-  which resolves Gitlab Project Tokens from an EDN-encoded file."
   (:require
-   [clojure.data                :as data]
    [lambdaisland.deep-diff2     :as ddiff]
    [clojure.edn                 :as edn]))
 
@@ -48,7 +45,6 @@
 (defn normalize [m]
   (reduce (fn [acc [k the-value]]
             (cond (map? the-value)
-                  ;; ???
                   (merge acc (deep-merge-maps (normalize-vector [{k the-value}] 0)))
                   (vector? the-value)
                   (merge acc (deep-merge-maps (normalize-vector the-value 0)))
@@ -73,12 +69,6 @@
    (config-diffs "config.default.edn" "config.edn")))
 
 (comment (config-diffs))
-
-"/home/danielhabib/sig/dev-docs/document-root/operations/servers/prod/inyo/config/config.edn"
-
-#_(difftastic-files
-   "/home/danielhabib/sig/pyregence/config.edn"
-   "/home/danielhabib/sig/pyregence/config.default.edn")
 
 (defn -main
   [& [config1 config2]]
