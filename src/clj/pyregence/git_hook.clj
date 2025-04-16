@@ -7,7 +7,9 @@
    [lambdaisland.deep-diff2     :as ddiff]
    [clojure.edn                 :as edn]))
 
-(defn read-config [config-file]
+(defn read-config
+  "From an edn file to clj data"
+  [config-file]
   (-> config-file
       slurp
       edn/read-string))
@@ -16,7 +18,9 @@
   (update-keys m
                #(keyword (str index "." (name %)))))
 
-(defn deep-merge-maps [coll]
+(defn deep-merge-maps
+  "Builds a map from a coll of maps (arbitrary deepness)"
+  [coll]
   (reduce
    (fn [acc item]
      (cond (map? item)
@@ -25,24 +29,29 @@
            (merge acc (deep-merge-maps item))))
    {}
    coll))
-(comment (deep-merge-maps (normalize-vector [{:x 2}
-                                             [[{:x 3}]]
-                                             [2 [[[{:innie 42}]]]]]
-                                            0)))
-(comment (deep-merge-maps (normalize-vector [{:x 2}] 0)))
+(comment (deep-merge-maps [{:__vec-0.0.x 2} [[{:__vec-0.2.x 3}]] [{:.1 2} [[[{:__vec-0.4.innie 42}]]]]]))
+(comment (deep-merge-maps [{:__vec-0.0.x 2}]))
 
-(defn normalize-vector [v index]
+(defn normalize-vector
+  "Transforms a vector into a coll of maps whose keys describes the 'locations'"
+  [v index]
   (map-indexed (fn [the-index the-value]
                  (cond (map? the-value)
-                       (update-map-keys-with-index (str "pyr-cfg-vec-" the-index "." index) the-value)
+                       (update-map-keys-with-index (str "__vec-" the-index "." index) the-value)
                        (vector? the-value)
                        (normalize-vector the-value (inc index))
                        :else
-                       {(keyword (str "." index)) the-value}))
+                       {(keyword (str "__plain." index)) the-value}))
                v))
-(comment (deep-merge-maps (normalize-vector [{:x [[[{:inner 42}]]]}] 0)))
+(comment (normalize-vector [[{:x 0} 1]] 0))
+;; FIXME the example is buggy so fix the code. It's good enough for me though
+(comment (normalize-vector [{:x [[[{:inner 42}]]]}] 0))
+;; FIXME the example is buggy so fix the code. It's good enough for me though
+(comment (normalize-vector [1 2 3 {:x 42 :y [[[43 {:innie "hi, outie!"}]]]}] 0))
 
-(defn normalize [m]
+(defn normalize
+  "Main function: normalizes the config map"
+  [m]
   (reduce (fn [acc [k the-value]]
             (cond (map? the-value)
                   (merge acc (deep-merge-maps (normalize-vector [{k the-value}] 0)))
@@ -54,6 +63,7 @@
           m))
 (comment (normalize {:x {:inner 42}}))
 (comment (normalize {:x [[[{:inner 42}]]]}))
+;; FIXME buggy. Where is :x?
 (comment (normalize {:x [1 [{:y 0}]]}))
 
 (defn- select-config-keys [config]
@@ -67,7 +77,6 @@
        (ddiff/pretty-print)))
   ([]
    (config-diffs "config.default.edn" "config.edn")))
-
 (comment (config-diffs))
 
 (defn -main
