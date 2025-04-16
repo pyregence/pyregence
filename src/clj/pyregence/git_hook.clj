@@ -82,7 +82,7 @@
 
 (comment (deep-merge-maps (normalize-vector [{:x 2}
                                              [[{:x 3}]]
-                                             [2]]
+                                             [2 [[[{:innie 42}]]]]]
                                             0)))
 (comment (deep-merge-maps (normalize-vector [{:x 2}] 0))) ;; {:0-x 2}
 
@@ -98,10 +98,8 @@
 (comment (normalize-vector [1] 0)) ;; {}
 (comment (normalize-vector [{:x 2}] 0)) ;; {:0-x 2}
 (comment (deep-merge-maps (normalize-vector [{:x [1]}] 0)))
-(comment (normalize-vector [{:x 2}
-                            [[{:x 3}]]
-                            [2]]
-                           0)) ;; {:0-x 2}
+(comment (deep-merge-maps (normalize-vector [{:x [[[{:inner 42}]]]}]
+                                            0))) ;; {:0-x 2}
 
 (defn normalize [m]
   (reduce (fn [acc [k the-value]]
@@ -109,21 +107,32 @@
                   ;; ???
                   (merge acc (deep-merge-maps (normalize-vector [{k the-value}] 0)))
                   (vector? the-value)
-                  (merge acc (deep-merge-maps (normalize-vector [{k the-value}] 0)))
+                  (merge acc (deep-merge-maps (normalize-vector the-value 0)))
                   :else
                   (assoc acc k the-value)))
           {}
           m))
 
-(comment (normalize {:x 3})) ;; = {:x 3}
-(comment (normalize {:x [1 {:y 0}]})) ;; = {:x [1]}
+(comment (normalize
+          {:triangulum.build-db/admin-pass "<password>"
+           :x                              {:triangulum.worker/name  "set-all-capabilities",
+                                            :triangulum.worker/start "pyregence.jobs/start-set-all-capabilities-job!",
+                                            :triangulum.worker/stop  "pyregence.jobs/stop-set-all-capabilities-job!"}
+           :triangulum.handler/bad-tokens  #{".php"}}))
+
+(comment (normalize {:x {:inner 42}})) ;; = {:x 3}
+(comment (normalize {:x [[[{:inner 42}]]]})) ;; = {:x 3}
+(comment (normalize {:x [1 [{:y 0}]]})) ;; = {:x [1]}
+
+(defn- select-config-keys [config]
+  (-> config read-config normalize keys set))
 
 (defn config-diffs []
   (data/diff
-   (collect-keys (read-config
-                  "/home/danielhabib/sig/pyregence/config.default.edn"))
-   (collect-keys (read-config
-                  "/home/danielhabib/sig/pyregence/config.edn"))))
+   (select-config-keys "/home/danielhabib/sig/pyregence/config.default.edn")
+   (select-config-keys "/home/danielhabib/sig/pyregence/config.edn")))
+
+(comment (config-diffs))
 
 #_(difftastic-files
    "/home/danielhabib/sig/pyregence/config.edn"
