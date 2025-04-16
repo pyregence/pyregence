@@ -33,26 +33,72 @@
       edn/read-string))
 
 (defn collect-maps [v]
-  (filter map? v))
+  (reduce (fn [acc item]
+            (cond (map? item)
+                  (conj acc item)
+                  (vector? item)
+                  (conj acc (collect-maps item))
+                  :else
+                  acc))
+          []
+          v))
 (comment
-  (collect-maps [1 2 3 {:x {:y [1 2 3 {:r 4}]}} 4]))
+  (collect-maps [1 2 3 {:o 23} ["a" "b" {:innnner 42}]])
+  (collect-maps [1 2 3 [{:inner 2}] {:x {:y [1 2 3 {:r 4}]}} 4]))
 
-;; not perfect but hey
-;; idea: process as a vector instead... so "map" the "map" to get the tuples etc.
 (defn collect-keys [m]
-  (let [root-keys (set (keys m))]
-    (vec (for [k    root-keys
-               :let [the-val (k m)]]
-           (if (coll? the-val)
-             (cond (vector? the-val)
-                   (map  collect-keys (collect-maps the-val))
-                   (map? the-val)
-                   (collect-keys the-val))
-             k)))))
+  (reduce (fn [acc [k the-value]]
+            (cond (map? the-value)
+                  (conj acc collect-keys the-value)
+                  (vector? the-value)
+                  (conj acc (let [hi    (collect-maps the-value)
+                                  debug (map collect-keys hi)]
+                              (println "hi:" hi)
+                              (println "debug:" debug)
+                              debug))
+                  :else
+                  (conj acc k)))
+          #{}
+          m))
 (comment (collect-keys {:x 3}))
 (comment (collect-keys {:x 3 :z {:y 4}}))
 (comment (collect-keys {:x 3 :z {:y 4} :w [1 2 3]}))
-(comment (collect-keys {:x 3 :z {:y 4} :w [1 2 3 {:o 23} ["a" "b" {:innnner 42}]]}))
+(comment (collect-keys {:x 3 :z {:y 4}
+                        :w [1 2 3 {:o 23} ["a" "b" {:innnner 42}]]}))
+
+(defn- build-key [index m]
+  (update-keys m
+               #(keyword (str index "-" (name %)))))
+
+(defn normalize-vector [v first-index]
+  (map (fn [the-value]
+         (cond (map? the-value)
+               (build-key first-index the-value)
+               (vector? the-value)
+               (normalize-vector the-value (inc first-index))
+               :else
+               {(keyword (str first-index)) the-value}))
+       v))
+(comment (normalize-vector [1] 0)) ;; {}
+(comment (normalize-vector [{:x 2}] 0)) ;; {:0-x 2}
+(comment (normalize-vector [{:x 2}
+                            [[{:x 3}]]
+                            [2]]
+                           0)) ;; {:0-x 2}
+
+(defn normalize [m]
+  (reduce (fn [acc [k the-value]]
+            (cond #_(map? the-value)
+             #_(conj acc collect-keys the-value)
+             #_#_(vector? the-value)
+               (conj acc (map collect-keys (collect-maps the-value)))
+             :else
+                  (assoc acc k the-value)))
+          {}
+          m))
+
+(comment (normalize {:x 3})) ;; = {:x 3}
+(comment (normalize {:x [1]})) ;; = {:x [1]}
 
 (defn config-diffs []
   (data/diff
