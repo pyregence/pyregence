@@ -77,7 +77,7 @@
    "/home/danielhabib/sig/pyregence/config.default.edn")
 
 (defn -main
-  [args]
+  [& args]
   (config-diffs))
 
 (when (= *file* (System/getProperty "babashka.file"))
