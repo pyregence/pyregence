@@ -63,24 +63,30 @@
 (defn- select-config-keys [config]
   (-> config read-config normalize keys set))
 
-(defn config-diffs []
-  (ddiff/pretty-print
-   (ddiff/minimize (ddiff/diff
-                    (select-config-keys "config.default.edn")
-                    (select-config-keys "config.edn"))))
-  #_(data/diff
-     (select-config-keys "/home/danielhabib/sig/pyregence/config.default.edn")
-     (select-config-keys "/home/danielhabib/sig/pyregence/config.edn")))
+(defn config-diffs
+  ([config1 config2]
+   (-> (ddiff/diff (select-config-keys config1)
+                   (select-config-keys config2))
+       (ddiff/minimize)
+       (ddiff/pretty-print)))
+  ([]
+   (config-diffs "config.default.edn" "config.edn")))
 
 (comment (config-diffs))
+
+"/home/danielhabib/sig/dev-docs/document-root/operations/servers/prod/inyo/config/config.edn"
 
 #_(difftastic-files
    "/home/danielhabib/sig/pyregence/config.edn"
    "/home/danielhabib/sig/pyregence/config.default.edn")
 
 (defn -main
-  [& args]
-  (config-diffs))
+  [& [config1 config2]]
+  (if (and config1 config2)
+    (do
+      (println "Comparing files"  config1  "and"  config2)
+      (config-diffs config1 config2))
+    (config-diffs)))
 
 (when (= *file* (System/getProperty "babashka.file"))
   (apply -main *command-line-args*))
