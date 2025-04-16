@@ -4,10 +4,12 @@
   "A custom git-credential executable friendly to our Gitlab-Kubernetes combination,
   which resolves Gitlab Project Tokens from an EDN-encoded file."
   (:require
-   [clojure.data         :as data]
-   [clojure.edn          :as edn]
-   [clojure.string       :as str]
-   [triangulum.config    :as config]))
+   [clojure.data                :as data]
+   [lambdaisland.deep-diff2     :as ddiff]
+   [clojure.edn                 :as edn]
+   [clojure.string              :as str]
+   [triangulum.config           :as config]))
+
 (def gitlab-token (System/getenv "GITLAB_TOKEN"))
 (def gitlab-user  (System/getenv "USER"))
 (def gitlab-url   "https://gitlab.sig-gis.com/api/v4")
@@ -128,9 +130,13 @@
   (-> config read-config normalize keys set))
 
 (defn config-diffs []
-  (data/diff
-   (select-config-keys "/home/danielhabib/sig/pyregence/config.default.edn")
-   (select-config-keys "/home/danielhabib/sig/pyregence/config.edn")))
+  (ddiff/pretty-print
+   (ddiff/minimize (ddiff/diff
+                    (select-config-keys "/home/danielhabib/sig/pyregence/config.default.edn")
+                    (select-config-keys "/home/danielhabib/sig/pyregence/config.edn"))))
+  #_(data/diff
+     (select-config-keys "/home/danielhabib/sig/pyregence/config.default.edn")
+     (select-config-keys "/home/danielhabib/sig/pyregence/config.edn")))
 
 (comment (config-diffs))
 
@@ -140,10 +146,7 @@
 
 (defn -main
   [args]
-  (try
-    (println "HI")
-    (catch Exception e
-      (println e))))
+  (config-diffs))
 
-#_(when (= *file* (System/getProperty "babashka.file"))
-    (apply -main *command-line-args*))
+(when (= *file* (System/getProperty "babashka.file"))
+  (apply -main *command-line-args*))
