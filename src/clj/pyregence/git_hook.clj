@@ -66,8 +66,8 @@
 (defn config-diffs []
   (ddiff/pretty-print
    (ddiff/minimize (ddiff/diff
-                    (select-config-keys "/home/danielhabib/sig/pyregence/config.default.edn")
-                    (select-config-keys "/home/danielhabib/sig/pyregence/config.edn"))))
+                    (select-config-keys "config.default.edn")
+                    (select-config-keys "config.edn"))))
   #_(data/diff
      (select-config-keys "/home/danielhabib/sig/pyregence/config.default.edn")
      (select-config-keys "/home/danielhabib/sig/pyregence/config.edn")))
