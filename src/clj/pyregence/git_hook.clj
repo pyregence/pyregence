@@ -6,8 +6,7 @@
   (:require
    [clojure.data                :as data]
    [lambdaisland.deep-diff2     :as ddiff]
-   [clojure.edn                 :as edn]
-   [clojure.string              :as str]))
+   [clojure.edn                 :as edn]))
 
 (defn read-config [config-file]
   (-> config-file
