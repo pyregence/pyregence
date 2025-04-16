@@ -1,4 +1,6 @@
-{:tasks
+{:deps  {lambdaisland/deep-diff2 {:mvn/version "2.12.219"}}
+ :paths ["src"]
+ :tasks
  {:enter       (println (str (java.util.Date.)
                              " task " "'" (:name (current-task)) "'"
                              " running... "))
@@ -32,10 +34,10 @@
                  (run 'install)
                  (run 'functions)
                  (clojure "-M:default-ssl-opts:figwheel"))
-  dev-norepl    (do
-                  (run 'install)
-                  (run 'functions)
-                  (shell "clojure -M:default-ssl-opts:figwheel-lib -m figwheel.main -b \"compile-dev\""))
+  dev-norepl   (do
+                 (run 'install)
+                 (run 'functions)
+                 (shell "clojure -M:default-ssl-opts:figwheel-lib -m figwheel.main -b \"compile-dev\""))
   install      (shell "npm install")
   deploy       (do
                  (run 'stop)

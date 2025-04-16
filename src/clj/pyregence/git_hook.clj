@@ -1,5 +1,7 @@
-;; #!/usr/bin/env bb
+#!/usr/bin/env bb
+
 ;; NOTE this file must be self-contained - it will be executed as a standalone script.
+
 (ns pyregence.git-hook
   "A custom git-credential executable friendly to our Gitlab-Kubernetes combination,
   which resolves Gitlab Project Tokens from an EDN-encoded file."
