@@ -345,9 +345,8 @@ To build a JAR run:
 clj -X:build-uberjar
 #+end_src
 
-This will produce a uberJAR located at  target/pyregence-<date>-<commit>-standalone.jar
-
-The JAR's cli actions are available through ~java -jar~:
+This will produce a uberJAR located at  target/pyregence-<date>-<commit>-standalone.jar which depends only
+on a config.edn, java and psql. The JAR's cli actions are available through ~java -jar~:
 
 #+begin_src sh :results raw
 java -jar target/pyregence-*
