@@ -337,6 +337,24 @@ Ubuntu example:
 sudo less +G /var/log/nginx/error.log
 #+end_src
 
+*** JAR
+
+To build a JAR run:
+
+#+begin_src sh
+clj -X:build-uberjar
+#+end_src
+
+This will produce a uberJAR located at  target/pyregence-<date>-<commit>-standalone.jar
+
+The JAR's cli actions are available through ~java -jar~:
+
+#+begin_src sh :results raw
+java -jar target/pyregence-*
+#+end_src
+
+But the current notable actions are running the server and the build-db functionality.
+
 ** License and Distribution
 
 Copyright © 2020-2025 Spatial Informatics Group, LLC.
