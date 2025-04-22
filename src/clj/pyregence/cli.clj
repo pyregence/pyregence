@@ -10,7 +10,7 @@
 
 (defn -main
   [& args]
-  (if-let [{:keys [action options]}
+  (if-let [{:keys [action]}
            (get-cli-options
              (take 1 (filter (set (map name (keys cli-actions))) args))
              {}
