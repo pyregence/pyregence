@@ -232,7 +232,7 @@
    `geoserver-key` specifies which GeoServer to call GetCapabilities on and
    passing in an optional `workspace-name` allows you to call GetCapabilities
    on just that workspace by passing it into `process-layers!`."
-  [{:strs [geoserver-key workspace-name]}]
+  [_ {:strs [geoserver-key workspace-name]}]
   (let [geoserver-key (keyword geoserver-key)
         basic-auth    (when (private-layer-geoservers geoserver-key)
                         (str psps-geoserver-admin-username ":" psps-geoserver-admin-password))]
@@ -264,11 +264,13 @@
 
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
-  []
-  (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
-    (set-capabilities! {"geoserver-key" (name geoserver-key)}))
-  (data-response (str (reduce + (map count (vals @layers)))
-                      " total layers added to " site-url ".")))
+  ([]
+   (set-all-capabilities! nil))
+  ([_]
+   (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
+     (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))
+   (data-response (str (reduce + (map count (vals @layers)))
+                       " total layers added to " site-url "."))))
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]

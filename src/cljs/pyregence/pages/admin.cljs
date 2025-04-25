@@ -101,10 +101,10 @@
     (reset! *org-non-members
             (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-non-member-users" org-id)))))))
 
-(defn- get-organizations [user-id]
+(defn- get-organizations []
   (reset! pending-get-organizations? true)
   (go
-    (let [response (<! (u-async/call-clj-async! "get-organizations" user-id))]
+    (let [response (<! (u-async/call-clj-async! "get-organizations"))]
       (reset! *orgs (if (:success response)
                       (->> (:body response)
                            (edn/read-string)
@@ -126,18 +126,17 @@
                                  email-domains
                                  auto-add?
                                  auto-accept?))
-    (get-organizations @_user-id)
+    (get-organizations)
     (toast-message! "Organization info updated.")))
 
-(defn- add-new-user! []
+(defn- add-new-user-and-assign-to-*org! []
   (go
     (toast-message! "Creating new account. This may take a moment...")
     (if (and (:success (<! (u-async/call-clj-async! "add-new-user"
                                                     @new-user-email
                                                     @new-user-full-name
                                                     @new-user-password
-                                                    {:org-id          @*org-id
-                                                     :restrict-email? false})))
+                                                    {:org-id @*org-id})))
              (:success (<! (u-async/call-clj-async! "send-email" @new-user-email :new-user))))
       (do
         (toast-message! ["Your account has been created successfully."
@@ -166,8 +165,9 @@
       (if (pos? (count errors))
         (do (toast-message! errors)
             (reset! pending-new-user-submission? false))
-        (add-new-user!)))))
+        (add-new-user-and-assign-to-*org!)))))
 
+;; TODO only allow super-admins to do this in the UI (already restricted on back-end)
 (defn- update-org-user! [email new-name]
   (go
     (<! (u-async/call-clj-async! "update-user-name" email new-name))
@@ -184,15 +184,15 @@
 
 (defn- update-org-user-role! [org-user-id role-id]
   (go
-    (<! (u-async/call-clj-async! "update-org-user-role" org-user-id role-id))
+    (<! (u-async/call-clj-async! "update-org-user-role" @*org-id org-user-id role-id))
     (toast-message! "User role updated.")))
 
 (defn- remove-org-user! [org-user-id]
   (go
-    (<! (u-async/call-clj-async! "remove-org-user" org-user-id))
+    (<! (u-async/call-clj-async! "remove-org-user" @*org-id org-user-id))
     (get-org-member-users @*org-id)
     (get-org-non-member-users @*org-id)
-    (toast-message! "User removed.")))
+    (toast-message! "User removed from organization.")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -416,7 +416,7 @@
    Displays the organization list, settings, and users."
   [{:keys [user-id]}]
   (reset! _user-id user-id)
-  (get-organizations user-id)
+  (get-organizations)
   (fn [_]
     (if @pending-get-organizations?
       ;; Organizations are still loading

@@ -46,9 +46,9 @@
         (toast-message! (str "Something went wrong while deleting Match Drop "
                              match-job-id ": " response-body))))))
 
-(defn- set-match-drop-access! [user-id]
+(defn- set-match-drop-access! []
   (go
-    (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access" user-id))]
+    (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access"))]
       (if (:success response)
         (reset! match-drop-access? true)
         (reset! match-drop-access? false)))))
@@ -204,7 +204,7 @@
   [{:keys [user-id]}]
   (reset! _user-id user-id)
   (set-user-match-drops! user-id)
-  (set-match-drop-access! user-id)
+  (set-match-drop-access!)
   (fn [_]
     (if-not @match-drop-access?
       ;; user doesn't have match drop access

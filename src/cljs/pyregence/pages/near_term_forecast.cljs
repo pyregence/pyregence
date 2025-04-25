@@ -619,7 +619,7 @@
           user-layers-chan                (u-async/call-clj-async! "get-user-layers" user-id)
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
-          user-orgs-list-chan             (u-async/call-clj-async! "get-organizations" user-id)
+          user-orgs-list-chan             (u-async/call-clj-async! "get-organizations")
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count fire-names)]

@@ -1,18 +1,18 @@
 (ns pyregence.handlers
-  (:require [cider.nrepl              :refer [cider-nrepl-handler]]
-            [clojure.data.json        :as    json]
-            [clojure.repl             :refer [demunge]]
-            [clojure.string           :as    str]
-            [nrepl.server             :as    nrepl-server]
-            [pyregence.authentication :refer [has-match-drop-access? is-admin?]]
-            [ring.util.codec          :refer [url-encode]]
-            [ring.util.response       :refer [redirect]]
-            [triangulum.config        :refer [get-config]]
-            [triangulum.handler       :refer [development-app]]
-            [triangulum.logging       :refer [log-str set-log-path!]]
-            [triangulum.response      :refer [data-response]]
-            [triangulum.views         :refer [render-page]]
-            [triangulum.worker        :refer [start-workers!]]))
+  (:require [cider.nrepl         :refer [cider-nrepl-handler]]
+            [clojure.data.json   :as    json]
+            [clojure.repl        :refer [demunge]]
+            [clojure.string      :as    str]
+            [nrepl.server        :as    nrepl-server]
+            [ring.util.codec     :refer [url-encode]]
+            [ring.util.response  :refer [redirect]]
+            [triangulum.config   :refer [get-config]]
+            [triangulum.database :refer [call-sql sql-primitive]]
+            [triangulum.handler  :refer [development-app]]
+            [triangulum.logging  :refer [log-str set-log-path!]]
+            [triangulum.response :refer [data-response]]
+            [triangulum.views    :refer [render-page]]
+            [triangulum.worker   :refer [start-workers!]]))
 
 (def not-found-handler (comp #(assoc % :status 404) (render-page "/not-found")))
 
@@ -25,13 +25,14 @@
                      full-url)))))
 
 (defn route-authenticator [{:keys [headers session] :as request} auth-type]
-  (let [user-id      (:user-id session -1)
+  (let [user-id                (:user-id session -1)
         ;; Extract Bearer token from Authorization header
-        bearer-token (some->> (get headers "authorization")
-                              (re-find #"(?i)^Bearer\s+(.+)$")
-                              second)
-        valid-token? (= bearer-token (get-config :triangulum.views/client-keys :auth-token))]
-
+        bearer-token           (some->> (get headers "authorization")
+                                        (re-find #"(?i)^Bearer\s+(.+)$")
+                                        second)
+        valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))
+        is-admin?              (sql-primitive (call-sql "get_user_admin_access" user-id))
+        has-match-drop-access? (sql-primitive (call-sql "get_user_match_drop_access" user-id))]
     (every? (fn [auth-type]
               (case auth-type
                 :admin (is-admin? user-id)
@@ -52,12 +53,37 @@
       (first)
       (symbol)))
 
-(defn clj-handler [function]
-  (fn [{:keys [params content-type]}]
+(defn clj-handler
+    "Wraps a backend Clojure function for use in the CLJ HTTP API routing table (defined in `routing.clj`).
+
+     This handler extracts `:clj-args` from the incoming request (either EDN or JSON),
+     and injects the user's session as the first argument when calling the target function.
+     It supports both user-facing routes (which rely on session-based IAM) and machine-triggered
+     calls (e.g. action hooks) by preserving `:clj-args` for non-auth data.
+
+     Arguments:
+     - `function`: A Clojure function that must accept the session as its first argument,
+       followed by any optional arguments extracted from `:clj-args`.
+
+     Returns a Ring-compatible handler function that:
+     - Calls the wrapped function with `(apply function session clj-args)`
+     - Logs the call and args
+     - Returns the result as a Ring response (with optional `:status` handling and response type conversion)
+
+     Example usage:
+       (clj-handler my-fn)
+
+     Where `my-fn` has a function signature such as:
+      (defn my-fn [_ arg1 arg2 arg3 ...]) ; when session is unused
+      (defn my-fn [session arg1 arg2 arg3 ...])
+      (defn my-fn [_])
+      (defn my-fn [session])"
+  [function]
+  (fn [{:keys [params content-type session]}]
     (let [clj-args   (if (= content-type "application/edn")
                        (:clj-args params [])
                        (json/read-str (:clj-args params "[]")))
-          clj-result (apply function clj-args)]
+          clj-result (apply function session clj-args)]
       (log-str "CLJ Call: " (cons (fn->sym function) clj-args))
       (if (:status clj-result)
         clj-result

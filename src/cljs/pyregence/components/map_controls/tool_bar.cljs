@@ -85,9 +85,9 @@
   (mb/set-visible-by-title! "fire-history-centroid" @!/show-fire-history?)
   (mb/clear-popup! "fire-history"))
 
-(defn- set-match-drop-access! [user-id]
+(defn- set-match-drop-access! []
   (go
-    (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access" user-id))]
+    (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access"))]
       (if (:success response)
         (reset! match-drop-access? true)
         (reset! match-drop-access? false)))))
@@ -97,7 +97,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn tool-bar [set-show-info! get-any-level-key user-id]
-  (set-match-drop-access! user-id)
+  (set-match-drop-access!)
   (fn [_]
     [:div#tool-bar {:style ($/combine $/tool $/tool-bar {:top "16px"})}
      (->> [[:info
