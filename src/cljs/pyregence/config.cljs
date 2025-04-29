@@ -419,7 +419,7 @@
                                                               :crown-fire-area {:opt-label    "Crown fire area"
                                                                                 :filter       "crown-fire-area"
                                                                                 :units        "Acres"
-                                                                                :disabled-for #{:tlines :nve :liberty :northwestern :otec :pnm :tep :srp}}
+                                                                                :disabled-for #{:tlines :nve :liberty :northwestern :otec :pnm :tep :srp :cowlitz}}
                                                               :plignrate       {:opt-label    "Power line ignition rate"
                                                                                 :filter       "plignrate"
                                                                                 :units        "Ignitions/line-mi/hr"
