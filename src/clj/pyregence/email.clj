@@ -10,13 +10,13 @@
 (defn- get-password-reset-message [base-url email verification-token]
   (str "Hi " email ",\n\n"
        "  To reset your password, simply click the following link:\n\n"
-       "  " base-url "/reset-password?email=" email "&token=" verification-token "\n\n"
+       "  " base-url "/reset-password?email=" email "&verification-token=" verification-token "\n\n"
        "  - Pyregence Technical Support"))
 
 (defn- get-new-user-message [base-url email verification-token]
   (str "Hi " email ",\n\n"
        "  You have been registered for Pyregence. Please verify your email by clicking the following link:\n\n"
-       "  " base-url "/verify-email?email=" email "&token=" verification-token "\n\n"
+       "  " base-url "/verify-email?email=" email "&verification-token=" verification-token "\n\n"
        "  - Pyregence Technical Support"))
 
 (defn- get-match-drop-message [base-url email {:keys [match-job-id display-name fire-name ignition-time lat lon]}]
@@ -34,7 +34,7 @@
   []
   (format "%06d" (rand-int 1000000)))
 
-(defn- send-verification-email! 
+(defn- send-verification-email!
   "Send verification email with a token."
   [email subject message-fn]
   (let [verification-token (str (UUID/randomUUID))
@@ -43,14 +43,16 @@
     (call-sql "set_verification_token" email verification-token nil)
     (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
 
-(defn- get-2fa-message 
+(defn- get-2fa-message
   "Generate message for 2FA verification"
   [_ email token]
   (str "Hi " email ",\n\n"
-       "  Your verification code for Pyregence login is: " token "\n\n"
+       "  Please use the following verification code to complete your Pyregence login:\n\n"
+       "  " token "\n\n"
        "  This code will expire in 15 minutes.\n\n"
        "  - Pyregence Technical Support"))
 
+;; TODO: we can make the token expiration wait time configurable
 (defn send-2fa-code
   "Sends a time-limited 2FA code to the user's email"
   [email]
@@ -71,14 +73,25 @@
       (data-response "Match Drop email successfully sent.")
       (data-response "There was an issue sending the Match Drop email." {:status 400}))))
 
+(comment
+
+  (System/setProperty "javax.net.ssl.trustStore" "")
+  (System/setProperty "mail.smtp.ssl.trust" "*")
+
+  (send-email! "sif@fastmail.com" :new-user))
+
+;; Trying to send email locally with the same smtp.gmail.com config we have in `goshawk`
+;; but I do with send-email!, I get KeyManagementException exception thrown...
+;; Not sure why?
+
 (defn send-email! [email email-type & [match-drop-args]]
   (condp = email-type
     :reset      (send-verification-email! email
-                                         "Pyregence Password Reset"
-                                         get-password-reset-message)
+                                          "Pyregence Password Reset"
+                                          get-password-reset-message)
     :new-user   (send-verification-email! email
-                                         "Pyregence New User"
-                                         get-new-user-message)
+                                          "Pyregence New User"
+                                          get-new-user-message)
     :2fa        (send-2fa-code email)
     :match-drop (send-match-drop-email! email
                                         "Match Drop Finished Running"
