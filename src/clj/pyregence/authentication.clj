@@ -1,13 +1,18 @@
 (ns pyregence.authentication
-  (:require [pyregence.utils     :refer [nil-on-error]]
+  (:require [pyregence.email     :as email]
+            [pyregence.utils     :refer [nil-on-error]]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql sql-primitive]]
             [triangulum.response :refer [data-response]]))
 
 (defn log-in [email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-    (data-response "" {:session (merge {:user-id (:user_id user)}
-                                       (get-config :app :client-keys))})
+    ;; For now, require email 2FA for all users
+    ;; This could later check user settings for the 2FA method
+    ;; Send the 2FA code and return a response indicating 2FA is required
+    (do
+      (email/send-email! email :2fa)
+      (data-response {:email email :require-2fa true}))
     (data-response "" {:status 403})))
 
 (defn log-out [] (data-response "" {:session nil}))
@@ -113,7 +118,8 @@
   "Verifies a 2FA code"
   [email token]
   (if-let [user (first (call-sql "verify_user_2fa" email token))]
-    (data-response "" {:session {:user-id (:user_id user)}})
+    (data-response "" {:session (merge {:user-id (:user_id user)}
+                                      (get-config :app :client-keys))})
     (data-response "" {:status 403})))
 
 (defn get-org-member-users
