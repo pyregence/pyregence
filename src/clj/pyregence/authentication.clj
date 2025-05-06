@@ -7,12 +7,18 @@
 
 (defn log-in [email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-    ;; For now, require email 2FA for all users
-    ;; This could later check user settings for the 2FA method
-    ;; Send the 2FA code and return a response indicating 2FA is required
-    (do
-      (email/send-email! email :2fa)
-      (data-response {:email email :require-2fa true}))
+    (let [user-id (:user_id user)
+          settings-str (:settings (first (call-sql "get_user_info" user-id)))
+          settings (when settings-str (read-string settings-str))
+          two-factor (:two-factor settings)]
+      (if (= :email two-factor)
+        ;; Email 2FA is enabled
+        (do
+          (email/send-email! email :2fa)
+          (data-response {:email email :require-2fa true}))
+        ;; No 2FA required
+        (data-response "" {:session (merge {:user-id user-id}
+                                          (get-config :app :client-keys))})))
     (data-response "" {:status 403})))
 
 (defn log-out [] (data-response "" {:session nil}))
