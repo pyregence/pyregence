@@ -86,7 +86,7 @@
                                                          :shasta      "https://shasta.pyregence.org/geoserver"
                                                          ;; :shasta      "https://solitaire.sig-gis.com/geoserver"
                                                          :match-drop  "https://sierra.pyregence.org/geoserver"
-                                                         :psps        "https://energy.pyregence.org/geoserver"
+                                                         :psps        "https://energy.pyregence.org:8443/geoserver"
                                                          :pyreclimate "https://climate.pyregence.org/geoserver"}}
 
  ;; workers (server)
