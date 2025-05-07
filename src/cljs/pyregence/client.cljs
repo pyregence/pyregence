@@ -3,6 +3,7 @@
             [clojure.edn                        :as edn]
             [goog.dom                           :as dom]
             [reagent.dom                        :refer [render]]
+            [reagent.core                       :as r]
             ["@sentry/react"                    :as Sentry]
             [pyregence.components.page-layout   :refer [wrap-page]]
             [pyregence.pages.admin              :as admin]
@@ -45,18 +46,18 @@
   "Renders the root component for the current URI."
   [params]
   (let [uri (-> js/window .-location .-pathname)]
-    (render (cond
-              (uri->root-component-h uri)
-              (wrap-page #((uri->root-component-h uri) params))
+    (render
+     [:> (.-ErrorBoundary Sentry) {:fallback (r/as-element [:p "An error happened"])}
+      (cond
+        (uri->root-component-h uri)
+        [wrap-page  #(uri->root-component-h uri)]
 
-              (uri->root-component-hf uri)
-              (wrap-page #((uri->root-component-hf uri) params)
-                         :footer? true)
+        (uri->root-component-hf uri)
+        [wrap-page #(uri->root-component-hf uri) :footer? true]
 
-              :else
-              (wrap-page not-found/root-component
-                         :footer? true))
-            (dom/getElement "app"))))
+        :else
+        [wrap-page not-found/root-component :footer? true])]
+     (dom/getElement "app"))))
 
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."
