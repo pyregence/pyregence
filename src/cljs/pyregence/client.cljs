@@ -3,6 +3,7 @@
             [clojure.edn                        :as edn]
             [goog.dom                           :as dom]
             [reagent.dom                        :refer [render]]
+            ["@sentry/react"                    :as Sentry]
             [pyregence.components.page-layout   :refer [wrap-page]]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.dashboard          :as dashboard]
@@ -68,6 +69,7 @@
                           (reset! original-session (js->clj session :keywordize-keys true))
                           @original-session)
           merged-params (merge clj-params clj-session)]
+      (.init Sentry (-> clj-session :sentry clj->js))
       (reset! !/show-disclaimer?    (get clj-session :show-disclaimer))
       (reset! !/feature-flags       (get clj-session :features))
       (reset! !/geoserver-urls      (get clj-session :geoserver))
