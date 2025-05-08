@@ -101,8 +101,7 @@
                               :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}]
 
  ;;; Pyrecast
- :pyregence.cameras/alert-wildfire-api-key   "<api-key>"
- :pyregence.cameras/alert-california-api-key "<api-key>"
+ :pyregence.cameras/alert-west-api-key       "<api-key>"
  :pyregence.capabilities/psps                {:geoserver-admin-username "admin"
                                               :geoserver-admin-password "password"}
  :pyregence.match-drop/match-drop            {:app-name       "Pyrecast Match Drop Server"
