@@ -116,15 +116,15 @@
   []
   (data-response
    (if (valid-cache?)
-    @camera-cache
-    (let [new-cameras (->> (get-and-conform-wildfire-cameras!)
-                           ;; remove inactive cameras
-                           (remove (fn [{{timestamp :update-time} :properties}]
-                                     (or (nil? timestamp)
-                                         (utc-timestamp->four-hours-old? timestamp))))
-                           (->feature-collection))]
-      (reset-cache! new-cameras)
-      new-cameras))))
+     @camera-cache
+     (let [new-cameras (->> (get-and-conform-wildfire-cameras!)
+                            ;; remove inactive cameras
+                            (remove (fn [{{timestamp :update-time} :properties}]
+                                      (or (nil? timestamp)
+                                          (utc-timestamp->four-hours-old? timestamp))))
+                            (->feature-collection))]
+       (reset-cache! new-cameras)
+       new-cameras))))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.
