@@ -18,7 +18,7 @@
           (data-response {:email email :require-2fa true}))
         ;; No 2FA required
         (data-response "" {:session (merge {:user-id user-id}
-                                          (get-config :app :client-keys))})))
+                                           (get-config :app :client-keys))})))
     (data-response "" {:status 403})))
 
 (defn log-out [] (data-response "" {:session nil}))
@@ -125,7 +125,7 @@
   [email token]
   (if-let [user (first (call-sql "verify_user_2fa" email token))]
     (data-response "" {:session (merge {:user-id (:user_id user)}
-                                      (get-config :app :client-keys))})
+                                       (get-config :app :client-keys))})
     (data-response "" {:status 403})))
 
 (defn get-org-member-users

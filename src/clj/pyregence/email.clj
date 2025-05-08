@@ -57,10 +57,9 @@
   "Sends a time-limited 2FA code to the user's email"
   [email]
   (let [token         (generate-numeric-token)
-        expiration    (-> (java.time.LocalDateTime/now)
-                          (.plusMinutes 15)
-                          (.atZone (java.time.ZoneId/systemDefault))
-                          (.toInstant))
+        fifteen-min   (* 15 60 1000) ;; 15 minutes in milliseconds
+        current-time  (System/currentTimeMillis)
+        expiration    (java.sql.Timestamp. (+ current-time fifteen-min))
         body          (get-2fa-message nil email token)
         result        (send-mail email nil nil "Pyregence Login Verification Code" body :text)]
     (call-sql "set_verification_token" email token expiration)
@@ -80,6 +79,27 @@
 
   (send-email! "sif@fastmail.com" :new-user))
 
+;; Testing version of send-2fa-code that just prints the code
+(defn mock-send-2fa-code
+  "For testing only: generates a 2FA code and stores it, but doesn't send an email"
+  [email]
+  (let [token         (generate-numeric-token)
+        fifteen-min   (* 15 60 1000)
+        current-time  (System/currentTimeMillis)
+        expiration    (java.sql.Timestamp. (+ current-time fifteen-min))
+        body          (get-2fa-message nil email token)]
+
+    (println "=====================================")
+    (println "TESTING MODE: NO EMAIL SENT")
+    (println "2FA CODE for" email ":" token)
+    (println "Expires at:" expiration)
+    (println "Email body would be:")
+    (println body)
+    (println "=====================================")
+
+    (call-sql "set_verification_token" email token expiration)
+    (data-response email)))
+
 ;; Trying to send email locally with the same smtp.gmail.com config we have in `goshawk`
 ;; but I do with send-email!, I get KeyManagementException exception thrown...
 ;; Not sure why?
@@ -92,7 +112,7 @@
     :new-user   (send-verification-email! email
                                           "Pyregence New User"
                                           get-new-user-message)
-    :2fa        (send-2fa-code email)
+    :2fa        (send-2fa-code email)  ; For testing without email: (mock-send-2fa-code email)
     :match-drop (send-match-drop-email! email
                                         "Match Drop Finished Running"
                                         get-match-drop-message
