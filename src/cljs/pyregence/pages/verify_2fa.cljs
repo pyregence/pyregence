@@ -26,7 +26,7 @@
     (reset! pending? true)
     (let [errors (remove nil?
                          [(when (u-data/missing-data? @email @verification-code)
-                            "Please fill in all the information.")])]
+                            "Please enter the verification code.")])]
 
       (if (pos? (count errors))
         (do (toast-message! errors)
@@ -54,15 +54,20 @@
       [simple-form
        "Two-Factor Authentication"
        "Verify"
-       [["Email" email "email" "email" {:disabled? (not (empty? @email))}]
-        ["Verification Code" verification-code "text" "verification-code"]]
-       verify-2fa!
-       (fn []
-         [:div {:style {:margin-top "1rem" :text-align "center"}}
-          [:p "Enter the verification code sent to your email."]
-          [:a {:href "#"
-               :on-click #(go
-                            (if (:success (<! (u-async/call-clj-async! "send-email" @email :2fa)))
-                              (toast-message! "A new verification code has been sent to your email.")
-                              (toast-message! "Failed to send verification code. Please try again.")))}
-           "Resend verification code"]])]]]))
+       [["Verification Code" verification-code "text" "verification-code"]]
+       verify-2fa!]]
+     [:div {:style {:display "flex"
+                    :flex-direction "column"
+                    :align-items "center"
+                    :margin-top "1rem"}}
+      [:p {:style {:margin-bottom "0.5rem"}}
+       (str "Enter the verification code sent to ")
+       [:span {:style {:font-weight "bold"}} @email]
+       "."]
+      [:a {:href "#"
+           :style {:color ($/color-picker :link-color)}
+           :on-click #(go
+                        (if (:success (<! (u-async/call-clj-async! "send-email" @email :2fa)))
+                          (toast-message! "A new verification code has been sent to your email.")
+                          (toast-message! "Failed to send verification code. Please try again.")))}
+       "Resend verification code"]]]))
