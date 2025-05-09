@@ -19,7 +19,7 @@
   compile       (clojure "-M:compile-cljs")
   pull          (shell "git pull")
   migrate       (clojure "-M:build-db migrate")
-  build-uberjar (clojure "-M:build-uberjar")
+  build-uberjar (clojure "-X:build-uberjar")
   build-all     (clojure "-M:build-db build-all")
   dev-data      (clojure "-M:build-db build-all --dev-data")
   functions     (clojure "-M:build-db functions")
