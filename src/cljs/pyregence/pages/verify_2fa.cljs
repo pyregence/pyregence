@@ -25,7 +25,7 @@
   (go
     (reset! pending? true)
     (let [errors (remove nil?
-                         [(when (u-data/missing-data? @email @verification-code)
+                         [(when (empty? @verification-code)
                             "Please enter the verification code.")])]
 
       (if (pos? (count errors))
@@ -47,6 +47,9 @@
    Displays the 2FA verification form."
   [params]
   (reset! email (or (:email params) ""))
+  ;; If email is missing, redirect to login page
+  (when (empty? @email)
+    (u-browser/jump-to-url! "/login"))
   (fn [_]
     [:<>
      [:div {:style ($/combine ($/disabled-group @pending?)
