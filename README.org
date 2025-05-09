@@ -352,7 +352,7 @@ on a config.edn, java and psql. The JAR's cli actions are available through ~jav
 java -jar target/pyregence-*
 #+end_src
 
-The current notable actions are running the server and the build-db functionality. For more fine grained documentation please refer to https://github.com/sig-gis/triangulum
+The current notable actions are [[https://github.com/sig-gis/triangulum?tab=readme-ov-file#triangulumserver][running the server]] and the [[https://github.com/sig-gis/triangulum?tab=readme-ov-file#triangulumbuild-db][building the database]].
 
 ** License and Distribution
 
