@@ -17,7 +17,7 @@ behavior models:
 - [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
 - [[https://www.postgresql.org/download][PostgreSQL (version 13)]]
 - [[https://postgis.net/][PostGIS (version 3)]]
-- [https://docs.npmjs.com/downloading-and-installing-node-js-and-npm][NPM (version 9.2.0)]]
+- [[https://docs.npmjs.com/downloading-and-installing-node-js-and-npm][NPM (version 9.2.0)]]
 
 ** Application Configuration
 
