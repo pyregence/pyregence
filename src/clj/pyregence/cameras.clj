@@ -16,62 +16,11 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private alert-wildfire-api-url      "https://data.alertwildfire.org/api/firecams/v0")
-(def ^:private alert-wildfire-api-key      (get-config :pyregence.cameras/alert-wildfire-api-key))
-(def ^:private alert-wildfire-api-defaults {:headers {"X-Api-Key" alert-wildfire-api-key}})
-
-(def ^:private alert-california-api-url      "https://data.alertcalifornia.org/api/firecams/v0")
-(def ^:private alert-california-api-key      (get-config :pyregence.cameras/alert-california-api-key))
-(def ^:private alert-california-api-defaults {:headers {"X-Api-Key" alert-california-api-key}})
+(def ^:private alert-west-api-url      "https://alertwest.live/api/firecams/v0")
+(def ^:private alert-west-api-key      (get-config :pyregence.cameras/alert-west-api-key))
+(def ^:private alert-west-api-defaults {:headers {"X-Api-Key" alert-west-api-key}})
 
 (def ^:private cache-max-age            (* 24 60 1000)) ; Once a day
-
-(def ^:private california-cameras-to-keep #{"Axis-AlderHill"
-                                            "Axis-Alpine"
-                                            "Axis-ArmstrongLookout1"
-                                            "Axis-ArmstrongLookout2"
-                                            "Axis-Babbitt"
-                                            "Axis-BaldCA"
-                                            "Axis-BaldCA2"
-                                            "Axis-BigHill"
-                                            "Axis-Bunker"
-                                            "Axis-Emerald"
-                                            "Axis-CTC"
-                                            "Axis-FallenLeaf"
-                                            "Axis-FortSage"
-                                            "Axis-GoldCountry"
-                                            "Axis-HawkinsPeak"
-                                            "Axis-Heavenly2"
-                                            "Axis-Homewood1"
-                                            "Axis-Homewood2"
-                                            "Axis-KennedyMine"
-                                            "Axis-Leek"
-                                            "Axis-Martis"
-                                            "Axis-MohawkEsmeralda"
-                                            "Axis-Montezuma"
-                                            "Axis-MtDanaher"
-                                            "Axis-MtZion1"
-                                            "Axis-MtZion2"
-                                            "Axis-NorthMok"
-                                            "Axis-Pepperwood1"
-                                            "Axis-QueenBee"
-                                            "Axis-RedCorral"
-                                            "Axis-RedCorral2"
-                                            "Axis-Rockland"
-                                            "Axis-Rockpile"
-                                            "Axis-Sagehen5"
-                                            "Axis-Sierra"
-                                            "Axis-TahoeDonner"
-                                            "Axis-TVHill"
-                                            "Axis-WestPoint"
-                                            "Axis-Winters1"
-                                            "Axis-Winters2"
-                                            "Axis-Konocti"
-                                            "Axis-StHelenaNorth"
-                                            "Axis-PrattMtn2"
-                                            "Axis-PrattMtn1"
-                                            "Axis-PierceMtn2"
-                                            "Axis-PierceMtn1"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Camera cache
@@ -112,18 +61,24 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- parse-num [v]
+  (if (string? v)
+    (Double/parseDouble v)
+    v))
+
 (defn- site->feature [api-name {:keys [name site position image update_time]}]
   {:type       "Feature"
    :geometry   {:type        "Point"
-                :coordinates [(:longitude site) (:latitude site)]}
+                :coordinates [(parse-num (:longitude site))
+                              (parse-num (:latitude site))]}
    :properties {:api-name    api-name
-                :latitude    (:latitude site)
-                :longitude   (:longitude site)
+                :latitude    (parse-num (:latitude site))
+                :longitude   (parse-num (:longitude site))
                 :name        name
-                :pan         (:pan position)
+                :pan         (parse-num (:pan position))
                 :state       (:state site)
-                :tilt        (:tilt position)
-                :update-time update_time
+                :tilt        (parse-num (:tilt position))
+                :update-time (or update_time (:time image))
                 :image-url   (:url image)}})
 
 (defn- ->feature-collection [features]
@@ -131,25 +86,6 @@
    :features features})
 
 ;; Timestamp functions
-
-(defn- valid-timezoneless-iso8601-timestamp?
-  "Returns true if the timezoneless timestamp is valid."
-  [timezoneless-iso8601-timestamp]
-  (try
-    (let [formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm:ss.SSSSSS")]
-      (LocalDateTime/parse timezoneless-iso8601-timestamp formatter)
-      true)
-    (catch DateTimeParseException _
-      false)))
-
-(defn- timezoneless-iso8601-timestamp->utc-timestamp
-  "Reformats the timezoneless timestamp so that it's in the UTC/Zulu format."
-  [timezoneless-timestamp]
-  (as-> timezoneless-timestamp %
-    (str/split % #" ")
-    (interpose "T" %)
-    (concat % "Z")
-    (apply str %)))
 
 (defn- utc-timestamp->four-hours-old?
   "Returns true if the UTC timestamp is older than four hours."
@@ -163,41 +99,13 @@
 
 (defn- get-wildfire-cameras!
   []
-  (api-all-cameras alert-wildfire-api-url alert-wildfire-api-defaults))
-
-(defn- is-wildfire-camera-in-list-or-cali?
-  "Returns true if the camera is in 'the list' or isn't from California."
-  [camera]
-  (let [camera-properites (:properties camera)]
-    (or (california-cameras-to-keep (:name camera-properites))
-        (not= (:state camera-properites) "CA"))))
+  (api-all-cameras alert-west-api-url alert-west-api-defaults))
 
 (defn- get-and-conform-wildfire-cameras!
-  "Fetches non-California wildfire cameras, filters, and reformats them."
+  "Fetches ALERTWest wildfire cameras and reformats them."
   []
-  (->> (get-wildfire-cameras!)
-       (pmap #(site->feature "alert-wildfire" %))
-       ;; The Alert Wildfire API does **not** work for most California cameras so
-       ;; we filter out all California Alert Wildfire cameras besides a predefined list
-       (filter is-wildfire-camera-in-list-or-cali?)
-       ;; The Alert Wildfire API non-californa camera api sends timestamps without a timezone. However
-       ;; we have high confidence they are UTC time and mark them as such here so they
-       ;; have the same format as the california timestamps which are marked as UTC.
-       (filter (fn [{{update-time :update-time} :properties}]
-                 (valid-timezoneless-iso8601-timestamp? update-time)))
-       (map (fn [camera]
-              (update-in camera [:properties :update-time]
-                         timezoneless-iso8601-timestamp->utc-timestamp)))))
-
-(defn- get-california-cameras!
-  []
-  (api-all-cameras alert-california-api-url alert-california-api-defaults))
-
-(defn- get-and-conform-california-cameras!
-  "Fetches California wildfire cameras, filters and reformats them."
-  []
-  (->> (get-california-cameras!)
-       (pmap #(site->feature "alert-california" %))))
+  (some->> (get-wildfire-cameras!)
+           (pmap #(site->feature "alert-west" %))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Functions
@@ -209,11 +117,11 @@
   (data-response
    (if (valid-cache?)
      @camera-cache
-     (let [new-cameras (->> (concat (get-and-conform-wildfire-cameras!)
-                                    (get-and-conform-california-cameras!))
+     (let [new-cameras (->> (get-and-conform-wildfire-cameras!)
                             ;; remove inactive cameras
                             (remove (fn [{{timestamp :update-time} :properties}]
-                                      (utc-timestamp->four-hours-old? timestamp)))
+                                      (or (nil? timestamp)
+                                          (utc-timestamp->four-hours-old? timestamp))))
                             (->feature-collection))]
        (reset-cache! new-cameras)
        new-cameras))))
@@ -224,8 +132,7 @@
   [camera-name api-name]
   {:pre [(string? camera-name)]}
   (let [[api-url api-defaults] (case api-name
-                                 "alert-wildfire"   [alert-wildfire-api-url alert-wildfire-api-defaults]
-                                 "alert-california" [alert-california-api-url alert-california-api-defaults]
+                                 "alert-west" [alert-west-api-url alert-west-api-defaults]
                                  nil)]
     (if (and api-url api-defaults)
       (data-response (api-current-image camera-name api-url api-defaults)
