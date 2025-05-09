@@ -1,13 +1,24 @@
 (ns pyregence.authentication
-  (:require [pyregence.utils     :refer [nil-on-error]]
+  (:require [pyregence.email     :as email]
+            [pyregence.utils     :refer [nil-on-error]]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql sql-primitive]]
             [triangulum.response :refer [data-response]]))
 
 (defn log-in [email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-    (data-response "" {:session (merge {:user-id (:user_id user)}
-                                       (get-config :app :client-keys))})
+    (let [user-id (:user_id user)
+          settings-str (:settings (first (call-sql "get_user_info" user-id)))
+          settings (when settings-str (read-string settings-str))
+          two-factor (:two-factor settings)]
+      (if (= :email two-factor)
+        ;; Email 2FA is enabled
+        (do
+          (email/send-email! email :2fa)
+          (data-response {:email email :require-2fa true}))
+        ;; No 2FA required
+        (data-response "" {:session (merge {:user-id user-id}
+                                           (get-config :app :client-keys))})))
     (data-response "" {:status 403})))
 
 (defn log-out [] (data-response "" {:session nil}))
@@ -20,13 +31,13 @@
      (data-response "")
      (data-response "" {:status 403}))))
 
-(defn set-user-password [email password reset-key]
-  (if-let [user (first (call-sql "set_user_password" {:log? false} email password reset-key))]
+(defn set-user-password [email password token]
+  (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
     (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
-(defn verify-user-email [email reset-key]
-  (if-let [user (first (call-sql "verify_user_email" email reset-key))]
+(defn verify-user-email [email token]
+  (if-let [user (first (call-sql "verify_user_email" email token))]
     (data-response "" {:session {:user-id (:user_id user)}})
     (data-response "" {:status 403})))
 
@@ -108,6 +119,14 @@
   "Returns true if the user is admin of at least one organization."
   [user-id]
   (sql-primitive (call-sql "get_user_admin_access" user-id)))
+
+(defn verify-2fa
+  "Verifies a 2FA code"
+  [email token]
+  (if-let [user (first (call-sql "verify_user_2fa" email token))]
+    (data-response "" {:session (merge {:user-id (:user_id user)}
+                                       (get-config :app :client-keys))})
+    (data-response "" {:status 403})))
 
 (defn get-org-member-users
   "Returns a vector of member users by the given org-id."
