@@ -97,7 +97,7 @@
                               (<!)
                               (:body)
                               (edn/read-string))
-            email (-> (u-async/call-clj-async! "get-email-by-user-id" user-id)
+            email (-> (u-async/call-clj-async! "get-current-user-email")
                       (<!)
                       (:body))]
         (case md-status

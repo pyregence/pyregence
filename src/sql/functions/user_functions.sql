@@ -19,7 +19,7 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
  RETURNS TABLE (user_id integer) AS $$
 
-    SELECT user_uid
+    SELECT user_uid, match_drop_access, super_admin
     FROM users
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
@@ -125,7 +125,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
 
 $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION get_user_info(_user_id integer)
+CREATE OR REPLACE FUNCTION get_user_settings(_user_id integer)
  RETURNS TABLE (settings text) AS $$
 
     SELECT settings
@@ -134,7 +134,7 @@ CREATE OR REPLACE FUNCTION get_user_info(_user_id integer)
 
 $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION update_user_info(
+CREATE OR REPLACE FUNCTION update_user_settings(
     _user_id     integer,
     _settings    text
  ) RETURNS void AS $$
@@ -215,6 +215,18 @@ CREATE OR REPLACE FUNCTION get_user_admin_access(_user_id integer)
         AND (ou.role_rid = 1);
 
 $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION is_user_admin_of_org(_user_id integer, _org_id integer)
+ RETURNS boolean AS $$
+    SELECT EXISTS (
+      SELECT 1
+      FROM organization_users
+      WHERE user_rid = _user_id
+        AND organization_rid = _org_id
+        AND role_rid = 1 -- admin role
+    );
+$$ LANGUAGE SQL;
+
 
 -- Returns all organizations that have PSPS data (denoted by presence of geoserver_credentials)
 CREATE OR REPLACE FUNCTION get_psps_organizations()

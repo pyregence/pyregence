@@ -35,12 +35,12 @@
    [:post "/clj/add-org-user"]                  {:handler     (clj-handler authentication/add-org-user)
                                                  :auth-type   #{:admin :token}
                                                  :auth-action :block}
-   [:post "/clj/get-email-by-user-id"]          {:handler     (clj-handler authentication/get-email-by-user-id)
-                                                 :auth-type   :token
-                                                 :auth-action :block}
-   [:post "/clj/get-organizations"]             {:handler     (clj-handler authentication/get-organizations)
-                                                 :auth-type   :token
-                                                 :auth-action :block}
+   [:post "/clj/get-current-user-email"]        {:handler     (clj-handler authentication/get-current-user-email)
+                                                              :auth-type   :token
+                                                              :auth-action :block}
+   [:post "/clj/get-current-user-organizations"] {:handler     (clj-handler authentication/get-current-user-organizations)
+                                                  :auth-type   :token
+                                                  :auth-action :block}
    [:post "/clj/get-org-non-member-users"]      {:handler     (clj-handler authentication/get-org-non-member-users)
                                                  :auth-type   :token
                                                  :auth-action :block}
