@@ -25,7 +25,7 @@
 
 (defn user-email-taken
   ([_ email]
-   (user-email-taken email -1))
+   (user-email-taken nil email -1))
   ([_ email user-id-to-ignore]
    (if (sql-primitive (call-sql "user_email_taken" email user-id-to-ignore))
      (data-response "")
