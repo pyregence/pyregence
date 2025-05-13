@@ -74,9 +74,9 @@
    An example return value from get-fire-names can be seen below:
    {:foo {:opt-label \"foo\", :filter \"foo\", :auto-zoom? true}
     :bar {:opt-label \"bar\", :filter \"bar\", :auto-zoom? true}}"
-  [user-id]
+  []
   (go
-    (let [fire-names (->> (u-async/call-clj-async! "get-fire-names" user-id)
+    (let [fire-names (->> (u-async/call-clj-async! "get-fire-names")
                           (<!)
                           (:body)
                           (edn/read-string))]
@@ -86,7 +86,7 @@
 (defn- poll-status
   "Continually polls for updated information about the match drop run every 5 seconds.
    Stops polling on finish or error signal."
-  [match-job-id user-id user-email ignition-time lat lon]
+  [match-job-id user-email ignition-time lat lon]
   (go
     (while @poll?
       (let [{:keys [display-name
@@ -99,7 +99,7 @@
                               (edn/read-string))]
         (case md-status
           0 (do
-              (refresh-fire-names! user-id)
+              (refresh-fire-names!)
               (set-message-box-content! {:body (str "Finished running match-drop-" match-job-id ".")})
               (<! (u-async/call-clj-async! "send-email"
                                            user-email
@@ -154,7 +154,7 @@
           (if error
             (set-message-box-content! {:body (str "Error: " error)})
             (do (reset! poll? true)
-                (poll-status match-job-id user-id user-email ignition-time lat lon)))))
+                (poll-status match-job-id user-email ignition-time lat lon)))))
       ;; Lat and Lon are invalid, let user know
       (set-message-box-content! {:title "Lat/Lon Error"
                                  :body  (str "Error: The Latitude of your ignition point must be between 25 and 50\n"

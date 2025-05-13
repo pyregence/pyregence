@@ -47,9 +47,6 @@
    [:post "/clj/get-psps-organizations"]        {:handler     (clj-handler authentication/get-psps-organizations)
                                                  :auth-type   :token
                                                  :auth-action :block}
-   [:post "/clj/get-user-info"]                 {:handler     (clj-handler authentication/get-user-info)
-                                                 :auth-type   #{:user :token}
-                                                 :auth-action :block}
    [:post "/clj/get-user-match-drop-access"]    {:handler     (clj-handler authentication/get-user-match-drop-access)
                                                  :auth-type   #{:user :token}
                                                  :auth-action :block}
@@ -72,12 +69,6 @@
                                                  :auth-type   #{:admin :token}
                                                  :auth-action :block}
    [:post "/clj/update-org-user-role"]          {:handler     (clj-handler authentication/update-org-user-role)
-                                                 :auth-type   #{:admin :token}
-                                                 :auth-action :block}
-   [:post "/clj/update-user-info"]              {:handler     (clj-handler authentication/update-user-info)
-                                                 :auth-type   #{:admin :token}
-                                                 :auth-action :block}
-   [:post "/clj/update-user-match-drop-access"] {:handler     (clj-handler authentication/update-user-match-drop-access)
                                                  :auth-type   #{:admin :token}
                                                  :auth-action :block}
    [:post "/clj/update-user-name"]              {:handler     (clj-handler authentication/update-user-name)

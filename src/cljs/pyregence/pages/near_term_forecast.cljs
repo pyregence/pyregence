@@ -612,12 +612,12 @@
                                                        params))]))
                      options-config)))
 
-(defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
+(defn- initialize! [{:keys [forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
-          user-layers-chan                (u-async/call-clj-async! "get-user-layers" user-id)
-          fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
+          user-layers-chan                (u-async/call-clj-async! "get-user-layers")
+          fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
           user-orgs-list-chan             (u-async/call-clj-async! "get-organizations")
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
