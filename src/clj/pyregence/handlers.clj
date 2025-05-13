@@ -32,17 +32,15 @@
                                         second)
         valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))
         is-admin?              (sql-primitive (call-sql "get_user_admin_access" user-id))
-        has-match-drop-access? (sql-primitive (call-sql "get_user_match_drop_access" user-id))]
+        has-match-drop-access? (:match-drop-access? session)
+        super-admin?           (:super-admin? session)]
     (every? (fn [auth-type]
               (case auth-type
-                :admin (is-admin? user-id)
-                :match-drop (has-match-drop-access? user-id)
-                ;; TODO: token generated per user specifically and validated cryptographically
-                :token (do
-                         #_(when (and (nil? bearer-token) (contains? (:params request) :auth-token))
-                             (log-str "Token in URL params detected"))
-                         valid-token?)
-                :user  (pos? user-id)
+                :admin       (is-admin? user-id)
+                :super-admin super-admin?
+                :match-drop  has-match-drop-access?
+                :token       valid-token? ; TODO: generate token per user and validate it cryptographically
+                :user        (pos? user-id)
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))
 

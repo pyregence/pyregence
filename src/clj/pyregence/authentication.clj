@@ -131,10 +131,9 @@
       (data-response (str "Match drop access updated to " match-drop-access?))
       (data-response "Match drop access was not able to be updated." {:status 403}))))
 
-;; TODO we can get the match drop access from the session directly
 (defn get-user-match-drop-access [session]
-  (let [user-id (:user-id session)]
-    (if (sql-primitive (call-sql "get_user_match_drop_access" user-id))`
+  (let [{:keys [user-id match-drop-access?]} session]
+    (if match-drop-access?
       (data-response (str "The user with an id of " user-id " has Match Drop access."))
       (let [response-msg (if (nil? user-id)
                            "There is no user logged in. Match Drop will remain disabled."

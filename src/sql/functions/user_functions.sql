@@ -168,15 +168,6 @@ CREATE OR REPLACE FUNCTION update_user_match_drop_access(_user_id integer, _matc
 
 $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION get_user_match_drop_access(_user_id integer)
- RETURNS boolean AS $$
-
-    SELECT match_drop_access
-    FROM users
-    WHERE user_uid = _user_id
-
-$$ LANGUAGE SQL;
-
 ---
 ---  Organizations
 ---
