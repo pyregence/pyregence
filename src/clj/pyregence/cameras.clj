@@ -113,7 +113,7 @@
 
 (defn get-cameras
   "Builds a GeoJSON response of the current wildfire cameras."
-  []
+  [_]
   (data-response
    (if (valid-cache?)
      @camera-cache
@@ -129,7 +129,7 @@
 (defn get-current-image
   "Builds a response object with current image of a camera.
    Response type is an 'image/jpeg'"
-  [camera-name api-name]
+  [_ camera-name api-name]
   {:pre [(string? camera-name)]}
   (let [[api-url api-defaults] (case api-name
                                  "alert-west" [alert-west-api-url alert-west-api-defaults]

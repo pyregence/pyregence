@@ -215,7 +215,7 @@
 (defn remove-workspace!
   "Given a specific geoserver-key and a specific workspace-name, removes any
    layers from that workspace from the layers atom."
-  [{:strs [geoserver-key workspace-name]}]
+  [_ {:strs [geoserver-key workspace-name]}]
   (swap! layers
          update
          (keyword geoserver-key)
@@ -223,7 +223,7 @@
                      (not= workspace workspace-name)) %))
   (data-response (str workspace-name " removed from " site-url ".")))
 
-(defn get-all-layers []
+(defn get-all-layers [_]
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
 (defn set-capabilities!
@@ -232,7 +232,7 @@
    `geoserver-key` specifies which GeoServer to call GetCapabilities on and
    passing in an optional `workspace-name` allows you to call GetCapabilities
    on just that workspace by passing it into `process-layers!`."
-  [{:strs [geoserver-key workspace-name]}]
+  [_ {:strs [geoserver-key workspace-name]}]
   (let [geoserver-key (keyword geoserver-key)
         basic-auth    (when (private-layer-geoservers geoserver-key)
                         (str psps-geoserver-admin-username ":" psps-geoserver-admin-password))]
@@ -247,8 +247,8 @@
                                     message       (str (count new-layers) " layers from " geoserver-url " added to " site-url ".")]
                                 (if workspace-name
                                   (do
-                                    (remove-workspace! {"geoserver-key"  (name geoserver-key)
-                                                        "workspace-name" workspace-name})
+                                    (remove-workspace! nil {"geoserver-key"  (name geoserver-key)
+                                                            "workspace-name" workspace-name})
                                     (swap! layers update geoserver-key concat new-layers))
                                   (swap! layers assoc geoserver-key new-layers))
                                 (log message :force-stdout? stdout?)
@@ -264,9 +264,9 @@
 
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
-  []
+  [_]
   (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
-    (set-capabilities! {"geoserver-key" (name geoserver-key)}))
+    (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " site-url ".")))
 
@@ -276,21 +276,22 @@
               (into [(str/upper-case (first parts))]
                     (map str/capitalize (rest parts))))))
 
-; FIXME get user-id from session on backend
 (defn get-fire-names
   "Returns all unique fires from the layers atom parsed into the format
    needed on the front-end. Takes special care to deal with match drop fires.
    An example return value can be seen below:
    {:foo {:opt-label \"foo\", :filter \"foo\", :auto-zoom? true,
     :bar {:opt-label \"bar\", :filter \"bar\", :auto-zoom? true}}"
-  [user-id]
-  (let [match-drop-names (->> (call-sql "get_user_match_names" user-id)
-                              (reduce (fn [acc row]
-                                        (assoc acc
-                                               (:match_job_id row)
-                                               (str (:display_name row)
-                                                    " (Match Drop)")))
-                                      {}))]
+  [session]
+  (let [{:keys [user-id match-drop-access?]} session
+        match-drop-names (when match-drop-access?
+                           (->> (call-sql "get_user_match_names" user-id)
+                                (reduce (fn [acc row]
+                                          (assoc acc
+                                                 (:match_job_id row)
+                                                 (str (:display_name row)
+                                                      " (Match Drop)")))
+                                        {})))]
     (->> (apply merge (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
                    (= "fire-spread-forecast" forecast)))
@@ -317,9 +318,8 @@
                          :geoserver-key (if match-job-id :match-drop :trinity)}]))))
          (apply array-map))))
 
-(defn get-user-layers [user-id]
-  ; TODO get user-id from session on backend
-  (data-response (call-sql "get_user_layers_list" user-id)))
+(defn get-user-layers [session]
+  (data-response (call-sql "get_user_layers_list" (:user-id session))))
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
 (defn get-layers
@@ -327,7 +327,7 @@
    returns all of the matching layers from the layers atom and their associated
    model-times. The selected-set-str is compared against the :filter-set property
    of each layer in the layers atom. Any subsets lead to that layer being returned."
-  [geoserver-key selected-set-str]
+  [_ geoserver-key selected-set-str]
   (when-not (seq @layers) (set-all-capabilities!))
   (let [selected-set (edn/read-string selected-set-str)
         available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer)))
@@ -349,7 +349,7 @@
                         :model-times (seq model-times)}))
                    {:type :transit})))
 
-(defn get-layer-name [geoserver-key selected-set-str]
+(defn get-layer-name [_ geoserver-key selected-set-str]
   (let [selected-set (edn/read-string selected-set-str)]
     (data-response (->> (geoserver-key @layers)
                         (filter (fn [layer] (set/subset? selected-set (:filter-set layer))))

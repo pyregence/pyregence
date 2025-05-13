@@ -17,9 +17,14 @@ $$ LANGUAGE SQL;
 
 -- Returns user info user name and password match
 CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
- RETURNS TABLE (user_id integer) AS $$
+ RETURNS TABLE (
+   user_id integer,
+   user_email text,
+   match_drop_access boolean,
+   super_admin boolean
+ ) AS $$
 
-    SELECT user_uid
+    SELECT user_uid, email, match_drop_access, super_admin
     FROM users
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
@@ -45,16 +50,6 @@ CREATE OR REPLACE FUNCTION get_user_id_by_email(_email text)
     SELECT user_uid
     FROM users
     WHERE email = lower_trim(_email)
-
-$$ LANGUAGE SQL;
-
--- Returns user email for a given user id
-CREATE OR REPLACE FUNCTION get_email_by_user_id(_user_id integer)
- RETURNS text AS $$
-
-    SELECT email
-    FROM users
-    WHERE user_uid = _user_id
 
 $$ LANGUAGE SQL;
 
@@ -90,7 +85,12 @@ $$ LANGUAGE SQL;
 
 -- Sets the password for a user, if the reset key is valid
 CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset_key text)
- RETURNS TABLE (user_id integer) AS $$
+  RETURNS TABLE (
+    user_id integer,
+    user_email text,
+    match_drop_access boolean,
+    super_admin boolean
+  ) AS $$
 
     UPDATE users
     SET password = crypt(_password, gen_salt('bf')),
@@ -100,7 +100,7 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset
         AND reset_key = _reset_key
         AND reset_key IS NOT NULL;
 
-    SELECT user_uid
+    SELECT user_uid, email, match_drop_access, super_admin
     FROM users
     WHERE email = lower_trim(_email)
         AND verified = TRUE;
@@ -109,7 +109,12 @@ $$ LANGUAGE SQL;
 
 -- Sets verified to true, if the reset key is valid
 CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
- RETURNS TABLE (user_id integer) AS $$
+  RETURNS TABLE (
+    user_id integer,
+    user_email text,
+    match_drop_access boolean,
+    super_admin boolean
+  ) AS $$
 
     UPDATE users
     SET verified = TRUE,
@@ -118,14 +123,14 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
         AND reset_key = _reset_key
         AND reset_key IS NOT NULL;
 
-    SELECT user_uid
+    SELECT user_uid, email, match_drop_access, super_admin
     FROM users
     WHERE email = lower_trim(_email)
         AND verified = TRUE;
 
 $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION get_user_info(_user_id integer)
+CREATE OR REPLACE FUNCTION get_user_settings(_user_id integer)
  RETURNS TABLE (settings text) AS $$
 
     SELECT settings
@@ -134,7 +139,7 @@ CREATE OR REPLACE FUNCTION get_user_info(_user_id integer)
 
 $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION update_user_info(
+CREATE OR REPLACE FUNCTION update_user_settings(
     _user_id     integer,
     _settings    text
  ) RETURNS void AS $$
@@ -159,15 +164,6 @@ CREATE OR REPLACE FUNCTION update_user_match_drop_access(_user_id integer, _matc
 
     UPDATE users
     SET match_drop_access = _match_drop_access
-    WHERE user_uid = _user_id
-
-$$ LANGUAGE SQL;
-
-CREATE OR REPLACE FUNCTION get_user_match_drop_access(_user_id integer)
- RETURNS boolean AS $$
-
-    SELECT match_drop_access
-    FROM users
     WHERE user_uid = _user_id
 
 $$ LANGUAGE SQL;
@@ -215,6 +211,18 @@ CREATE OR REPLACE FUNCTION get_user_admin_access(_user_id integer)
         AND (ou.role_rid = 1);
 
 $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION is_user_admin_of_org(_user_id integer, _org_id integer)
+ RETURNS boolean AS $$
+    SELECT EXISTS (
+      SELECT 1
+      FROM organization_users
+      WHERE user_rid = _user_id
+        AND organization_rid = _org_id
+        AND role_rid = 1 -- admin role
+    );
+$$ LANGUAGE SQL;
+
 
 -- Returns all organizations that have PSPS data (denoted by presence of geoserver_credentials)
 CREATE OR REPLACE FUNCTION get_psps_organizations()

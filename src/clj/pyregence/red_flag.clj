@@ -62,7 +62,7 @@
 
 (defn get-red-flag-layer
   "Builds a GeoJSON response of the NOAA Red Flag warnings."
-  []
+  [_]
   (data-response (if (valid-cache?)
                    @cache
                    (let [warnings (-> (all-hazards)

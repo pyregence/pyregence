@@ -50,7 +50,7 @@
       (data-response "Match Drop email successfully sent.")
       (data-response "There was an issue sending the Match Drop email." {:status 400}))))
 
-(defn send-email! [email email-type & [match-drop-args]]
+(defn send-email! [_ email email-type & [match-drop-args]]
   (condp = email-type
     :reset      (send-reset-key-email! email
                                        "Pyregence Password Reset"

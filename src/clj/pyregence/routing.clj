@@ -35,12 +35,9 @@
    [:post "/clj/add-org-user"]                  {:handler     (clj-handler authentication/add-org-user)
                                                  :auth-type   #{:admin :token}
                                                  :auth-action :block}
-   [:post "/clj/get-email-by-user-id"]          {:handler     (clj-handler authentication/get-email-by-user-id)
-                                                 :auth-type   :token
-                                                 :auth-action :block}
-   [:post "/clj/get-organizations"]             {:handler     (clj-handler authentication/get-organizations)
-                                                 :auth-type   :token
-                                                 :auth-action :block}
+   [:post "/clj/get-current-user-organizations"] {:handler     (clj-handler authentication/get-current-user-organizations)
+                                                  :auth-type   :token
+                                                  :auth-action :block}
    [:post "/clj/get-org-non-member-users"]      {:handler     (clj-handler authentication/get-org-non-member-users)
                                                  :auth-type   :token
                                                  :auth-action :block}
@@ -49,9 +46,6 @@
                                                  :auth-action :block}
    [:post "/clj/get-psps-organizations"]        {:handler     (clj-handler authentication/get-psps-organizations)
                                                  :auth-type   :token
-                                                 :auth-action :block}
-   [:post "/clj/get-user-info"]                 {:handler     (clj-handler authentication/get-user-info)
-                                                 :auth-type   #{:user :token}
                                                  :auth-action :block}
    [:post "/clj/get-user-match-drop-access"]    {:handler     (clj-handler authentication/get-user-match-drop-access)
                                                  :auth-type   #{:user :token}
@@ -75,12 +69,6 @@
                                                  :auth-type   #{:admin :token}
                                                  :auth-action :block}
    [:post "/clj/update-org-user-role"]          {:handler     (clj-handler authentication/update-org-user-role)
-                                                 :auth-type   #{:admin :token}
-                                                 :auth-action :block}
-   [:post "/clj/update-user-info"]              {:handler     (clj-handler authentication/update-user-info)
-                                                 :auth-type   #{:admin :token}
-                                                 :auth-action :block}
-   [:post "/clj/update-user-match-drop-access"] {:handler     (clj-handler authentication/update-user-match-drop-access)
                                                  :auth-type   #{:admin :token}
                                                  :auth-action :block}
    [:post "/clj/update-user-name"]              {:handler     (clj-handler authentication/update-user-name)
