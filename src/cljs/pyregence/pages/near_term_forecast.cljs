@@ -619,7 +619,7 @@
           user-layers-chan                (u-async/call-clj-async! "get-user-layers")
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
-          user-orgs-list-chan             (u-async/call-clj-async! "get-organizations")
+          user-orgs-list-chan             (u-async/call-clj-async! "get-current-user-organizations")
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count fire-names)]
@@ -690,7 +690,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- control-layer [user-email]
+(defn- control-layer [user-id user-email]
   (let [my-box (r/atom #js {})
         ref    (react/createRef)]
     (r/create-class
@@ -859,6 +859,6 @@
         (when (and @mb/the-map
                    (not-empty @!/capabilities)
                    (not-empty @!/*params))
-          [control-layer user-email])
+          [control-layer user-id user-email])
         [map-layer]
         [pop-up]]])}))

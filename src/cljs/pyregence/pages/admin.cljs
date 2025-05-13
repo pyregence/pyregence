@@ -104,7 +104,7 @@
 (defn- get-organizations []
   (reset! pending-get-organizations? true)
   (go
-    (let [response (<! (u-async/call-clj-async! "get-organizations"))]
+    (let [response (<! (u-async/call-clj-async! "get-current-user-organizations"))]
       (reset! *orgs (if (:success response)
                       (->> (:body response)
                            (edn/read-string)
@@ -167,11 +167,12 @@
             (reset! pending-new-user-submission? false))
         (add-new-user-and-assign-to-*org!)))))
 
-;; TODO only allow super-admins to do this in the UI (already restricted on back-end)
 (defn- update-org-user! [email new-name]
   (go
-    (<! (u-async/call-clj-async! "update-user-name" email new-name))
-    (toast-message! (str "The user " new-name " with the email " email  " has been updated."))))
+    (let [res (<! (u-async/call-clj-async! "update-user-name" email new-name))]
+      (if (:success res)
+        (toast-message! (str "The user " new-name " with the email " email  " has been updated."))
+        (toast-message! (:body res))))))
 
 (defn- add-existing-user! [email]
   (go

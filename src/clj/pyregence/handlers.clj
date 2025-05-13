@@ -24,7 +24,7 @@
       (redirect (str "/login?flash_message=You must login to see "
                      full-url)))))
 
-(defn route-authenticator [{:keys [headers session] :as request} auth-type]
+(defn route-authenticator [{:keys [headers session]} auth-type]
   (let [user-id                (:user-id session -1)
         ;; Extract Bearer token from Authorization header
         bearer-token           (some->> (get headers "authorization")
@@ -36,7 +36,7 @@
         super-admin?           (:super-admin? session)]
     (every? (fn [auth-type]
               (case auth-type
-                :admin       (is-admin? user-id)
+                :admin       is-admin?
                 :super-admin super-admin?
                 :match-drop  has-match-drop-access?
                 :token       valid-token? ; TODO: generate token per user and validate it cryptographically

@@ -168,7 +168,7 @@
                   :auto-add?             auto_add
                   :auto-accept?          auto_accept}))
          (data-response))
-    (data-response {:status 403})))
+    (data-response "No user is logged in." {:status 403})))
 
 (defn get-org-member-users
   "Returns a vector of member users for the given org-id, if the user is an
