@@ -128,7 +128,7 @@
   "Initiates the match drop run and initiates polling for updates.
    Note that md-datetime-local is in local time and will be converted back
    to UTC before being passed to the back-end as the ignition-time."
-  [display-name [lon lat] md-datetime-local forecast-weather? user-id user-email]
+  [display-name [lon lat] md-datetime-local forecast-weather? user-email]
   (go
     ;; Lat and Lon must be within CONUS
     ;; TODO we should also add a separate check for md-datetime-local being within the available weather dates
@@ -142,8 +142,7 @@
                                                     :ignition-time ignition-time
                                                     :lon           lon
                                                     :lat           lat
-                                                    :wx-type       (if forecast-weather? "forecast" "historical")
-                                                    :user-id       user-id})]
+                                                    :wx-type       (if forecast-weather? "forecast" "historical")})]
         (set-message-box-content! {:title         "Processing Match Drop"
                                    :body          "Initiating match drop run."
                                    :mode          :custom
@@ -257,7 +256,7 @@
       (reset! md-datetime-local (u-dom/input-value %))
       (reset-local-time-zone! local-time-zone (u-dom/input-value %)))])
 
-(defn- md-buttons [md-datetime-local forecast-weather? display-name lon-lat user-id user-email]
+(defn- md-buttons [md-datetime-local forecast-weather? display-name lon-lat user-email]
   [:div {:style {:display         "flex"
                  :flex-shrink     0
                  :justify-content "space-between"
@@ -269,7 +268,7 @@
              :disabled (or (= [0 0] @lon-lat)
                            (= "" @md-datetime-local)
                            (empty? @!/md-available-dates))
-             :on-click #(initiate-match-drop! @display-name @lon-lat @md-datetime-local @forecast-weather? user-id user-email)}
+             :on-click #(initiate-match-drop! @display-name @lon-lat @md-datetime-local @forecast-weather? user-email)}
     "Submit"]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -279,7 +278,7 @@
 (defn match-drop-tool
   "Match Drop Tool view. Enables a user to start a simulated fire at a particular
    location and date/time."
-  [parent-box close-fn! user-id user-email]
+  [parent-box close-fn! user-email]
   (r/with-let [display-name      (r/atom "")
                lon-lat           (r/atom [0 0])
                forecast-weather? (r/atom true) ; Whether or not we are using forecast or historical weather data, default to using forecast
@@ -318,7 +317,7 @@
              [weather-info forecast-weather?]
              [weather-radio-buttons forecast-weather? md-datetime-local local-time-zone]
              [datetime-local-picker forecast-weather? md-datetime-local local-time-zone]])
-          [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-id user-email]]])]]
+          [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-email]]])]]
     (finally
       (mb/remove-markers!)
       (mb/remove-event! click-event))))

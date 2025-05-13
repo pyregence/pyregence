@@ -18,16 +18,15 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private _user-id    (r/atom nil))
 (defonce ^:private match-drops (r/atom []))
 (defonce ^:private ^{:doc "Whether or not the currently logged in user has match drop access."}
   match-drop-access? (r/atom false))
 
 ;; API Requests
 
-(defn- set-user-match-drops! [user-id]
+(defn- set-user-match-drops! []
   (go
-    (reset! match-drops (->> (u-async/call-clj-async! "get-match-drops" user-id)
+    (reset! match-drops (->> (u-async/call-clj-async! "get-match-drops")
                              (<!)
                              (:body)
                              (edn/read-string)
@@ -42,7 +41,7 @@
       (if (:success response)
         (do
           (toast-message! response-body)
-          (set-user-match-drops! @_user-id)) ; refresh the dashboard
+          (set-user-match-drops!)) ; refresh the dashboard
         (toast-message! (str "Something went wrong while deleting Match Drop "
                              match-job-id ": " response-body))))))
 
@@ -164,12 +163,12 @@
            [match-drop-item md])
          @match-drops)]])
 
-(defn- match-drop-header [user-id]
+(defn- match-drop-header []
   [:div {:style {:display "grid" :grid-template-columns "1fr 1fr 1fr" :align-items "center" :width "100%"}}
    [:h3 {:style {:margin "0" :grid-column "2" :justify-self "center"}}
     "Match Drop Dashboard"]
    [:div {:style {:grid-column "3" :justify-self "end"}}
-    [icon-button :refresh #(set-user-match-drops! user-id) "Refresh"]]])
+    [icon-button :refresh set-user-match-drops! "Refresh"]]])
 
 (defn- no-match-drops []
   [:div {:style {:border        (str "2px solid " ($/color-picker :brown))
@@ -201,9 +200,8 @@
 (defn root-component
   "The root component for the match drop /dashboard page.
    Displays a header, refresh button, and a table of a user's match drops "
-  [{:keys [user-id]}]
-  (reset! _user-id user-id)
-  (set-user-match-drops! user-id)
+  []
+  (set-user-match-drops!)
   (set-match-drop-access!)
   (fn [_]
     (if-not @match-drop-access?
@@ -214,7 +212,7 @@
        ;; TODO make this bigger to reflect the long logs we have
        [message-box-modal]
        [:div {:style ($/combine $/flex-col {:padding "2rem"})}
-        [match-drop-header user-id]
+        [match-drop-header]
         [:div {:style {:padding "1rem" :width "100%"}}
          (if (seq @match-drops)
            [match-drop-table]

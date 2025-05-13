@@ -690,7 +690,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- control-layer [user-id user-email]
+(defn- control-layer [user-email]
   (let [my-box (r/atom #js {})
         ref    (react/createRef)]
     (r/create-class
@@ -724,7 +724,7 @@
                (get-current-layer-hour)
                #(set-show-info! false)])
             (when @!/show-match-drop?
-              [match-drop-tool @my-box #(reset! !/show-match-drop? false) user-id user-email])
+              [match-drop-tool @my-box #(reset! !/show-match-drop? false) user-email])
             (when @!/show-measure-tool?
               [measure-tool @my-box #(reset! !/show-measure-tool? false)])
             (when @!/show-camera?
@@ -854,11 +854,11 @@
                  :mobile?          @!/mobile?
                  :user-orgs-list   @!/user-orgs-list
                  :select-forecast! select-forecast!
-                 :user-id          user-id}]
+                 :user-id          user-id}] ; TODO we might be able to get rid of this
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when (and @mb/the-map
                    (not-empty @!/capabilities)
                    (not-empty @!/*params))
-          [control-layer user-id user-email])
+          [control-layer user-email])
         [map-layer]
         [pop-up]]])}))
