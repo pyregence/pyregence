@@ -33,14 +33,18 @@
 
 (defn set-user-password [_ email password reset-key]
   (if-let [user (first (call-sql "set_user_password" {:log? false} email password reset-key))]
-    (data-response "" {:session {:user-id    (:user_id user)
-                                 :user-email (:user_email user)}})
+    (data-response "" {:session {:user-id            (:user_id user)
+                                 :user-email         (:user_email user)
+                                 :match-drop-access? (:match_drop_access user)
+                                 :super-admin?       (:super_admin user)}})
     (data-response "" {:status 403})))
 
 (defn verify-user-email [_ email reset-key]
   (if-let [user (first (call-sql "verify_user_email" email reset-key))]
-    (data-response "" {:session {:user-id    (:user_id user)
-                                 :user-email (:user_email user)}})
+    (data-response "" {:session {:user-id            (:user_id user)
+                                 :user-email         (:user_email user)
+                                 :match-drop-access? (:match_drop_access user)
+                                 :super-admin?       (:super_admin user)}})
     (data-response "" {:status 403})))
 
 (defn add-new-user
