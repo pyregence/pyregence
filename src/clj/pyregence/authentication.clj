@@ -10,42 +10,6 @@
   (call-sql "is_user_admin_of_org" user-id org-id))
 
 ;;; API Routes
-;; TODO sort alphabetically to match the routing table
-
-(defn log-in [_ email password]
-  (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-    (data-response "" {:session (merge {:user-id            (:user_id user)
-                                        :user-email         (:user_email user)
-                                        :match-drop-access? (:match_drop_access user)
-                                        :super-admin?       (:super_admin user)}
-                                       (get-config :app :client-keys))})
-    (data-response "" {:status 403})))
-
-(defn log-out [_] (data-response "" {:session nil}))
-
-(defn user-email-taken
-  ([_ email]
-   (user-email-taken nil email -1))
-  ([_ email user-id-to-ignore]
-   (if (sql-primitive (call-sql "user_email_taken" email user-id-to-ignore))
-     (data-response "")
-     (data-response "" {:status 403}))))
-
-(defn set-user-password [_ email password reset-key]
-  (if-let [user (first (call-sql "set_user_password" {:log? false} email password reset-key))]
-    (data-response "" {:session {:user-id            (:user_id user)
-                                 :user-email         (:user_email user)
-                                 :match-drop-access? (:match_drop_access user)
-                                 :super-admin?       (:super_admin user)}})
-    (data-response "" {:status 403})))
-
-(defn verify-user-email [_ email reset-key]
-  (if-let [user (first (call-sql "verify_user_email" email reset-key))]
-    (data-response "" {:session {:user-id            (:user_id user)
-                                 :user-email         (:user_email user)
-                                 :match-drop-access? (:match_drop_access user)
-                                 :super-admin?       (:super_admin user)}})
-    (data-response "" {:status 403})))
 
 (defn add-new-user
   "Creates a new user account and optionally associates them with an organization.
@@ -110,45 +74,15 @@
             (data-response "User created successfully but something went wrong when calling auto_add_org_user."
                            {:status 403})))))))
 
-;; TODO hook into UI
-(defn get-current-user-settings [session]
+(defn add-org-user [session org-id email]
   (let [user-id (:user-id session)]
-    (if-let [user-info (first (call-sql "get_user_settings" user-id))]
-      (data-response user-info)
-      (data-response "" {:status 403}))))
-
-;; TODO hook into UI
-(defn update-current-user-settings [session new-settings]
-  (let [user-id (:user-id session)]
-    (if (call-sql "update_user_settings" user-id new-settings)
-      (data-response "User settings successfully updated.")
-      (data-response "User settings were not able to be updated." {:status 403}))))
-
-;; TODO hook into UI
-(defn update-current-user-match-drop-access [session match-drop-access?]
-  (let [user-id (:user-id session)]
-    (if (call-sql "update_user_match_drop_access" user-id match-drop-access?)
-      (data-response (str "Match drop access updated to " match-drop-access?))
-      (data-response "Match drop access was not able to be updated." {:status 403}))))
-
-(defn get-user-match-drop-access [session]
-  (let [{:keys [user-id match-drop-access?]} session]
-    (if match-drop-access?
-      (data-response (str "The user with an id of " user-id " has Match Drop access."))
-      (let [response-msg (if (nil? user-id)
-                           "There is no user logged in. Match Drop will remain disabled."
-                           (str "The user with an id of " user-id " does not have Match Drop access."))]
-        (data-response response-msg {:status 403})))))
-
-(defn update-user-name
-  "Allows a super admin to update the name of a user by their email."
-  [session email new-name]
-  (let [super-admin? (:super-admin? session)]
-    (if-not super-admin?
-      (data-response "You do not have permission to update user names." {:status 403})
-      (if-let [user-id-to-update (sql-primitive (call-sql "get_user_id_by_email" email))]
-        (do (call-sql "update_user_name" user-id-to-update new-name)
-            (data-response (str "User's name successfully updated to " new-name)))
+    (if-not (is-user-admin-of-org? user-id org-id)
+      (data-response "User does not have permission to add members to this organization."
+                     {:status 403})
+      (if-let [user-id-to-add (sql-primitive (call-sql "get_user_id_by_email" email))]
+        (do
+          (call-sql "add_org_user" org-id user-id-to-add)
+          (data-response ""))
         (data-response (str "There is no user with the email " email)
                        {:status 403})))))
 
@@ -170,21 +104,12 @@
          (data-response))
     (data-response "No user is logged in." {:status 403})))
 
-(defn get-org-member-users
-  "Returns a vector of member users for the given org-id, if the user is an
-   admin of the given org."
-  [session org-id]
+;; TODO hook into UI
+(defn get-current-user-settings [session]
   (let [user-id (:user-id session)]
-    (if (is-user-admin-of-org? user-id org-id)
-      (->> (call-sql "get_org_member_users" org-id)
-           (mapv (fn [{:keys [org_user_id full_name email role_id]}]
-                   {:org-user-id org_user_id
-                    :full-name   full_name
-                    :email       email
-                    :role-id     role_id}))
-           (data-response))
-      (data-response "User does not have permission to access this organization."
-                     {:status 403}))))
+    (if-let [user-info (first (call-sql "get_user_settings" user-id))]
+      (data-response user-info)
+      (data-response "" {:status 403}))))
 
 ;; TODO remove me?
 (defn get-org-non-member-users
@@ -202,38 +127,50 @@
       (data-response "User does not have permission to access this organization."
                      {:status 403}))))
 
-(defn update-org-info [session org-id org-name email-domains auto-add? auto-accept?]
+(defn get-org-member-users
+  "Returns a vector of member users for the given org-id, if the user is an
+   admin of the given org."
+  [session org-id]
   (let [user-id (:user-id session)]
     (if (is-user-admin-of-org? user-id org-id)
-      (do
-        (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
-        (data-response ""))
-      (data-response "User does not have permission to update this organization."
+      (->> (call-sql "get_org_member_users" org-id)
+           (mapv (fn [{:keys [org_user_id full_name email role_id]}]
+                   {:org-user-id org_user_id
+                    :full-name   full_name
+                    :email       email
+                    :role-id     role_id}))
+           (data-response))
+      (data-response "User does not have permission to access this organization."
                      {:status 403}))))
 
-(defn add-org-user [session org-id email]
-  (let [user-id (:user-id session)]
-    (if-not (is-user-admin-of-org? user-id org-id)
-      (data-response "User does not have permission to add members to this organization."
-                     {:status 403})
-      (if-let [user-id-to-add (sql-primitive (call-sql "get_user_id_by_email" email))]
-        (do
-          (call-sql "add_org_user" org-id user-id-to-add)
-          (data-response ""))
-        (data-response (str "There is no user with the email " email)
-                       {:status 403})))))
+(defn get-psps-organizations
+  "Returns the list of all organizations that have PSPS layers (currently denoted
+   by the presence of a value in the `geoserver_credentials` column)."
+  [_]
+  (->> (call-sql "get_psps_organizations")
+       (mapv #(:org_unique_id %))
+       (data-response)))
 
-;; TODO review this function
-(defn update-org-user-role [session org-id org-user-id role-id]
-  (let [user-id (:user-id session)]
-    (if-not (is-user-admin-of-org? user-id org-id)
-     (data-response "User does not have permission to update user roles in this organization."
-                    {:status 403})
-     (do
-       (call-sql "update_org_user_role" org-user-id role-id)
-       (data-response "")))))
+(defn get-user-match-drop-access [session]
+  (let [{:keys [user-id match-drop-access?]} session]
+    (if match-drop-access?
+      (data-response (str "The user with an id of " user-id " has Match Drop access."))
+      (let [response-msg (if (nil? user-id)
+                           "There is no user logged in. Match Drop will remain disabled."
+                           (str "The user with an id of " user-id " does not have Match Drop access."))]
+        (data-response response-msg {:status 403})))))
 
-;; TODO review this function
+(defn log-in [_ email password]
+  (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
+    (data-response "" {:session (merge {:user-id            (:user_id user)
+                                        :user-email         (:user_email user)
+                                        :match-drop-access? (:match_drop_access user)
+                                        :super-admin?       (:super_admin user)}
+                                       (get-config :app :client-keys))})
+    (data-response "" {:status 403})))
+
+(defn log-out [_] (data-response "" {:session nil}))
+
 (defn remove-org-user [session org-id org-user-id]
   (let [user-id (:user-id session)]
     (if-not (is-user-admin-of-org? user-id org-id)
@@ -243,10 +180,70 @@
        (call-sql "remove_org_user" org-user-id)
        (data-response "")))))
 
-(defn get-psps-organizations
-  "Returns the list of all organizations that have PSPS layers (currently denoted
-   by the presence of a value in the `geoserver_credentials` column)."
-  [_]
-  (->> (call-sql "get_psps_organizations")
-       (mapv #(:org_unique_id %))
-       (data-response)))
+(defn set-user-password [_ email password reset-key]
+  (if-let [user (first (call-sql "set_user_password" {:log? false} email password reset-key))]
+    (data-response "" {:session {:user-id            (:user_id user)
+                                 :user-email         (:user_email user)
+                                 :match-drop-access? (:match_drop_access user)
+                                 :super-admin?       (:super_admin user)}})
+    (data-response "" {:status 403})))
+
+;; TODO hook into UI
+(defn update-current-user-match-drop-access [session match-drop-access?]
+  (let [user-id (:user-id session)]
+    (if (call-sql "update_user_match_drop_access" user-id match-drop-access?)
+      (data-response (str "Match drop access updated to " match-drop-access?))
+      (data-response "Match drop access was not able to be updated." {:status 403}))))
+
+;; TODO hook into UI
+(defn update-current-user-settings [session new-settings]
+  (let [user-id (:user-id session)]
+    (if (call-sql "update_user_settings" user-id new-settings)
+      (data-response "User settings successfully updated.")
+      (data-response "User settings were not able to be updated." {:status 403}))))
+
+(defn update-org-info [session org-id org-name email-domains auto-add? auto-accept?]
+  (let [user-id (:user-id session)]
+    (if (is-user-admin-of-org? user-id org-id)
+      (do
+        (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
+        (data-response ""))
+      (data-response "User does not have permission to update this organization."
+                     {:status 403}))))
+
+(defn update-org-user-role [session org-id org-user-id role-id]
+  (let [user-id (:user-id session)]
+    (if-not (is-user-admin-of-org? user-id org-id)
+     (data-response "User does not have permission to update user roles in this organization."
+                    {:status 403})
+     (do
+       (call-sql "update_org_user_role" org-user-id role-id)
+       (data-response "")))))
+
+(defn update-user-name
+  "Allows a super admin to update the name of a user by their email."
+  [session email new-name]
+  (let [super-admin? (:super-admin? session)]
+    (if-not super-admin?
+      (data-response "You do not have permission to update user names." {:status 403})
+      (if-let [user-id-to-update (sql-primitive (call-sql "get_user_id_by_email" email))]
+        (do (call-sql "update_user_name" user-id-to-update new-name)
+            (data-response (str "User's name successfully updated to " new-name)))
+        (data-response (str "There is no user with the email " email)
+                       {:status 403})))))
+
+(defn user-email-taken
+  ([_ email]
+   (user-email-taken nil email -1))
+  ([_ email user-id-to-ignore]
+   (if (sql-primitive (call-sql "user_email_taken" email user-id-to-ignore))
+     (data-response "")
+     (data-response "" {:status 403}))))
+
+(defn verify-user-email [_ email reset-key]
+  (if-let [user (first (call-sql "verify_user_email" email reset-key))]
+    (data-response "" {:session {:user-id            (:user_id user)
+                                 :user-email         (:user_email user)
+                                 :match-drop-access? (:match_drop_access user)
+                                 :super-admin?       (:super_admin user)}})
+    (data-response "" {:status 403})))
