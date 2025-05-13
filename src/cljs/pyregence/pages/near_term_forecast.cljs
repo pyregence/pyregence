@@ -690,7 +690,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- control-layer [user-id]
+(defn- control-layer [user-id user-email]
   (let [my-box (r/atom #js {})
         ref    (react/createRef)]
     (r/create-class
@@ -724,7 +724,7 @@
                (get-current-layer-hour)
                #(set-show-info! false)])
             (when @!/show-match-drop?
-              [match-drop-tool @my-box #(reset! !/show-match-drop? false) user-id])
+              [match-drop-tool @my-box #(reset! !/show-match-drop? false) user-id user-email])
             (when @!/show-measure-tool?
               [measure-tool @my-box #(reset! !/show-measure-tool? false)])
             (when @!/show-camera?
@@ -825,7 +825,7 @@
 
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
-  [{:keys [user-id] :as params}]
+  [{:keys [user-id user-email] :as params}]
   (r/create-class
    {:component-did-mount
     (fn [_]
@@ -859,6 +859,6 @@
         (when (and @mb/the-map
                    (not-empty @!/capabilities)
                    (not-empty @!/*params))
-          [control-layer user-id])
+          [control-layer user-id user-email])
         [map-layer]
         [pop-up]]])}))

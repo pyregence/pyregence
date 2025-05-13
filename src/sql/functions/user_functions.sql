@@ -17,9 +17,9 @@ $$ LANGUAGE SQL;
 
 -- Returns user info user name and password match
 CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
- RETURNS TABLE (user_id integer) AS $$
+ RETURNS TABLE (user_id integer, user_email text) AS $$
 
-    SELECT user_uid, match_drop_access, super_admin
+    SELECT user_uid, email, match_drop_access, super_admin
     FROM users
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
@@ -45,16 +45,6 @@ CREATE OR REPLACE FUNCTION get_user_id_by_email(_email text)
     SELECT user_uid
     FROM users
     WHERE email = lower_trim(_email)
-
-$$ LANGUAGE SQL;
-
--- Returns user email for a given user id
-CREATE OR REPLACE FUNCTION get_email_by_user_id(_user_id integer)
- RETURNS text AS $$
-
-    SELECT email
-    FROM users
-    WHERE user_uid = _user_id
 
 $$ LANGUAGE SQL;
 
@@ -90,7 +80,7 @@ $$ LANGUAGE SQL;
 
 -- Sets the password for a user, if the reset key is valid
 CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset_key text)
- RETURNS TABLE (user_id integer) AS $$
+ RETURNS TABLE (user_id integer, user_email text) AS $$
 
     UPDATE users
     SET password = crypt(_password, gen_salt('bf')),
@@ -100,7 +90,7 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _reset
         AND reset_key = _reset_key
         AND reset_key IS NOT NULL;
 
-    SELECT user_uid
+    SELECT user_uid, email
     FROM users
     WHERE email = lower_trim(_email)
         AND verified = TRUE;
@@ -109,7 +99,7 @@ $$ LANGUAGE SQL;
 
 -- Sets verified to true, if the reset key is valid
 CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
- RETURNS TABLE (user_id integer) AS $$
+ RETURNS TABLE (user_id integer, user_email text) AS $$
 
     UPDATE users
     SET verified = TRUE,
@@ -118,7 +108,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _reset_key text)
         AND reset_key = _reset_key
         AND reset_key IS NOT NULL;
 
-    SELECT user_uid
+    SELECT user_uid, email
     FROM users
     WHERE email = lower_trim(_email)
         AND verified = TRUE;

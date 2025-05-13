@@ -35,9 +35,6 @@
    [:post "/clj/add-org-user"]                  {:handler     (clj-handler authentication/add-org-user)
                                                  :auth-type   #{:admin :token}
                                                  :auth-action :block}
-   [:post "/clj/get-current-user-email"]        {:handler     (clj-handler authentication/get-current-user-email)
-                                                              :auth-type   :token
-                                                              :auth-action :block}
    [:post "/clj/get-current-user-organizations"] {:handler     (clj-handler authentication/get-current-user-organizations)
                                                   :auth-type   :token
                                                   :auth-action :block}
