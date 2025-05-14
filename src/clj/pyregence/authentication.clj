@@ -130,7 +130,7 @@
 
 (defn verify-2fa
   "Verifies a 2FA code"
-  [email token]
+  [_ email token]
   (if-let [user (first (call-sql "verify_user_2fa" email token))]
     (data-response "" {:session (merge {:user-id (:user_id user)}
                                        (get-config :app :client-keys))})
