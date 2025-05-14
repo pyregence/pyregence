@@ -1,4 +1,4 @@
-{:paths   ["src/clj" "src/cljs" "resources" "target"]
+{:paths   ["src/clj" "src/cljs" "resources" "target" "src/sql"]
  :deps    {clj-http/clj-http          {:mvn/version "3.10.1"}
            clj-tagsoup/clj-tagsoup    {:mvn/version "0.3.0" :exclusions [org.clojure/data.xml org.clojure/clojure]}
            com.cognitect/transit-clj  {:mvn/version "1.0.324"}
@@ -6,7 +6,7 @@
            funcool/decimal            {:mvn/version "1.0.2"}
            herb/herb                  {:mvn/version "0.10.0"}
            hiccup/hiccup              {:mvn/version "2.0.0-alpha2"}
-           org.clojure/clojure        {:mvn/version "1.11.1"}
+           org.clojure/clojure        {:mvn/version "1.12.0"}
            org.clojure/clojurescript  {:mvn/version "1.10.866"}
            org.clojure/core.async     {:mvn/version "1.2.603"}
            org.clojure/data.json      {:mvn/version "1.0.0"}
@@ -23,8 +23,13 @@
                                        :git/sha "a3a2b218e15e9144af5e9064f686d253198f0c85"
                                        :git/tag "2024.06.05-a3a2b21"}
            sig-gis/triangulum         {:git/url "https://github.com/sig-gis/triangulum"
-                                       :git/sha "edbb7dac5770278741f0985f5b67ed17aa9dea93"}}
+                                       :git/sha "87de020f2e786f8c9023696a3c880a1fb5f74675"}}
  :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
+           :build-uberjar    {:exec-fn   pyregence.packaging/build-uberjar!
+                              :exec-args {:app-name      pyregence
+                                          :src-dirs      ["src/clj"]
+                                          :main-ns       pyregence.cli
+                                          :resource-dirs ["resources" "target" "src/cljs" "src/sql"]}}
            :check-deps       {:deps      {com.github.liquidz/antq {:mvn/version "RELEASE"}}
                               :main-opts ["-m" "antq.core"]}
            :check-reflection {:main-opts ["-e" "(do,(set!,*warn-on-reflection*,true),nil)"
@@ -32,6 +37,7 @@
                                           "-e" "(require,'pyregence.jobs)"
                                           "-e" "(require,'pyregence.handlers)"
                                           "-e" "(require,'pyregence.compile-cljs)"]}
+           :cli              {:main-opts ["-m" "pyregence.cli"]}
            :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
            :config           {:main-opts ["-m" "triangulum.config"]}
            :default-ssl-opts {:jvm-opts ["-Djavax.net.ssl.keyStore=resources/runway.pkcs12"

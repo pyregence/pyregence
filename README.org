@@ -17,7 +17,7 @@ behavior models:
 - [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
 - [[https://www.postgresql.org/download][PostgreSQL (version 13)]]
 - [[https://postgis.net/][PostGIS (version 3)]]
-- [https://docs.npmjs.com/downloading-and-installing-node-js-and-npm][NPM (version 9.2.0)]]
+- [[https://docs.npmjs.com/downloading-and-installing-node-js-and-npm][NPM (version 9.2.0)]]
 
 ** Application Configuration
 
@@ -336,6 +336,23 @@ Ubuntu example:
 #+begin_src sh
 sudo less +G /var/log/nginx/error.log
 #+end_src
+
+*** JAR
+
+To build a JAR run:
+
+#+begin_src sh
+clj -X:build-uberjar
+#+end_src
+
+This will produce a uberJAR located at  target/pyregence-<date>-<commit>-standalone.jar which depends only
+on a config.edn, java and psql. The JAR's cli actions are available through ~java -jar~:
+
+#+begin_src sh :results raw
+java -jar target/pyregence-*
+#+end_src
+
+The current notable actions are [[https://github.com/sig-gis/triangulum?tab=readme-ov-file#triangulumserver][running the server]] and the [[https://github.com/sig-gis/triangulum?tab=readme-ov-file#triangulumbuild-db][building the database]].
 
 ** License and Distribution
 

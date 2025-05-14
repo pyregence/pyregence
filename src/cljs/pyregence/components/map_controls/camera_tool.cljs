@@ -27,8 +27,8 @@
          (:body)
          (js/URL.createObjectURL))))
 
-(defn- alert-ca-image-url->alert-ca-camera-id
-  "Parses the camera ID out of the image URL for ALERTCalifornia cameras.
+(defn- alert-image-url->alert-camera-id
+  "Parses the camera ID out of the image URL for AlertWest cameras.
    Ex: A URL of \"https://prod.weathernode.net/data/img/2428/2023/07/12/Sutro_Tower_1_1689204279_6490.jpg\"
    returns `2428`."
   [url]
@@ -82,18 +82,13 @@
 (defn- camera-tool-intro []
   [:div {:style {:padding "1.2em"}}
    "Click on a camera to view the most recent image. Powered by "
-   [:a {:href   "https://www.alertwildfire.org/"
+   [:a {:href   "https://www.alertwest.org/"
         :ref    "noreferrer noopener"
         :target "_blank"}
-    "ALERT Wildfire"]
-   " and "
-   [:a {:href   "https://alertcalifornia.org/"
-        :ref    "noreferrer noopener"
-        :target "_blank"}
-    "ALERTCalifornia"]
+    "ALERTWest"]
    "."])
 
-(defn- camera-image [camera-name camera-api-name camera-image-url reset-view zoom-camera image-src]
+(defn- camera-image [camera-name camera-image-url reset-view zoom-camera image-src]
   [:div
    [:div {:style {:display         "flex"
                   :justify-content "center"
@@ -101,14 +96,10 @@
                   :top             "2rem"
                   :width           "100%"}}
     [:label (str "Camera: " camera-name)]]
-   [:a {:href   (if (= camera-api-name "alert-wildfire")
-                  (str "https://www.alertwildfire.org/region/?camera=" camera-name)
-                  (str "https://ops.alertcalifornia.org/cam-console/" (alert-ca-image-url->alert-ca-camera-id camera-image-url)))
+   [:a {:href   (str "https://www.alertwest.live/cam-console/" (alert-image-url->alert-camera-id camera-image-url))
         :ref    "noreferrer noopener"
         :target "_blank"}
-    [:img {:src   (if (= camera-api-name "alert-wildfire")
-                    "images/awf_logo.png"
-                    "images/alert_ca_logo.png")
+    [:img {:src   "images/alert_west_logo.png"
            :style ($/combine $alert-logo-style)}]]
    (when @!/terrain?
      [tool-tip-wrapper
@@ -182,7 +173,6 @@
                                        "fire-cameras" "fire-cameras"
                                        :click-fn on-click))]
     (let [camera-name        (:name @active-camera)
-          camera-api-name    (:api-name @active-camera)
           camera-image-url   (:image-url @active-camera)
           render-content     (fn []
                                (cond
@@ -192,7 +182,6 @@
                                  @image-src
                                  [camera-image
                                   camera-name
-                                  camera-api-name
                                   camera-image-url
                                   reset-view
                                   zoom-camera

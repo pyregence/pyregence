@@ -612,14 +612,14 @@
                                                        params))]))
                      options-config)))
 
-(defn- initialize! [{:keys [user-id forecast-type forecast layer-idx lat lng zoom] :as params}]
+(defn- initialize! [{:keys [forecast-type forecast layer-idx lat lng zoom] :as params}]
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
-          user-layers-chan                (u-async/call-clj-async! "get-user-layers" user-id)
-          fire-names-chan                 (u-async/call-clj-async! "get-fire-names" user-id)
+          user-layers-chan                (u-async/call-clj-async! "get-user-layers")
+          fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
-          user-orgs-list-chan             (u-async/call-clj-async! "get-organizations" user-id)
+          user-orgs-list-chan             (u-async/call-clj-async! "get-current-user-organizations")
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count fire-names)]
@@ -690,7 +690,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- control-layer [user-id]
+(defn- control-layer [user-id user-email]
   (let [my-box (r/atom #js {})
         ref    (react/createRef)]
     (r/create-class
@@ -724,7 +724,7 @@
                (get-current-layer-hour)
                #(set-show-info! false)])
             (when @!/show-match-drop?
-              [match-drop-tool @my-box #(reset! !/show-match-drop? false) user-id])
+              [match-drop-tool @my-box #(reset! !/show-match-drop? false) user-email])
             (when @!/show-measure-tool?
               [measure-tool @my-box #(reset! !/show-measure-tool? false)])
             (when @!/show-camera?
@@ -825,7 +825,7 @@
 
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
-  [{:keys [user-id] :as params}]
+  [{:keys [user-id user-email] :as params}]
   (r/create-class
    {:component-did-mount
     (fn [_]
@@ -854,11 +854,11 @@
                  :mobile?          @!/mobile?
                  :user-orgs-list   @!/user-orgs-list
                  :select-forecast! select-forecast!
-                 :user-id          user-id}]
+                 :user-id          user-id}] ; TODO we might be able to get rid of this
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when (and @mb/the-map
                    (not-empty @!/capabilities)
                    (not-empty @!/*params))
-          [control-layer user-id])
+          [control-layer user-id user-email])
         [map-layer]
         [pop-up]]])}))

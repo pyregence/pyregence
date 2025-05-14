@@ -86,7 +86,7 @@
                                                          :shasta      "https://shasta.pyregence.org/geoserver"
                                                          ;; :shasta      "https://solitaire.sig-gis.com/geoserver"
                                                          :match-drop  "https://sierra.pyregence.org/geoserver"
-                                                         :psps        "https://energy.pyregence.org/geoserver"
+                                                         :psps        "https://energy.pyregence.org:8443/geoserver"
                                                          :pyreclimate "https://climate.pyregence.org/geoserver"}}
 
  ;; workers (server)
@@ -101,8 +101,7 @@
                               :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}]
 
  ;;; Pyrecast
- :pyregence.cameras/alert-wildfire-api-key   "<api-key>"
- :pyregence.cameras/alert-california-api-key "<api-key>"
+ :pyregence.cameras/alert-west-api-key       "<api-key>"
  :pyregence.capabilities/psps                {:geoserver-admin-username "admin"
                                               :geoserver-admin-password "password"}
  :pyregence.match-drop/match-drop            {:app-name       "Pyrecast Match Drop Server"

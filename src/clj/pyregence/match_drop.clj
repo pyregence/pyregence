@@ -377,32 +377,40 @@
 
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
-  [{:keys [user-id] :as params}]
-  (data-response
-   (cond
-     (not (get-config :triangulum.views/client-keys :features :match-drop))
-     {:error "Match drop is currently disabled. Please contact your system administrator to enable it."}
+  [session match-drop-job-params]
+  (let [{:keys [user-id match-drop-access?]} session]
+    (if-not match-drop-access?
+      (data-response "You do not have access to the Match Drop tool."
+                     {:status 403})
+      (data-response
+       (cond
+         (not (get-config :triangulum.views/client-keys :features :match-drop))
+         {:error "Match drop is currently disabled. Please contact your system administrator to enable it."}
 
-     (pos? (count-running-user-match-jobs user-id))
-     {:error "Match drop is already running. Please wait until it has completed."}
+         (pos? (count-running-user-match-jobs user-id))
+         {:error "Match drop is already running. Please wait until it has completed."}
 
-     (< (get-md-config :max-queue-size) (count-all-running-match-drops))
-     {:error "The queue is currently full. Please try again later."}
+         (< (get-md-config :max-queue-size) (count-all-running-match-drops))
+         {:error "The queue is currently full. Please try again later."}
 
-     :else
-     (create-match-job! params))))
+         :else
+         (create-match-job! match-drop-job-params))))))
 
 (defn get-match-drops
-  "Returns the user's match drops"
-  [user-id]
-  (->> (call-sql "get_user_match_jobs" user-id)
-       (mapv sql-result->job)
-       (data-response)))
+  "Returns the user's match drops."
+  [session]
+  (let [{:keys [user-id match-drop-access?]} session]
+    (if-not match-drop-access?
+      (data-response "You do not have access to the Match Drop tool."
+                     {:status 403})
+      (->> (call-sql "get_user_match_jobs" user-id)
+           (mapv sql-result->job)
+           (data-response)))))
 
 (defn delete-match-drop!
   "Deletes the specified match drop from the DB and removes it from the GeoServer
    via the 'remove' action passed to the GeoSync Runway server."
-  [match-job-id]
+  [_ match-job-id]
   (let [{:keys [geosync-request geoserver-workspace]} (get-match-job-from-match-job-id match-job-id)
         updated-geosync-request (-> geosync-request
                                     (assoc-in [:script-args :geosync-args :action] "remove"))
@@ -436,7 +444,7 @@
 
 (defn get-md-status
   "Returns the current status of the given match drop run."
-  [match-job-id]
+  [_ match-job-id]
   (data-response (-> (get-match-job-from-match-job-id match-job-id)
                      (select-keys [:display-name :geoserver-workspace :message :md-status :job-log]))))
 
@@ -449,7 +457,7 @@
                  :max-date-iso-str \"2022-09-30T23:00Z\"}
     :forecast   {:min-date-iso-str \"2023-06-04T00:00Z\"
                  :max-date-iso-str \"2023-06-07T18:00Z\"}"
-  []
+  [_]
   (let [{:keys [out err exit]} (sh "ssh" "sig-app@sierra"
                                    "cd /mnt/tahoe/elmfire/cloudfire && ./fuel_wx_ign.py" "--get_available_wx_times=True")]
     (if (= exit 0)

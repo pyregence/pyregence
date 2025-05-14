@@ -93,7 +93,7 @@
     (call-sql "set_verification_token" email token expiration)
     (data-response email)))
 
-(defn send-email! [email email-type & [match-drop-args]]
+(defn send-email! [_ email email-type & [match-drop-args]]
   (condp = email-type
     :reset      (send-verification-email! email
                                           "Pyregence Password Reset"

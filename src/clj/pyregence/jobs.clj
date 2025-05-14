@@ -13,7 +13,7 @@
 (defn start-set-all-capabilities-job! []
   (future
     (log-str "Calling pyregence.capabilities/set-all-capabilities!")
-    (set-all-capabilities!)))
+    (set-all-capabilities! nil)))
 
 (defn stop-set-all-capabilities-job! [fut]
   (future-cancel fut))
