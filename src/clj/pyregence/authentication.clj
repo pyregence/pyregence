@@ -178,7 +178,7 @@
       (if (= :email two-factor)
         ;; Email 2FA is enabled
         (do
-          (email/send-email! email :2fa)
+          (email/send-email! nil email :2fa)
           (data-response {:email email :require-2fa true}))
         ;; No 2FA required
         (data-response "" {:session (merge {:user-id            (:user_id user)
