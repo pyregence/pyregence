@@ -45,22 +45,22 @@
 
 (defn- get-2fa-message
   "Generate message for 2FA verification"
-  [_ email token]
+  [_ email token expiry-mins]
   (str "Hi " email ",\n\n"
        "  Please use the following verification code to complete your Pyregence login:\n\n"
        "  " token "\n\n"
-       "  This code will expire in 15 minutes.\n\n"
+       "  This code will expire in " expiry-mins " minutes.\n\n"
        "  - Pyregence Technical Support"))
 
-;; TODO: we can make the token expiration wait time configurable
 (defn send-2fa-code
   "Sends a time-limited 2FA code to the user's email"
   [email]
   (let [token         (generate-numeric-token)
         fifteen-min   (* 15 60 1000) ;; 15 minutes in milliseconds
+        expiry-mins   15 ;; Default to 15 minutes
         current-time  (System/currentTimeMillis)
         expiration    (java.sql.Timestamp. (+ current-time fifteen-min))
-        body          (get-2fa-message nil email token)
+        body          (get-2fa-message nil email token expiry-mins)
         result        (send-mail email nil nil "Pyregence Login Verification Code" body :text)]
     (call-sql "set_verification_token" email token expiration)
     (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
@@ -78,9 +78,10 @@
   [email]
   (let [token         (generate-numeric-token)
         fifteen-min   (* 15 60 1000)
+        expiry-mins   15 ;; Default to 15 minutes
         current-time  (System/currentTimeMillis)
         expiration    (java.sql.Timestamp. (+ current-time fifteen-min))
-        body          (get-2fa-message nil email token)]
+        body          (get-2fa-message nil email token expiry-mins)]
 
     (println "=====================================")
     (println "TESTING MODE: NO EMAIL SENT")
