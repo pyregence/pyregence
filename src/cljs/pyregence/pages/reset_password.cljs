@@ -12,11 +12,11 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce pending?    (r/atom false))
-(defonce email       (r/atom ""))
-(defonce reset-key   (r/atom ""))
-(defonce password    (r/atom ""))
-(defonce re-password (r/atom ""))
+(defonce pending?           (r/atom false))
+(defonce email              (r/atom ""))
+(defonce verification-token (r/atom ""))
+(defonce password           (r/atom ""))
+(defonce re-password        (r/atom ""))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -41,7 +41,7 @@
       (if (pos? (count errors))
         (do (toast-message! errors)
             (reset! pending? false))
-        (if (:success (<! (u-async/call-clj-async! "set-user-password" @email @password @reset-key)))
+        (if (:success (<! (u-async/call-clj-async! "set-user-password" @email @password @verification-token)))
           (do (toast-message! "Your password has been reset successfully.")
               (<! (timeout 2000))
               (u-browser/jump-to-url! "/forecast"))
@@ -56,8 +56,8 @@
   "The root component for the /reset-password page.
    Displays the reset password form."
   [params]
-  (reset! email     (:email     params ""))
-  (reset! reset-key (:reset-key params ""))
+  (reset! email              (:email params ""))
+  (reset! verification-token (:verification-token params ""))
   (fn [_]
     [:<>
      [:div {:style ($/combine ($/disabled-group @pending?)

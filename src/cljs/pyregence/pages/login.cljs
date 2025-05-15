@@ -1,5 +1,6 @@
 (ns pyregence.pages.login
   (:require
+   [cljs.reader                    :as edn]
    [clojure.core.async             :refer [<! go timeout]]
    [pyregence.analytics            :refer [gtag]]
    [pyregence.components.common    :refer [simple-form]]
@@ -24,14 +25,21 @@
 
 (defn- log-in! []
   (go
-    (if (:success (<! (u-async/call-clj-async! "log-in" @email @password)))
-      (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
-        (u-browser/clear-session-storage!)
-        (u-browser/jump-to-url! url)
-        (gtag "log-in" {}))
-      ;; TODO, it would be helpful to show the user which of the two errors it actually is.
-      (toast-message! ["Invalid login credentials. Please try again."
-                       "If you feel this is an error, check your email for the verification email."]))))
+    (let [response (<! (u-async/call-clj-async! "log-in" @email @password))]
+      (if (:success response)
+        (let [resp-data (edn/read-string (:body response))]
+          (if (:require-2fa resp-data)
+            ;; 2FA is required, redirect to 2FA verification page
+            (u-browser/jump-to-url! (str "/verify-2fa?email=" (:email resp-data)))
+            ;; Normal login success
+            (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
+              (u-browser/clear-session-storage!)
+              (u-browser/jump-to-url! url)
+              (gtag "log-in" {}))))
+        ;; Login failed
+        ;; TODO, it would be helpful to show the user which of the two errors it actually is.
+        (toast-message! ["Invalid login credentials. Please try again."
+                         "If you feel this is an error, check your email for the verification email."])))))
 
 (defn- request-password! []
   (go
