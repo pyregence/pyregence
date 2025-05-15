@@ -132,9 +132,9 @@
                                                         changed-keys     (u-data/get-changed-keys old-param-map new-param-map)
                                                         underlay         (get-in @!/capabilities [@!/*forecast :underlays id])
                                                         update-underlay? (seq (set/intersection changed-keys (set (:dependent-inputs underlay))))]
-                                                    (when (filter-set "isochrones")
-                                                      (mb/set-multiple-layers-visibility! #"isochrones" false))
                                                     (when update-underlay?
+                                                      (when (filter-set "isochrones")
+                                                        (mb/set-multiple-layers-visibility! #"isochrones" false))
                                                       (toggle-underlay! (:filter-set underlay)
                                                                         (:dependent-inputs underlay)
                                                                         (:geoserver-key underlay)
