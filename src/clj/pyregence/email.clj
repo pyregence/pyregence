@@ -1,7 +1,7 @@
 (ns pyregence.email
   (:import java.util.UUID)
   (:require [pyregence.utils     :refer [convert-date-string]]
-            [triangulum.config   :refer [get-config]]
+            [triangulum.config   :refer [get-config] :as config]
             [triangulum.database :refer [call-sql]]
             [triangulum.email    :refer [send-mail]]
             [triangulum.response :refer [data-response]]))
@@ -55,11 +55,11 @@
 (defn send-2fa-code
   "Sends a time-limited 2FA code to the user's email"
   [email]
-  (let [token         (generate-numeric-token)
-        fifteen-min   (* 15 60 1000) ;; 15 minutes in milliseconds
-        expiry-mins   15 ;; Default to 15 minutes
+  (let [expiry-mins   (or (config/get-config ::verification-token-expiry-minutes) 15)
+        token         (generate-numeric-token)
+        expiry-ms     (* expiry-mins 60 1000) ;; Convert minutes to milliseconds
         current-time  (System/currentTimeMillis)
-        expiration    (java.sql.Timestamp. (+ current-time fifteen-min))
+        expiration    (java.sql.Timestamp. (+ current-time expiry-ms))
         body          (get-2fa-message nil email token expiry-mins)
         result        (send-mail email nil nil "Pyregence Login Verification Code" body :text)]
     (call-sql "set_verification_token" email token expiration)
@@ -76,17 +76,18 @@
 (defn mock-send-2fa-code
   "For testing only: generates a 2FA code and stores it, but doesn't send an email"
   [email]
-  (let [token         (generate-numeric-token)
-        fifteen-min   (* 15 60 1000)
-        expiry-mins   15 ;; Default to 15 minutes
+  (let [expiry-mins   (or (config/get-config ::verification-token-expiry-minutes) 15)
+        token         (generate-numeric-token)
+        expiry-ms     (* expiry-mins 60 1000) ;; Convert minutes to milliseconds
         current-time  (System/currentTimeMillis)
-        expiration    (java.sql.Timestamp. (+ current-time fifteen-min))
+        expiration    (java.sql.Timestamp. (+ current-time expiry-ms))
         body          (get-2fa-message nil email token expiry-mins)]
 
     (println "=====================================")
     (println "TESTING MODE: NO EMAIL SENT")
     (println "2FA CODE for" email ":" token)
     (println "Expires at:" expiration)
+    (println "Code will expire in" expiry-mins "minutes (from config)")
     (println "Email body would be:")
     (println body)
     (println "=====================================")

@@ -101,23 +101,24 @@
                               :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}]
 
  ;;; Pyrecast
- :pyregence.cameras/alert-west-api-key       "<api-key>"
- :pyregence.capabilities/psps                {:geoserver-admin-username "admin"
-                                              :geoserver-admin-password "password"}
- :pyregence.match-drop/match-drop            {:app-name       "Pyrecast Match Drop Server"
-                                              :app-host       "localhost"
-                                              :app-port       31337
-                                              :dps-name       "Data Provisioning Server"
-                                              :dps-host       "sierra.pyregence.org"
-                                              :dps-port       31337
-                                              :elmfire-name   "ELMFIRE"
-                                              :elmfire-host   "sierra.pyregence.org"
-                                              :elmfire-port   31338
-                                              :gridfire-name  "GridFire"
-                                              :gridfire-host  "sierra.pyregence.org"
-                                              :gridfire-port  31339
-                                              :geosync-name   "GeoSync"
-                                              :geosync-host   "sierra.pyregence.org"
-                                              :geosync-port   31340
-                                              :max-queue-size 5
-                                              :md-prefix      "<prod | dev | local>"}}
+ :pyregence.email/verification-token-expiry-minutes 15
+ :pyregence.cameras/alert-west-api-key              "<api-key>"
+ :pyregence.capabilities/psps                       {:geoserver-admin-username "admin"
+                                                     :geoserver-admin-password "password"}
+ :pyregence.match-drop/match-drop                   {:app-name       "Pyrecast Match Drop Server"
+                                                     :app-host       "localhost"
+                                                     :app-port       31337
+                                                     :dps-name       "Data Provisioning Server"
+                                                     :dps-host       "sierra.pyregence.org"
+                                                     :dps-port       31337
+                                                     :elmfire-name   "ELMFIRE"
+                                                     :elmfire-host   "sierra.pyregence.org"
+                                                     :elmfire-port   31338
+                                                     :gridfire-name  "GridFire"
+                                                     :gridfire-host  "sierra.pyregence.org"
+                                                     :gridfire-port  31339
+                                                     :geosync-name   "GeoSync"
+                                                     :geosync-host   "sierra.pyregence.org"
+                                                     :geosync-port   31340
+                                                     :max-queue-size 5
+                                                     :md-prefix      "<prod | dev | local>"}}
