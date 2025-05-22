@@ -14,8 +14,8 @@
             [pyregence.pages.register           :as register]
             [pyregence.pages.reset-password     :as reset-password]
             [pyregence.pages.terms-of-use       :as terms]
-            [pyregence.pages.verify-email       :as verify-email]
             [pyregence.pages.verify-2fa         :as verify-2fa]
+            [pyregence.pages.verify-email       :as verify-email]
             [pyregence.state                    :as !]
             [pyregence.utils.async-utils        :as u-async]))
 
@@ -33,8 +33,8 @@
    "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/register"           register/root-component
    "/reset-password"     reset-password/root-component
-   "/verify-email"       verify-email/root-component
-   "/verify-2fa"         verify-2fa/root-component})
+   "/verify-2fa"         verify-2fa/root-component
+   "/verify-email"       verify-email/root-component})
 
 (def ^:private uri->root-component-hf
   "All root-components for URIs that should have a header and a footer."

@@ -1,12 +1,10 @@
 (ns pyregence.pages.verify-2fa
-  (:require [cljs.reader                    :as edn]
-            [clojure.core.async             :refer [go <! timeout]]
+  (:require [clojure.core.async             :refer [go <! timeout]]
             [pyregence.components.common    :refer [simple-form]]
             [pyregence.components.messaging :refer [toast-message!]]
             [pyregence.styles               :as $]
             [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.browser-utils  :as u-browser]
-            [pyregence.utils.data-utils     :as u-data]
             [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

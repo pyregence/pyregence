@@ -26,8 +26,8 @@
    [:get "/register"]                           {:handler     (render-page "/register")}
    [:get "/reset-password"]                     {:handler     (render-page "/reset-password")}
    [:get "/terms-of-use"]                       {:handler     (render-page "/terms-of-use")}
-   [:get "/verify-email"]                       {:handler     (render-page "/verify-email")}
    [:get "/verify-2fa"]                         {:handler     (render-page "/verify-2fa")}
+   [:get "/verify-email"]                       {:handler     (render-page "/verify-email")}
 
    ;; Users API
    [:post "/clj/add-new-user"]                  {:handler     (clj-handler authentication/add-new-user)

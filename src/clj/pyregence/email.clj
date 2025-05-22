@@ -56,8 +56,8 @@
   "Sends a time-limited 2FA code to the user's email"
   [email]
   (let [token         (generate-numeric-token)
-        fifteen-min   (* 15 60 1000) ;; 15 minutes in milliseconds
         expiry-mins   15 ;; Default to 15 minutes
+        fifteen-min   (* expiry-mins 60 1000) ;; Convert to milliseconds
         current-time  (System/currentTimeMillis)
         expiration    (java.sql.Timestamp. (+ current-time fifteen-min))
         body          (get-2fa-message nil email token expiry-mins)
@@ -77,8 +77,8 @@
   "For testing only: generates a 2FA code and stores it, but doesn't send an email"
   [email]
   (let [token         (generate-numeric-token)
-        fifteen-min   (* 15 60 1000)
         expiry-mins   15 ;; Default to 15 minutes
+        fifteen-min   (* expiry-mins 60 1000) ;; Convert to milliseconds
         current-time  (System/currentTimeMillis)
         expiration    (java.sql.Timestamp. (+ current-time fifteen-min))
         body          (get-2fa-message nil email token expiry-mins)]
