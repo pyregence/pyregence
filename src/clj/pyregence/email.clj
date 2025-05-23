@@ -57,9 +57,9 @@
   [email]
   (let [token         (generate-numeric-token)
         expiry-mins   15 ;; Default to 15 minutes
-        fifteen-min   (* expiry-mins 60 1000) ;; Convert to milliseconds
+        expiry-ms      (* expiry-mins 60 1000) ;; Convert to milliseconds
         current-time  (System/currentTimeMillis)
-        expiration    (java.sql.Timestamp. (+ current-time fifteen-min))
+        expiration    (java.sql.Timestamp. (+ current-time expiry-ms))
         body          (get-2fa-message nil email token expiry-mins)
         result        (send-mail email nil nil "Pyregence Login Verification Code" body :text)]
     (call-sql "set_verification_token" email token expiration)
@@ -78,9 +78,9 @@
   [email]
   (let [token         (generate-numeric-token)
         expiry-mins   15 ;; Default to 15 minutes
-        fifteen-min   (* expiry-mins 60 1000) ;; Convert to milliseconds
+        expiry-ms     (* expiry-mins 60 1000) ;; Convert to milliseconds
         current-time  (System/currentTimeMillis)
-        expiration    (java.sql.Timestamp. (+ current-time fifteen-min))
+        expiration    (java.sql.Timestamp. (+ current-time expiry-ms))
         body          (get-2fa-message nil email token expiry-mins)]
 
     (println "=====================================")

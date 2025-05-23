@@ -257,9 +257,9 @@
   [_ email token]
   (if-let [user (first (call-sql "verify_user_2fa" email token))]
     (data-response "" {:session (merge {:user-id            (:user_id user)
-                                       :user-email         (:user_email user)
-                                       :match-drop-access? (:match_drop_access user)
-                                       :super-admin?       (:super_admin user)}
+                                        :user-email         (:user_email user)
+                                        :match-drop-access? (:match_drop_access user)
+                                        :super-admin?       (:super_admin user)}
                                        (get-config :app :client-keys))})
     (data-response "" {:status 403})))
 
