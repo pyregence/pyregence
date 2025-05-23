@@ -26,6 +26,7 @@
    [:get "/register"]                           {:handler     (render-page "/register")}
    [:get "/reset-password"]                     {:handler     (render-page "/reset-password")}
    [:get "/terms-of-use"]                       {:handler     (render-page "/terms-of-use")}
+   [:get "/verify-2fa"]                         {:handler     (render-page "/verify-2fa")}
    [:get "/verify-email"]                       {:handler     (render-page "/verify-email")}
 
    ;; Users API
@@ -75,6 +76,9 @@
                                                  :auth-type   #{:admin :token}
                                                  :auth-action :block}
    [:post "/clj/verify-user-email"]             {:handler     (clj-handler authentication/verify-user-email)
+                                                 :auth-type   :token
+                                                 :auth-action :block}
+   [:post "/clj/verify-2fa"]                    {:handler     (clj-handler authentication/verify-2fa)
                                                  :auth-type   :token
                                                  :auth-action :block}
 

@@ -1,5 +1,6 @@
 (ns pyregence.authentication
-  (:require [pyregence.utils     :refer [nil-on-error]]
+  (:require [pyregence.email     :as email]
+            [pyregence.utils     :refer [nil-on-error]]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql sql-primitive]]
             [triangulum.response :refer [data-response]]))
@@ -127,6 +128,7 @@
       (data-response "User does not have permission to access this organization."
                      {:status 403}))))
 
+
 (defn get-org-member-users
   "Returns a vector of member users for the given org-id, if the user is an
    admin of the given org."
@@ -162,11 +164,21 @@
 
 (defn log-in [_ email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-    (data-response "" {:session (merge {:user-id            (:user_id user)
-                                        :user-email         (:user_email user)
-                                        :match-drop-access? (:match_drop_access user)
-                                        :super-admin?       (:super_admin user)}
-                                       (get-config :app :client-keys))})
+    (let [user-id      (:user_id user)
+          settings-str (:settings (first (call-sql "get_user_settings" user-id)))
+          settings     (when settings-str (read-string settings-str))
+          two-factor   (:two-factor settings)]
+      (if (= :email two-factor)
+        ;; Email 2FA is enabled
+        (do
+          (email/send-email! nil email :2fa)
+          (data-response {:email email :require-2fa true}))
+        ;; No 2FA required
+        (data-response "" {:session (merge {:user-id            (:user_id user)
+                                            :user-email         (:user_email user)
+                                            :match-drop-access? (:match_drop_access user)
+                                            :super-admin?       (:super_admin user)}
+                                           (get-config :app :client-keys))})))
     (data-response "" {:status 403})))
 
 (defn log-out [_] (data-response "" {:session nil}))
@@ -174,14 +186,14 @@
 (defn remove-org-user [session org-id org-user-id]
   (let [user-id (:user-id session)]
     (if-not (is-user-admin-of-org? user-id org-id)
-     (data-response "User does not have permission to remove members from this organization."
-                    {:status 403})
-     (do
-       (call-sql "remove_org_user" org-user-id)
-       (data-response "")))))
+      (data-response "User does not have permission to remove members from this organization."
+                     {:status 403})
+      (do
+        (call-sql "remove_org_user" org-user-id)
+        (data-response "")))))
 
-(defn set-user-password [_ email password reset-key]
-  (if-let [user (first (call-sql "set_user_password" {:log? false} email password reset-key))]
+(defn set-user-password [_ email password token]
+  (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
     (data-response "" {:session {:user-id            (:user_id user)
                                  :user-email         (:user_email user)
                                  :match-drop-access? (:match_drop_access user)
@@ -214,11 +226,11 @@
 (defn update-org-user-role [session org-id org-user-id role-id]
   (let [user-id (:user-id session)]
     (if-not (is-user-admin-of-org? user-id org-id)
-     (data-response "User does not have permission to update user roles in this organization."
-                    {:status 403})
-     (do
-       (call-sql "update_org_user_role" org-user-id role-id)
-       (data-response "")))))
+      (data-response "User does not have permission to update user roles in this organization."
+                     {:status 403})
+      (do
+        (call-sql "update_org_user_role" org-user-id role-id)
+        (data-response "")))))
 
 (defn update-user-name
   "Allows a super admin to update the name of a user by their email."
@@ -240,8 +252,19 @@
      (data-response "")
      (data-response "" {:status 403}))))
 
-(defn verify-user-email [_ email reset-key]
-  (if-let [user (first (call-sql "verify_user_email" email reset-key))]
+(defn verify-2fa
+  "Verifies a 2FA code"
+  [_ email token]
+  (if-let [user (first (call-sql "verify_user_2fa" email token))]
+    (data-response "" {:session (merge {:user-id            (:user_id user)
+                                        :user-email         (:user_email user)
+                                        :match-drop-access? (:match_drop_access user)
+                                        :super-admin?       (:super_admin user)}
+                                       (get-config :app :client-keys))})
+    (data-response "" {:status 403})))
+
+(defn verify-user-email [_ email token]
+  (if-let [user (first (call-sql "verify_user_email" email token))]
     (data-response "" {:session {:user-id            (:user_id user)
                                  :user-email         (:user_email user)
                                  :match-drop-access? (:match_drop_access user)

@@ -13,15 +13,16 @@ VALUES
 INSERT INTO users
     (user_uid, email, name, password, verified, settings)
 VALUES
-    (1, 'admin@pyr.dev', 'Admin', crypt('admin', gen_salt('bf')), TRUE, '{:timezone :utc}'),
-    (2, 'user@pyr.dev', 'User', crypt('user', gen_salt('bf')), TRUE, '{:timezone :utc}'),
-    (3, 'irmamorales@zzyz.gov', 'Irma Morales', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
-    (4, 'constanceamaral@acme.com', 'Constance Amaral', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
-    (5, 'vincentcarmona@updateme.com', 'Vincent Carmona', crypt('test456', gen_salt('bf')), true, '{:timezone :utc}'),
-    (6, 'elizabethpinto@updateme.com', 'Elizabeth Pinto', crypt('test456', gen_salt('bf')), true, '{:timezone :utc}'),
-    (7, 'shadmakinde@acme.com', 'Shad Makinde', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
-    (8, 'viviensoares@acme.com', 'Vivien Soares', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
-    (9, 'keelyigbinoghene@updateme.com', 'Keely Igbinoghene', crypt('test456', gen_salt('bf')), true, '{:timezone :utc}'),
+    (1,  'admin@pyr.dev', 'Admin', crypt('admin', gen_salt('bf')), TRUE, '{:timezone :utc}'),
+    (2,  'user@pyr.dev', 'User', crypt('user', gen_salt('bf')), TRUE, '{:timezone :utc}'),
+    (23, '2fa@pyr.dev', '2FA', crypt('2fa', gen_salt('bf')), TRUE, '{:timezone :utc, :two-factor :email}'),
+    (3,  'irmamorales@zzyz.gov', 'Irma Morales', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
+    (4,  'constanceamaral@acme.com', 'Constance Amaral', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
+    (5,  'vincentcarmona@updateme.com', 'Vincent Carmona', crypt('test456', gen_salt('bf')), true, '{:timezone :utc}'),
+    (6,  'elizabethpinto@updateme.com', 'Elizabeth Pinto', crypt('test456', gen_salt('bf')), true, '{:timezone :utc}'),
+    (7,  'shadmakinde@acme.com', 'Shad Makinde', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
+    (8,  'viviensoares@acme.com', 'Vivien Soares', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
+    (9,  'keelyigbinoghene@updateme.com', 'Keely Igbinoghene', crypt('test456', gen_salt('bf')), true, '{:timezone :utc}'),
     (10, 'sachabauer@acmelabs.com', 'Sacha Bauer', crypt('test456', gen_salt('bf')), true, '{:timezone :utc}'),
     (11, 'staceychan@acmelabs.org', 'Stacey Chan', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
     (12, 'kiarapichler@deleteme.com', 'Kiara Pichler', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
@@ -44,6 +45,7 @@ INSERT INTO organization_users
 VALUES
     (1, 1, 1),
     (1, 2, 2),
+    (1, 23, 2),
     (2, 12, 1),
     (2, 14, 3),
     (2, 17, 2),
