@@ -101,10 +101,10 @@
                               :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}]
 
  ;;; Pyrecast
- :pyregence.email/verification-token-expiry-minutes 15
  :pyregence.cameras/alert-west-api-key              "<api-key>"
  :pyregence.capabilities/psps                       {:geoserver-admin-username "admin"
                                                      :geoserver-admin-password "password"}
+ :pyregence.email/verification-token-expiry-minutes 15
  :pyregence.match-drop/match-drop                   {:app-name       "Pyrecast Match Drop Server"
                                                      :app-host       "localhost"
                                                      :app-port       31337
