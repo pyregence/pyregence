@@ -159,6 +159,7 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
     SELECT * FROM updated;
 
 $$ LANGUAGE SQL;
+
 CREATE OR REPLACE FUNCTION get_user_settings(_user_id integer)
  RETURNS TABLE (settings text) AS $$
 
