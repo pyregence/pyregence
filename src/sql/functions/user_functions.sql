@@ -138,20 +138,27 @@ $$ LANGUAGE SQL;
 
 -- Verifies a 2FA token without changing verified status
 CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
- RETURNS TABLE (user_id integer) AS $$
+ RETURNS TABLE (
+    user_id integer,
+    user_email text,
+    match_drop_access boolean,
+    super_admin boolean
+ ) AS $$
 
-    UPDATE users
-    SET verification_token = NULL,
-        token_expiration = NULL
-    WHERE email = lower_trim(_email)
-        AND verification_token = _token
-        AND verification_token IS NOT NULL
-        AND token_expiration > NOW()
-        AND verified = TRUE
-    RETURNING user_uid;
+    WITH updated AS (
+        UPDATE users
+        SET verification_token = NULL,
+            token_expiration = NULL
+        WHERE email = lower_trim(_email)
+            AND verification_token = _token
+            AND verification_token IS NOT NULL
+            AND token_expiration > NOW()
+            AND verified = TRUE
+        RETURNING user_uid, email, match_drop_access, super_admin
+    )
+    SELECT * FROM updated;
 
 $$ LANGUAGE SQL;
-
 CREATE OR REPLACE FUNCTION get_user_settings(_user_id integer)
  RETURNS TABLE (settings text) AS $$
 

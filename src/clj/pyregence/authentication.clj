@@ -128,14 +128,6 @@
       (data-response "User does not have permission to access this organization."
                      {:status 403}))))
 
-(defn verify-2fa
-  "Verifies a 2FA code"
-  [_ email token]
-  (if-let [user (first (call-sql "verify_user_2fa" email token))]
-    (data-response "" {:session (merge {:user-id (:user_id user)}
-                                       (get-config :app :client-keys))})
-    (data-response "" {:status 403})))
-
 (defn get-org-member-users
   "Returns a vector of member users for the given org-id, if the user is an
    admin of the given org."
@@ -171,10 +163,10 @@
 
 (defn log-in [_ email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-    (let [user-id (:user_id user)
+    (let [user-id      (:user_id user)
           settings-str (:settings (first (call-sql "get_user_settings" user-id)))
-          settings (when settings-str (read-string settings-str))
-          two-factor (:two-factor settings)]
+          settings     (when settings-str (read-string settings-str))
+          two-factor   (:two-factor settings)]
       (if (= :email two-factor)
         ;; Email 2FA is enabled
         (do
@@ -258,6 +250,17 @@
    (if (sql-primitive (call-sql "user_email_taken" email user-id-to-ignore))
      (data-response "")
      (data-response "" {:status 403}))))
+
+(defn verify-2fa
+  "Verifies a 2FA code"
+  [_ email token]
+  (if-let [user (first (call-sql "verify_user_2fa" email token))]
+    (data-response "" {:session (merge {:user-id            (:user_id user)
+                                        :user-email         (:user_email user)
+                                        :match-drop-access? (:match_drop_access user)
+                                        :super-admin?       (:super_admin user)}
+                                       (get-config :app :client-keys))})
+    (data-response "" {:status 403})))
 
 (defn verify-user-email [_ email token]
   (if-let [user (first (call-sql "verify_user_email" email token))]
