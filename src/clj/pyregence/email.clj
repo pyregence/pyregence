@@ -103,7 +103,7 @@
     :new-user   (send-verification-email! email
                                           "Pyregence New User"
                                           get-new-user-message)
-    :2fa        (mock-send-2fa-code email) ; For testing without email: (mock-send-2fa-code email)
+    :2fa        (send-2fa-code email) ; For testing without email: (mock-send-2fa-code email)
     :match-drop (send-match-drop-email! email
                                         "Match Drop Finished Running"
                                         get-match-drop-message
