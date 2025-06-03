@@ -1,8 +1,8 @@
-DROP DATABASE IF EXISTS pyregence;
-DROP ROLE IF EXISTS pyregence;
-CREATE ROLE pyregence WITH LOGIN CREATEDB PASSWORD 'pyregence';
-GRANT pyregence TO postgres;
-SET ROLE pyregence;
-CREATE DATABASE pyregence WITH OWNER pyregence;
-\c pyregence
+DROP DATABASE IF EXISTS :database;
+DROP ROLE IF EXISTS :user;
+CREATE ROLE :user WITH LOGIN CREATEDB PASSWORD :'password';
+GRANT :user TO postgres;
+SET ROLE :user;
+CREATE DATABASE :database WITH OWNER :user;
+\c :database
 CREATE EXTENSION pgcrypto;
