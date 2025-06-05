@@ -20,6 +20,28 @@ CREATE TABLE users (
     match_drop_access  boolean DEFAULT FALSE
 );
 
+-- Stores TOTP secrets with verification state
+CREATE TABLE user_totp (
+    user_id INTEGER PRIMARY KEY REFERENCES users(user_uid) ON DELETE CASCADE,
+    secret TEXT NOT NULL,
+    verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Stores backup codes (8-character alphanumeric)
+CREATE TABLE user_backup_codes (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_uid) ON DELETE CASCADE,
+    code TEXT NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    used_at TIMESTAMP WITH TIME ZONE NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for backup code lookups
+CREATE INDEX idx_backup_codes_user ON user_backup_codes(user_id);
+
 -- Stores information about organizations
 CREATE TABLE organizations (
     organization_uid      SERIAL PRIMARY KEY,
