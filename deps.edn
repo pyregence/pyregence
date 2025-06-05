@@ -6,6 +6,8 @@
            funcool/decimal            {:mvn/version "1.0.2"}
            herb/herb                  {:mvn/version "0.10.0"}
            hiccup/hiccup              {:mvn/version "2.0.0-alpha2"}
+           one-time/one-time          {:mvn/version "0.8.0"
+                                       :exclusions [com.github.kenglxn.qrgen/javase]}
            org.clojure/clojure        {:mvn/version "1.12.0"}
            org.clojure/clojurescript  {:mvn/version "1.10.866"}
            org.clojure/core.async     {:mvn/version "1.2.603"}
@@ -23,7 +25,7 @@
                                        :git/sha "a3a2b218e15e9144af5e9064f686d253198f0c85"
                                        :git/tag "2024.06.05-a3a2b21"}
            sig-gis/triangulum         {:git/url "https://github.com/sig-gis/triangulum"
-                                       :git/sha "87de020f2e786f8c9023696a3c880a1fb5f74675"}}
+                                       :git/sha "1e0e6f189fe696ad3998cf0731c2fde1b72d6254"}}
  :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
            :build-uberjar    {:exec-fn   pyregence.packaging/build-uberjar!
                               :exec-args {:app-name      pyregence
