@@ -11,13 +11,12 @@ behavior models:
 1. [[https://github.com/lautenberger/elmfire][ELMFIRE]]
 2. [[https://github.com/pyregence/gridfire][GridFire]]
 
-** Installation Requirements
+** Installation
 
-- [[https://www.oracle.com/java/technologies/downloads/#java17][Java Development Kit (version 17.0.3)]]
-- [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
-- [[https://www.postgresql.org/download][PostgreSQL (version 13)]]
-- [[https://postgis.net/][PostGIS (version 3)]]
-- [[https://docs.npmjs.com/downloading-and-installing-node-js-and-npm][NPM (version 9.2.0)]]
+To just get the server running you will need a JDK, Clojure CLI, NPM and PostgresSQL
+running, you can install these packages global on your system or, assuming you have
+[[guix][https://guix.gnu.org/]] installed, by running  =./pyregence-shell.sh=
+which creates a shell with all the packages installed into it.
 
 ** Application Configuration
 
