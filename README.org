@@ -13,10 +13,10 @@ behavior models:
 
 ** Installation
 
-To just get the server running you will need a JDK, Clojure CLI, NPM and PostgresSQL
-running, you can install these packages global on your system or, assuming you have
+To just get the server running you will need a JDK ([[https://openjdk.org/projects/jdk/21/][OpenJDK-21]]) , Clojure ([[https://clojure.org/guides/install_clojure][cli-1.11.*]]), NPM ([[https://nodejs.org/en/download][node-22]])
+and PostgresSQL ([[https://www.postgresql.org/download][13]]) running, you can install these packages global on your system or, assuming you have
 [[guix][https://guix.gnu.org/]] installed, by running  =./pyregence-shell.sh=
-which creates a shell with all the packages installed into it.
+which creates a shell with all the packages installed into it. For the current package list see =/manifest.scm=.
 
 ** Application Configuration
 
