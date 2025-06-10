@@ -11,13 +11,15 @@ behavior models:
 1. [[https://github.com/lautenberger/elmfire][ELMFIRE]]
 2. [[https://github.com/pyregence/gridfire][GridFire]]
 
-** Installation Requirements
+** Installation
 
-- [[https://www.oracle.com/java/technologies/downloads/#java17][Java Development Kit (version 17.0.3)]]
-- [[https://clojure.org/guides/getting_started][Clojure CLI tools]]
-- [[https://www.postgresql.org/download][PostgreSQL (version 13)]]
-- [[https://postgis.net/][PostGIS (version 3)]]
-- [[https://docs.npmjs.com/downloading-and-installing-node-js-and-npm][NPM (version 9.2.0)]]
+To run PyreCast locally you will need a JDK ([[https://openjdk.org/projects/jdk/21/][OpenJDK-21]]),
+Clojure ([[https://clojure.org/guides/install_clojure][cli-1.11.*]]), [[https://github.com/babashka/babashka#installation][babashka]],
+NPM ([[https://nodejs.org/en/download][node-22]]), and PostgresSQL ([[https://www.postgresql.org/download][13]]).
+You can install these packages globally on your system or, assuming you have
+[[https://guix.gnu.org/][guix]] installed, by running [[./pyregence-shell.sh][pyregence-shell.sh]]
+which creates a container shell with all of the necessary packages installed into it.
+For the current package list see [[./manifest.scm][manifest.scm]].
 
 ** Application Configuration
 
