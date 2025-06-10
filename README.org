@@ -13,10 +13,13 @@ behavior models:
 
 ** Installation
 
-To just get the server running you will need a JDK ([[https://openjdk.org/projects/jdk/21/][OpenJDK-21]]) , Clojure ([[https://clojure.org/guides/install_clojure][cli-1.11.*]]), NPM ([[https://nodejs.org/en/download][node-22]])
-and PostgresSQL ([[https://www.postgresql.org/download][13]]) running, you can install these packages global on your system or, assuming you have
-[[guix][https://guix.gnu.org/]] installed, by running  =./pyregence-shell.sh=
-which creates a shell with all the packages installed into it. For the current package list see =/manifest.scm=.
+To run PyreCast locally you will need a JDK ([[https://openjdk.org/projects/jdk/21/][OpenJDK-21]]),
+Clojure ([[https://clojure.org/guides/install_clojure][cli-1.11.*]]), [[babashka][https://github.com/babashka/babashka#installation]],
+NPM ([[https://nodejs.org/en/download][node-22]]), and PostgresSQL ([[https://www.postgresql.org/download][13]]).
+You can install these packages globally on your system or, assuming you have
+[[guix][https://guix.gnu.org/]] installed, by running [[~pyregence-shell.sh~][./pyregence-shell.sh]]
+which creates a container shell with all of the necessary packages installed into it.
+For the current package list see [[~manifest.scm~][./manifest.scm]].
 
 ** Application Configuration
 
