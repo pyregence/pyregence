@@ -13,9 +13,9 @@
 
 (defonce layers (atom {}))
 
-(def site-url (get-config :triangulum.email/base-url))
-(def psps-geoserver-admin-username (get-config :pyregence.capabilities/psps :geoserver-admin-username))
-(def psps-geoserver-admin-password (get-config :pyregence.capabilities/psps :geoserver-admin-password))
+(def site-url (delay (get-config :triangulum.email/base-url)))
+(def psps-geoserver-admin-username (delay (get-config :pyregence.capabilities/psps :geoserver-admin-username)))
+(def psps-geoserver-admin-password (delay (get-config :pyregence.capabilities/psps :geoserver-admin-password)))
 (def private-layer-geoservers #{:psps})
 
 ;;; Helper Functions
@@ -221,7 +221,7 @@
          (keyword geoserver-key)
          #(filterv (fn [{:keys [workspace]}]
                      (not= workspace workspace-name)) %))
-  (data-response (str workspace-name " removed from " site-url ".")))
+  (data-response (str workspace-name " removed from " @site-url ".")))
 
 (defn get-all-layers [_]
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
@@ -235,7 +235,7 @@
   [_ {:strs [geoserver-key workspace-name]}]
   (let [geoserver-key (keyword geoserver-key)
         basic-auth    (when (private-layer-geoservers geoserver-key)
-                        (str psps-geoserver-admin-username ":" psps-geoserver-admin-password))]
+                        (str @psps-geoserver-admin-username ":" @psps-geoserver-admin-password))]
     (if-not (contains? (get-config :triangulum.views/client-keys :geoserver) geoserver-key)
       (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn.")
       (let [timeout-ms    (* 2.5 60 1000) ; 2.5 minutes
@@ -244,7 +244,7 @@
                               (let [stdout?       (= 0 (count @layers))
                                     geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
                                     new-layers    (process-layers! geoserver-url workspace-name basic-auth)
-                                    message       (str (count new-layers) " layers from " geoserver-url " added to " site-url ".")]
+                                    message       (str (count new-layers) " layers from " geoserver-url " added to " @site-url ".")]
                                 (if workspace-name
                                   (do
                                     (remove-workspace! nil {"geoserver-key"  (name geoserver-key)
@@ -268,7 +268,7 @@
   (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
     (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))
   (data-response (str (reduce + (map count (vals @layers)))
-                      " total layers added to " site-url ".")))
+                      " total layers added to " @site-url ".")))
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]
