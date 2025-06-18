@@ -21,3 +21,17 @@ CREATE TABLE user_backup_codes (
 
 -- Simple index for user lookups
 CREATE INDEX idx_backup_codes_user ON user_backup_codes(user_id);
+
+-- Update trigger function to keep track of `updated_at`
+CREATE OR REPLACE FUNCTION update_updated_at_column() RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger for TOTP table
+CREATE TRIGGER user_totp_updated_at_trigger
+BEFORE UPDATE ON user_totp
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();

@@ -13,20 +13,7 @@ CREATE OR REPLACE FUNCTION create_totp_setup(_user_id integer, _secret text)
     VALUES (_user_id, _secret, FALSE)
     ON CONFLICT (user_id) DO UPDATE
     SET secret = EXCLUDED.secret,
-        verified = FALSE,
-        created_at = NOW(),
-        updated_at = NOW()
-
-$$ LANGUAGE SQL;
-
--- Delete old unverified TOTP setups (older than 3 days)
-CREATE OR REPLACE FUNCTION delete_old_unverified_totp_setups(_user_id integer)
- RETURNS void AS $$
-
-    DELETE FROM user_totp
-    WHERE user_id = _user_id
-        AND verified = FALSE
-        AND created_at < NOW() - INTERVAL '3 days'
+        verified = FALSE
 
 $$ LANGUAGE SQL;
 
@@ -93,8 +80,7 @@ CREATE OR REPLACE FUNCTION mark_totp_verified(_user_id integer)
  RETURNS void AS $$
 
     UPDATE user_totp
-    SET verified = TRUE,
-        updated_at = NOW()
+    SET verified = TRUE
     WHERE user_id = _user_id
         AND verified = FALSE
 
