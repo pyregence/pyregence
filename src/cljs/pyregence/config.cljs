@@ -87,18 +87,18 @@
                                                                      :units           ""
                                                                      :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                      :reverse-legend? false
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
                                                             :slp    {:opt-label       "Slope (degrees)"
                                                                      :filter          "slp"
                                                                      :units           "\u00B0"
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
                                                             :dem    {:opt-label       "Elevation (ft)"
                                                                      :filter          "dem"
                                                                      :units           "ft"
                                                                      :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.4.0-2.3.0}}
                                                             :cc     {:opt-label       "Canopy Cover (%)"
                                                                      :filter          "cc"
                                                                      :units           "%"
@@ -155,7 +155,7 @@
                                                             "), 2022."
                                                             [:br]
                                                             [:br]
-                                                            [:strong "Fire Factor 2022\u2122"]
+                                                            [:strong "Fire Factor\u2122"]
                                                             " -  Data provided by "
                                                             [:a {:href   "https://riskfactor.com/methodology/fire"
                                                                  :target "_blank"}
@@ -207,6 +207,9 @@
                                                                                    :filter    "ca-2022-fuelscape"}
                                                             :ca-fuelscapes-2021   {:opt-label "2021 CA fuelscape"
                                                                                    :filter    "ca-2021-fuelscape"}
+                                                            :fire-factor-2024     {:opt-label    "Fire Factor 2024"
+                                                                                   :filter       "fire-factor-2024"
+                                                                                   :disabled-for #{:asp :slp :dem}}
                                                             :fire-factor-2023     {:opt-label    "Fire Factor 2023"
                                                                                    :filter       "fire-factor-2023"
                                                                                    :disabled-for #{:asp :slp :dem}}
