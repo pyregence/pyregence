@@ -155,7 +155,7 @@
                                                             "), 2022."
                                                             [:br]
                                                             [:br]
-                                                            [:strong "Fire Factor 2022\u2122"]
+                                                            [:strong "Fire Factor\u2122"]
                                                             " -  Data provided by "
                                                             [:a {:href   "https://riskfactor.com/methodology/fire"
                                                                  :target "_blank"}
