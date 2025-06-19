@@ -211,7 +211,7 @@
           " - Hot spots detected by the Moderate Resolution Imaging Spectroradiometer sensor on the Suomi NPP and NOAA-20 satellites."
           [:br]
           [:br]
-          [:strong "Live satellite (GOES-16)"]
+          [:strong "Live satellite (GOES-19)"]
           " - Real time imagery from the GOES East satellite."]
          [:div {:style {:margin-top 10}}
           [:hr]

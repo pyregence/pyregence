@@ -192,7 +192,7 @@
                           (merge-fn (split-isochrones-layer-name full-name))
 
                           (or (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
-                              (re-matches #"fire-detections.*:(goes16-rgb|fire-history|conus-buildings|us-transmission-lines|.*boundaries).*" full-name))
+                              (re-matches #"fire-detections.*:(goes19-rgb|fire-history|conus-buildings|us-transmission-lines|.*boundaries).*" full-name))
                           (merge-fn (split-fire-detections full-name))
 
                           (str/starts-with? full-name "fuels")
