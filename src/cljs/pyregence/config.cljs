@@ -57,9 +57,9 @@
                              :z-index       101
                              :filter-set    #{"fire-detections" "modis-timestamped"}
                              :geoserver-key :shasta}
-   :goes-imagery            {:opt-label     "Live satellite (GOES-16)"
+   :goes-imagery            {:opt-label     "Live satellite (GOES-19)"
                              :z-index       100
-                             :filter-set    #{"fire-detections" "goes16-rgb"}
+                             :filter-set    #{"fire-detections" "goes19-rgb"}
                              :geoserver-key :shasta}))
 
 (def near-term-forecast-options
