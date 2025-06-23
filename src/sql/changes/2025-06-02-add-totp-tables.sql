@@ -11,7 +11,7 @@ CREATE TABLE user_totp (
 
 -- Backup codes (8-character alphanumeric)
 CREATE TABLE user_backup_codes (
-    id SERIAL PRIMARY KEY,
+    user_backup_code_uid SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(user_uid) ON DELETE CASCADE,
     code TEXT NOT NULL,
     used BOOLEAN DEFAULT FALSE,

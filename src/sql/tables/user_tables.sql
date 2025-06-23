@@ -31,7 +31,7 @@ CREATE TABLE user_totp (
 
 -- Stores backup codes (8-character alphanumeric)
 CREATE TABLE user_backup_codes (
-    id SERIAL PRIMARY KEY,
+    user_backup_code_uid SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(user_uid) ON DELETE CASCADE,
     code TEXT NOT NULL,
     used BOOLEAN DEFAULT FALSE,
@@ -73,3 +73,17 @@ CREATE TABLE organization_layers (
     layer_path          text,
     layer_config        text
 );
+
+-- Update trigger function to keep track of `updated_at`
+CREATE OR REPLACE FUNCTION update_updated_at_column() RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger for TOTP table
+CREATE TRIGGER user_totp_updated_at_trigger
+BEFORE UPDATE ON user_totp
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
