@@ -40,7 +40,7 @@
           {:keys [settings]} (first (call-sql "get_user_settings" user-id))
           two-factor (:two-factor (parse-user-settings settings))]
       (case two-factor
-        :totp (data-response {:email email :require-2fa true :method "totp"})
+        :totp  (data-response {:email email :require-2fa true :method "totp"})
         :email (do (email/send-email! nil email :2fa)
                    (data-response {:email email :require-2fa true :method "email"}))
         (create-session-from-user-data user)))
