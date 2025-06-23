@@ -118,6 +118,8 @@
 
   ;; Test TOTP with valid code
   (let [user-id 24
+        ;; Save original settings
+        original-settings (:settings (first (call-sql "get_user_settings" user-id)))
         ;; Ensure user has verified TOTP
         _ (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :totp}))
         _ (call-sql "delete_totp_setup" user-id)
@@ -125,14 +127,25 @@
         _ (call-sql "mark_totp_verified" user-id)
         secret (:secret (first (call-sql "get_totp_setup" user-id)))
         valid-code (str (totp/get-current-totp-code secret))]
-    (verify-2fa nil "totp-2fa@pyr.dev" valid-code))
+    (try
+      (verify-2fa nil "totp-2fa@pyr.dev" valid-code)
+      (finally
+        ;; Restore original state
+        (call-sql "update_user_settings" user-id original-settings))))
+  ;=>> {:status 200 :session some?} 
   ;=>> {:status 200 :session some?}
 
   ;; Test backup code usage
-  (do
-    (call-sql "delete_backup_codes" 24)
-    (call-sql "create_backup_codes" 24 (into-array ["TESTCODE"]))
-    (verify-2fa nil "totp-2fa@pyr.dev" "TESTCODE"))
+  (let [user-id 24
+        ;; Ensure user has TOTP enabled
+        _ (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :totp}))
+        _ (call-sql "delete_backup_codes" user-id)
+        _ (call-sql "create_backup_codes" user-id (into-array ["TESTCODE"]))]
+    (try
+      (verify-2fa nil "totp-2fa@pyr.dev" "TESTCODE")
+      (finally
+        ;; Clean up
+        (call-sql "delete_backup_codes" user-id))))
   ;=>> {:status 200 :session some?}
 
   ;; Test email 2FA
@@ -193,24 +206,35 @@
   ;=>> {:status 400}
 
   ;; First time setup returns all data needed
-  ; (let [response (begin-totp-setup {:user-id 1 :user-email "test@pyregence.com"})]
-  ;   (when (= 200 (:status response))
-  ;     (let [body (read-string (:body response))]
-  ;       [(set (keys body))
-  ;        (:resuming body)
-  ;        (= 10 (count (:backup-codes body)))])))
-  ; ;=> [#{:qr-uri :secret :backup-codes :resuming} false true]
+  (let [_ (call-sql "delete_totp_setup" 1) ; Clean any existing setup first
+        response (begin-totp-setup {:user-id 1 :user-email "test@pyregence.com"})]
+    (try
+      (when (= 200 (:status response))
+        (let [body (read-string (:body response))]
+          [(set (keys body))
+           (:resuming body)
+           (= 10 (count (:backup-codes body)))]))
+      (finally
+        ;; Clean up
+        (call-sql "delete_totp_setup" 1)
+        (call-sql "delete_backup_codes" 1))))
+  ;=> [#{:qr-uri :secret :backup-codes :resuming} false true]
 
   ;; Resuming returns same data structure
-  ; (let [first-resp (begin-totp-setup {:user-id 1 :user-email "test@pyregence.com"})
-  ;       second-resp (begin-totp-setup {:user-id 1 :user-email "test@pyregence.com"})]
-  ;   (when (every? #(= 200 (:status %)) [first-resp second-resp])
-  ;     (let [first-body (read-string (:body first-resp))
-  ;           second-body (read-string (:body second-resp))]
-  ;       [(= (set (keys first-body)) (set (keys second-body)))
-  ;        (:resuming second-body)
-  ;        (= (:secret first-body) (:secret second-body))])))
-  ; ;=> [true true true]
+  (let [first-resp (begin-totp-setup {:user-id 1 :user-email "test@pyregence.com"})
+        second-resp (begin-totp-setup {:user-id 1 :user-email "test@pyregence.com"})]
+    (try
+      (when (every? #(= 200 (:status %)) [first-resp second-resp])
+        (let [first-body (read-string (:body first-resp))
+              second-body (read-string (:body second-resp))]
+          [(= (set (keys first-body)) (set (keys second-body)))
+           (:resuming second-body)
+           (= (:secret first-body) (:secret second-body))]))
+      (finally
+        ;; Clean up
+        (call-sql "delete_totp_setup" 1)
+        (call-sql "delete_backup_codes" 1))))
+  ;=> [true true true]
   )
 
 (defn complete-totp-setup
