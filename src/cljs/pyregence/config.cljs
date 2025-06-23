@@ -436,7 +436,7 @@
                                                               " - Anthropogenic fires (fires from all causes except lightning)."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "Transmission Lines"]
+                                                              [:strong "Transmission Lines/Overhead Lines"]
                                                               " - Fires ignited in close proximity to overhead electrical transmission lines."]
                                                  :options    {:all    {:opt-label    "All-cause fires"
                                                                        :auto-zoom?   true
