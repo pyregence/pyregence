@@ -132,7 +132,6 @@
       (finally
         ;; Restore original state
         (call-sql "update_user_settings" user-id original-settings))))
-  ;=>> {:status 200 :session some?} 
   ;=>> {:status 200 :session some?}
 
   ;; Test backup code usage
