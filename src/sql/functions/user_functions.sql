@@ -1,7 +1,7 @@
 -- NAMESPACE: user
 -- REQUIRES: clear
 
--- Automatically updates the updated_at timestamp on row modification
+-- Trigger function for automatic updated_at timestamp maintenance
 CREATE OR REPLACE FUNCTION update_updated_at_column() 
 RETURNS TRIGGER AS $$
 BEGIN
@@ -10,7 +10,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Recreate the trigger that was dropped by CASCADE
+-- Apply trigger to user_totp table
 CREATE TRIGGER user_totp_updated_at_trigger
 BEFORE UPDATE ON user_totp
 FOR EACH ROW
