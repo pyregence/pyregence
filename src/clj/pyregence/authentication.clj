@@ -472,7 +472,6 @@
             (data-response "User created successfully but something went wrong when calling auto_add_org_user."
                            {:status 403})))))))
 
-;; TODO hook into UI
 (defn get-current-user-settings
   "Returns settings for the current user."
   [{:keys [user-id]}]
