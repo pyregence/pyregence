@@ -12,10 +12,10 @@
   [& args]
   (if-let [{:keys [action]}
            (get-cli-options
-             (take 1 (filter (set (map name (keys cli-actions))) args))
-             {}
-             cli-actions
-             "cli")]
+            (take 1 (filter (set (map name (keys cli-actions))) args))
+            {}
+            cli-actions
+            "cli")]
     (let [subtask-args (remove #{(name action)} args)]
       (case action
         :server   (apply triangulum.server/-main subtask-args)
