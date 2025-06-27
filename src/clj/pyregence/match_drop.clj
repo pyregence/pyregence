@@ -27,10 +27,11 @@
   (get-config :pyregence.match-drop/match-drop k))
 
 (def ^:private runway-server-pretty-names
-  {"dps"      (get-md-config :dps-name)
-   "elmfire"  (get-md-config :elmfire-name)
-   "gridfire" (get-md-config :gridfire-name)
-   "geosync"  (get-md-config :geosync-name)})
+  (delay
+    {"dps"      (get-md-config :dps-name)
+     "elmfire"  (get-md-config :elmfire-name)
+     "gridfire" (get-md-config :gridfire-name)
+     "geosync"  (get-md-config :geosync-name)}))
 
 ;;==============================================================================
 ;; Helper Functions
@@ -64,7 +65,7 @@
     (str/split % #"-")
     (first %)
     (if pretty?
-      (get runway-server-pretty-names %)
+      (get @runway-server-pretty-names %)
       %)))
 
 ;; FIXME this should eventually be removed -- read the dosctring for more details
@@ -630,7 +631,7 @@
     (let [runway-server-that-finished (get-server-based-on-job-id job-id)]
       (update-match-job! {:match-job-id match-job-id
                           :message      (format "%s has successfully finished running!\n"
-                                                (get runway-server-pretty-names runway-server-that-finished))})
+                                                (get @runway-server-pretty-names runway-server-that-finished))})
       (condp = runway-server-that-finished
         "dps"
         (handle-steps-after-dps-finishes! match-job-id elmfire-request gridfire-request message)
