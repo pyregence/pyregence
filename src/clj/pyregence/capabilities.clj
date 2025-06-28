@@ -328,7 +328,7 @@
    model-times. The selected-set-str is compared against the :filter-set property
    of each layer in the layers atom. Any subsets lead to that layer being returned."
   [_ geoserver-key selected-set-str]
-  (when-not (seq @layers) (set-all-capabilities!))
+  (when-not (seq @layers) (set-all-capabilities! nil))
   (let [selected-set (edn/read-string selected-set-str)
         available    (filterv (fn [layer] (set/subset? selected-set (:filter-set layer)))
                               (geoserver-key @layers))
