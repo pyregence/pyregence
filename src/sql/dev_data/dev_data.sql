@@ -15,7 +15,8 @@ INSERT INTO users
 VALUES
     (1,  'admin@pyr.dev', 'Admin', crypt('admin', gen_salt('bf')), TRUE, '{:timezone :utc}'),
     (2,  'user@pyr.dev', 'User', crypt('user', gen_salt('bf')), TRUE, '{:timezone :utc}'),
-    (23, '2fa@pyr.dev', '2FA', crypt('2fa', gen_salt('bf')), TRUE, '{:timezone :utc, :two-factor :email}'),
+    (23, 'email-2fa@pyr.dev', 'Email 2FA User', crypt('email2fa', gen_salt('bf')), TRUE, '{:timezone :utc, :two-factor :email}'),
+    (24, 'totp-2fa@pyr.dev', 'TOTP 2FA User', crypt('totp2fa', gen_salt('bf')), TRUE, '{:timezone :utc, :two-factor :totp}'),
     (3,  'irmamorales@zzyz.gov', 'Irma Morales', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
     (4,  'constanceamaral@acme.com', 'Constance Amaral', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
     (5,  'vincentcarmona@updateme.com', 'Vincent Carmona', crypt('test456', gen_salt('bf')), true, '{:timezone :utc}'),
@@ -46,6 +47,7 @@ VALUES
     (1, 1, 1),
     (1, 2, 2),
     (1, 23, 2),
+    (1, 24, 2),
     (2, 12, 1),
     (2, 14, 3),
     (2, 17, 2),
@@ -69,3 +71,20 @@ VALUES
     (5, 16, 3),
     (5, 21, 1),
     (5, 22, 1);
+
+-- TOTP setup for test user  
+-- Secret: JBSWY3DPEHPK3PXP (base32 encoded test secret)
+INSERT INTO user_totp (user_id, secret, verified)
+VALUES (24, 'JBSWY3DPEHPK3PXP', TRUE);
+
+-- Backup codes for TOTP test user  
+INSERT INTO user_backup_codes (user_id, code)
+VALUES 
+    (24, 'ABC12345'),
+    (24, 'DEF67890'),
+    (24, 'GHI13579'),
+    (24, 'JKL24680'),
+    (24, 'MNO36912'),
+    (24, 'PQR48024'),
+    (24, 'STU59136'),
+    (24, 'VWX60247');
