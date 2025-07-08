@@ -87,18 +87,18 @@
                                                                      :units           ""
                                                                      :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                      :reverse-legend? false
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0}}
                                                             :slp    {:opt-label       "Slope (degrees)"
                                                                      :filter          "slp"
                                                                      :units           "\u00B0"
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0}}
                                                             :dem    {:opt-label       "Elevation (ft)"
                                                                      :filter          "dem"
                                                                      :units           "ft"
                                                                      :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0}}
                                                             :cc     {:opt-label       "Canopy Cover (%)"
                                                                      :filter          "cc"
                                                                      :units           "%"
@@ -176,6 +176,9 @@
                                                :options    (array-map
                                                             :landfire-2.5.0       {:opt-label    "LANDFIRE 2.5.0 (2025 capable)"
                                                                                    :filter       "landfire-2.5.0"
+                                                                                   :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-2.5.0-2.4.0 {:opt-label    "LANDFIRE 2.5.0/2.4.0 (2025/2024 capable)"
+                                                                                   :filter       "landfire-2.5.0-2.4.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
                                                             :landfire-2.4.0       {:opt-label    "LANDFIRE 2.4.0 (2024 capable)"
                                                                                    :filter       "landfire-2.4.0"
