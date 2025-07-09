@@ -6,8 +6,7 @@
            funcool/decimal                            {:mvn/version "1.0.2"}
            herb/herb                                  {:mvn/version "0.10.0"}
            hiccup/hiccup                              {:mvn/version "2.0.0-alpha2"}
-           one-time/one-time                          {:mvn/version "0.8.0"
-                                                       :exclusions [com.github.kenglxn.qrgen/javase]}
+           one-time/one-time                          {:mvn/version "0.8.0" :exclusions [com.github.kenglxn.qrgen/javase]}
            org.clojure/clojure                        {:mvn/version "1.12.0"}
            org.clojure/clojurescript                  {:mvn/version "1.10.866"}
            org.clojure/core.async                     {:mvn/version "1.2.603"}
@@ -56,4 +55,4 @@
            :server           {:main-opts  ["-m" "triangulum.server"]}
            :systemd          {:main-opts  ["-m" "triangulum.systemd"]}
            :rct-test         {:exec-fn    com.mjdowney.rich-comment-tests.test-runner/run-tests-in-file-tree!
-                              :exec-args  {:dirs #{"src"}}}
+                              :exec-args  {:dirs #{"src"}}}}}
