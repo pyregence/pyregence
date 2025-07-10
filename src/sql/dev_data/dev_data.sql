@@ -1,6 +1,5 @@
 -- NAMESPACE: dev-data
 
--- Adds an organization called "Development"
 INSERT INTO organizations
     (organization_uid, org_unique_id, org_name, email_domains, auto_add, auto_accept)
 VALUES
@@ -9,13 +8,12 @@ VALUES
     (3, 'update-me', 'Update My Setttings and Company', '@updateme.com', FALSE, TRUE),
     (4, 'acme-labs', 'Acme Labs', '@acme.com,@acmelabs.org', TRUE, TRUE),
     (5, 'skunk-works', 'Skunk Works', '@topsecret.net,@seentoomuch.us,@zzyzx.gov,', FALSE, FALSE);
--- Adds an admin and a user
+
 INSERT INTO users
     (user_uid, email, name, password, verified, settings)
 VALUES
     (1,  'admin@pyr.dev', 'Admin', crypt('admin', gen_salt('bf')), TRUE, '{:timezone :utc}'),
     (2,  'user@pyr.dev', 'User', crypt('user', gen_salt('bf')), TRUE, '{:timezone :utc}'),
-    (23, '2fa@pyr.dev', '2FA', crypt('2fa', gen_salt('bf')), TRUE, '{:timezone :utc, :two-factor :email}'),
     (3,  'irmamorales@zzyz.gov', 'Irma Morales', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
     (4,  'constanceamaral@acme.com', 'Constance Amaral', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
     (5,  'vincentcarmona@updateme.com', 'Vincent Carmona', crypt('test456', gen_salt('bf')), true, '{:timezone :utc}'),
@@ -36,16 +34,16 @@ VALUES
     (20, 'brendanwalsh@updateme.com', 'Brendan Walsh', crypt('test123', gen_salt('bf')), FALSE, '{:timezone :utc}'),
     (21, 'octaviusbalarabe@self.com', 'Octavius Balarabe', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
     (22, 'admin@all-orgs.com', 'Dwight Schrute', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}');
-    -- Adds the admin and user to the 'Development' organization
-    -- Adds test organizations: 'Delete Me Inc.', 'Update My Settings and Company',
-    --                          'Acme Labs', and 'Skunk Works'
-    -- Adds test users, an user that spans all test orgs: admin@all-orgs.com
+    (23, 'email-2fa@pyr.dev', 'Email 2FA User', crypt('email2fa', gen_salt('bf')), TRUE, '{:timezone :utc, :two-factor :email}'),
+    (24, 'totp-2fa@pyr.dev', 'TOTP 2FA User', crypt('totp2fa', gen_salt('bf')), TRUE, '{:timezone :utc, :two-factor :totp}'),
+
 INSERT INTO organization_users
     (organization_rid, user_rid, role_rid)
 VALUES
     (1, 1, 1),
     (1, 2, 2),
     (1, 23, 2),
+    (1, 24, 2),
     (2, 12, 1),
     (2, 14, 3),
     (2, 17, 2),
@@ -69,3 +67,20 @@ VALUES
     (5, 16, 3),
     (5, 21, 1),
     (5, 22, 1);
+
+-- TOTP setup for totp-2fa@pyr.dev user
+-- Secret: JBSWY3DPEHPK3PXP (base32 encoded test secret)
+INSERT INTO user_totp (user_id, secret, verified)
+VALUES (24, 'JBSWY3DPEHPK3PXP', TRUE);
+
+-- Backup codes for TOTP test user
+INSERT INTO user_backup_codes (user_id, code)
+VALUES
+    (24, 'ABC12345'),
+    (24, 'DEF67890'),
+    (24, 'GHI13579'),
+    (24, 'JKL24680'),
+    (24, 'MNO36912'),
+    (24, 'PQR48024'),
+    (24, 'STU59136'),
+    (24, 'VWX60247');

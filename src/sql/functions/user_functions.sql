@@ -1,6 +1,21 @@
 -- NAMESPACE: user
 -- REQUIRES: clear
 
+-- Trigger function for automatic updated_at timestamp maintenance
+CREATE OR REPLACE FUNCTION update_updated_at_column() 
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply trigger to user_totp table
+CREATE TRIGGER user_totp_updated_at_trigger
+BEFORE UPDATE ON user_totp
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
 CREATE OR REPLACE FUNCTION trim_space(_str text)
  RETURNS text as $$
 
