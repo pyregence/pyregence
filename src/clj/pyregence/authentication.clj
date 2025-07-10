@@ -61,9 +61,8 @@
   ;=>> {:status 200 :body string?}
 
   ;; Test login with email 2FA
-  (log-in nil "email-2fa@pyr.dev" "email2fa")
+  (log-in nil "email-2fa@pyr.dev" "email2fa"))
   ;=>> {:status 200 :body string?}
-  )
 
 (defn log-out [_] (data-response "" {:session nil}))
 
@@ -158,9 +157,8 @@
   ;=>> {:status 200 :session some?}
 
   ;; Test no 2FA configured
-  (verify-2fa nil "user@pyr.dev" "123456")
+  (verify-2fa nil "user@pyr.dev" "123456"))
   ;=>> {:status 403 :body string?}
-  )
 
 ;;; TOTP Management
 
@@ -232,9 +230,8 @@
       (finally
         ;; Clean up
         (call-sql "delete_totp_setup" 1)
-        (call-sql "delete_backup_codes" 1))))
+        (call-sql "delete_backup_codes" 1)))))
   ;=> [true true true]
-  )
 
 (defn complete-totp-setup
   "Completes TOTP setup by validating the provided code against the unverified setup."
@@ -291,9 +288,8 @@
     (call-sql "delete_totp_setup" 1)
     (call-sql "create_totp_setup" 1 "TESTSECRET")
     (let [valid-code (str (totp/get-current-totp-code "TESTSECRET"))]
-      (complete-totp-setup {:user-id 1} valid-code)))
+      (complete-totp-setup {:user-id 1} valid-code))))
   ;=>> {:status 200}
-  )
 
 (defn get-backup-codes
   "Returns the backup codes for the current user if TOTP is enabled."
@@ -325,9 +321,8 @@
   ;=>> {:status 200, :body "{:backup-codes []}"}
 
   ;; Test user with TOTP
-  (get-backup-codes {:user-id 24})
+  (get-backup-codes {:user-id 24}))
   ;=>> {:status 200}
-  )
 
 (defn regenerate-backup-codes
   "Regenerates backup codes for the current user. Requires current TOTP code for security."

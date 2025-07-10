@@ -1,6 +1,5 @@
 (ns pyregence.totp
   (:require [one-time.core  :as ot]
-            [one-time.codec :as codec]
             [one-time.uri   :as uri])
   (:import [java.security SecureRandom]))
 
@@ -30,8 +29,8 @@
   "Generate n random backup codes.
   Each code is 8 characters, alphanumeric."
   [n]
-  (let [chars "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        random (SecureRandom.)
+  (let [chars    "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        random   (SecureRandom.)
         gen-code (fn []
                    (->> (repeatedly 8 #(.charAt chars (.nextInt random (count chars))))
                         (apply str)))]
@@ -41,4 +40,3 @@
   "Get the current TOTP code for a secret (useful for testing)"
   [secret]
   (ot/get-totp-token secret))
-
