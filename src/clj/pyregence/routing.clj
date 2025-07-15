@@ -1,5 +1,6 @@
 (ns pyregence.routing
-  (:require [pyregence.authentication :as authentication]
+  (:require [pyregence.analytics      :as analytics]
+            [pyregence.authentication :as authentication]
             [pyregence.cameras        :as cameras]
             [pyregence.capabilities   :as capabilities]
             [pyregence.email          :as email]
