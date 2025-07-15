@@ -174,11 +174,13 @@
           (email/send-email! nil email :2fa)
           (data-response {:email email :require-2fa true}))
         ;; No 2FA required
-        (data-response "" {:session (merge {:user-id            (:user_id user)
-                                            :user-email         (:user_email user)
-                                            :match-drop-access? (:match_drop_access user)
-                                            :super-admin?       (:super_admin user)}
-                                           (get-config :app :client-keys))})))
+        (do
+          (call-sql "set_users_last_login_date_to_now" user-id)
+          (data-response "" {:session (merge {:user-id            (:user_id user)
+                                              :user-email         (:user_email user)
+                                              :match-drop-access? (:match_drop_access user)
+                                              :super-admin?       (:super_admin user)}
+                                             (get-config :app :client-keys))}))))
     (data-response "" {:status 403})))
 
 (defn log-out [_] (data-response "" {:session nil}))
@@ -256,11 +258,13 @@
   "Verifies a 2FA code"
   [_ email token]
   (if-let [user (first (call-sql "verify_user_2fa" email token))]
-    (data-response "" {:session (merge {:user-id            (:user_id user)
-                                        :user-email         (:user_email user)
-                                        :match-drop-access? (:match_drop_access user)
-                                        :super-admin?       (:super_admin user)}
-                                       (get-config :app :client-keys))})
+    (do
+      (call-sql "set_users_last_login_date_to_now" (:user_id user))
+      (data-response "" {:session (merge {:user-id            (:user_id user)
+                                          :user-email         (:user_email user)
+                                          :match-drop-access? (:match_drop_access user)
+                                          :super-admin?       (:super_admin user)}
+                                         (get-config :app :client-keys))}))
     (data-response "" {:status 403})))
 
 (defn verify-user-email [_ email token]
