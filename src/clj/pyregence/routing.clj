@@ -141,6 +141,8 @@
    ;; Red Flag API
    [:post "/clj/get-red-flag-layer"]            {:handler     (clj-handler red-flag/get-red-flag-layer)
                                                  :auth-type   :token
+                                                 :auth-action :block}
+
    ;; Analytics API
    [:get "/clj/get-all-users-last-login-dates"] {:handler     (clj-handler analytics/get-all-users-last-login-dates)
                                                  :auth-type   #{:analyst}
