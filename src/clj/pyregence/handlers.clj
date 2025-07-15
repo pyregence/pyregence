@@ -33,9 +33,11 @@
         valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))
         is-admin?              (sql-primitive (call-sql "get_user_admin_access" user-id))
         has-match-drop-access? (:match-drop-access? session)
-        super-admin?           (:super-admin? session)]
+        super-admin?           (:super-admin? session)
+        is-analyst?            (sql-primitive (call-sql "is_user_an_analyst" user-id))]
     (every? (fn [auth-type]
               (case auth-type
+                :analyst     is-analyst?
                 :admin       is-admin?
                 :super-admin super-admin?
                 :match-drop  has-match-drop-access?
