@@ -444,3 +444,37 @@ BEGIN
     VALUES
         (_org_id, _user_id, _role);
 END $$;
+
+-- Sets the given users last login date to now.
+CREATE OR REPLACE FUNCTION set_users_last_login_date_to_now(_user_id integer)
+  RETURNS void AS $$
+  UPDATE users
+  SET last_login_date = CURRENT_TIMESTAMP
+  WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
+-- Returns a table of all the users last login date and some metadata.
+CREATE OR REPLACE FUNCTION get_all_users_last_login_dates()
+  RETURNS TABLE (
+    email text,
+    name text,
+    organization text,
+    role text,
+    last_login_date timestamptz) AS $$
+    SELECT u.email, u.name, o.org_name, r.title as role, u.last_login_date
+    FROM users AS u
+    JOIN organization_users ou ON ou.user_rid = u.user_uid
+    JOIN organizations o ON ou.organization_rid = o.organization_uid
+    JOIN roles r ON r.role_uid = ou.role_rid
+
+$$ LANGUAGE SQL;
+
+-- Returns true if user is an analyst.
+CREATE OR REPLACE FUNCTION is_user_an_analyst(_user_id integer)
+  RETURNS boolean AS $$
+  SELECT analyst
+  FROM users
+  WHERE user_uid = _user_id;
+
+$$ LANGUAGE SQL;
