@@ -14,4 +14,4 @@
               sc/vectorize
               (csv/write-csv rows))
          (str rows))
-       (assoc {:status  200 :headers {"Content-Type" "text/csv"}} :body)))
+       (assoc {:status 200 :headers {"Content-Type" "text/csv"}} :body)))
