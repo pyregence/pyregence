@@ -54,7 +54,7 @@
       (symbol)))
 
 (defn clj-handler
-    "Wraps a backend Clojure function for use in the CLJ HTTP API routing table (defined in `routing.clj`).
+  "Wraps a backend Clojure function for use in the CLJ HTTP API routing table (defined in `routing.clj`).
 
      This handler extracts `:clj-args` from the incoming request (either EDN or JSON),
      and injects the user's session as the first argument when calling the target function.
