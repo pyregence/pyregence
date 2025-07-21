@@ -18,7 +18,7 @@ CREATE TABLE users (
     verification_token text DEFAULT NULL,
     token_expiration   TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     match_drop_access  boolean DEFAULT FALSE,
-    last_login_date    TIMESTAMP WITH TIME ZONE DEFAULT NULL
+    last_login_date    TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     analyst            boolean DEFAULT FALSE
 );
 
