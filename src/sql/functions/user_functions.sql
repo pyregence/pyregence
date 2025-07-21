@@ -36,7 +36,8 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    user_id integer,
    user_email text,
    match_drop_access boolean,
-   super_admin boolean
+   super_admin boolean,
+   analyst boolean
  ) AS $$
 
     SELECT user_uid, email, match_drop_access, super_admin
@@ -157,7 +158,8 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
     user_id integer,
     user_email text,
     match_drop_access boolean,
-    super_admin boolean
+    super_admin boolean,
+    analyst boolean
  ) AS $$
 
     WITH updated AS (
