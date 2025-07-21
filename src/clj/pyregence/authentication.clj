@@ -17,7 +17,8 @@
     (data-response "" {:session (merge {:match-drop-access? (:match_drop_access user-data)
                                         :super-admin?       (:super_admin user-data)
                                         :user-email         (:user_email user-data)
-                                        :user-id            (:user_id user-data)}
+                                        :user-id            (:user_id user-data)
+                                        :analyst?           (:analyst? user-data)}
                                        (get-config :app :client-keys))})))
 
 (defn- is-user-admin-of-org? [user-id org-id]

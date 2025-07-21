@@ -484,12 +484,3 @@ CREATE OR REPLACE FUNCTION get_all_users_last_login_dates()
     JOIN roles r ON r.role_uid = ou.role_rid
 
 $$ LANGUAGE SQL;
-
--- Returns true if user is an analyst.
-CREATE OR REPLACE FUNCTION is_user_an_analyst(_user_id integer)
-  RETURNS boolean AS $$
-  SELECT analyst
-  FROM users
-  WHERE user_uid = _user_id;
-
-$$ LANGUAGE SQL;
