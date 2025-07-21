@@ -34,6 +34,11 @@
 
 ;;; Authentication & Session Management
 
+(defn successful-login
+  [{:keys [user-id] :as user}]
+  (call-sql "set_users_last_login_date_to_now" user-id)
+  (create-session-from-user-data user))
+
 (defn log-in
   "Authenticates user and determines 2FA requirements."
   [_ email password]
@@ -45,7 +50,7 @@
         :totp  (data-response {:email email :require-2fa true :method "totp"})
         :email (do (email/send-email! nil email :2fa)
                    (data-response {:email email :require-2fa true :method "email"}))
-        (create-session-from-user-data user)))
+        (successful-login user)))
     (data-response "" {:status 403})))
 
 ^:rct/test
@@ -95,13 +100,13 @@
         (if-let [{:keys [secret] :as user} (first (call-sql "get_user_with_totp" user-id))]
           (if (or (totp/validate-totp-code secret code)
                   (sql-primitive (call-sql "use_backup_code" user-id code)))
-            (create-session-from-user-data user)
+            (successful-login user)
             (data-response "Invalid code" {:status 403}))
           (data-response "TOTP not configured" {:status 403}))
 
         :email
         (if-let [user (first (call-sql "verify_user_2fa" email code))]
-          (create-session-from-user-data user)
+          (successful-login user)
           (data-response "Invalid email verification code" {:status 403}))
 
         (data-response "2FA not configured for this account" {:status 403})))
