@@ -106,7 +106,8 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _token
     user_id integer,
     user_email text,
     match_drop_access boolean,
-    super_admin boolean
+    super_admin boolean,
+    analyst boolean
   ) AS $$
 
     UPDATE users
@@ -119,7 +120,7 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _token
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, match_drop_access, super_admin
+    SELECT user_uid, email, match_drop_access, super_admin, analyst
     FROM users
     WHERE email = lower_trim(_email)
         AND verified = TRUE;
@@ -132,7 +133,8 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
     user_id integer,
     user_email text,
     match_drop_access boolean,
-    super_admin boolean
+    super_admin boolean,
+    analyst boolean
   ) AS $$
 
     UPDATE users
@@ -145,7 +147,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
         AND (token_expiration IS NULL OR token_expiration > NOW())
     RETURNING user_uid;
 
-    SELECT user_uid, email, match_drop_access, super_admin
+    SELECT user_uid, email, match_drop_access, super_admin, analyst
     FROM users
     WHERE email = lower_trim(_email)
         AND verified = TRUE;
