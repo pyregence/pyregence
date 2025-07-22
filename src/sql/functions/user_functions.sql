@@ -2,7 +2,7 @@
 -- REQUIRES: clear
 
 -- Trigger function for automatic updated_at timestamp maintenance
-CREATE OR REPLACE FUNCTION update_updated_at_column() 
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
@@ -36,10 +36,11 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    user_id integer,
    user_email text,
    match_drop_access boolean,
-   super_admin boolean
+   super_admin boolean,
+   analyst boolean
  ) AS $$
 
-    SELECT user_uid, email, match_drop_access, super_admin
+    SELECT user_uid, email, match_drop_access, super_admin, analyst
     FROM users
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
@@ -105,7 +106,8 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _token
     user_id integer,
     user_email text,
     match_drop_access boolean,
-    super_admin boolean
+    super_admin boolean,
+    analyst boolean
   ) AS $$
 
     UPDATE users
@@ -118,7 +120,7 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _token
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, match_drop_access, super_admin
+    SELECT user_uid, email, match_drop_access, super_admin, analyst
     FROM users
     WHERE email = lower_trim(_email)
         AND verified = TRUE;
@@ -131,7 +133,8 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
     user_id integer,
     user_email text,
     match_drop_access boolean,
-    super_admin boolean
+    super_admin boolean,
+    analyst boolean
   ) AS $$
 
     UPDATE users
@@ -144,7 +147,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
         AND (token_expiration IS NULL OR token_expiration > NOW())
     RETURNING user_uid;
 
-    SELECT user_uid, email, match_drop_access, super_admin
+    SELECT user_uid, email, match_drop_access, super_admin, analyst
     FROM users
     WHERE email = lower_trim(_email)
         AND verified = TRUE;
@@ -157,7 +160,8 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
     user_id integer,
     user_email text,
     match_drop_access boolean,
-    super_admin boolean
+    super_admin boolean,
+    analyst boolean
  ) AS $$
 
     WITH updated AS (
@@ -169,7 +173,7 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
             AND verification_token IS NOT NULL
             AND token_expiration > NOW()
             AND verified = TRUE
-        RETURNING user_uid, email, match_drop_access, super_admin
+        RETURNING user_uid, email, match_drop_access, super_admin, analyst
     )
     SELECT * FROM updated;
 
@@ -459,3 +463,28 @@ BEGIN
     VALUES
         (_org_id, _user_id, _role);
 END $$;
+
+-- Sets the given users last login date to now.
+CREATE OR REPLACE FUNCTION set_users_last_login_date_to_now(_user_id integer)
+  RETURNS void AS $$
+  UPDATE users
+  SET last_login_date = CURRENT_TIMESTAMP
+  WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
+-- Returns a table of all the users last login date and some metadata.
+CREATE OR REPLACE FUNCTION get_all_users_last_login_dates()
+  RETURNS TABLE (
+    email text,
+    name text,
+    organization text,
+    role text,
+    last_login_date timestamptz) AS $$
+    SELECT u.email, u.name, o.org_name, r.title as role, u.last_login_date
+    FROM users AS u
+    JOIN organization_users ou ON ou.user_rid = u.user_uid
+    JOIN organizations o ON ou.organization_rid = o.organization_uid
+    JOIN roles r ON r.role_uid = ou.role_rid
+
+$$ LANGUAGE SQL;

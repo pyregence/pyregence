@@ -48,14 +48,16 @@ CREATE OR REPLACE FUNCTION get_user_with_totp(_user_id integer)
     user_email text,
     match_drop_access boolean,
     super_admin boolean,
-    secret text
+    secret text,
+    analyst boolean
  ) AS $$
 
     SELECT u.user_uid,
            u.email,
            u.match_drop_access,
            u.super_admin,
-           t.secret
+           t.secret,
+           u.analyst
     FROM user_totp t
     JOIN users u ON u.user_uid = t.user_id
     WHERE t.user_id = _user_id
