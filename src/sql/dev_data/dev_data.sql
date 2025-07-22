@@ -33,9 +33,9 @@ VALUES
     (19, 'quinnkoopman@updateme.com', 'Quinn Koopman', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
     (20, 'brendanwalsh@updateme.com', 'Brendan Walsh', crypt('test123', gen_salt('bf')), FALSE, '{:timezone :utc}'),
     (21, 'octaviusbalarabe@self.com', 'Octavius Balarabe', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
-    (22, 'admin@all-orgs.com', 'Dwight Schrute', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}');
+    (22, 'admin@all-orgs.com', 'Dwight Schrute', crypt('test456', gen_salt('bf')), TRUE, '{:timezone :utc}'),
     (23, 'email-2fa@pyr.dev', 'Email 2FA User', crypt('email2fa', gen_salt('bf')), TRUE, '{:timezone :utc, :two-factor :email}'),
-    (24, 'totp-2fa@pyr.dev', 'TOTP 2FA User', crypt('totp2fa', gen_salt('bf')), TRUE, '{:timezone :utc, :two-factor :totp}'),
+    (24, 'totp-2fa@pyr.dev', 'TOTP 2FA User', crypt('totp2fa', gen_salt('bf')), TRUE, '{:timezone :utc, :two-factor :totp}');
 
 INSERT INTO organization_users
     (organization_rid, user_rid, role_rid)
