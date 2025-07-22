@@ -34,7 +34,7 @@
 
 ;;; Authentication & Session Management
 
-(defn successful-login
+(defn- successful-login
   [{:keys [user-id] :as user}]
   (call-sql "set_users_last_login_date_to_now" user-id)
   (create-session-from-user-data user))
