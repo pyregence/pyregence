@@ -40,7 +40,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    analyst boolean
  ) AS $$
 
-    SELECT user_uid, email, match_drop_access, super_admin
+    SELECT user_uid, email, match_drop_access, super_admin, analyst
     FROM users
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
@@ -171,7 +171,7 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
             AND verification_token IS NOT NULL
             AND token_expiration > NOW()
             AND verified = TRUE
-        RETURNING user_uid, email, match_drop_access, super_admin
+        RETURNING user_uid, email, match_drop_access, super_admin, analyst
     )
     SELECT * FROM updated;
 
