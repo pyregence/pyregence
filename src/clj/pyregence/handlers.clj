@@ -34,7 +34,7 @@
         is-admin?              (sql-primitive (call-sql "get_user_admin_access" user-id))
         has-match-drop-access? (:match-drop-access? session)
         super-admin?           (:super-admin? session)
-        is-analyst?            (:analyst session)]
+        is-analyst?            (:analyst? session)]
     (every? (fn [auth-type]
               (case auth-type
                 :analyst     is-analyst?
