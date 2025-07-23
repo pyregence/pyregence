@@ -1,10 +1,10 @@
 (ns pyregence.authentication
-  (:require [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive]]
-            [pyregence.email     :as email]
-            [triangulum.response :refer [data-response]]
+  (:require [pyregence.email     :as email]
             [pyregence.totp      :as totp]
-            [pyregence.utils     :refer [nil-on-error]]))
+            [pyregence.utils     :refer [nil-on-error]]
+            [triangulum.config   :refer [get-config]]
+            [triangulum.database :refer [call-sql sql-primitive]]
+            [triangulum.response :refer [data-response]]))
 
 ;;; Helper Functions
 
@@ -32,6 +32,25 @@
          (read-string settings-str)))
       {}))
 
+(defn- cleanup-totp-data!
+  "Removes all TOTP-related data for a user."
+  [user-id]
+  (call-sql "delete_totp_setup" user-id)
+  (call-sql "delete_backup_codes" user-id))
+
+(defn- get-user-settings
+  "Retrieves and parses user settings."
+  [user-id]
+  (-> (call-sql "get_user_settings" user-id)
+      first
+      :settings
+      parse-user-settings))
+
+(defn- save-user-settings!
+  "Saves user settings to the database."
+  [user-id settings]
+  (call-sql "update_user_settings" user-id (pr-str settings)))
+
 ;;; Authentication & Session Management
 
 (defn- successful-login
@@ -44,8 +63,7 @@
   [_ email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
     (let [user-id (:user_id user)
-          {:keys [settings]} (first (call-sql "get_user_settings" user-id))
-          two-factor (:two-factor (parse-user-settings settings))]
+          two-factor (:two-factor (get-user-settings user-id))]
       (case two-factor
         :totp  (data-response {:email email :require-2fa true :method "totp"})
         :email (do (email/send-email! nil email :2fa)
@@ -60,7 +78,9 @@
   ;=>> {:status 403}
 
   ;; Test valid login without 2FA
-  (log-in nil "user@pyr.dev" "user")
+  (do
+    (save-user-settings! 2 {})
+    (log-in nil "user@pyr.dev" "user"))
   ;=>> {:status 200 :session some?}
 
   ;; Test login with TOTP 2FA
@@ -68,8 +88,9 @@
   ;=>> {:status 200 :body string?}
 
   ;; Test login with email 2FA
-  (log-in nil "email-2fa@pyr.dev" "email2fa"))
+  (log-in nil "email-2fa@pyr.dev" "email2fa")
   ;=>> {:status 200 :body string?}
+  )
 
 (defn log-out [_] (data-response "" {:session nil}))
 
@@ -93,8 +114,7 @@
   "Verifies 2FA code for email/TOTP authentication."
   [_ email code]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
-    (let [{:keys [settings]} (first (call-sql "get_user_settings" user-id))
-          two-factor (:two-factor (parse-user-settings settings))]
+    (let [two-factor (:two-factor (get-user-settings user-id))]
       (case two-factor
         :totp
         (if-let [{:keys [secret] :as user} (first (call-sql "get_user_with_totp" user-id))]
@@ -183,8 +203,10 @@
     :else
     (if-let [{:keys [secret verified]} (first (call-sql "get_totp_setup" user-id))]
       (when-not verified
-        (let [existing-codes (map :code (call-sql "get_backup_codes" user-id))]
-          (data-response {:backup-codes existing-codes
+        (let [existing-codes (call-sql "get_backup_codes" user-id)]
+          (data-response {:backup-codes (mapv (fn [{:keys [code used]}]
+                                                {:code code :used? used})
+                                              existing-codes)
                           :qr-uri       (totp/generate-totp-uri user-email secret)
                           :resuming     true
                           :secret       secret})))
@@ -194,7 +216,7 @@
         (call-sql "delete_backup_codes" user-id)
         (call-sql "create_totp_setup" user-id secret)
         (call-sql "create_backup_codes" user-id (into-array String backup-codes))
-        (data-response {:backup-codes backup-codes
+        (data-response {:backup-codes (mapv (fn [code] {:code code :used? false}) backup-codes)
                         :qr-uri       (totp/generate-totp-uri user-email secret)
                         :resuming     false
                         :secret       secret})))))
@@ -259,12 +281,8 @@
         :else
         (do
           (call-sql "mark_totp_verified" user-id)
-          (let [settings (-> (call-sql "get_user_settings" user-id)
-                             first
-                             :settings
-                             parse-user-settings
-                             (assoc :two-factor :totp))]
-            (call-sql "update_user_settings" user-id (pr-str settings)))
+          (save-user-settings! user-id
+                               (assoc (get-user-settings user-id) :two-factor :totp))
           (data-response {:message "TOTP setup completed successfully"})))
       (data-response "No TOTP setup in progress" {:status 400}))))
 
@@ -332,7 +350,7 @@
   ;=>> {:status 200}
 
 (defn regenerate-backup-codes
-  "Regenerates backup codes for the current user. Requires current TOTP code for security."
+  "Regenerates backup codes for the current user. Requires current TOTP code or backup code for security."
   [{:keys [user-id]} code]
   (cond
     (nil? user-id)
@@ -344,15 +362,16 @@
         (not verified)
         (data-response "TOTP is not enabled for this account" {:status 400})
 
-        (not (totp/validate-totp-code secret code))
-        (data-response "Invalid TOTP code" {:status 403})
+        (not (or (totp/validate-totp-code secret code)
+                 (sql-primitive (call-sql "use_backup_code" user-id code))))
+        (data-response "Invalid code" {:status 403})
 
         :else
         (do
           (call-sql "delete_backup_codes" user-id)
           (let [new-codes (totp/generate-backup-codes 10)]
             (call-sql "create_backup_codes" user-id (into-array String new-codes))
-            (data-response {:backup-codes new-codes}))))
+            (data-response {:backup-codes (mapv (fn [code] {:code code :used? false}) new-codes)}))))
       (data-response "TOTP is not enabled for this account" {:status 400}))))
 
 ^:rct/test
@@ -367,7 +386,7 @@
 
   ;; Test invalid TOTP code
   (regenerate-backup-codes {:user-id 24} "wrong")
-  ;=>> {:status 403, :body "\"Invalid TOTP code\""}
+  ;=>> {:status 403, :body "\"Invalid code\""}
 
   ;; Test successful regeneration
   (let [user-id 24
@@ -382,7 +401,58 @@
       (seq? (:backup-codes (read-string (:body response)))))))
   ;=> true
 
-(defn remove-totp
+(defn enable-email-2fa
+  "Enables email-based 2FA after verifying the provided code."
+  [{:keys [user-id user-email]} code]
+  (cond
+    (not user-id)
+    (data-response "Not authenticated" {:status 401})
+
+    (not code)
+    (data-response "Verification code required" {:status 400})
+
+    :else
+    (let [settings (get-user-settings user-id)]
+      (cond
+        (= :email (:two-factor settings))
+        (data-response "Email 2FA is already enabled" {:status 400})
+
+        (empty? (call-sql "verify_user_2fa" user-email code))
+        (data-response "Invalid verification code" {:status 403})
+
+        :else
+        (do
+          (when (= :totp (:two-factor settings))
+            (cleanup-totp-data! user-id))
+          (save-user-settings! user-id (assoc settings :two-factor :email))
+          (data-response {:message "Email 2FA has been enabled"}))))))
+
+^:rct/test
+(comment
+  ;; Test not authenticated
+  (enable-email-2fa {} "123456")
+  ;=>> {:status 401}
+
+  ;; Test no code provided
+  (enable-email-2fa {:user-id 2 :user-email "user@pyr.dev"} nil)
+  ;=>> {:status 400}
+
+  ;; Test invalid code
+  (do
+    (save-user-settings! 2 {})
+    (enable-email-2fa {:user-id 2 :user-email "user@pyr.dev"} "wrong"))
+  ;=>> {:status 403}
+
+  ;; Test already has email 2FA
+  (let [user-id 2
+        _ (save-user-settings! user-id {:timezone :utc :two-factor :email})
+        result (enable-email-2fa {:user-id user-id :user-email "user@pyr.dev"} "123456")]
+    (save-user-settings! user-id {})
+    result)
+  ;=>> {:status 400}
+  )
+
+(defn- remove-totp
   "Removes TOTP authentication for the current user. Requires current TOTP code for security."
   [{:keys [user-id]} code]
   (cond
@@ -395,20 +465,16 @@
         (not verified)
         (data-response "TOTP is not enabled for this account" {:status 400})
 
-        (not (totp/validate-totp-code secret code))
-        (data-response "Invalid TOTP code" {:status 403})
+        (not (or (totp/validate-totp-code secret code)
+                 (sql-primitive (call-sql "use_backup_code" user-id code))))
+        (data-response "Invalid code" {:status 403})
 
         :else
         (do
-          (call-sql "delete_totp_setup" user-id)
-          (call-sql "delete_backup_codes" user-id)
-          (let [settings (-> (call-sql "get_user_settings" user-id)
-                             first
-                             :settings
-                             parse-user-settings
-                             (dissoc :two-factor))]
-            (call-sql "update_user_settings" user-id (pr-str settings)))
-          (data-response {:message "TOTP 2FA has been disabled"})))
+          (cleanup-totp-data! user-id)
+          (let [settings (dissoc (get-user-settings user-id) :two-factor)]
+            (save-user-settings! user-id settings))
+          (data-response {:message "Two-factor authentication has been disabled"})))
       (data-response "TOTP is not enabled for this account" {:status 400}))))
 
 ^:rct/test
@@ -423,14 +489,64 @@
 
   ;; Test invalid TOTP code
   (remove-totp {:user-id 24} "wrong")
-  ;=>> {:status 403, :body "\"Invalid TOTP code\""}
+  ;=>> {:status 403, :body "\"Invalid code\""}
 
   ;; Test successful removal
   (let [user-id 24
         secret (:secret (first (call-sql "get_totp_setup" user-id)))
         valid-code (str (totp/get-current-totp-code secret))]
-    (remove-totp {:user-id user-id} valid-code)))
-  ;=>> {:status 200, :body "{:message \"TOTP 2FA has been disabled\"}"}
+    (remove-totp {:user-id user-id} valid-code))
+  ;=>> {:status 200, :body "{:message \"Two-factor authentication has been disabled\"}"}
+  )
+
+(defn disable-2fa
+  "Disables any 2FA method for the current user after verification."
+  [{:keys [user-id user-email]} code]
+  (if-not user-id
+    (data-response "Not authenticated" {:status 401})
+    (let [settings (get-user-settings user-id)
+          two-factor (:two-factor settings)]
+      (cond
+        (nil? two-factor)
+        (data-response "2FA is not enabled" {:status 400})
+
+        (= two-factor :totp)
+        (remove-totp {:user-id user-id} code)
+
+        (= two-factor :email)
+        (if (first (call-sql "verify_user_2fa" user-email code))
+          (do
+            (save-user-settings! user-id (dissoc settings :two-factor))
+            (data-response {:message "Two-factor authentication has been disabled"}))
+          (data-response "Invalid verification code" {:status 403}))
+
+        :else
+        (data-response "Unknown 2FA method" {:status 400})))))
+
+^:rct/test
+(comment
+  (disable-2fa {} "123456")
+  ;=>> {:status 401, :body "\"Not authenticated\""}
+
+  (do
+    (save-user-settings! 1 {})
+    (disable-2fa {:user-id 1} "123456"))
+  ;=>> {:status 400, :body "\"2FA is not enabled\""}
+
+  (let [user-id 14]
+    (save-user-settings! user-id {:two-factor :email})
+    (disable-2fa {:user-id user-id :user-email "email-2fa@pyr.dev"} "wrong"))
+  ;=>> {:status 403, :body "\"Invalid verification code\""}
+
+  (let [user-id 14
+        email "email-2fa@pyr.dev"
+        _ (require '[pyregence.email :as email])
+        output (with-out-str (email/mock-send-2fa-code email))
+        code (second (re-find #"2FA CODE for .* : (\d+)" output))]
+    (save-user-settings! user-id {:two-factor :email})
+    (disable-2fa {:user-id user-id :user-email email} code))
+  ;=>> {:status 200, :body "{:message \"Two-factor authentication has been disabled\"}"}
+  )
 
 ;;; User Management
 
@@ -499,9 +615,9 @@
 
 (defn get-current-user-settings
   "Returns settings for the current user."
-  [{:keys [user-id]}]
+  [{:keys [user-id user-email]}]
   (if-let [user-info (first (call-sql "get_user_settings" user-id))]
-    (data-response user-info)
+    (data-response (assoc user-info :email user-email))
     (data-response "User not found" {:status 403})))
 
 ;; TODO hook into UI

@@ -21,7 +21,10 @@
                 :aria-label "Visit the admin page"
                 :href       "/admin"}
             [svg/admin-user :height "25px"]]])
-        [:label {:style    {:cursor "pointer" :margin ".16rem .2rem 0 0"}
+        [:label {:style    {:cursor "pointer" :margin-right "1rem"}
+                 :on-click #(u-browser/jump-to-url! "/settings")}
+         "2FA Settings"]
+        [:label {:style    {:cursor "pointer"}
                  :on-click (fn []
                              (go (<! (u-async/call-clj-async! "log-out"))
                                  (-> js/window .-location .reload)))}
