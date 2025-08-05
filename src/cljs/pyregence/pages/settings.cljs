@@ -24,17 +24,6 @@
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- parse-user-settings [settings]
-  (cond
-    (nil? settings) {}
-    (map? settings) settings
-    (string? settings)
-    (try
-      (reader/read-string settings)
-      (catch :default e
-        (js/console.error "Failed to parse settings:" settings e)
-        {}))
-    :else {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Functions
@@ -44,14 +33,21 @@
   (go
     (let [response (<! (u-async/call-clj-async! "get-current-user-settings"))]
       (if (and (:success response) (:body response))
-        (let [parsed-body (reader/read-string (:body response))]
-          (swap! state assoc :loading false :user parsed-body))
+        (let [parsed-body (reader/read-string (:body response))
+              settings (if (string? (:settings parsed-body))
+                        (try 
+                          (reader/read-string (:settings parsed-body))
+                          (catch :default _ {}))
+                        (or (:settings parsed-body) {}))]
+          (swap! state assoc 
+                 :loading false 
+                 :user (assoc parsed-body :settings settings)))
         (swap! state assoc :loading false)))))
 
 (defn- handle-enable-email-2fa! []
   (go
     (let [code (:code @state)
-          settings (parse-user-settings (:settings (:user @state)))
+          settings (:settings (:user @state))
           two-factor (:two-factor settings)
           email (:email (:user @state))]
       (cond
@@ -126,7 +122,7 @@
 (defn- handle-disable-2fa! []
   (go
     (let [code (:code @state)
-          settings (parse-user-settings (:settings (:user @state)))
+          settings (:settings (:user @state))
           two-factor (:two-factor settings)
           email (:email (:user @state))]
       (cond
@@ -392,7 +388,7 @@
     :reagent-render
     (fn []
       (let [{:keys [loading user]} @state
-            settings (parse-user-settings (:settings user))
+            settings (:settings user)
             two-factor (:two-factor settings)]
         [:div {:style {:display         "flex"
                        :justify-content "center"
