@@ -32,12 +32,6 @@
          (read-string settings-str)))
       {}))
 
-(defn- cleanup-totp-data!
-  "Removes all TOTP-related data for a user."
-  [user-id]
-  (call-sql "delete_totp_setup" user-id)
-  (call-sql "delete_backup_codes" user-id))
-
 (defn- get-user-settings
   "Retrieves and parses user settings."
   [user-id]
@@ -213,9 +207,7 @@
 
       (let [secret (totp/generate-secret)
             backup-codes (totp/generate-backup-codes 10)]
-        (call-sql "delete_backup_codes" user-id)
-        (call-sql "create_totp_setup" user-id secret)
-        (call-sql "create_backup_codes" user-id (into-array String backup-codes))
+        (call-sql "begin_totp_setup" user-id secret (into-array String backup-codes))
         (data-response {:backup-codes (mapv (fn [code] {:code code :used? false}) backup-codes)
                         :qr-uri       (totp/generate-totp-uri user-email secret)
                         :resuming     false
@@ -368,9 +360,8 @@
 
         :else
         (do
-          (call-sql "delete_backup_codes" user-id)
           (let [new-codes (totp/generate-backup-codes 10)]
-            (call-sql "create_backup_codes" user-id (into-array String new-codes))
+            (call-sql "regenerate_backup_codes" user-id (into-array String new-codes))
             (data-response {:backup-codes (mapv (fn [code] {:code code :used? false}) new-codes)}))))
       (data-response "TOTP is not enabled for this account" {:status 400}))))
 
@@ -423,7 +414,7 @@
         :else
         (do
           (when (= :totp (:two-factor settings))
-            (cleanup-totp-data! user-id))
+            (call-sql "cleanup_totp_data" user-id))
           (save-user-settings! user-id (assoc settings :two-factor :email))
           (data-response {:message "Email 2FA has been enabled"}))))))
 
@@ -471,7 +462,7 @@
 
         :else
         (do
-          (cleanup-totp-data! user-id)
+          (call-sql "cleanup_totp_data" user-id)
           (let [settings (dissoc (get-user-settings user-id) :two-factor)]
             (save-user-settings! user-id settings))
           (data-response {:message "Two-factor authentication has been disabled"})))
