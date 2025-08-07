@@ -210,17 +210,21 @@
 
 ;;; Routes
 
-;; TODO note that calling this fn on a regex does not work properly. Passing in
-;; a workspace name as a regex is a GeoSync use case, so this should be updated to accept a regex
 (defn remove-workspace!
   "Given a specific geoserver-key and a specific workspace-name, removes any
-   layers from that workspace from the layers atom."
+   layers from that workspace from the layers atom. The workspace-name can be
+   either an exact string match or a regex pattern (e.g. 'fire-weather.*')."
   [_ {:strs [geoserver-key workspace-name]}]
-  (swap! layers
-         update
-         (keyword geoserver-key)
-         #(filterv (fn [{:keys [workspace]}]
-                     (not= workspace workspace-name)) %))
+  (letfn [(matches? [{:keys [workspace]}]
+            (or (= workspace-name workspace)
+                (try (some-> workspace-name
+                             (re-pattern)
+                             (re-matches workspace))
+                     (catch Exception _ false))))]
+    (swap! layers
+           update
+           (keyword geoserver-key)
+           #(vec (remove matches? %))))
   (data-response (str workspace-name " removed from " site-url ".")))
 
 (defn get-all-layers [_]
