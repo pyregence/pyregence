@@ -268,6 +268,7 @@
 
 (defn- create-match-job!
   [{:keys [display-name user-id ignition-time lat lon wx-type] :as params}]
+  {:pre [(integer? user-id)]}
   (let [runway-job-id        (str (UUID/randomUUID))
         match-job-id         (initialize-match-job! user-id)
         west-buffer          12
@@ -390,11 +391,11 @@
          (pos? (count-running-user-match-jobs user-id))
          {:error "Match drop is already running. Please wait until it has completed."}
 
-         (< (get-md-config :max-queue-size) (count-all-running-match-drops))
+         (<= (get-md-config :max-queue-size) (count-all-running-match-drops))
          {:error "The queue is currently full. Please try again later."}
 
          :else
-         (create-match-job! match-drop-job-params))))))
+         (create-match-job! (assoc match-drop-job-params :user-id user-id)))))))
 
 (defn get-match-drops
   "Returns the user's match drops."
