@@ -30,12 +30,12 @@
       (if (and (:success response) (:body response))
         (let [parsed-body (reader/read-string (:body response))
               settings (if (string? (:settings parsed-body))
-                        (try 
+                        (try
                           (reader/read-string (:settings parsed-body))
                           (catch :default _ {}))
                         (or (:settings parsed-body) {}))]
-          (swap! state assoc 
-                 :loading false 
+          (swap! state assoc
+                 :loading false
                  :user (assoc parsed-body :settings settings)))
         (swap! state assoc :loading false)))))
 
@@ -350,30 +350,30 @@
                      :flex-direction "column"
                      :gap            "20px"}}
        [:div
-        [:input {:class    (<class $/p-form-button)
-                 :on-click #(set! (.-location js/window) "/totp-setup")
-                 :style    {:margin-bottom "0.5rem"}
-                 :type     "button"
-                 :value    "AUTHENTICATOR APP"}]
         [:p {:style {:color         "#666"
                      :font-size     "0.9rem"
                      :margin        "0"
                      :margin-bottom "0.3rem"}}
          "Use an authenticator app (Recommended)"]
-        [:p {:style {:color     "#666"
-                     :font-size "0.85rem"
-                     :margin    "0"}}
-         "Install Google Authenticator, Microsoft Authenticator, or Authy from your app store"]]
+        [:p {:style {:color         "#666"
+                     :font-size     "0.85rem"
+                     :margin        "0"
+                     :margin-bottom "0.5rem"}}
+         "Install Google Authenticator, Microsoft Authenticator, or Authy from your app store"]
+        [:input {:class    (<class $/p-form-button)
+                 :on-click #(set! (.-location js/window) "/totp-setup")
+                 :type     "button"
+                 :value    "AUTHENTICATOR APP"}]]
        [:div
+        [:p {:style {:color         "#666"
+                     :font-size     "0.9rem"
+                     :margin        "0"
+                     :margin-bottom "0.5rem"}}
+         "Receive codes via email"]
         [:input {:class    (<class $/p-form-button)
                  :on-click on-enable-email
-                 :style    {:margin-bottom "0.5rem"}
                  :type     "button"
-                 :value    "EMAIL VERIFICATION"}]
-        [:p {:style {:color     "#666"
-                     :font-size "0.9rem"
-                     :margin    "0"}}
-         "Receive codes via email"]]]])])
+                 :value    "EMAIL VERIFICATION"}]]]])])
 
 (defn root-component
   "Root component for 2FA settings page."
