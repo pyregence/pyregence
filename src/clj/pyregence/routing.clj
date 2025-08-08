@@ -15,6 +15,9 @@
    [:get "/admin"]                               {:handler (render-page "/admin")
                                                   :auth-type :admin
                                                   :auth-action :redirect}
+   [:get "/backup-codes"]                        {:handler (render-page "/backup-codes")
+                                                  :auth-type :user
+                                                  :auth-action :redirect}
    [:get "/dashboard"]                           {:handler (render-page "/dashboard")
                                                   :auth-type :user
                                                   :auth-action :redirect}
@@ -26,6 +29,12 @@
    [:get "/privacy-policy"]                      {:handler (render-page "/privacy-policy")}
    [:get "/register"]                            {:handler (render-page "/register")}
    [:get "/reset-password"]                      {:handler (render-page "/reset-password")}
+   [:get "/settings"]                            {:handler (render-page "/settings")
+                                                  :auth-type :user
+                                                  :auth-action :redirect}
+   [:get "/totp-setup"]                          {:handler (render-page "/totp-setup")
+                                                  :auth-type :user
+                                                  :auth-action :redirect}
    [:get "/terms-of-use"]                        {:handler (render-page "/terms-of-use")}
    [:get "/verify-2fa"]                          {:handler (render-page "/verify-2fa")}
    [:get "/verify-email"]                        {:handler (render-page "/verify-email")}
@@ -61,7 +70,10 @@
    [:post "/clj/regenerate-backup-codes"]        {:handler (clj-handler authentication/regenerate-backup-codes)
                                                   :auth-type :user
                                                   :auth-action :block}
-   [:post "/clj/remove-totp"]                    {:handler (clj-handler authentication/remove-totp)
+   [:post "/clj/enable-email-2fa"]               {:handler (clj-handler authentication/enable-email-2fa)
+                                                  :auth-type :user
+                                                  :auth-action :block}
+   [:post "/clj/disable-2fa"]                    {:handler (clj-handler authentication/disable-2fa)
                                                   :auth-type :user
                                                   :auth-action :block}
 

@@ -5,6 +5,7 @@
             [reagent.dom                        :refer [render]]
             [pyregence.components.page-layout   :refer [wrap-page]]
             [pyregence.pages.admin              :as admin]
+            [pyregence.pages.backup-codes       :as backup-codes]
             [pyregence.pages.dashboard          :as dashboard]
             [pyregence.pages.help               :as help]
             [pyregence.pages.login              :as login]
@@ -13,7 +14,9 @@
             [pyregence.pages.privacy-policy     :as privacy]
             [pyregence.pages.register           :as register]
             [pyregence.pages.reset-password     :as reset-password]
+            [pyregence.pages.settings           :as settings]
             [pyregence.pages.terms-of-use       :as terms]
+            [pyregence.pages.totp-setup         :as totp-setup]
             [pyregence.pages.verify-2fa         :as verify-2fa]
             [pyregence.pages.verify-email       :as verify-email]
             [pyregence.state                    :as !]
@@ -26,6 +29,7 @@
   "All root-components for URIs that should have just a header."
   {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/admin"              admin/root-component
+   "/backup-codes"       backup-codes/root-component
    "/dashboard"          dashboard/root-component
    "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/login"              login/root-component
@@ -33,6 +37,8 @@
    "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/register"           register/root-component
    "/reset-password"     reset-password/root-component
+   "/settings"           settings/root-component
+   "/totp-setup"         totp-setup/root-component
    "/verify-2fa"         verify-2fa/root-component
    "/verify-email"       verify-email/root-component})
 

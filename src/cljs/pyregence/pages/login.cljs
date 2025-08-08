@@ -30,7 +30,7 @@
         (let [resp-data (edn/read-string (:body response))]
           (if (:require-2fa resp-data)
             ;; 2FA is required, redirect to 2FA verification page
-            (u-browser/jump-to-url! (str "/verify-2fa?email=" (:email resp-data)))
+            (u-browser/jump-to-url! (str "/verify-2fa?email=" (:email resp-data) "&method=" (:method resp-data)))
             ;; Normal login success
             (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
               (u-browser/clear-session-storage!)
