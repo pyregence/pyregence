@@ -268,6 +268,7 @@
 
 (defn- create-match-job!
   [{:keys [display-name user-id ignition-time lat lon wx-type] :as params}]
+  {:pre [(integer? user-id)]}
   (let [runway-job-id        (str (UUID/randomUUID))
         match-job-id         (initialize-match-job! user-id)
         west-buffer          12
@@ -390,11 +391,11 @@
          (pos? (count-running-user-match-jobs user-id))
          {:error "Match drop is already running. Please wait until it has completed."}
 
-         (< (get-md-config :max-queue-size) (count-all-running-match-drops))
+         (<= (get-md-config :max-queue-size) (count-all-running-match-drops))
          {:error "The queue is currently full. Please try again later."}
 
          :else
-         (create-match-job! match-drop-job-params))))))
+         (create-match-job! (assoc match-drop-job-params :user-id user-id)))))))
 
 (defn get-match-drops
   "Returns the user's match drops."
@@ -588,8 +589,8 @@
     2       (do
               (log-str (str "Geoserver workspace is " geoserver-workspace))
               ;; NOTE: set-capabilities! isn't handled by the GeoSync action hook since GeoSync is running in CLI mode in the GeoSync microservice (action hooks only work in server mode).
-              (set-capabilities! {"geoserver-key"  "match-drop"
-                                  "workspace-name" geoserver-workspace})
+              (set-capabilities! nil {"geoserver-key"  "match-drop"
+                                      "workspace-name" geoserver-workspace})
               (log-str (str "Match Drop layers successfully added to Pyrecast! "
                             "Match Drop job #" match-job-id " is complete."))
               (update-match-job! {:match-job-id match-job-id
@@ -603,8 +604,8 @@
             ;; TODO in the future we should make sure that the front-end is updated as soon as the workspace is removed.
             ;; we will need to do something similar to the refresh-fire-names! fn in match_drop_tool.cljs, but only call
             ;; it once this section of the code is hit.
-            (remove-workspace! {"geoserver-key"  "match-drop"
-                                "workspace-name" geoserver-workspace}))
+            (remove-workspace! nil {"geoserver-key"  "match-drop"
+                                    "workspace-name" geoserver-workspace}))
 
     :else (update-match-drop-on-error! match-job-id
                                        {:job-id  job-id
