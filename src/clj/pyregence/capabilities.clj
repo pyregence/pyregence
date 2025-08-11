@@ -232,11 +232,11 @@
   ;; Test exact match removal
   (let [original-layers @layers
         test-layers {:shasta [{:workspace "fire-detections_current-year-perimeters" :layer "layer1"}
-                              {:workspace "fire-detections_historical-perimeters" :layer "layer2"}
-                              {:workspace "fire-weather-forecast_gfs_20250101_00" :layer "layer3"}]}]
+                              {:workspace "fire-detections_historical-perimeters"   :layer "layer2"}
+                              {:workspace "fire-weather-forecast_gfs_20250101_00"   :layer "layer3"}]}]
     (reset! layers test-layers)
-    (remove-workspace! nil {"geoserver-key" "shasta"
-                           "workspace-name" "fire-detections_current-year-perimeters"})
+    (remove-workspace! nil {"geoserver-key"  "shasta"
+                            "workspace-name" "fire-detections_current-year-perimeters"})
     (let [result (map :workspace (:shasta @layers))]
       (reset! layers original-layers)
       result))
@@ -244,13 +244,13 @@
 
   ;; Test regex pattern removal
   (let [original-layers @layers
-        test-layers {:shasta [{:workspace "fire-weather-forecast_gfs_20250101_00" :layer "layer1"}
+        test-layers {:shasta [{:workspace "fire-weather-forecast_gfs_20250101_00"  :layer "layer1"}
                               {:workspace "fire-weather-forecast_hrrr_20250101_12" :layer "layer2"}
-                              {:workspace "fire-weather-forecast_nam_20250102_00" :layer "layer3"}
-                              {:workspace "fire-risk-forecast_20250101_00" :layer "layer4"}]}]
+                              {:workspace "fire-weather-forecast_nam_20250102_00"  :layer "layer3"}
+                              {:workspace "fire-risk-forecast_20250101_00"         :layer "layer4"}]}]
     (reset! layers test-layers)
-    (remove-workspace! nil {"geoserver-key" "shasta"
-                           "workspace-name" "fire-weather-forecast_.*"})
+    (remove-workspace! nil {"geoserver-key"  "shasta"
+                            "workspace-name" "fire-weather-forecast_.*"})
     (let [result (map :workspace (:shasta @layers))]
       (reset! layers original-layers)
       result))
