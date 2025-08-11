@@ -74,3 +74,29 @@
    (if window-name
      (.open js/window url window-name)
      (jump-to-url! url))))
+
+(defn copy-to-clipboard!
+  "Copies text to the system clipboard. Returns true if successful, false otherwise."
+  [text]
+  (let [textarea (.createElement js/document "textarea")]
+    (set! (.-value textarea) text)
+    (.appendChild js/document.body textarea)
+    (.select textarea)
+    (let [success (.execCommand js/document "copy")]
+      (.removeChild js/document.body textarea)
+      success)))
+
+(defn download-backup-codes!
+  "Downloads backup codes as a text file"
+  [codes]
+  (let [content (str "Pyregence 2FA Backup Codes\n"
+                     "Generated: " (.toLocaleDateString (js/Date.)) "\n\n"
+                     (str/join "\n" codes) "\n\n"
+                     "Keep these codes safe. Each can only be used once.")
+        blob (js/Blob. #js [content] #js {:type "text/plain"})
+        url (.createObjectURL js/URL blob)
+        a (.createElement js/document "a")]
+    (set! (.-href a) url)
+    (set! (.-download a) "pyregence-backup-codes.txt")
+    (.click a)
+    (.revokeObjectURL js/URL url)))
