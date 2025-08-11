@@ -227,6 +227,36 @@
            #(vec (remove matches? %))))
   (data-response (str workspace-name " removed from " site-url ".")))
 
+^:rct/test
+(comment
+  ;; Test exact match removal
+  (let [original-layers @layers
+        test-layers {:shasta [{:workspace "fire-detections_current-year-perimeters" :layer "layer1"}
+                              {:workspace "fire-detections_historical-perimeters" :layer "layer2"}
+                              {:workspace "fire-weather-forecast_gfs_20250101_00" :layer "layer3"}]}]
+    (reset! layers test-layers)
+    (remove-workspace! nil {"geoserver-key" "shasta"
+                           "workspace-name" "fire-detections_current-year-perimeters"})
+    (let [result (map :workspace (:shasta @layers))]
+      (reset! layers original-layers)
+      result))
+  ;=>> ["fire-detections_historical-perimeters" "fire-weather-forecast_gfs_20250101_00"]
+
+  ;; Test regex pattern removal
+  (let [original-layers @layers
+        test-layers {:shasta [{:workspace "fire-weather-forecast_gfs_20250101_00" :layer "layer1"}
+                              {:workspace "fire-weather-forecast_hrrr_20250101_12" :layer "layer2"}
+                              {:workspace "fire-weather-forecast_nam_20250102_00" :layer "layer3"}
+                              {:workspace "fire-risk-forecast_20250101_00" :layer "layer4"}]}]
+    (reset! layers test-layers)
+    (remove-workspace! nil {"geoserver-key" "shasta"
+                           "workspace-name" "fire-weather-forecast_.*"})
+    (let [result (map :workspace (:shasta @layers))]
+      (reset! layers original-layers)
+      result))
+  ;=>> ["fire-risk-forecast_20250101_00"]
+  )
+
 (defn get-all-layers [_]
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
