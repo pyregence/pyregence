@@ -13,9 +13,24 @@ Show authenticated users, on the map, where the weathers stations (WS) are, by d
 - Air quality
 
 * TODOs
-** TODO Get WS-geo-info
-** TODO Get camera-geo-info
-** TODO See if WS-geo-info looks like it translated into the same format as camera-geo-info
+** DOING Get WS-geo-info
+
+The WS geometry information has this description:
+#+begin_quote
+A GeoJSON geometry object. Please refer to IETF RFC 7946 for information on the GeoJSON format.
+#+end_quote
+
+So can we use the data in a GeoJSON geometry object?
+
+** DOING Get camera-geo-info
+
+the `get-cameras` function says
+
+"Builds a GeoJSON response of the current wildfire cameras."
+
+So chances are good we can!
+
+** DOING See if WS-geo-info looks like it translated into the same format as camera-geo-info
 ** TODO Gather other WS-info url calls.
 ** TODO confirm ws-geo-info to camera-geo-info
 ** TODO confirm WS-info calls
