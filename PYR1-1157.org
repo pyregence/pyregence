@@ -32,6 +32,16 @@ So chances are good we can!
 
 ** DOING See if WS-geo-info looks like it translated into the same format as camera-geo-info
 ** TODO Gather other WS-info url calls.
+
+#+begin_src clojure
+
+#+end_src
+
+#+RESULTS:
+: nil
+
+
+
 ** TODO confirm ws-geo-info to camera-geo-info
 ** TODO confirm WS-info calls
 ** TODO Get WS-icon
