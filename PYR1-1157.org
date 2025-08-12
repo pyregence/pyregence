@@ -17,6 +17,8 @@ Show authenticated users, on the map, where the weathers stations (WS) are, by d
 ** TODO Get camera-geo-info
 ** TODO See if WS-geo-info looks like it translated into the same format as camera-geo-info
 ** TODO Gather other WS-info url calls.
+** TODO confirm ws-geo-info to camera-geo-info
+** TODO confirm WS-info calls
 ** TODO Get WS-icon
 ** TODO Use WS-geo-info the same way camera-geo-info is to create a map.
 ** TODO Display WS-info when clicked.
