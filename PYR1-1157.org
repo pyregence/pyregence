@@ -1,5 +1,5 @@
 * Description
-Show authenticated users, on the map, where the weathers stations (WS) are, by displaying weather station icons, and their when clicked, zoom to them, and show the following WS-info, from this site (https://api.weather.gov/|https://api.weather.gov/), in the info popup:
+Show authenticated users, on the map, where the weathers stations (WS) are, by displaying weather station icons, and their when clicked, zoom to them, and show the following WS-info, from this site (https://api.weather.gov/), in the info popup:
 
 - WS Name / ID
 - Forecast datetime
@@ -13,8 +13,10 @@ Show authenticated users, on the map, where the weathers stations (WS) are, by d
 - Air quality
 
 * TODOs
-
 ** Get WS-info
+
+https://api.weather.gov/
+
 ** Learn how camera-geo-info becomes a map.
 ** Get WS-icon
 ** Use WS-geo-info the same way camera-geo-info is to create a map.
