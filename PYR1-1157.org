@@ -1,0 +1,76 @@
+** TODO Add Weather Stations as interactive icons on maps         :PYR1_1157:
+:PROPERTIES:
+:assignee: Drew Verlee
+:filename: PYR1
+:reporter: Katy Beehler
+:type:     Story
+:type-id:  10007
+:priority: Medium
+:status:   To Do
+:created:  2025-08-01T23:43:12.728+0000
+:updated:  2025-08-11T19:45:31.864+0000
+:parent-issue-key: [jira:PYR1-1160]
+:ID:       PYR1-1157
+:CUSTOM_ID: PYR1-1157
+:END:
+:LOGBOOK:
+:END:
+*** description: [[https://sig-gis.atlassian.net/browse/PYR1-1157][PYR1-1157]]
+  h2. Description
+
+  We want to add Weather Station icons with metadata pulled from [https://api.weather.gov/|https://api.weather.gov/] with the station name and id and allow to click to see the latest forecast.
+
+  This data will be available to all authenticated users (Members, Org Members, Org Admins, Account Manager, Super Admins) at all subscription levels.
+
+  h2. Details
+
+  Weather Stations will be represented by “station” icon on the map. When the user clicks, they will see a pop-up with the latest weather data.
+
+  Pop-up could include:
+
+  * Weather Station Name / ID
+  * Forecast datetime
+  * Latest forecast for selected value or all:
+  ** Air temperature (F)
+  ** Humidity
+  ** Dew Point
+  ** Wind speed
+  ** Wind direction
+  ** Gust
+  ** Air quality
+
+  h2. Implementation
+
+  Re-use components from the cameras functionality to create clickable icons on the map. The camera pop-up box should include the information from the Details section above. Use styling similar to the Match Drop Tool or Measure Distance Tool as inspiration.
+
+  Binoculars can still zoom to location and activate 3D mode (no directional orientation or standard directional orientation).
+
+  Also look at the red flag clj.
+
+  h2. Acceptance Criteria
+
+  * All authenticated Users can enable/disable Weather Station icons on the maps for all tabs (Fuels, Weather, Risk, Active Fires, PSPS)
+  * When the user clicks on the Weather icon in the toolbox, Weather Station icons will appear on the maps
+  * Users can view the latest forecast for that Weather Station for their selected Weather Station icon:
+  ** Air temperature (F)
+  ** Humidity
+  ** Dew Point
+  ** Wind speed
+  ** Wind direction
+  ** Gust
+  ** Air quality
+  * When user clicks the Weather Station icon, they will zoom to the location and 3D terrain will be enabled for them
+zm*** Comment: Katy Beehler
+:PROPERTIES:
+:ID:       18529
+:created:  2025-08-01T23:44:05.504+0000
+:END:
+  (flag) Flag added
+
+  Katy: Need UI/UX designs.
+*** Comment: Katy Beehler
+:PROPERTIES:
+:ID:       18540
+:created:  2025-08-06T00:22:09.535+0000
+:END:
+  Removed flag for design. We should explore the lower effort option to provide new features quickly prior to the “relaunch” in February 2026. Adjusted the description accordingly.
