@@ -1,10 +1,27 @@
 -- NAMESPACE: totp
 -- REQUIRES: user
 
----
----  TOTP Functions
----
+--------------------------------------------------------------------------------
+-- TOTP Triggers
+--------------------------------------------------------------------------------
+-- Trigger function for automatic updated_at timestamp maintenance
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
+-- Apply trigger to user_totp table
+CREATE TRIGGER user_totp_updated_at_trigger
+BEFORE UPDATE ON user_totp
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+--------------------------------------------------------------------------------
+-- TOTP Functions
+--------------------------------------------------------------------------------
 -- Create a new TOTP setup for a user
 CREATE OR REPLACE FUNCTION create_totp_setup(_user_id integer, _secret text)
  RETURNS void AS $$
@@ -47,22 +64,22 @@ CREATE OR REPLACE FUNCTION get_user_with_totp(_user_id integer)
     user_id integer,
     user_email text,
     match_drop_access boolean,
-    super_admin boolean,
     secret text,
-    analyst boolean
+    user_role user_role,
+    organization_id integer
  ) AS $$
 
     SELECT u.user_uid,
            u.email,
            u.match_drop_access,
-           u.super_admin,
            t.secret,
-           u.analyst
+           u.user_role,
+           u.organization_rid
     FROM user_totp t
     JOIN users u ON u.user_uid = t.user_id
     WHERE t.user_id = _user_id
         AND t.verified = TRUE
-        AND u.verified = TRUE
+        AND u.email_verified = TRUE
 
 $$ LANGUAGE SQL;
 
@@ -88,10 +105,9 @@ CREATE OR REPLACE FUNCTION mark_totp_verified(_user_id integer)
 
 $$ LANGUAGE SQL;
 
----
+--------------------------------------------------------------------------------
 ---  Backup Code Functions
----
-
+--------------------------------------------------------------------------------
 -- Create backup codes for a user
 CREATE OR REPLACE FUNCTION create_backup_codes(_user_id integer, _codes text[])
  RETURNS void AS $$

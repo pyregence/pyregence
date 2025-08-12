@@ -1,5 +1,7 @@
 -- NAMESPACE: dev-data
 
+-- TODO update me
+
 INSERT INTO organizations
     (organization_uid, org_unique_id, org_name, email_domains, auto_add, auto_accept)
 VALUES

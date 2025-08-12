@@ -26,23 +26,28 @@
 
 (defn route-authenticator [{:keys [headers session]} auth-type]
   (let [user-id                (:user-id session -1)
+        org-id                 (:organization-id session -1)
+        user-role              (:user-role session)
         ;; Extract Bearer token from Authorization header
         bearer-token           (some->> (get headers "authorization")
                                         (re-find #"(?i)^Bearer\s+(.+)$")
                                         second)
         valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))
-        is-admin?              (sql-primitive (call-sql "get_user_admin_access" user-id))
         has-match-drop-access? (:match-drop-access? session)
-        super-admin?           (:super-admin? session)
-        is-analyst?            (:analyst? session)]
+        org-admin?             (sql-primitive (call-sql "is_user_admin_of_org" user-id org-id))
+        super-admin?           (= "super_admin" user-role)
+        account-manager?       (= "account_manager" user-role)
+        org-member?            (= "organization_member" user-role)
+        member?                (and (pos? user-id) (= "member" user-role))]
     (every? (fn [auth-type]
               (case auth-type
-                :analyst     is-analyst?
-                :admin       is-admin?
-                :super-admin super-admin?
-                :match-drop  has-match-drop-access?
-                :token       valid-token? ; TODO: generate token per user and validate it cryptographically
-                :user        (pos? user-id)
+                :token           valid-token? ; TODO: generate token per user and validate it cryptographically
+                :match-drop      has-match-drop-access?
+                :super-admin     super-admin?
+                :org-admin       (or super-admin? org-admin?)
+                :account-manager (or super-admin? account-manager?)
+                :org-member      (or super-admin? org-admin? org-member?)
+                :member          (or super-admin? org-admin? account-manager? org-member? member?)
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))
 

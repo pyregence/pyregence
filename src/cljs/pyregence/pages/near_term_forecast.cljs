@@ -619,6 +619,7 @@
           user-layers-chan                (u-async/call-clj-async! "get-user-layers")
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
+          ;; TODO do away with this call in the future
           user-orgs-list-chan             (u-async/call-clj-async! "get-current-user-organizations")
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))

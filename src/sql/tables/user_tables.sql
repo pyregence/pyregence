@@ -1,79 +1,83 @@
 -- NAMESPACE: user
+-- REQUIRES: organization
 
--- Stores text values for roles
-CREATE TABLE roles (
-    role_uid    integer PRIMARY KEY,
-    title       text NOT NULL
+--------------------------------------------------------------------------------
+-- Enum types
+--------------------------------------------------------------------------------
+-- Roles describe capabilities
+CREATE TYPE user_role AS ENUM (
+    'super_admin',
+    'organization_admin',
+    'organization_member',
+    'account_manager',
+    'member'
 );
 
+-- Describes account lifecycle state
+CREATE TYPE org_membership_status AS ENUM (
+    'none',    -- not in any org
+    'pending', -- waiting for approval
+    'accepted' -- approved
+);
+
+--------------------------------------------------------------------------------
 -- Stores information about users
+--------------------------------------------------------------------------------
 CREATE TABLE users (
-    user_uid           SERIAL PRIMARY KEY,
-    email              text NOT NULL UNIQUE,
-    name               text NOT NULL,
-    password           varchar(72) NOT NULL,
-    settings           text,
-    super_admin        boolean DEFAULT FALSE,
-    verified           boolean DEFAULT FALSE,
-    verification_token text DEFAULT NULL,
-    token_expiration   TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    match_drop_access  boolean DEFAULT FALSE,
-    last_login_date    TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    analyst            boolean DEFAULT FALSE
+    user_uid              SERIAL PRIMARY KEY,
+    email                 text NOT NULL UNIQUE,
+    name                  text NOT NULL,
+    password              varchar(72) NOT NULL,
+    settings              text,
+    match_drop_access     BOOLEAN DEFAULT FALSE,
+    email_verified        BOOLEAN DEFAULT FALSE,
+    verification_token    text DEFAULT NULL, -- used for both initial email verification and 2FA
+    token_expiration      TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    last_login_date       TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    user_role             user_role NOT NULL DEFAULT 'member',
+    org_membership_status org_membership_status NOT NULL DEFAULT 'none',
+    organization_rid      integer references organizations(organization_uid)
 );
 
+ALTER TABLE users
+ADD CONSTRAINT valid_org_role_and_status
+CHECK (
+    -- If user is in an org, membership status must not be 'none' (it should either be 'pending' or 'accepted')
+    (organization_rid IS NOT NULL AND org_membership_status != 'none')
+    -- If user is not in an org, status must be 'none'
+    OR (organization_rid IS NULL AND org_membership_status = 'none')
+);
+
+ALTER TABLE users
+ADD CONSTRAINT valid_role_for_membership
+CHECK (
+    -- Only allow elevated org roles if status is 'accepted'
+    (user_role IN ('organization_admin', 'organization_member') AND org_membership_status = 'accepted')
+    OR (user_role = 'member')
+);
+
+--------------------------------------------------------------------------------
 -- Stores TOTP secrets with verification state
+--------------------------------------------------------------------------------
 CREATE TABLE user_totp (
-    user_id INTEGER PRIMARY KEY REFERENCES users(user_uid) ON DELETE CASCADE,
-    secret TEXT NOT NULL,
-    verified BOOLEAN DEFAULT FALSE,
+    user_id    INTEGER PRIMARY KEY REFERENCES users(user_uid) ON DELETE CASCADE,
+    secret     TEXT NOT NULL,
+    verified   BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+--------------------------------------------------------------------------------
 -- Stores backup codes (8-character alphanumeric)
+--------------------------------------------------------------------------------
 CREATE TABLE user_backup_codes (
     user_backup_code_uid SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(user_uid) ON DELETE CASCADE,
-    code TEXT NOT NULL,
-    used BOOLEAN DEFAULT FALSE,
-    used_at TIMESTAMP WITH TIME ZONE NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    user_id              INTEGER REFERENCES users(user_uid) ON DELETE CASCADE,
+    code                 TEXT NOT NULL,
+    used                 BOOLEAN DEFAULT FALSE,
+    used_at              TIMESTAMP WITH TIME ZONE NULL,
+    created_at           TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index for backup code lookups
 CREATE INDEX idx_backup_codes_user ON user_backup_codes(user_id);
-
--- Stores information about organizations
-CREATE TABLE organizations (
-    organization_uid      SERIAL PRIMARY KEY,
-    org_name              text NOT NULL,
-    org_unique_id         text NOT NULL UNIQUE,
-    geoserver_credentials text,
-    email_domains         text,
-    auto_add              boolean,
-    auto_accept           boolean,
-    archived              boolean DEFAULT FALSE,
-    created_date          date DEFAULT NOW(),
-    archived_date         date
-);
-
--- Creates a relationship between users and organizations
--- organizations -> many organization_users <- users
-CREATE TABLE organization_users (
-    org_user_uid        SERIAL PRIMARY KEY,
-    organization_rid    integer NOT NULL REFERENCES organizations (organization_uid) ON DELETE CASCADE ON UPDATE CASCADE,
-    user_rid            integer NOT NULL REFERENCES users (user_uid) ON DELETE CASCADE ON UPDATE CASCADE,
-    role_rid            integer NOT NULL REFERENCES roles (role_uid),
-    CONSTRAINT per_organization_per_user UNIQUE(organization_rid, user_rid)
-);
-
--- Stores information about layers available to an organization
-CREATE TABLE organization_layers (
-    org_layer_uid       SERIAL PRIMARY KEY,
-    organization_rid    integer NOT NULL REFERENCES organizations (organization_uid) ON DELETE CASCADE ON UPDATE CASCADE,
-    layer_path          text,
-    layer_config        text
-);
-
-
