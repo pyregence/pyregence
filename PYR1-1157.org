@@ -77,13 +77,59 @@ station
   "@type" "wx:ObservationStation"}}
 #+end_src
 
-** DOING confirm we can get the rest of the data
+** DOING confirm we can get the rest of the WS data:
 
 We need and its found under :
-- [x] WS Name: properties
+- [x] Name: properties
 - [x] ID: properties
-- [?] Forecast datetime: see properties
-- [?] Latest forecast for selected value or all:
+
+** DONE confirm we can get the rest of the forecast data:
+
+Forecast doesn't hold the data we want
+#+begin_src clojure
+(require '[clj-http.client :as client]
+         '[clojure.string :as str])
+
+(def forecast-url "https://api.weather.gov/zones/forecast/FLZ017")
+(defn getj [u] (client/get u {:as :json-string-keys}))
+(def forecast (get-in (getj forecast-url) [:body "properties"]))
+forecast
+;; => {"awipsLocationIdentifier" "TAE",
+;;     "gridIdentifier" "TAE",
+;;     "@id" "https://api.weather.gov/zones/forecast/FLZ017",
+;;     "effectiveDate" "2025-03-18T18:00:00+00:00",
+;;     "timeZone" ["America/New_York"],
+;;     "id" "FLZ017",
+;;     "forecastOffices" ["https://api.weather.gov/offices/TAE"],
+;;     "name" "Leon",
+;;     "forecastOffice" "https://api.weather.gov/offices/TAE",
+;;     "type" "public",
+;;     "state" "FL",
+;;     "expirationDate" "2200-01-01T00:00:00+00:00",
+;;     "cwa" ["TAE"],
+;;     "radarStation" "TLH",
+;;     "observationStations"
+;;     ["https://api.weather.gov/stations/KTLH"
+;;      "https://api.weather.gov/stations/KAAF"
+;;      "https://api.weather.gov/stations/KABY"
+;;      "https://api.weather.gov/stations/KBGE"
+;;      "https://api.weather.gov/stations/KCTY"
+;;      "https://api.weather.gov/stations/KDHN"
+;;      "https://api.weather.gov/stations/KECP"
+;;      "https://api.weather.gov/stations/KFPY"
+;;      "https://api.weather.gov/stations/KLOR"
+;;      "https://api.weather.gov/stations/KMAI"
+;;      "https://api.weather.gov/stations/KOZR"
+;;      "https://api.weather.gov/stations/KPAM"
+;;      "https://api.weather.gov/stations/KVAD"
+;;      "https://api.weather.gov/stations/KVLD"],
+;;     "@type" "wx:Zone"}
+
+#+end_src
+
+** DOING Try to get rest of data from Observations endpoint
+
+- [?] Datetime
 - [?] Air temperature (F)
 - [?] Humidity
 - [?] Dew Point
@@ -91,12 +137,6 @@ We need and its found under :
 - [?] Wind direction
 - [?] Gust
 - [?] Air quality
-
-** DOING get forecast data for a station
-
-#+begin_src clojure
-#+end_src
-
 
 ** TODO confirm ws-geo-info to camera-geo-info
 ** TODO confirm WS-info calls
