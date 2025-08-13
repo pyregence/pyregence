@@ -162,7 +162,84 @@ We were able to get everything but Air Quality.
  "dewpoint" {"unitCode" "wmoUnit:degC", "value" 23.23, "qualityControl" "V"}}
 #+end_src
 
+** DOING gather info on how we use camera data
+
+*** function calls
+
+we have a server side GET function that builds a GeoJson which i believe what we have.
+
+#+begin_src clojure
+(defn get-cameras
+  "Builds a GeoJSON response of the current wildfire cameras."
+  [_]
+  (data-response
+   (if (valid-cache?)
+     @camera-cache
+     (let [new-cameras (->> (get-and-conform-wildfire-cameras!)
+                            ;; remove inactive cameras
+                            (remove (fn [{{timestamp :update-time} :properties}]
+                                      (or (nil? timestamp)
+                                          (utc-timestamp->four-hours-old? timestamp))))
+                            (->feature-collection))]
+       (reset-cache! new-cameras)
+       new-cameras))))
+#+end_src
+
+
+;; that recall calls this..
+
+#+begin_src clojure
+(defn- get-and-conform-wildfire-cameras!
+  "Fetches ALERTWest wildfire cameras and reformats them."
+  []
+  (some->> (get-wildfire-cameras!)
+           (pmap #(site->feature "alert-west" %))))
+#+end_src
+
+site->feature just conforms
+
+#+begin_src clojure
+(defn- site->feature [api-name {:keys [name site position image update_time]}]
+  {:type       "Feature"
+   :geometry   {:type        "Point"
+                :coordinates [(parse-num (:longitude site))
+                              (parse-num (:latitude site))]}
+   :properties {:api-name    api-name
+                :latitude    (parse-num (:latitude site))
+                :longitude   (parse-num (:longitude site))
+                :name        name
+                :pan         (parse-num (:pan position))
+                :state       (:state site)
+                :tilt        (parse-num (:tilt position))
+                :update-time (or update_time (:time image))
+                :image-url   (:url image)}})
+#+end_src
+
+calls this..
+
+#+begin_src clojure
+(defn- get-wildfire-cameras!
+  []
+  (api-all-cameras alert-west-api-url alert-west-api-defaults))
+#+end_src
+
+calls this..
+
+#+begin_src clojure
+(defn- api-all-cameras [api-url api-defaults]
+  (let [{:keys [status body]} (api-request "cameras" api-url api-defaults)]
+    (when (= 200 status)
+      (json/read-str body :key-fn keyword))))
+#+end_src
+
+
+*** raw response from cameras api
+
+
+
+*** what we transform it in to
 ** TODO confirm ws-geo-info to camera-geo-info
+
 ** TODO confirm WS-info calls
 ** TODO Get WS-icon
 ** TODO Use WS-geo-info the same way camera-geo-info is to create a map.
