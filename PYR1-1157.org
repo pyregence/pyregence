@@ -33,6 +33,10 @@ So chances are good we can!
 ** DONE See if WS-geo-info looks like it translated into the same format as camera-geo-info
 ** DONE Get example station to use for the rest of the steps.
 
+GET https://api.weather.gov/stations/{stationId}/
+
+*** Example
+
 #+begin_src clojure
 (require '[clj-http.client :as client]
          '[clojure.string :as str])
@@ -77,7 +81,7 @@ station
   "@type" "wx:ObservationStation"}}
 #+end_src
 
-** DOING confirm we can get the rest of the WS data:
+** FAILED confirm we can get the rest of the WS data:
 
 We need and its found under :
 - [x] Name: properties
@@ -93,6 +97,7 @@ Forecast doesn't hold the data we want
 (def forecast-url "https://api.weather.gov/zones/forecast/FLZ017")
 (defn getj [u] (client/get u {:as :json-string-keys}))
 (def forecast (get-in (getj forecast-url) [:body "properties"]))
+
 forecast
 ;; => {"awipsLocationIdentifier" "TAE",
 ;;     "gridIdentifier" "TAE",
@@ -127,7 +132,37 @@ forecast
 
 #+end_src
 
-** DOING Try to get rest of data from Observations endpoint
+** DONE Try to get rest of data from Observations endpoint
+
+*** URL
+
+GET https://api.weather.gov/stations/{stationId}/observations/latest
+
+*** Example
+
+We were able to get everything but Air Quality.
+
+#+begin_src clojure
+(require '[clj-http.client :as client]
+         '[clojure.string :as str])
+
+(def url "https://api.weather.gov/stations/0007W/observations/latest")
+(defn getj [u] (client/get u {:as :json-string-keys}))
+(def obs (get-in (getj url) [:body "properties"]))
+
+(select-keys obs ["windSpeed" "windDirection" "windGust" "temperature" "relativeHumidity" "dewpoint"])
+{"windSpeed"
+ {"unitCode" "wmoUnit:km_h-1", "value" 8.028, "qualityControl" "V"},
+ "windDirection"
+ {"unitCode" "wmoUnit:degree_(angle)", "value" 323, "qualityControl" "V"},
+ "windGust" {"unitCode" "wmoUnit:km_h-1", "value" nil, "qualityControl" "Z"},
+ "temperature" {"unitCode" "wmoUnit:degC", "value" nil, "qualityControl" "Z"},
+ "relativeHumidity"
+ {"unitCode" "wmoUnit:percent", "value" nil, "qualityControl" "Z"},
+ "dewpoint" {"unitCode" "wmoUnit:degC", "value" 23.23, "qualityControl" "V"}}
+
+#+end_src
+
 
 - [?] Datetime
 - [?] Air temperature (F)
