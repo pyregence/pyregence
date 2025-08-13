@@ -76,7 +76,27 @@ station
   "fireWeatherZone" "https://api.weather.gov/zones/fire/FLZ017",
   "@type" "wx:ObservationStation"}}
 #+end_src
-** TODO confirm we can get the other
+
+** DOING confirm we can get the rest of the data
+
+We need and its found under :
+- [x] WS Name: properties
+- [x] ID: properties
+- [?] Forecast datetime: see properties
+- [?] Latest forecast for selected value or all:
+- [?] Air temperature (F)
+- [?] Humidity
+- [?] Dew Point
+- [?] Wind speed
+- [?] Wind direction
+- [?] Gust
+- [?] Air quality
+
+** DOING get forecast data for a station
+
+#+begin_src clojure
+#+end_src
+
 
 ** TODO confirm ws-geo-info to camera-geo-info
 ** TODO confirm WS-info calls
