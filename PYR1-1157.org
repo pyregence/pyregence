@@ -160,18 +160,7 @@ We were able to get everything but Air Quality.
  "relativeHumidity"
  {"unitCode" "wmoUnit:percent", "value" nil, "qualityControl" "Z"},
  "dewpoint" {"unitCode" "wmoUnit:degC", "value" 23.23, "qualityControl" "V"}}
-
 #+end_src
-
-
-- [?] Datetime
-- [?] Air temperature (F)
-- [?] Humidity
-- [?] Dew Point
-- [?] Wind speed
-- [?] Wind direction
-- [?] Gust
-- [?] Air quality
 
 ** TODO confirm ws-geo-info to camera-geo-info
 ** TODO confirm WS-info calls
