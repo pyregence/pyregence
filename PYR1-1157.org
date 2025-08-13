@@ -13,7 +13,7 @@ Show authenticated users, on the map, where the weathers stations (WS) are, by d
 - Air quality
 
 * TODOs
-** DOING Get WS-geo-info
+** DONE Get WS-geo-info
 
 The WS geometry information has this description:
 #+begin_quote
@@ -22,7 +22,7 @@ A GeoJSON geometry object. Please refer to IETF RFC 7946 for information on the 
 
 So can we use the data in a GeoJSON geometry object?
 
-** DOING Get camera-geo-info
+** DONE Get camera-geo-info
 
 the `get-cameras` function says
 
@@ -30,17 +30,53 @@ the `get-cameras` function says
 
 So chances are good we can!
 
-** DOING See if WS-geo-info looks like it translated into the same format as camera-geo-info
-** TODO Gather other WS-info url calls.
+** DONE See if WS-geo-info looks like it translated into the same format as camera-geo-info
+** DONE Get example station to use for the rest of the steps.
 
 #+begin_src clojure
+(require '[clj-http.client :as client]
+         '[clojure.string :as str])
 
+(def url "https://api.weather.gov/")
+(defn getj [u] (client/get u {:as :json-string-keys}))
+(def stations (:body (getj "https://api.weather.gov/stations")))
+(def station-url (first (stations "observationStations")))
+(def station (:body (getj station-url )))
+station
+{"@context"
+ ["https://geojson.org/geojson-ld/geojson-context.jsonld"
+  {"s" "https://schema.org/",
+   "bearing" {"@type" "s:QuantitativeValue"},
+   "city" "s:addressLocality",
+   "wx" "https://api.weather.gov/ontology#",
+   "county" {"@type" "@id"},
+   "geo" "http://www.opengis.net/ont/geosparql#",
+   "forecastOffice" {"@type" "@id"},
+   "@version" "1.1",
+   "value" {"@id" "s:value"},
+   "geometry" {"@id" "s:GeoCoordinates", "@type" "geo:wktLiteral"},
+   "publicZone" {"@type" "@id"},
+   "distance" {"@id" "s:Distance", "@type" "s:QuantitativeValue"},
+   "@vocab" "https://api.weather.gov/ontology#",
+   "state" "s:addressRegion",
+   "unit" "http://codes.wmo.int/common/unit/",
+   "forecastGridData" {"@type" "@id"},
+   "unitCode" {"@id" "s:unitCode", "@type" "@id"}}],
+ "id" "https://api.weather.gov/stations/0007W",
+ "type" "Feature",
+ "geometry" {"type" "Point", "coordinates" [-84.1787 30.53099]},
+ "properties"
+ {"forecast" "https://api.weather.gov/zones/forecast/FLZ017",
+  "@id" "https://api.weather.gov/stations/0007W",
+  "elevation" {"unitCode" "wmoUnit:m", "value" 49.0728},
+  "timeZone" "America/New_York",
+  "county" "https://api.weather.gov/zones/county/FLC073",
+  "stationIdentifier" "0007W",
+  "name" "Montford Middle",
+  "fireWeatherZone" "https://api.weather.gov/zones/fire/FLZ017",
+  "@type" "wx:ObservationStation"}}
 #+end_src
-
-#+RESULTS:
-: nil
-
-
+** TODO confirm we can get the other
 
 ** TODO confirm ws-geo-info to camera-geo-info
 ** TODO confirm WS-info calls
@@ -48,3 +84,4 @@ So chances are good we can!
 ** TODO Use WS-geo-info the same way camera-geo-info is to create a map.
 ** TODO Display WS-info when clicked.
 ** TODO Zoom to WS-icon when clicked
+** TODO Cache station results because they take too long.
