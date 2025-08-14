@@ -1,0 +1,78 @@
+* Jira ticket: DONE Match Drop not running for utility clients    :PYR1_1119:
+
+** description
+
+When the Organization's users try to run Match Drop on [PyreCast.org|http://nPyreCast.org], they expect that a Match Drop simulation will start, be logged in their dashboard, and then finish over time; however, today, they were unable to start a run on their account.
+
+Oliver will perform the initial investigation into this ticket to get a concept of what would be happening with this ticket. Oliver will then pair program to share knowledge and help guide the assignee. Match Drop client calls microservices; acts as intermediate step for UI to microservice.
+
+Ideas of where to investigate: calls to specific microservices (elmfire, weather/dps), service that didn’t start.
+
+#+begin_src quote
+  {noformat}06/03 19:20:00 SQL Call: SELECT * FROM initialize_match_job(nil)
+  06/03 19:20:00 Error: ERROR: null value in column "user_rid" of relation "match_jobs" violates not-null constraint
+    Detail: Failing row contains (190, null, 2025-06-03 19:20:00.264531, 2025-06-03 19:20:00.264531, 2, null, , f, f, null, null, null, null, null, null, null).
+    Where: SQL function "initialize_match_job" statement 1
+  06/03 19:20:00 Request(post): "/clj/get-md-status" {:clj-args (nil)}{noformat}
+#+end_src
+
+** Steps to Reproduce
+
+  # Go to [PyreCast.org|http://PyreCast.org] and login using an account with Match Drop enabled
+  # …
+
+** Acceptance Criteria
+
+  * Channel in MatterMost created for match drop discussion (or one will be revived)
+  * Organization's users and any user with access to Match Drop can run a match drop simulation
+  * Catch the current error gracefully and provide an error message to the user
+  *
+
+** comments by oliver
+
+**** tickets
+
+3 tickets created:
+
+1. https://sig-gis.atlassian.net/browse/PYR1-1163
+
+2. https://sig-gis.atlassian.net/browse/PYR1-1164
+
+3. PYR1-1165: Fix bug with Sierra GeoServer: https://sig-gis.atlassian.net/browse/PYR1-1165
+
+**** issues
+  There are 3 issues that I identified here:
+
+  # A code issue with the PyreCast codebase. [https://github.com/pyregence/pyregence/pull/956|https://github.com/pyregence/pyregence/pull/956|smart-link]  should fix it, but I can’t test this until 2 and 3 are fixed below.
+  # None of the microservices are live on {{sierra}}, likely due to {{sierra}} being rebooted at one point. I think we should be able to tell the status of these from the server status page, but maybe they went down so long ago that we forgot about them. I sent a [MM message to Daniel and Alice|https://mattermost.sig-gis.com/sig/pl/wuroq8bwhfg1jd4dn1quhmfsbo] to ask for advice on how to best spin these up again.
+  # An error message on the [Sierra GeoServer|https://sierra.pyregence.org/geoserver/web/):] :
+
+  {noformat}Loading quota store failed, the disk quota subsystem is disabled, please re-configure: Could not open JDBC Connection for transaction; nested exception is org.apache.commons.dbcp.SQLNestedException: Cannot create PoolableConnectionFactory (General error: java.lang.RuntimeException: double allocation in file /opt/geoserver/data/gwc/diskquota_page_store_h2/diskquota.index.db page 6264 blocks 400896-400959 [50000-119]){noformat}
+
+      I think this is something that Dominick has fixed for us in the past, and I should be able to fix it as well.
+
+
+
+  Once these three are fixed, we can try testing a full Match Drop run. A few things that might pop up/we need to confirm at that point:
+
+  * Make sure the {{gridfire}} servers on the 4 compute nodes are running.
+  * Make sure that the version of ELMFIRE that we’re using in our microservices is installed on the 4 compute nodes.
+  * Make sure that the request the PyreCast Match Drop client is making matches the latest syntax/accepted parameters for Chris’s WorldGen server.
+  * Make sure our Sierra GeoServer is still working as expected.
+  * Coordinate with Chris to push the priority of a few Match Drop runs so that we don’t have to wait multiple hours for each one to finish (due to being in the queue).
+***** Comment: Katy Beehler
+:PROPERTIES:
+:ID:       18557
+:created:  2025-08-08T16:58:56.575+0000
+:END:
+  [~accountid:6102e0976051c5006aa081c8] : Because the fire microservices aren’t running on Sierra at all, is now a good time to consider whether we should move toward the Kubernetes approach instead of fixing these on Sierra? If Match Drop calls to to the fire microservices on our K8, we will know which versions are running and which models are available. I believe we do have a working elmfire and pyretechnics up there now but will let [~accountid:712020:851f7891-7821-4b31-b8c0-b6836936c273]  and [~accountid:632db5cb9b32cfef93259964] confirm what’s possible. I’ll follow-up in the MM channel too for further discussion.
+***** Comment: Oliver Baldwin Edwards
+:PROPERTIES:
+:ID:       18558
+:created:  2025-08-08T17:01:34.041+0000
+:END:
+  [~accountid:712020:f455b4d6-6d6c-49d9-9b67-8db0a5556e2c] The issue is that our Match Drop client is specifically built to interface with the Runway microservices as they’re set up on {{sierra}}. I don’t know enough about the K8 deployment of the microservices, but my guess is that there would be a fair bit of work required to get everything working.
+
+
+
+  Getting the microservices running on {{sierra}} again should only take running a few commands. I reached out to Alice and Daniel because I want to know if/how those commands have changed before I go ahead and run them.
