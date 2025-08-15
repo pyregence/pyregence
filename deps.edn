@@ -34,27 +34,27 @@
                                           :src-dirs      ["src/clj"]
                                           :main-ns       pyregence.cli
                                           :resource-dirs ["resources" "target" "src/cljs" "src/sql"]}}
-           :check-deps       {:deps       {com.github.liquidz/antq {:mvn/version "RELEASE"}}
-                              :main-opts  ["-m" "antq.core"]}
-           :check-reflection {:main-opts  ["-e" "(do,(set!,*warn-on-reflection*,true),nil)"
-                                           "-e" "(require,'pyregence.routing)"
-                                           "-e" "(require,'pyregence.jobs)"
-                                           "-e" "(require,'pyregence.handlers)"
-                                           "-e" "(require,'pyregence.compile-cljs)"]}
-           :cli              {:main-opts  ["-m" "pyregence.cli"]}
-           :compile-cljs     {:main-opts  ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
-           :config           {:main-opts  ["-m" "triangulum.config"]}
-           :default-ssl-opts {:jvm-opts   ["-Djavax.net.ssl.keyStore=resources/runway.pkcs12"
-                                           "-Djavax.net.ssl.keyStorePassword=RomeoUniformNovemberWhiskeyAlfaYankee"]}
-           :https            {:main-opts  ["-m" "triangulum.https"]}
-           :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main       {:mvn/version "0.2.13"}}}
+           :check-deps       {:deps      {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+                              :main-opts ["-m" "antq.core"]}
+           :check-reflection {:main-opts ["-e" "(do,(set!,*warn-on-reflection*,true),nil)"
+                                          "-e" "(require,'pyregence.routing)"
+                                          "-e" "(require,'pyregence.jobs)"
+                                          "-e" "(require,'pyregence.handlers)"
+                                          "-e" "(require,'pyregence.compile-cljs)"]}
+           :cli              {:main-opts ["-m" "pyregence.cli"]}
+           :compile-cljs     {:main-opts ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
+           :config           {:main-opts ["-m" "triangulum.config"]}
+           :default-ssl-opts {:jvm-opts ["-Djavax.net.ssl.keyStore=resources/runway-test-2025.pkcs12"
+                                         "-Djavax.net.ssl.keyStorePassword=84bHv23Lo1XGoBoOSBDOeQ9H8jqYR5smZDNLPRlvXP56pkaU"]}
+           :https            {:main-opts ["-m" "triangulum.https"]}
+           :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.13"}}}
            :figwheel         {:extra-deps {com.bhauman/figwheel-main       {:mvn/version "0.2.13"}
                                            com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}}
                               :main-opts  ["-m" "figwheel.main" "-b" "compile-dev" "-r"]}
-           :production       {:jvm-opts   ["-XX:MaxRAMPercentage=90" "-XX:+PrintFlagsFinal"]}
+           :production       {:jvm-opts ["-XX:MaxRAMPercentage=90" "-XX:+PrintFlagsFinal"]}
            :rebel            {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
                               :main-opts  ["-m" "rebel-readline.main"]}
-           :server           {:main-opts  ["-m" "triangulum.server"]}
-           :systemd          {:main-opts  ["-m" "triangulum.systemd"]}
-           :rct-test         {:exec-fn    com.mjdowney.rich-comment-tests.test-runner/run-tests-in-file-tree!
-                              :exec-args  {:dirs #{"src"}}}}}
+           :server           {:main-opts ["-m" "triangulum.server"]}
+           :systemd          {:main-opts ["-m" "triangulum.systemd"]}
+           :rct-test         {:exec-fn   com.mjdowney.rich-comment-tests.test-runner/run-tests-in-file-tree!
+                              :exec-args {:dirs #{"src"}}}}}
