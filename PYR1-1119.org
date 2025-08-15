@@ -7,34 +7,16 @@ Detail: Failing row contains (190, null, 2025-06-03 19:20:00.264531, 2025-06-03 
 Where: SQL function "initialize_match_job" statement 1
 #+end_quote
 
-However it seems Oliver believes even when this is fixed their will still be an issue because of some microservice, something to do with runway, elmfire, etc...
-What follows is potentially related error message from sierra GeoServer:
-
-#+begin_quote
-Loading quota store failed, the disk quota subsystem is disabled, please re-configure: Could not open JDBC Connection for transaction; nested exception is org.apache.commons.dbcp.SQLNestedException: Cannot create PoolableConnectionFactory (General error: java.lang.RuntimeException: double allocation in file /opt/geoserver/data/gwc/diskquota_page_store_h2/diskquota.index.db page 6264 blocks 400896-400959 [50000-119])
-#+end_quote
-
-We have a [[https://github.com/pyregence/pyregence/pull/956][PR to initiate match drop]], the PR says:
-
-Fixes a bug introduced in #934 where the `match-drop/initiate-md!` function didn't correctly pass along the `user-id` parameter, which lead to errors of the following type, which prevent Match Drops from initiating:
-
-#+begin_quote
-"ERROR: null value in column \"user_rid\" of relation \"match_jobs\" violates not-null constraint\n  Detail: Failing row contains (203, null, 2025-07-31 14:18:48.712312, 2025-07-31 14:18:48.712312, 2, null, , f, f, null, null, null, null, null, null, null).\n  Where: SQL function \"initialize_match_job\" statement 1"
-#+end_quote
-
-Here is the diff:
+This is fixed by having `match-drop/initiate-md!` correctly pass along the `user-id` parameter:
 
 #+begin_src diff
 modified   src/clj/pyregence/match_drop.clj
-@@ -268,6 +268,7 @@
-
  (defn- create-match-job!
    [{:keys [display-name user-id ignition-time lat lon wx-type] :as params}]
 +  {:pre [(integer? user-id)]}
    (let [runway-job-id        (str (UUID/randomUUID))
          match-job-id         (initialize-match-job! user-id)
          west-buffer          12
-@@ -390,11 +391,11 @@
           (pos? (count-running-user-match-jobs user-id))
           {:error "Match drop is already running. Please wait until it has completed."}
 
@@ -48,7 +30,6 @@ modified   src/clj/pyregence/match_drop.clj
 
  (defn get-match-drops
    "Returns the user's match drops."
-@@ -588,8 +589,8 @@
      2       (do
                (log-str (str "Geoserver workspace is " geoserver-workspace))
                ;; NOTE: set-capabilities! isn't handled by the GeoSync action hook since GeoSync is running in CLI mode in the GeoSync microservice (action hooks only work in server mode).
@@ -59,7 +40,6 @@ modified   src/clj/pyregence/match_drop.clj
                (log-str (str "Match Drop layers successfully added to Pyrecast! "
                              "Match Drop job #" match-job-id " is complete."))
                (update-match-job! {:match-job-id match-job-id
-@@ -603,8 +604,8 @@
              ;; TODO in the future we should make sure that the front-end is updated as soon as the workspace is removed.
              ;; we will need to do something similar to the refresh-fire-names! fn in match_drop_tool.cljs, but only call
              ;; it once this section of the code is hit.
@@ -72,17 +52,15 @@ modified   src/clj/pyregence/match_drop.clj
                                         {:job-id  job-id
 #+end_src
 
-but none of the none of the microservices are live on the [[https://sierra.pyregence.org/geoserver/web/][Sierra GeoServer]] which as this error:
+However Oliver believes there is also an issue with mircro-services: runway or elmfire, none of which are alive on Sierra, as this error seems to demonstrate:
 
 #+begin_quote
 Loading quota store failed, the disk quota subsystem is disabled, please re-configure: Could not open JDBC Connection for transaction; nested exception is org.apache.commons.dbcp.SQLNestedException: Cannot create PoolableConnectionFactory (General error: java.lang.RuntimeException: double allocation in file /opt/geoserver/data/gwc/diskquota_page_store_h2/diskquota.index.db page 6264 blocks 400896-400959 [50000-119])
 #+end_quote
 
-Oliver's TODOS that i haven't vetted:
+So after we merge in the PR Oliver suggests we do the following:
 - Make sure the gridfire servers on the 4 compute nodes are running.
 - Make sure that the version of ELMFIRE that we’re using in our microservices is installed on the 4 compute nodes.
 - Make sure that the request the PyreCast Match Drop client is making matches the latest syntax/accepted parameters for Chris’s WorldGen server.
 - Make sure our Sierra GeoServer is still working as expected.
 - Coordinate with Chris to push the priority of a few Match Drop runs so that we don’t have to wait multiple hours for each one to finish (due to being in the queue).
-
-Gary says the namespaces to look at are near_term_forecast.cljs, match_drop.clj, match_functions.sql and ultimately submits jobs via the Runway protocol to our SLURM cluster's microservices. You could check with @aliceliquori and/or @daniel-silva for support with those if you get this far and it looks like the job is failing after being submitted via Runway.
