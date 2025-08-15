@@ -1,0 +1,210 @@
+(ns pyregence.components.map-controls.weather-station-tool
+  (:require [clojure.core.async                            :refer [take! go <!]]
+            [clojure.string                                :as str]
+            [herb.core                                     :refer [<class]]
+            [pyregence.components.common                   :refer [tool-tip-wrapper]]
+            [pyregence.components.help                     :as h]
+            [pyregence.components.map-controls.tool-button :refer [tool-button]]
+            [pyregence.components.mapbox                   :as mb]
+            [pyregence.components.resizable-window         :refer [resizable-window]]
+            [pyregence.components.svg-icons                :as svg]
+            [pyregence.state                               :as !]
+            [pyregence.styles                              :as $]
+            [pyregence.utils.async-utils                   :as u-async]
+            [reagent.core                                  :as r]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helper Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-weather-station-image-chan [active-weather-station]
+  (go
+    (->> (u-async/call-clj-async! "get-current-image"
+                                  :post-blob
+                                  (:name active-weather-station)
+                                  (:api-name active-weather-station))
+         (<!)
+         (:body)
+         (js/URL.createObjectURL))))
+
+(defn- alert-image-url->alert-weather-station-id
+  "Parses the weather-station ID out of the image URL for AlertWest weather-stations.
+   Ex: A URL of \"https://prod.weathernode.net/data/img/2428/2023/07/12/Sutro_Tower_1_1689204279_6490.jpg\"
+   returns `2428`."
+  [url]
+  (-> url
+      (str/split #"/")
+      (get 5 nil)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Styles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- $alert-logo-style []
+  {:height    "auto"
+   :left      "2rem"
+   :min-width "100px"
+   :position  "absolute"
+   :top       "2rem"
+   :width     "10%"})
+
+(defn- $mobile-weather-station-tool []
+  {:background-color ($/color-picker :bg-color)
+   :box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
+   :color            ($/color-picker :font-color)
+   :height           "290px"
+   :display          "block"
+   :width            "100%"
+   :z-index          "105"})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+(defn- mobile-weather-station-tool-header []
+  [:div#collapsible-weather-station-header
+   {:style {:align-items      "center"
+            :background-color ($/color-picker :header-color)
+            :display          "flex"
+            :justify-content  "space-between"
+            :padding             "0 1rem"}}
+   [:span {:style {:fill         ($/color-picker :font-color)
+                   :height       "1.5rem"
+                   :margin-right "0.5rem"
+                   :width        "1.5rem"}}
+    [svg/weather-station]]
+   [:label {:style {:font-size "1rem"}}
+    "Wildfire Weather-Station Tool"]
+   [:span {:style {:margin-right "-.5rem"
+                   :visibility   (if (and @!/show-weather-station? @!/mobile?) "visible" "hidden")}}
+    [tool-button :close #(reset! !/show-weather-station? false)]]])
+
+(defn- weather-station-tool-intro []
+  [:div {:style {:padding "1.2em"}}
+   "Click on a weather-station to view the most recent image. Powered by "
+   [:a {:href   "https://www.alertwest.org/"
+        :ref    "noreferrer noopener"
+        :target "_blank"}
+    "ALERTWest"]
+   "."])
+
+(defn- weather-station-image [weather-station-name weather-station-image-url reset-view zoom-weather-station image-src]
+  [:div
+   [:div {:style {:display         "flex"
+                  :justify-content "center"
+                  :position        "absolute"
+                  :top             "2rem"
+                  :width           "100%"}}
+    [:label (str "Weather-Station: " weather-station-name)]]
+   [:a {:href   (str "https://www.alertwest.live/cam-console/" (alert-image-url->alert-weather-station-id weather-station-image-url))
+        :ref    "noreferrer noopener"
+        :target "_blank"}
+    [:img {:src   "images/alert_west_logo.png"
+           :style ($/combine $alert-logo-style)}]]
+   (when @!/terrain?
+     [tool-tip-wrapper
+      "Zoom Out to 2D"
+      :left
+      [:button {:class    (<class $/p-themed-button)
+                :on-click reset-view
+                :style    {:bottom   "1.25rem"
+                           :padding  "2px"
+                           :position "absolute"
+                           :left     "1rem"}}
+       [:div {:style {:height "32px"
+                      :width  "32px"}}
+        [svg/return]]]])
+   [tool-tip-wrapper
+    "Zoom Map to Weather-Station"
+    :right
+    [:button {:class    (<class $/p-themed-button)
+              :on-click zoom-weather-station
+              :style    {:bottom   "1.25rem"
+                         :padding  "2px"
+                         :position "absolute"
+                         :right    "1rem"}}
+     [:div {:style {:height "32px"
+                    :width  "32px"}}
+      [svg/binoculars]]]]
+   [:img {:src   @image-src
+          :style {:height "auto" :width "100%"}}]])
+
+(defn- loading-weather-station [weather-station-name]
+  [:div {:style {:padding "1.2em"}}
+   (str "Loading weather-station " weather-station-name "...")])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Root Component
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn weather-station-tool [parent-box close-fn!]
+  (r/with-let [active-weather-station  (r/atom nil)
+               image-src      (r/atom nil)
+               exit-chan      (r/atom nil)
+               zoom-weather-station    (fn []
+                                (let [{:keys [longitude latitude tilt pan]} @active-weather-station]
+                                  (reset! !/terrain? true)
+                                  (h/show-help! :terrain)
+                                  (mb/toggle-dimensions! true)
+                                  (mb/fly-to! {:center  [longitude latitude]
+                                               :zoom    15
+                                               :bearing pan
+                                               :pitch   (min (+ 90 tilt) 85)}) 400))
+               reset-view     (fn []
+                                (let [{:keys [longitude latitude]} @active-weather-station]
+                                  (reset! !/terrain? false)
+                                  (mb/toggle-dimensions! false)
+                                  (mb/fly-to! {:center [longitude latitude]
+                                               :zoom   6})))
+               on-click       (fn [features]
+                                (go
+                                  (when-let [new-weather-station (js->clj (aget features "properties") :keywordize-keys true)]
+                                    (u-async/stop-refresh! @exit-chan)
+                                    (reset! active-weather-station new-weather-station)
+                                    (reset! image-src nil)
+                                    (let [image-chan (get-weather-station-image-chan @active-weather-station)]
+                                      (reset! image-src (<! image-chan))
+                                      (reset! exit-chan
+                                              (u-async/refresh-on-interval! #(go (reset! image-src (<! (get-weather-station-image-chan @active-weather-station))))
+                                                                            60000))))))
+               ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
+               _              (take! (mb/create-weather-station-layer! "fire-weather-stations")
+                                     #(mb/add-feature-highlight!
+                                       "fire-weather-stations" "fire-weather-stations"
+                                       :click-fn on-click))]
+    (let [weather-station-name        (:name @active-weather-station)
+          weather-station-image-url   (:image-url @active-weather-station)
+          render-content     (fn []
+                               (cond
+                                 (nil? @active-weather-station)
+                                 [weather-station-tool-intro]
+
+                                 @image-src
+                                 [weather-station-image
+                                  weather-station-name
+                                  weather-station-image-url
+                                  reset-view
+                                  zoom-weather-station
+                                  image-src]
+
+                                 :else
+                                 [loading-weather-station weather-station-name]))]
+      (if @!/mobile?
+        [:div#wildfire-mobile-weather-station-tool
+         {:style ($/combine $/tool $mobile-weather-station-tool)}
+         [mobile-weather-station-tool-header]
+         [render-content]]
+        [:div#wildfire-weather-station-tool
+         [resizable-window
+          parent-box
+          290
+          460
+          "Wildfire Weather-Station Tool"
+          close-fn!
+          render-content]]))
+    (finally
+      (u-async/stop-refresh! @exit-chan)
+      (mb/remove-layer! "fire-weather-stations")
+      (mb/clear-highlight! "fire-weather-stations" :selected))))

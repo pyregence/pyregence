@@ -55,11 +55,15 @@ GET camera
   :line "38.573868,-120.726982 38.566535,-120.711052"}}
 #+end_src
 
+For now we will use the camera-svg as a mock ws-svg
 
-* TODO confirm WS-info calls
-* TODO Get WS-icon
-* TODO Use WS-geo-info the same way camera-geo-info is to create a map.
-* TODO Display WS-info when clicked.
+* DOING Use WS-geo-info the same way camera-geo-info is to create a map.
+
+#+begin_src clojure
+
+#+end_src
+
+* DOING Display WS-info when WS-svg clicked.
 Here is what we will want to display:
 - WS Name / ID
 - Forecast datetime
@@ -72,6 +76,6 @@ Here is what we will want to display:
 - Gust
 - Air quality
 
-* TODO Zoom to WS-icon when clicked
-* TODO only show to authenticated users.
+* DOING Zoom to WS-icon when WS-svg clicked
+* TODO only show WS-icons&info to authenticated users.
 * TODO Cache station results because they take too long.

@@ -38,6 +38,7 @@
       :admin-user      [svg/admin-user :height "20px" :width "20px"]
       :binoculars      [svg/binoculars :height "20px" :width "20px"]
       :camera          [svg/camera :height "20px" :width "20px"]
+      :weather-station [svg/weather-station :height "20px" :width "20px"]
       :center-on-point [svg/center-on-point :height "20px" :width "20px"]
       :close           [svg/close :height "20px" :width "20px"]
       :clock           [svg/clock :height "20px" :width "20px"]

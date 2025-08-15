@@ -41,6 +41,18 @@
             :fill   "currentColor"
             :stroke "none"}]]])
 
+(defn weather-station [& {:keys [height width]}]
+  [:svg {:height  height
+         :viewBox "0 0 100 100"
+         :width   width}
+   [:g {:transform "matrix(1,0,0,1,-1.05324,1.00207)"}
+    [:path {:d      "M90.8,23.4C88.7,22.3 86.1,22.3 84.1,23.6L69.5,33C69,26.3 63.4,21.1 56.7,21.1L20.5,21.1
+                     C13.4,21.2 7.7,26.9 7.7,34L7.7,64C7.7,71.1 13.4,76.8 20.5,76.8L56.8,76.8C63.5,76.8 69.1,
+                     71.6 69.6,64.9L84.2,74.3C86.2,75.6 88.8,75.7 90.9,74.5C93.1,73.3 94.4,71 94.4,68.6
+                     L94.4,29.3C94.3,26.9 93,24.6 90.8,23.4Z"
+            :fill   "currentColor"
+            :stroke "none"}]]])
+
 (defn center-on-point [& {:keys [height width]}]
   [:svg {:height  height
          :viewBox "0 0 48 48"

@@ -129,6 +129,10 @@
                    (reset! !/show-measure-tool? false)
                    (gtag-tool-clicked @!/show-camera? "camera"))
               @!/show-camera?])
+           [:weather-station
+            "show weather stations"
+            #(swap! !/show-weather-station? not)
+            @!/show-weather-station?]
            (when-not (get-any-level-key :disable-flag?)
              [:flag
               (str (hs-str @!/show-red-flag?) " red flag warnings")
