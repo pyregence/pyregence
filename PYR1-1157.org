@@ -57,7 +57,7 @@ GET camera
 
 For now we will use the camera-svg as a mock ws-svg
 
-* DOING Use WS-geo-info the same way camera-geo-info is to create a map.
+* DOING Unmock API and WS-geo-info the same way camera-geo-info is to create a map.
 
 #+begin_src clojure
 
@@ -79,3 +79,5 @@ Here is what we will want to display:
 * DOING Zoom to WS-icon when WS-svg clicked
 * TODO only show WS-icons&info to authenticated users.
 * TODO Cache station results because they take too long.
+* TODO Consider sharing functionality with camera api
+* TODO see what were not using in the weather_station_tools ns
