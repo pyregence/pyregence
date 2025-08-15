@@ -15,7 +15,7 @@
             [runway.utils               :refer [json-str->edn log-response!]]
             [triangulum.config          :refer [get-config]]
             [triangulum.database        :refer [call-sql sql-primitive]]
-            [triangulum.logging         :refer [log-str]]
+            [triangulum.logging         :refer [log-str log]]
             [triangulum.response        :refer [data-response]]
             [triangulum.type-conversion :refer [json->clj clj->json]]))
 
@@ -365,7 +365,7 @@
                               :geoserver-workspace geoserver-workspace}]
     (update-match-job! match-job)
     (log-str "Initiating Match Drop #" match-job-id)
-    (log-str "dps-request" dps-request)
+    (log dps-request {:truncate? false})
     ;; The Match Drop pipeline is started by sending a request to the DPS:
     (send-to-server-wrapper! (get-md-config :dps-host)
                              (get-md-config :dps-port)
