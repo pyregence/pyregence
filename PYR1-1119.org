@@ -76,3 +76,23 @@ Ideas of where to investigate: calls to specific microservices (elmfire, weather
 
 
   Getting the microservices running on {{sierra}} again should only take running a few commands. I reached out to Alice and Daniel because I want to know if/how those commands have changed before I go ahead and run them.
+
+* Garys overview
+
+link to mattermost: https://mattermost.sig-gis.com/cec-project/pl/6s18p9coe7guzjogadx8o7q7he
+
+@drew HI Drew. Thanks for offering to take a look at the broken match-drop feature today. I'm not sure why new match-drop jobs aren't appearing on our dashboards. @oliver is really the developer best suited to answer this question for us, but since he's out until Monday, we'll have to take a look without him first.
+
+Here are some tips:
+
+1. Visit https://pyrecast.org and log in with your account.
+2. Make sure that you can see the match-drop tool icon in the upper right toolbar. It looks like a stylized flame.
+3. Click on that icon to open a pop-up window with match-drop instructions. You will need to click on the map to set your ignition point and then select an ignition time from the calendar widget. This widget seems a bit buggy to me in Firefox, but the pop-up does say that it is only meant to work with Chrome, so I'd recommend running it through there first. Make sure that you select an ignition time in the valid range that is specified in the pop-up window.
+4. Once you submit your job, a new pop-up will appear with a button to visit the dashboard page (https://pyrecast.org/dashboard). You should see your match-drop job appear here if it is successfully submitted. (Chris and I aren't seeing any new jobs appear on our dashboard, which is the current problem.)
+5. I'd recommend SSHing onto our production Pyrecast server and using `tail -f` on the server's log file while submitting a new match-drop job to see if you can catch a server-side error coming through.
+6. In code, this is all in the `pyregence` repo. The job should be sent from the browser somewhere in `src/cljs/pyregence/pages/near_term_forecast.cljs`. (Look for the match-drop widget.)
+7. On the back-end, the job should be picked up and processed by `src/clj/pyregence/match_drop.clj`(after getting there through a route in `src/clj/pyregence/routing.clj`, of course).
+8. The `match_drop.clj` code uses `call-sql` to invoke various SQL functions in `src/sql/functions/match_functions.sql`. These are used to track jobs persistently in our Postgresql database. You may want to check the contents of the database and/or just call some of these `call-sql` expressions from your REPL to see if the jobs are actually being created or not.
+9. Ultimately, `match_drop.clj` submits jobs via the Runway protocol to our SLURM cluster's microservices. You could check with @aliceliquori and/or @daniel-silva for support with those if you get this far and it looks like the job is failing after being submitted via Runway.
+
+Good luck and happy hacking! :fire:
