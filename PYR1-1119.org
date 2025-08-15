@@ -7,9 +7,8 @@ Detail: Failing row contains (190, null, 2025-06-03 19:20:00.264531, 2025-06-03 
 Where: SQL function "initialize_match_job" statement 1
 #+end_quote
 
-However it seems Oliver believes even when this is fixed their will still be an issue beacause of some microservice, something to do with runway, elmfire, etc...
-
-What follows is potentially related error message from sierra GeoServer.
+However it seems Oliver believes even when this is fixed their will still be an issue because of some microservice, something to do with runway, elmfire, etc...
+What follows is potentially related error message from sierra GeoServer:
 
 #+begin_quote
 Loading quota store failed, the disk quota subsystem is disabled, please re-configure: Could not open JDBC Connection for transaction; nested exception is org.apache.commons.dbcp.SQLNestedException: Cannot create PoolableConnectionFactory (General error: java.lang.RuntimeException: double allocation in file /opt/geoserver/data/gwc/diskquota_page_store_h2/diskquota.index.db page 6264 blocks 400896-400959 [50000-119])
@@ -22,10 +21,10 @@ Loading quota store failed, the disk quota subsystem is disabled, please re-conf
 #+end_quote
 
 Oliver's TODOS that i haven't vetted:
-  * Make sure the gridfire servers on the 4 compute nodes are running.
-  * Make sure that the version of ELMFIRE that we’re using in our microservices is installed on the 4 compute nodes.
-  * Make sure that the request the PyreCast Match Drop client is making matches the latest syntax/accepted parameters for Chris’s WorldGen server.
-  * Make sure our Sierra GeoServer is still working as expected.
-  * Coordinate with Chris to push the priority of a few Match Drop runs so that we don’t have to wait multiple hours for each one to finish (due to being in the queue).
+- Make sure the gridfire servers on the 4 compute nodes are running.
+- Make sure that the version of ELMFIRE that we’re using in our microservices is installed on the 4 compute nodes.
+- Make sure that the request the PyreCast Match Drop client is making matches the latest syntax/accepted parameters for Chris’s WorldGen server.
+- Make sure our Sierra GeoServer is still working as expected.
+- Coordinate with Chris to push the priority of a few Match Drop runs so that we don’t have to wait multiple hours for each one to finish (due to being in the queue).
 
 Gary says the namespaces to look at are near_term_forecast.cljs, match_drop.clj, match_functions.sql and ultimately submits jobs via the Runway protocol to our SLURM cluster's microservices. You could check with @aliceliquori and/or @daniel-silva for support with those if you get this far and it looks like the job is failing after being submitted via Runway.
