@@ -1,73 +1,8 @@
-* Description
-Show authenticated users, on the map, where the weathers stations (WS) are, by displaying weather station icons, and their when clicked, zoom to them, and show the following WS-info, from this site (https://api.weather.gov/), in the info popup:
+* Summary
 
-- WS Name / ID
-- Forecast datetime
-- Latest forecast for selected value or all:
-- Air temperature (F)
-- Humidity
-- Dew Point
-- Wind speed
-- Wind direction
-- Gust
-- Air quality
-
-* TODOs
-** DONE Get WS-geo-info
-
-The WS geometry information has this description:
-#+begin_quote
-A GeoJSON geometry object. Please refer to IETF RFC 7946 for information on the GeoJSON format.
-#+end_quote
-
-So can we use the data in a GeoJSON geometry object?
-
-** DONE Get camera-geo-info
-
-the `get-cameras` function says
-
-"Builds a GeoJSON response of the current wildfire cameras."
-
-So chances are good we can!
-
-** DONE See if WS-geo-info looks like it translated into the same format as camera-geo-info
-** DONE Get example station to use for the rest of the steps.
 GET https://api.weather.gov/stations/{stationId}/
-*** Example
-
 #+begin_src clojure
-(require '[clj-http.client :as client]
-         '[clojure.string :as str])
-
-(def url "https://api.weather.gov/")
-(defn getj [u] (client/get u {:as :json-string-keys}))
-(def stations (:body (getj "https://api.weather.gov/stations")))
-(def station-url (first (stations "observationStations")))
-(def station (:body (getj station-url )))
-station
-{"@context"
- ["https://geojson.org/geojson-ld/geojson-context.jsonld"
-  {"s" "https://schema.org/",
-   "bearing" {"@type" "s:QuantitativeValue"},
-   "city" "s:addressLocality",
-   "wx" "https://api.weather.gov/ontology#",
-   "county" {"@type" "@id"},
-   "geo" "http://www.opengis.net/ont/geosparql#",
-   "forecastOffice" {"@type" "@id"},
-   "@version" "1.1",
-   "value" {"@id" "s:value"},
-   "geometry" {"@id" "s:GeoCoordinates", "@type" "geo:wktLiteral"},
-   "publicZone" {"@type" "@id"},
-   "distance" {"@id" "s:Distance", "@type" "s:QuantitativeValue"},
-   "@vocab" "https://api.weather.gov/ontology#",
-   "state" "s:addressRegion",
-   "unit" "http://codes.wmo.int/common/unit/",
-   "forecastGridData" {"@type" "@id"},
-   "unitCode" {"@id" "s:unitCode", "@type" "@id"}}],
- "id" "https://api.weather.gov/stations/0007W",
- "type" "Feature",
- "geometry" {"type" "Point", "coordinates" [-84.1787 30.53099]},
- "properties"
+{"properties"
  {"forecast" "https://api.weather.gov/zones/forecast/FLZ017",
   "@id" "https://api.weather.gov/stations/0007W",
   "elevation" {"unitCode" "wmoUnit:m", "value" 49.0728},
@@ -76,78 +11,11 @@ station
   "stationIdentifier" "0007W",
   "name" "Montford Middle",
   "fireWeatherZone" "https://api.weather.gov/zones/fire/FLZ017",
-  "@type" "wx:ObservationStation"}}
+  "@type" "wx:ObservationStation"},
+ "geometry" {"type" "Point", "coordinates" [-84.1787 30.53099]}}
 #+end_src
-
-** FAILED confirm we can get the rest of the WS data:
-
-We need and its found under :
-- [x] Name: properties
-- [x] ID: properties
-
-** DONE confirm we can get the rest of the forecast data:
-
-Forecast doesn't hold the data we want
-#+begin_src clojure
-(require '[clj-http.client :as client]
-         '[clojure.string :as str])
-
-(def forecast-url "https://api.weather.gov/zones/forecast/FLZ017")
-(defn getj [u] (client/get u {:as :json-string-keys}))
-(def forecast (get-in (getj forecast-url) [:body "properties"]))
-
-forecast
-;; => {"awipsLocationIdentifier" "TAE",
-;;     "gridIdentifier" "TAE",
-;;     "@id" "https://api.weather.gov/zones/forecast/FLZ017",
-;;     "effectiveDate" "2025-03-18T18:00:00+00:00",
-;;     "timeZone" ["America/New_York"],
-;;     "id" "FLZ017",
-;;     "forecastOffices" ["https://api.weather.gov/offices/TAE"],
-;;     "name" "Leon",
-;;     "forecastOffice" "https://api.weather.gov/offices/TAE",
-;;     "type" "public",
-;;     "state" "FL",
-;;     "expirationDate" "2200-01-01T00:00:00+00:00",
-;;     "cwa" ["TAE"],
-;;     "radarStation" "TLH",
-;;     "observationStations"
-;;     ["https://api.weather.gov/stations/KTLH"
-;;      "https://api.weather.gov/stations/KAAF"
-;;      "https://api.weather.gov/stations/KABY"
-;;      "https://api.weather.gov/stations/KBGE"
-;;      "https://api.weather.gov/stations/KCTY"
-;;      "https://api.weather.gov/stations/KDHN"
-;;      "https://api.weather.gov/stations/KECP"
-;;      "https://api.weather.gov/stations/KFPY"
-;;      "https://api.weather.gov/stations/KLOR"
-;;      "https://api.weather.gov/stations/KMAI"
-;;      "https://api.weather.gov/stations/KOZR"
-;;      "https://api.weather.gov/stations/KPAM"
-;;      "https://api.weather.gov/stations/KVAD"
-;;      "https://api.weather.gov/stations/KVLD"],
-;;     "@type" "wx:Zone"}
-
-#+end_src
-
-** DONE Try to get rest of data from Observations endpoint
-*** URL
-
 GET https://api.weather.gov/stations/{stationId}/observations/latest
-
-*** Example
-
-We were able to get everything but Air Quality.
-
 #+begin_src clojure
-(require '[clj-http.client :as client]
-         '[clojure.string :as str])
-
-(def url "https://api.weather.gov/stations/0007W/observations/latest")
-(defn getj [u] (client/get u {:as :json-string-keys}))
-(def obs (get-in (getj url) [:body "properties"]))
-
-(select-keys obs ["windSpeed" "windDirection" "windGust" "temperature" "relativeHumidity" "dewpoint"])
 {"windSpeed"
  {"unitCode" "wmoUnit:km_h-1", "value" 8.028, "qualityControl" "V"},
  "windDirection"
@@ -158,76 +26,7 @@ We were able to get everything but Air Quality.
  {"unitCode" "wmoUnit:percent", "value" nil, "qualityControl" "Z"},
  "dewpoint" {"unitCode" "wmoUnit:degC", "value" 23.23, "qualityControl" "V"}}
 #+end_src
-
-** DOING gather info on how we use camera data
-*** function calls
-we have a server side GET function that builds a GeoJson which i believe what we have.
-
-#+begin_src clojure
-(defn get-cameras
-  "Builds a GeoJSON response of the current wildfire cameras."
-  [_]
-  (data-response
-   (if (valid-cache?)
-     @camera-cache
-     (let [new-cameras (->> (get-and-conform-wildfire-cameras!)
-                            ;; remove inactive cameras
-                            (remove (fn [{{timestamp :update-time} :properties}]
-                                      (or (nil? timestamp)
-                                          (utc-timestamp->four-hours-old? timestamp))))
-                            (->feature-collection))]
-       (reset-cache! new-cameras)
-       new-cameras))))
-#+end_src
-
-
-;; that recall calls this..
-
-#+begin_src clojure
-(defn- get-and-conform-wildfire-cameras!
-  "Fetches ALERTWest wildfire cameras and reformats them."
-  []
-  (some->> (get-wildfire-cameras!)
-           (pmap #(site->feature "alert-west" %))))
-#+end_src
-
-site->feature just conforms
-
-#+begin_src clojure
-(defn- site->feature [api-name {:keys [name site position image update_time]}]
-  {:type       "Feature"
-   :geometry   {:type        "Point"
-                :coordinates [(parse-num (:longitude site))
-                              (parse-num (:latitude site))]}
-   :properties {:api-name    api-name
-                :latitude    (parse-num (:latitude site))
-                :longitude   (parse-num (:longitude site))
-                :name        name
-                :pan         (parse-num (:pan position))
-                :state       (:state site)
-                :tilt        (parse-num (:tilt position))
-                :update-time (or update_time (:time image))
-                :image-url   (:url image)}})
-#+end_src
-
-calls this..
-
-#+begin_src clojure
-(defn- get-wildfire-cameras!
-  []
-  (api-all-cameras alert-west-api-url alert-west-api-defaults))
-#+end_src
-
-calls this..
-
-#+begin_src clojure
-(defn- api-all-cameras [api-url api-defaults]
-  (let [{:keys [status body]} (api-request "cameras" api-url api-defaults)]
-    (when (= 200 status)
-      (json/read-str body :key-fn keyword))))
-#+end_src
-*** example raw camera from api
-**** example
+GET camera
 #+begin_src clojure
 {:name "Axis-MtAukum1",
  :source "Mt_Aukum_1",
@@ -255,106 +54,24 @@ calls this..
  {:time "2025-08-15T17:37:25Z",
   :line "38.573868,-120.726982 38.566535,-120.711052"}}
 #+end_src
-**** compared to raw WS
-***** WS
-#+begin_src clojure
-{"@context"
- ["https://geojson.org/geojson-ld/geojson-context.jsonld"
-  {"s" "https://schema.org/",
-   "bearing" {"@type" "s:QuantitativeValue"},
-   "city" "s:addressLocality",
-   "wx" "https://api.weather.gov/ontology#",
-   "county" {"@type" "@id"},
-   "geo" "http://www.opengis.net/ont/geosparql#",
-   "forecastOffice" {"@type" "@id"},
-   "@version" "1.1",
-   "value" {"@id" "s:value"},
-   "geometry" {"@id" "s:GeoCoordinates", "@type" "geo:wktLiteral"},
-   "publicZone" {"@type" "@id"},
-   "distance" {"@id" "s:Distance", "@type" "s:QuantitativeValue"},
-   "@vocab" "https://api.weather.gov/ontology#",
-   "state" "s:addressRegion",
-   "unit" "http://codes.wmo.int/common/unit/",
-   "forecastGridData" {"@type" "@id"},
-   "unitCode" {"@id" "s:unitCode", "@type" "@id"}}],
- "id" "https://api.weather.gov/stations/0007W",
- "type" "Feature",
- "geometry" {"type" "Point", "coordinates" [-84.1787 30.53099]},
- "properties"
- {"forecast" "https://api.weather.gov/zones/forecast/FLZ017",
-  "@id" "https://api.weather.gov/stations/0007W",
-  "elevation" {"unitCode" "wmoUnit:m", "value" 49.0728},
-  "timeZone" "America/New_York",
-  "county" "https://api.weather.gov/zones/county/FLC073",
-  "stationIdentifier" "0007W",
-  "name" "Montford Middle",
-  "fireWeatherZone" "https://api.weather.gov/zones/fire/FLZ017",
-  "@type" "wx:ObservationStation"}}
-#+end_src
-***** WS-observation
-#+begin_src clojure
-{"windSpeed"
- {"unitCode" "wmoUnit:km_h-1", "value" 8.028, "qualityControl" "V"},
- "windDirection"
- {"unitCode" "wmoUnit:degree_(angle)", "value" 323, "qualityControl" "V"},
- "windGust" {"unitCode" "wmoUnit:km_h-1", "value" nil, "qualityControl" "Z"},
- "temperature" {"unitCode" "wmoUnit:degC", "value" nil, "qualityControl" "Z"},
- "relativeHumidity"
- {"unitCode" "wmoUnit:percent", "value" nil, "qualityControl" "Z"},
- "dewpoint" {"unitCode" "wmoUnit:degC", "value" 23.23, "qualityControl" "V"}}
-#+end_src
 
 
-*** example confirmed camera
-#+begin_src clojure
-{:type "Feature",
- :geometry {:type "Point", :coordinates [-120.726982 38.573868]},
- :properties
- {:image-url
-  "https://prod.weathernode.net/data/img/2148/2025/08/15/Mt_Aukum_1_1755279225_6396.jpg",
-  :pan 240.39,
-  :name "Axis-MtAukum1",
-  :update-time "2025-08-15T17:33:45Z",
-  :tilt -2.99,
-  :longitude -120.726982,
-  :state "CA",
-  :api-name "alert-west",
-  :latitude 38.573868}}
-#+end_src
-*** what gets used in camera to set the location on the map?
-The coordinates: [longitude, latitude]
-** DOING confirm ws-geo-info to camera-geo-info
+* TODO confirm WS-info calls
+* TODO Get WS-icon
+* TODO Use WS-geo-info the same way camera-geo-info is to create a map.
+* TODO Display WS-info when clicked.
+Here is what we will want to display:
+- WS Name / ID
+- Forecast datetime
+- Latest forecast for selected value or all:
+- Air temperature (F)
+- Humidity
+- Dew Point
+- Wind speed
+- Wind direction
+- Gust
+- Air quality
 
-So we will need coordinates aka longitude, latitude to place it on the map.
-In the WS that path is
-#+begin_src clojure
-["geometry" "coordinates"]
-#+end_src
-However the conform cameras feature might take a GeoJSON object so we can maybe use the same code? might not be worth the hassle.Here is what the site->feature has:
-#+begin_src clojure
-{:type       "Feature"
- :geometry   {:type        "Point"
-              :coordinates [(parse-num (:longitude site))
-                            (parse-num (:latitude site))]}
- :properties {:api-name    api-name
-              :latitude    (parse-num (:latitude site))
-              :longitude   (parse-num (:longitude site))
-              :name        name
-              :pan         (parse-num (:pan position))
-              :state       (:state site)
-              :tilt        (parse-num (:tilt position))
-              :update-time (or update_time (:time image))
-              :image-url   (:url image)}}
-#+end_src
-
-Conclusion:
-It doesn't look like its worth it. We don't have: tilt, image-url, pan, update-time.
-We have coordinates, latitude, longitude, name, state (through id), maybe api-name.
-Should the type be ID
-
-** TODO confirm WS-info calls
-** TODO Get WS-icon
-** TODO Use WS-geo-info the same way camera-geo-info is to create a map.
-** TODO Display WS-info when clicked.
-** TODO Zoom to WS-icon when clicked
-** TODO Cache station results because they take too long.
+* TODO Zoom to WS-icon when clicked
+* TODO only show to authenticated users.
+* TODO Cache station results because they take too long.
