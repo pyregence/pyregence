@@ -60,7 +60,7 @@
                           match-drop-server-msg-handler
                           (System/getProperty "javax.net.ssl.keyStore")
                           (System/getProperty "javax.net.ssl.keyStorePassword")
-                          false)))
+                          true)))
 
 (defn stop-match-drop-server! [_]
   (log-str "Stopping Match Drop server on port " (get-config :pyregence.match-drop/match-drop :app-port))
