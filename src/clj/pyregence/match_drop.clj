@@ -244,7 +244,7 @@
                                                                port
                                                                (System/getProperty "javax.net.ssl.keyStore")
                                                                (System/getProperty "javax.net.ssl.keyStorePassword")
-                                                               false)]
+                                                               true)]
       (log-str (str "Able to open a client-socket: " client-socket))
       (when-not (runway/send-to-server! client-socket
                                         (-> request
@@ -365,6 +365,7 @@
                               :geoserver-workspace geoserver-workspace}]
     (update-match-job! match-job)
     (log-str "Initiating Match Drop #" match-job-id)
+    (log-str "dps-request" dps-request)
     ;; The Match Drop pipeline is started by sending a request to the DPS:
     (send-to-server-wrapper! (get-md-config :dps-host)
                              (get-md-config :dps-port)
