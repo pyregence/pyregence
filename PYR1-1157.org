@@ -163,9 +163,7 @@ We were able to get everything but Air Quality.
 #+end_src
 
 ** DOING gather info on how we use camera data
-
 *** function calls
-
 we have a server side GET function that builds a GeoJson which i believe what we have.
 
 #+begin_src clojure
@@ -233,8 +231,52 @@ calls this..
 #+end_src
 
 
-*** raw response from cameras api
+*** example raw camera from api
+#+begin_src clojure
+{:name "Axis-MtAukum1",
+ :source "Mt_Aukum_1",
+ :site
+ {:id "2148",
+  :description nil,
+  :latitude "38.573868",
+  :longitude "-120.726982",
+  :altitude nil,
+  :county "eldorado",
+  :state "CA",
+  :time "2025-08-15T17:37:25Z"},
+ :image
+ {:time "2025-08-15T17:37:25Z",
+  :url
+  "https://prod.weathernode.net/data/img/2148/2025/08/15/Mt_Aukum_1_1755279445_8986.jpg"},
+ :position
+ {:time "2025-08-15T17:37:25Z", :pan "120.38", :tilt "-2.99", :zoom "1"},
+ :parameters
+ {:time "2025-08-15T17:37:25Z",
+  :Properties.System.SerialNumber nil,
+  :Brand.Brand "Axis",
+  :Brand.ProdNbr "Q6075-E"},
+ :view
+ {:time "2025-08-15T17:37:25Z",
+  :line "38.573868,-120.726982 38.566535,-120.711052"}}
 
+#+end_src
+
+*** example confirmed camera
+#+begin_src clojure
+{:type "Feature",
+ :geometry {:type "Point", :coordinates [-120.726982 38.573868]},
+ :properties
+ {:image-url
+  "https://prod.weathernode.net/data/img/2148/2025/08/15/Mt_Aukum_1_1755279225_6396.jpg",
+  :pan 240.39,
+  :name "Axis-MtAukum1",
+  :update-time "2025-08-15T17:33:45Z",
+  :tilt -2.99,
+  :longitude -120.726982,
+  :state "CA",
+  :api-name "alert-west",
+  :latitude 38.573868}}
+#+end_src
 
 
 *** what we transform it in to
