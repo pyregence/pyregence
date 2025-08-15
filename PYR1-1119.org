@@ -1,47 +1,22 @@
-* Jira ticket: DONE Match Drop not running for utility clients    :PYR1_1119:
+* Jira ticket: DONE Match Drop not running for utility clients
 
-** description
+Match drop doesn't start, here are some logs from some service, maybe elmfire or weather/dps::
 
-When the Organization's users try to run Match Drop on [PyreCast.org|http://nPyreCast.org], they expect that a Match Drop simulation will start, be logged in their dashboard, and then finish over time; however, today, they were unable to start a run on their account.
+#+begin_quote
+SQL Call: SELECT * FROM initialize_match_job(nil)
+Error: ERROR: null value in column "user_rid" of relation "match_jobs" violates not-null constraint
+Detail: Failing row contains (190, null, 2025-06-03 19:20:00.264531, 2025-06-03 19:20:00.264531, 2, null, , f, f, null, null, null, null, null, null, null).
+Where: SQL function "initialize_match_job" statement 1
+Request(post): "/clj/get-md-status" {:clj-args (nil)}
+#+end_quote
 
-Oliver will perform the initial investigation into this ticket to get a concept of what would be happening with this ticket. Oliver will then pair program to share knowledge and help guide the assignee. Match Drop client calls microservices; acts as intermediate step for UI to microservice.
+Potentially related error message from sierra GeoServer:
 
-Ideas of where to investigate: calls to specific microservices (elmfire, weather/dps), service that didn’t start.
-
-#+begin_src quote
-  {noformat}06/03 19:20:00 SQL Call: SELECT * FROM initialize_match_job(nil)
-  06/03 19:20:00 Error: ERROR: null value in column "user_rid" of relation "match_jobs" violates not-null constraint
-    Detail: Failing row contains (190, null, 2025-06-03 19:20:00.264531, 2025-06-03 19:20:00.264531, 2, null, , f, f, null, null, null, null, null, null, null).
-    Where: SQL function "initialize_match_job" statement 1
-  06/03 19:20:00 Request(post): "/clj/get-md-status" {:clj-args (nil)}{noformat}
-#+end_src
-
-** Steps to Reproduce
-
-  # Go to [PyreCast.org|http://PyreCast.org] and login using an account with Match Drop enabled
-  # …
-
-** Acceptance Criteria
-
-  * Channel in MatterMost created for match drop discussion (or one will be revived)
-  * Organization's users and any user with access to Match Drop can run a match drop simulation
-  * Catch the current error gracefully and provide an error message to the user
-  *
-
-** comments by oliver
-
-**** tickets
-
-3 tickets created:
-
-1. https://sig-gis.atlassian.net/browse/PYR1-1163
-
-2. https://sig-gis.atlassian.net/browse/PYR1-1164
-
-3. PYR1-1165: Fix bug with Sierra GeoServer: https://sig-gis.atlassian.net/browse/PYR1-1165
+#+begin_quote
+Loading quota store failed, the disk quota subsystem is disabled, please re-configure: Could not open JDBC Connection for transaction; nested exception is org.apache.commons.dbcp.SQLNestedException: Cannot create PoolableConnectionFactory (General error: java.lang.RuntimeException: double allocation in file /opt/geoserver/data/gwc/diskquota_page_store_h2/diskquota.index.db page 6264 blocks 400896-400959 [50000-119])
+#+end_quote
 
 **** issues
-  There are 3 issues that I identified here:
 
   # A code issue with the PyreCast codebase. [https://github.com/pyregence/pyregence/pull/956|https://github.com/pyregence/pyregence/pull/956|smart-link]  should fix it, but I can’t test this until 2 and 3 are fixed below.
   # None of the microservices are live on {{sierra}}, likely due to {{sierra}} being rebooted at one point. I think we should be able to tell the status of these from the server status page, but maybe they went down so long ago that we forgot about them. I sent a [MM message to Daniel and Alice|https://mattermost.sig-gis.com/sig/pl/wuroq8bwhfg1jd4dn1quhmfsbo] to ask for advice on how to best spin these up again.
