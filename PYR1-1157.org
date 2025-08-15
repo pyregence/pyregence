@@ -32,9 +32,7 @@ So chances are good we can!
 
 ** DONE See if WS-geo-info looks like it translated into the same format as camera-geo-info
 ** DONE Get example station to use for the rest of the steps.
-
 GET https://api.weather.gov/stations/{stationId}/
-
 *** Example
 
 #+begin_src clojure
@@ -133,7 +131,6 @@ forecast
 #+end_src
 
 ** DONE Try to get rest of data from Observations endpoint
-
 *** URL
 
 GET https://api.weather.gov/stations/{stationId}/observations/latest
@@ -229,9 +226,8 @@ calls this..
     (when (= 200 status)
       (json/read-str body :key-fn keyword))))
 #+end_src
-
-
 *** example raw camera from api
+**** example
 #+begin_src clojure
 {:name "Axis-MtAukum1",
  :source "Mt_Aukum_1",
@@ -258,8 +254,56 @@ calls this..
  :view
  {:time "2025-08-15T17:37:25Z",
   :line "38.573868,-120.726982 38.566535,-120.711052"}}
-
 #+end_src
+**** compared to raw WS
+***** WS
+#+begin_src clojure
+{"@context"
+ ["https://geojson.org/geojson-ld/geojson-context.jsonld"
+  {"s" "https://schema.org/",
+   "bearing" {"@type" "s:QuantitativeValue"},
+   "city" "s:addressLocality",
+   "wx" "https://api.weather.gov/ontology#",
+   "county" {"@type" "@id"},
+   "geo" "http://www.opengis.net/ont/geosparql#",
+   "forecastOffice" {"@type" "@id"},
+   "@version" "1.1",
+   "value" {"@id" "s:value"},
+   "geometry" {"@id" "s:GeoCoordinates", "@type" "geo:wktLiteral"},
+   "publicZone" {"@type" "@id"},
+   "distance" {"@id" "s:Distance", "@type" "s:QuantitativeValue"},
+   "@vocab" "https://api.weather.gov/ontology#",
+   "state" "s:addressRegion",
+   "unit" "http://codes.wmo.int/common/unit/",
+   "forecastGridData" {"@type" "@id"},
+   "unitCode" {"@id" "s:unitCode", "@type" "@id"}}],
+ "id" "https://api.weather.gov/stations/0007W",
+ "type" "Feature",
+ "geometry" {"type" "Point", "coordinates" [-84.1787 30.53099]},
+ "properties"
+ {"forecast" "https://api.weather.gov/zones/forecast/FLZ017",
+  "@id" "https://api.weather.gov/stations/0007W",
+  "elevation" {"unitCode" "wmoUnit:m", "value" 49.0728},
+  "timeZone" "America/New_York",
+  "county" "https://api.weather.gov/zones/county/FLC073",
+  "stationIdentifier" "0007W",
+  "name" "Montford Middle",
+  "fireWeatherZone" "https://api.weather.gov/zones/fire/FLZ017",
+  "@type" "wx:ObservationStation"}}
+#+end_src
+***** WS-observation
+#+begin_src clojure
+{"windSpeed"
+ {"unitCode" "wmoUnit:km_h-1", "value" 8.028, "qualityControl" "V"},
+ "windDirection"
+ {"unitCode" "wmoUnit:degree_(angle)", "value" 323, "qualityControl" "V"},
+ "windGust" {"unitCode" "wmoUnit:km_h-1", "value" nil, "qualityControl" "Z"},
+ "temperature" {"unitCode" "wmoUnit:degC", "value" nil, "qualityControl" "Z"},
+ "relativeHumidity"
+ {"unitCode" "wmoUnit:percent", "value" nil, "qualityControl" "Z"},
+ "dewpoint" {"unitCode" "wmoUnit:degC", "value" 23.23, "qualityControl" "V"}}
+#+end_src
+
 
 *** example confirmed camera
 #+begin_src clojure
@@ -277,10 +321,36 @@ calls this..
   :api-name "alert-west",
   :latitude 38.573868}}
 #+end_src
+*** what gets used in camera to set the location on the map?
+The coordinates: [longitude, latitude]
+** DOING confirm ws-geo-info to camera-geo-info
 
+So we will need coordinates aka longitude, latitude to place it on the map.
+In the WS that path is
+#+begin_src clojure
+["geometry" "coordinates"]
+#+end_src
+However the conform cameras feature might take a GeoJSON object so we can maybe use the same code? might not be worth the hassle.Here is what the site->feature has:
+#+begin_src clojure
+{:type       "Feature"
+ :geometry   {:type        "Point"
+              :coordinates [(parse-num (:longitude site))
+                            (parse-num (:latitude site))]}
+ :properties {:api-name    api-name
+              :latitude    (parse-num (:latitude site))
+              :longitude   (parse-num (:longitude site))
+              :name        name
+              :pan         (parse-num (:pan position))
+              :state       (:state site)
+              :tilt        (parse-num (:tilt position))
+              :update-time (or update_time (:time image))
+              :image-url   (:url image)}}
+#+end_src
 
-*** what we transform it in to
-** TODO confirm ws-geo-info to camera-geo-info
+Conclusion:
+It doesn't look like its worth it. We don't have: tilt, image-url, pan, update-time.
+We have coordinates, latitude, longitude, name, state (through id), maybe api-name.
+Should the type be ID
 
 ** TODO confirm WS-info calls
 ** TODO Get WS-icon
