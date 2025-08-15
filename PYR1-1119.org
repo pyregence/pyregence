@@ -10,7 +10,7 @@ Where: SQL function "initialize_match_job" statement 1
 Request(post): "/clj/get-md-status" {:clj-args (nil)}
 #+end_quote
 
-Potentially related error message from sierra GeoServer:
+Potentially related error message from sierra GeoServer
 
 #+begin_quote
 Loading quota store failed, the disk quota subsystem is disabled, please re-configure: Could not open JDBC Connection for transaction; nested exception is org.apache.commons.dbcp.SQLNestedException: Cannot create PoolableConnectionFactory (General error: java.lang.RuntimeException: double allocation in file /opt/geoserver/data/gwc/diskquota_page_store_h2/diskquota.index.db page 6264 blocks 400896-400959 [50000-119])
@@ -20,32 +20,57 @@ Loading quota store failed, the disk quota subsystem is disabled, please re-conf
 We have a [[https://github.com/pyregence/pyregence/pull/956][PR to initiate match drop]], but none of the none of the microservices are live on the [[https://sierra.pyregence.org/geoserver/web/][Sierra GeoServer]] which as this error:
 
 #+begin_quote
-  Loading quota store failed, the disk quota subsystem is disabled, please re-configure: Could not open JDBC Connection for transaction; nested exception is org.apache.commons.dbcp.SQLNestedException: Cannot create PoolableConnectionFactory (General error: java.lang.RuntimeException: double allocation in file /opt/geoserver/data/gwc/diskquota_page_store_h2/diskquota.index.db page 6264 blocks 400896-400959 [50000-119])
+Loading quota store failed, the disk quota subsystem is disabled, please re-configure: Could not open JDBC Connection for transaction; nested exception is org.apache.commons.dbcp.SQLNestedException: Cannot create PoolableConnectionFactory (General error: java.lang.RuntimeException: double allocation in file /opt/geoserver/data/gwc/diskquota_page_store_h2/diskquota.index.db page 6264 blocks 400896-400959 [50000-119])
 #+end_quote
 
-TODOS
+Olivers TODOS
   * Make sure the gridfire servers on the 4 compute nodes are running.
   * Make sure that the version of ELMFIRE that we’re using in our microservices is installed on the 4 compute nodes.
   * Make sure that the request the PyreCast Match Drop client is making matches the latest syntax/accepted parameters for Chris’s WorldGen server.
   * Make sure our Sierra GeoServer is still working as expected.
   * Coordinate with Chris to push the priority of a few Match Drop runs so that we don’t have to wait multiple hours for each one to finish (due to being in the queue).
 
-* Garys overview
+Here are the server logs for the failed match drop ignition:
 
-link to mattermost: https://mattermost.sig-gis.com/cec-project/pl/6s18p9coe7guzjogadx8o7q7he
+#+begin_quote
+08/15 03:46:51 Request(post): "/clj/initiate-md" {:clj-args ({:ignition-time "2025-08-15 03:45 UTC", :wx-type "forecast", :lon -109.54428183509914, :lat 41.64404393034417, :display-name "drews-fire"})}
+08/15 03:46:51 SQL Call: SELECT * FROM get_user_admin_access(421)
+08/15 03:46:51 SQL Call: SELECT * FROM count_running_user_match_jobs(421)
+08/15 03:46:51 SQL Call: SELECT * FROM count_all_running_match_jobs()
+08/15 03:46:51 SQL Call: SELECT * FROM initialize_match_job(nil)
+08/15 03:46:51 Error: ERROR: null value in column "user_rid" of relation "match_jobs" violates not-null constraint
+  Detail: Failing row contains (210, null, 2025-08-15 03:46:51.679619, 2025-08-15 03:46:51.679619, 2, null, , f, f, null, null, null, null, null, null, null).
+  Where: SQL function "initialize_match_job" statement 1
+08/15 03:46:51 Request(post): "/clj/get-md-status" {:clj-args (nil)}
+08/15 03:46:51 SQL Call: SELECT * FROM get_user_admin_access(421)
+08/15 03:46:51 CLJ Call: (pyregence.match-drop/get-md-status nil)
+08/15 03:46:51 Response(200): {}
+08/15 03:46:52 Request(get): "/clj/set-capabilities" {:clj-args "[{\"geoserver-key\" \"trinity\", \"workspace-name\" \"fire-spread-forecast_wy-sleeper-ranch_20250814_194500\"}]"}
+08/15 03:46:52 SQL Call: SELECT * FROM get_user_admin_access(-1)
+08/15 03:46:52 30 layers from https://trinity.pyregence.org/geoserver added to https://pyrecast.org.
+08/15 03:46:52 CLJ Call: (pyregence.capabilities/set-capabilities! {"geoserver-key" "trinity", "workspace-name" "fire-spread-forecast_wy-sleeper-ranch_20250814_194500"})
+08/15 03:46:52 Response(200): 30 layers from https://trinity.pyregence.org/geoserver added to https://pyrecast.org.
+08/15 03:46:56 Request(post): "/clj/get-md-status" {:clj-args (nil)}
+08/15 03:46:56 SQL Call: SELECT * FROM get_user_admin_access(421)
+08/15 03:46:56 CLJ Call: (pyregence.match-drop/get-md-status nil)
+08/15 03:46:56 Response(200): {}
+08/15 03:47:00 Request(get): "/clj/set-capabilities" {:clj-args "[{\"geoserver-key\" \"psps\", \"workspace-name\" \"fire-risk-forecast_nve_20250814_06\"}]"}
+08/15 03:47:00 SQL Call: SELECT * FROM get_user_admin_access(-1)
+08/15 03:47:00 432 layers from https://energy.pyregence.org/geoserver added to https://pyrecast.org.
+08/15 03:47:00 CLJ Call: (pyregence.capabilities/set-capabilities! {"geoserver-key" "psps", "workspace-name" "fire-risk-forecast_nve_20250814_06"})
+08/15 03:47:00 Response(200): 432 layers from https://energy.pyregence.org/geoserver added to https://pyrecast.org.
+08/15 03:47:02 Request(post): "/clj/get-md-status" {:clj-args (nil)}
+08/15 03:47:02 SQL Call: SELECT * FROM get_user_admin_access(421)
+08/15 03:47:02 CLJ Call: (pyregence.match-drop/get-md-status nil)
+08/15 03:47:02 Response(200): {}
+08/15 03:47:07 Request(post): "/clj/get-md-status" {:clj-args (nil)}
+08/15 03:47:07 SQL Call: SELECT * FROM get_user_admin_access(421)
+08/15 03:47:07 CLJ Call: (pyregence.match-drop/get-md-status nil)
+08/15 03:47:07 Response(200): {}
+08/15 03:47:12 Request(post): "/clj/get-md-status" {:clj-args (nil)}
+08/15 03:47:12 SQL Call: SELECT * FROM get_user_admin_access(421)
+08/15 03:47:12 CLJ Call: (pyregence.match-drop/get-md-status nil)
+08/15 03:47:12 Response(200): {}
+#+end_quote
 
-@drew HI Drew. Thanks for offering to take a look at the broken match-drop feature today. I'm not sure why new match-drop jobs aren't appearing on our dashboards. @oliver is really the developer best suited to answer this question for us, but since he's out until Monday, we'll have to take a look without him first.
-
-Here are some tips:
-
-1. Visit https://pyrecast.org and log in with your account.
-2. Make sure that you can see the match-drop tool icon in the upper right toolbar. It looks like a stylized flame.
-3. Click on that icon to open a pop-up window with match-drop instructions. You will need to click on the map to set your ignition point and then select an ignition time from the calendar widget. This widget seems a bit buggy to me in Firefox, but the pop-up does say that it is only meant to work with Chrome, so I'd recommend running it through there first. Make sure that you select an ignition time in the valid range that is specified in the pop-up window.
-4. Once you submit your job, a new pop-up will appear with a button to visit the dashboard page (https://pyrecast.org/dashboard). You should see your match-drop job appear here if it is successfully submitted. (Chris and I aren't seeing any new jobs appear on our dashboard, which is the current problem.)
-5. I'd recommend SSHing onto our production Pyrecast server and using `tail -f` on the server's log file while submitting a new match-drop job to see if you can catch a server-side error coming through.
-6. In code, this is all in the `pyregence` repo. The job should be sent from the browser somewhere in `src/cljs/pyregence/pages/near_term_forecast.cljs`. (Look for the match-drop widget.)
-7. On the back-end, the job should be picked up and processed by `src/clj/pyregence/match_drop.clj`(after getting there through a route in `src/clj/pyregence/routing.clj`, of course).
-8. The `match_drop.clj` code uses `call-sql` to invoke various SQL functions in `src/sql/functions/match_functions.sql`. These are used to track jobs persistently in our Postgresql database. You may want to check the contents of the database and/or just call some of these `call-sql` expressions from your REPL to see if the jobs are actually being created or not.
-9. Ultimately, `match_drop.clj` submits jobs via the Runway protocol to our SLURM cluster's microservices. You could check with @aliceliquori and/or @daniel-silva for support with those if you get this far and it looks like the job is failing after being submitted via Runway.
-
-Good luck and happy hacking! :fire:
+Gary says the namespaces to look at are near_term_forecast.cljs, match_drop.clj, match_functions.sql and ultimately submits jobs via the Runway protocol to our SLURM cluster's microservices. You could check with @aliceliquori and/or @daniel-silva for support with those if you get this far and it looks like the job is failing after being submitted via Runway.
