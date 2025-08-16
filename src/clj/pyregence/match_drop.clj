@@ -253,7 +253,9 @@
         (update-match-job! {:match-job-id match-job-id
                             :md-status    1
                             :message      (str "Connection to " host ":" port " failed.\n")})
-        (when deletion-request? (throw (Exception. "Failed to remove Match Drop.")))))
+        (when deletion-request? (throw (Exception. "Failed to remove Match Drop."))))
+      (log-str (str ".shutdownOutput"  client-socket))
+      (.shutdownOutput client-socket))
     (catch Exception e
       (log-str (str "Exception in send-to-server-wrapper!: " e ". "
                     "Was not able to open an SSL client socket to host: " host " on port: " port))
