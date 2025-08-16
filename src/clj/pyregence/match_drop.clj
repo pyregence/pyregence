@@ -714,8 +714,8 @@
   (thread
     (try
       (loop [response-msg-edn (json-str->edn response-msg-json)]
-        (log response-msg-json {:truncate? false})
-        (log response-msg-edn {:truncate? false})
+        (log (str "msg: " response-msg-json) {:truncate? false})
+        (log (str "msg: " response-msg-edn) {:truncate? false})
         (let [status (:status response-msg-edn)
               info   (:info response-msg-edn)]
           (log-response! response-msg-edn)
