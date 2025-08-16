@@ -716,7 +716,8 @@
       (loop [response-msg-edn (json-str->edn response-msg-json)]
         (log response-msg-json {:truncate? false})
         (log response-msg-edn {:truncate? false})
-        (let [status (:status response-msg-edn)]
+        (let [status (:status response-msg-edn)
+              info   (:info response-msg-edn)]
           (log-response! response-msg-edn)
           (cond
             (.isClosed socket) (do
@@ -726,6 +727,7 @@
                                  (process-response-msg response-msg-edn)
                                  (recur (json-str->edn (runway/read-socket! socket))))
             (#{0 1} status)    (process-response-msg response-msg-edn)
+            info               (log-str "Received `info` from server: " info)
             :else              (do
                                  (log-str "Something went wrong. Closing socket!")
                                  (.close socket)))))
