@@ -727,7 +727,8 @@
                                  (process-response-msg response-msg-edn)
                                  (recur (json-str->edn (runway/read-socket! socket))))
             (#{0 1} status)    (process-response-msg response-msg-edn)
-            info               (log-str "Received `info` from server: " info)
+            info               (do (log-str "Received `info` from server: " info)
+                                   (recur (json-str->edn (runway/read-socket! socket))))
             :else              (do
                                  (log-str "Something went wrong. Closing socket!")
                                  (.close socket)))))
