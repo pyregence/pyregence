@@ -713,11 +713,11 @@
   [^SSLSocket socket response-msg-json]
   (thread
     (try
-      (loop [response-msg-json response-msg-json]
+      (loop [response-msg-edn (json-str->edn response-msg-json)]
         (log (str "msg: " response-msg-json) {:truncate? false})
-        (let [response-msg-edn (json-str->edn response-msg-json)
-              status           (:status response-msg-edn)
-              info             (:info response-msg-edn)]
+        (log (str "msg: " response-msg-edn) {:truncate? false})
+        (let [status (:status response-msg-edn)
+              info   (:info response-msg-edn)]
           (log-response! response-msg-edn)
           (cond
             (.isClosed socket) (do
@@ -725,10 +725,9 @@
                                  (.close socket))
             (= 2 status)       (do
                                  (process-response-msg response-msg-edn)
-                                 (recur (runway/read-socket! socket)))
+                                 (recur (json-str->edn (runway/read-socket! socket))))
             (#{0 1} status)    (process-response-msg response-msg-edn)
-            info               (do (log-str "Received `info` from server: " info)
-                                   (recur (runway/read-socket! socket)))
+            info               (log-str "Received `info` from server: " info)
             :else              (do
                                  (log-str "Something went wrong. Closing socket!")
                                  (.close socket)))))
