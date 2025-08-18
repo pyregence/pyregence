@@ -2,7 +2,9 @@
   (:require [clj-http.client :as client]))
 (def urls (atom []))
 (def cursors (atom []))
-(comment
+
+(defn get-stations-put-in-url
+  []
   (loop [u "https://api.weather.gov/stations"]
     (let [{{os        :observationStations
             {p :next} :pagination} :body} (client/get u {:as :json})]
@@ -14,26 +16,34 @@
       (Thread/sleep 5000)
       (when-not (< 2000 (count @urls))
         (recur p)))))
-(def as
-  ;;TODO map isn't ideal for this
+
+(defn get-some-observation-stations
+  []
+  (get-stations-put-in-url)
   (map
     #(client/get % {:as :json})
     (take 20 @urls)))
-(def stations
-  (->> as
+
+(defn stations
+  []
+  (->> (get-some-observation-stations)
        (map :body)
        (map (fn [{{i :stationIdentifier n :name} :properties
                   {c :coordinates}               :geometry}]
               [i n c]))))
 (comment
-  stations)
-;; => (["340PG" "Road to Ranches" [-122.7331 38.05648]]
-;;     ["156SE" "SCE Bautista Creek" [-116.85673 33.70725]]
-;;     ["612SE" "SCE Rocky Court" [-118.34749 35.08966]]
-;;     ["049SE" "SCE Magic Mountain" [-118.37337 34.42503]]
-;;     ["026CE" "56 Shadow Creek Ranch" [-95.39775 29.5553]])
+  (stations)
+  ;; => (["340PG" "Road to Ranches" [-122.7331 38.05648]]
+  ;;     ["156SE" "SCE Bautista Creek" [-116.85673 33.70725]]
+  ;;     ["612SE" "SCE Rocky Court" [-118.34749 35.08966]]
+  ;;     ["049SE" "SCE Magic Mountain" [-118.37337 34.42503]]
+  ;;     ["026CE" "56 Shadow Creek Ranch" [-95.39775 29.5553]])
+
+  )
 (def observations (atom []))
-(comment
+
+(defn another-get-observations-from-urls
+  []
   (loop [surls (take 10 @urls)]
     (when-let [s (first surls)]
       (Thread/sleep 2000)
@@ -41,11 +51,10 @@
       (swap! observations conj (client/get s {:as :json}))
       (recur (rest surls)))))
 
-
-
-(def station-url (first (stations "observationStations")))
-(def station (:body (getj station-url)))
 (comment
+  (def station-url (first (stations "observationStations")))
+  (def station (:body (getj station-url)))
+
   station
   {"@context"
    ["https://geojson.org/geojson-ld/geojson-context.jsonld"
@@ -85,9 +94,9 @@
 
 (def url "https://api.weather.gov/stations/0007W/observations/latest")
 (defn getj [u] (client/get u {:as :json-string-keys}))
-(def obs (get-in (getj url) [:body "properties"]))
+(defn obs [] (get-in (getj url) [:body "properties"]))
 (comment
-  (select-keys obs ["windSpeed" "windDirection" "windGust" "temperature" "relativeHumidity" "dewpoint"])
+  (select-keys (obs) ["windSpeed" "windDirection" "windGust" "temperature" "relativeHumidity" "dewpoint"])
   {"windSpeed"
    {"unitCode" "wmoUnit:km_h-1", "value" 8.028, "qualityControl" "V"},
    "windDirection"
