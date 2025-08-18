@@ -65,19 +65,20 @@ For now we will use the camera-svg as a mock ws-svg
 
 * DOING Display WS-info when WS-svg clicked.
 Here is what we will want to display:
-- WS Name / ID
-- Forecast datetime
-- Latest forecast for selected value or all:
-- Air temperature (F)
-- Humidity
-- Dew Point
-- Wind speed
-- Wind direction
-- Gust
-- Air quality
+- WS Name
+- WS ID
+- WSO datetime
+- WSO Air temperature (F)
+- WSO Humidity
+- WSO Dew Point
+- WSO Wind speed
+- WSO Wind direction
+- WSO Gust
+- WSO Air quality
 
 * DOING Zoom to WS-icon when WS-svg clicked
 * TODO only show WS-icons&info to authenticated users.
 * TODO Cache station results because they take too long.
 * TODO Consider sharing functionality with camera api
 * TODO see what were not using in the weather_station_tools ns
+* TODO https://www.weather.gov/documentation/services-web-api about user agent authentication
