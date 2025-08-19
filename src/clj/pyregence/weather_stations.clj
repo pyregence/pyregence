@@ -3,6 +3,8 @@
 (def urls (atom []))
 (def cursors (atom []))
 
+;;Retrieve the metadata for your location from https://api.weather.gov/points/{lat},{lon}.
+
 (defn get-stations-put-in-url
   []
   (loop [u "https://api.weather.gov/stations"]
@@ -17,9 +19,11 @@
       (when-not (< 2000 (count @urls))
         (recur p)))))
 
+(comment
+  (get-stations-put-in-url))
 (defn get-some-observation-stations
   []
-  (get-stations-put-in-url)
+
   (map
     #(client/get % {:as :json})
     (take 20 @urls)))
@@ -31,8 +35,20 @@
        (map (fn [{{i :stationIdentifier n :name} :properties
                   {c :coordinates}               :geometry}]
               [i n c]))))
+
 (comment
-  (stations)
+  (def s *1)
+
+  (map
+    (fn [[id name [lat long :as coordinates]]]
+      {:type "Feature"
+       :geometry {:type "Point" :coordinates coordinates}
+       :properties
+       })
+    s)
+
+
+  ;; TODO just use keys don't do [blah, foo]
   ;; => (["340PG" "Road to Ranches" [-122.7331 38.05648]]
   ;;     ["156SE" "SCE Bautista Creek" [-116.85673 33.70725]]
   ;;     ["612SE" "SCE Rocky Court" [-118.34749 35.08966]]
@@ -107,19 +123,26 @@
    {"unitCode" "wmoUnit:percent", "value" nil, "qualityControl" "Z"},
    "dewpoint"    {"unitCode" "wmoUnit:degC", "value" 23.23, "qualityControl" "V"}})
 
+;; > The first two elements are longitude and latitude, or easting and northing,
+
+;; [longitude, latitude].
+;; ~ https://datatracker.ietf.org/doc/html/rfc7946
+
+;;["340PG" "Road to Ranches" [-122.7331 38.05648]]
+
 (defn get-weather-stations
   [_]
   {:type "FeatureCollection"
    :features [{:type     "Feature",
-               :geometry {:type "Point", :coordinates [-110.340278 42.319167]},
+               :geometry {:type "Point", :coordinates [-84.1787 30.53099] },
                :properties
-               {:image-url
+               {#_#_:image-url
                 "https://prod.weathernode.net/data/img/15794/2025/08/15/Hogsback_1_1755288466_5020.jpg",
-                :pan         32.4,
-                :name        "Axis-Hogsback-mock",
-                :update-time "2025-08-15T20:07:46Z",
-                :tilt        0.24,
-                :longitude   -110.340278,
-                :state       "CA",
-                :api-name    "alert-west",
-                :latitude    42.319167}}]})
+                #_#_:pan         32.4,
+                :name        "Montford middle",
+                #_#_:update-time "2025-08-15T20:07:46Z",
+                #_#_:tilt        0.24,
+                :longitude   -84.1787,
+                #_#_:state       "CA",
+                #_#_:api-name    "alert-west",
+                :latitude    30.53099}}]})

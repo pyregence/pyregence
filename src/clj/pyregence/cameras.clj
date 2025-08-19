@@ -139,3 +139,22 @@
                      {:type "image/jpeg"})
       (data-response (str "Invalid cameras API name.")
                      {:status 403}))))
+
+
+(comment
+  (->> @camera-cache :features
+       first
+       :geometry
+       :coordinates)
+  ;; => [-120.726982 38.573868]
+  ;; [longitude, latitude]
+
+  (-> @camera-cache
+      :features
+      first
+      :properties
+      (select-keys [:longitude :latitude]))
+  ;; => {:longitude -120.726982, :latitude 38.573868}
+
+;;
+  )
