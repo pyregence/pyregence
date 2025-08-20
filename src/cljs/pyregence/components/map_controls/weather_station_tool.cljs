@@ -81,6 +81,7 @@
                    :visibility   (if (and @!/show-weather-station? @!/mobile?) "visible" "hidden")}}
     [tool-button :close #(reset! !/show-weather-station? false)]]])
 
+;;TODO what should this say, not alert west.
 (defn- weather-station-tool-intro []
   [:div {:style {:padding "1.2em"}}
    "Click on a weather-station to view the most recent image. Powered by "
