@@ -9,7 +9,7 @@
 ;;set amount of time.
 (defn get-observation-stations!
   "Returns a list of observation stations from the weather.gov api which you can limit by total urls or fetches per second."
-  [& {:keys [total-station-limit rate-limit-per-second] :or {rate-limit-per-second 30 total-url-limit Double/POSITIVE_INFINITY}}]
+  [& {:keys [total-station-limit rate-limit-per-second] :or {rate-limit-per-second 30 total-station-limit Double/POSITIVE_INFINITY}}]
   (loop [url "https://api.weather.gov/stations"
          observation-stations []]
     (let [{{new-observation-stations        :features
