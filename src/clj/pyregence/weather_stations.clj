@@ -4,8 +4,11 @@
 ;;TODO consider turning this isn't a transducer, that way i think limit and sleep wouldn't have to be passed in as arguments.
 ;;NOTE this makes no attempt to gracefully handler failures
 ;;TODO before release to prod we should see how this behaves in dev over time and potentially have it handle failures that come up!
+;;TODO consider adding a connect-timeout and socket-timeout
+;;TODO add something to check if this timesout, returns a none 200, doesn't reach the end, in some
+;;set amount of time.
 (defn get-observation-stations!
-  "Returns a list of observation stations from the weather.gov api which you can limit by total urls or fetches per second"
+  "Returns a list of observation stations from the weather.gov api which you can limit by total urls or fetches per second."
   [& {:keys [total-station-limit rate-limit-per-second] :or {rate-limit-per-second 30 total-url-limit Double/POSITIVE_INFINITY}}]
   (loop [url "https://api.weather.gov/stations"
          observation-stations []]
