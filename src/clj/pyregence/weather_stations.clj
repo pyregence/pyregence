@@ -7,9 +7,13 @@
 ;;TODO consider adding a connect-timeout and socket-timeout
 ;;TODO add something to check if this timesout, returns a none 200, doesn't reach the end, in some
 ;;set amount of time.
+;;NOTE there are roughly 63500 stations at 30 seconds, which is a safe pull-rate given the implicit rate limit,
+;; that takes roughly an hour
+;;TODO handle if this throws due to a 504/timeout
 (defn get-observation-stations!
   "Returns a list of observation stations from the weather.gov api which you can limit by total urls or fetches per second."
   [& {:keys [total-station-limit rate-limit-per-second] :or {rate-limit-per-second 30 total-station-limit Double/POSITIVE_INFINITY}}]
+  (println "start---")
   (loop [url "https://api.weather.gov/stations"
          observation-stations []]
     (let [{{new-observation-stations        :features
@@ -20,13 +24,19 @@
           no-new-observation-stations? (zero? (count new-observation-stations))
           observation-stations (concat observation-stations new-observation-stations)
           station-cap-hit? (<= total-station-limit (count observation-stations))]
+      (println {:status (:status response) :count (count observation-stations) })
       (Thread/sleep (* rate-limit-per-second 1000))
-      (println (count observation-stations))
       (if (or no-new-observation-stations? station-cap-hit?)
         observation-stations
         (recur next-batch-of-stations-url observation-stations)))))
 
-(defonce observation-stations (get-observation-stations! {:total-station-limit 4000}))
+;;(defonce observation-stations (get-observation-stations! {:total-station-limit 4000}))
+
+
+(def observation-stations
+  (future
+    (time (get-observation-stations! {:rate-limit-per-second 130}))))
+
 
 ;;TODO rethink this idea because were changing the ws to be the the camera and it might not need
 ;; everything like pan and tilt.
@@ -39,5 +49,5 @@
 (defn get-weather-stations
   [_]
   {:type "FeatureCollection"
-   :features (->> observation-stations
+   :features [] #_(->> observation-stations
                   (map ws->camera-format))})
