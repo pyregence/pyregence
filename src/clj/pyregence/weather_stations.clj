@@ -9,7 +9,7 @@
 ;;set amount of time.
 ;;NOTE there are roughly 63500 stations at 30 seconds, which is a safe pull-rate given the implicit rate limit,
 ;; that takes roughly an hour
-;;TODO handle if this throws due to a 504/timeout
+;;TODO consider handling 504/timeout
 (defn get-observation-stations!
   "Returns a list of observation stations from the weather.gov api which you can limit by total urls or fetches per second."
   [& {:keys [total-station-limit rate-limit-per-second] :or {rate-limit-per-second 30 total-station-limit Double/POSITIVE_INFINITY}}]
@@ -18,7 +18,8 @@
          observation-stations []]
     (let [{{new-observation-stations        :features
             {next-batch-of-stations-url :next} :pagination} :body
-           :as response} (client/get url {:as :json})
+           :as response} (client/get url {:as :json
+                                          :headers {"User-Agent" "support@sig-gis.com"}})
           ;;NOTE it's unclear how to tell we reached the end as the next-batch-of-stations-url isn't nil even after it runs out.
           ;;so we count the stations instead, which should be just as accurate.
           no-new-observation-stations? (zero? (count new-observation-stations))
@@ -35,7 +36,7 @@
 
 (def observation-stations
   (future
-    (time (get-observation-stations! {:rate-limit-per-second 130}))))
+    (time (get-observation-stations! {:rate-limit-per-second 120}))))
 
 
 ;;TODO rethink this idea because were changing the ws to be the the camera and it might not need
