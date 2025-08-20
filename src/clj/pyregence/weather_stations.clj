@@ -26,8 +26,6 @@
         observation-stations
         (recur next-batch-of-stations-url observation-stations)))))
 
-(def response (client/get "https://api.weather.gov/stations" {:as :json}))
-
 (defonce observation-stations (get-observation-stations! {:total-station-limit 4000}))
 
 ;;TODO rethink this idea because were changing the ws to be the the camera and it might not need
