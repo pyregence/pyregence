@@ -82,3 +82,4 @@ Here is what we will want to display:
 * TODO Consider sharing functionality with camera api
 * TODO see what were not using in the weather_station_tools ns
 * TODO https://www.weather.gov/documentation/services-web-api about user agent authentication
+* TODO check out cache-busting info
