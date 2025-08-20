@@ -215,16 +215,18 @@
    layers from that workspace from the layers atom. The workspace-name can be
    either an exact string match or a regex pattern (e.g. 'fire-weather.*')."
   [_ {:strs [geoserver-key workspace-name]}]
-  (letfn [(matches? [{:keys [workspace]}]
-            (or (= workspace-name workspace)
-                (try (some-> workspace-name
-                             (re-pattern)
-                             (re-matches workspace))
-                     (catch Exception _ false))))]
+  {:pre [(string? geoserver-key) (string? workspace-name)]}
+  (let [workspace-name-regex (try (re-pattern workspace-name)
+                                  (catch Exception _ nil))
+        matching-workspace?  (fn [{:keys [workspace]}]
+                               (or (= workspace-name workspace) ; workspace-name is a normal string and we look for an exact match
+                                   (and workspace-name-regex ; workspace name is a regex string so we look for regex matches
+                                        (string? workspace)
+                                        (re-matches workspace-name-regex workspace))))]
     (swap! layers
            update
            (keyword geoserver-key)
-           #(vec (remove matches? %))))
+           #(vec (remove matching-workspace? %))))
   (data-response (str workspace-name " removed from " site-url ".")))
 
 ^:rct/test
