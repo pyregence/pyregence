@@ -78,8 +78,9 @@ Here is what we will want to display:
 
 * DOING Zoom to WS-icon when WS-svg clicked
 * TODO only show WS-icons&info to authenticated users.
-* TODO Cache station results because they take too long.
-* TODO Consider sharing functionality with camera api
+* DOING Cache station results because they take too long.
+* TODO Consider refactoring to sharing functionality with camera api (right now it's a straight copy paste)
 * TODO see what were not using in the weather_station_tools ns
-* TODO https://www.weather.gov/documentation/services-web-api about user agent authentication
+* DOING https://www.weather.gov/documentation/services-web-api about user agent authentication
+Did using the user-agent make the api not throttle us our requests as much?
 * TODO check out cache-busting info
