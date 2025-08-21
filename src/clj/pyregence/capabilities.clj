@@ -210,18 +210,54 @@
 
 ;;; Routes
 
-;; TODO note that calling this fn on a regex does not work properly. Passing in
-;; a workspace name as a regex is a GeoSync use case, so this should be updated to accept a regex
 (defn remove-workspace!
   "Given a specific geoserver-key and a specific workspace-name, removes any
-   layers from that workspace from the layers atom."
+   layers from that workspace from the layers atom. The workspace-name can be
+   either an exact string match or a regex pattern (e.g. 'fire-weather.*')."
   [_ {:strs [geoserver-key workspace-name]}]
-  (swap! layers
-         update
-         (keyword geoserver-key)
-         #(filterv (fn [{:keys [workspace]}]
-                     (not= workspace workspace-name)) %))
+  {:pre [(string? geoserver-key) (string? workspace-name)]}
+  (let [workspace-name-regex (try (re-pattern workspace-name)
+                                  (catch Exception _ nil))
+        matching-workspace?  (fn [{:keys [workspace]}]
+                               (or (= workspace-name workspace) ; workspace-name is a normal string and we look for an exact match
+                                   (and workspace-name-regex ; workspace name is a regex string so we look for regex matches
+                                        (string? workspace)
+                                        (re-matches workspace-name-regex workspace))))]
+    (swap! layers
+           update
+           (keyword geoserver-key)
+           #(vec (remove matching-workspace? %))))
   (data-response (str workspace-name " removed from " site-url ".")))
+
+^:rct/test
+(comment
+  ;; Test exact match removal
+  (let [original-layers @layers
+        test-layers {:shasta [{:workspace "fire-detections_current-year-perimeters" :layer "layer1"}
+                              {:workspace "fire-detections_historical-perimeters"   :layer "layer2"}
+                              {:workspace "fire-weather-forecast_gfs_20250101_00"   :layer "layer3"}]}]
+    (reset! layers test-layers)
+    (remove-workspace! nil {"geoserver-key"  "shasta"
+                            "workspace-name" "fire-detections_current-year-perimeters"})
+    (let [result (map :workspace (:shasta @layers))]
+      (reset! layers original-layers)
+      result))
+  ;=>> ["fire-detections_historical-perimeters" "fire-weather-forecast_gfs_20250101_00"]
+
+  ;; Test regex pattern removal
+  (let [original-layers @layers
+        test-layers {:shasta [{:workspace "fire-weather-forecast_gfs_20250101_00"  :layer "layer1"}
+                              {:workspace "fire-weather-forecast_hrrr_20250101_12" :layer "layer2"}
+                              {:workspace "fire-weather-forecast_nam_20250102_00"  :layer "layer3"}
+                              {:workspace "fire-risk-forecast_20250101_00"         :layer "layer4"}]}]
+    (reset! layers test-layers)
+    (remove-workspace! nil {"geoserver-key"  "shasta"
+                            "workspace-name" "fire-weather-forecast_.*"})
+    (let [result (map :workspace (:shasta @layers))]
+      (reset! layers original-layers)
+      result))
+  ;=>> ["fire-risk-forecast_20250101_00"]
+  )
 
 (defn get-all-layers [_]
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
