@@ -1,7 +1,6 @@
 -- NAMESPACE: user
 -- REQUIRES: clear
 
-
 --------------------------------------------------------------------------------
 -- Triggers
 --------------------------------------------------------------------------------
@@ -105,8 +104,8 @@ CREATE OR REPLACE FUNCTION add_org_user(
 ) RETURNS void AS $$
     UPDATE users
     SET organization_rid = _org_id,
-        user_role = 'organization_member',
-        org_membership_status = 'accepted'
+        user_role = 'organization_member'::user_role,
+        org_membership_status = 'accepted'::org_membership_status
     WHERE user_uid = _user_id;
 $$ LANGUAGE SQL;
 
@@ -114,7 +113,7 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION auto_add_org_user(
     _user_id      integer,
     _email_domain text
-) RETURNS boolean AS $$
+) RETURNS void AS $$
     WITH matched_org AS (
         SELECT organization_uid, auto_accept
         FROM organizations
@@ -123,11 +122,10 @@ CREATE OR REPLACE FUNCTION auto_add_org_user(
     )
     UPDATE users u
     SET organization_rid = m.organization_uid,
-        user_role = CASE WHEN m.auto_accept THEN 'organization_member' ELSE 'member' END,
-        org_membership_status = CASE WHEN m.auto_accept THEN 'accepted' ELSE 'pending' END
+        user_role = CASE WHEN m.auto_accept THEN 'organization_member'::user_role ELSE 'member'::user_role END,
+        org_membership_status = CASE WHEN m.auto_accept THEN 'accepted'::org_membership_status ELSE 'pending'::org_membership_status END
     FROM matched_org m
     WHERE u.user_uid = _user_id
-    RETURNING 1
 $$ LANGUAGE SQL;
 
 --------------------------------------------------------------------------------

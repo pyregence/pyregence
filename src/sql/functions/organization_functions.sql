@@ -143,4 +143,4 @@ CREATE OR REPLACE FUNCTION add_org_layer(
     VALUES
         (_org_id, _layer_path, _layer_config)
 
-$$ LANGUAGE SQL;s
+$$ LANGUAGE SQL;
