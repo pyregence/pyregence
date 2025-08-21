@@ -77,7 +77,7 @@ ADD CONSTRAINT valid_role_for_membership
 CHECK (
     -- Only allow elevated org roles if status is 'accepted'
     (user_role IN ('organization_admin', 'organization_member') AND org_membership_status = 'accepted')
-    OR (user_role = 'member')
+    OR (org_membership_status IN('pending', 'none'))
 );
 
 --------------------------------------------------------------------------------
