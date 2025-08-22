@@ -37,6 +37,9 @@ VALUES
     (23, 'email-2fa@pyr.dev',             'Email 2FA User',    crypt('email2fa', gen_salt('bf')), TRUE,  TRUE,  '{:timezone :utc, :two-factor :email}', 'organization_member', 'accepted', 1),
     (24, 'totp-2fa@pyr.dev',              'TOTP 2FA User',     crypt('totp2fa', gen_salt('bf')),  TRUE,  TRUE,  '{:timezone :utc, :two-factor :totp}',  'organization_member', 'accepted', 1);
 
+-- Make sure user_uid sequence still works
+SELECT setval('users_user_uid_seq', (SELECT MAX(user_uid) FROM users));
+
 -- TOTP setup for totp-2fa@pyr.dev user
 -- Secret: JBSWY3DPEHPK3PXP (base32 encoded test secret)
 INSERT INTO user_totp (user_id, secret, verified)
