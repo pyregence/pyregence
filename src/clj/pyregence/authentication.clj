@@ -575,12 +575,12 @@
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
 
-(defn get-current-user-organizations
+(defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that
    they belong to and are an admin or a member of."
   [session]
   (if-let [user-id (:user-id session)]
-    (->> (call-sql "get_organizations" user-id)
+    (->> (call-sql "get_user_organization" user-id)
          (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept]}]
                  {:org-id                org_id
                   :org-name              org_name

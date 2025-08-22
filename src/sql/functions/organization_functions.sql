@@ -8,7 +8,7 @@
 -- TODO in the future we should get rid of this b/c the organization a user belongs to
 -- is simply in the u.organization_rid column. this was kept in order to not have
 -- to overhaul the front end code that calls this.
-CREATE OR REPLACE FUNCTION get_organizations(_user_id integer)
+CREATE OR REPLACE FUNCTION get_user_organization(_user_id integer)
  RETURNS TABLE (
     org_id                integer,
     org_name              text,

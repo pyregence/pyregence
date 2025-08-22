@@ -57,6 +57,12 @@
                                      :etc      (s/+ keyword?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Defs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def roles-who-can-see-admin-btn #{"super_admin" "organization_admin"})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -620,7 +626,7 @@
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
           ;; TODO do away with this call in the future
-          user-orgs-list-chan             (u-async/call-clj-async! "get-current-user-organizations")
+          user-orgs-list-chan             (u-async/call-clj-async! "get-current-user-organization")
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count fire-names)]
@@ -826,7 +832,7 @@
 
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
-  [{:keys [user-id user-email] :as params}]
+  [{:keys [user-id user-role user-email] :as params}]
   (r/create-class
    {:component-did-mount
     (fn [_]
@@ -847,10 +853,7 @@
        [message-modal]
        [nav-bar {:capabilities     @!/capabilities
                  :current-forecast @!/*forecast
-                 :is-admin?        (->> @!/user-orgs-list
-                                        (filter #(= "admin" (:role %)))
-                                        (count)
-                                        (< 0)) ; admin of at least one org
+                 :is-admin?        (roles-who-can-see-admin-btn user-role)
                  :logged-in?       user-id
                  :mobile?          @!/mobile?
                  :user-orgs-list   @!/user-orgs-list

@@ -16,7 +16,7 @@
                                                   :auth-type :org-admin
                                                   :auth-action :redirect}
    [:get "/dashboard"]                           {:handler (render-page "/dashboard")
-                                                  :auth-type :member
+                                                  :auth-type #{:match-drop :member}
                                                   :auth-action :redirect}
    [:get "/forecast"]                            {:handler (render-page "/forecast")}
    [:get "/help"]                                {:handler (render-page "/help")}
@@ -88,7 +88,7 @@
    [:post "/clj/add-org-user"]                   {:handler (clj-handler authentication/add-org-user)
                                                   :auth-type #{:org-admin :token}
                                                   :auth-action :block}
-   [:post "/clj/get-current-user-organizations"] {:handler (clj-handler authentication/get-current-user-organizations)
+   [:post "/clj/get-current-user-organization"]  {:handler (clj-handler authentication/get-current-user-organization)
                                                   :auth-type :token
                                                   :auth-action :block}
    [:post "/clj/get-org-member-users"]           {:handler (clj-handler authentication/get-org-member-users)

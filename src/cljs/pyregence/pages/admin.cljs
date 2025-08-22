@@ -102,7 +102,7 @@
 (defn- get-organizations []
   (reset! pending-get-organizations? true)
   (go
-    (let [response (<! (u-async/call-clj-async! "get-current-user-organizations"))]
+    (let [response (<! (u-async/call-clj-async! "get-current-user-organization"))]
       (reset! *orgs (if (:success response)
                       (->> (:body response)
                            (edn/read-string)
