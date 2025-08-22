@@ -17,7 +17,7 @@
           (client/get url {:as      :json
                            :headers {"User-Agent" "support@sig-gis.com"}})]
       (when (seq new-observation-stations)
-        observation-stations (swap! observation-stations concat new-observation-stations)
+        (swap! observation-stations concat new-observation-stations)
         (Thread/sleep 2000)
         (recur next-batch-of-stations-url)))))
 
