@@ -599,7 +599,7 @@
   [_ org-id]
   (->> (call-sql "get_org_member_users" org-id)
        (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
-               {:user_id           user_id
+               {:user-id           user_id
                 :full-name         full_name
                 :email             email
                 :user-role         user_role

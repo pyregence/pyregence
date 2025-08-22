@@ -86,7 +86,6 @@ CREATE OR REPLACE FUNCTION get_org_member_users(_org_id integer)
         org_membership_status
     FROM users
     WHERE organization_rid = _org_id
-      AND org_membership_status = 'accepted'
 
 $$ LANGUAGE SQL;
 
@@ -100,12 +99,12 @@ RETURNS void AS $$
 $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION update_org_user_role(
-    _user_id   integer,
-    _user_role user_role
+    _user_id        integer,
+    _user_role_text text
 ) RETURNS void AS $$
 
     UPDATE users
-    SET user_role = _user_role
+    SET user_role = _user_role_text::user_role
     WHERE user_uid = _user_id;
 
 $$ LANGUAGE SQL;

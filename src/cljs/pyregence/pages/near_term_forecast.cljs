@@ -57,10 +57,10 @@
                                      :etc      (s/+ keyword?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Defs
+;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def roles-who-can-see-admin-btn #{"super_admin" "organization_admin"})
+(def ^:private roles-who-can-see-admin-btn #{"super_admin" "organization_admin"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions

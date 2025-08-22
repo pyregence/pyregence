@@ -24,6 +24,10 @@
                       {:opt-id 4 :opt-label "Account Manager"     :user-role "account_manager"}
                       {:opt-id 5 :opt-label "Member"              :user-role "member"}])
 
+(def ^:private membership-status [{:opt-id 1 :opt-label "None"     :status "none"}
+                                  {:opt-id 2 :opt-label "Pending"  :status "pending"}
+                                  {:opt-id 3 :opt-label "Accepted" :status "accepted"}])
+
 ;; Organization Object Properties
 (defonce ^{:doc "The currently selected organization."}
   *org (r/atom nil))
@@ -105,8 +109,7 @@
     (let [response (<! (u-async/call-clj-async! "get-current-user-organization"))]
       (reset! *orgs (if (:success response)
                       (->> (:body response)
-                           (edn/read-string)
-                           (filter #(= "admin" (:role %)))) ; only show orgs user is an admin of
+                           (edn/read-string))
                       []))
       (reset! pending-get-organizations? false)
 
@@ -179,16 +182,21 @@
             (toast-message! (str "User " email " added.")))
         (toast-message! (:body res))))))
 
-(defn- update-org-user-role! [org-user-id new-role]
+(defn- update-org-user-role! [user-id new-role]
   (go
-    (<! (u-async/call-clj-async! "update-org-user-role" org-user-id new-role))
-    (toast-message! "User role updated.")))
+    (let [res (<! (u-async/call-clj-async! "update-org-user-role" user-id new-role))]
+      (if (:success res)
+        (do (get-org-member-users @*org-id)
+            (toast-message! "User role updated."))
+        (toast-message! (:body res))))))
 
-(defn- remove-org-user! [org-user-id]
+(defn- remove-org-user! [user-id]
   (go
-    (<! (u-async/call-clj-async! "remove-org-user" org-user-id))
-    (get-org-member-users @*org-id)
-    (toast-message! "User removed from organization.")))
+    (let [res (<! (u-async/call-clj-async! "remove-org-user" user-id))]
+      (if (:success res)
+        (do (get-org-member-users @*org-id)
+            (toast-message! "User removed from organization."))
+        (toast-message! (:body res))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -246,15 +254,16 @@
                                :action #(remove-org-user! user-id)})))
 
 (defn- handle-update-role-id [role-id user-id user-name]
-  (let [message   "Are you sure you want to change the role of user \"%s\" to \"%s\"?"
-        role-name (->> roles
-                       (filter (fn [role] (= role-id (:opt-id role))))
-                       (first)
-                       (:user-role))]
+  (let [message              "Are you sure you want to change the role of user \"%s\" to \"%s\"?"
+        new-role             (->> roles
+                                  (filter (fn [role] (= role-id (:opt-id role))))
+                                  (first))
+        new-role-db-format   (:user-role new-role)
+        new-role-pretty-text (:opt-label new-role)]
     (set-message-box-content! {:mode   :confirm
                                :title  "Update User Role"
-                               :body   (format message user-name role-name)
-                               :action #(update-org-user-role! user-id role-name)})))
+                               :body   (format message user-name new-role-pretty-text)
+                               :action #(update-org-user-role! user-id new-role-db-format)})))
 
 (defn- handle-update-org-settings [oid org-name email-domains auto-add auto-accept]
   (let [message "Are you sure you wish to update the settings for the \"%s\" organization? Saving these changes will overwrite any previous settings."]
@@ -316,8 +325,11 @@
      ["Confirm Password" new-user-re-password "password" "confirm-password"]]
     handle-add-user]])
 
-(defn- user-item [org-user-id full-name email role-id]
-  (r/with-let [_role-id          (r/atom role-id)
+(defn- user-item [user-id full-name email user-role membership-status]
+  (r/with-let [_role-id          (r/atom (->> roles
+                                              (filter (fn [role-entry] (= user-role (:user-role role-entry))))
+                                              (first)
+                                              (:opt-id)))
                full-name-update  (r/atom full-name)
                edit-mode-enabled (r/atom false)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
@@ -349,7 +361,7 @@
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Remove User"
-               :on-click #(handle-remove-user org-user-id full-name)}]
+               :on-click #(handle-remove-user user-id full-name)}]
       [:select {:class     (<class $/p-bordered-input)
                 :style     {:margin "0 .25rem 0 1rem" :height "2rem"}
                 :value     @_role-id
@@ -361,7 +373,7 @@
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Update Role"
-               :on-click #(handle-update-role-id @_role-id org-user-id full-name)}]]]))
+               :on-click #(handle-update-role-id @_role-id user-id full-name)}]]]))
 
 (defn- org-users-list [org-member-users]
   [:div#org-users {:style {:margin-top "2rem"}}
@@ -370,9 +382,9 @@
      [:label {:style ($/padding "1px" :l)} "Member User-List"]]
     [:div {:style {:overflow "auto"}}
      [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
-      (doall (map (fn [{:keys [org-user-id full-name email role-id]}]
-                    ^{:key org-user-id}
-                    [user-item org-user-id full-name email role-id])
+      (doall (map (fn [{:keys [user-id full-name email user-role membership-status]}]
+                    ^{:key user-id}
+                    [user-item user-id full-name email user-role membership-status])
                   org-member-users))]]]])
 
 ;; TODO add in a UI component to show a user's membership_status
