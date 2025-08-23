@@ -84,3 +84,4 @@ Here is what we will want to display:
 * DOING https://www.weather.gov/documentation/services-web-api about user agent authentication
 Did using the user-agent make the api not throttle us our requests as much?
 * TODO check out cache-busting info
+* consider filtering r^(MesoWest|RAWS|ASOS)$ to "provider" requires feature flag  -H 'Feature-Flags: obs_station_provider' > CA_stations_0.geojson" (not sure state bit is necessary)
