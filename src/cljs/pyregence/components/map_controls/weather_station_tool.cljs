@@ -91,7 +91,7 @@
     "ALERTWest"]
    "."])
 
-(defn- weather-station-image [weather-station-name reset-view zoom-weather-station image-src]
+(defn- weather-station-image [weather-station-name reset-view zoom-weather-station]
   [:div
    [:div {:style {:display         "flex"
                   :justify-content "center"
@@ -123,9 +123,7 @@
                          :right    "1rem"}}
      [:div {:style {:height "32px"
                     :width  "32px"}}
-      [svg/binoculars]]]]
-   [:img {:src   @image-src
-          :style {:height "auto" :width "100%"}}]])
+      [svg/binoculars]]]]])
 
 (defn- loading-weather-station [weather-station-name]
   [:div {:style {:padding "1.2em"}}
@@ -180,8 +178,7 @@
                                  [weather-station-image
                                   weather-station-name
                                   reset-view
-                                  zoom-weather-station
-                                  image-src]
+                                  zoom-weather-station]
 
                                  :else
                                  [loading-weather-station weather-station-name]))]
