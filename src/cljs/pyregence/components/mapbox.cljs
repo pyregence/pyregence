@@ -803,7 +803,7 @@
           new-layers [{:id       id
                        :source   id
                        :type     "symbol"
-                       :layout   {:icon-image              "video-icon"
+                       :layout   {:icon-image              "weather-station-icon"
                                   :icon-rotate             ["-" ["get" "pan"] 90]
                                   :icon-rotation-alignment "map"
                                   :icon-size               0.5}
@@ -811,7 +811,7 @@
                                   :z-index 1001}
                        :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]
           icon-chan  (chan)]
-      (add-icon! icon-chan "video-icon" "./images/video.png" true)
+      (add-icon! icon-chan "weather-station-icon" "./images/weather-station.png" true)
       (<! icon-chan)
       (update-style! (get-style) :new-sources new-source :new-layers new-layers))))
 
