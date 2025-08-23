@@ -61,8 +61,6 @@
 ;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-
 (defn- mobile-weather-station-tool-header []
   [:div#collapsible-weather-station-header
    {:style {:align-items      "center"
@@ -138,14 +136,14 @@
                image-src      (r/atom nil)
                exit-chan      (r/atom nil)
                zoom-weather-station    (fn []
-                                (let [{:keys [longitude latitude tilt pan]} @active-weather-station]
-                                  (reset! !/terrain? true)
-                                  (h/show-help! :terrain)
-                                  (mb/toggle-dimensions! true)
-                                  (mb/fly-to! {:center  [longitude latitude]
-                                               :zoom    15
-                                               :bearing pan
-                                               :pitch   (min (+ 90 tilt) 85)}) 400))
+                                         (let [{:keys [longitude latitude tilt pan]} @active-weather-station]
+                                           (reset! !/terrain? true)
+                                           (h/show-help! :terrain)
+                                           (mb/toggle-dimensions! true)
+                                           (mb/fly-to! {:center  [longitude latitude]
+                                                        :zoom    15
+                                                        :bearing pan
+                                                        :pitch   (min (+ 90 tilt) 85)}) 400))
                reset-view     (fn []
                                 (let [{:keys [longitude latitude]} @active-weather-station]
                                   (reset! !/terrain? false)
