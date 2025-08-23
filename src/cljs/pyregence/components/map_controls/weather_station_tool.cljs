@@ -91,7 +91,7 @@
     "ALERTWest"]
    "."])
 
-(defn- weather-station-image [weather-station-name weather-station-image-url reset-view zoom-weather-station image-src]
+(defn- weather-station-image [weather-station-name reset-view zoom-weather-station image-src]
   [:div
    [:div {:style {:display         "flex"
                   :justify-content "center"
@@ -99,11 +99,6 @@
                   :top             "2rem"
                   :width           "100%"}}
     [:label (str "Weather-Station: " weather-station-name)]]
-   [:a {:href   (str "https://www.alertwest.live/cam-console/" (alert-image-url->alert-weather-station-id weather-station-image-url))
-        :ref    "noreferrer noopener"
-        :target "_blank"}
-    [:img {:src   "images/alert_west_logo.png"
-           :style ($/combine $alert-logo-style)}]]
    (when @!/terrain?
      [tool-tip-wrapper
       "Zoom Out to 2D"
@@ -176,7 +171,6 @@
                                        "fire-weather-stations" "fire-weather-stations"
                                        :click-fn on-click))]
     (let [weather-station-name        (:name @active-weather-station)
-          weather-station-image-url   (:image-url @active-weather-station)
           render-content     (fn []
                                (cond
                                  (nil? @active-weather-station)
@@ -185,7 +179,6 @@
                                  @image-src
                                  [weather-station-image
                                   weather-station-name
-                                  weather-station-image-url
                                   reset-view
                                   zoom-weather-station
                                   image-src]
