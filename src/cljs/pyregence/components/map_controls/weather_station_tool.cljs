@@ -91,7 +91,7 @@
     "ALERTWest"]
    "."])
 
-(defn- weather-station-image [weather-station-name reset-view zoom-weather-station]
+(defn- weather-station-info [weather-station-name reset-view zoom-weather-station]
   [:div
    [:div {:style {:display         "flex"
                   :justify-content "center"
@@ -175,7 +175,7 @@
                                  [weather-station-tool-intro]
 
                                  @image-src
-                                 [weather-station-image
+                                 [weather-station-info
                                   weather-station-name
                                   reset-view
                                   zoom-weather-station]
