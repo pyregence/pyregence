@@ -27,7 +27,8 @@
 ;; If it's a time based event this defonce to future layer might be ok, if user-event this logic will obviously move.
 ;; we have an example of user-event based cache refresh in camera.
 (defonce get-observation-stations-in-the-background!
-  (future (get-observation-stations!)))
+  (future
+    (get-observation-stations!)))
 
 ;; example time based trigger
 (comment
@@ -35,23 +36,43 @@
 
   (def scheduled-counter
     (future
-      (loop [n 0]
-        (Thread/sleep (* 2000 ;; 1s
+      (loop []
+        (println @counter)
+        (throw (AssertionError. "wrong"))
+        (Thread/sleep (* 1000 ;; 1s
                          ;;60   ;; 1m
                          ;;60   ;; 1h
                          ;;24   ;; 1d
-                         ;;7    ;; 1w
-                         )    ;; => 604800000
-                      )
+                         ;;2    ;; s days
+                         ))
+        (swap! counter inc)
+        (recur))))
 
-        (recur (reset! counter (inc n))))))
-
-  (def scheduled-counter
-    (future
-      (loop [n 0]
-        (Thread/sleep 2000)
-        (recur (reset! counter (inc n))))))
   )
+
+;; What the observations logic will end up looking like.
+;;TODO consider saving if get-observations-stations succeeded... as in we reached the end
+;;the issue is, we would have to log if it didn't, then alert on that log... and that would have to be on
+;;a time schedule..
+(comment
+  (require '[triangulum.logging  :refer [log]])
+
+  (((defonce get-observation-stations-in-the-background!
+      (future
+        (loop []
+
+          (try
+            (get-observation-stations!)
+            (catch Exception ex (log (ex-data ex) :truncate? false)))
+          (Thread/sleep (* 1000 ;; 1s
+                           60   ;; 1m
+                           60   ;; 1h
+                           24   ;; 1d
+                           2    ;; s days
+                           ))
+          (recur))))))
+  )
+
 
 ;;TODO rethink this idea because were changing the ws to be the the camera and it might not need
 ;; everything like pan and tilt.
