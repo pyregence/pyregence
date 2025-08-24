@@ -15,7 +15,9 @@
     (let [{{new-observation-stations           :features
             {next-batch-of-stations-url :next} :pagination} :body}
           (client/get url {:as      :json
-                           :headers {"User-Agent" "support@sig-gis.com"}})]
+                           :headers {"User-Agent" "support@sig-gis.com"}
+                           ;; throw if we don't hear back in 3 minutes, because by then we never will.
+                           :connection-timeout (* 1000 60 3)})]
       (when (seq new-observation-stations)
         (swap! observation-stations concat new-observation-stations)
         (Thread/sleep 2000)
