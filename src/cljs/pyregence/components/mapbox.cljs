@@ -806,7 +806,7 @@
                        :layout   {:icon-image              "weather-station-icon"
                                   :icon-rotate             ["-" ["get" "pan"] 90]
                                   :icon-rotation-alignment "map"
-                                  :icon-size               0.5}
+                                  :icon-size               0.25}
                        :metadata {:type    (get-layer-type id)
                                   :z-index 1001}
                        :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]
