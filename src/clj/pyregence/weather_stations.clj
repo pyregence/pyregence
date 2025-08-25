@@ -79,7 +79,7 @@
 (defn ws->camera-format
   [{{[lon lat] :coordinates} :geometry :as ws}]
   (-> ws
-      (update :properties select-keys [:name])
+      (update :properties select-keys [:name :stationIdentifier])
       (update :properties assoc :longitude lon :latitude lat)))
 
 (defn get-weather-stations
