@@ -23,3 +23,4 @@ we can do this using a loop (see weather_station) or oliver mentioned using back
 Did using the user-agent make the api not throttle us our requests as much?
 * TODO consider filtering r^(MesoWest|RAWS|ASOS)$ to "provider" requires feature flag  -H 'Feature-Flags: obs_station_provider' > CA_stations_0.geojson" (not sure state bit is necessary)
 * DONE add svg icon and png
+* TODO fetching the latest observation on the frontend just considers the happy path: e.g doesn't handly none-200 or slow responses.
