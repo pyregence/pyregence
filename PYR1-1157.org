@@ -1,68 +1,4 @@
-* Summary
-
-GET https://api.weather.gov/stations/{stationId}/
-#+begin_src clojure
-{"properties"
- {"forecast" "https://api.weather.gov/zones/forecast/FLZ017",
-  "@id" "https://api.weather.gov/stations/0007W",
-  "elevation" {"unitCode" "wmoUnit:m", "value" 49.0728},
-  "timeZone" "America/New_York",
-  "county" "https://api.weather.gov/zones/county/FLC073",
-  "stationIdentifier" "0007W",
-  "name" "Montford Middle",
-  "fireWeatherZone" "https://api.weather.gov/zones/fire/FLZ017",
-  "@type" "wx:ObservationStation"},
- "geometry" {"type" "Point", "coordinates" [-84.1787 30.53099]}}
-#+end_src
-GET https://api.weather.gov/stations/{stationId}/observations/latest
-#+begin_src clojure
-{"windSpeed"
- {"unitCode" "wmoUnit:km_h-1", "value" 8.028, "qualityControl" "V"},
- "windDirection"
- {"unitCode" "wmoUnit:degree_(angle)", "value" 323, "qualityControl" "V"},
- "windGust" {"unitCode" "wmoUnit:km_h-1", "value" nil, "qualityControl" "Z"},
- "temperature" {"unitCode" "wmoUnit:degC", "value" nil, "qualityControl" "Z"},
- "relativeHumidity"
- {"unitCode" "wmoUnit:percent", "value" nil, "qualityControl" "Z"},
- "dewpoint" {"unitCode" "wmoUnit:degC", "value" 23.23, "qualityControl" "V"}}
-#+end_src
-GET camera
-#+begin_src clojure
-{:name "Axis-MtAukum1",
- :source "Mt_Aukum_1",
- :site
- {:id "2148",
-  :description nil,
-  :latitude "38.573868",
-  :longitude "-120.726982",
-  :altitude nil,
-  :county "eldorado",
-  :state "CA",
-  :time "2025-08-15T17:37:25Z"},
- :image
- {:time "2025-08-15T17:37:25Z",
-  :url
-  "https://prod.weathernode.net/data/img/2148/2025/08/15/Mt_Aukum_1_1755279445_8986.jpg"},
- :position
- {:time "2025-08-15T17:37:25Z", :pan "120.38", :tilt "-2.99", :zoom "1"},
- :parameters
- {:time "2025-08-15T17:37:25Z",
-  :Properties.System.SerialNumber nil,
-  :Brand.Brand "Axis",
-  :Brand.ProdNbr "Q6075-E"},
- :view
- {:time "2025-08-15T17:37:25Z",
-  :line "38.573868,-120.726982 38.566535,-120.711052"}}
-#+end_src
-
-For now we will use the camera-svg as a mock ws-svg
-
 * DOING Unmock API and WS-geo-info the same way camera-geo-info is to create a map.
-
-#+begin_src clojure
-
-#+end_src
-
 * DOING Display WS-info when WS-svg clicked.
 Here is what we will want to display:
 - WS Name
@@ -77,14 +13,13 @@ Here is what we will want to display:
 - WSO Air quality
 
 * DOING Zoom to WS-icon when WS-svg clicked
-* TODO only show WS-icons&info to authenticated users.
+* TODO only show WS-icons&info to Authenticated users.
+oliver said we might make this a patch
 * DOING Cache station results because they take too long.
+we can do this using a loop (see weather_station) or oliver mentioned using background jobs.
 * TODO Consider refactoring to sharing functionality with camera api (right now it's a straight copy paste)
 * TODO see what were not using in the weather_station_tools ns
 * DOING https://www.weather.gov/documentation/services-web-api about user agent authentication
 Did using the user-agent make the api not throttle us our requests as much?
-* DOING check out cache-busting info
-* consider filtering r^(MesoWest|RAWS|ASOS)$ to "provider" requires feature flag  -H 'Feature-Flags: obs_station_provider' > CA_stations_0.geojson" (not sure state bit is necessary)
-* DOING add svg icon and png
-
-#+end_src
+* TODO consider filtering r^(MesoWest|RAWS|ASOS)$ to "provider" requires feature flag  -H 'Feature-Flags: obs_station_provider' > CA_stations_0.geojson" (not sure state bit is necessary)
+* DONE add svg icon and png
