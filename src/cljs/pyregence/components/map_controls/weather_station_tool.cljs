@@ -83,11 +83,11 @@
 ;;TODO what should this say, not alert west.
 (defn- weather-station-tool-intro []
   [:div {:style {:padding "1.2em"}}
-   "Click on a weather-station to view the most recent image. Powered by "
-   [:a {:href   "https://www.alertwest.org/"
+   "Click on a weather station to view the latest observation. Powered by "
+   [:a {:href   "https://api.weather.gov/"
         :ref    "noreferrer noopener"
         :target "_blank"}
-    "ALERTWest"]
+    "Weather.gov"]
    "."])
 
 (defn- weather-station-info [{:keys [stationName windDirection]} reset-view zoom-weather-station]
