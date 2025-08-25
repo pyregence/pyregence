@@ -232,3 +232,17 @@
       (u-async/stop-refresh! @exit-chan)
       (mb/remove-layer! "fire-weather-stations")
       (mb/clear-highlight! "fire-weather-stations" :selected))))
+
+;;
+
+
+(comment
+  (require '[pyregence.utils.async-utils :refer [fetch-and-process]]
+           '[cljs.core.async.interop        :refer-macros [<p!]])
+
+  (go
+    (<! (fetch-and-process "https://api.weather.gov/stations/0007W/observations/latest"
+                           {:method "get"}
+                           (fn [response] (go
+                                            (println
+                                             (<p! (.json response)))))))))
