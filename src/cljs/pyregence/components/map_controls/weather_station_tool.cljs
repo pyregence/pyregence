@@ -11,7 +11,8 @@
             [pyregence.state                               :as !]
             [pyregence.styles                              :as $]
             [pyregence.utils.async-utils                   :as u-async]
-            [reagent.core                                  :as r]))
+            [reagent.core                                  :as r]
+            [cljs.core.async.interop                       :refer-macros [<p!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -155,7 +156,19 @@
                                 (go
                                   (when-let [new-weather-station (js->clj (aget features "properties") :keywordize-keys true)]
                                     (u-async/stop-refresh! @exit-chan)
-                                    (reset! active-weather-station new-weather-station)
+                                    (<! (u-async/fetch-and-process
+                                         (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
+                                         {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
+                                         (fn [response]
+                                           (go
+                                             (reset! active-weather-station
+                                                     (js->clj
+                                                      (aget
+
+                                                       (<p! (.json response))
+                                                       "properties")
+                                                      :keywordize-keys true))))))
+
                                     (reset! image-src nil)
                                     (let [image-chan (get-weather-station-image-chan @active-weather-station)]
                                       (reset! image-src (<! image-chan))
@@ -167,41 +180,7 @@
                                      #(mb/add-feature-highlight!
                                        "fire-weather-stations" "fire-weather-stations"
                                        :click-fn on-click))]
-    (let [{:keys [stationName]
-           :as latest-observation}
-          ;;TODO unmock data
-          ;;this is mocked until i figure out client side fetching...
-          {:station "https://api.weather.gov/stations/0007W",
-           :precipitationLast3Hours
-           {:unitCode "wmoUnit:mm", :value nil, :qualityControl "Z"},
-           :elevation {:unitCode "wmoUnit:m", :value 49.1},
-           :windSpeed {:unitCode "wmoUnit:km_h-1", :value 1.62, :qualityControl "V"},
-           :dewpoint {:unitCode "wmoUnit:degC", :value 22.8, :qualityControl "V"},
-           :cloudLayers [],
-           :icon nil,
-           :presentWeather [],
-           :windChill {:unitCode "wmoUnit:degC", :value nil, :qualityControl "V"},
-           :textDescription "",
-           :stationName "Montford Middle",
-           :seaLevelPressure {:unitCode "wmoUnit:Pa", :value nil, :qualityControl "Z"},
-           :relativeHumidity
-           {:unitCode "wmoUnit:percent", :value 88.76954134215, :qualityControl "V"},
-           :stationId "0007W",
-           :barometricPressure
-           {:unitCode "wmoUnit:Pa", :value 101557.74, :qualityControl "V"},
-           :minTemperatureLast24Hours {:unitCode "wmoUnit:degC", :value nil},
-           :maxTemperatureLast24Hours {:unitCode "wmoUnit:degC", :value nil},
-           :rawMessage "",
-           :heatIndex
-           {:unitCode "wmoUnit:degC", :value 25.63142691282278, :qualityControl "V"},
-           :windGust {:unitCode "wmoUnit:km_h-1", :value nil, :qualityControl "Z"},
-           :windDirection
-           {:unitCode "wmoUnit:degree_(angle)", :value 24, :qualityControl "V"},
-           :timestamp "2025-08-23T03:40:00+00:00",
-           :visibility {:unitCode "wmoUnit:m", :value nil, :qualityControl "Z"},
-           :temperature {:unitCode "wmoUnit:degC", :value 24.78, :qualityControl "V"}}
-
-         ;;TODO where should i make this api call? the surrounding logic here is very complex. this location certainly isn't ideal
+    (let [{:keys [stationName] :as latest-observation} @active-weather-station
           render-content     (fn []
                                (cond
                                  (nil? @active-weather-station)
@@ -232,17 +211,3 @@
       (u-async/stop-refresh! @exit-chan)
       (mb/remove-layer! "fire-weather-stations")
       (mb/clear-highlight! "fire-weather-stations" :selected))))
-
-;;
-
-
-(comment
-  (require '[pyregence.utils.async-utils :refer [fetch-and-process]]
-           '[cljs.core.async.interop        :refer-macros [<p!]])
-
-  (go
-    (<! (fetch-and-process "https://api.weather.gov/stations/0007W/observations/latest"
-                           {:method "get"}
-                           (fn [response] (go
-                                            (println
-                                             (<p! (.json response)))))))))
