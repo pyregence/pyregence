@@ -11,6 +11,7 @@
             [pyregence.state                               :as !]
             [pyregence.styles                              :as $]
             [pyregence.utils.async-utils                   :as u-async]
+            [pyregence.wmo-codes-registry-2025-8-27        :refer [wmo-unit-id->labels]]
             [reagent.core                                  :as r]
             [cljs.core.async.interop                       :refer-macros [<p!]]))
 
@@ -90,15 +91,31 @@
     "Weather.gov"]
    "."])
 
-(defn- weather-station-info [{:keys [stationName windDirection]} reset-view zoom-weather-station]
+(defn- weather-station-info [{:keys [stationName stationId timestamp] :as lo} reset-view zoom-weather-station]
   [:div
    [:div {:style {:display         "flex"
                   :justify-content "center"
                   :position        "absolute"
                   :top             "2rem"
                   :width           "100%"}}
-    [:label (str "Weather-Station: " stationName)]
-    [:p (str "wind direction value" (:value windDirection))]]
+    [:ul
+     [:li "ID: " stationId]
+     [:li "Name: " stationName]
+     ;;TODO double check that the timestamp here really is the observation time!
+     ;;TODO format timestamp
+     [:li "observed at: " timestamp]
+     ;;TODO it doenst seem like we want to show them all.
+     [:<>
+      (for [[k v] lo
+            :when (and (map? v) (:value v))]
+        ^{:key k}
+        [:li (str (name k) ": "
+                  (:value v) " "
+                  (-> (:unitCode v)
+                      (clojure.string/split #":")
+                      last
+                      wmo-unit-id->labels
+                      (get "skos:altLabel")))])]]]
    (when @!/terrain?
      [tool-tip-wrapper
       "Zoom Out to 2D"
