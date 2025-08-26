@@ -204,7 +204,7 @@
           parent-box
           290
           460
-          "Wildfire Weather-Station Tool"
+          "Stations latest observation"
           close-fn!
           render-content]]))
     (finally
