@@ -24,30 +24,40 @@
       (redirect (str "/login?flash_message=You must login to see "
                      full-url)))))
 
+(def role-hierarchy
+  (-> (make-hierarchy)
+      (derive :super-admin         :organization-admin)
+      (derive :super-admin         :account-manager)
+      (derive :super-admin         :organization-member)
+      (derive :super-admin         :member)
+      (derive :organization-admin  :organization-member)
+      (derive :organization-admin  :member)
+      (derive :account-manager     :member)
+      (derive :organization-member :member)))
+
 (defn route-authenticator [{:keys [headers session]} auth-type]
-  (let [user-id                (:user-id session -1)
-        org-id                 (:organization-id session -1)
-        user-role              (:user-role session)
+  (let [org-membership-status  (:org-membership-status session nil)
+        has-match-drop-access? (:match-drop-access? session)
+        user-role              (some-> session
+                                       (:user-role)
+                                       (str/replace "_" "-")
+                                       (keyword)) ; e.g. turns "super_admin" into :super-admin so that we can use role-hierarchy
         ;; Extract Bearer token from Authorization header
         bearer-token           (some->> (get headers "authorization")
                                         (re-find #"(?i)^Bearer\s+(.+)$")
                                         second)
-        valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))
-        has-match-drop-access? (:match-drop-access? session)
-        org-admin?             (sql-primitive (call-sql "is_user_admin_of_org" user-id org-id))
-        super-admin?           (= "super_admin" user-role)
-        account-manager?       (= "account_manager" user-role)
-        org-member?            (= "organization_member" user-role)
-        member?                (and (pos? user-id) (= "member" user-role))]
+        valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))]
     (every? (fn [auth-type]
               (case auth-type
                 :token           valid-token? ; TODO: generate token per user and validate it cryptographically
                 :match-drop      has-match-drop-access?
-                :super-admin     super-admin?
-                :org-admin       (or super-admin? org-admin?)
-                :account-manager (or super-admin? account-manager?)
-                :org-member      (or super-admin? org-admin? org-member?)
-                :member          (or super-admin? org-admin? account-manager? org-member? member?)
+                :super-admin     (isa? role-hierarchy user-role :super-admin)
+                :account-manager (isa? role-hierarchy user-role :account-manager)
+                :org-admin       (and (isa? role-hierarchy user-role :organization-admin)
+                                      (= org-membership-status "accepted"))
+                :org-member      (and (isa? role-hierarchy user-role :organization-member)
+                                      (= org-membership-status "accepted"))
+                :member          (isa? role-hierarchy user-role :member)
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))
 

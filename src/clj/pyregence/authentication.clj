@@ -15,11 +15,12 @@
    This is the single source of truth for session structure."
   [user-data]
   (when user-data
-    (data-response "" {:session (merge {:match-drop-access? (:match_drop_access user-data)
-                                        :user-email         (:user_email user-data)
-                                        :user-id            (:user_id user-data)
-                                        :user-role          (:user_role user-data)
-                                        :organization-id    (:organization_rid user-data)}
+    (data-response "" {:session (merge {:match-drop-access?    (:match_drop_access user-data)
+                                        :user-email            (:user_email user-data)
+                                        :user-id               (:user_id user-data)
+                                        :user-role             (:user_role user-data)
+                                        :organization-id       (:organization_rid user-data)
+                                        :org-membership-status (:org_membership_status user-data)}
                                        (get-config :app :client-keys))})))
 
 (defn- parse-user-settings

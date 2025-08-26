@@ -62,18 +62,6 @@ CREATE OR REPLACE FUNCTION user_email_taken(_email text, _user_id_to_ignore inte
 
 $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION is_user_admin_of_org(_user_id integer, _org_id integer)
- RETURNS boolean AS $$
-    SELECT EXISTS (
-      SELECT 1
-      FROM users
-      WHERE user_uid = _user_id
-        AND organization_rid = _org_id
-        AND user_role = 'organization_admin'
-        AND org_membership_status = 'accepted'
-    );
-$$ LANGUAGE SQL;
-
 --------------------------------------------------------------------------------
 -- User Creation functions
 --------------------------------------------------------------------------------
@@ -134,14 +122,15 @@ $$ LANGUAGE SQL;
 -- Returns user info user name and password match
 CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
  RETURNS TABLE (
-   user_id           integer,
-   user_email        text,
-   match_drop_access boolean,
-   user_role         user_role,
-   organization_rid  integer
+   user_id               integer,
+   user_email            text,
+   match_drop_access     boolean,
+   user_role             user_role,
+   org_membership_status org_membership_status,
+   organization_rid      integer
  ) AS $$
 
-    SELECT user_uid, email, match_drop_access, user_role, organization_rid
+    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid
     FROM users
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
@@ -171,11 +160,12 @@ CREATE OR REPLACE FUNCTION set_user_password(
     _token    text
 )
 RETURNS TABLE (
-    user_id           integer,
-    user_email        text,
-    match_drop_access boolean,
-    user_role         user_role,
-    organization_rid  integer
+    user_id               integer,
+    user_email            text,
+    match_drop_access     boolean,
+    user_role             user_role,
+    org_membership_status org_membership_status,
+    organization_rid      integer
 ) AS $$
 
     UPDATE users
@@ -188,7 +178,7 @@ RETURNS TABLE (
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, match_drop_access, user_role, organization_rid
+    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid
     FROM users
     WHERE email = lower_trim(_email)
       AND email_verified = TRUE;
@@ -198,11 +188,12 @@ $$ LANGUAGE SQL;
 -- Sets email_verified to true, if the verification token is valid
 CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
 RETURNS TABLE (
-    user_id           integer,
-    user_email        text,
-    match_drop_access boolean,
-    user_role         user_role,
-    organization_rid  integer
+    user_id               integer,
+    user_email            text,
+    match_drop_access     boolean,
+    user_role             user_role,
+    org_membership_status org_membership_status,
+    organization_rid      integer
 ) AS $$
 
     UPDATE users
@@ -214,7 +205,7 @@ RETURNS TABLE (
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, match_drop_access, user_role, organization_rid
+    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid
     FROM users
     WHERE email = lower_trim(_email)
       AND email_verified = TRUE;
@@ -224,11 +215,12 @@ $$ LANGUAGE SQL;
 -- Verifies a 2FA token without changing verified status
 CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
  RETURNS TABLE (
-    user_id           integer,
-    user_email        text,
-    match_drop_access boolean,
-    user_role         user_role,
-    organization_rid  integer
+    user_id               integer,
+    user_email            text,
+    match_drop_access     boolean,
+    user_role             user_role,
+    org_membership_status org_membership_status,
+    organization_rid      integer
  ) AS $$
 
     UPDATE users
@@ -239,7 +231,7 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
         AND verification_token IS NOT NULL
         AND token_expiration > NOW()
         AND email_verified = TRUE
-    RETURNING user_uid, email, match_drop_access, user_role, organization_rid;
+    RETURNING user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid;
 
 $$ LANGUAGE SQL;
 

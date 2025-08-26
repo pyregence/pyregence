@@ -61,12 +61,13 @@ $$ LANGUAGE SQL;
 -- Get user with TOTP secret for authenticated session creation
 CREATE OR REPLACE FUNCTION get_user_with_totp(_user_id integer)
  RETURNS TABLE (
-    user_id integer,
-    user_email text,
-    match_drop_access boolean,
-    secret text,
-    user_role user_role,
-    organization_id integer
+    user_id               integer,
+    user_email            text,
+    match_drop_access     boolean,
+    secret                text,
+    user_role             user_role,
+    org_membership_status org_membership_status,
+    organization_rid      integer
  ) AS $$
 
     SELECT u.user_uid,
@@ -74,6 +75,7 @@ CREATE OR REPLACE FUNCTION get_user_with_totp(_user_id integer)
            u.match_drop_access,
            t.secret,
            u.user_role,
+           u.org_membership_status,
            u.organization_rid
     FROM user_totp t
     JOIN users u ON u.user_uid = t.user_id
