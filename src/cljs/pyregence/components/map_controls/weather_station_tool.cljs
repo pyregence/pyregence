@@ -115,8 +115,15 @@
                                     (str label
                                          ": "
                                          value
-                          ;;TODO percent, km/h, degree should be unicode symbols
-                                         (unitCode->wmo-label unitCode))]))]
+                                         ;;TODO percent, km/h_, degree should be unicode symbols
+                                         ;;TODO get unitCode for these
+                                         ;; percent: "percent" or is _percent?
+                                         ;; km: km_h-1
+                                         ;; degree: degC
+                                         (or ({"percent" "TODO percent"
+                                               "km_h-1" "TODO km/h"
+                                               "degC" "TODO degC"} unitCode)
+                                          (unitCode->wmo-label unitCode)))]))]
        (vec
         (cons :<>
               (->> [[:temperature "Temperature"]
