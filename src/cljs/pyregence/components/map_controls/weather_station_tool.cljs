@@ -102,31 +102,28 @@
      [:li "Station id: " stationId]
      [:li "Station name: " stationName]
      [:li "observed at: " (u-time/date-string->iso-string timestamp true)]
-     (let [kamel->title (fn  [k]
-                          (let [parts (-> k
-                                          name
-                                          (str/replace #"([a-z])([A-Z])" "$1 $2")
-                                          (str/split #" "))]
-                            (->> (concat [(str/capitalize (first parts))]
-                                         (map str/lower-case (rest parts)))
-                                 (str/join " "))))
-           unit-code->wmo-label #(-> %
+     (let [unitCode->wmo-label #(-> %
                                      (clojure.string/split #":")
                                      last
                                      wmo-unit-id->labels
                                      (get "skos:altLabel"))
-           show (fn [k]
+           show (fn [[k label]]
                   (let [{:keys [unitCode value]} (latest-observation k)]
                     [:li
                      {:key k}
-                     (str (kamel->title k)
+                     (str label
                           ": "
                           value
                           " "
-                          (unit-code->wmo-label unitCode))]))]
+                          (unitCode->wmo-label unitCode))]))]
        [:<>
         (mapv show
-         [:temperature :relativeHumidity :dewpoint :windSpeed :windDirection :windGust])])]]
+              [[:temperature "Temperature"]
+               [:relativeHumidity "Relative humidity" ]
+               [:dewpoint "Dewpoint"]
+               [:windSpeed "Wind speed"]
+               [:windDirection "Wind direction"]
+               [:windGust "Wind gust"]])])]]
    (when @!/terrain?
      [tool-tip-wrapper
       "Zoom Out to 2D"
