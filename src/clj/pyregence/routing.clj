@@ -97,30 +97,33 @@
                                                   :auth-action :block}
 
    ;; -- Organization Management
-   [:post "/clj/add-org-user"]                   {:handler (clj-handler authentication/add-org-user)
-                                                  :auth-type #{:organization-admin :token}
-                                                  :auth-action :block}
-   [:post "/clj/get-all-organizations"]          {:handler (clj-handler authentication/get-all-organizations)
-                                                  :auth-type #{:super-admin :token}
-                                                  :auth-action :block}
-   [:post "/clj/get-current-user-organization"]  {:handler (clj-handler authentication/get-current-user-organization)
-                                                  :auth-type :token
-                                                  :auth-action :block}
-   [:post "/clj/get-org-member-users"]           {:handler (clj-handler authentication/get-org-member-users)
-                                                  :auth-type #{:organization-admin :token}
-                                                  :auth-action :block}
-   [:post "/clj/get-psps-organizations"]         {:handler (clj-handler authentication/get-psps-organizations)
-                                                  :auth-type :token
-                                                  :auth-action :block}
-   [:post "/clj/remove-org-user"]                {:handler (clj-handler authentication/remove-org-user)
-                                                  :auth-type #{:organization-admin :token}
-                                                  :auth-action :block}
-   [:post "/clj/update-org-info"]                {:handler (clj-handler authentication/update-org-info)
-                                                  :auth-type #{:organization-admin :token}
-                                                  :auth-action :block}
-   [:post "/clj/update-org-user-role"]           {:handler (clj-handler authentication/update-org-user-role)
-                                                  :auth-type #{:organization-admin :token}
-                                                  :auth-action :block}
+   [:post "/clj/add-org-user"]                      {:handler (clj-handler authentication/add-org-user)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/get-all-organizations"]             {:handler (clj-handler authentication/get-all-organizations)
+                                                     :auth-type #{:super-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/get-current-user-organization"]     {:handler (clj-handler authentication/get-current-user-organization)
+                                                     :auth-type :token
+                                                     :auth-action :block}
+   [:post "/clj/get-org-member-users"]              {:handler (clj-handler authentication/get-org-member-users)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/get-psps-organizations"]            {:handler (clj-handler authentication/get-psps-organizations)
+                                                     :auth-type :token
+                                                     :auth-action :block}
+   [:post "/clj/remove-org-user"]                   {:handler (clj-handler authentication/remove-org-user)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/update-org-info"]                   {:handler (clj-handler authentication/update-org-info)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/update-org-user-role"]              {:handler (clj-handler authentication/update-org-user-role)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/update-user-org-membership-status"] {:handler (clj-handler authentication/update-user-org-membership-status)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
 
    ;; Cameras API
    [:post "/clj/get-cameras"]                    {:handler (clj-handler cameras/get-cameras)

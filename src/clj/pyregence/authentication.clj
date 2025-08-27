@@ -746,3 +746,7 @@
 (defn update-org-user-role [_ user-id new-role]
   (call-sql "update_org_user_role" user-id new-role)
   (data-response ""))
+
+(defn update-user-org-membership-status [_ user-id new-status]
+  (call-sql "update_org_membership_status" user-id new-status)
+  (data-response ""))

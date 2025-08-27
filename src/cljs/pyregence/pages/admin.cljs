@@ -24,9 +24,9 @@
                       {:opt-id 4 :opt-label "Account Manager"     :user-role "account_manager"}
                       {:opt-id 5 :opt-label "Member"              :user-role "member"}])
 
-(def ^:private membership-status [{:opt-id 1 :opt-label "None"     :status "none"}
-                                  {:opt-id 2 :opt-label "Pending"  :status "pending"}
-                                  {:opt-id 3 :opt-label "Accepted" :status "accepted"}])
+(def ^:private membership-statuses [{:opt-id 1 :opt-label "None"     :status "none"}
+                                    {:opt-id 2 :opt-label "Pending"  :status "pending"}
+                                    {:opt-id 3 :opt-label "Accepted" :status "accepted"}])
 
 ;; Organization Object Properties
 (defonce ^{:doc "The currently selected organization."}
@@ -195,6 +195,14 @@
             (toast-message! "User role updated."))
         (toast-message! (:body res))))))
 
+(defn- update-org-user-membership-status! [user-id new-status]
+  (go
+    (let [res (<! (u-async/call-clj-async! "update-user-org-membership-status" user-id new-status))]
+      (if (:success res)
+        (do (get-org-member-users @*org-id)
+            (toast-message! "User membership status updated."))
+        (toast-message! (:body res))))))
+
 (defn- remove-org-user! [user-id]
   (go
     (let [res (<! (u-async/call-clj-async! "remove-org-user" user-id))]
@@ -270,6 +278,18 @@
                                :body   (format message user-name new-role-pretty-text)
                                :action #(update-org-user-role! user-id new-role-db-format)})))
 
+(defn- handle-update-membership-status [status-id user-id user-name]
+  (let [message                "Are you sure you want to change the membership status of user \"%s\" to \"%s\"?"
+        new-status             (->> membership-statuses
+                                    (filter (fn [m] (= status-id (:opt-id m))))
+                                    (first))
+        new-status-db-format   (:status new-status)
+        new-status-pretty-text (:opt-label new-status)]
+    (set-message-box-content! {:mode   :confirm
+                               :title  "Update User Membership Status"
+                               :body   (format message user-name new-status-pretty-text)
+                               :action #(update-org-user-membership-status! user-id new-status-db-format)})))
+
 (defn- handle-update-org-settings [oid org-name email-domains auto-add auto-accept]
   (let [message "Are you sure you wish to update the settings for the \"%s\" organization? Saving these changes will overwrite any previous settings."]
     (set-message-box-content! {:mode   :confirm
@@ -330,13 +350,17 @@
      ["Confirm Password" new-user-re-password "password" "confirm-password"]]
     handle-add-user]])
 
-(defn- user-item [user-id full-name email user-role membership-status]
-  (r/with-let [_role-id          (r/atom (->> roles
-                                              (filter (fn [role-entry] (= user-role (:user-role role-entry))))
-                                              (first)
-                                              (:opt-id)))
-               full-name-update  (r/atom full-name)
-               edit-mode-enabled (r/atom false)]
+(defn- user-item [user-id full-name email user-role user-membership-status]
+  (r/with-let [_role-id              (r/atom (->> roles
+                                                  (filter (fn [role-entry] (= user-role (:user-role role-entry))))
+                                                  (first)
+                                                  (:opt-id)))
+               _membership-status-id (r/atom (->> membership-statuses
+                                                  (filter (fn [m] (= user-membership-status (:status m))))
+                                                  (first)
+                                                  (:opt-id)))
+               full-name-update      (r/atom full-name)
+               edit-mode-enabled     (r/atom false)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (if @edit-mode-enabled
@@ -362,11 +386,13 @@
                  :type     "button"
                  :value    "Edit User"
                  :on-click #(swap! edit-mode-enabled not)}])
+      ;; Remove User button
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Remove User"
                :on-click #(handle-remove-user user-id full-name)}]
+      ;; User Role dropdown
       [:select {:class     (<class $/p-bordered-input)
                 :style     {:margin "0 .25rem 0 1rem" :height "2rem"}
                 :value     @_role-id
@@ -374,11 +400,26 @@
        (map (fn [{role-id :opt-id role-name :opt-label}]
               [:option {:key role-id :value role-id} role-name])
             roles)]
+      ;; Update Role button
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Update Role"
-               :on-click #(handle-update-role-id @_role-id user-id full-name)}]]]))
+               :on-click #(handle-update-role-id @_role-id user-id full-name)}]
+      ;; Membership Status dropdown
+      [:select {:class     (<class $/p-bordered-input)
+                :style     {:margin "0 .25rem 0 1rem" :height "2rem"}
+                :value     @_membership-status-id
+                :on-change #(reset! _membership-status-id (u-dom/input-int-value %))}
+       (map (fn [{membership-status-id :opt-id status-name :opt-label}]
+              [:option {:key membership-status-id :value membership-status-id} status-name])
+            membership-statuses)]
+      ;; Update Role button
+      [:input {:class    (<class $/p-form-button)
+               :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
+               :type     "button"
+               :value    "Update Status"
+               :on-click #(handle-update-membership-status @_membership-status-id user-id full-name)}]]]))
 
 (defn- org-users-list [org-member-users]
   [:div#org-users {:style {:margin-top "2rem"}}
@@ -411,7 +452,7 @@
        [:div {:style {:flex 1 :padding "1rem"}}
         [org-list @*orgs]]
        [:div {:style {:display        "flex"
-                      :flex           2
+                      :flex           3
                       :flex-direction "column"
                       :height         "100%"
                       :padding        "1rem"}}

@@ -85,16 +85,27 @@ CREATE OR REPLACE FUNCTION update_org_info(
 
 $$ LANGUAGE SQL;
 
+-- Allows switching between 'pending' and 'accepted' (and 'none' for users with no org).
+-- DB constraints in user_tables.sql will enforce invalid combos.
+CREATE OR REPLACE FUNCTION update_org_membership_status(
+    _user_id     integer,
+    _status_text text
+) RETURNS void AS $$
+    UPDATE users
+    SET org_membership_status = _status_text::org_membership_status
+    WHERE user_uid = _user_id;
+$$ LANGUAGE SQL;
+
 --------------------------------------------------------------------------------
 ---  Organization Memberss
 --------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_org_member_users(_org_id integer)
  RETURNS TABLE (
-    user_id           integer,
-    full_name         text,
-    email             text,
-    user_role         user_role,
-    membership_status org_membership_status
+    user_id               integer,
+    full_name             text,
+    email                 text,
+    user_role             user_role,
+    org_membership_status org_membership_status
  ) AS $$
 
     SELECT
