@@ -45,4 +45,6 @@
 (defn get-weather-stations
   [_]
   {:type "FeatureCollection"
+   ;;TODO consider applying a filter to r"^(MesoWest|RAWS|ASOS)$" applied to the provider attribute.
+   ;;this would require adding the provider feature flag to the GET request.
    :features (map select-relevent-properties @observation-stations)})
