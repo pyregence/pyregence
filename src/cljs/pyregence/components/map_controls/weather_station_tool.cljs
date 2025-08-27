@@ -11,6 +11,7 @@
             [pyregence.state                               :as !]
             [pyregence.styles                              :as $]
             [pyregence.utils.async-utils                   :as u-async]
+            [pyregence.utils.time_utils                    :as u-time]
             [pyregence.wmo-codes-registry-2025-8-27        :refer [wmo-unit-id->labels]]
             [reagent.core                                  :as r]
             [cljs.core.async.interop                       :refer-macros [<p!]]))
@@ -101,9 +102,7 @@
     [:ul
      [:li "ID: " stationId]
      [:li "Name: " stationName]
-     ;;TODO double check that the timestamp here really is the observation time!
-     ;;TODO format timestamp
-     [:li "observed at: " timestamp]
+     [:li "observed at: " (u-time/date-string->iso-string timestamp true)]
      ;;TODO it doenst seem like we want to show them all.
      [:<>
       (for [[k v] lo
