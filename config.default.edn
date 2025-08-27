@@ -90,6 +90,7 @@
                                                          :pyreclimate "https://climate.pyregence.org/geoserver"}}
 
  ;; workers (server)
+ ;;TODO this needs to be updated with weather station pull, will time configuration go here?
  :triangulum.worker/workers [{:triangulum.worker/name  "set-all-capabilities"
                               :triangulum.worker/start pyregence.jobs/start-set-all-capabilities-job!
                               :triangulum.worker/stop  pyregence.jobs/stop-set-all-capabilities-job!}
@@ -99,6 +100,7 @@
                              {:triangulum.worker/name  "match-drop-server"
                               :triangulum.worker/start pyregence.jobs/start-match-drop-server!
                               :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}]
+
 
  ;;; Pyrecast
  :pyregence.cameras/alert-west-api-key              "<api-key>"
