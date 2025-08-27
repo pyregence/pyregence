@@ -159,3 +159,37 @@ CREATE OR REPLACE FUNCTION use_backup_code(_user_id integer, _code text)
     SELECT count(1) > 0 FROM updated
 
 $$ LANGUAGE SQL;
+
+--  Cleanup all TOTP-related data for a user
+CREATE OR REPLACE FUNCTION cleanup_totp_data(_user_id integer)
+ RETURNS void AS $$
+
+BEGIN
+    PERFORM delete_totp_setup(_user_id);
+    PERFORM delete_backup_codes(_user_id);
+END;
+
+$$ LANGUAGE plpgsql;
+
+-- Setup TOTP with backup codes
+CREATE OR REPLACE FUNCTION begin_totp_setup(_user_id integer, _secret text, _backup_codes text[])
+ RETURNS void AS $$
+
+BEGIN
+    PERFORM delete_backup_codes(_user_id);
+    PERFORM create_totp_setup(_user_id, _secret);
+    PERFORM create_backup_codes(_user_id, _backup_codes);
+END;
+
+$$ LANGUAGE plpgsql;
+
+-- Regenerate backup codes
+CREATE OR REPLACE FUNCTION regenerate_backup_codes(_user_id integer, _backup_codes text[])
+ RETURNS void AS $$
+
+BEGIN
+    PERFORM delete_backup_codes(_user_id);
+    PERFORM create_backup_codes(_user_id, _backup_codes);
+END;
+
+$$ LANGUAGE plpgsql;

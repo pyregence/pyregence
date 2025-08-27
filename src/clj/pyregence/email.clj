@@ -47,7 +47,7 @@
   "Generate message for 2FA verification"
   [_ email token expiry-mins]
   (str "Hi " email ",\n\n"
-       "  Please use the following verification code to complete your Pyregence login:\n\n"
+       "  Please use the following verification code:\n\n"
        "  " token "\n\n"
        "  This code will expire in " expiry-mins " minutes.\n\n"
        "  - Pyregence Technical Support"))
