@@ -195,12 +195,13 @@
                                          (fn [response]
                                            (go
                                              (reset! active-weather-station
-                                                     (js->clj
-                                                      (aget
-
-                                                       (<p! (.json response))
-                                                       "properties")
-                                                      :keywordize-keys true))))))
+                                                     (try
+                                                       (js->clj
+                                                        (aget
+                                                         (<p! (.json response))
+                                                         "properties")
+                                                        :keywordize-keys true)
+                                                       (catch :default _)))))))
 
                                     (reset! image-src nil)
                                     (let [image-chan (get-weather-station-image-chan @active-weather-station)]
