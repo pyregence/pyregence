@@ -144,7 +144,7 @@
                                                   :auth-type :token
                                                   :auth-action :block}
    [:post "/clj/get-user-layers"]                {:handler (clj-handler capabilities/get-user-layers)
-                                                  :auth-type #{:member :token}
+                                                  :auth-type #{:organization-member :token}
                                                   :auth-action :block}
    [:get "/clj/remove-workspace"]                {:handler (clj-handler capabilities/remove-workspace!)
                                                   :auth-type :token

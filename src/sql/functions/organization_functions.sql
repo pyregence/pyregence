@@ -137,13 +137,20 @@ CREATE OR REPLACE FUNCTION get_user_layers_list(_user_id integer)
     layer_path   text,
     layer_config text
  ) AS $$
-
-    SELECT ol.org_layer_uid, ol.layer_path, ol.layer_config
-    FROM organization_layers ol
-    JOIN users u ON ol.organization_rid = u.organization_rid
+    SELECT
+        ol.org_layer_uid AS org_layer_id,
+        ol.layer_path,
+        ol.layer_config
+    FROM users u
+    CROSS JOIN organization_layers ol
     WHERE u.user_uid = _user_id
-        AND u.user_role IN ('super_admin', 'organization_admin', 'organization_member')
-
+      AND (
+            -- super_admin sees ALL organization_layers
+            u.user_role = 'super_admin'
+            -- org admins/members see only their own org's layers
+            OR (u.user_role IN ('organization_admin', 'organization_member')
+                AND ol.organization_rid = u.organization_rid)
+          );
 $$ LANGUAGE SQL;
 
 --------------------------------------------------------------------------------

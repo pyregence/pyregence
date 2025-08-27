@@ -255,9 +255,8 @@
                             "workspace-name" "fire-weather-forecast_.*"})
     (let [result (map :workspace (:shasta @layers))]
       (reset! layers original-layers)
-      result))
+      result)))
   ;=>> ["fire-risk-forecast_20250101_00"]
-  )
 
 (defn get-all-layers [_]
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
