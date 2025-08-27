@@ -99,9 +99,9 @@
                   :margin-top      "1rem"}}
     ;;TODO when the user hovers on the observation it would be nice to pop up a longer description that includes a longer label
     [:ul
-     [:li "Station id: " stationId]
+     [:li "Station ID: " stationId]
      [:li "Station name: " stationName]
-     [:li "observed at: " (u-time/date-string->iso-string timestamp true)]
+     [:li "Observed at: " (u-time/date-string->iso-string timestamp true)]
      (let [unitCode->wmo-label #(-> %
                                     (clojure.string/split #":")
                                     last
