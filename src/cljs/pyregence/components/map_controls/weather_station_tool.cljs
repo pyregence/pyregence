@@ -237,7 +237,7 @@
           parent-box
           290
           460
-          "Stations latest observation"
+          "Station's latest observation"
           close-fn!
           render-content]]))
     (finally
