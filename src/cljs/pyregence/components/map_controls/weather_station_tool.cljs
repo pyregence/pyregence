@@ -91,7 +91,7 @@
     "Weather.gov"]
    "."])
 
-(defn- weather-station-info [{:keys [stationName stationId timestamp] :as lo} reset-view zoom-weather-station]
+(defn- weather-station-info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
    [:div {:style {:display         "flex"
                   :justify-content "center"
@@ -99,21 +99,34 @@
                   :top             "2rem"
                   :width           "100%"}}
     [:ul
-     [:li "ID: " stationId]
-     [:li "Name: " stationName]
+     [:li "Station id: " stationId]
+     [:li "Station name: " stationName]
      [:li "observed at: " (u-time/date-string->iso-string timestamp true)]
-     ;;TODO it doenst seem like we want to show them all.
-     [:<>
-      (for [[k v] lo
-            :when (and (map? v) (:value v))]
-        ^{:key k}
-        [:li (str (name k) ": "
-                  (:value v) " "
-                  (-> (:unitCode v)
-                      (clojure.string/split #":")
-                      last
-                      wmo-unit-id->labels
-                      (get "skos:altLabel")))])]]]
+     (let [kamel->title (fn  [k]
+                          (let [parts (-> k
+                                          name
+                                          (str/replace #"([a-z])([A-Z])" "$1 $2")
+                                          (str/split #" "))]
+                            (->> (concat [(str/capitalize (first parts))]
+                                         (map str/lower-case (rest parts)))
+                                 (str/join " "))))
+           unit-code->wmo-label #(-> %
+                                     (clojure.string/split #":")
+                                     last
+                                     wmo-unit-id->labels
+                                     (get "skos:altLabel"))
+           show (fn [k]
+                  (let [{:keys [unitCode value]} (latest-observation k)]
+                    [:li
+                     {:key k}
+                     (str (kamel->title k)
+                          ": "
+                          value
+                          " "
+                          (unit-code->wmo-label unitCode))]))]
+       [:<>
+        (mapv show
+         [:temperature :relativeHumidity :dewpoint :windSpeed :windDirection :windGust])])]]
    (when @!/terrain?
      [tool-tip-wrapper
       "Zoom Out to 2D"
