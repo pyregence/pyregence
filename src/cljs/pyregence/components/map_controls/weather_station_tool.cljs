@@ -114,7 +114,6 @@
                      (str label
                           ": "
                           value
-                          " "
                           (unitCode->wmo-label unitCode))]))]
        (vec
         (cons :<>
