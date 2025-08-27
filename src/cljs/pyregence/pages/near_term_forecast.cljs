@@ -662,10 +662,6 @@
                  (not-empty @!/*params))
         (reset! !/loading? false)))))
 
-(comment
-  (keys @!/the-cameras)
-  @!/the-weather-stations)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
