@@ -109,21 +109,20 @@
                                     wmo-unit-id->labels
                                     (get "skos:altLabel"))
            show                (fn [[k label]]
-                                 (let [{:keys [unitCode value]} (latest-observation k)]
+                                 (let [{:keys [unitCode value]} (latest-observation k)
+                                       round-to-1-decimal  #(/ (Math/round (* % 10)) 10)]
+
                                    [:li
                                     {:key k}
+                                    ;;TODO this conditional logic should probably be in a data structure
                                     (str label
                                          ": "
-                                         value
-                                         ;;TODO percent, km/h_, degree should be unicode symbols
-                                         ;;TODO get unitCode for these
-                                         ;; percent: "percent" or is _percent?
-                                         ;; km: km_h-1
-                                         ;; degree: degC
-                                         (or ({"percent" "TODO percent"
-                                               "km_h-1" "TODO km/h"
-                                               "degC" "TODO degC"} unitCode)
-                                          (unitCode->wmo-label unitCode)))]))]
+                                         (if (float? value)
+                                           (round-to-1-decimal value)
+                                           value)
+                                         (or ({"wmoUnit:km_h-1" "km/hr"
+                                               "wmoUnit:degC"   "\u00B0C"} unitCode)
+                                             (unitCode->wmo-label unitCode)))]))]
        (vec
         (cons :<>
               (->> [[:temperature "Temperature"]
