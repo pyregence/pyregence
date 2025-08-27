@@ -94,10 +94,9 @@
 (defn- weather-station-info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
    [:div {:style {:display         "flex"
-                  :justify-content "center"
-                  :position        "absolute"
-                  :top             "2rem"
-                  :width           "100%"}}
+                  :justify-content "flex-start"
+                  :width           "100%"
+                  :margin-top      "1rem"}}
     ;;TODO when the user hovers on the observation it would be nice to pop up a longer description that includes a longer label
     [:ul
      [:li "Station id: " stationId]
