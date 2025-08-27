@@ -4,6 +4,7 @@
 
 (defonce observation-stations (atom []))
 
+;;NOTE this takes roughly 5-10 minutes
 (defn get-observation-stations!
   []
   (loop [url "https://api.weather.gov/stations"
