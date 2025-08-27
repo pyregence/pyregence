@@ -23,35 +23,80 @@ CREATE TYPE org_membership_status AS ENUM (
 -- Step 2: Add new columns to users table
 --------------------------------------------------------------------------------
 ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS user_role user_role DEFAULT 'member' NOT NULL,
-    ADD COLUMN IF NOT EXISTS org_membership_status org_membership_status DEFAULT 'none' NOT NULL,
-    ADD COLUMN IF NOT EXISTS organization_rid INTEGER REFERENCES organizations(organization_uid),
+    ADD COLUMN IF NOT EXISTS user_role             user_role             NOT NULL DEFAULT 'member',
+    ADD COLUMN IF NOT EXISTS org_membership_status org_membership_status NOT NULL DEFAULT 'none',
+    ADD COLUMN IF NOT EXISTS organization_rid      INTEGER REFERENCES organizations(organization_uid);
+
+ALTER TABLE users
     RENAME COLUMN verified TO email_verified;
 
 --------------------------------------------------------------------------------
--- Step 3: Backfill data from organization_users and roles TODO this needs to be fixed to account for users who are part of multiple organizations
+-- Step 3: Backfill data from organization_users using heuristics
 --------------------------------------------------------------------------------
--- Map org membership
+-- (1) Users in >1 orgs => super_admin, detach from orgs
+WITH multi_org AS (
+  SELECT user_rid
+  FROM organization_users
+  GROUP BY user_rid
+  HAVING COUNT(DISTINCT organization_rid) > 1
+)
 UPDATE users u
-SET organization_rid = ou.organization_rid
-FROM organization_users ou
-WHERE u.user_uid = ou.user_rid;
+SET user_role             = 'super_admin',
+    org_membership_status = 'none',
+    organization_rid      = NULL
+FROM multi_org m
+WHERE u.user_uid = m.user_rid;
 
--- Map roles
+-- (2) Users in exactly 1 org => attach that org and set role/status
+WITH one_org AS (
+  SELECT user_rid
+  FROM organization_users
+  GROUP BY user_rid
+  HAVING COUNT(DISTINCT organization_rid) = 1
+),
+one_org_role AS (
+  -- Resolve multiple rows to the highest-privilege role within that single org
+  SELECT
+    ou.user_rid,
+    ou.organization_rid,
+    MIN(ou.role_rid) AS role_rid  -- 1 admin, 2 member, 3 pending
+  FROM organization_users ou
+  JOIN one_org oo ON oo.user_rid = ou.user_rid
+  GROUP BY ou.user_rid, ou.organization_rid
+),
+multi_org AS (
+  SELECT user_rid
+  FROM organization_users
+  GROUP BY user_rid
+  HAVING COUNT(DISTINCT organization_rid) > 1
+)
 UPDATE users u
-SET user_role = CASE
-    WHEN u.super_admin = TRUE THEN 'super_admin'
-    WHEN ou.role_rid = 1 THEN 'organization_admin'
-    WHEN ou.role_rid = 2 THEN 'organization_member'
-    WHEN ou.role_rid = 3 THEN 'member' -- previously "pending" role
-    ELSE 'member'
-END
-FROM organization_users ou
-WHERE u.user_uid = ou.user_rid;
+SET organization_rid = o.organization_rid,
+    user_role = CASE o.role_rid
+                  WHEN 1 THEN 'organization_admin'
+                  WHEN 2 THEN 'organization_member'
+                  WHEN 3 THEN 'organization_member'
+                END,
+    org_membership_status = CASE o.role_rid
+                              WHEN 3 THEN 'pending'
+                              ELSE 'accepted'
+                            END
+FROM one_org_role o
+LEFT JOIN multi_org mo ON mo.user_rid = o.user_rid
+WHERE mo.user_rid IS NULL
+  AND u.user_uid = o.user_rid;
 
-UPDATE users
-SET org_membership_status = 'accepted'
-WHERE organization_rid IS NOT NULL;
+-- (3) Users with 0 orgs => normalize to member/none/NULL
+-- (i.e., not in organization_users at all)
+UPDATE users u
+SET user_role             = 'member',
+    org_membership_status = 'none',
+    organization_rid      = NULL
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM organization_users ou
+        WHERE ou.user_rid = u.user_uid
+      );
 
 --------------------------------------------------------------------------------
 -- Step 4: Drop old columns no longer needed
@@ -90,8 +135,8 @@ BEGIN
   UPDATE users
   SET
     organization_rid = NULL,
-    user_role = 'member',
-    org_membership_status = 'none'
+    user_role = 'member'::user_role,
+    org_membership_status = 'none'::org_membership_status
   WHERE organization_rid = OLD.organization_uid;
 
   RETURN OLD;

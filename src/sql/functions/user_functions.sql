@@ -11,8 +11,8 @@ BEGIN
   UPDATE users
   SET
     organization_rid = NULL,
-    user_role = 'member',
-    org_membership_status = 'none'
+    user_role = 'member'::user_role,
+    org_membership_status = 'none'::org_membership_status
   WHERE organization_rid = OLD.organization_uid;
 
   RETURN OLD;
