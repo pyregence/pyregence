@@ -30,9 +30,9 @@
       ;;TODO this timeout should be configurable and default to every 2 or 3 days in dev and production.
       (Thread/sleep (* 1000 ;; 1s
                        60   ;; 1m
-                       5   ;;  5m
-                     ;;24   ;; 1 day
-                     ;;2    ;; 2 days
+                       60   ;; 1h
+                       24   ;; 1 day
+                       2    ;; 2 days
                        ))
       (recur))))
 
