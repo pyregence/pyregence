@@ -43,5 +43,4 @@
 (defn get-weather-stations
   [_]
   {:type "FeatureCollection"
-   :features (->> @observation-stations
-                  (map select-relevent-properties))})
+   :features (map select-relevent-properties @observation-stations)})
