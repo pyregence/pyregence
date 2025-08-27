@@ -103,10 +103,10 @@
      [:li "Station name: " stationName]
      [:li "observed at: " (u-time/date-string->iso-string timestamp true)]
      (let [unitCode->wmo-label #(-> %
-                                     (clojure.string/split #":")
-                                     last
-                                     wmo-unit-id->labels
-                                     (get "skos:altLabel"))
+                                    (clojure.string/split #":")
+                                    last
+                                    wmo-unit-id->labels
+                                    (get "skos:altLabel"))
            show (fn [[k label]]
                   (let [{:keys [unitCode value]} (latest-observation k)]
                     [:li
