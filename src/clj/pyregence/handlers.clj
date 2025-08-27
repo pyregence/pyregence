@@ -7,7 +7,6 @@
             [ring.util.codec     :refer [url-encode]]
             [ring.util.response  :refer [redirect]]
             [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive]]
             [triangulum.handler  :refer [development-app]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.response :refer [data-response]]
