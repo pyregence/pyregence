@@ -107,14 +107,15 @@
                                     last
                                     wmo-unit-id->labels
                                     (get "skos:altLabel"))
-           show (fn [[k label]]
-                  (let [{:keys [unitCode value]} (latest-observation k)]
-                    [:li
-                     {:key k}
-                     (str label
-                          ": "
-                          value
-                          (unitCode->wmo-label unitCode))]))]
+           show                (fn [[k label]]
+                                 (let [{:keys [unitCode value]} (latest-observation k)]
+                                   [:li
+                                    {:key k}
+                                    (str label
+                                         ": "
+                                         value
+                          ;;TODO percent, km/h, degree should be unicode symbols
+                                         (unitCode->wmo-label unitCode))]))]
        (vec
         (cons :<>
               (->> [[:temperature "Temperature"]
