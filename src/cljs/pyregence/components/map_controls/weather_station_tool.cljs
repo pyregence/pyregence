@@ -98,6 +98,7 @@
                   :position        "absolute"
                   :top             "2rem"
                   :width           "100%"}}
+    ;;TODO when the user hovers on the observation it would be nice to pop up a longer description that includes a longer label
     [:ul
      [:li "Station id: " stationId]
      [:li "Station name: " stationName]
