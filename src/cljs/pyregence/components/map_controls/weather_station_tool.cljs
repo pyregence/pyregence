@@ -116,14 +116,16 @@
                           value
                           " "
                           (unitCode->wmo-label unitCode))]))]
-       [:<>
-        (mapv show
-              [[:temperature "Temperature"]
-               [:relativeHumidity "Relative humidity" ]
-               [:dewpoint "Dewpoint"]
-               [:windSpeed "Wind speed"]
-               [:windDirection "Wind direction"]
-               [:windGust "Wind gust"]])])]]
+       (vec
+        (cons :<>
+              (->> [[:temperature "Temperature"]
+                    [:relativeHumidity "Relative humidity"]
+                    [:dewpoint "Dewpoint"]
+                    [:windSpeed "Wind speed"]
+                    [:windDirection "Wind direction"]
+                    [:windGust "Wind gust"]]
+                   (filter (fn [[k _]] (-> k latest-observation :value)))
+                   (mapv show)))))]]
    (when @!/terrain?
      [tool-tip-wrapper
       "Zoom Out to 2D"
