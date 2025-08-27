@@ -4,6 +4,25 @@
 --------------------------------------------------------------------------------
 ---  Organizations
 --------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION get_all_organizations()
+ RETURNS TABLE (
+   org_id                integer,
+   org_name              text,
+   org_unique_id         text,
+   geoserver_credentials text,
+   email_domains         text,
+   auto_add              boolean,
+   auto_accept           boolean,
+   archived              boolean,
+   created_date          date,
+   archived_date         date
+ ) AS $$
+
+    SELECT * FROM organizations
+    ORDER BY organization_uid
+
+$$ LANGUAGE SQL;
+
 -- Returns the organization for a user if they are an org admin or org member
 -- TODO in the future we should get rid of this b/c the organization a user belongs to
 -- is simply in the u.organization_rid column. this was kept in order to not have

@@ -86,7 +86,6 @@
   (log-in nil "email-2fa@pyr.dev" "email2fa"))
   ;=>> {:status 200 :body string?}
 
-
 (defn log-out [_] (data-response "" {:session nil}))
 
 (defn set-user-password
@@ -493,7 +492,6 @@
     (remove-totp {:user-id user-id} valid-code)))
   ;=>> {:status 200, :body "{:message \"Two-factor authentication has been disabled\"}"}
 
-
 (defn disable-2fa
   "Disables any 2FA method for the current user after verification."
   [{:keys [user-id user-email]} code]
@@ -541,7 +539,6 @@
     (save-user-settings! user-id {:two-factor :email})
     (disable-2fa {:user-id user-id :user-email email} code)))
   ;=>> {:status 200, :body "{:message \"Two-factor authentication has been disabled\"}"}
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; User Management
@@ -673,6 +670,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Organization Management
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-all-organizations
+  "Returns the list of all organizations in the database."
+  [_]
+  (->> (call-sql "get_all_organizations")
+       (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials email_domains auto_add auto_accept archived created_date archived_date]}]
+               {:org-id                org_id
+                :org-name              org_name
+                :org-unique-id         org_unique_id
+                :geoserver-credentials geoserver_credentials
+                :email-domains         email_domains
+                :auto-add?             auto_add
+                :auto-accept?          auto_accept
+                :archived?             archived
+                :created-date          created_date
+                :archived-date         archived_date}))
+       (data-response)))
 
 (defn add-org-user [_ org-id email]
   (if-let [user-id-to-add (sql-primitive (call-sql "get_user_id_by_email" email))]

@@ -105,10 +105,13 @@
                              (edn/read-string (:body response))
                              [])))))
 
-(defn- get-organizations []
+(defn- get-organizations [user-role]
   (reset! pending-get-organizations? true)
   (go
-    (let [response (<! (u-async/call-clj-async! "get-current-user-organization"))]
+   (let [api-route (if (= user-role "super_admin")
+                     "get-all-organizations" ; super admin can see all orgs
+                     "get-current-user-organization") ; org admin can just see their org
+         response  (<! (u-async/call-clj-async! api-route))]
       (reset! *orgs (if (:success response)
                       (->> (:body response)
                            (edn/read-string))
@@ -128,7 +131,7 @@
                                  email-domains
                                  auto-add?
                                  auto-accept?))
-    (get-organizations)
+    (get-organizations @_user-role)
     (toast-message! "Organization info updated.")))
 
 (defn- add-new-user-and-assign-to-*org! []
@@ -396,7 +399,7 @@
   [{:keys [user-id user-role]}]
   (reset! _user-id user-id)
   (reset! _user-role user-role)
-  (get-organizations)
+  (get-organizations user-role)
   (fn [_]
     (if @pending-get-organizations?
       ;; Organizations are still loading
