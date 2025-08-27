@@ -45,18 +45,21 @@
         bearer-token           (some->> (get headers "authorization")
                                         (re-find #"(?i)^Bearer\s+(.+)$")
                                         second)
-        valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))]
+        valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))
+        super-admin?           (isa? role-hierarchy user-role :super-admin)]
     (every? (fn [auth-type]
               (case auth-type
-                :token           valid-token? ; TODO: generate token per user and validate it cryptographically
-                :match-drop      has-match-drop-access?
-                :super-admin     (isa? role-hierarchy user-role :super-admin)
-                :account-manager (isa? role-hierarchy user-role :account-manager)
-                :org-admin       (and (isa? role-hierarchy user-role :organization-admin)
-                                      (= org-membership-status "accepted"))
-                :org-member      (and (isa? role-hierarchy user-role :organization-member)
-                                      (= org-membership-status "accepted"))
-                :member          (isa? role-hierarchy user-role :member)
+                :token               valid-token? ; TODO: generate token per user and validate it cryptographically
+                :match-drop          has-match-drop-access?
+                :super-admin         super-admin?
+                :account-manager     (isa? role-hierarchy user-role :account-manager)
+                :organization-admin  (or super-admin? ; we need this extra check because super-admins don't have an associated org, and thus their org-membership-status is none
+                                         (and (isa? role-hierarchy user-role :organization-admin)
+                                              (= org-membership-status "accepted")))
+                :organization-member (or super-admin? ; we need this extra check because super-admins don't have an associated org, and thus their org-membership-status is none
+                                         (and (isa? role-hierarchy user-role :organization-member)
+                                              (= org-membership-status "accepted")))
+                :member              (isa? role-hierarchy user-role :member)
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))
 

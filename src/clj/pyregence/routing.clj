@@ -13,10 +13,10 @@
   {;; Page Routes
    [:get "/"]                                    {:handler (render-page "/")}
    [:get "/admin"]                               {:handler (render-page "/admin")
-                                                  :auth-type :org-admin
+                                                  :auth-type :organization-admin
                                                   :auth-action :redirect}
    [:get "/backup-codes"]                        {:handler (render-page "/backup-codes")
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :redirect}
    [:get "/dashboard"]                           {:handler (render-page "/dashboard")
                                                   :auth-type #{:match-drop :member}
@@ -30,10 +30,10 @@
    [:get "/register"]                            {:handler (render-page "/register")}
    [:get "/reset-password"]                      {:handler (render-page "/reset-password")}
    [:get "/settings"]                            {:handler (render-page "/settings")
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :redirect}
    [:get "/totp-setup"]                          {:handler (render-page "/totp-setup")
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :redirect}
    [:get "/terms-of-use"]                        {:handler (render-page "/terms-of-use")}
    [:get "/verify-2fa"]                          {:handler (render-page "/verify-2fa")}
@@ -88,7 +88,7 @@
                                                   :auth-type :token
                                                   :auth-action :block}
    [:post "/clj/update-user-name"]               {:handler (clj-handler authentication/update-user-name)
-                                                  :auth-type #{:org-admin :token}
+                                                  :auth-type #{:organization-admin :token}
                                                   :auth-action :block}
 
    ;; -- Access Control
@@ -98,25 +98,25 @@
 
    ;; -- Organization Management
    [:post "/clj/add-org-user"]                   {:handler (clj-handler authentication/add-org-user)
-                                                  :auth-type #{:org-admin :token}
+                                                  :auth-type #{:organization-admin :token}
                                                   :auth-action :block}
    [:post "/clj/get-current-user-organization"]  {:handler (clj-handler authentication/get-current-user-organization)
                                                   :auth-type :token
                                                   :auth-action :block}
    [:post "/clj/get-org-member-users"]           {:handler (clj-handler authentication/get-org-member-users)
-                                                  :auth-type #{:org-admin :token}
+                                                  :auth-type #{:organization-admin :token}
                                                   :auth-action :block}
    [:post "/clj/get-psps-organizations"]         {:handler (clj-handler authentication/get-psps-organizations)
                                                   :auth-type :token
                                                   :auth-action :block}
    [:post "/clj/remove-org-user"]                {:handler (clj-handler authentication/remove-org-user)
-                                                  :auth-type #{:org-admin :token}
+                                                  :auth-type #{:organization-admin :token}
                                                   :auth-action :block}
    [:post "/clj/update-org-info"]                {:handler (clj-handler authentication/update-org-info)
-                                                  :auth-type #{:org-admin :token}
+                                                  :auth-type #{:organization-admin :token}
                                                   :auth-action :block}
    [:post "/clj/update-org-user-role"]           {:handler (clj-handler authentication/update-org-user-role)
-                                                  :auth-type #{:org-admin :token}
+                                                  :auth-type #{:organization-admin :token}
                                                   :auth-action :block}
 
    ;; Cameras API

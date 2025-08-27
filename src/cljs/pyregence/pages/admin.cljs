@@ -52,7 +52,9 @@
 
 ;; Current User Selections
 (defonce ^{:doc "The user id of the logged in user."}
-  _user-id  (r/atom -1))
+  _user-id (r/atom -1))
+(defonce ^{:doc "The user role of the logged in user."}
+  _user-role (r/atom -1))
 
 ;; Add User form state
 (defonce ^{:doc "The email in the Add User form."}
@@ -391,8 +393,9 @@
 (defn root-component
   "The root component for the /admin page.
    Displays the organization list, settings, and users."
-  [{:keys [user-id]}]
+  [{:keys [user-id user-role]}]
   (reset! _user-id user-id)
+  (reset! _user-role user-role)
   (get-organizations)
   (fn [_]
     (if @pending-get-organizations?
