@@ -12,7 +12,7 @@
             [pyregence.styles                              :as $]
             [pyregence.utils.async-utils                   :as u-async]
             [pyregence.utils.time_utils                    :as u-time]
-            [pyregence.wmo-codes-registry-2025-8-27        :refer [wmo-unit-id->labels]]
+            [pyregence.utils.wmo-codes        :refer [wmo-unit-id->unit-id->labels
             [reagent.core                                  :as r]
             [cljs.core.async.interop                       :refer-macros [<p!]]))
 
@@ -96,7 +96,7 @@
            unitCode->wmo-label #(-> %
                                     (clojure.string/split #":")
                                     last
-                                    wmo-unit-id->labels
+                                    unit-id->labels
                                     (get "skos:altLabel"))
            ->item (fn [[k {:keys [unitCode value]}]]
                     (let [round-to-1-decimal  #(/ (Math/round (* % 10)) 10)]

@@ -1,6 +1,6 @@
-(ns pyregence.wmo-codes-registry-2025-8-27)
+(ns pyregence.utils.wmo-codes)
 
-(def wmo-unit-id->labels
+(def unit-id->labels
   "A mapping of wmo-id's to labels curated from https://codes.wmo.int/common/unit in 2025"
   {"(Z)_pref" {"skos:altLabel" "(Z)", "skos:prefLabel" "(zetta)"},
    "Bq" {"skos:altLabel" "Bq", "skos:prefLabel" "becquerel"},
