@@ -633,15 +633,13 @@
                                                                      "get-current-user-organization"))
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
-          active-fire-count               (count fire-names)
-          psps-orgs-body                  (edn/read-string (:body (<! psps-orgs-list-chan)))]
+          active-fire-count               (count fire-names)]
       (reset! !/active-fire-count active-fire-count)
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
-      (reset! !/psps-orgs-list psps-orgs-body)
-      (reset! !/user-psps-orgs-list
-              (if super-admin?
-                psps-orgs-body ; super_admins can see all psps orgs
-                (filter (fn [org] (some #(= (:org-unique-id org) %) psps-orgs-body)))))
+      (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
+      (reset! !/user-psps-orgs-list (filter (fn [org]
+                                              (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
+                                            @!/user-orgs-list))
       (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast
               (cond
