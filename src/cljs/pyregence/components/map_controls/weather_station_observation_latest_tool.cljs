@@ -20,7 +20,7 @@
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $mobile-weather-station-tool []
+(defn- $mobile []
   {:background-color ($/color-picker :bg-color)
    :box-shadow       (str "1px 0 5px " ($/color-picker :dark-gray 0.3))
    :color            ($/color-picker :font-color)
@@ -33,7 +33,7 @@
 ;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- mobile-weather-station-tool-header []
+(defn- mobile-header []
   [:div#collapsible-weather-station-header
    {:style {:align-items      "center"
             :background-color ($/color-picker :header-color)
@@ -51,7 +51,7 @@
                    :visibility   (if (and @!/show-weather-station? @!/mobile?) "visible" "hidden")}}
     [tool-button :close #(reset! !/show-weather-station? false)]]])
 
-(defn- latest-observation-tool-intro []
+(defn- intro []
   [:div {:style {:padding "1.2em"}}
    "Click on a weather station to view the latest observation. Powered by "
    [:a {:href   "https://api.weather.gov/"
@@ -60,7 +60,7 @@
     "Weather.gov"]
    "."])
 
-(defn- show-observation-station
+(defn- not-found
   [{:keys [name stationIdentifier]}]
   [:div
    [:div {:style {:display         "flex"
@@ -76,7 +76,7 @@
      [:li "Station ID: " stationIdentifier]
      [:li "Station name: " name]]]])
 
-(defn- show-latest-observation-info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
+(defn- info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
    [:div {:style {:display         "flex"
                   :justify-content "flex-start"
@@ -143,7 +143,7 @@
                     :width  "32px"}}
       [svg/binoculars]]]]])
 
-(defn- loading-latest-observation [weather-station-name]
+(defn- loading [weather-station-name]
   [:div {:style {:padding "1.2em"}}
    (str "Loading weather-station " weather-station-name "...")])
 
@@ -151,7 +151,7 @@
 ;; Root Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn weather-station-tool [parent-box close-fn!]
+(defn tool [parent-box close-fn!]
   (r/with-let [latest-observation  (r/atom nil)
                weather-station     (r/atom nil)
                exit-chan      (r/atom nil)
@@ -198,23 +198,23 @@
                                ;;in the larger flow.
                                (cond
                                  (nil? @latest-observation)
-                                 [latest-observation-tool-intro]
+                                 [intro]
 
                                  stationName
-                                 [show-latest-observation-info
+                                 [info
                                   latest-observation-info
                                   reset-view
                                   zoom-weather-station]
 
                                  @weather-station
-                                 [show-observation-station @weather-station]
+                                 [not-found @weather-station]
 
                                  :else
-                                 [loading-latest-observation stationName]))]
+                                 [loading stationName]))]
       (if @!/mobile?
         [:div#wildfire-mobile-weather-station-tool
-         {:style ($/combine $/tool $mobile-weather-station-tool)}
-         [mobile-weather-station-tool-header]
+         {:style ($/combine $/tool $mobile)}
+         [mobile-header]
          [render-content]]
         [:div#wildfire-weather-station-tool
          [resizable-window

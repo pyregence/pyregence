@@ -9,7 +9,7 @@
    [herb.core                                                                 :refer [<class]]
    [pyregence.analytics                                                       :refer [gtag]]
    [pyregence.components.map-controls.camera-tool                             :refer [camera-tool]]
-   [pyregence.components.map-controls.weather-station-observation-latest-tool :refer [weather-station-tool]]
+   [pyregence.components.map-controls.weather-station-observation-latest-tool :as weather-obs]
    [pyregence.components.map-controls.collapsible-panel                       :refer [collapsible-panel]]
    [pyregence.components.map-controls.information-tool                        :refer [information-tool]]
    [pyregence.components.map-controls.legend-box                              :refer [legend-box]]
@@ -733,7 +733,7 @@
             (when @!/show-camera?
               [camera-tool @my-box #(reset! !/show-camera? false)])
             (when @!/show-weather-station?
-              [weather-station-tool @my-box #(reset! !/show-weather-station? false)])])
+              [weather-obs/tool @my-box #(reset! !/show-weather-station? false)])])
          [legend-box
           (get-any-level-key :reverse-legend?)
           (get-any-level-key :time-slider?)
