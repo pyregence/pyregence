@@ -53,11 +53,11 @@
 
 (defn- intro []
   [:div {:style {:padding "1.2em"}}
-   "Click on a weather station to view it's latest observation. Powered by "
+   "Click on a weather station to view it's latest observation. Powered by the "
    [:a {:href   "https://api.weather.gov/"
         :ref    "noreferrer noopener"
         :target "_blank"}
-    "Weather.gov"]
+    "National Weather Service (NWS) API."]
    "."])
 
 (defn- not-found

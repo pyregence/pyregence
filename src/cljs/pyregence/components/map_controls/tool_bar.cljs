@@ -133,7 +133,7 @@
                    (gtag-tool-clicked @!/show-camera? "camera"))
               @!/show-camera?])
            [:weather-station
-            "show weather stations"
+            "Show weather stations"
             #(do
                (reset! !/show-info? false)
                (reset! !/show-measure-tool? false)
