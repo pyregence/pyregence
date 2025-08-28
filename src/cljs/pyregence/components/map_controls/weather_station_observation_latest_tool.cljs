@@ -1,4 +1,4 @@
-(ns pyregence.components.map-controls.weather-station-tool
+(ns pyregence.components.map-controls.weather-station-observation-latest-tool
   (:require [clojure.core.async                            :refer [take! go <!]]
             [clojure.string                                :as str]
             [herb.core                                     :refer [<class]]
