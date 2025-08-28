@@ -398,13 +398,17 @@
                 :value     @_role-id
                 :on-change #(reset! _role-id (u-dom/input-int-value %))}
        (map (fn [{role-id :opt-id role-name :opt-label}]
-              [:option {:key role-id :value role-id} role-name])
+              [:option {:key      role-id
+                        :value    role-id
+                        :disabled (= role-id 1)} ; don't allow super admin to be a selectable option - we need a different mechanism later to add a super admin
+               role-name])
             roles)]
       ;; Update Role button
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Update Role"
+               :disabled (= user-role "super_admin")
                :on-click #(handle-update-role-id @_role-id user-id full-name)}]
       ;; Membership Status dropdown
       [:select {:class     (<class $/p-bordered-input)
