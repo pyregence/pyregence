@@ -91,7 +91,7 @@
     "Weather.gov"]
    "."])
 
-(defn- latest-observation-info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
+(defn- show-latest-observation-info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
    [:div {:style {:display         "flex"
                   :justify-content "flex-start"
@@ -212,15 +212,16 @@
                                      #(mb/add-feature-highlight!
                                        "fire-weather-stations" "fire-weather-stations"
                                        :click-fn on-click))]
-    (let [{:keys [stationName] :as latest-observation} @latest-observation
+
+    (let [{:keys [stationName] :as latest-observation-info} @latest-observation
           render-content     (fn []
                                (cond
                                  (nil? @latest-observation)
                                  [latest-observation-tool-intro]
 
                                  @image-src
-                                 [latest-observation-info
-                                  latest-observation
+                                 [show-latest-observation-info
+                                  latest-observation-info
                                   reset-view
                                   zoom-weather-station]
 
