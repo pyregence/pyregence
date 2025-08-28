@@ -14,7 +14,8 @@
     (let [{{new-observation-stations           :features
             {next-batch-of-stations-url :next} :pagination} :body}
           (client/get url {:as      :json
-                           :headers {"User-Agent" "support@sig-gis.com"}
+                           :headers {"User-Agent" "support@sig-gis.com"
+                                     "Feature-Flags" "obs_station_provider"}
                            :connection-timeout (* 1000 60 3)})]
       (if (seq new-observation-stations)
         (recur next-batch-of-stations-url (concat observation-stations new-observation-stations))
@@ -43,4 +44,45 @@
   {:type "FeatureCollection"
    ;;TODO consider applying a filter to r"^(MesoWest|RAWS|ASOS)$" applied to the provider attribute.
    ;;this would require adding the provider feature flag to the GET request.
-   :features (map select-relevent-properties @observation-stations)})
+   :features (->> @observation-stations
+                  (filter (fn [{{provider :provider} :properties}]
+                            (#{"MesoWest" "RAWS" "ASOS"} provider)))
+                  (map select-relevent-properties))})
+
+;;scratch pad to add provider filter.
+(comment
+  (def response
+    (client/get "https://api.weather.gov/stations"
+                {:as      :json
+                 :headers {"User-Agent" "support@sig-gis.com"
+                           "Feature-Flags" "obs_station_provider"}
+                 :connection-timeout (* 1000 60 3)}))
+
+  (->> response :body :features first)
+  ;; => {:id "https://api.weather.gov/stations/0007W",
+  ;;     :type "Feature",
+  ;;     :geometry {:type "Point", :coordinates [-84.1787 30.53099]},
+  ;;     :properties
+  ;;     {:timeZone "America/New_York",
+  ;;      :elevation {:unitCode "wmoUnit:m", :value 49.0728},
+  ;;      :fireWeatherZone "https://api.weather.gov/zones/fire/FLZ017",
+  ;;      :subProvider "WEATHERSTEM",
+  ;;      :name "Montford Middle",
+  ;;      :forecast "https://api.weather.gov/zones/forecast/FLZ017",
+  ;;      :county "https://api.weather.gov/zones/county/FLC073",
+  ;;      :stationIdentifier "0007W",
+  ;;      :@id "https://api.weather.gov/stations/0007W",
+  ;;      :@type "wx:ObservationStation",
+  ;;      :provider "MesoWest"}}
+
+  (count @observation-stations)
+  ;; => 63357
+
+  (->> @observation-stations
+       (filter (fn [{{provider :provider} :properties}]
+                 (#{"MesoWest" "RAWS" "ASOS"} provider)))
+       count)
+  ;; => 17035
+
+;;
+  )
