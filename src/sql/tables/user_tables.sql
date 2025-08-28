@@ -51,9 +51,16 @@ CHECK (
 ALTER TABLE users
 ADD CONSTRAINT valid_role_for_membership
 CHECK (
-    -- Only allow elevated org roles if status is 'accepted'
-    (user_role IN ('organization_admin', 'organization_member') AND org_membership_status = 'accepted')
-    OR (org_membership_status IN('pending', 'none'))
+  CASE
+    WHEN org_membership_status = 'accepted' THEN
+      user_role IN ('organization_member', 'organization_admin')
+    WHEN org_membership_status = 'pending' THEN
+      user_role IN ('organization_member', 'organization_admin')
+    WHEN org_membership_status = 'none' THEN
+      user_role IN ('super_admin' ,'account_manager', 'member')
+    ELSE
+      FALSE
+  END
 );
 
 --------------------------------------------------------------------------------

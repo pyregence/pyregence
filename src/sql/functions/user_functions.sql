@@ -78,9 +78,9 @@ CREATE OR REPLACE FUNCTION add_new_user(
         _name,
         crypt(_password, gen_salt('bf')),
         _settings,
-        FALSE,    -- by default a user is pending email verification
-        'member', -- by default a user becomes a member
-        'none'    -- by default a user doesn't belong to an organization
+        FALSE,                        -- by default a user is pending email verification
+        'member'::user_role,          -- by default a user becomes a member
+        'none'::org_membership_status -- by default a user doesn't belong to an organization
     )
     RETURNING user_uid
 
@@ -110,7 +110,7 @@ CREATE OR REPLACE FUNCTION auto_add_org_user(
     )
     UPDATE users u
     SET organization_rid = m.organization_uid,
-        user_role = CASE WHEN m.auto_accept THEN 'organization_member'::user_role ELSE 'member'::user_role END,
+        user_role = 'organization_member'::user_role,
         org_membership_status = CASE WHEN m.auto_accept THEN 'accepted'::org_membership_status ELSE 'pending'::org_membership_status END
     FROM matched_org m
     WHERE u.user_uid = _user_id

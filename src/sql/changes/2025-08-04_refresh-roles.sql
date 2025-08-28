@@ -41,8 +41,8 @@ WITH multi_org AS (
   HAVING COUNT(DISTINCT organization_rid) > 1
 )
 UPDATE users u
-SET user_role             = 'super_admin',
-    org_membership_status = 'none',
+SET user_role             = 'super_admin'::user_role,
+    org_membership_status = 'none'::org_membership_status,
     organization_rid      = NULL
 FROM multi_org m
 WHERE u.user_uid = m.user_rid;
@@ -73,13 +73,13 @@ multi_org AS (
 UPDATE users u
 SET organization_rid = o.organization_rid,
     user_role = CASE o.role_rid
-                  WHEN 1 THEN 'organization_admin'
-                  WHEN 2 THEN 'organization_member'
-                  WHEN 3 THEN 'organization_member'
+                  WHEN 1 THEN 'organization_admin'::user_role
+                  WHEN 2 THEN 'organization_member'::user_role
+                  WHEN 3 THEN 'organization_member'::user_role
                 END,
     org_membership_status = CASE o.role_rid
-                              WHEN 3 THEN 'pending'
-                              ELSE 'accepted'
+                              WHEN 3 THEN 'pending'::org_membership_status
+                              ELSE 'accepted'::org_membership_status
                             END
 FROM one_org_role o
 LEFT JOIN multi_org mo ON mo.user_rid = o.user_rid
@@ -89,8 +89,8 @@ WHERE mo.user_rid IS NULL
 -- (3) Users with 0 orgs => normalize to member/none/NULL
 -- (i.e., not in organization_users at all)
 UPDATE users u
-SET user_role             = 'member',
-    org_membership_status = 'none',
+SET user_role             = 'member'::user_role,
+    org_membership_status = 'none'::org_membership_status,
     organization_rid      = NULL
 WHERE NOT EXISTS (
         SELECT 1
@@ -120,9 +120,16 @@ CHECK (
 ALTER TABLE users
 ADD CONSTRAINT valid_role_for_membership
 CHECK (
-    -- Only allow elevated org roles if status is 'accepted'
-    (user_role IN ('organization_admin', 'organization_member') AND org_membership_status = 'accepted')
-    OR (org_membership_status IN('pending', 'none'))
+  CASE
+    WHEN org_membership_status = 'accepted' THEN
+      user_role IN ('organization_member', 'organization_admin')
+    WHEN org_membership_status = 'pending' THEN
+      user_role IN ('organization_member', 'organization_admin')
+    WHEN org_membership_status = 'none' THEN
+      user_role IN ('super_admin' ,'account_manager', 'member')
+    ELSE
+      FALSE
+  END
 );
 
 --------------------------------------------------------------------------------
