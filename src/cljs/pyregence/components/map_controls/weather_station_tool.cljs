@@ -221,7 +221,7 @@
           parent-box
           290
           460
-          "Station's latest observation"
+          "Weather Station's latest observation"
           close-fn!
           render-content]]))
     (finally
