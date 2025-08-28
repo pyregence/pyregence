@@ -75,6 +75,7 @@
      [:li "Station name: " name]]]])
 
 ;;TODO this could share styles with the `not-found` component
+;;TODO needs to zoom in and out like it did before and it does on camera.
 (defn- info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
    ;;TODO what do we want to do if the observations go beyond the set window size?

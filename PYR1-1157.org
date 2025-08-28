@@ -1,2 +1,0 @@
-* DOING Zoom to WS-icon when WS-svg clicked
-* DONE consider filtering r^(MesoWest|RAWS|ASOS)$ to "provider" requires feature flag  -H 'Feature-Flags: obs_station_provider' > CA_stations_0.geojson" (not sure state bit is necessary)
