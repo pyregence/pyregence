@@ -7,14 +7,13 @@
 ;;NOTE this takes roughly 5-10 minutes
 (defn get-observation-stations!
   []
-  (loop [url "https://api.weather.gov/stations"
+  (loop [url                  "https://api.weather.gov/stations"
          observation-stations []]
     (Thread/sleep 2000)
     (let [{{new-observation-stations           :features
             {next-batch-of-stations-url :next} :pagination} :body}
           (client/get url {:as      :json
                            :headers {"User-Agent" "support@sig-gis.com"}
-                           ;; throw if we don't hear back in 3 minutes, because by then we never will.
                            :connection-timeout (* 1000 60 3)})]
       (if (seq new-observation-stations)
         (recur next-batch-of-stations-url (concat observation-stations new-observation-stations))
@@ -32,8 +31,7 @@
                        60   ;; 1m
                        60   ;; 1h
                        24   ;; 1 day
-                       2    ;; 2 days
-                       ))
+                       2    ;; 2 days))
       (recur))))
 
 (defn select-relevent-properties
