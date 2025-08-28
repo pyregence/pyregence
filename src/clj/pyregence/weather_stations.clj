@@ -6,7 +6,7 @@
 (defonce observation-stations (atom []))
 
 ;;NOTE this takes roughly 5-10 minutes
-(defn get-observation-stations!
+(defn get-all-observation-stations!
   []
   (loop [url                  "https://api.weather.gov/stations"
          observation-stations []]
@@ -25,7 +25,7 @@
   (future
     (loop []
       (try
-        (reset! observation-stations (get-observation-stations!))
+        (reset! observation-stations (get-all-observation-stations!))
         (catch Exception ex (log (ex-data ex) :truncate? false)))
       (Thread/sleep (* 1000 ;; 1s
                        60   ;; 1m
