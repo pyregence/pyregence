@@ -106,7 +106,7 @@
  :pyregence.cameras/alert-west-api-key              "<api-key>"
  :pyregence.capabilities/psps                       {:geoserver-admin-username "admin"
                                                      :geoserver-admin-password "password"}
- :pyregence.weather-stations/get-observation-stations-every-n-minutes (* 60 24) ;; once a day
+ :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
  :pyregence.match-drop/match-drop                   {:app-name       "Pyrecast Match Drop Server"
                                                      :app-host       "localhost"
