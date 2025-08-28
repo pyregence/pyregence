@@ -31,7 +31,8 @@
                        60   ;; 1m
                        60   ;; 1h
                        24   ;; 1 day
-                       2    ;; 2 days))
+                       2    ;; 2 days
+                       ))
       (recur))))
 
 (defn select-relevent-properties
