@@ -1,34 +1,8 @@
-* DOING Unmock API and WS-geo-info the same way camera-geo-info is to create a map.
-* DOING Display WS-info when WS-svg clicked.
-Here is what we will want to display:
-- WS Name
-- WS ID
-- WSO datetime
-- WSO Air temperature (F)
-- WSO Humidity
-- WSO Dew Point
-- WSO Wind speed
-- WSO Wind direction
-- WSO Gust
-- WSO Air quality
-
-* DOING Zoom to WS-icon when WS-svg clicked
 * TODO only show WS-icons&info to Authenticated users.
-oliver said we might make this a patch
-* DOING Cache station results because they take too long.
-we can do this using a loop (see weather_station) or oliver mentioned using background jobs.
-* TODO Consider refactoring to sharing functionality with camera api (right now it's a straight copy paste)
-* TODO see what were not using in the weather_station_tools ns
-* DOING https://www.weather.gov/documentation/services-web-api about user agent authentication
-Did using the user-agent make the api not throttle us our requests as much?
-* TODO consider filtering r^(MesoWest|RAWS|ASOS)$ to "provider" requires feature flag  -H 'Feature-Flags: obs_station_provider' > CA_stations_0.geojson" (not sure state bit is necessary)
+* DOING Zoom to WS-icon when WS-svg clicked
+* DOING consider filtering r^(MesoWest|RAWS|ASOS)$ to "provider" requires feature flag  -H 'Feature-Flags: obs_station_provider' > CA_stations_0.geojson" (not sure state bit is necessary)
+* DONE Cache station results because they take too long.
 * DONE add svg icon and png
-* TODO fetching the latest observation on the frontend just considers the happy path: e.g doesn't handly none-200 or slow responses.
-* TODO ask someone how many sig figs for observation latest aka relative humidity shows like 75..34343
-
-
-
-potential improvements to get-observations stations:
-1. turn into transducer
-2. error handling on none 200
-3. store cache refresh time so we can check it
+* DONE fetching the latest observation on the frontend just considers the happy path: e.g doesn't handly none-200 or slow responses.
+* DONE Unmock API and WS-geo-info the same way camera-geo-info is to create a map.
+* DONE Display WS-info when WS-svg clicked.
