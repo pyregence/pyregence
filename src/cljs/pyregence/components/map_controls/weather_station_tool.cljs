@@ -91,6 +91,22 @@
     "Weather.gov"]
    "."])
 
+(defn- show-observation-station
+  [{:keys [name stationIdentifier]}]
+  [:div
+   [:div {:style {:display         "flex"
+                  :flex-direction  "column"
+                  :justify-content "flex-start"
+                  :width           "100%"
+                  :margin-top      "1rem"
+                  :margin-left     "1rem"}}
+    ;TODO improve on how this looks.
+    [:p "No information for this weather station was found."]
+    [:p "Please check back later or try another station."]
+    [:ul
+     [:li "Station ID: " stationIdentifier]
+     [:li "Station name: " name]]]])
+
 (defn- show-latest-observation-info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
    [:div {:style {:display         "flex"
@@ -168,6 +184,7 @@
 
 (defn weather-station-tool [parent-box close-fn!]
   (r/with-let [latest-observation  (r/atom nil)
+               weather-station     (r/atom nil)
                image-src      (r/atom nil)
                exit-chan      (r/atom nil)
                zoom-weather-station    (fn []
@@ -189,6 +206,7 @@
                                 (go
                                   (when-let [new-weather-station (js->clj (aget features "properties") :keywordize-keys true)]
                                     (u-async/stop-refresh! @exit-chan)
+                                    (reset! weather-station new-weather-station)
                                     (reset! latest-observation
                                             (or
                                              (<! (u-async/fetch-and-process
@@ -198,7 +216,7 @@
                                                     (go
                                                       (js->clj (aget (<p! (.json response)) "properties")
                                                                :keywordize-keys true)))))
-                                             ;;TODO consider improving on the story of what happens if the observation isn't a 200-ok.
+                                             ;;TODO improve on how we handle the networkcalls
                                              :error))
 
                                     (reset! image-src nil)
@@ -219,11 +237,14 @@
                                  (nil? @latest-observation)
                                  [latest-observation-tool-intro]
 
-                                 @image-src
+                                 stationName
                                  [show-latest-observation-info
                                   latest-observation-info
                                   reset-view
                                   zoom-weather-station]
+
+                                 @weather-station
+                                 [show-observation-station @weather-station]
 
                                  :else
                                  [loading-latest-observation stationName]))]
