@@ -189,19 +189,14 @@
                                 (go
                                   (when-let [new-weather-station (js->clj (aget features "properties") :keywordize-keys true)]
                                     (u-async/stop-refresh! @exit-chan)
-                                    (<! (u-async/fetch-and-process
-                                         (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
-                                         {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
-                                         (fn [response]
-                                           (go
-                                             (reset! active-weather-station
-                                                     (try
-                                                       (js->clj
-                                                        (aget
-                                                         (<p! (.json response))
-                                                         "properties")
-                                                        :keywordize-keys true)
-                                                       (catch :default _)))))))
+                                    (reset! active-weather-station
+                                            (<! (u-async/fetch-and-process
+                                                 (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
+                                                 {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
+                                                 (fn [response]
+                                                   (go
+                                                     (js->clj (aget (<p! (.json response)) "properties")
+                                                              :keywordize-keys true))))))
 
                                     (reset! image-src nil)
                                     (let [image-chan (get-weather-station-image-chan @active-weather-station)]
