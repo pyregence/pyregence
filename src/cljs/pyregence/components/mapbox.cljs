@@ -804,7 +804,6 @@
                        :source   id
                        :type     "symbol"
                        :layout   {:icon-image              "weather-station-icon"
-                                  :icon-rotate             ["-" ["get" "pan"] 90]
                                   :icon-rotation-alignment "map"
                                   :icon-size               0.25}
                        :metadata {:type    (get-layer-type id)
