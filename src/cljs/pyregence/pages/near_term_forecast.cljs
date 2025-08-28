@@ -318,7 +318,9 @@
    is **exactly** the same as the `org-unique-id` set in the organizations DB table.
    The Euro forecast (associated with the `:ecmwf` key on the weather tab) is an edge
    case because each PSPS company has access to it. Returns `nil` if the user does
-   not belong to a PSPS organization or the current layer doesn't require GeoServer credentials."
+   not belong to a PSPS organization or the current layer doesn't require GeoServer credentials.
+
+   Note that super_admins can resolve credentials from *all* orgs."
   []
   (when (seq @!/user-psps-orgs-list)
     (when-some [keypath (case @!/*forecast
@@ -618,25 +620,29 @@
                                                        params))]))
                      options-config)))
 
-(defn- initialize! [{:keys [forecast-type forecast layer-idx lat lng zoom] :as params}]
+(defn- initialize! [{:keys [forecast-type forecast layer-idx lat lng zoom user-role] :as params}]
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
+          super-admin?                    (= user-role "super_admin")
           user-layers-chan                (u-async/call-clj-async! "get-user-layers")
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
-          ;; TODO do away with this call in the future
-          user-orgs-list-chan             (u-async/call-clj-async! "get-current-user-organization")
+          user-orgs-list-chan             (u-async/call-clj-async! (if super-admin?
+                                                                     "get-all-organizations"
+                                                                     "get-current-user-organization"))
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
-          active-fire-count               (count fire-names)]
+          active-fire-count               (count fire-names)
+          psps-orgs-body                  (edn/read-string (:body (<! psps-orgs-list-chan)))]
       (reset! !/active-fire-count active-fire-count)
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
-      (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
-      (reset! !/user-psps-orgs-list (filter (fn [org] (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
-                                            @!/user-orgs-list))
+      (reset! !/psps-orgs-list psps-orgs-body)
+      (reset! !/user-psps-orgs-list
+              (if super-admin?
+                psps-orgs-body ; super_admins can see all psps orgs
+                (filter (fn [org] (some #(= (:org-unique-id org) %) psps-orgs-body)))))
       (reset! !/*forecast-type forecast-type)
-
       (reset! !/*forecast
               (cond
                 (= :long-term forecast-type)
