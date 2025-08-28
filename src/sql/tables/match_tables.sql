@@ -1,7 +1,9 @@
 -- NAMESPACE: match
 -- REQUIRES: user
 
+--------------------------------------------------------------------------------
 -- Stores information about organizations
+--------------------------------------------------------------------------------
 CREATE TABLE match_jobs (
     match_job_uid       SERIAL PRIMARY KEY,
     runway_job_uid      text,

@@ -1,7 +1,7 @@
 (ns pyregence.pages.admin
   (:require [cljs.reader                    :as edn]
             [clojure.core.async             :refer [go <!]]
-            [clojure.string                 :refer [blank? includes?]]
+            [clojure.string                 :refer [blank?]]
             [goog.string                    :refer [format]]
             [herb.core                      :refer [<class]]
             [pyregence.components.common    :refer [check-box labeled-input simple-form]]
@@ -16,10 +16,17 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Update role id designiations
 ;; Organization Role Enumeration
-(def ^:private roles [{:opt-id 1 :opt-label "Admin"}
-                      {:opt-id 2 :opt-label "Member"}
-                      {:opt-id 3 :opt-label "Pending"}])
+(def ^:private roles [{:opt-id 1 :opt-label "Super Admin"         :user-role "super_admin"}
+                      {:opt-id 2 :opt-label "Organization Admin"  :user-role "organization_admin"}
+                      {:opt-id 3 :opt-label "Organization Member" :user-role "organization_member"}
+                      {:opt-id 4 :opt-label "Account Manager"     :user-role "account_manager"}
+                      {:opt-id 5 :opt-label "Member"              :user-role "member"}])
+
+(def ^:private membership-statuses [{:opt-id 1 :opt-label "None"     :status "none"}
+                                    {:opt-id 2 :opt-label "Pending"  :status "pending"}
+                                    {:opt-id 3 :opt-label "Accepted" :status "accepted"}])
 
 ;; Organization Object Properties
 (defonce ^{:doc "The currently selected organization."}
@@ -45,7 +52,9 @@
 
 ;; Current User Selections
 (defonce ^{:doc "The user id of the logged in user."}
-  _user-id  (r/atom -1))
+  _user-id (r/atom -1))
+(defonce ^{:doc "The user role of the logged in user."}
+  _user-role (r/atom -1))
 
 ;; Add User form state
 (defonce ^{:doc "The email in the Add User form."}
@@ -96,27 +105,23 @@
                              (edn/read-string (:body response))
                              [])))))
 
-(defn- get-org-non-member-users [org-id]
-  (go
-    (reset! *org-non-members
-            (edn/read-string (:body (<! (u-async/call-clj-async! "get-org-non-member-users" org-id)))))))
-
-(defn- get-organizations []
+(defn- get-organizations [user-role]
   (reset! pending-get-organizations? true)
   (go
-    (let [response (<! (u-async/call-clj-async! "get-current-user-organizations"))]
+   (let [api-route (if (= user-role "super_admin")
+                     "get-all-organizations" ; super admin can see all orgs
+                     "get-current-user-organization") ; org admin can just see their org
+         response  (<! (u-async/call-clj-async! api-route))]
       (reset! *orgs (if (:success response)
                       (->> (:body response)
-                           (edn/read-string)
-                           (filter #(= "admin" (:role %)))) ; only show orgs user is an admin of
+                           (edn/read-string))
                       []))
       (reset! pending-get-organizations? false)
 
       ;; Skip on returned zero-length list
       (when (> (count @*orgs) 0)
         (set-selected-org! (or (get-org-by-id @*orgs @*org-id) (first @*orgs)))
-        (get-org-member-users @*org-id)
-        (get-org-non-member-users @*org-id)))))
+        (get-org-member-users @*org-id)))))
 
 (defn- update-org-info! [opt-id org-name email-domains auto-add? auto-accept?]
   (go
@@ -126,7 +131,7 @@
                                  email-domains
                                  auto-add?
                                  auto-accept?))
-    (get-organizations)
+    (get-organizations @_user-role)
     (toast-message! "Organization info updated.")))
 
 (defn- add-new-user-and-assign-to-*org! []
@@ -179,21 +184,32 @@
     (let [res (<! (u-async/call-clj-async! "add-org-user" @*org-id email))]
       (if (:success res)
         (do (get-org-member-users @*org-id)
-            (get-org-non-member-users @*org-id)
             (toast-message! (str "User " email " added.")))
         (toast-message! (:body res))))))
 
-(defn- update-org-user-role! [org-user-id role-id]
+(defn- update-org-user-role! [user-id new-role]
   (go
-    (<! (u-async/call-clj-async! "update-org-user-role" @*org-id org-user-id role-id))
-    (toast-message! "User role updated.")))
+    (let [res (<! (u-async/call-clj-async! "update-org-user-role" user-id new-role))]
+      (if (:success res)
+        (do (get-org-member-users @*org-id)
+            (toast-message! "User role updated."))
+        (toast-message! (:body res))))))
 
-(defn- remove-org-user! [org-user-id]
+(defn- update-org-user-membership-status! [user-id new-status]
   (go
-    (<! (u-async/call-clj-async! "remove-org-user" @*org-id org-user-id))
-    (get-org-member-users @*org-id)
-    (get-org-non-member-users @*org-id)
-    (toast-message! "User removed from organization.")))
+    (let [res (<! (u-async/call-clj-async! "update-user-org-membership-status" user-id new-status))]
+      (if (:success res)
+        (do (get-org-member-users @*org-id)
+            (toast-message! "User membership status updated."))
+        (toast-message! (:body res))))))
+
+(defn- remove-org-user! [user-id]
+  (go
+    (let [res (<! (u-async/call-clj-async! "remove-org-user" user-id))]
+      (if (:success res)
+        (do (get-org-member-users @*org-id)
+            (toast-message! "User removed from organization."))
+        (toast-message! (:body res))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Styles
@@ -211,7 +227,6 @@
 (defn- handle-select-org! [org-id]
   (set-selected-org! (get-org-by-id @*orgs org-id))
   (get-org-member-users org-id)
-  (get-org-non-member-users org-id)
   (reset-add-user-form!))
 
 (defn- handle-add-user []
@@ -231,8 +246,7 @@
                                  :body   (format message email @*org-name)
                                  :action #(do
                                             (add-existing-user! email)
-                                            (get-org-member-users org-id)
-                                            (get-org-non-member-users org-id))}))))
+                                            (get-org-member-users org-id))}))))
 
 (defn- handle-edit-user [email prev-name updated-name-state]
   (go
@@ -252,16 +266,29 @@
                                :body   (format message user-name @*org-name)
                                :action #(remove-org-user! user-id)})))
 
-(defn- handle-update-role-id [rid uid user-name]
-  (let [message   "Are you sure you want to change the role of user \"%s\" to \"%s\"?"
-        role-name (->> roles
-                       (filter (fn [role] (= rid (role :opt-id))))
-                       (first)
-                       (:opt-label))]
+(defn- handle-update-role-id [role-id user-id user-name]
+  (let [message              "Are you sure you want to change the role of user \"%s\" to \"%s\"?"
+        new-role             (->> roles
+                                  (filter (fn [role] (= role-id (:opt-id role))))
+                                  (first))
+        new-role-db-format   (:user-role new-role)
+        new-role-pretty-text (:opt-label new-role)]
     (set-message-box-content! {:mode   :confirm
                                :title  "Update User Role"
-                               :body   (format message user-name role-name)
-                               :action #(update-org-user-role! uid rid)})))
+                               :body   (format message user-name new-role-pretty-text)
+                               :action #(update-org-user-role! user-id new-role-db-format)})))
+
+(defn- handle-update-membership-status [status-id user-id user-name]
+  (let [message                "Are you sure you want to change the membership status of user \"%s\" to \"%s\"?"
+        new-status             (->> membership-statuses
+                                    (filter (fn [m] (= status-id (:opt-id m))))
+                                    (first))
+        new-status-db-format   (:status new-status)
+        new-status-pretty-text (:opt-label new-status)]
+    (set-message-box-content! {:mode   :confirm
+                               :title  "Update User Membership Status"
+                               :body   (format message user-name new-status-pretty-text)
+                               :action #(update-org-user-membership-status! user-id new-status-db-format)})))
 
 (defn- handle-update-org-settings [oid org-name email-domains auto-add auto-accept]
   (let [message "Are you sure you wish to update the settings for the \"%s\" organization? Saving these changes will overwrite any previous settings."]
@@ -323,10 +350,17 @@
      ["Confirm Password" new-user-re-password "password" "confirm-password"]]
     handle-add-user]])
 
-(defn- user-item [org-user-id full-name email role-id]
-  (r/with-let [_role-id          (r/atom role-id)
-               full-name-update  (r/atom full-name)
-               edit-mode-enabled (r/atom false)]
+(defn- user-item [user-id full-name email user-role user-membership-status]
+  (r/with-let [_role-id              (r/atom (->> roles
+                                                  (filter (fn [role-entry] (= user-role (:user-role role-entry))))
+                                                  (first)
+                                                  (:opt-id)))
+               _membership-status-id (r/atom (->> membership-statuses
+                                                  (filter (fn [m] (= user-membership-status (:status m))))
+                                                  (first)
+                                                  (:opt-id)))
+               full-name-update      (r/atom full-name)
+               edit-mode-enabled     (r/atom false)]
     [:div {:style {:align-items "center" :display "flex" :padding ".25rem"}}
      [:div {:style {:display "flex" :flex-direction "column"}}
       (if @edit-mode-enabled
@@ -352,23 +386,44 @@
                  :type     "button"
                  :value    "Edit User"
                  :on-click #(swap! edit-mode-enabled not)}])
+      ;; Remove User button
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Remove User"
-               :on-click #(handle-remove-user org-user-id full-name)}]
+               :on-click #(handle-remove-user user-id full-name)}]
+      ;; User Role dropdown
       [:select {:class     (<class $/p-bordered-input)
                 :style     {:margin "0 .25rem 0 1rem" :height "2rem"}
                 :value     @_role-id
                 :on-change #(reset! _role-id (u-dom/input-int-value %))}
        (map (fn [{role-id :opt-id role-name :opt-label}]
-              [:option {:key role-id :value role-id} role-name])
+              [:option {:key      role-id
+                        :value    role-id
+                        :disabled (= role-id 1)} ; don't allow super admin to be a selectable option - we need a different mechanism later to add a super admin
+               role-name])
             roles)]
+      ;; Update Role button
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Update Role"
-               :on-click #(handle-update-role-id @_role-id org-user-id full-name)}]]]))
+               :disabled (= user-role "super_admin")
+               :on-click #(handle-update-role-id @_role-id user-id full-name)}]
+      ;; Membership Status dropdown
+      [:select {:class     (<class $/p-bordered-input)
+                :style     {:margin "0 .25rem 0 1rem" :height "2rem"}
+                :value     @_membership-status-id
+                :on-change #(reset! _membership-status-id (u-dom/input-int-value %))}
+       (map (fn [{membership-status-id :opt-id status-name :opt-label}]
+              [:option {:key membership-status-id :value membership-status-id} status-name])
+            membership-statuses)]
+      ;; Update Role button
+      [:input {:class    (<class $/p-form-button)
+               :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
+               :type     "button"
+               :value    "Update Status"
+               :on-click #(handle-update-membership-status @_membership-status-id user-id full-name)}]]]))
 
 (defn- org-users-list [org-member-users]
   [:div#org-users {:style {:margin-top "2rem"}}
@@ -377,47 +432,19 @@
      [:label {:style ($/padding "1px" :l)} "Member User-List"]]
     [:div {:style {:overflow "auto"}}
      [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
-      (doall (map (fn [{:keys [org-user-id full-name email role-id]}]
-                    ^{:key org-user-id}
-                    [user-item org-user-id full-name email role-id])
+      (doall (map (fn [{:keys [user-id full-name email user-role membership-status]}]
+                    ^{:key user-id}
+                    [user-item user-id full-name email user-role membership-status])
                   org-member-users))]]]])
 
-(defn- org-non-members-list [org-id org-non-members]
-  (r/with-let [email-search (r/atom "")]
-    [:div#org-non-members {:style {:margin-top "2rem"}}
-     [:div {:style ($/action-box)}
-      [:div {:style ($/action-header)}
-       [:label {:style ($/padding "1px" :l)} "Non-Member Users List"]]
-      [:div#org-non-members-body {:style {:overflow "auto"}}
-       [:div {:style {:align-items "flex-end" :display "flex" :padding "1rem 1rem 0 1rem"}}
-        [labeled-input "Existing User Email Address" email-search]]
-       [:hr {:style {:margin ".1rem 0" :padding 0}}]
-       [:ol#org-non-member-list {:style {:display "flex" :flex-direction "column" :padding "1rem"}}
-        (doall
-         (->> org-non-members
-              (filter #(includes? (:email %) @email-search))
-              (map (fn [{:keys [email full-name]}]
-                     ^{:key email} [:div {:style {:border-bottom   "lightgrey solid 1px"
-                                                  :display         "flex"
-                                                  :justify-content "flex-start"
-                                                  :margin          "0 0 1rem 1rem"
-                                                  :padding-bottom  ".2rem"}}
-                                    [:input {:class    (<class $/p-form-button)
-                                             :style    {:margin "0 1rem 0.5rem 0"}
-                                             :type     "button"
-                                             :value    "Link User"
-                                             :on-click #(do (reset! email-search "")
-                                                            (handle-add-existing-user org-id email))}]
-                                    [:div {:style {:display "flex" :flex-direction "column"}}
-                                     [:label full-name]
-                                     [:label email]]]))))]]]]))
-
+;; TODO add in a UI component to show a user's membership_status
 (defn root-component
   "The root component for the /admin page.
    Displays the organization list, settings, and users."
-  [{:keys [user-id]}]
+  [{:keys [user-id user-role]}]
   (reset! _user-id user-id)
-  (get-organizations)
+  (reset! _user-role user-role)
+  (get-organizations user-role)
   (fn [_]
     (if @pending-get-organizations?
       ;; Organizations are still loading
@@ -429,11 +456,10 @@
        [:div {:style {:flex 1 :padding "1rem"}}
         [org-list @*orgs]]
        [:div {:style {:display        "flex"
-                      :flex           2
+                      :flex           3
                       :flex-direction "column"
                       :height         "100%"
                       :padding        "1rem"}}
         [org-settings]
         [org-user-add-form]
-        [org-users-list @*org-members]
-        [org-non-members-list @*org-id @*org-non-members]]])))
+        [org-users-list @*org-members]]])))

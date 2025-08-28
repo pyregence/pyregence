@@ -13,13 +13,13 @@
   {;; Page Routes
    [:get "/"]                                    {:handler (render-page "/")}
    [:get "/admin"]                               {:handler (render-page "/admin")
-                                                  :auth-type :admin
+                                                  :auth-type :organization-admin
                                                   :auth-action :redirect}
    [:get "/backup-codes"]                        {:handler (render-page "/backup-codes")
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :redirect}
    [:get "/dashboard"]                           {:handler (render-page "/dashboard")
-                                                  :auth-type :user
+                                                  :auth-type #{:match-drop :member}
                                                   :auth-action :redirect}
    [:get "/forecast"]                            {:handler (render-page "/forecast")}
    [:get "/help"]                                {:handler (render-page "/help")}
@@ -30,10 +30,10 @@
    [:get "/register"]                            {:handler (render-page "/register")}
    [:get "/reset-password"]                      {:handler (render-page "/reset-password")}
    [:get "/settings"]                            {:handler (render-page "/settings")
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :redirect}
    [:get "/totp-setup"]                          {:handler (render-page "/totp-setup")
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :redirect}
    [:get "/terms-of-use"]                        {:handler (render-page "/terms-of-use")}
    [:get "/verify-2fa"]                          {:handler (render-page "/verify-2fa")}
@@ -59,22 +59,22 @@
 
    ;; -- TOTP Management
    [:post "/clj/begin-totp-setup"]               {:handler (clj-handler authentication/begin-totp-setup)
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :block}
    [:post "/clj/complete-totp-setup"]            {:handler (clj-handler authentication/complete-totp-setup)
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :block}
    [:post "/clj/get-backup-codes"]               {:handler (clj-handler authentication/get-backup-codes)
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :block}
    [:post "/clj/regenerate-backup-codes"]        {:handler (clj-handler authentication/regenerate-backup-codes)
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :block}
    [:post "/clj/enable-email-2fa"]               {:handler (clj-handler authentication/enable-email-2fa)
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :block}
    [:post "/clj/disable-2fa"]                    {:handler (clj-handler authentication/disable-2fa)
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :block}
 
    ;; -- User Management
@@ -82,45 +82,48 @@
                                                   :auth-type :token
                                                   :auth-action :block}
    [:post "/clj/get-current-user-settings"]      {:handler (clj-handler authentication/get-current-user-settings)
-                                                  :auth-type :user
+                                                  :auth-type :member
                                                   :auth-action :block}
    [:post "/clj/user-email-taken"]               {:handler (clj-handler authentication/user-email-taken)
                                                   :auth-type :token
                                                   :auth-action :block}
    [:post "/clj/update-user-name"]               {:handler (clj-handler authentication/update-user-name)
-                                                  :auth-type #{:admin :token}
+                                                  :auth-type #{:organization-admin :token}
                                                   :auth-action :block}
 
    ;; -- Access Control
    [:post "/clj/get-user-match-drop-access"]     {:handler (clj-handler authentication/get-user-match-drop-access)
-                                                  :auth-type #{:user :token}
+                                                  :auth-type #{:member :token}
                                                   :auth-action :block}
 
    ;; -- Organization Management
-   [:post "/clj/add-org-user"]                   {:handler (clj-handler authentication/add-org-user)
-                                                  :auth-type #{:admin :token}
-                                                  :auth-action :block}
-   [:post "/clj/get-current-user-organizations"] {:handler (clj-handler authentication/get-current-user-organizations)
-                                                  :auth-type :token
-                                                  :auth-action :block}
-   [:post "/clj/get-org-member-users"]           {:handler (clj-handler authentication/get-org-member-users)
-                                                  :auth-type :token
-                                                  :auth-action :block}
-   [:post "/clj/get-org-non-member-users"]       {:handler (clj-handler authentication/get-org-non-member-users)
-                                                  :auth-type :token
-                                                  :auth-action :block}
-   [:post "/clj/get-psps-organizations"]         {:handler (clj-handler authentication/get-psps-organizations)
-                                                  :auth-type :token
-                                                  :auth-action :block}
-   [:post "/clj/remove-org-user"]                {:handler (clj-handler authentication/remove-org-user)
-                                                  :auth-type #{:admin :token}
-                                                  :auth-action :block}
-   [:post "/clj/update-org-info"]                {:handler (clj-handler authentication/update-org-info)
-                                                  :auth-type #{:admin :token}
-                                                  :auth-action :block}
-   [:post "/clj/update-org-user-role"]           {:handler (clj-handler authentication/update-org-user-role)
-                                                  :auth-type #{:admin :token}
-                                                  :auth-action :block}
+   [:post "/clj/add-org-user"]                      {:handler (clj-handler authentication/add-org-user)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/get-all-organizations"]             {:handler (clj-handler authentication/get-all-organizations)
+                                                     :auth-type #{:super-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/get-current-user-organization"]     {:handler (clj-handler authentication/get-current-user-organization)
+                                                     :auth-type :token
+                                                     :auth-action :block}
+   [:post "/clj/get-org-member-users"]              {:handler (clj-handler authentication/get-org-member-users)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/get-psps-organizations"]            {:handler (clj-handler authentication/get-psps-organizations)
+                                                     :auth-type :token
+                                                     :auth-action :block}
+   [:post "/clj/remove-org-user"]                   {:handler (clj-handler authentication/remove-org-user)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/update-org-info"]                   {:handler (clj-handler authentication/update-org-info)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/update-org-user-role"]              {:handler (clj-handler authentication/update-org-user-role)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/update-user-org-membership-status"] {:handler (clj-handler authentication/update-user-org-membership-status)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
 
    ;; Cameras API
    [:post "/clj/get-cameras"]                    {:handler (clj-handler cameras/get-cameras)
@@ -144,7 +147,7 @@
                                                   :auth-type :token
                                                   :auth-action :block}
    [:post "/clj/get-user-layers"]                {:handler (clj-handler capabilities/get-user-layers)
-                                                  :auth-type #{:user :token}
+                                                  :auth-type #{:organization-member :token}
                                                   :auth-action :block}
    [:get "/clj/remove-workspace"]                {:handler (clj-handler capabilities/remove-workspace!)
                                                   :auth-type :token
@@ -185,5 +188,5 @@
 
    ;; Analytics API
    [:get "/clj/get-all-users-last-login-dates"]  {:handler     (clj-handler analytics/get-all-users-last-login-dates)
-                                                  :auth-type   #{:analyst}
+                                                  :auth-type   :account-manager
                                                   :auth-action :block}})

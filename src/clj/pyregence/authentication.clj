@@ -6,23 +6,22 @@
             [triangulum.database :refer [call-sql sql-primitive]]
             [triangulum.response :refer [data-response]]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- create-session-from-user-data
   "Creates a session response from user data returned by SQL functions.
    This is the single source of truth for session structure."
   [user-data]
   (when user-data
-    (call-sql "set_users_last_login_date_to_now" (:user_id user-data))
-    (data-response "" {:session (merge {:match-drop-access? (:match_drop_access user-data)
-                                        :super-admin?       (:super_admin user-data)
-                                        :user-email         (:user_email user-data)
-                                        :user-id            (:user_id user-data)
-                                        :analyst?           (:analyst user-data)}
+    (data-response "" {:session (merge {:match-drop-access?    (:match_drop_access user-data)
+                                        :user-email            (:user_email user-data)
+                                        :user-id               (:user_id user-data)
+                                        :user-role             (:user_role user-data)
+                                        :organization-id       (:organization_rid user-data)
+                                        :org-membership-status (:org_membership_status user-data)}
                                        (get-config :app :client-keys))})))
-
-(defn- is-user-admin-of-org? [user-id org-id]
-  (call-sql "is_user_admin_of_org" user-id org-id))
 
 (defn- parse-user-settings
   "Safely parses user settings from EDN string, returning empty map on error."
@@ -45,7 +44,9 @@
   [user-id settings]
   (call-sql "update_user_settings" user-id (pr-str settings)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Authentication & Session Management
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- successful-login
   [{:keys [user-id] :as user}]
@@ -82,9 +83,8 @@
   ;=>> {:status 200 :body string?}
 
   ;; Test login with email 2FA
-  (log-in nil "email-2fa@pyr.dev" "email2fa")
+  (log-in nil "email-2fa@pyr.dev" "email2fa"))
   ;=>> {:status 200 :body string?}
-  )
 
 (defn log-out [_] (data-response "" {:session nil}))
 
@@ -102,7 +102,9 @@
     (create-session-from-user-data user)
     (data-response "Invalid or expired verification token" {:status 403})))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; 2FA Core Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn verify-2fa
   "Verifies 2FA code for email/TOTP authentication."
@@ -181,7 +183,9 @@
   (verify-2fa nil "user@pyr.dev" "123456"))
   ;=>> {:status 403 :body string?}
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; TOTP Management
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn begin-totp-setup
   "Initiates TOTP setup for the authenticated user.
@@ -439,9 +443,8 @@
         _ (save-user-settings! user-id {:timezone :utc :two-factor :email})
         result (enable-email-2fa {:user-id user-id :user-email "user@pyr.dev"} "123456")]
     (save-user-settings! user-id {})
-    result)
+    result))
   ;=>> {:status 400}
-  )
 
 (defn- remove-totp
   "Removes TOTP authentication for the current user. Requires current TOTP code for security."
@@ -486,9 +489,8 @@
   (let [user-id 24
         secret (:secret (first (call-sql "get_totp_setup" user-id)))
         valid-code (str (totp/get-current-totp-code secret))]
-    (remove-totp {:user-id user-id} valid-code))
+    (remove-totp {:user-id user-id} valid-code)))
   ;=>> {:status 200, :body "{:message \"Two-factor authentication has been disabled\"}"}
-  )
 
 (defn disable-2fa
   "Disables any 2FA method for the current user after verification."
@@ -535,11 +537,12 @@
         output (with-out-str (email/mock-send-2fa-code email))
         code (second (re-find #"2FA CODE for .* : (\d+)" output))]
     (save-user-settings! user-id {:two-factor :email})
-    (disable-2fa {:user-id user-id :user-email email} code))
+    (disable-2fa {:user-id user-id :user-email email} code)))
   ;=>> {:status 200, :body "{:message \"Two-factor authentication has been disabled\"}"}
-  )
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; User Management
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn add-new-user
   "Creates a new user account and optionally associates them with an organization.
@@ -554,53 +557,59 @@
   Behavior:
   - A new user is created and persisted to the database.
   - If `:org-id` is provided, the function checks whether the current user is a
-    super admin or has admin privileges for the given org. Given the right permissions,
-    the user is associated to the org with the role of 'Member'.
+    super admin or an org admin for the given org. Given the right permissions,
+    the user is associated to the org with the role of 'organization_member'.
 
   - If `:org-id` is not provided or the user lacks permissions to assign directly,
     the system falls back to automatic domain-based organization assignment.
     This associates the user with an organization that matches their email domain
-    to the email_domains column. The user's assigned role is:
-    - 'Member' if the organization has `auto_accept = true` (auto-approved)
-    - 'Pending' if `auto_accept = false` (pending approval)
+    to the `email_domains` column. The user's assigned role is:
+    - 'organization_member' if the organization has `auto_accept = true` (auto-approved)
+    - 'member' if `auto_accept = false`
+    The users membership status is
+    - 'accepted' if `auto_accept = true`
+    - 'pending' if `auto_accept = false`
 
   Returns:
   - A 200 OK response if the user was successfully created and optionally assigned
   - A 403 Forbidden response if user creation fails
 
   Security:
-  - Only users with sufficient privileges (super admins or organization admins) may
+  - Only users with sufficient privileges (super_admin or organization_admin) may
     explicitly assign a new user to an organization via `:org-id`.
   - All organization assignments are validated server-side using the session context."
-  [session email name password & [opts]]
+  [session email user-name password & [opts]]
   (let [{:keys [org-id] :or {org-id nil}} opts
-        {:keys [user-id super-admin?]} session
+        {:keys [user-role]} session
         default-settings (pr-str {:timezone :utc})
         new-user-id (nil-on-error
                      (sql-primitive (call-sql "add_new_user"
                                               {:log? false}
                                               email
-                                              name
+                                              user-name
                                               password
                                               default-settings)))]
     (if-not new-user-id
-      (data-response (str "Failed to create the new user with name " name " and email " email)
+      (data-response (str "Failed to create the new user with name " user-name " and email " email)
                      {:status 403})
       (cond
-        ;; Explicit org assignment, must be super-admin or org admin
+        ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
+        ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
+        ;; The new user will have a user_role of organization_member and a user_status of active
         org-id
-        (if (or super-admin? (is-user-admin-of-org? user-id org-id))
+        (if (or (= user-role "super_admin")
+                (= user-role "organization_admin"))
           (do
             (call-sql "add_org_user" org-id new-user-id)
             (data-response "User created and added to organization."))
           (data-response "User does not have permission to assign users to this organization."
                          {:status 403}))
 
-        ;; No org-id provided — use domain-based auto-assignment
+        ;; No org-id provided — use email domain-based auto-assignment (depedent on org auto_add settings)
         :else
         (let [domain (re-find #"@{1}.+" email)]
           (if (call-sql "auto_add_org_user" new-user-id domain)
-            (data-response "User created and auto-assigned to all matching organizations by email domain.")
+            (data-response "User created and added to added to an organization by email domain (when auto_add is true for that organization).")
             (data-response "User created successfully but something went wrong when calling auto_add_org_user."
                            {:status 403})))))))
 
@@ -635,10 +644,12 @@
    (user-email-taken nil email -1))
   ([_ email user-id-to-ignore]
    (if (sql-primitive (call-sql "user_email_taken" email user-id-to-ignore))
-     (data-response "")
-     (data-response "" {:status 403}))))
+     (data-response "User email is taken")
+     (data-response "User email is not taken" {:status 403}))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Access Control
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-user-match-drop-access [session]
   (let [{:keys [user-id match-drop-access?]} session]
@@ -656,32 +667,47 @@
       (data-response (str "Match drop access updated to " match-drop-access?))
       (data-response "Match drop access was not able to be updated." {:status 403}))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Organization Management
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn add-org-user [session org-id email]
-  (let [user-id (:user-id session)]
-    (if-not (is-user-admin-of-org? user-id org-id)
-      (data-response "User does not have permission to add members to this organization."
-                     {:status 403})
-      (if-let [user-id-to-add (sql-primitive (call-sql "get_user_id_by_email" email))]
-        (do
-          (call-sql "add_org_user" org-id user-id-to-add)
-          (data-response ""))
-        (data-response (str "There is no user with the email " email)
-                       {:status 403})))))
+(defn get-all-organizations
+  "Returns the list of all organizations in the database."
+  [_]
+  (->> (call-sql "get_all_organizations")
+       (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials email_domains auto_add auto_accept archived created_date archived_date]}]
+               {:org-id                org_id
+                :org-name              org_name
+                :org-unique-id         org_unique_id
+                :geoserver-credentials geoserver_credentials
+                :email-domains         email_domains
+                :auto-add?             auto_add
+                :auto-accept?          auto_accept
+                :archived?             archived
+                :created-date          created_date
+                :archived-date         archived_date}))
+       (data-response)))
 
-(defn get-current-user-organizations
+(defn add-org-user [_ org-id email]
+  (if-let [user-id-to-add (sql-primitive (call-sql "get_user_id_by_email" email))]
+    (do
+      (call-sql "add_org_user" org-id user-id-to-add)
+      (data-response ""))
+    (data-response (str "There is no user with the email " email)
+                   {:status 403})))
+
+(defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that
    they belong to and are an admin or a member of."
   [session]
   (if-let [user-id (:user-id session)]
-    (->> (call-sql "get_organizations" user-id)
-         (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials role_id email_domains auto_add auto_accept]}]
+    (->> (call-sql "get_user_organization" user-id)
+         (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept]}]
                  {:org-id                org_id
                   :org-name              org_name
                   :org-unique-id         org_unique_id
                   :geoserver-credentials geoserver_credentials
-                  :role                  (if (= role_id 1) "admin" "member")
+                  :role                  user_role
                   :email-domains         email_domains
                   :auto-add?             auto_add
                   :auto-accept?          auto_accept}))
@@ -691,34 +717,15 @@
 (defn get-org-member-users
   "Returns a vector of member users for the given org-id, if the user is an
    admin of the given org."
-  [session org-id]
-  (let [user-id (:user-id session)]
-    (if (is-user-admin-of-org? user-id org-id)
-      (->> (call-sql "get_org_member_users" org-id)
-           (mapv (fn [{:keys [org_user_id full_name email role_id]}]
-                   {:org-user-id org_user_id
-                    :full-name   full_name
-                    :email       email
-                    :role-id     role_id}))
-           (data-response))
-      (data-response "User does not have permission to access this organization."
-                     {:status 403}))))
-
-;; TODO remove me?
-(defn get-org-non-member-users
-  "Returns a vector of non-member users by the given org-id, if the user is an
-   admin of the given org."
-  [session org-id]
-  (let [user-id (:user-id session)]
-    (if (is-user-admin-of-org? user-id org-id)
-      (->> (call-sql "get_org_non_member_users" org-id)
-           (mapv (fn [{:keys [user_uid email name]}]
-                   {:user-id   user_uid
-                    :full-name name
-                    :email     email}))
-           (data-response))
-      (data-response "User does not have permission to access this organization."
-                     {:status 403}))))
+  [_ org-id]
+  (->> (call-sql "get_org_member_users" org-id)
+       (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
+               {:user-id           user_id
+                :full-name         full_name
+                :email             email
+                :user-role         user_role
+                :membership-status org_membership_status}))
+       (data-response)))
 
 (defn get-psps-organizations
   "Returns the list of all organizations that have PSPS layers (currently denoted
@@ -728,29 +735,18 @@
        (mapv #(:org_unique_id %))
        (data-response)))
 
-(defn remove-org-user [session org-id org-user-id]
-  (let [user-id (:user-id session)]
-    (if-not (is-user-admin-of-org? user-id org-id)
-      (data-response "User does not have permission to remove members from this organization."
-                     {:status 403})
-      (do
-        (call-sql "remove_org_user" org-user-id)
-        (data-response "")))))
+(defn remove-org-user [_ org-user-id]
+  (call-sql "remove_org_user" org-user-id)
+  (data-response ""))
 
-(defn update-org-info [session org-id org-name email-domains auto-add? auto-accept?]
-  (let [user-id (:user-id session)]
-    (if (is-user-admin-of-org? user-id org-id)
-      (do
-        (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
-        (data-response ""))
-      (data-response "User does not have permission to update this organization."
-                     {:status 403}))))
+(defn update-org-info [_ org-id org-name email-domains auto-add? auto-accept?]
+  (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
+  (data-response ""))
 
-(defn update-org-user-role [session org-id org-user-id role-id]
-  (let [user-id (:user-id session)]
-    (if-not (is-user-admin-of-org? user-id org-id)
-      (data-response "User does not have permission to update user roles in this organization."
-                     {:status 403})
-      (do
-        (call-sql "update_org_user_role" org-user-id role-id)
-        (data-response "")))))
+(defn update-org-user-role [_ user-id new-role]
+  (call-sql "update_org_user_role" user-id new-role)
+  (data-response ""))
+
+(defn update-user-org-membership-status [_ user-id new-status]
+  (call-sql "update_org_membership_status" user-id new-status)
+  (data-response ""))
