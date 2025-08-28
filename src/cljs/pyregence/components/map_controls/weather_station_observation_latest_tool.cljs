@@ -53,7 +53,7 @@
 
 (defn- intro []
   [:div {:style {:padding "1.2em"}}
-   "Click on a weather station to view the latest observation. Powered by "
+   "Click on a weather station to view it's latest observation. Powered by "
    [:a {:href   "https://api.weather.gov/"
         :ref    "noreferrer noopener"
         :target "_blank"}
