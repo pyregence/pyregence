@@ -158,14 +158,12 @@
                weather-station     (r/atom nil)
                exit-chan      (r/atom nil)
                zoom-weather-station    (fn []
-                                         (let [{:keys [longitude latitude tilt pan]} @latest-observation]
+                                         (let [{:keys [longitude latitude]} @latest-observation]
                                            (reset! !/terrain? true)
                                            (h/show-help! :terrain)
                                            (mb/toggle-dimensions! true)
                                            (mb/fly-to! {:center  [longitude latitude]
-                                                        :zoom    15
-                                                        :bearing pan
-                                                        :pitch   (min (+ 90 tilt) 85)}) 400))
+                                                        :zoom    15}) 400))
                reset-view     (fn []
                                 (let [{:keys [longitude latitude]} @latest-observation]
                                   (reset! !/terrain? false)
