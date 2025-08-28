@@ -99,10 +99,12 @@
                               :triangulum.worker/stop  pyregence.jobs/stop-clean-up-service!}
                              {:triangulum.worker/name  "match-drop-server"
                               :triangulum.worker/start pyregence.jobs/start-match-drop-server!
-                              :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}]
+                              :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}
+                             {:triangulum.worker/name  "get-weather-stations"
+                              :triangulum.worker/start pyregence.jobs/start-get-weather-stations!
+                              :triangulum.worker/stop  pyregence.jobs/stop-get-weather-stations!}]
 
-
- ;;; Pyrecast
+;;; Pyrecast
  :pyregence.cameras/alert-west-api-key              "<api-key>"
  :pyregence.capabilities/psps                       {:geoserver-admin-username "admin"
                                                      :geoserver-admin-password "password"}
