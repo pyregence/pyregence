@@ -12,7 +12,7 @@
             [pyregence.styles                              :as $]
             [pyregence.utils.async-utils                   :as u-async]
             [pyregence.utils.time_utils                    :as u-time]
-            [pyregence.utils.wmo-codes        :refer [wmo-unit-id->unit-id->labels
+            [pyregence.utils.wmo-codes                     :refer [unit-id->labels]]
             [reagent.core                                  :as r]
             [cljs.core.async.interop                       :refer-macros [<p!]]))
 
