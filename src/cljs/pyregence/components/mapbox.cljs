@@ -794,7 +794,7 @@
       (update-style! (get-style) :new-sources new-source :new-layers new-layers))))
 
 (defn create-weather-station-layer!
-  "TODO"
+  "Adds a weather station layer to the map."
   [id]
   (go
     (let [new-source {id {:type       "geojson"
