@@ -54,7 +54,7 @@ that there are 145 different time steps in this specific forecast."}
 
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Wildfire Camera Tool."}
   show-camera? (r/atom false))
-(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Weather Station Tool"}
+(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Weather Station Tool."}
  show-weather-station? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Fire History Tool."}
   show-fire-history? (r/atom false))
