@@ -26,6 +26,8 @@
   (future
     (loop []
       (try
+        ;;TODO log successful cache-refresh
+        ;;TODO consider a way to hydrate per page.
         (reset! observation-stations (get-all-observation-stations!))
         (catch Exception ex (log (ex-data ex) :truncate? false)))
       (Thread/sleep (* 1000 ;; 1s
