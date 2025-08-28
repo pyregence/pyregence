@@ -17,39 +17,8 @@
             [cljs.core.async.interop                       :refer-macros [<p!]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helper Functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- get-weather-station-image-chan [active-weather-station]
-  (go
-    (->> (u-async/call-clj-async! "get-current-image"
-                                  :post-blob
-                                  (:name active-weather-station)
-                                  (:api-name active-weather-station))
-         (<!)
-         (:body)
-         (js/URL.createObjectURL))))
-
-(defn- alert-image-url->alert-weather-station-id
-  "Parses the weather-station ID out of the image URL for AlertWest weather-stations.
-   Ex: A URL of \"https://prod.weathernode.net/data/img/2428/2023/07/12/Sutro_Tower_1_1689204279_6490.jpg\"
-   returns `2428`."
-  [url]
-  (-> url
-      (str/split #"/")
-      (get 5 nil)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- $alert-logo-style []
-  {:height    "auto"
-   :left      "2rem"
-   :min-width "100px"
-   :position  "absolute"
-   :top       "2rem"
-   :width     "10%"})
 
 (defn- $mobile-weather-station-tool []
   {:background-color ($/color-picker :bg-color)
@@ -185,7 +154,6 @@
 (defn weather-station-tool [parent-box close-fn!]
   (r/with-let [latest-observation  (r/atom nil)
                weather-station     (r/atom nil)
-               image-src      (r/atom nil)
                exit-chan      (r/atom nil)
                zoom-weather-station    (fn []
                                          (let [{:keys [longitude latitude tilt pan]} @latest-observation]
@@ -209,22 +177,15 @@
                                     (reset! weather-station new-weather-station)
                                     (reset! latest-observation
                                             (or
-                                             (<! (u-async/fetch-and-process
-                                                  (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
-                                                  {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
-                                                  (fn [response]
-                                                    (go
-                                                      (js->clj (aget (<p! (.json response)) "properties")
-                                                               :keywordize-keys true)))))
-                                             ;;TODO improve on how we handle the networkcalls
-                                             :error))
-
-                                    (reset! image-src nil)
-                                    (let [image-chan (get-weather-station-image-chan @latest-observation)]
-                                      (reset! image-src (<! image-chan))
-                                      (reset! exit-chan
-                                              (u-async/refresh-on-interval! #(go (reset! image-src (<! (get-weather-station-image-chan @latest-observation))))
-                                                                            60000))))))
+                                              (<! (u-async/fetch-and-process
+                                                    (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
+                                                    {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
+                                                    (fn [response]
+                                                      (go
+                                                        (js->clj (aget (<p! (.json response)) "properties")
+                                                                 :keywordize-keys true)))))
+                                              ;;TODO improve on how we handle the networkcalls
+                                              :error)))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _              (take! (mb/create-weather-station-layer! "fire-weather-stations")
                                      #(mb/add-feature-highlight!
