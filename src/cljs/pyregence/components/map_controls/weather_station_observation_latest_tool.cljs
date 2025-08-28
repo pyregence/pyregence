@@ -67,23 +67,24 @@
                   :flex-direction  "column"
                   :justify-content "flex-start"
                   :width           "100%"
-                  :margin-top      "1rem"
-                  :margin-left     "1rem"}}
-    ;TODO improve on how this looks.
-    [:p "No information for this weather station was found."]
-    [:p "Please check back later or try another station."]
-    [:ul
+                  :padding-top     "1rem"
+                  :padding-left    "1rem"}}
+    [:p "No information for this weather station was found. Please check back later or try another station."]
+    [:ul {:style {:padding-inline-start "1rem"}}
      [:li "Station ID: " stationIdentifier]
      [:li "Station name: " name]]]])
 
+;;TODO this could share styles with the `not-found` component
 (defn- info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
+   ;;TODO what do we want to do if the observations go beyond the set window size?
    [:div {:style {:display         "flex"
                   :justify-content "flex-start"
                   :width           "100%"
-                  :margin-top      "1rem"}}
+                  :padding-top     "1rem"
+                  :padding-left    "1rem"}}
     ;;TODO when the user hovers on the observation it would be nice to pop up a longer description that includes a longer label
-    [:ul
+    [:ul {:style {:padding-inline-start "1rem"}}
      [:li "Station ID: " stationId]
      [:li "Station name: " stationName]
      [:li "Observed at: " (u-time/date-string->iso-string timestamp true)]
