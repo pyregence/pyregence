@@ -82,7 +82,7 @@
                    :visibility   (if (and @!/show-weather-station? @!/mobile?) "visible" "hidden")}}
     [tool-button :close #(reset! !/show-weather-station? false)]]])
 
-(defn- weather-station-tool-intro []
+(defn- latest-observation-tool-intro []
   [:div {:style {:padding "1.2em"}}
    "Click on a weather station to view the latest observation. Powered by "
    [:a {:href   "https://api.weather.gov/"
@@ -91,7 +91,7 @@
     "Weather.gov"]
    "."])
 
-(defn- weather-station-info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
+(defn- latest-observation-info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
    [:div {:style {:display         "flex"
                   :justify-content "flex-start"
@@ -158,7 +158,7 @@
                     :width  "32px"}}
       [svg/binoculars]]]]])
 
-(defn- loading-weather-station [weather-station-name]
+(defn- loading-latest-observation [weather-station-name]
   [:div {:style {:padding "1.2em"}}
    (str "Loading weather-station " weather-station-name "...")])
 
@@ -167,11 +167,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn weather-station-tool [parent-box close-fn!]
-  (r/with-let [active-weather-station  (r/atom nil)
+  (r/with-let [latest-observation  (r/atom nil)
                image-src      (r/atom nil)
                exit-chan      (r/atom nil)
                zoom-weather-station    (fn []
-                                         (let [{:keys [longitude latitude tilt pan]} @active-weather-station]
+                                         (let [{:keys [longitude latitude tilt pan]} @latest-observation]
                                            (reset! !/terrain? true)
                                            (h/show-help! :terrain)
                                            (mb/toggle-dimensions! true)
@@ -180,7 +180,7 @@
                                                         :bearing pan
                                                         :pitch   (min (+ 90 tilt) 85)}) 400))
                reset-view     (fn []
-                                (let [{:keys [longitude latitude]} @active-weather-station]
+                                (let [{:keys [longitude latitude]} @latest-observation]
                                   (reset! !/terrain? false)
                                   (mb/toggle-dimensions! false)
                                   (mb/fly-to! {:center [longitude latitude]
@@ -189,40 +189,43 @@
                                 (go
                                   (when-let [new-weather-station (js->clj (aget features "properties") :keywordize-keys true)]
                                     (u-async/stop-refresh! @exit-chan)
-                                    (reset! active-weather-station
-                                            (<! (u-async/fetch-and-process
-                                                 (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
-                                                 {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
-                                                 (fn [response]
-                                                   (go
-                                                     (js->clj (aget (<p! (.json response)) "properties")
-                                                              :keywordize-keys true))))))
+                                    (reset! latest-observation
+                                            (or
+                                             (<! (u-async/fetch-and-process
+                                                  (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
+                                                  {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
+                                                  (fn [response]
+                                                    (go
+                                                      (js->clj (aget (<p! (.json response)) "properties")
+                                                               :keywordize-keys true)))))
+                                             ;;TODO consider improving on the story of what happens if the observation isn't a 200-ok.
+                                             :error))
 
                                     (reset! image-src nil)
-                                    (let [image-chan (get-weather-station-image-chan @active-weather-station)]
+                                    (let [image-chan (get-weather-station-image-chan @latest-observation)]
                                       (reset! image-src (<! image-chan))
                                       (reset! exit-chan
-                                              (u-async/refresh-on-interval! #(go (reset! image-src (<! (get-weather-station-image-chan @active-weather-station))))
+                                              (u-async/refresh-on-interval! #(go (reset! image-src (<! (get-weather-station-image-chan @latest-observation))))
                                                                             60000))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _              (take! (mb/create-weather-station-layer! "fire-weather-stations")
                                      #(mb/add-feature-highlight!
                                        "fire-weather-stations" "fire-weather-stations"
                                        :click-fn on-click))]
-    (let [{:keys [stationName] :as latest-observation} @active-weather-station
+    (let [{:keys [stationName] :as latest-observation} @latest-observation
           render-content     (fn []
                                (cond
-                                 (nil? @active-weather-station)
-                                 [weather-station-tool-intro]
+                                 (nil? @latest-observation)
+                                 [latest-observation-tool-intro]
 
                                  @image-src
-                                 [weather-station-info
+                                 [latest-observation-info
                                   latest-observation
                                   reset-view
                                   zoom-weather-station]
 
                                  :else
-                                 [loading-weather-station stationName]))]
+                                 [loading-latest-observation stationName]))]
       (if @!/mobile?
         [:div#wildfire-mobile-weather-station-tool
          {:style ($/combine $/tool $mobile-weather-station-tool)}
