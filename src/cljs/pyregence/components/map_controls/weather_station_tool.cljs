@@ -118,36 +118,36 @@
      [:li "Station ID: " stationId]
      [:li "Station name: " stationName]
      [:li "Observed at: " (u-time/date-string->iso-string timestamp true)]
-     (let [unitCode->wmo-label #(-> %
+     (let [CamelCase->title (fn
+                              [CamelCase]
+                              (let [[f & r] (-> CamelCase
+                                                name
+                                                (str/split  #"(?=[A-Z])"))]
+                                (str/join " " (concat [(str/capitalize f)] (mapv str/lower-case r)))))
+           unitCode->wmo-label #(-> %
                                     (clojure.string/split #":")
                                     last
                                     wmo-unit-id->labels
                                     (get "skos:altLabel"))
-           show                (fn [[k label]]
-                                 (let [{:keys [unitCode value]} (latest-observation k)
-                                       round-to-1-decimal  #(/ (Math/round (* % 10)) 10)]
-
-                                   [:li
-                                    {:key k}
-                                    ;;TODO this conditional logic should probably be in a data structure
-                                    (str label
-                                         ": "
-                                         (if (float? value)
-                                           (round-to-1-decimal value)
-                                           value)
-                                         (or ({"wmoUnit:km_h-1" "km/hr"
-                                               "wmoUnit:degC"   "\u00B0C"} unitCode)
-                                             (unitCode->wmo-label unitCode)))]))]
+           ->item (fn [[k {:keys [unitCode value]}]]
+                    (let [round-to-1-decimal  #(/ (Math/round (* % 10)) 10)]
+                      (str (-> k
+                               CamelCase->title
+                               (str/replace  #"last(\d+)" "last $1"))
+                           ": "
+                           (if (float? value)
+                             (round-to-1-decimal value)
+                             value)
+                           (or ({"wmoUnit:km_h-1" "km/hr"
+                                 "wmoUnit:degC"   "\u00B0C"} unitCode)
+                               (unitCode->wmo-label unitCode)))))]
        (vec
         (cons :<>
-              (->> [[:temperature "Temperature"]
-                    [:relativeHumidity "Relative humidity"]
-                    [:dewpoint "Dewpoint"]
-                    [:windSpeed "Wind speed"]
-                    [:windDirection "Wind direction"]
-                    [:windGust "Wind gust"]]
-                   (filter (fn [[k _]] (-> k latest-observation :value)))
-                   (mapv show)))))]]
+              (->> latest-observation
+                   (filter (fn [[_ {:keys [value]}]] value))
+                   (map ->item)
+                   sort
+                   (mapv (fn [i] [:li {:key (hash i)} i]))))))]]
    (when @!/terrain?
      [tool-tip-wrapper
       "Zoom Out to 2D"
