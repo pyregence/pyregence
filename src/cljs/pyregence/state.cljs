@@ -118,7 +118,7 @@ cameras from California are filtered out since they do not work anymore. We inst
 California cameras. This atom is used to create the camera layer in mapbox.cljs."}
   the-cameras (r/atom nil))
 (defonce ^{:doc "The GeoJSON response from api.weather.gov. TODO is this atom also used to create the WS layer in mapbox.cljs."}
- the-weather-stations (r/atom nil))
+  the-weather-stations (r/atom nil))
 (defonce ^{:doc "The set of avialable weather dates for Match Drop."}
   md-available-dates (r/atom {}))
 (defonce ^{:doc "An integer that keeps track of the number of active fires."}
