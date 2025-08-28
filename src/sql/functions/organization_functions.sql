@@ -6,20 +6,31 @@
 --------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_all_organizations()
  RETURNS TABLE (
-   org_id                integer,
-   org_name              text,
-   org_unique_id         text,
-   geoserver_credentials text,
-   email_domains         text,
-   auto_add              boolean,
-   auto_accept           boolean,
-   archived              boolean,
-   created_date          date,
-   archived_date         date
+  org_id                integer,
+  org_name              text,
+  org_unique_id         text,
+  geoserver_credentials text,
+  email_domains         text,
+  auto_add              boolean,
+  auto_accept           boolean,
+  archived              boolean,
+  created_date          date,
+  archived_date         date
  ) AS $$
 
-    SELECT * FROM organizations
-    ORDER BY organization_uid
+  SELECT
+    o.organization_uid               AS org_id,
+    o.org_name                       AS org_name,
+    o.org_unique_id                  AS org_unique_id,
+    o.geoserver_credentials::text    AS geoserver_credentials,
+    o.email_domains::text            AS email_domains,
+    o.auto_add                       AS auto_add,
+    o.auto_accept                    AS auto_accept,
+    o.archived                       AS archived,
+    o.created_date::date             AS created_date,
+    o.archived_date::date            AS archived_date
+  FROM organizations o
+  ORDER BY o.organization_uid;
 
 $$ LANGUAGE SQL;
 
