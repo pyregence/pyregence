@@ -1,6 +1,7 @@
 (ns pyregence.weather-stations
   (:require [clj-http.client     :as client]
-            [triangulum.logging  :refer [log]]))
+            [triangulum.logging  :refer [log]]
+            [triangulum.config   :refer [get-config]]))
 
 (defonce observation-stations (atom []))
 
@@ -26,13 +27,9 @@
       (try
         (reset! observation-stations (get-observation-stations!))
         (catch Exception ex (log (ex-data ex) :truncate? false)))
-      ;;TODO this timeout should be configurable and default to every 2 or 3 days in dev and production.
       (Thread/sleep (* 1000 ;; 1s
                        60   ;; 1m
-                       60   ;; 1h
-                       24   ;; 1 day
-                       2    ;; 2 days
-                       ))
+                       (get-config :pyregence.weather-stations/get-observation-stations-every-n-minutes)))
       (recur))))
 
 (defn select-relevent-properties
