@@ -858,7 +858,8 @@
                  :mobile?          @!/mobile?
                  :user-orgs-list   @!/user-orgs-list
                  :select-forecast! select-forecast!
-                 :user-id          user-id}] ; TODO we might be able to get rid of this
+                 :user-id          user-id ; TODO we might be able to get rid of this
+                 :user-role        user-role}]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when (and @mb/the-map
                    (not-empty @!/capabilities)
