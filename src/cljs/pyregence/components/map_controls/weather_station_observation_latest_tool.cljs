@@ -75,7 +75,6 @@
      [:li "Station name: " name]]]])
 
 ;;TODO this could share styles with the `not-found` component
-;;TODO make zoom go to right coordinates
 (defn- info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
    ;;TODO what do we want to do if the observations go beyond the set window size?
