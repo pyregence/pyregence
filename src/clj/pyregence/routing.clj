@@ -132,7 +132,7 @@
                                                   :auth-action :block}
    ;; Weather Station API
    [:post "/clj/get-weather-stations"]           {:handler (clj-handler weather-stations/get-weather-stations)
-                                                  :auth-type   :token
+                                                  :auth-type   #{:member :token}
                                                   :auth-action :block}
 
    [:post "/clj/get-current-image"]              {:handler (clj-handler cameras/get-current-image)
