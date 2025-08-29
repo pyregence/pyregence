@@ -158,14 +158,14 @@
                weather-station     (r/atom nil)
                exit-chan      (r/atom nil)
                zoom-weather-station    (fn []
-                                         (let [{:keys [longitude latitude]} @latest-observation]
+                                         (let [{:keys [longitude latitude]} @weather-station]
                                            (reset! !/terrain? true)
                                            (h/show-help! :terrain)
                                            (mb/toggle-dimensions! true)
                                            (mb/fly-to! {:center  [longitude latitude]
                                                         :zoom    15}) 400))
                reset-view     (fn []
-                                (let [{:keys [longitude latitude]} @latest-observation]
+                                (let [{:keys [longitude latitude]} @weather-station]
                                   (reset! !/terrain? false)
                                   (mb/toggle-dimensions! false)
                                   (mb/fly-to! {:center [longitude latitude]
