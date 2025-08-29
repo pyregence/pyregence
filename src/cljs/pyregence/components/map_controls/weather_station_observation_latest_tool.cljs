@@ -71,7 +71,7 @@
    [:a {:href   "https://api.weather.gov/"
         :ref    "noreferrer noopener"
         :target "_blank"}
-    "National Weather Service (NWS) API."]
+    "National Weather Service (NWS) API"]
    "."])
 
 (defn- not-found

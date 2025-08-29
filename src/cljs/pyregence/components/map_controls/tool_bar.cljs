@@ -132,16 +132,17 @@
                    (reset! !/show-weather-station? false)
                    (gtag-tool-clicked @!/show-camera? "camera"))
               @!/show-camera?])
-           [:weather-station
-            "Show weather stations"
-            #(do
-               (reset! !/show-info? false)
-               (reset! !/show-measure-tool? false)
-               (reset! !/show-match-drop? false)
-               (reset! !/show-camera? false)
-               (swap! !/show-weather-station? not)
-               (gtag-tool-clicked @!/show-weather-station? "weather-station"))
-            @!/show-weather-station?]
+           (when (number? user-id)
+            [:weather-station
+             "Show weather stations"
+             #(do
+                (reset! !/show-info? false)
+                (reset! !/show-measure-tool? false)
+                (reset! !/show-match-drop? false)
+                (reset! !/show-camera? false)
+                (swap! !/show-weather-station? not)
+                (gtag-tool-clicked @!/show-weather-station? "weather-station"))
+             @!/show-weather-station?])
            (when-not (get-any-level-key :disable-flag?)
              [:flag
               (str (hs-str @!/show-red-flag?) " red flag warnings")
