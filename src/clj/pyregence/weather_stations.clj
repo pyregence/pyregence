@@ -1,5 +1,4 @@
-(ns pyregence.weather-stations
-  (:require [clj-http.client     :as client]
+(ns::  (:require [clj-http.client     :as client]
             [triangulum.logging  :refer [log log-str]]
             [triangulum.config   :refer [get-config]]))
 
@@ -32,7 +31,7 @@
         (catch Exception ex (log (ex-data ex) :truncate? false)))
       (Thread/sleep (* 1000 ;; 1s
                        60   ;; 1m
-                       (get-config :pyregence.weather-stations/get-observation-stations-every-n-minutes)))
+                       (get-config ::get-observation-stations-every-n-minutes)))
       (recur))))
 
 (defn- select-relevent-properties
