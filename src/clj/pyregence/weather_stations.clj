@@ -6,7 +6,7 @@
 (defonce observation-stations (atom []))
 
 ;;NOTE this takes roughly 5-10 minutes
-(defn get-all-observation-stations!
+(defn- get-all-observation-stations!
   []
   (loop [url                  "https://api.weather.gov/stations"
          observation-stations []]
@@ -35,7 +35,7 @@
                        (get-config :pyregence.weather-stations/get-observation-stations-every-n-minutes)))
       (recur))))
 
-(defn select-relevent-properties
+(defn- select-relevent-properties
   [{{[lon lat] :coordinates} :geometry :as ws}]
   (-> ws
       (update :properties select-keys [:name :stationIdentifier])

@@ -99,18 +99,22 @@
                                     last
                                     unit-id->labels
                                     (get "skos:altLabel"))
-           ->item (fn [[k {:keys [unitCode value]}]]
-                    (let [round-to-1-decimal  #(/ (Math/round (* % 10)) 10)]
-                      (str (-> k
-                               CamelCase->title
-                               (str/replace  #"last(\d+)" "last $1"))
-                           ": "
-                           (if (float? value)
-                             (round-to-1-decimal value)
-                             value)
-                           (or ({"wmoUnit:km_h-1" "km/hr"
-                                 "wmoUnit:degC"   "\u00B0C"} unitCode)
-                               (unitCode->wmo-label unitCode)))))]
+           ->item (fn [[observation-key {:keys [unitCode value]}]]
+                    (let [round-to-1-decimal #(/ (Math/round (* % 10)) 10)
+                          c->f               (fn [c] (+ (* c 1.8) 32))
+                          is-celsius?        (= unitCode "wmoUnit:degC")
+                          observation-param  (-> observation-key
+                                                 CamelCase->title
+                                                 (str/replace  #"last(\d+)" "last $1"))
+                          numeric-value      (when (number? value)
+                                               (if is-celsius?
+                                                 (round-to-1-decimal (c->f value))
+                                                 (round-to-1-decimal value)))
+                          units              (or ({"wmoUnit:km_h-1" "km/hr"
+                                                   "wmoUnit:degC"   "\u00B0F"} ; note that this gets changed to Fahrenheit b/c we manually convert c->f above in the numeric-value binding
+                                                  unitCode)
+                                                 (unitCode->wmo-label unitCode))]
+                      (str observation-param ": " numeric-value units)))]
        (vec
         (cons :<>
               (->> latest-observation
