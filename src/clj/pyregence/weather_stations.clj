@@ -26,7 +26,7 @@
   (future
     (loop []
       (try
-        ;;TODO consider a way to hydrate per page.
+        ;;TODO consider a way to hydrate per page and/or save cache between server restarts.
         (reset! observation-stations (get-all-observation-stations!))
         (log-str "weather-stations-updated")
         (catch Exception ex (log (ex-data ex) :truncate? false)))
