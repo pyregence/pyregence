@@ -155,7 +155,6 @@
 (defn tool [parent-box close-fn!]
   (r/with-let [latest-observation   (r/atom nil)
                weather-station      (r/atom nil)
-               exit-chan            (r/atom nil)
                zoom-weather-station (fn []
                                       (let [{:keys [longitude latitude]} @weather-station]
                                         (reset! !/terrain? true)
@@ -172,7 +171,6 @@
                on-click             (fn [features]
                                       (go
                                         (when-let [new-weather-station (js->clj (aget features "properties") :keywordize-keys true)]
-                                          (u-async/stop-refresh! @exit-chan)
                                           (reset! weather-station new-weather-station)
                                           (reset! latest-observation
                                                   (or
@@ -224,6 +222,5 @@
           close-fn!
           render-content]]))
     (finally
-      (u-async/stop-refresh! @exit-chan)
       (mb/remove-layer! "weather-stations")
       (mb/clear-highlight! "weather-stations" :selected))))
