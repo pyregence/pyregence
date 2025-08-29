@@ -103,7 +103,7 @@
                               :triangulum.worker/start pyregence.jobs/start-match-drop-server!
                               :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}]
 
-;;; Pyrecast
+ ;;; Pyrecast
  :pyregence.cameras/alert-west-api-key              "<api-key>"
  :pyregence.capabilities/psps                       {:geoserver-admin-username "admin"
                                                      :geoserver-admin-password "password"}
