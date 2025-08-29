@@ -46,14 +46,14 @@
                    :width        "1.5rem"}}
     [svg/weather-station]]
    [:label {:style {:font-size "1rem"}}
-    "Wildfire Weather-Station Tool"]
+    "Weather Station Tool"]
    [:span {:style {:margin-right "-.5rem"
                    :visibility   (if (and @!/show-weather-station? @!/mobile?) "visible" "hidden")}}
     [tool-button :close #(reset! !/show-weather-station? false)]]])
 
 (defn- intro []
   [:div {:style {:padding "1.2em"}}
-   "Click on a weather station to view it's latest observation. Powered by the "
+   "Click on a weather station to view its latest observation. Powered by the "
    [:a {:href   "https://api.weather.gov/"
         :ref    "noreferrer noopener"
         :target "_blank"}
@@ -160,8 +160,8 @@
                                         (reset! !/terrain? true)
                                         (h/show-help! :terrain)
                                         (mb/toggle-dimensions! true)
-                                        (mb/fly-to! {:center  [longitude latitude]
-                                                     :zoom    15}) 400))
+                                        (mb/fly-to! {:center [longitude latitude]
+                                                     :zoom   15})))
                reset-view           (fn []
                                       (let [{:keys [longitude latitude]} @weather-station]
                                         (reset! !/terrain? false)
@@ -218,7 +218,7 @@
           parent-box
           290
           460
-          "Weather Station's latest observation"
+          "Weather Station Tool"
           close-fn!
           render-content]]))
     (finally
