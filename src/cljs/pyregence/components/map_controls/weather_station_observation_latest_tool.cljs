@@ -83,7 +83,7 @@
                   :width           "100%"
                   :padding-top     "1rem"
                   :padding-left    "1rem"}}
-    [:p "No information for this weather station was found. Please check back later or try another station."]
+    [:p "No information for the " name " weather station was found. Please check back later or try another station."]
     [:ul {:style {:padding-inline-start "1rem"}}
      [:li "Station ID: " stationIdentifier]
      [:li "Station name: " name]]]])
@@ -166,7 +166,18 @@
                     :width  "32px"}}
       [svg/binoculars]]]]])
 
-(defn- loading [weather-station-name]
+(defn- loading-all-stations []
+  [:div {:style {:padding "1.2em"}}
+   "Grabbing weather stations from the "
+   [:a {:href   "https://api.weather.gov/"
+        :ref    "noreferrer noopener"
+        :target "_blank"}
+    "National Weather Service (NWS) API"]
+   "..."
+   [:div {:style {:padding-top "1rem"}}
+    "Please check back later."]])
+
+(defn- loading-one-station [weather-station-name]
   [:div {:style {:padding "1.2em"}}
    (str "Loading the " weather-station-name " weather station...")])
 
@@ -205,23 +216,27 @@
                                              "weather-stations" "weather-stations"
                                              :click-fn on-click))]
 
-    (let [{:keys [stationName] :as latest-observation-info} @latest-observation
-          render-content     (fn []
-                               (cond
-                                 (nil? @latest-observation)
-                                 [intro]
+    (let [{:keys [stationName]
+           :as latest-observation-info} @latest-observation
+          render-content                (fn []
+                                          (cond
+                                            (empty? (:features @!/the-weather-stations))
+                                            [loading-all-stations]
 
-                                 stationName
-                                 [info
-                                  latest-observation-info
-                                  reset-view
-                                  zoom-weather-station]
+                                            (nil? @latest-observation)
+                                            [intro]
 
-                                 @weather-station
-                                 [not-found @weather-station]
+                                            stationName
+                                            [info
+                                             latest-observation-info
+                                             reset-view
+                                             zoom-weather-station]
 
-                                 :else
-                                 [loading stationName]))]
+                                            (= @latest-observation :error)
+                                            [not-found @weather-station]
+
+                                            :else
+                                            [loading-one-station stationName]))]
       (if @!/mobile?
         [:div#wildfire-mobile-weather-station-tool
          {:style ($/combine $/tool $mobile)}
