@@ -80,10 +80,12 @@
    ;;TODO what do we want to do if the observations go beyond the set window size?
    [:div {:style {:display         "flex"
                   :justify-content "flex-start"
+                  :flex-direction  "column"
                   :width           "100%"
                   :padding-top     "1rem"
                   :padding-left    "1rem"}}
     ;;TODO when the user hovers on the observation it would be nice to pop up a longer description that includes a longer label
+    [:p {:style {:font-weight "bold"}}  "Latest observation"]
     [:ul {:style {:padding-inline-start "1rem"}}
      [:li "Station ID: " stationId]
      [:li "Station name: " stationName]
