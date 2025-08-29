@@ -195,8 +195,6 @@
 
     (let [{:keys [stationName] :as latest-observation-info} @latest-observation
           render-content     (fn []
-                               ;;TODO double check these conditionals make sense when viewed
-                               ;;in the larger flow.
                                (cond
                                  (nil? @latest-observation)
                                  [intro]
