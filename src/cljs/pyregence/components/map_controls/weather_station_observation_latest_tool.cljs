@@ -16,6 +16,20 @@
             [reagent.core                                  :as r]
             [cljs.core.async.interop                       :refer-macros [<p!]]))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helper Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-weather-station-chan [weather-station]
+  (u-async/fetch-and-process
+   (str "https://api.weather.gov/stations/" (:stationIdentifier weather-station) "/observations/latest")
+   {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
+   (fn [response]
+     (go
+       (js->clj (aget (<p! (.json response)) "properties")
+                :keywordize-keys true)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -180,17 +194,11 @@
                                       (go
                                         (when-let [new-weather-station (js->clj (aget features "properties") :keywordize-keys true)]
                                           (reset! weather-station new-weather-station)
-                                          (reset! latest-observation
-                                                  (or
-                                                   (<! (u-async/fetch-and-process
-                                                        (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
-                                                        {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
-                                                        (fn [response]
-                                                          (go
-                                                            (js->clj (aget (<p! (.json response)) "properties")
-                                                                     :keywordize-keys true)))))
-                                                    ;;TODO improve on how we handle the networkcalls
-                                                   :error)))))
+                                          (let [observation-chan (get-weather-station-chan new-weather-station)]
+                                            (reset! latest-observation
+                                                    (or (<! observation-chan)
+                                                        ;;TODO improve on how we handle the network calls
+                                                        :error))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _                    (take! (mb/create-weather-station-layer! "weather-stations")
                                            #(mb/add-feature-highlight!
