@@ -187,9 +187,9 @@
                                               ;;TODO improve on how we handle the networkcalls
                                               :error)))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
-               _              (take! (mb/create-weather-station-layer! "fire-weather-stations")
+               _              (take! (mb/create-weather-station-layer! "weather-stations")
                                      #(mb/add-feature-highlight!
-                                       "fire-weather-stations" "fire-weather-stations"
+                                       "weather-stations" "weather-stations"
                                        :click-fn on-click))]
 
     (let [{:keys [stationName] :as latest-observation-info} @latest-observation
@@ -226,5 +226,5 @@
           render-content]]))
     (finally
       (u-async/stop-refresh! @exit-chan)
-      (mb/remove-layer! "fire-weather-stations")
-      (mb/clear-highlight! "fire-weather-stations" :selected))))
+      (mb/remove-layer! "weather-stations")
+      (mb/clear-highlight! "weather-stations" :selected))))
