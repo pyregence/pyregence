@@ -91,7 +91,7 @@
     [:ul {:style {:padding-inline-start "1rem"}}
      [:li "Station ID: " stationId]
      [:li "Station name: " stationName]
-     [:li "Observed at: " (u-time/date-string->iso-string timestamp true)]
+     [:li "Observed at: " (u-time/date-string->iso-string timestamp @!/show-utc?)]
      (let [CamelCase->title    (fn
                                  [CamelCase]
                                  (let [[f & r] (-> CamelCase
