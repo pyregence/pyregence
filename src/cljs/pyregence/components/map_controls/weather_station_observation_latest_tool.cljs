@@ -177,15 +177,15 @@
                                     (reset! weather-station new-weather-station)
                                     (reset! latest-observation
                                             (or
-                                              (<! (u-async/fetch-and-process
-                                                    (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
-                                                    {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
-                                                    (fn [response]
-                                                      (go
-                                                        (js->clj (aget (<p! (.json response)) "properties")
-                                                                 :keywordize-keys true)))))
+                                             (<! (u-async/fetch-and-process
+                                                  (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
+                                                  {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
+                                                  (fn [response]
+                                                    (go
+                                                      (js->clj (aget (<p! (.json response)) "properties")
+                                                               :keywordize-keys true)))))
                                               ;;TODO improve on how we handle the networkcalls
-                                              :error)))))
+                                             :error)))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _              (take! (mb/create-weather-station-layer! "weather-stations")
                                      #(mb/add-feature-highlight!
