@@ -7,7 +7,6 @@
             [ring.util.codec     :refer [url-encode]]
             [ring.util.response  :refer [redirect]]
             [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive]]
             [triangulum.handler  :refer [development-app]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.response :refer [data-response]]
@@ -24,25 +23,43 @@
       (redirect (str "/login?flash_message=You must login to see "
                      full-url)))))
 
+(def role-hierarchy
+  (-> (make-hierarchy)
+      (derive :super-admin         :organization-admin)
+      (derive :super-admin         :account-manager)
+      (derive :super-admin         :organization-member)
+      (derive :super-admin         :member)
+      (derive :organization-admin  :organization-member)
+      (derive :organization-admin  :member)
+      (derive :account-manager     :member)
+      (derive :organization-member :member)))
+
 (defn route-authenticator [{:keys [headers session]} auth-type]
-  (let [user-id                (:user-id session -1)
+  (let [org-membership-status  (:org-membership-status session nil)
+        has-match-drop-access? (:match-drop-access? session)
+        user-role              (some-> session
+                                       (:user-role)
+                                       (str/replace "_" "-")
+                                       (keyword)) ; e.g. turns "super_admin" into :super-admin so that we can use role-hierarchy
         ;; Extract Bearer token from Authorization header
         bearer-token           (some->> (get headers "authorization")
                                         (re-find #"(?i)^Bearer\s+(.+)$")
                                         second)
         valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))
-        is-admin?              (sql-primitive (call-sql "get_user_admin_access" user-id))
-        has-match-drop-access? (:match-drop-access? session)
-        super-admin?           (:super-admin? session)
-        is-analyst?            (:analyst? session)]
+        super-admin?           (isa? role-hierarchy user-role :super-admin)]
     (every? (fn [auth-type]
               (case auth-type
-                :analyst     is-analyst?
-                :admin       is-admin?
-                :super-admin super-admin?
-                :match-drop  has-match-drop-access?
-                :token       valid-token? ; TODO: generate token per user and validate it cryptographically
-                :user        (pos? user-id)
+                :token               valid-token? ; TODO: generate token per user and validate it cryptographically
+                :match-drop          has-match-drop-access?
+                :super-admin         super-admin?
+                :account-manager     (isa? role-hierarchy user-role :account-manager)
+                :organization-admin  (or super-admin? ; we need this extra check because super-admins don't have an associated org, and thus their org-membership-status is none
+                                         (and (isa? role-hierarchy user-role :organization-admin)
+                                              (= org-membership-status "accepted")))
+                :organization-member (or super-admin? ; we need this extra check because super-admins don't have an associated org, and thus their org-membership-status is none
+                                         (and (isa? role-hierarchy user-role :organization-member)
+                                              (= org-membership-status "accepted")))
+                :member              (isa? role-hierarchy user-role :member)
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))
 

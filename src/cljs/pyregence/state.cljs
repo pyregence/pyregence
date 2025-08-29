@@ -95,9 +95,9 @@ Each entry in the legend contains the legend's label, value, color, and opacity.
 ;; Miscellaneous State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^{:doc "For the currently logged in user, stores a list of all of the organizations
+(defonce ^{:doc "For the currently logged in user, stores a list of all the organization
 that they belong to as an Admin or a Member. Will be bound to an empty vector if
-the user is not an Admin or Member of at least one organization."}
+the user is not an Admin or Member of their organization."}
   user-orgs-list (r/atom []))
 (defonce ^{:doc "Stores a list of all organizations that have PSPS data."}
   psps-orgs-list (r/atom []))

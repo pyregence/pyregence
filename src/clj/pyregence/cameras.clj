@@ -1,9 +1,7 @@
 (ns pyregence.cameras
-  (:import  [java.time Instant Duration LocalDateTime]
-            [java.time.format DateTimeFormatter DateTimeParseException])
+  (:import  [java.time Instant Duration])
   (:require [clj-http.client     :as client]
             [clojure.data.json   :as json]
-            [clojure.string      :as str]
             [triangulum.config   :refer [get-config]]
             [triangulum.response :refer [data-response]]))
 

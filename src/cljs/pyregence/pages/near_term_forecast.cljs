@@ -58,6 +58,12 @@
                                      :etc      (s/+ keyword?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private roles-who-can-see-admin-btn #{"super_admin" "organization_admin"})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -313,7 +319,9 @@
    is **exactly** the same as the `org-unique-id` set in the organizations DB table.
    The Euro forecast (associated with the `:ecmwf` key on the weather tab) is an edge
    case because each PSPS company has access to it. Returns `nil` if the user does
-   not belong to a PSPS organization or the current layer doesn't require GeoServer credentials."
+   not belong to a PSPS organization or the current layer doesn't require GeoServer credentials.
+
+   Note that super_admins can resolve credentials from *all* orgs."
   []
   (when (seq @!/user-psps-orgs-list)
     (when-some [keypath (case @!/*forecast
@@ -613,25 +621,28 @@
                                                        params))]))
                      options-config)))
 
-(defn- initialize! [{:keys [forecast-type forecast layer-idx lat lng zoom] :as params}]
+(defn- initialize! [{:keys [forecast-type forecast layer-idx lat lng zoom user-role] :as params}]
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
+          super-admin?                    (= user-role "super_admin")
           user-layers-chan                (u-async/call-clj-async! "get-user-layers")
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
           weather-stations-chan           (u-async/call-clj-async! "get-weather-stations")
-          user-orgs-list-chan             (u-async/call-clj-async! "get-current-user-organizations")
+          user-orgs-list-chan             (u-async/call-clj-async! (if super-admin?
+                                                                     "get-all-organizations"
+                                                                     "get-current-user-organization"))
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count fire-names)]
       (reset! !/active-fire-count active-fire-count)
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
       (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
-      (reset! !/user-psps-orgs-list (filter (fn [org] (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
+      (reset! !/user-psps-orgs-list (filter (fn [org]
+                                              (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
                                             @!/user-orgs-list))
       (reset! !/*forecast-type forecast-type)
-
       (reset! !/*forecast
               (cond
                 (= :long-term forecast-type)
@@ -830,7 +841,7 @@
 
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
-  [{:keys [user-id user-email] :as params}]
+  [{:keys [user-id user-role user-email] :as params}]
   (r/create-class
    {:component-did-mount
     (fn [_]
@@ -851,15 +862,13 @@
        [message-modal]
        [nav-bar {:capabilities     @!/capabilities
                  :current-forecast @!/*forecast
-                 :is-admin?        (->> @!/user-orgs-list
-                                        (filter #(= "admin" (:role %)))
-                                        (count)
-                                        (< 0)) ; admin of at least one org
+                 :is-admin?        (roles-who-can-see-admin-btn user-role)
                  :logged-in?       user-id
                  :mobile?          @!/mobile?
                  :user-orgs-list   @!/user-orgs-list
                  :select-forecast! select-forecast!
-                 :user-id          user-id}] ; TODO we might be able to get rid of this
+                 :user-id          user-id ; TODO we might be able to get rid of this
+                 :user-role        user-role}]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when (and @mb/the-map
                    (not-empty @!/capabilities)
