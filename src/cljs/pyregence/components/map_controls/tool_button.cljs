@@ -28,6 +28,7 @@
        :admin-user      [svg/admin-user]
        :binoculars      [svg/binoculars]
        :camera          [svg/camera]
+       :weather-station [svg/weather-station]
        :center-on-point [svg/center-on-point]
        :close           [svg/close]
        :clock           [svg/clock]

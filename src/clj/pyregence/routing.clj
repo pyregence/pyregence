@@ -1,13 +1,14 @@
 (ns pyregence.routing
-  (:require [pyregence.analytics      :as analytics]
-            [pyregence.authentication :as authentication]
-            [pyregence.cameras        :as cameras]
-            [pyregence.capabilities   :as capabilities]
-            [pyregence.email          :as email]
-            [pyregence.handlers       :refer [clj-handler]]
-            [pyregence.match-drop     :as match-drop]
-            [pyregence.red-flag       :as red-flag]
-            [triangulum.views         :refer [render-page]]))
+  (:require [pyregence.analytics        :as analytics]
+            [pyregence.authentication   :as authentication]
+            [pyregence.cameras          :as cameras]
+            [pyregence.capabilities     :as capabilities]
+            [pyregence.email            :as email]
+            [pyregence.handlers         :refer [clj-handler]]
+            [pyregence.match-drop       :as match-drop]
+            [pyregence.red-flag         :as red-flag]
+            [pyregence.weather-stations :as weather-stations]
+            [triangulum.views           :refer [render-page]]))
 
 (def routes
   {;; Page Routes
@@ -129,6 +130,11 @@
    [:post "/clj/get-cameras"]                    {:handler (clj-handler cameras/get-cameras)
                                                   :auth-type :token
                                                   :auth-action :block}
+   ;; Weather Station API
+   [:post "/clj/get-weather-stations"]           {:handler (clj-handler weather-stations/get-weather-stations)
+                                                  :auth-type   :token
+                                                  :auth-action :block}
+
    [:post "/clj/get-current-image"]              {:handler (clj-handler cameras/get-current-image)
                                                   :auth-type :token
                                                   :auth-action :block}

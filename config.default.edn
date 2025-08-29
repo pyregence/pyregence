@@ -93,6 +93,9 @@
  :triangulum.worker/workers [{:triangulum.worker/name  "set-all-capabilities"
                               :triangulum.worker/start pyregence.jobs/start-set-all-capabilities-job!
                               :triangulum.worker/stop  pyregence.jobs/stop-set-all-capabilities-job!}
+                             {:triangulum.worker/name  "get-weather-stations"
+                              :triangulum.worker/start pyregence.jobs/start-get-weather-stations!
+                              :triangulum.worker/stop  pyregence.jobs/stop-get-weather-stations!}
                              {:triangulum.worker/name  "clean-up-service"
                               :triangulum.worker/start pyregence.jobs/start-clean-up-service!
                               :triangulum.worker/stop  pyregence.jobs/stop-clean-up-service!}
@@ -104,6 +107,7 @@
  :pyregence.cameras/alert-west-api-key              "<api-key>"
  :pyregence.capabilities/psps                       {:geoserver-admin-username "admin"
                                                      :geoserver-admin-password "password"}
+ :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
  :pyregence.match-drop/match-drop                   {:app-name       "Pyrecast Match Drop Server"
                                                      :app-host       "localhost"

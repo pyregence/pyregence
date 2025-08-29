@@ -793,6 +793,27 @@
       (<! icon-chan)
       (update-style! (get-style) :new-sources new-source :new-layers new-layers))))
 
+(defn create-weather-station-layer!
+  "Adds a weather station layer to the map."
+  [id]
+  (go
+    (let [new-source {id {:type       "geojson"
+                          :data       (clj->js @!/the-weather-stations)
+                          :generateId true}}
+          new-layers [{:id       id
+                       :source   id
+                       :type     "symbol"
+                       :layout   {:icon-image              "weather-station-icon"
+                                  :icon-rotation-alignment "map"
+                                  :icon-size               0.25}
+                       :metadata {:type    (get-layer-type id)
+                                  :z-index 1001}
+                       :paint    {:icon-color (on-selected "#f47a3e" "#c24b29" "#000000")}}]
+          icon-chan  (chan)]
+      (add-icon! icon-chan "weather-station-icon" "./images/weather-station.png" true)
+      (<! icon-chan)
+      (update-style! (get-style) :new-sources new-source :new-layers new-layers))))
+
 (defn create-red-flag-layer!
   "Adds red flag warning layer to the map."
   [id data]

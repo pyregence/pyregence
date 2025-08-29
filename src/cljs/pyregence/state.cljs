@@ -54,6 +54,8 @@ that there are 145 different time steps in this specific forecast."}
 
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Wildfire Camera Tool."}
   show-camera? (r/atom false))
+(defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Weather Station Tool."}
+ show-weather-station? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Fire History Tool."}
   show-fire-history? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Point Information Tool."}
@@ -115,6 +117,8 @@ Returns all cameras currently available in ALERT Wildfire and ALERTCalifornia. N
 cameras from California are filtered out since they do not work anymore. We instead use ALERTCalifornia for
 California cameras. This atom is used to create the camera layer in mapbox.cljs."}
   the-cameras (r/atom nil))
+(defonce ^{:doc "The GeoJSON response from api.weather.gov. TODO is this atom also used to create the WS layer in mapbox.cljs."}
+  the-weather-stations (r/atom nil))
 (defonce ^{:doc "The set of avialable weather dates for Match Drop."}
   md-available-dates (r/atom {}))
 (defonce ^{:doc "An integer that keeps track of the number of active fires."}

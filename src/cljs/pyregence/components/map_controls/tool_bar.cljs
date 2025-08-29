@@ -106,6 +106,7 @@
                  (reset! !/show-measure-tool? false)
                  (reset! !/show-match-drop? false)
                  (reset! !/show-camera? false)
+                 (reset! !/show-weather-station? false)
                  (gtag-tool-clicked @!/show-info? "point-information"))
             @!/show-info?]
            (when (and (c/feature-enabled? :match-drop) ; enabled in `config.edn`
@@ -118,6 +119,7 @@
                    (reset! !/show-measure-tool? false)
                    (set-show-info! false)
                    (reset! !/show-camera? false)
+                   (reset! !/show-weather-station? false)
                    (gtag-tool-clicked @!/show-match-drop? "match-drop"))
               @!/show-match-drop?])
            (when-not (get-any-level-key :disable-camera?)
@@ -127,8 +129,19 @@
                    (set-show-info! false)
                    (reset! !/show-match-drop? false)
                    (reset! !/show-measure-tool? false)
+                   (reset! !/show-weather-station? false)
                    (gtag-tool-clicked @!/show-camera? "camera"))
               @!/show-camera?])
+           [:weather-station
+            "Show weather stations"
+            #(do
+               (reset! !/show-info? false)
+               (reset! !/show-measure-tool? false)
+               (reset! !/show-match-drop? false)
+               (reset! !/show-camera? false)
+               (swap! !/show-weather-station? not)
+               (gtag-tool-clicked @!/show-weather-station? "weather-station"))
+            @!/show-weather-station?]
            (when-not (get-any-level-key :disable-flag?)
              [:flag
               (str (hs-str @!/show-red-flag?) " red flag warnings")
@@ -143,6 +156,7 @@
                  (reset! !/show-camera? false)
                  (reset! !/show-match-drop? false)
                  (swap! !/show-measure-tool? not)
+                 (reset! !/show-weather-station? false)
                  (gtag-tool-clicked @!/show-measure-tool? "measure-distance"))]
            [:legend
             (str (hs-str @!/show-legend?) " legend")

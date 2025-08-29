@@ -1,41 +1,42 @@
 (ns pyregence.pages.near-term-forecast
   (:require
-   [cljs.core.async.interop                             :refer-macros [<p!]]
-   [clojure.core.async                                  :refer [<! go]]
-   [clojure.edn                                         :as edn]
-   [clojure.spec.alpha                                  :as s]
-   [clojure.string                                      :as str]
-   [cognitect.transit                                   :as t]
-   [herb.core                                           :refer [<class]]
-   [pyregence.analytics                                 :refer [gtag]]
-   [pyregence.components.map-controls.camera-tool       :refer [camera-tool]]
-   [pyregence.components.map-controls.collapsible-panel :refer [collapsible-panel]]
-   [pyregence.components.map-controls.information-tool  :refer [information-tool]]
-   [pyregence.components.map-controls.legend-box        :refer [legend-box]]
-   [pyregence.components.map-controls.match-drop-tool   :refer [match-drop-tool]]
-   [pyregence.components.map-controls.measure-tool      :refer [measure-tool]]
-   [pyregence.components.map-controls.mouse-lng-lat     :refer [mouse-lng-lat]]
-   [pyregence.components.map-controls.scale-bar         :refer [scale-bar]]
-   [pyregence.components.map-controls.time-slider       :refer [time-slider]]
-   [pyregence.components.map-controls.tool-bar          :refer [tool-bar]]
-   [pyregence.components.map-controls.zoom-bar          :refer [zoom-bar]]
-   [pyregence.components.mapbox                         :as mb]
-   [pyregence.components.messaging                      :refer [message-box-modal
-                                                                toast-message!]]
-   [pyregence.components.nav-bar                        :refer [nav-bar]]
-   [pyregence.components.popups                         :refer [fire-popup]]
-   [pyregence.components.svg-icons                      :as svg]
-   [pyregence.config                                    :as c]
-   [pyregence.state                                     :as !]
-   [pyregence.styles                                    :as $]
-   [pyregence.utils.async-utils                         :as u-async]
-   [pyregence.utils.browser-utils                       :as u-browser]
-   [pyregence.utils.data-utils                          :as u-data]
-   [pyregence.utils.misc-utils                          :as u-misc]
-   [pyregence.utils.number-utils                        :as u-num]
-   [pyregence.utils.time-utils                          :as u-time]
-   [react                                               :as react]
-   [reagent.core                                        :as r]))
+   [cljs.core.async.interop                                                   :refer-macros [<p!]]
+   [clojure.core.async                                                        :refer [<! go]]
+   [clojure.edn                                                               :as edn]
+   [clojure.spec.alpha                                                        :as s]
+   [clojure.string                                                            :as str]
+   [cognitect.transit                                                         :as t]
+   [herb.core                                                                 :refer [<class]]
+   [pyregence.analytics                                                       :refer [gtag]]
+   [pyregence.components.map-controls.camera-tool                             :refer [camera-tool]]
+   [pyregence.components.map-controls.weather-station-observation-latest-tool :as weather-obs]
+   [pyregence.components.map-controls.collapsible-panel                       :refer [collapsible-panel]]
+   [pyregence.components.map-controls.information-tool                        :refer [information-tool]]
+   [pyregence.components.map-controls.legend-box                              :refer [legend-box]]
+   [pyregence.components.map-controls.match-drop-tool                         :refer [match-drop-tool]]
+   [pyregence.components.map-controls.measure-tool                            :refer [measure-tool]]
+   [pyregence.components.map-controls.mouse-lng-lat                           :refer [mouse-lng-lat]]
+   [pyregence.components.map-controls.scale-bar                               :refer [scale-bar]]
+   [pyregence.components.map-controls.time-slider                             :refer [time-slider]]
+   [pyregence.components.map-controls.tool-bar                                :refer [tool-bar]]
+   [pyregence.components.map-controls.zoom-bar                                :refer [zoom-bar]]
+   [pyregence.components.mapbox                                               :as mb]
+   [pyregence.components.messaging                                            :refer [message-box-modal
+                                                                                      toast-message!]]
+   [pyregence.components.nav-bar                                              :refer [nav-bar]]
+   [pyregence.components.popups                                               :refer [fire-popup]]
+   [pyregence.components.svg-icons                                            :as svg]
+   [pyregence.config                                                          :as c]
+   [pyregence.state                                                           :as !]
+   [pyregence.styles                                                          :as $]
+   [pyregence.utils.async-utils                                               :as u-async]
+   [pyregence.utils.browser-utils                                             :as u-browser]
+   [pyregence.utils.data-utils                                                :as u-data]
+   [pyregence.utils.misc-utils                                                :as u-misc]
+   [pyregence.utils.number-utils                                              :as u-num]
+   [pyregence.utils.time-utils                                                :as u-time]
+   [react                                                                     :as react]
+   [reagent.core                                                              :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec
@@ -628,6 +629,7 @@
           user-layers-chan                (u-async/call-clj-async! "get-user-layers")
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
+          weather-stations-chan           (u-async/call-clj-async! "get-weather-stations")
           user-orgs-list-chan             (u-async/call-clj-async! (if super-admin?
                                                                      "get-all-organizations"
                                                                      "get-current-user-organization"))
@@ -666,6 +668,7 @@
                              @!/user-psps-orgs-list
                              (params->selected-options options-config @!/*forecast params))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
+      (reset! !/the-weather-stations (edn/read-string (:body (<! weather-stations-chan))))
       (when (and (not-empty @!/capabilities)
                  (not-empty @!/*params))
         (reset! !/loading? false)))))
@@ -739,7 +742,9 @@
             (when @!/show-measure-tool?
               [measure-tool @my-box #(reset! !/show-measure-tool? false)])
             (when @!/show-camera?
-              [camera-tool @my-box #(reset! !/show-camera? false)])])
+              [camera-tool @my-box #(reset! !/show-camera? false)])
+            (when @!/show-weather-station?
+              [weather-obs/tool @my-box #(reset! !/show-weather-station? false)])])
          [legend-box
           (get-any-level-key :reverse-legend?)
           (get-any-level-key :time-slider?)

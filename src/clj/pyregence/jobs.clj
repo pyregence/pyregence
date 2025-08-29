@@ -1,12 +1,13 @@
 (ns pyregence.jobs
   (:import java.io.File)
-  (:require [clojure.java.io        :as io]
-            [clojure.string         :as str]
-            [pyregence.capabilities :refer [set-all-capabilities!]]
-            [pyregence.match-drop   :refer [match-drop-server-msg-handler]]
-            [runway.simple-sockets  :as runway]
-            [triangulum.config      :refer [get-config]]
-            [triangulum.logging     :refer [log-str]]))
+  (:require [clojure.java.io            :as io]
+            [clojure.string             :as str]
+            [pyregence.capabilities     :refer [set-all-capabilities!]]
+            [pyregence.match-drop       :refer [match-drop-server-msg-handler]]
+            [pyregence.weather-stations :refer [periodically-get-observation-stations-in-the-background!]]
+            [runway.simple-sockets      :as runway]
+            [triangulum.config          :refer [get-config]]
+            [triangulum.logging         :refer [log-str]]))
 
 ;; Set Capabilities
 
@@ -65,3 +66,13 @@
 (defn stop-match-drop-server! [_]
   (log-str "Stopping Match Drop server on port " (get-config :pyregence.match-drop/match-drop :app-port))
   (runway/stop-server!))
+
+;; Weather Stations
+
+(defn start-get-weather-stations! []
+  (future
+    (log-str "Calling pyregence.weather-stations/periodically-get-observation-stations-in-the-background!")
+    (periodically-get-observation-stations-in-the-background!)))
+
+(defn stop-get-weather-stations! [fut]
+  (future-cancel fut))
