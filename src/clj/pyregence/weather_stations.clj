@@ -14,7 +14,7 @@
     (let [{{new-observation-stations           :features
             {next-batch-of-stations-url :next} :pagination} :body}
           (client/get url {:as      :json
-                           :headers {"User-Agent" "support@sig-gis.com"
+                           :headers {"User-Agent"    "support@sig-gis.com"
                                      "Feature-Flags" "obs_station_provider"}
                            :connection-timeout (* 1000 60 3)})]
       (if (seq new-observation-stations)

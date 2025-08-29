@@ -793,7 +793,7 @@
       (<! icon-chan)
       (update-style! (get-style) :new-sources new-source :new-layers new-layers))))
 
-;;TODO this get a close review from someone who understands layers better.
+;;TODO this should get a close review from someone who understands layers better.
 (defn create-weather-station-layer!
   "Adds a weather station layer to the map."
   [id]
