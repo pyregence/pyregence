@@ -149,7 +149,7 @@
                                   (mb/fly-to! {:center  [longitude latitude]
                                                :zoom    15
                                                :bearing pan
-                                               :pitch   (min (+ 90 tilt) 85)}) 400))
+                                               :pitch   (min (+ 90 tilt) 85)})))
                reset-view     (fn []
                                 (let [{:keys [longitude latitude]} @active-camera]
                                   (reset! !/terrain? false)

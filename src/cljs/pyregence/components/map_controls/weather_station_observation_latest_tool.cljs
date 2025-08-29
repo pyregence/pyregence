@@ -46,14 +46,14 @@
                    :width        "1.5rem"}}
     [svg/weather-station]]
    [:label {:style {:font-size "1rem"}}
-    "Wildfire Weather-Station Tool"]
+    "Weather Station Tool"]
    [:span {:style {:margin-right "-.5rem"
                    :visibility   (if (and @!/show-weather-station? @!/mobile?) "visible" "hidden")}}
     [tool-button :close #(reset! !/show-weather-station? false)]]])
 
 (defn- intro []
   [:div {:style {:padding "1.2em"}}
-   "Click on a weather station to view it's latest observation. Powered by the "
+   "Click on a weather station to view its latest observation. Powered by the "
    [:a {:href   "https://api.weather.gov/"
         :ref    "noreferrer noopener"
         :target "_blank"}
@@ -95,7 +95,7 @@
                                                 (str/split  #"(?=[A-Z])"))]
                                 (str/join " " (concat [(str/capitalize f)] (mapv str/lower-case r)))))
            unitCode->wmo-label #(-> %
-                                    (clojure.string/split #":")
+                                    (str/split #":")
                                     last
                                     unit-id->labels
                                     (get "skos:altLabel"))
@@ -132,7 +132,7 @@
                       :width  "32px"}}
         [svg/return]]]])
    [tool-tip-wrapper
-    "Zoom Map to Weather-Station"
+    "Zoom Map to Weather Station"
     :right
     [:button {:class    (<class $/p-themed-button)
               :on-click zoom-weather-station
@@ -146,50 +146,48 @@
 
 (defn- loading [weather-station-name]
   [:div {:style {:padding "1.2em"}}
-   (str "Loading weather-station " weather-station-name "...")])
+   (str "Loading the " weather-station-name " weather station...")])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn tool [parent-box close-fn!]
-  (r/with-let [latest-observation  (r/atom nil)
-               weather-station     (r/atom nil)
-               exit-chan      (r/atom nil)
-               zoom-weather-station    (fn []
-                                         (let [{:keys [longitude latitude]} @weather-station]
-                                           (reset! !/terrain? true)
-                                           (h/show-help! :terrain)
-                                           (mb/toggle-dimensions! true)
-                                           (mb/fly-to! {:center  [longitude latitude]
-                                                        :zoom    15}) 400))
-               reset-view     (fn []
-                                (let [{:keys [longitude latitude]} @weather-station]
-                                  (reset! !/terrain? false)
-                                  (mb/toggle-dimensions! false)
-                                  (mb/fly-to! {:center [longitude latitude]
-                                               :zoom   6})))
-               on-click       (fn [features]
-                                (go
-                                  (when-let [new-weather-station (js->clj (aget features "properties") :keywordize-keys true)]
-                                    (u-async/stop-refresh! @exit-chan)
-                                    (reset! weather-station new-weather-station)
-                                    (reset! latest-observation
-                                            (or
-                                             (<! (u-async/fetch-and-process
-                                                  (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
-                                                  {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
-                                                  (fn [response]
-                                                    (go
-                                                      (js->clj (aget (<p! (.json response)) "properties")
-                                                               :keywordize-keys true)))))
-                                              ;;TODO improve on how we handle the networkcalls
-                                             :error)))))
+  (r/with-let [latest-observation   (r/atom nil)
+               weather-station      (r/atom nil)
+               zoom-weather-station (fn []
+                                      (let [{:keys [longitude latitude]} @weather-station]
+                                        (reset! !/terrain? true)
+                                        (h/show-help! :terrain)
+                                        (mb/toggle-dimensions! true)
+                                        (mb/fly-to! {:center [longitude latitude]
+                                                     :zoom   15})))
+               reset-view           (fn []
+                                      (let [{:keys [longitude latitude]} @weather-station]
+                                        (reset! !/terrain? false)
+                                        (mb/toggle-dimensions! false)
+                                        (mb/fly-to! {:center [longitude latitude]
+                                                     :zoom   6})))
+               on-click             (fn [features]
+                                      (go
+                                        (when-let [new-weather-station (js->clj (aget features "properties") :keywordize-keys true)]
+                                          (reset! weather-station new-weather-station)
+                                          (reset! latest-observation
+                                                  (or
+                                                   (<! (u-async/fetch-and-process
+                                                        (str "https://api.weather.gov/stations/" (:stationIdentifier new-weather-station) "/observations/latest")
+                                                        {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
+                                                        (fn [response]
+                                                          (go
+                                                            (js->clj (aget (<p! (.json response)) "properties")
+                                                                     :keywordize-keys true)))))
+                                                    ;;TODO improve on how we handle the networkcalls
+                                                   :error)))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
-               _              (take! (mb/create-weather-station-layer! "weather-stations")
-                                     #(mb/add-feature-highlight!
-                                       "weather-stations" "weather-stations"
-                                       :click-fn on-click))]
+               _                    (take! (mb/create-weather-station-layer! "weather-stations")
+                                           #(mb/add-feature-highlight!
+                                             "weather-stations" "weather-stations"
+                                             :click-fn on-click))]
 
     (let [{:keys [stationName] :as latest-observation-info} @latest-observation
           render-content     (fn []
@@ -218,10 +216,9 @@
           parent-box
           290
           460
-          "Weather Station's latest observation"
+          "Weather Station Tool"
           close-fn!
           render-content]]))
     (finally
-      (u-async/stop-refresh! @exit-chan)
       (mb/remove-layer! "weather-stations")
       (mb/clear-highlight! "weather-stations" :selected))))
