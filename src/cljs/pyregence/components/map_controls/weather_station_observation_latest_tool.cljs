@@ -88,38 +88,38 @@
      [:li "Station ID: " stationId]
      [:li "Station name: " stationName]
      [:li "Observed at: " (u-time/date-string->iso-string timestamp true)]
-     (let [CamelCase->title (fn
-                              [CamelCase]
-                              (let [[f & r] (-> CamelCase
-                                                name
-                                                (str/split  #"(?=[A-Z])"))]
-                                (str/join " " (concat [(str/capitalize f)] (mapv str/lower-case r)))))
+     (let [CamelCase->title    (fn
+                                 [CamelCase]
+                                 (let [[f & r] (-> CamelCase
+                                                   name
+                                                   (str/split  #"(?=[A-Z])"))]
+                                   (str/join " " (concat [(str/capitalize f)] (mapv str/lower-case r)))))
            unitCode->wmo-label #(-> %
                                     (str/split #":")
                                     last
                                     unit-id->labels
                                     (get "skos:altLabel"))
-           ->item (fn [[observation-key {:keys [unitCode value]}]]
-                    (let [round-to-1-decimal #(/ (Math/round (* % 10)) 10)
-                          c->f               (fn [c] (+ (* c 1.8) 32))
-                          is-celsius?        (= unitCode "wmoUnit:degC")
-                          observation-param  (-> observation-key
-                                                 CamelCase->title
-                                                 (str/replace  #"last(\d+)" "last $1"))
-                          numeric-value      (when (number? value)
-                                               (if is-celsius?
-                                                 (round-to-1-decimal (c->f value))
-                                                 (round-to-1-decimal value)))
-                          units              (or ({"wmoUnit:km_h-1" "km/hr"
-                                                   "wmoUnit:degC"   "\u00B0F"} ; note that this gets changed to Fahrenheit b/c we manually convert c->f above in the numeric-value binding
-                                                  unitCode)
-                                                 (unitCode->wmo-label unitCode))]
-                      (str observation-param ": " numeric-value units)))]
+           observation->item   (fn [[observation-key {:keys [unitCode value]}]]
+                                 (let [round-to-1-decimal #(/ (Math/round (* % 10)) 10)
+                                       c->f               (fn [c] (+ (* c 1.8) 32))
+                                       is-celsius?        (= unitCode "wmoUnit:degC")
+                                       observation-param  (-> observation-key
+                                                              CamelCase->title
+                                                              (str/replace  #"last(\d+)" "last $1"))
+                                       numeric-value      (when (number? value)
+                                                            (if is-celsius?
+                                                              (round-to-1-decimal (c->f value))
+                                                              (round-to-1-decimal value)))
+                                       units              (or ({"wmoUnit:km_h-1" "km/hr"
+                                                                "wmoUnit:degC"   "\u00B0F"} ; note that this gets changed to Fahrenheit b/c we manually convert c->f above in the numeric-value binding
+                                                               unitCode)
+                                                              (unitCode->wmo-label unitCode))]
+                                   (str observation-param ": " numeric-value units)))]
        (vec
         (cons :<>
               (->> latest-observation
                    (filter (fn [[_ {:keys [value]}]] value))
-                   (map ->item)
+                   (map observation->item)
                    sort
                    (mapv (fn [i] [:li {:key (hash i)} i]))))))]]
    (when @!/terrain?
@@ -218,7 +218,7 @@
         [:div#wildfire-weather-station-tool
          [resizable-window
           parent-box
-          290
+          325
           460
           "Weather Station Tool"
           close-fn!
