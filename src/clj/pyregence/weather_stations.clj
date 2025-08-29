@@ -1,6 +1,6 @@
-(ns::  (:require [clj-http.client     :as client]
-                 [triangulum.logging  :refer [log log-str]]
-                 [triangulum.config   :refer [get-config]]))
+(:require [clj-http.client     :as client]
+          [triangulum.logging  :refer [log log-str]]
+          [triangulum.config   :refer [get-config]])
 
 (defonce observation-stations (atom []))
 
