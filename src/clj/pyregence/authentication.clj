@@ -49,8 +49,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- successful-login
-  [{:keys [user-id] :as user}]
-  (call-sql "set_users_last_login_date_to_now" user-id)
+  [{:keys [user_id] :as user}]
+  (call-sql "set_users_last_login_date_to_now" user_id)
   (create-session-from-user-data user))
 
 (defn log-in

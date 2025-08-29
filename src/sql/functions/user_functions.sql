@@ -258,8 +258,10 @@ CREATE OR REPLACE FUNCTION update_user_settings(
 
 $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION update_user_name(_user_id integer, _name text)
- RETURNS void AS $$
+CREATE OR REPLACE FUNCTION update_user_name(
+    _user_id integer,
+    _name    text
+ ) RETURNS void AS $$
 
     UPDATE users
     SET name = _name
@@ -278,10 +280,11 @@ $$ LANGUAGE SQL;
 
 -- Sets the given users last login date to now.
 CREATE OR REPLACE FUNCTION set_users_last_login_date_to_now(_user_id integer)
-  RETURNS void AS $$
-  UPDATE users
-  SET last_login_date = CURRENT_TIMESTAMP
-  WHERE user_uid = _user_id
+ RETURNS void AS $$
+
+    UPDATE users
+    SET last_login_date = CURRENT_TIMESTAMP
+    WHERE user_uid = _user_id
 
 $$ LANGUAGE SQL;
 
