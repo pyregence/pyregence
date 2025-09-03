@@ -152,7 +152,12 @@
                            :left     "1rem"}}
        [:div {:style {:height "32px"
                       :width  "32px"}}
-        [svg/return]]]])
+        [svg/return]]]
+      (fn [child]
+        [:div {:style {:bottom   "1.25rem"
+                       :position "absolute"
+                       :left     "1rem"}}
+         child])])
 
    [tool-tip-wrapper
     "Zoom Map to Weather Station"

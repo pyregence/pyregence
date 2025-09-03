@@ -107,13 +107,15 @@
       :left
       [:button {:class    (<class $/p-themed-button)
                 :on-click reset-view
-                :style    {:bottom   "1.25rem"
-                           :padding  "2px"
-                           :position "absolute"
-                           :left     "1rem"}}
+                :style    {:padding  "2px"}}
        [:div {:style {:height "32px"
                       :width  "32px"}}
-        [svg/return]]]])
+        [svg/return]]]
+      (fn [child]
+        [:div {:style {:bottom   "1.25rem"
+                       :position "absolute"
+                       :left     "1rem"}}
+         child])])
    [tool-tip-wrapper
     "Zoom Map to Camera"
     :top
@@ -124,8 +126,8 @@
                     :width  "32px"}}
       [svg/binoculars]]]
     (fn [child] [:div {:style {:bottom   "1.25rem"
-                               :position "absolute"
-                               :right    "1rem"}}
+                              :position "absolute"
+                              :right    "1rem"}}
                  child])]
    [:img {:src   @image-src
           :style {:height "auto" :width "100%"}}]])
