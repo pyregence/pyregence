@@ -114,9 +114,6 @@
        [:div {:style {:height "32px"
                       :width  "32px"}}
         [svg/return]]]])
-   [:div {:style {:bottom   "1.25rem"
-                  :position "absolute"
-                  :right    "1rem"}}]
    [tool-tip-wrapper
     "Zoom Map to Camera"
     :top
@@ -125,7 +122,11 @@
               :style    {:padding  "2px"}}
      [:div {:style {:height "32px"
                     :width  "32px"}}
-      [svg/binoculars]]]]
+      [svg/binoculars]]]
+    (fn [child] [:div {:style {:bottom   "1.25rem"
+                               :position "absolute"
+                               :right    "1rem"}}
+                 child])]
    [:img {:src   @image-src
           :style {:height "auto" :width "100%"}}]])
 

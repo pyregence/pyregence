@@ -273,16 +273,20 @@
             tool-tip-text]]))})))
 
 (defn tool-tip-wrapper
-  "Adds a tooltip given the desired text (or Hiccup), direction of the tooltip, and the element."
-  [tool-tip-text arrow-position sibling]
-  (r/with-let [show?        (r/atom false)
-               sibling-ref  (r/atom nil)]
-    [:div {:on-mouse-over  #(do (reset! show? true))
-           :on-touch-end   #(go (<! (timeout 1500)) (reset! show? false))
-           :on-mouse-leave #(reset! show? false)}
-     [sibling-wrapper sibling sibling-ref]
-     (when @sibling-ref
-       [tool-tip {:tool-tip-text  tool-tip-text
-                  :sibling-ref    @sibling-ref
-                  :arrow-position arrow-position
-                  :show?          @show?}])]))
+  "Adds a tooltip given the desired text (or Hiccup), direction of the tooltip, and the element.
+   Can optional take a parent to position of the child (see PYR1-1190)."
+  ([tool-tip-text arrow-position child parent]
+   [parent
+    [tool-tip-wrapper tool-tip-text arrow-position child]])
+  ([tool-tip-text arrow-position sibling]
+   (r/with-let [show?        (r/atom false)
+                sibling-ref  (r/atom nil)]
+     [:div {:on-mouse-over  #(do (reset! show? true))
+            :on-touch-end   #(go (<! (timeout 1500)) (reset! show? false))
+            :on-mouse-leave #(reset! show? false)}
+      [sibling-wrapper sibling sibling-ref]
+      (when @sibling-ref
+        [tool-tip {:tool-tip-text  tool-tip-text
+                   :sibling-ref    @sibling-ref
+                   :arrow-position arrow-position
+                   :show?          @show?}])])))
