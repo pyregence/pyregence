@@ -105,7 +105,8 @@ CREATE OR REPLACE FUNCTION auto_add_org_user(
     WITH matched_org AS (
         SELECT organization_uid, auto_accept
         FROM organizations
-        WHERE email_domains LIKE '%' || _email_domain || '%'
+        WHERE auto_add = TRUE
+          AND email_domains LIKE '%' || _email_domain || '%'
         LIMIT 1
     )
     UPDATE users u
