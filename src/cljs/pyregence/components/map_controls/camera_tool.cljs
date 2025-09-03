@@ -104,7 +104,7 @@
    (when @!/terrain?
      [tool-tip-wrapper
       "Zoom Out to 2D"
-      :left
+      :top
       [:button {:class    (<class $/p-themed-button)
                 :on-click reset-view
                 :style    {:padding  "2px"}}
