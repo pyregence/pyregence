@@ -153,18 +153,18 @@
        [:div {:style {:height "32px"
                       :width  "32px"}}
         [svg/return]]]])
-   [tool-tip-wrapper
-    "Zoom Map to Weather Station"
-    :right
-    [:button {:class    (<class $/p-themed-button)
-              :on-click zoom-weather-station
-              :style    {:bottom   "1.25rem"
-                         :padding  "2px"
-                         :position "absolute"
-                         :right    "1rem"}}
-     [:div {:style {:height "32px"
-                    :width  "32px"}}
-      [svg/binoculars]]]]])
+   [:div {:style {:bottom   "1.25rem"
+                  :position "absolute"
+                  :right    "1rem"}}
+    [tool-tip-wrapper
+     "Zoom Map to Weather Station"
+     :right
+     [:button {:class    (<class $/p-themed-button)
+               :on-click zoom-weather-station
+               :style    {:padding  "2px"}}
+      [:div {:style {:height "32px"
+                     :width  "32px"}}
+       [svg/binoculars]]]]]])
 
 (defn- loading-all-stations []
   [:div {:style {:padding "1.2em"}}
