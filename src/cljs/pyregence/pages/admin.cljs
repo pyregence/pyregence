@@ -400,7 +400,8 @@
        (map (fn [{role-id :opt-id role-name :opt-label}]
               [:option {:key      role-id
                         :value    role-id
-                        :disabled (= role-id 1)} ; don't allow super admin to be a selectable option - we need a different mechanism later to add a super admin
+                        :disabled (or (= role-id 1)
+                                      (= role-id 5))} ; TODO for now, don't allow super admin or member to be a selectable option for now - we need a different mechanism later to add a super admin and demote someone to a member
                role-name])
             roles)]
       ;; Update Role button
@@ -408,7 +409,8 @@
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Update Role"
-               :disabled (= user-role "super_admin")
+               :disabled (or (= user-role "super_admin")
+                             (= user-role "member")) ; TODO for now, don't allow super admin or member to be a selectable option for now - we need a different mechanism later to add a super admin and demote someone to a member
                :on-click #(handle-update-role-id @_role-id user-id full-name)}]
       ;; Membership Status dropdown
       [:select {:class     (<class $/p-bordered-input)
@@ -416,13 +418,17 @@
                 :value     @_membership-status-id
                 :on-change #(reset! _membership-status-id (u-dom/input-int-value %))}
        (map (fn [{membership-status-id :opt-id status-name :opt-label}]
-              [:option {:key membership-status-id :value membership-status-id} status-name])
+              [:option {:key     membership-status-id
+                        :value    membership-status-id
+                        :disabled (= membership-status-id 1)} ; TODO for now, we won't let admins set this to "None"
+               status-name])
             membership-statuses)]
       ;; Update Role button
       [:input {:class    (<class $/p-form-button)
                :style    ($/combine ($/align :block :right) {:margin-left "0.5rem"})
                :type     "button"
                :value    "Update Status"
+               :disabled (= user-membership-status "none") ; TODO for now, we won't let admins set this to "None"
                :on-click #(handle-update-membership-status @_membership-status-id user-id full-name)}]]]))
 
 (defn- org-users-list [org-member-users]
