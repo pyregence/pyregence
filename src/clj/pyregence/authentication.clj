@@ -629,15 +629,12 @@
 
 (defn update-user-name
   "Allows a super admin to update the name of a user by their email."
-  [session email new-name]
-  (let [super-admin? (:super-admin? session)]
-    (if-not super-admin?
-      (data-response "You do not have permission to update user names." {:status 403})
-      (if-let [user-id-to-update (sql-primitive (call-sql "get_user_id_by_email" email))]
-        (do (call-sql "update_user_name" user-id-to-update new-name)
-            (data-response (str "User's name successfully updated to " new-name)))
-        (data-response (str "There is no user with the email " email)
-                       {:status 403})))))
+  [_ email new-name]
+  (if-let [user-id-to-update (sql-primitive (call-sql "get_user_id_by_email" email))]
+    (do (call-sql "update_user_name" user-id-to-update new-name)
+        (data-response (str "User's name successfully updated to " new-name)))
+    (data-response (str "There is no user with the email " email)
+                   {:status 403})))
 
 (defn user-email-taken
   ([_ email]
