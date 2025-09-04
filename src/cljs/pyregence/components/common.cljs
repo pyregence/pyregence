@@ -273,8 +273,7 @@
             tool-tip-text]]))})))
 
 (defn tool-tip-wrapper
-  "Adds a tooltip given the desired text (or Hiccup), direction of the tooltip, and the element.
-   Can optional take a parent to position of the child (see PYR1-1190)."
+  "Adds a tooltip given the desired text (or Hiccup), direction of the tooltip, and the element. Can optionally take a parent to position the child (see PYR1-1190)."
   ([tool-tip-text arrow-position child parent]
    [parent
     [tool-tip-wrapper tool-tip-text arrow-position child]])
