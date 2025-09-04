@@ -317,6 +317,10 @@
                     ^{:key org-id} [org-item org-id org-name])
                   orgs))]]]])
 
+(defn- info-blurb [text]
+  [:div {:style {:font-style "italic" :margin "0 0 0.65rem 1rem"}}
+   text])
+
 (defn- org-settings [_]
   [:div#org-settings {:style ($/action-box)}
    [:div {:style ($/action-header)}
@@ -324,9 +328,11 @@
    [:div {:style {:overflow "auto"}}
     [:div {:style {:display "flex" :flex-direction "column" :padding "1.5rem"}}
      [labeled-input "Name" *org-name]
-     [labeled-input "Email Domains (comma separated)" *org-email-domains]
-     [check-box "Auto add user to organization" *org-auto-add?]
-     [check-box "Auto accept user as member" *org-auto-accept?]
+     [labeled-input "Email Domains for Auto Add (comma separated)" *org-email-domains]
+     [check-box "Auto Add User to Organization" *org-auto-add?]
+     [info-blurb "When enabled, users who register for a new PyreCast account will automatically join your organization when using approved email address domains (e.g. user@company.com). By default, this gives the user a \"Pending\" status."]
+     [check-box "Auto Accept User as Organization Member" *org-auto-accept?]
+     [info-blurb "When enabled, users who join your organization through automatic email domain registration will be automatically \"Accepted\". This allows them to view all of your organization's private layers. Only users with email addresses with the domain(s) specified above for your organization will be eligible for auto-acceptance (e.g. user@company.com). If this box is unchecked, your Organization Admin(s) will need to manually approve members before they can log in and view your organization's private layers."]
      [:input {:class    (<class $/p-form-button :large)
               :style    ($/combine ($/align :block :center) {:margin-top ".5rem"})
               :type     "button"
