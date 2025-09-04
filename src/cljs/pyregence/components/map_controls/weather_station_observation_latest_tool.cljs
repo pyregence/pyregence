@@ -143,28 +143,33 @@
    (when @!/terrain?
      [tool-tip-wrapper
       "Zoom Out to 2D"
-      :left
+      :top
       [:button {:class    (<class $/p-themed-button)
                 :on-click reset-view
-                :style    {:bottom   "1.25rem"
-                           :padding  "2px"
-                           :position "absolute"
-                           :left     "1rem"}}
+                :style    {:padding  "2px"}}
        [:div {:style {:height "32px"
                       :width  "32px"}}
-        [svg/return]]]])
+        [svg/return]]]
+      (fn [child]
+        [:div {:style {:bottom   "1.25rem"
+                       :position "absolute"
+                       :left     "1rem"}}
+         child])])
+
    [tool-tip-wrapper
     "Zoom Map to Weather Station"
-    :right
+    :top
     [:button {:class    (<class $/p-themed-button)
               :on-click zoom-weather-station
-              :style    {:bottom   "1.25rem"
-                         :padding  "2px"
-                         :position "absolute"
-                         :right    "1rem"}}
+              :style    {:padding  "2px"}}
      [:div {:style {:height "32px"
                     :width  "32px"}}
-      [svg/binoculars]]]]])
+      [svg/binoculars]]]
+    (fn [child]
+      [:div {:style {:bottom   "1.25rem"
+                     :position "absolute"
+                     :right    "1rem"}}
+       child])]])
 
 (defn- loading-all-stations []
   [:div {:style {:padding "1.2em"}}

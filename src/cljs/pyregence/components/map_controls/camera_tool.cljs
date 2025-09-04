@@ -104,28 +104,31 @@
    (when @!/terrain?
      [tool-tip-wrapper
       "Zoom Out to 2D"
-      :left
+      :top
       [:button {:class    (<class $/p-themed-button)
                 :on-click reset-view
-                :style    {:bottom   "1.25rem"
-                           :padding  "2px"
-                           :position "absolute"
-                           :left     "1rem"}}
+                :style    {:padding  "2px"}}
        [:div {:style {:height "32px"
                       :width  "32px"}}
-        [svg/return]]]])
+        [svg/return]]]
+      (fn [child]
+        [:div {:style {:bottom   "1.25rem"
+                       :position "absolute"
+                       :left     "1rem"}}
+         child])])
    [tool-tip-wrapper
     "Zoom Map to Camera"
-    :right
+    :top
     [:button {:class    (<class $/p-themed-button)
               :on-click zoom-camera
-              :style    {:bottom   "1.25rem"
-                         :padding  "2px"
-                         :position "absolute"
-                         :right    "1rem"}}
+              :style    {:padding  "2px"}}
      [:div {:style {:height "32px"
                     :width  "32px"}}
-      [svg/binoculars]]]]
+      [svg/binoculars]]]
+    (fn [child] [:div {:style {:bottom   "1.25rem"
+                              :position "absolute"
+                              :right    "1rem"}}
+                 child])]
    [:img {:src   @image-src
           :style {:height "auto" :width "100%"}}]])
 
