@@ -11,7 +11,7 @@
    [:div {:style {:margin "1rem" :width  "75%"}}
     [:div
      [:h2 "TERMS OF USE"]
-     [:p "Last Updated: November 10, 2020"]
+     [:p "Last Updated: September 1, 2025"]
      [:p
       "Welcome to Pyregence! We, the Pyregence Consortium, and each and every individual, entity and collaborator therein (“Pyregence”, “we”, “us” or “our”), operate web sites, research facilities, mobile applications, social media pages, and all site-related services (collectively, the “Site”). The Site is provided for your personal and noncommercial use. These Terms of Use, together with the "
       [:a {:href "/privacy-policy"} "Privacy Policy"]
@@ -72,7 +72,42 @@
       [:a {:href "https://www.eclipse.org/legal/epl-2.0/" :target "_blank"} "Eclipse Public License v2"]
       " (“EPL License”), which is expressly incorporated in these Terms.  Your use of any Content, except as provided in these Terms, including in the EPL License, without our written permission of is strictly prohibited."]]
     [:div
-     [:h3 "VI. SUBMISSIONS AND CREATIONS."]
+     [:h3 "VI. COMMERCIAL USE."]
+     [:p
+      [:strong
+       [:u "Permitted Uses"]]
+      " Use of the PyreCast platform, including all data, forecasts, visualizations, and associated modeling frameworks, is provided free of charge for:"]
+     [:ul
+      [:li "Non-commercial research conducted by academic institutions, government agencies, and individual researchers"]
+      [:li "Educational purposes in accredited educational settings and institutions"]
+      [:li "Public safety applications by emergency management, fire service organizations, and government agencies"]]]
+    [:p
+     [:strong
+      [:u "Commercial Use Restrictions"]]
+     " Commercial use is strictly prohibited without prior written authorization. Commercial use includes, but is not limited to:"]
+    [:ul
+     [:li "Integration into products or services offered for sale or licensing"]
+     [:li "Use in fee-based consulting, analysis, or advisory services"]
+     [:li "Incorporation into proprietary software applications or platforms"]
+     [:li "Use to generate revenue directly or indirectly"]
+     [:li "Integration into enterprise workflows or business operations"]
+     [:li "Redistribution or resale of PyreCast data or derived products"]]
+    [:p
+     [:strong
+      [:u "Data Attribution Requirements"]]
+     " All uses of PyreCast data must include appropriate attribution in any publications, presentations, reports, or derivatives as follows: \"Data source: PyreCast Wildfire Forecasting Platform ("
+     [:a {:href "http://pyrecast.org" :target "_blank"} "pyrecast.org"] ").\""]
+    [:p
+     [:strong
+      [:u "Commercial Authorization"]]
+     " To inquire about commercial licensing, integration partnerships, or enterprise use authorization, contact: "
+     [:a {:href   "mailto:info@pyrecast.com"
+          :target "_blank"
+          :rel    "noreferrer noopener"}
+      "info@pyrecast.com"]
+     "."]
+    [:div
+     [:h3 "VII. SUBMISSIONS AND CREATIONS."]
      [:p
       [:strong
        [:u "On-Site Submissions and Creations"]]
@@ -97,7 +132,7 @@
        [:u "We Are Not Responsible For Third Parties"]]
       " We have no control over what third parties may do with your Submission or Creation.  We have no legal liability for such misuse.  We also do not endorse and are not responsible for any opinions, advice, statements, information, or other materials made available in any Submission or Creation."]]
     [:div
-     [:h3 "VII. DISPUTE RESOLUTION TERMS (PLEASE READ CAREFULLY)."]
+     [:h3 "VIII. DISPUTE RESOLUTION TERMS (PLEASE READ CAREFULLY)."]
      [:p
       [:strong [:u "Informal Dispute Resolution."]]
       " To give us an opportunity to resolve informally any disputes between you and us arising out of or relating in any way to our Site, these Terms, or any services or products provided (“Claims”), you agree to communicate your Claim to us by emailing us at by emailing us at "
@@ -158,7 +193,7 @@
       [:strong [:u "Injunctive Relief"]]
       " The arbitrator may not issue any injunction.  If either party in a Dispute seeks injunctive relief, the arbitrator will complete arbitration of the Dispute, issue an award of monetary compensation (if any), and then the party seeking injunctive relief may file a new action in state in Contra Costa County, California, or federal court in the Northern District of California solely for injunctive relief.  The findings of fact and conclusions of law of the arbitrator shall not be submitted as evidence or constitute precedent in such subsequent suit."]]
     [:div
-     [:h3 "VIII. MISCELLANEOUS."]
+     [:h3 "IX. MISCELLANEOUS."]
      [:p
       [:strong [:u "Notices"]]
       " Notices to you may be made via posting to the Site, by email, or by regular mail, in our sole discretion.  Notices to us should be made by emailing us at "
@@ -185,7 +220,7 @@
       " Your notice must comply with the Digital Millennium Copyright Act (17 U.S.C. §512) (the “DMCA”).  Upon receipt of a DMCA-compliant notice, we will respond and proceed in accordance with the DMCA."]
      [:p "We have also put in place a Repeat Infringer Policy to address situations in which a particular individual is the subject of multiple DMCA notices.  If we determine that an individual has violated our Repeat Infringer Policy, then we may, in our sole discretion, take any number of steps, such as issuing warnings, suspending or terminating the individual’s account, or any other measures that we deem appropriate."]]
     [:div
-     [:h3 "IX. CHANGES."]
+     [:h3 "X. CHANGES."]
      [:p
       [:strong [:u "Changes to the Site"]]
       " We may modify or discontinue the Site and its Contents at any time, in our sole discretion without notice. We reserve the right to withdraw or amend this Site, and any service or material we provide on our Site, in our sole discretion without notice. We will not be liable if, for any reason, all or any part of our Site is unavailable at any time or for any period."]
