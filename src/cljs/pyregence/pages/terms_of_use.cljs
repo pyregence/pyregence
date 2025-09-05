@@ -72,7 +72,7 @@
       [:a {:href "https://www.eclipse.org/legal/epl-2.0/" :target "_blank"} "Eclipse Public License v2"]
       " (“EPL License”), which is expressly incorporated in these Terms.  Your use of any Content, except as provided in these Terms, including in the EPL License, without our written permission of is strictly prohibited."]]
     [:div
-     [:h3 "VI. COMMERCIAL USE"]
+     [:h3 "VI. COMMERCIAL USE."]
      [:p
       [:strong
        [:u "Permitted Uses"]]
