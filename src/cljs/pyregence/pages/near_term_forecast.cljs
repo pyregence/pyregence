@@ -785,51 +785,87 @@
 
 (defn- message-modal []
   (r/with-let [show-me? (r/atom @!/show-disclaimer?)]
-    (when @show-me?
-      [:div#message-modal {:style ($/modal)}
-       [:div {:style ($message-modal false)}
-        [:div {:style {:background ($/color-picker :yellow)
-                       :width      "100%"}}
-         [:label {:style {:font-size "1.5rem" :padding ".5rem 0 0 .5rem"}}
-          "Disclaimer"]]
-        [:div {:style {:overflow "auto" :padding ".5rem"}}
-         [:label {:style {:margin-bottom ".5rem"}}
-          "This site is currently a work in progress and is in a Beta testing phase.
-           It provides access to an experimental fire spread forecast tool. Use at your own risk."]
-         [:label
-          "Your use of this web site is undertaken at your sole risk.
-           This site is available on an “as is” and “as available” basis without warranty of any kind.
-           We do not warrant that this site will (i) be uninterrupted or error-free; or (ii) result in any desired outcome.
-           We are not responsible for the availability or content of other services, data or public information
-           that may be used by or linked to this site. To the fullest extent permitted by law, the Pyregence Consortium,
-           and each and every individual, entity and collaborator therein, hereby disclaims (for itself, its affiliates,
-           subcontractors, and licensors) all representations and warranties, whether express or implied, oral or written,
-           with respect to this site, including without limitation, all implied warranties of title, non-infringement,
-           quiet enjoyment, accuracy, integration, merchantability or fitness for any particular purpose,
-           and all warranties arising from any course of dealing, course of performance, or usage of trade."]
-         [:label {:style {:margin "1rem .25rem 0 0"}}
-          "Please see our "
-          [:a {:style {:margin-right ".25rem"}
-               :href "/terms-of-use"
-               :target "_blank"} "Terms of Use"]
-          "and"
-          [:a {:style {:margin-left ".25rem"}
-               :href "/privacy-policy"
-               :target "_blank"} "Privacy Policy"]
-          "."]]
-        [:div {:style ($/combine $/flex-row {:justify-content "center"})}
-         [:span
-          [:label {:class (<class $/p-form-button)
-                   :style {:padding-left  "1.75rem"
-                           :padding-right "1.75rem"}
-                   :on-click #(u-browser/jump-to-url! "https://pyregence.org/")}
-           "Decline"]
-          [:label {:class (<class $/p-form-button)
-                   :style {:margin        ".5rem"
-                           :padding-left  "1.75rem"
-                           :padding-right "1.75rem"}
-                   :on-click #(reset! show-me? false)}
-           "Accept"]]]]])))
+    (let [link (fn [t h]
+                 [:a {:style {:margin-right ".25rem"}
+                      :href h
+                      :target "_blank"} t])
+          p (fn [t] [:p {:style {:font-size "1rem"
+                                 :font-weight "bold"
+                                 :margin-bottom 0}} t])]
+      (when @show-me?
+        [:div#message-modal {:style ($/modal)}
+         [:div {:style ($message-modal false)}
+          [:div
+           [:div {:style {:background ($/color-picker :yellow)
+                          :width      "100%"}}
+            [:label {:style {:font-size "1.5rem" :padding ".5rem 0 0 .5rem"}}
+             "USAGE TERMS & CONDITIONS"]]]
+          [:div {:style {:overflow "auto" :padding ".5rem"}}
+           [:label {:style {:margin-bottom ".5rem"}}
+            "By accessing or using any PyreCast platform
+            ("
+            [:a {:href "https://pyrecast.com/"} "pyrecast.com"]
+            ", "
+            [:a {:href "https://pyrecast.org/"} "pyrecast.org"]
+            ", "
+            [:a {:href "https://data.pyrecast.org/"} "data.pyrecast.org"]
+            "),
+             you acknowledge that you have read, understood, and agree to be bound by these terms."]
+           [:div
+            [:h4 {:style {:font-weight "bold"}} "Permitted Uses"]
+            [:label "Use of the PyreCast platform, including all data, forecasts, visualizations, and associated modeling frameworks, is provided free of charge for:"]
+            [:ul
+             [:li [p "Non-commercial research conducted by academic institutions, government agencies, and individual researchers"]]
+             [:li [p "Educational purposes in accredited educational settings and institutions"]]
+             [:li [p "Public safety applications by emergency management, fire service organizations, and government agencies"]]]]
+           [:div
+            [:h4 {:style {:font-weight "bold"}} "Commercial Use Restrictions"]
+            [:label "Commercial use is strictly prohibited without prior written authorization. Commercial use includes, but is not limited to:"]
+            [:ul
+             [:li [p "Integration into products or services offered for sale or licensing"]]
+             [:li [p "Use in fee-based consulting, analysis, or advisory services"]]
+             [:li [p "Incorporation into proprietary software applications or platforms"]]
+             [:li [p "Use to generate revenue directly or indirectly"]]
+             [:li [p "Integration into enterprise workflows or business operations"]]
+             [:li [p "Redistribution or resale of PyreCast data or derived products"]]]]
+           [:div
+            [:h4 {:style {:margin-top ".5rem" :font-weight "bold"}} "Data Attribution Requirements"]
+            [:label "All uses of PyreCast data must include appropriate attribution in any publications, presentations, reports, or derivatives as follows: \"Data source: PyreCast Wildfire Forecasting Platform (" [:a {:href "https://pyrecast.com/"} "pyrecast.com"] ")\""]]
+           [:div
+            [:h4 {:style {:margin-top ".5rem" :font-weight "bold"}} "Disclaimers & Limitations"]
+            [:label {:style {:margin-top ".2rem"}} "FORECASTING DISCLAIMER: PyreCast forecasts and models are provided for informational purposes only. Wildfire behavior involves inherent uncertainties and rapidly changing conditions. Past forecast performance does not guarantee future accuracy. Users assume full responsibility for any decisions based on PyreCast data."]
+            [:label {:style {:margin-top ".2rem"}} "NO WARRANTIES: The platform and all data are provided \"AS IS\" without warranties of any kind, express or implied, including but not limited to accuracy, completeness, timeliness, or fitness for a particular purpose."]
+            [:label {:style {:margin-top ".2rem"}}  "LIMITATION OF LIABILITY: To the maximum extent permitted by law, PyreCast operators shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from use of the platform or reliance on forecasts."]]
+           [:div
+            [:h4 {:style {:margin-top ".5rem" :font-weight "bold"}} "Commercial Authorization"]
+            [:label "To inquire about commercial licensing, integration partnerships, or enterprise use authorization, contact: info@pyrecast.com."]]
+           [:div
+            [:h4 {:style {:margin-top ".5rem" :font-weight "bold"}} "Terms Modification"]
+            [:label  "These terms may be updated periodically. Continued use of any PyreCast platform constitutes acceptance of revised terms. Current terms are effective as of August 2025."]
+            [:label {:style {:margin-top ".2rem"}} "Unauthorized commercial use may result in legal action and monetary damages. For questions about permitted use, contact the licensing team above.
+"]
+
+            [:label {:style {:margin "1rem .25rem 0 0"}}
+             "Please see our "
+             [link "Terms of Use" "/terms-of-use"]
+             "and"
+             [:a {:style {:margin-left ".25rem"}
+                  :href "/privacy-policy"
+                  :target "_blank"} "Privacy Policy"]
+             "."]]]
+          [:div {:style ($/combine $/flex-row {:justify-content "center"})}
+           [:span
+            [:label {:class (<class $/p-form-button)
+                     :style {:padding-left  "1.75rem"
+                             :padding-right "1.75rem"}
+                     :on-click #(u-browser/jump-to-url! "https://pyregence.org/")}
+             "Decline"]
+            [:label {:class (<class $/p-form-button)
+                     :style {:margin        ".5rem"
+                             :padding-left  "1.75rem"
+                             :padding-right "1.75rem"}
+                     :on-click #(reset! show-me? false)}
+             "Accept"]]]]]))))
 
 (defn- loading-modal []
   [:div#loading-modal {:style ($/modal)}
