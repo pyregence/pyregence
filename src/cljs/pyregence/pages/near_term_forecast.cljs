@@ -784,7 +784,7 @@
                :on-mouse-up   #(reset! mouse-down? false)}]))
 
 (defn- message-modal []
-  (r/with-let [show-me? (r/atom @!/show-disclaimer?)]
+  (r/with-let [show-me? (r/atom @!/show-terms-and-conditions?)]
     (let [link
           (fn [t h]
             [:a {:style  {:margin-right ".25rem"}
@@ -800,7 +800,7 @@
           (fn [t] [:h4 {:style {:margin-top ".5rem"
                                :font-weight "bold"}} t])
 
-          k :disclaimer-accepted?
+          k :terms-and-conditions-accepted?
 
           set-accepted!
           #(-> (u-browser/get-local-storage)
