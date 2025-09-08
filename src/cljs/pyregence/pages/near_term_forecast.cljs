@@ -785,14 +785,26 @@
 
 (defn- message-modal []
   (r/with-let [show-me? (r/atom @!/show-disclaimer?)]
-    (let [link (fn [t h]
-                 [:a {:style {:margin-right ".25rem"}
-                      :href h
-                      :target "_blank"} t])
-          p (fn [t] [:p {:style {:font-size "1rem"
-                                 :font-weight "bold"
-                                 :margin-bottom 0}} t])]
-      (when @show-me?
+    (let [link
+          (fn [t h]
+            [:a {:style {:margin-right ".25rem"}
+                 :href h
+                 :target "_blank"} t])
+
+          p
+          (fn [t] [:p {:style {:font-size "1rem"
+                               :font-weight "bold"
+                               :margin-bottom 0}} t])
+          k :disclaimer-accepted?
+
+          set-disclaimer-accepted!
+          #(-> (u-browser/get-local-storage)
+               (assoc k true)
+               u-browser/set-local-storage!)
+
+          disclaimer-not-accepted?
+          (not (k (u-browser/get-local-storage)))]
+      (when (and @show-me? disclaimer-not-accepted?)
         [:div#message-modal {:style ($/modal)}
          [:div {:style ($message-modal false)}
           [:div
@@ -864,7 +876,9 @@
                      :style {:margin        ".5rem"
                              :padding-left  "1.75rem"
                              :padding-right "1.75rem"}
-                     :on-click #(reset! show-me? false)}
+                     :on-click (fn []
+                                 (reset! show-me? false)
+                                 (set-disclaimer-accepted!))}
              "Accept"]]]]]))))
 
 (defn- loading-modal []
