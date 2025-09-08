@@ -802,14 +802,14 @@
 
           k :disclaimer-accepted?
 
-          set-disclaimer-accepted!
+          set-accepted!
           #(-> (u-browser/get-local-storage)
                (assoc k true)
                u-browser/set-local-storage!)
 
-          disclaimer-not-accepted?
+          not-accepted?
           (not (k (u-browser/get-local-storage)))]
-      (when (and @show-me? disclaimer-not-accepted?)
+      (when (and @show-me? not-accepted?)
         [:div#message-modal {:style ($/modal)}
          [:div {:style ($message-modal false)}
           [:div
@@ -883,7 +883,7 @@
                              :padding-right "1.75rem"}
                      :on-click (fn []
                                  (reset! show-me? false)
-                                 (set-disclaimer-accepted!))}
+                                 (set-accepted!))}
              "Accept"]]]]]))))
 
 (defn- loading-modal []
