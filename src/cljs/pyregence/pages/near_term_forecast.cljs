@@ -855,7 +855,7 @@
             [:label {:style {:margin-top ".2rem"}}  "LIMITATION OF LIABILITY: To the maximum extent permitted by law, PyreCast operators shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from use of the platform or reliance on forecasts."]]
            [:div
             [header "Commercial Authorization"]
-            [:label "To inquire about commercial licensing, integration partnerships, or enterprise use authorization, contact: info@pyrecast.com."]]
+            [:label "To inquire about commercial licensing, integration partnerships, or enterprise use authorization, contact: " [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"] "."]]
            [:div
             [header "Terms Modification"]
             [:label  "These terms may be updated periodically. Continued use of any PyreCast platform constitutes acceptance of revised terms. Current terms are effective as of August 2025."]
