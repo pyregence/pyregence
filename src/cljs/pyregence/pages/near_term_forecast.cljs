@@ -787,14 +787,19 @@
   (r/with-let [show-me? (r/atom @!/show-disclaimer?)]
     (let [link
           (fn [t h]
-            [:a {:style {:margin-right ".25rem"}
-                 :href h
+            [:a {:style  {:margin-right ".25rem"}
+                 :href   h
                  :target "_blank"} t])
 
           p
           (fn [t] [:p {:style {:font-size "1rem"
-                               :font-weight "bold"
-                               :margin-bottom 0}} t])
+                              :font-weight "bold"
+                              :margin-bottom 0}} t])
+
+          header
+          (fn [t] [:h4 {:style {:margin-top ".5rem"
+                               :font-weight "bold"}} t])
+
           k :disclaimer-accepted?
 
           set-disclaimer-accepted!
@@ -824,14 +829,14 @@
             "),
              you acknowledge that you have read, understood, and agree to be bound by these terms."]
            [:div
-            [:h4 {:style {:font-weight "bold"}} "Permitted Uses"]
+            [header "Permitted Uses"]
             [:label "Use of the PyreCast platform, including all data, forecasts, visualizations, and associated modeling frameworks, is provided free of charge for:"]
             [:ul
              [:li [p "Non-commercial research conducted by academic institutions, government agencies, and individual researchers"]]
              [:li [p "Educational purposes in accredited educational settings and institutions"]]
              [:li [p "Public safety applications by emergency management, fire service organizations, and government agencies"]]]]
            [:div
-            [:h4 {:style {:font-weight "bold"}} "Commercial Use Restrictions"]
+            [header "Commercial Use Restrictions"]
             [:label "Commercial use is strictly prohibited without prior written authorization. Commercial use includes, but is not limited to:"]
             [:ul
              [:li [p "Integration into products or services offered for sale or licensing"]]
@@ -841,18 +846,18 @@
              [:li [p "Integration into enterprise workflows or business operations"]]
              [:li [p "Redistribution or resale of PyreCast data or derived products"]]]]
            [:div
-            [:h4 {:style {:margin-top ".5rem" :font-weight "bold"}} "Data Attribution Requirements"]
+            [header "Data Attribution Requirements"]
             [:label "All uses of PyreCast data must include appropriate attribution in any publications, presentations, reports, or derivatives as follows: \"Data source: PyreCast Wildfire Forecasting Platform (" [:a {:href "https://pyrecast.com/"} "pyrecast.com"] ")\""]]
            [:div
-            [:h4 {:style {:margin-top ".5rem" :font-weight "bold"}} "Disclaimers & Limitations"]
+            [header "Disclaimers & Limitations"]
             [:label {:style {:margin-top ".2rem"}} "FORECASTING DISCLAIMER: PyreCast forecasts and models are provided for informational purposes only. Wildfire behavior involves inherent uncertainties and rapidly changing conditions. Past forecast performance does not guarantee future accuracy. Users assume full responsibility for any decisions based on PyreCast data."]
             [:label {:style {:margin-top ".2rem"}} "NO WARRANTIES: The platform and all data are provided \"AS IS\" without warranties of any kind, express or implied, including but not limited to accuracy, completeness, timeliness, or fitness for a particular purpose."]
             [:label {:style {:margin-top ".2rem"}}  "LIMITATION OF LIABILITY: To the maximum extent permitted by law, PyreCast operators shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from use of the platform or reliance on forecasts."]]
            [:div
-            [:h4 {:style {:margin-top ".5rem" :font-weight "bold"}} "Commercial Authorization"]
+            [header "Commercial Authorization"]
             [:label "To inquire about commercial licensing, integration partnerships, or enterprise use authorization, contact: info@pyrecast.com."]]
            [:div
-            [:h4 {:style {:margin-top ".5rem" :font-weight "bold"}} "Terms Modification"]
+            [header "Terms Modification"]
             [:label  "These terms may be updated periodically. Continued use of any PyreCast platform constitutes acceptance of revised terms. Current terms are effective as of August 2025."]
             [:label {:style {:margin-top ".2rem"}} "Unauthorized commercial use may result in legal action and monetary damages. For questions about permitted use, contact the licensing team above.
 "]
