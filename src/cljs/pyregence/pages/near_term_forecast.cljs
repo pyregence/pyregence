@@ -784,8 +784,11 @@
                :on-mouse-up   #(reset! mouse-down? false)}]))
 
 (defn- message-modal []
-  (r/with-let [show-me? (r/atom @!/show-terms-and-conditions?)]
-    (let [link
+  (r/with-let [ut&c-date-local-storage-mirror-state (r/atom (:ut&c-date (u-browser/get-local-storage)))]
+    (let [ut&c-date                      @!/ut&c-date
+          ut&c-date-local-storage-mirror @ut&c-date-local-storage-mirror-state
+
+          link
           (fn [t h]
             [:a {:style  {:margin-right ".25rem"}
                  :href   h
@@ -800,16 +803,17 @@
           (fn [t] [:h4 {:style {:margin-top ".5rem"
                                :font-weight "bold"}} t])
 
-          k :terms-and-conditions-accepted?
-
           set-accepted!
-          #(-> (u-browser/get-local-storage)
-               (assoc k true)
-               u-browser/set-local-storage!)
+          (fn []
+            (-> (u-browser/get-local-storage)
+                (assoc :ut&c-date ut&c-date)
+                u-browser/set-local-storage!)
+            (reset! ut&c-date-local-storage-mirror-state ut&c-date))
 
-          not-accepted?
-          (not (k (u-browser/get-local-storage)))]
-      (when (and @show-me? not-accepted?)
+          not-accepted-current-usage-terms-and-conditions?
+          (not= ut&c-date-local-storage-mirror ut&c-date)]
+
+      (when not-accepted-current-usage-terms-and-conditions?
         [:div#message-modal {:style ($/modal)}
          [:div {:style ($message-modal false)}
           [:div
@@ -881,9 +885,7 @@
                      :style {:margin        ".5rem"
                              :padding-left  "1.75rem"
                              :padding-right "1.75rem"}
-                     :on-click (fn []
-                                 (reset! show-me? false)
-                                 (set-accepted!))}
+                     :on-click #(set-accepted!)}
              "Accept"]]]]]))))
 
 (defn- loading-modal []
