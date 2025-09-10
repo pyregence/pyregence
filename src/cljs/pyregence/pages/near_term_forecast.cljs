@@ -885,7 +885,7 @@
                      :style {:margin        ".5rem"
                              :padding-left  "1.75rem"
                              :padding-right "1.75rem"}
-                     :on-click #(set-accepted!)}
+                     :on-click set-accepted!}
              "Accept"]]]]]))))
 
 (defn- loading-modal []
