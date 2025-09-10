@@ -811,7 +811,7 @@
             (reset! ut&c-date-local-storage-mirror-state ut&c-date))
 
           not-accepted-current-usage-terms-and-conditions?
-          (not= ut&c-date-local-storage-mirror ut&c-date)]
+          (and ut&c-date (not= ut&c-date-local-storage-mirror ut&c-date))]
 
       (when not-accepted-current-usage-terms-and-conditions?
         [:div#message-modal {:style ($/modal)}
