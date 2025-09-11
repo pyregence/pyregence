@@ -801,7 +801,7 @@
 
           header
           (fn [t] [:h4 {:style {:margin-top  ".5rem"
-                               :font-weight "bold"}} t])
+                                :font-weight "bold"}} t])
 
           set-accepted!
           (fn []
