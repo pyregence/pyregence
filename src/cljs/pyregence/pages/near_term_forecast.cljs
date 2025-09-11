@@ -807,7 +807,7 @@
           (fn []
             (-> (u-browser/get-local-storage)
                 (assoc :usage-terms-and-conditions-date usage-terms-and-conditions-date)
-                u-browser/set-local-storage!)
+                (u-browser/set-local-storage!))
             (reset! usage-terms-and-conditions-date-local-storage-mirror-state usage-terms-and-conditions-date))
 
           not-accepted-current-usage-terms-and-conditions?
