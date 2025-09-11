@@ -796,8 +796,8 @@
 
           p
           (fn [t] [:p {:style {:font-size     "1rem"
-                              :font-weight   "bold"
-                              :margin-bottom 0}} t])
+                               :font-weight   "bold"
+                               :margin-bottom 0}} t])
 
           header
           (fn [t] [:h4 {:style {:margin-top  ".5rem"
