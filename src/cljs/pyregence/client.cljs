@@ -76,15 +76,13 @@
                           (reset! original-session (js->clj session :keywordize-keys true))
                           @original-session)
           merged-params (merge clj-params clj-session)]
-      (reset! !/ut&c-date                     (get clj-session :ut&c-date))
-      (reset! !/feature-flags                 (get clj-session :features))
-      (reset! !/geoserver-urls                (get clj-session :geoserver))
-      (reset! !/default-forecasts             (get clj-session :default-forecasts))
-      (reset! !/pyr-auth-token                (get clj-session :auth-token))
-      (reset! !/mapbox-access-token           (get clj-session :mapbox-access-token))
+      (reset! !/usage-terms-and-conditions-date (get clj-session :usage-terms-and-conditions-date))
+      (reset! !/feature-flags                   (get clj-session :features))
+      (reset! !/geoserver-urls                  (get clj-session :geoserver))
+      (reset! !/default-forecasts               (get clj-session :default-forecasts))
+      (reset! !/pyr-auth-token                  (get clj-session :auth-token))
+      (reset! !/mapbox-access-token             (get clj-session :mapbox-access-token))
       (render-root merged-params))))
-
-
 
 (defn- ^:after-load mount-root!
   "A hook for figwheel to call the init function again."

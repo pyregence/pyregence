@@ -784,9 +784,9 @@
                :on-mouse-up   #(reset! mouse-down? false)}]))
 
 (defn- message-modal []
-  (r/with-let [ut&c-date-local-storage-mirror-state (r/atom (:ut&c-date (u-browser/get-local-storage)))]
-    (let [ut&c-date                      @!/ut&c-date
-          ut&c-date-local-storage-mirror @ut&c-date-local-storage-mirror-state
+  (r/with-let [usage-terms-and-conditions-date-local-storage-mirror-state (r/atom (:usage-terms-and-conditions-date (u-browser/get-local-storage)))]
+    (let [usage-terms-and-conditions-date                      @!/usage-terms-and-conditions-date
+          usage-terms-and-conditions-date-local-storage-mirror @usage-terms-and-conditions-date-local-storage-mirror-state
 
           link
           (fn [t h]
@@ -806,12 +806,12 @@
           set-accepted!
           (fn []
             (-> (u-browser/get-local-storage)
-                (assoc :ut&c-date ut&c-date)
+                (assoc :usage-terms-and-conditions-date usage-terms-and-conditions-date)
                 u-browser/set-local-storage!)
-            (reset! ut&c-date-local-storage-mirror-state ut&c-date))
+            (reset! usage-terms-and-conditions-date-local-storage-mirror-state usage-terms-and-conditions-date))
 
           not-accepted-current-usage-terms-and-conditions?
-          (and ut&c-date (not= ut&c-date-local-storage-mirror ut&c-date))]
+          (and usage-terms-and-conditions-date (not= usage-terms-and-conditions-date-local-storage-mirror usage-terms-and-conditions-date))]
 
       (when not-accepted-current-usage-terms-and-conditions?
         [:div#message-modal {:style ($/modal)}
@@ -862,7 +862,7 @@
             [:label "To inquire about commercial licensing, integration partnerships, or enterprise use authorization, contact: " [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"] "."]]
            [:div
             [header "Terms Modification"]
-            [:label  "These terms may be updated periodically. Continued use of any PyreCast platform constitutes acceptance of revised terms. Current terms are effective as of " ut&c-date "."]
+            [:label  "These terms may be updated periodically. Continued use of any PyreCast platform constitutes acceptance of revised terms. Current terms are effective as of " usage-terms-and-conditions-date "."]
             [:label {:style {:margin-top ".2rem"}} "Unauthorized commercial use may result in legal action and monetary damages. For questions about permitted use, contact the licensing team above.
 "]
 
