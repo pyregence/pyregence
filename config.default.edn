@@ -75,7 +75,7 @@
                                                                        :long-term :fire-scenarios}
                                      :mapbox-access-token             "<access-token>"
                                      :auth-token                      "<changeme123456789>"
-                                     :usage-terms-and-conditions-date "August 2025"
+                                     :usage-terms-and-conditions-date "September 1, 2025"
                                      :features                        {:match-drop       true
                                                                        :fire-history     true
                                                                        :structures       true
