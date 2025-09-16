@@ -266,7 +266,27 @@
 ;; Create Match Job Functions
 ;;==============================================================================
 
-(defn- create-match-job!
+(defn- params->match-drop-args [{:keys [ignition-time lat lon wx-type]} match-job-id match-drop-prefix]
+  (let [model-time (u/convert-date-string ignition-time)] ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
+    {:west-buffer          12
+     :ignition-time        ignition-time
+     :east-buffer          12
+     :south-buffer         12
+     :lat                  lat
+     :lon                  lon
+     :north-buffer         12
+     :num-ensemble-members 200
+     :fuel-source          "landfire"
+     :fuel-version         "2.4.0"
+     :wx-type              wx-type
+     :ignition-radius      300
+     :run-hours            72
+     :model-time           model-time ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
+     :wx-start-time        (u/round-down-to-nearest-hour model-time)
+     :fire-name            (str match-drop-prefix "-match-drop-" match-job-id)
+     :geoserver-workspace  (str "fire-spread-forecast_" match-drop-prefix "-match-drop-" match-job-id "_" model-time)}))
+
+(defn- create-match-job-using-runway!
   [{:keys [display-name user-id ignition-time lat lon wx-type] :as params}]
   {:pre [(integer? user-id)]}
   (let [runway-job-id        (str (UUID/randomUUID))
@@ -291,26 +311,26 @@
                               ;; TODO Now that each request is separate, we should get rid of `common-args`. The microservices will have to be updated to reflect this.
                               :script-args   {:common-args (merge params {:ignition-time ignition-time
                                                                           :fire-name     fire-name})
-                                              :dps-args    {:name                 fire-name
-                                                            :outdir               "/mnt/tahoe/pyrecast/fires/datacubes"
-                                                            :center-lat           lat
-                                                            :center-lon           lon
-                                                            :west-buffer          west-buffer
-                                                            :east-buffer          east-buffer
-                                                            :south-buffer         south-buffer
-                                                            :north-buffer         north-buffer
-                                                            :do-fuel              true
-                                                            :fuel-source          "landfire"
-                                                            :fuel-version         "2.4.0"
-                                                            :do-wx                true
-                                                            :wx-start-time        wx-start-time
-                                                            :wx-type              wx-type
-                                                            :do-ignition          true
-                                                            :point-ignition       true
-                                                            :ignition-lat         lat
-                                                            :ignition-lon         lon
-                                                            :polygon-ignition     false
-                                                            :ignition-radius      ignition-radius}}}
+                                              :dps-args    {:name             fire-name
+                                                            :outdir           "/mnt/tahoe/pyrecast/fires/datacubes"
+                                                            :center-lat       lat
+                                                            :center-lon       lon
+                                                            :west-buffer      west-buffer
+                                                            :east-buffer      east-buffer
+                                                            :south-buffer     south-buffer
+                                                            :north-buffer     north-buffer
+                                                            :do-fuel          true
+                                                            :fuel-source      "landfire"
+                                                            :fuel-version     "2.4.0"
+                                                            :do-wx            true
+                                                            :wx-start-time    wx-start-time
+                                                            :wx-type          wx-type
+                                                            :do-ignition      true
+                                                            :point-ignition   true
+                                                            :ignition-lat     lat
+                                                            :ignition-lon     lon
+                                                            :polygon-ignition false
+                                                            :ignition-radius  ignition-radius}}}
         elmfire-request      {:job-id        (str "elmfire-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "elmfire" -- this is a temporary work-around
                               :response-host (get-md-config :app-host)
                               :response-port (get-md-config :app-port)
@@ -372,6 +392,35 @@
                              (:dps-request match-job))
     {:match-job-id match-job-id}))
 
+(defn- match-drop-args->body [{:keys [fire-name lon lat wx-start-time ignition-time fuel-source wx-type fuel-version num-ensemble-members]}]
+  {:network   :match-drop
+   :arguments {:pyrc_fire_name       fire-name
+               :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
+                                      :pyrc_simspan_center_lat    lat
+                                      :pyrc_simspan_start_epoch_s wx-start-time}
+               :pyrc_ignition        {:pyrc_ignition_lon     lon
+                                      :pyrc_ignition_lat     lat
+                                      :pyrc_ignition_epoch_s ignition-time}
+               :pyrc_inputs          {:pyrc_fuel_source  fuel-source
+                                      :pyrc_wx_type      wx-type
+                                      :pyrc_fuel_version fuel-version}
+               :pyrc_sim_params      {:pyrc_sim_num_ensemble_members num-ensemble-members}}})
+
+(defn create-match-job-using-kubernetes!
+  "Requests a match-drop job from kubernetes"
+  [{:keys [user-id] :as params}]
+  (let [match-job-id      (initialize-match-job! user-id)
+        match-drop-prefix (get-md-config :md-prefix)
+        body              (-> params (params->match-drop-args match-job-id match-drop-prefix) match-drop-args->body)]
+    body))
+
+(defn- create-match-job!
+  [match-drop-kubernetes {:keys [user-id] :as params}]
+  {:pre [(integer? user-id)]}
+  (if match-drop-kubernetes
+    (create-match-job-using-kubernetes! params)
+    (create-match-job-using-runway! params)))
+
 ;;==============================================================================
 ;; Public API
 ;;==============================================================================
@@ -394,8 +443,8 @@
          (<= (get-md-config :max-queue-size) (count-all-running-match-drops))
          {:error "The queue is currently full. Please try again later."}
 
-         :else
-         (create-match-job! (assoc match-drop-job-params :user-id user-id)))))))
+         :else (create-match-job! (get-config :triangulum.views/client-keys :features :match-drop-kubernetes)
+                                  (assoc match-drop-job-params :user-id user-id)))))))
 
 (defn get-match-drops
   "Returns the user's match drops."
