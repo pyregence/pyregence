@@ -407,15 +407,15 @@
                                       :pyrc_fuel_version fuel-version}
                :pyrc_sim_params      {:pyrc_sim_num_ensemble_members num-ensemble-members}}})
 
-(defn create-match-job-using-kubernetes!
+(defn- invoke-match-drop-job!
   "Requests a match-drop job from kubernetes"
-  [{:keys [user-id] :as params}]
+  [user-id params match-drop-k8s-endpoint]
   (let [match-job-id                       (initialize-match-job! user-id)
         match-drop-prefix                  (get-md-config :md-prefix)
         request                            (-> params
                                                (params->match-drop-args match-job-id match-drop-prefix)
                                                (match-drop-args->body))
-        api-url                            "http://localhost:9999/api/submit-job" ;; FIXME
+        api-url                            (format "%s/api/submit-job"  match-drop-k8s-endpoint)
         http-request                       {:body         (json/write-str request)
                                             :headers      {"sig-auth" "BestOfLuck!"} ;; FIXME
                                             :content-type :json
@@ -426,11 +426,16 @@
       (throw (ex-info (format "match-drop request failed with status %d" status)
                       {:request http-request :response response})))))
 
+(defn- create-match-job-using-kubernetes!
+  [{:keys [user-id] :as params} match-drop-k8s-endpoint]
+  (let [job-id (invoke-match-drop-job! user-id params match-drop-k8s-endpoint)]
+    (println "TODO start polling? Or else define an endpoint to be notified! job-id:" job-id)))
+
 (defn- create-match-job!
-  [match-drop-kubernetes {:keys [user-id] :as params}]
+  [match-drop-k8s-endpoint {:keys [user-id] :as params}]
   {:pre [(integer? user-id)]}
-  (if match-drop-kubernetes
-    (create-match-job-using-kubernetes! params)
+  (if match-drop-k8s-endpoint
+    (create-match-job-using-kubernetes! params match-drop-k8s-endpoint)
     (create-match-job-using-runway! params)))
 
 ;;==============================================================================
@@ -455,7 +460,7 @@
          (<= (get-md-config :max-queue-size) (count-all-running-match-drops))
          {:error "The queue is currently full. Please try again later."}
 
-         :else (create-match-job! (get-config :triangulum.views/client-keys :features :match-drop-kubernetes)
+         :else (create-match-job! (get-config :triangulum.views/client-keys :features :match-drop-k8s-endpoint)
                                   (assoc match-drop-job-params :user-id user-id)))))))
 
 (defn get-match-drops
