@@ -17,7 +17,8 @@
             [triangulum.database        :refer [call-sql sql-primitive]]
             [triangulum.logging         :refer [log-str]]
             [triangulum.response        :refer [data-response]]
-            [triangulum.type-conversion :refer [json->clj clj->json]]))
+            [triangulum.type-conversion :refer [json->clj clj->json]]
+            [clj-http.client            :as client]))
 
 ;;==============================================================================
 ;; Static Data
@@ -409,10 +410,21 @@
 (defn create-match-job-using-kubernetes!
   "Requests a match-drop job from kubernetes"
   [{:keys [user-id] :as params}]
-  (let [match-job-id      (initialize-match-job! user-id)
-        match-drop-prefix (get-md-config :md-prefix)
-        body              (-> params (params->match-drop-args match-job-id match-drop-prefix) match-drop-args->body)]
-    body))
+  (let [match-job-id                       (initialize-match-job! user-id)
+        match-drop-prefix                  (get-md-config :md-prefix)
+        request                            (-> params
+                                               (params->match-drop-args match-job-id match-drop-prefix)
+                                               (match-drop-args->body))
+        api-url                            "http://localhost:9999/api/submit-job" ;; FIXME
+        http-request                       {:body         (json/write-str request)
+                                            :headers      {"sig-auth" "BestOfLuck!"} ;; FIXME
+                                            :content-type :json
+                                            :accept       :json}
+        {:keys [body status] :as response} (client/post api-url http-request)]
+    (if (= 200 status)
+      (:job-id (json/read-str body :key-fn keyword))
+      (throw (ex-info (format "match-drop request failed with status %d" status)
+                      {:request http-request :response response})))))
 
 (defn- create-match-job!
   [match-drop-kubernetes {:keys [user-id] :as params}]
