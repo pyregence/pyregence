@@ -416,29 +416,40 @@
                                       :pyrc_fuel_version fuel-version}
                :pyrc_sim_params      {:pyrc_sim_num_ensemble_members num-ensemble-members}}})
 
-(defn- invoke-match-drop-job!
+(defn- submit-match-drop-job!
   "Requests a match-drop job from kubernetes"
-  [user-id params match-drop-k8s-endpoint]
-  (let [match-job-id                       (initialize-match-job! user-id)
-        match-drop-prefix                  (get-md-config :md-prefix)
-        request                            (-> params
-                                               (params->match-drop-args match-job-id match-drop-prefix)
-                                               (match-drop-args->body))
+  [params match-drop-k8s-endpoint match-job-id]
+  (let [match-drop-prefix                  (get-md-config :md-prefix)
+        match-drop-inputs                  (params->match-drop-args params match-job-id match-drop-prefix)
+        request                            (match-drop-args->body match-drop-inputs)
         api-url                            (format "%s/api/submit-job"  match-drop-k8s-endpoint)
         http-request                       {:body         (json/write-str request)
                                             :headers      {"sig-auth" "BestOfLuck!"} ;; FIXME
                                             :content-type :json
                                             :accept       :json}
+        _                                  (println "POST" api-url http-request)
         {:keys [body status] :as response} (client/post api-url http-request)]
     (if (= 200 status)
-      (:job-id (json/read-str body :key-fn keyword))
+      (merge {:match-drop-inputs match-drop-inputs
+              :job-id            (json/read-str body :key-fn keyword)})
       (throw (ex-info (format "match-drop request failed with status %d" status)
                       {:request http-request :response response})))))
 
 (defn- create-match-job-using-kubernetes!
-  [{:keys [user-id] :as params} match-drop-k8s-endpoint]
-  (let [job-id (invoke-match-drop-job! user-id params match-drop-k8s-endpoint)]
-    (println "TODO start polling? Or else define an endpoint to be notified! job-id:" job-id)))
+  [{:keys [user-id display-name], :as params} match-drop-k8s-endpoint]
+  (let [match-job-id                       (initialize-match-job! user-id)
+        {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params match-drop-k8s-endpoint match-job-id)
+        {:keys [geoserver-workspace]}      match-drop-inputs]
+    (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
+                        :md-status           2
+                        :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.\n")
+                        :elmfire-done?       false
+                        :gridfire-done?      false
+                        :match-job-id        match-job-id
+                        :runway-job-id       job-id
+                        :geoserver-workspace geoserver-workspace})
+    (println "TODO start polling? Or else define an endpoint to be notified! job-id:" job-id)
+    {:match-job-id match-job-id}))
 
 (defn- create-match-job!
   [match-drop-k8s-endpoint {:keys [user-id] :as params}]
