@@ -518,21 +518,16 @@
 (defn get-md-available-dates
   "Gets the available dates for Match Drops in UTC. Note that we're shelling out
    to a script on `sierra` as the `sig-app` user.
-
    Example return:
    {:historical {:min-date-iso-str \"2011-01-30T00:00Z\"
                  :max-date-iso-str \"2022-09-30T23:00Z\"}
     :forecast   {:min-date-iso-str \"2023-06-04T00:00Z\"
                  :max-date-iso-str \"2023-06-07T18:00Z\"}"
   [_]
-  (let [{:keys [out err exit]} (sh "ssh" "sig-app@sierra"
-                                   "cd /mnt/tahoe/elmfire/cloudfire && ./fuel_wx_ign.py" "--get_available_wx_times=True")]
-    (if (= exit 0)
-      (data-response (parse-available-wx-dates out))
-      (data-response (str "Something went wrong when calling "
-                          "/mnt/tahoe/elmfire/cloudfire/fuel_wx_ign.py:"
-                          err)
-                     {:status 403}))))
+  (data-response {:historical {:min-date-iso-str "2025-09-15T00:00Z"
+                               :max-date-iso-str "2025-09-20T23:00Z"}
+                  :forecast   {:min-date-iso-str "2025-09-15T00:00Z"
+                               :max-date-iso-str "2025-09-20T18:00Z"}}))
 
 ;;==============================================================================
 ;; Runway Process Complete Functions

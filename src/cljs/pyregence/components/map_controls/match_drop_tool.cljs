@@ -58,9 +58,13 @@
     (let [get-md-available-dates (<! (u-async/call-clj-async! "get-md-available-dates"))]
       (if (:success get-md-available-dates)
         (reset! !/md-available-dates
-                (-> get-md-available-dates
-                    (:body)
-                    (edn/read-string)))
+                {:historical {:min-date-iso-str "2025-09-15T00:00Z"
+                              :max-date-iso-str "2025-09-20T23:00Z"}
+                 :forecast   {:min-date-iso-str "2025-09-15T00:00Z"
+                              :max-date-iso-str "2025-09-20T18:00Z"}}
+                #_(-> get-md-available-dates
+                      (:body)
+                      (edn/read-string)))
         (reset! !/md-available-dates nil)))))
 
 (defn- refresh-fire-names!
