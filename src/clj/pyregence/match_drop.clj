@@ -1,24 +1,26 @@
 (ns pyregence.match-drop
-  (:import  java.util.UUID
-            javax.net.ssl.SSLSocket)
-  (:require [clojure.core.async         :refer [thread]]
-            [clojure.data.json          :as json]
-            [clojure.edn                :as edn]
-            [clojure.java.shell         :refer [sh]]
-            [clojure.set                :refer [rename-keys]]
-            [clojure.string             :as str]
-            [pyregence.capabilities     :refer [layers-exist?
-                                                remove-workspace!
-                                                set-capabilities!]]
-            [pyregence.utils            :as u]
-            [runway.simple-sockets      :as runway]
-            [runway.utils               :refer [json-str->edn log-response!]]
-            [triangulum.config          :refer [get-config]]
-            [triangulum.database        :refer [call-sql sql-primitive]]
-            [triangulum.logging         :refer [log-str]]
-            [triangulum.response        :refer [data-response]]
-            [triangulum.type-conversion :refer [json->clj clj->json]]
-            [clj-http.client            :as client]))
+  (:require
+   [clj-http.client            :as client]
+   [clojure.core.async         :refer [thread]]
+   [clojure.data.json          :as json]
+   [clojure.edn                :as edn]
+   [clojure.set                :refer [rename-keys]]
+   [clojure.string             :as str]
+   [pyregence.capabilities     :refer [layers-exist? remove-workspace!
+                                       set-capabilities!]]
+   [pyregence.utils            :as u]
+   [runway.simple-sockets      :as runway]
+   [runway.utils               :refer [json-str->edn log-response!]]
+   [triangulum.config          :refer [get-config]]
+   [triangulum.database        :refer [call-sql sql-primitive]]
+   [triangulum.logging         :refer [log-str]]
+   [triangulum.response        :refer [data-response]]
+   [triangulum.type-conversion :refer [clj->json json->clj]])
+  (:import
+   [java.time LocalDateTime ZoneId]
+   [java.time.format DateTimeFormatter]
+   java.util.UUID
+   javax.net.ssl.SSLSocket))
 
 ;;==============================================================================
 ;; Static Data
@@ -393,15 +395,22 @@
                              (:dps-request match-job))
     {:match-job-id match-job-id}))
 
+(defn- utc-date->epoch-s [s]
+  (let [only-date-time (str/trim (first (str/split s #"UTC")))
+        fmt            (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm")
+        dt             (LocalDateTime/parse only-date-time fmt)]
+    (/ (.toEpochMilli (.toInstant (.atZone dt  (ZoneId/of "UTC"))))
+       1000)))
+
 (defn- match-drop-args->body [{:keys [fire-name lon lat wx-start-time ignition-time fuel-source wx-type fuel-version num-ensemble-members]}]
   {:network   :match-drop
    :arguments {:pyrc_fire_name       fire-name
                :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
                                       :pyrc_simspan_center_lat    lat
-                                      :pyrc_simspan_start_epoch_s wx-start-time}
+                                      :pyrc_simspan_start_epoch_s (utc-date->epoch-s wx-start-time)}
                :pyrc_ignition        {:pyrc_ignition_lon     lon
                                       :pyrc_ignition_lat     lat
-                                      :pyrc_ignition_epoch_s ignition-time}
+                                      :pyrc_ignition_epoch_s (utc-date->epoch-s ignition-time)}
                :pyrc_inputs          {:pyrc_fuel_source  fuel-source
                                       :pyrc_wx_type      wx-type
                                       :pyrc_fuel_version fuel-version}
