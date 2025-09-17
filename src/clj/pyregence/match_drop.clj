@@ -430,8 +430,8 @@
         _                                  (println "POST" api-url http-request)
         {:keys [body status] :as response} (client/post api-url http-request)]
     (if (= 200 status)
-      (merge {:match-drop-inputs match-drop-inputs
-              :job-id            (:job-id (json/read-str body :key-fn keyword))})
+      {:match-drop-inputs match-drop-inputs
+       :job-id            (:job-id (json/read-str body :key-fn keyword))}
       (throw (ex-info (format "match-drop request failed with status %d" status)
                       {:request http-request :response response})))))
 
@@ -450,7 +450,7 @@
                         :gridfire-request    {}
                         :geosync-request     {}
                         :match-job-id        match-job-id
-                        :runway-job-id       job-id
+                        :runway-job-id       job-id ;; NOTE: `k8s-job-id` actually
                         :geoserver-workspace geoserver-workspace})
     (println "TODO start polling? Or else define an endpoint to be notified! job-id:" job-id)
     {:match-job-id match-job-id}))
