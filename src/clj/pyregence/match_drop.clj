@@ -431,7 +431,7 @@
         {:keys [body status] :as response} (client/post api-url http-request)]
     (if (= 200 status)
       (merge {:match-drop-inputs match-drop-inputs
-              :job-id            (json/read-str body :key-fn keyword)})
+              :job-id            (:job-id (json/read-str body :key-fn keyword))})
       (throw (ex-info (format "match-drop request failed with status %d" status)
                       {:request http-request :response response})))))
 
@@ -445,6 +445,10 @@
                         :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.\n")
                         :elmfire-done?       false
                         :gridfire-done?      false
+                        :dps-request         {}
+                        :elmfire-request     {}
+                        :gridfire-request    {}
+                        :geosync-request     {}
                         :match-job-id        match-job-id
                         :runway-job-id       job-id
                         :geoserver-workspace geoserver-workspace})
