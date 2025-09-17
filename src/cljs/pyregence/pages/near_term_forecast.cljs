@@ -879,7 +879,7 @@
             [:label {:class (<class $/p-form-button)
                      :style {:padding-left  "1.75rem"
                              :padding-right "1.75rem"}
-                     :on-click #(u-browser/jump-to-url! "https://pyregence.org/")}
+                     :on-click #(u-browser/jump-to-url! "https://pyrecast.com/")}
              "Decline"]
             [:label {:class (<class $/p-form-button)
                      :style {:margin        ".5rem"
