@@ -435,6 +435,62 @@
       (throw (ex-info (format "match-drop request failed with status %d" status)
                       {:request http-request :response response})))))
 
+(defn- poll-job!
+  [match-drop-k8s-endpoint job-id]
+  (let [response (client/get (format "%s/api/poll/%s" match-drop-k8s-endpoint job-id) {:headers {"sig-auth" "BestOfLuck!"}})]
+    (json/read-str (:body response))))
+
+;; result: {status pending, mdrop-dps {job-status success, result {datacube s3://owo/sig3/datacubes/local-match-drop-2_20250917_215900_datacube_167bdd8c3b311220aeb21e3bf1115cde.tar.gz}}, mdrop-elmfire {job-status pending, result nil}}
+
+;; https://mikerowecode.com/2013/02/clojure-polling-function.html
+(defn- start-polling-results!
+  [match-drop-k8s-endpoint
+   job-id
+   match-job-id
+   & {:keys [interval timeout]
+      :or   {interval 10
+             timeout  3600}}]
+  (let [end-time (+ (System/currentTimeMillis) (* timeout 1000))
+        msg-fn   (fn [result step]
+                   (str step " done. result: "
+                        (pr-str (get-in result [step "result"]))
+                        "\n"))]
+    (future
+      (loop [dps-done?      false
+             elmfire-done?  false
+             gridfire-done? false
+             geosync-done?  false]
+        ;; TODO: introduce state :(
+        (def dps-done? dps-done?)
+        (def elmfire-done? elmfire-done?)
+        (def gridfire-done? gridfire-done?)
+        (def geosync-done? geosync-done?)
+        (let [result            (poll-job! match-drop-k8s-endpoint job-id)
+              dps-finished      (and (not dps-done?)
+                                     (= "success" (get-in result ["mdrop-dps" "job-status"])))
+              elmfire-finished  (and (not elmfire-done?)
+                                     (= "success" (get-in result ["mdrop-elmfire" "job-status"])))
+              gridfire-finished (and (not gridfire-done?)
+                                     (= "success" (get-in result ["mdrop-gridfire" "job-status"])))
+              geosync-finished  (and (not geosync-done?)
+                                     (= "success" (get-in result ["mdrop-geosync" "job-status"])))]
+          (when geosync-finished
+            (update-match-job! {:match-job-id match-job-id :message (msg-fn result "mdrop-geosync")}))
+          (when dps-finished
+            (update-match-job! {:match-job-id match-job-id :message (msg-fn result "mdrop-dps")}))
+          (when elmfire-finished
+            (update-match-job! {:match-job-id match-job-id :elmfire-done? true :message (msg-fn result "mdrop-elmfire")}))
+          (when gridfire-finished
+            (update-match-job! {:match-job-id match-job-id :gridfire-done? true :message (msg-fn result "mdrop-gridfire")}))
+          (if (or (= (get result "status") "success")
+                  (= (get result "status") "failure"))
+            result
+            (do
+              (Thread/sleep (* interval 1000))
+              (if (< (System/currentTimeMillis) end-time)
+                (recur dps-finished elmfire-finished gridfire-finished geosync-finished)
+                (println "Timeout while waiting for job" job-id "results. Stop progress recording.")))))))))
+
 (defn- create-match-job-using-kubernetes!
   [{:keys [user-id display-name], :as params} match-drop-k8s-endpoint]
   (let [match-job-id                       (initialize-match-job! user-id)
@@ -452,7 +508,7 @@
                         :match-job-id        match-job-id
                         :runway-job-id       job-id ;; NOTE: `k8s-job-id` actually
                         :geoserver-workspace geoserver-workspace})
-    (println "TODO start polling? Or else define an endpoint to be notified! job-id:" job-id)
+    (start-polling-results! match-drop-k8s-endpoint job-id match-job-id)
     {:match-job-id match-job-id}))
 
 (defn- create-match-job!
