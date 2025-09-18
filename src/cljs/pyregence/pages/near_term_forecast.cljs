@@ -863,9 +863,7 @@
            [:div
             [header "Terms Modification"]
             [:label  "These terms may be updated periodically. Continued use of any PyreCast platform constitutes acceptance of revised terms. Current terms are effective as of " usage-terms-and-conditions-date "."]
-            [:label {:style {:margin-top ".2rem"}} "Unauthorized commercial use may result in legal action and monetary damages. For questions about permitted use, contact the licensing team above.
-"]
-
+            [:label {:style {:margin-top ".2rem"}} "Unauthorized commercial use may result in legal action and monetary damages. For questions about permitted use, contact the licensing team above."]
             [:label {:style {:margin "1rem .25rem 0 0"}}
              "Please see our "
              [link "Terms of Use" "/terms-of-use"]
@@ -879,7 +877,7 @@
             [:label {:class (<class $/p-form-button)
                      :style {:padding-left  "1.75rem"
                              :padding-right "1.75rem"}
-                     :on-click #(u-browser/jump-to-url! "https://pyregence.org/")}
+                     :on-click #(u-browser/jump-to-url! "https://pyrecast.com/")}
              "Decline"]
             [:label {:class (<class $/p-form-button)
                      :style {:margin        ".5rem"
