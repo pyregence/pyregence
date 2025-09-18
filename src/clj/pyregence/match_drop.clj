@@ -447,49 +447,73 @@
   [match-drop-k8s-endpoint
    job-id
    match-job-id
-   & {:keys [interval timeout]
-      :or   {interval 10
-             timeout  3600}}]
-  (let [end-time (+ (System/currentTimeMillis) (* timeout 1000))
-        msg-fn   (fn [result step]
-                   (str step " done. result: "
-                        (pr-str (get-in result [step "result"]))
-                        "\n"))]
+   & {:keys [interval-in-seconds timeout-in-seconds]
+      :or   {interval-in-seconds 10
+             timeout-in-seconds  36000}}]
+  (let [end-time          (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))
+        pending-msg-fn    (fn [_result step]
+                            (str "Step " step " STARTED" "\n"))
+        msg-fn            (fn [result step]
+                            (str "Step " step " DONE. Result: "
+                                 (pr-str (get-in result [step "result"]))
+                                 "\n"))
+        dps-pending?      (atom false)
+        elmfire-pending?  (atom false)
+        gridfire-pending? (atom false)
+        geosync-pending?  (atom false)
+        dps-done?         (atom false)
+        elmfire-done?     (atom false)
+        gridfire-done?    (atom false)
+        geosync-done?     (atom false)]
     (future
-      (loop [dps-done?      false
-             elmfire-done?  false
-             gridfire-done? false
-             geosync-done?  false]
-        ;; TODO: introduce state :(
-        (def dps-done? dps-done?)
-        (def elmfire-done? elmfire-done?)
-        (def gridfire-done? gridfire-done?)
-        (def geosync-done? geosync-done?)
-        (let [result            (poll-job! match-drop-k8s-endpoint job-id)
-              dps-finished      (and (not dps-done?)
-                                     (= "success" (get-in result ["mdrop-dps" "job-status"])))
-              elmfire-finished  (and (not elmfire-done?)
-                                     (= "success" (get-in result ["mdrop-elmfire" "job-status"])))
-              gridfire-finished (and (not gridfire-done?)
-                                     (= "success" (get-in result ["mdrop-gridfire" "job-status"])))
-              geosync-finished  (and (not geosync-done?)
-                                     (= "success" (get-in result ["mdrop-geosync" "job-status"])))]
-          (when geosync-finished
-            (update-match-job! {:match-job-id match-job-id :message (msg-fn result "mdrop-geosync")}))
-          (when dps-finished
+      (loop []
+        (let [result                 (poll-job! match-drop-k8s-endpoint job-id)
+              dps-just-pending       (and (not @dps-pending?) (= "pending" (get-in result ["mdrop-dps" "job-status"])))
+              elmfire-just-pending   (and (not @elmfire-pending?) (= "pending" (get-in result ["mdrop-elmfire" "job-status"])))
+              gridfire-just-pending  (and (not @gridfire-pending?) (= "pending" (get-in result ["mdrop-gridfire" "job-status"])))
+              geosync-just-pending   (and (not @geosync-pending?) (= "pending" (get-in result ["mdrop-geosync" "job-status"])))
+              dps-just-finished      (and (not @dps-done?) (= "success" (get-in result ["mdrop-dps" "job-status"])))
+              elmfire-just-finished  (and (not @elmfire-done?) (= "success" (get-in result ["mdrop-elmfire" "job-status"])))
+              gridfire-just-finished (and (not @gridfire-done?) (= "success" (get-in result ["mdrop-gridfire" "job-status"])))
+              geosync-just-finished  (and (not @geosync-done?) (= "success" (get-in result ["mdrop-geosync" "job-status"])))
+              job-succeded?          (= (get result "status") "success")
+              job-failed?            (= (get result "status") "failure")
+              job-done?              (or job-succeded? job-failed?)]
+          ;; TODO refactor DRY maybe...
+          (when dps-just-pending
+            (reset! dps-pending? true)
+            (update-match-job! {:match-job-id match-job-id :message (pending-msg-fn result "mdrop-dps")}))
+          (when dps-just-finished
+            (reset! dps-done? true)
             (update-match-job! {:match-job-id match-job-id :message (msg-fn result "mdrop-dps")}))
-          (when elmfire-finished
-            (update-match-job! {:match-job-id match-job-id :elmfire-done? true :message (msg-fn result "mdrop-elmfire")}))
-          (when gridfire-finished
+          (when gridfire-just-pending
+            (reset! gridfire-pending? true)
+            (update-match-job! {:match-job-id match-job-id :gridfire-pending? true :message (pending-msg-fn result "mdrop-gridfire")}))
+          (when gridfire-just-finished
+            (reset! gridfire-done? true)
             (update-match-job! {:match-job-id match-job-id :gridfire-done? true :message (msg-fn result "mdrop-gridfire")}))
-          (if (or (= (get result "status") "success")
-                  (= (get result "status") "failure"))
-            result
+          (when elmfire-just-pending
+            (reset! elmfire-pending? true)
+            (update-match-job! {:match-job-id match-job-id :elmfire-pending? true :message (pending-msg-fn result "mdrop-elmfire")}))
+          (when elmfire-just-finished
+            (reset! elmfire-done? true)
+            (update-match-job! {:match-job-id match-job-id :elmfire-done? true :message (msg-fn result "mdrop-elmfire")}))
+          (when geosync-just-pending
+            (reset! geosync-pending? true)
+            (update-match-job! {:match-job-id match-job-id :message (pending-msg-fn result "mdrop-geosync")}))
+          (when geosync-just-finished
+            (reset! geosync-done? true)
+            (update-match-job! {:match-job-id match-job-id :message (msg-fn result "mdrop-geosync")}))
+          (if job-done?
+            (do (update-match-job! {:match-job-id match-job-id
+                                    :md-status    (if job-succeded? 0 1)
+                                    :message      (pr-str result)})
+                result)
             (do
-              (Thread/sleep (* interval 1000))
+              (Thread/sleep (* interval-in-seconds 1000))
               (if (< (System/currentTimeMillis) end-time)
-                (recur dps-finished elmfire-finished gridfire-finished geosync-finished)
-                (println "Timeout while waiting for job" job-id "results. Stop progress recording.")))))))))
+                (recur)
+                (println "Timeout while waiting for job" job-id "results. Stopping progress recording.")))))))))
 
 (defn- create-match-job-using-kubernetes!
   [{:keys [user-id display-name], :as params} match-drop-k8s-endpoint]
