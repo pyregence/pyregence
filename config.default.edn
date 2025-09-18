@@ -111,6 +111,7 @@
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
  :pyregence.match-drop/match-drop                   {:app-name       "Pyrecast Match Drop Server"
+                                                     :sig3-auth      "BestOfLuck!"
                                                      :app-host       "localhost"
                                                      :app-port       31337
                                                      :dps-name       "Data Provisioning Server"

@@ -424,7 +424,7 @@
         request                            (match-drop-args->body match-drop-inputs)
         api-url                            (format "%s/api/submit-job"  match-drop-k8s-endpoint)
         http-request                       {:body         (json/write-str request)
-                                            :headers      {"sig-auth" "BestOfLuck!"} ;; FIXME
+                                            :headers      {"sig-auth" (get-md-config :sig3-auth)}
                                             :content-type :json
                                             :accept       :json}
         _                                  (println "POST" api-url http-request)
