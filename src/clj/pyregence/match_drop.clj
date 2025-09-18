@@ -534,9 +534,9 @@
     {:match-job-id match-job-id}))
 
 (defn- create-match-job!
-  [match-drop-k8s-endpoint {:keys [user-id] :as params}]
+  [{:keys [user-id] :as params}]
   {:pre [(integer? user-id)]}
-  (if match-drop-k8s-endpoint
+  (if-let [match-drop-k8s-endpoint (get-config :triangulum.views/client-keys :features :match-drop-k8s-endpoint)]
     (create-match-job-using-kubernetes! params match-drop-k8s-endpoint)
     (create-match-job-using-runway! params)))
 
@@ -562,8 +562,7 @@
          (<= (get-md-config :max-queue-size) (count-all-running-match-drops))
          {:error "The queue is currently full. Please try again later."}
 
-         :else (create-match-job! (get-config :triangulum.views/client-keys :features :match-drop-k8s-endpoint)
-                                  (assoc match-drop-job-params :user-id user-id)))))))
+         :else (create-match-job! (assoc match-drop-job-params :user-id user-id)))))))
 
 (defn get-match-drops
   "Returns the user's match drops."
