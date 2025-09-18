@@ -631,8 +631,6 @@
           http-request {:headers {"sig-auth" (get-md-config :sig3-auth)}}
           _            (println "GET" api-url http-request)
           response     (client/get api-url http-request)]
-      (println "response:" response)
-      ;; FIXME
       (data-response (parse-available-wx-dates (:body response))))
     (let [{:keys [out err exit]} (sh "ssh" "sig-app@sierra"
                                      "cd /mnt/tahoe/elmfire/cloudfire && ./fuel_wx_ign.py" "--get_available_wx_times=True")]
