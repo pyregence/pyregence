@@ -428,7 +428,7 @@
                                             :headers      {"sig-auth" (get-md-config :sig3-auth)}
                                             :content-type :json
                                             :accept       :json}
-        _                                  (println "POST" api-url http-request)
+        _                                  (println "POST" api-url request)
         {:keys [body status] :as response} (client/post api-url http-request)]
     (if (= 200 status)
       {:match-drop-inputs match-drop-inputs
@@ -629,7 +629,7 @@
   (if-let  [match-drop-k8s-endpoint (get-config :triangulum.views/client-keys :features :match-drop-k8s-endpoint)]
     (let [api-url      (format "%s/api/get-available-wx-times" match-drop-k8s-endpoint)
           http-request {:headers {"sig-auth" (get-md-config :sig3-auth)}}
-          _            (println "GET" api-url http-request)
+          _            (println "GET" api-url)
           response     (client/get api-url http-request)]
       (data-response (parse-available-wx-dates (:body response))))
     (let [{:keys [out err exit]} (sh "ssh" "sig-app@sierra"
