@@ -183,7 +183,7 @@ CREATE OR REPLACE FUNCTION update_match_job(
         md_status = coalesce(_md_status, md_status),
         display_name = coalesce(_display_name, display_name),
         message = coalesce(_message, message),
-        job_log = coalesce(job_log || to_char(now(), 'YYYY-MM-DD HH:MI.SS') || ': ' || _message || '\n', job_log),
+        job_log = coalesce(job_log || to_char(now(), 'YYYY-MM-DD HH:MI.SS') || ': ' || _message || E'\n', job_log),
         elmfire_done = coalesce(_elmfire_done, elmfire_done),
         gridfire_done = coalesce(_gridfire_done, gridfire_done),
         dps_request = coalesce(_dps_request::jsonb, dps_request),

@@ -376,7 +376,7 @@
                                                              :gridfire-deck       "TODO"}}} ; NOTE: this will be filled in at a later point once GridFire has finished running
         match-job            {:display-name        (or display-name (str "Match Drop " match-job-id))
                               :md-status           2
-                              :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.\n")
+                              :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.")
                               :elmfire-done?       false
                               :gridfire-done?      false
                               :dps-request         dps-request
@@ -452,11 +452,9 @@
              timeout-in-seconds  36000}}]
   (let [end-time          (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))
         pending-msg-fn    (fn [_result step]
-                            (str "Step " step " STARTED" "\n"))
+                            (str "Step " step " STARTED"))
         msg-fn            (fn [result step]
-                            (str "Step " step " DONE. Result: "
-                                 (pr-str (get-in result [step "result"]))
-                                 "\n"))
+                            (str "Step " step " DONE. Result: " (get-in result [step "result"])))
         dps-pending?      (atom false)
         elmfire-pending?  (atom false)
         gridfire-pending? (atom false)
@@ -522,7 +520,7 @@
         {:keys [geoserver-workspace]}      match-drop-inputs]
     (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
                         :md-status           2
-                        :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.\n")
+                        :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.")
                         :elmfire-done?       false
                         :gridfire-done?      false
                         :dps-request         {}
