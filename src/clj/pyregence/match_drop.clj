@@ -447,11 +447,13 @@
    `order` is for sorting: control order of events
    `step` is the step name in the match-drop network in sig3"
   [state job-state match-job-id]
-  (mapcat (fn build-vector-of-transitions [[step {:strs [order pending success]}]]
+  (mapcat (fn build-vector-of-transitions [[step {:strs [order pending success failure]}]]
             (let [current-step-status (get-in job-state [step "job-status"])]
               (cond-> []
                 (and (false? pending) (= current-step-status "pending"))
                 (concat [[order step "pending" {}  match-job-id]])
+                (and (false? failure) (= current-step-status "failure"))
+                (concat [[order step "failure" (get-in job-state [step "result"]) match-job-id]])
                 (and (false? success) (= current-step-status "success"))
                 (concat [[order step "success" (get-in job-state [step "result"])  match-job-id]]))))
           @state))
@@ -465,10 +467,10 @@
       :or   {interval-in-seconds 10
              timeout-in-seconds  36000}}]
   (let [end-time (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))
-        state    (atom {"mdrop-dps"      {"pending" false "success" false "order" 1}
-                        "mdrop-gridfire" {"pending" false "success" false "order" 2}
-                        "mdrop-elmfire"  {"pending" false "success" false "order" 2} ;; `2` is not a typo
-                        "mdrop-geosync"  {"pending" false "success" false "order" 3}})]
+        state    (atom {"mdrop-dps"      {"pending" false "success" false "failure" false "order" 1}
+                        "mdrop-gridfire" {"pending" false "success" false "failure" false "order" 2}
+                        "mdrop-elmfire"  {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo
+                        "mdrop-geosync"  {"pending" false "success" false "failure" false "order" 3}})]
     (future
       (loop []
         (let [job-state     (poll-job! sig3-endpoint job-id)
@@ -480,6 +482,7 @@
             (update-match-job! (cond-> {:match-job-id   match-job-id
                                         :message        (case status
                                                           "pending" (str "Step " step " STARTED")
+                                                          "failure" (str "Step " step " FAILED. Result: " result)
                                                           "success" (str "Step " step " DONE. Result: " result))}
                                  (and (= step "mdrop-elmfire") (= "success" status))
                                  (assoc :elmfire-done? true)
