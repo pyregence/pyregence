@@ -121,7 +121,7 @@
               (set-message-box-content! {:body (str "Error running match-drop-" match-job-id ".\n\n" message)})
               (reset! poll? false))
 
-          (set-message-box-content! {:body (if (c/feature-enabled? :match-drop-k8s-endpoint)
+          (set-message-box-content! {:body (if (c/feature-enabled? :kubernetes-endpoint)
                                              job-log
                                              message)})))
       (<! (timeout 5000)))))

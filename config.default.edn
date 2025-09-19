@@ -76,12 +76,12 @@
                                      :mapbox-access-token             "<access-token>"
                                      :auth-token                      "<changeme123456789>"
                                      :usage-terms-and-conditions-date "September 1, 2025"
-                                     :features                        {:match-drop              true
-                                                                       :match-drop-k8s-endpoint "https://sig3.sig-gis-00.corespeq.com/"
-                                                                       :fire-history            true
-                                                                       :structures              true
-                                                                       :gridfire                true
-                                                                       :image-mosaic-gwc        true}
+                                     :features                        {:match-drop          true
+                                                                       :kubernetes-endpoint "https://sig3.sig-gis-00.corespeq.com/"
+                                                                       :fire-history        true
+                                                                       :structures          true
+                                                                       :gridfire            true
+                                                                       :image-mosaic-gwc    true}
                                      :geoserver                       {:trinity     "https://trinity.pyregence.org/geoserver"
                                                                        ;; :trinity     "https://swift.sig-gis.com/geoserver"
                                                                        :shasta      "https://shasta.pyregence.org/geoserver"
