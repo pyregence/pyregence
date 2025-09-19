@@ -315,26 +315,26 @@
                               ;; TODO Now that each request is separate, we should get rid of `common-args`. The microservices will have to be updated to reflect this.
                               :script-args   {:common-args (merge params {:ignition-time ignition-time
                                                                           :fire-name     fire-name})
-                                              :dps-args    {:name             fire-name
-                                                            :outdir           "/mnt/tahoe/pyrecast/fires/datacubes"
-                                                            :center-lat       lat
-                                                            :center-lon       lon
-                                                            :west-buffer      west-buffer
-                                                            :east-buffer      east-buffer
-                                                            :south-buffer     south-buffer
-                                                            :north-buffer     north-buffer
-                                                            :do-fuel          true
-                                                            :fuel-source      "landfire"
-                                                            :fuel-version     "2.4.0"
-                                                            :do-wx            true
-                                                            :wx-start-time    wx-start-time
-                                                            :wx-type          wx-type
-                                                            :do-ignition      true
-                                                            :point-ignition   true
-                                                            :ignition-lat     lat
-                                                            :ignition-lon     lon
-                                                            :polygon-ignition false
-                                                            :ignition-radius  ignition-radius}}}
+                                              :dps-args    {:name                 fire-name
+                                                            :outdir               "/mnt/tahoe/pyrecast/fires/datacubes"
+                                                            :center-lat           lat
+                                                            :center-lon           lon
+                                                            :west-buffer          west-buffer
+                                                            :east-buffer          east-buffer
+                                                            :south-buffer         south-buffer
+                                                            :north-buffer         north-buffer
+                                                            :do-fuel              true
+                                                            :fuel-source          "landfire"
+                                                            :fuel-version         "2.4.0"
+                                                            :do-wx                true
+                                                            :wx-start-time        wx-start-time
+                                                            :wx-type              wx-type
+                                                            :do-ignition          true
+                                                            :point-ignition       true
+                                                            :ignition-lat         lat
+                                                            :ignition-lon         lon
+                                                            :polygon-ignition     false
+                                                            :ignition-radius      ignition-radius}}}
         elmfire-request      {:job-id        (str "elmfire-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "elmfire" -- this is a temporary work-around
                               :response-host (get-md-config :app-host)
                               :response-port (get-md-config :app-port)
