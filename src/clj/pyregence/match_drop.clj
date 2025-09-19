@@ -439,7 +439,7 @@
 (defn- poll-job!
   [sig3-endpoint job-id]
   (let [response (client/get (format "%s/api/poll/%s" sig3-endpoint job-id)
-                             {:headers {"sig-auth" "BestOfLuck!"}})]
+                             {:headers {"sig-auth" (get-md-config :sig3-auth)}})]
     (json/read-str (:body response))))
 
 (defn calculate-transitions
