@@ -479,8 +479,8 @@
           (doseq [[_ step status result match-job-id] (sort-by first transitions)]
             (update-match-job! (cond-> {:match-job-id   match-job-id
                                         :message        (case status
-                                                          "pending" (println (str "Step " step " STARTED"))
-                                                          "success" (println (str "Step " step " DONE. Result: " result)))}
+                                                          "pending" (str "Step " step " STARTED")
+                                                          "success" (str "Step " step " DONE. Result: " result))}
                                  (and (= step "mdrop-elmfire") (= "success" status))
                                  (assoc :elmfire-done? true)
                                  (and (= step "mdrop-gridfire") (= "success" status))
