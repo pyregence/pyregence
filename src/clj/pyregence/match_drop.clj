@@ -550,7 +550,8 @@
          (<= (get-md-config :max-queue-size) (count-all-running-match-drops))
          {:error "The queue is currently full. Please try again later."}
 
-         :else (create-match-job! (assoc match-drop-job-params :user-id user-id)))))))
+         :else
+         (create-match-job! (assoc match-drop-job-params :user-id user-id)))))))
 
 (defn get-match-drops
   "Returns the user's match drops."
