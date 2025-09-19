@@ -419,11 +419,11 @@
 
 (defn- submit-match-drop-job!
   "Requests a match-drop job from kubernetes"
-  [params kubernetes-endpoint match-job-id]
+  [params sig3-endpoint match-job-id]
   (let [match-drop-prefix                  (get-md-config :md-prefix)
         match-drop-inputs                  (params->match-drop-args params match-job-id match-drop-prefix)
         request                            (match-drop-args->body match-drop-inputs)
-        api-url                            (format "%s/api/submit-job"  kubernetes-endpoint)
+        api-url                            (format "%s/api/submit-job" sig3-endpoint)
         http-request                       {:body         (json/write-str request)
                                             :headers      {"sig-auth" (get-md-config :sig3-auth)}
                                             :content-type :json
@@ -437,14 +437,14 @@
                       {:request http-request :response response})))))
 
 (defn- poll-job!
-  [kubernetes-endpoint job-id]
-  (let [response (client/get (format "%s/api/poll/%s" kubernetes-endpoint job-id)
+  [sig3-endpoint job-id]
+  (let [response (client/get (format "%s/api/poll/%s" sig3-endpoint job-id)
                              {:headers {"sig-auth" "BestOfLuck!"}})]
     (json/read-str (:body response))))
 
 ;; https://mikerowecode.com/2013/02/clojure-polling-function.html
 (defn- start-polling-results!
-  [kubernetes-endpoint
+  [sig3-endpoint
    job-id
    match-job-id
    & {:keys [interval-in-seconds timeout-in-seconds]
@@ -465,7 +465,7 @@
         geosync-done?     (atom false)]
     (future
       (loop []
-        (let [job-state              (poll-job! kubernetes-endpoint job-id)
+        (let [job-state              (poll-job! sig3-endpoint job-id)
               dps-just-pending       (and (not @dps-pending?) (= "pending" (get-in job-state ["mdrop-dps" "job-status"])))
               elmfire-just-pending   (and (not @elmfire-pending?) (= "pending" (get-in job-state ["mdrop-elmfire" "job-status"])))
               gridfire-just-pending  (and (not @gridfire-pending?) (= "pending" (get-in job-state ["mdrop-gridfire" "job-status"])))
@@ -514,9 +514,9 @@
                 (println "Timeout while waiting for job" job-id "results. Stopping progress recording.")))))))))
 
 (defn- create-match-job-using-kubernetes!
-  [{:keys [user-id display-name], :as params} kubernetes-endpoint]
+  [{:keys [user-id display-name], :as params} sig3-endpoint]
   (let [match-job-id                       (initialize-match-job! user-id)
-        {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params kubernetes-endpoint match-job-id)
+        {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3-endpoint match-job-id)
         {:keys [geoserver-workspace]}      match-drop-inputs]
     (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
                         :md-status           2
@@ -530,14 +530,14 @@
                         :match-job-id        match-job-id
                         :runway-job-id       job-id ;; NOTE: `k8s-job-id` actually
                         :geoserver-workspace geoserver-workspace})
-    (start-polling-results! kubernetes-endpoint job-id match-job-id)
+    (start-polling-results! sig3-endpoint job-id match-job-id)
     {:match-job-id match-job-id}))
 
 (defn- create-match-job!
   [{:keys [user-id] :as params}]
   {:pre [(integer? user-id)]}
-  (if-let [kubernetes-endpoint (get-config :triangulum.views/client-keys :features :kubernetes-endpoint)]
-    (create-match-job-using-kubernetes! params kubernetes-endpoint)
+  (if-let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
+    (create-match-job-using-kubernetes! params sig3-endpoint)
     (create-match-job-using-runway! params)))
 
 ;;==============================================================================
@@ -625,8 +625,8 @@
     :forecast   {:min-date-iso-str \"2023-06-04T00:00Z\"
                  :max-date-iso-str \"2023-06-07T18:00Z\"}"
   [_]
-  (if-let  [kubernetes-endpoint (get-config :triangulum.views/client-keys :features :kubernetes-endpoint)]
-    (let [api-url      (format "%s/api/get-available-wx-times" kubernetes-endpoint)
+  (if-let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
+    (let [api-url      (format "%s/api/get-available-wx-times" sig3-endpoint)
           http-request {:headers {"sig-auth" (get-md-config :sig3-auth)}}
           _            (println "GET" api-url)
           response     (client/get api-url http-request)]
