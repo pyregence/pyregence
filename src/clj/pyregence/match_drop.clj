@@ -442,6 +442,20 @@
                              {:headers {"sig-auth" "BestOfLuck!"}})]
     (json/read-str (:body response))))
 
+(defn calculate-transitions
+  "Return a vector of state changes when compared with the current job-state
+   `order` is for sorting: control order of events
+   `step` is the step name in the match-drop network in sig3"
+  [state job-state match-job-id]
+  (mapcat (fn build-vector-of-transitions [[step {:strs [order pending success]}]]
+            (let [current-step-status (get-in job-state [step "job-status"])]
+              (cond-> []
+                (and (false? pending) (= current-step-status "pending"))
+                (concat [[order step "pending" {}  match-job-id]])
+                (and (false? success) (= current-step-status "success"))
+                (concat [[order step "success" (get-in job-state [step "result"])  match-job-id]]))))
+          @state))
+
 ;; https://mikerowecode.com/2013/02/clojure-polling-function.html
 (defn- start-polling-results!
   [sig3-endpoint
@@ -450,58 +464,29 @@
    & {:keys [interval-in-seconds timeout-in-seconds]
       :or   {interval-in-seconds 10
              timeout-in-seconds  36000}}]
-  (let [end-time          (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))
-        pending-msg       (fn [step]
-                            (str "Step " step " STARTED"))
-        result-msg        (fn [result step]
-                            (str "Step " step " DONE. Result: " (get-in result [step "result"])))
-        dps-pending?      (atom false)
-        elmfire-pending?  (atom false)
-        gridfire-pending? (atom false)
-        geosync-pending?  (atom false)
-        dps-done?         (atom false)
-        elmfire-done?     (atom false)
-        gridfire-done?    (atom false)
-        geosync-done?     (atom false)]
+  (let [end-time (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))
+        state    (atom {"mdrop-dps"      {"pending" false "success" false "order" 1}
+                        "mdrop-gridfire" {"pending" false "success" false "order" 2}
+                        "mdrop-elmfire"  {"pending" false "success" false "order" 2} ;; `2` is not a typo
+                        "mdrop-geosync"  {"pending" false "success" false "order" 3}})]
     (future
       (loop []
-        (let [job-state              (poll-job! sig3-endpoint job-id)
-              dps-just-pending       (and (not @dps-pending?) (= "pending" (get-in job-state ["mdrop-dps" "job-status"])))
-              elmfire-just-pending   (and (not @elmfire-pending?) (= "pending" (get-in job-state ["mdrop-elmfire" "job-status"])))
-              gridfire-just-pending  (and (not @gridfire-pending?) (= "pending" (get-in job-state ["mdrop-gridfire" "job-status"])))
-              geosync-just-pending   (and (not @geosync-pending?) (= "pending" (get-in job-state ["mdrop-geosync" "job-status"])))
-              dps-just-finished      (and (not @dps-done?) (= "success" (get-in job-state ["mdrop-dps" "job-status"])))
-              elmfire-just-finished  (and (not @elmfire-done?) (= "success" (get-in job-state ["mdrop-elmfire" "job-status"])))
-              gridfire-just-finished (and (not @gridfire-done?) (= "success" (get-in job-state ["mdrop-gridfire" "job-status"])))
-              geosync-just-finished  (and (not @geosync-done?) (= "success" (get-in job-state ["mdrop-geosync" "job-status"])))
-              job-succeded?          (= (get job-state "status") "success")
-              job-failed?            (= (get job-state "status") "failure")
-              job-done?              (or job-succeded? job-failed?)]
-          ;; TODO refactor DRY maybe...
-          (when dps-just-pending
-            (reset! dps-pending? true)
-            (update-match-job! {:match-job-id match-job-id :message (pending-msg "mdrop-dps")}))
-          (when dps-just-finished
-            (reset! dps-done? true)
-            (update-match-job! {:match-job-id match-job-id :message (result-msg job-state "mdrop-dps")}))
-          (when gridfire-just-pending
-            (reset! gridfire-pending? true)
-            (update-match-job! {:match-job-id match-job-id :gridfire-pending? true :message (pending-msg "mdrop-gridfire")}))
-          (when gridfire-just-finished
-            (reset! gridfire-done? true)
-            (update-match-job! {:match-job-id match-job-id :gridfire-done? true :message (result-msg job-state "mdrop-gridfire")}))
-          (when elmfire-just-pending
-            (reset! elmfire-pending? true)
-            (update-match-job! {:match-job-id match-job-id :elmfire-pending? true :message (pending-msg "mdrop-elmfire")}))
-          (when elmfire-just-finished
-            (reset! elmfire-done? true)
-            (update-match-job! {:match-job-id match-job-id :elmfire-done? true :message (result-msg job-state "mdrop-elmfire")}))
-          (when geosync-just-pending
-            (reset! geosync-pending? true)
-            (update-match-job! {:match-job-id match-job-id :message (pending-msg "mdrop-geosync")}))
-          (when geosync-just-finished
-            (reset! geosync-done? true)
-            (update-match-job! {:match-job-id match-job-id :message (result-msg job-state "mdrop-geosync")}))
+        (let [job-state     (poll-job! sig3-endpoint job-id)
+              transitions   (calculate-transitions state job-state match-job-id)
+              job-succeded? (= (get job-state "status") "success")
+              job-failed?   (= (get job-state "status") "failure")
+              job-done?     (or job-succeded? job-failed?)]
+          (doseq [[_ step status result match-job-id] (sort-by first transitions)]
+            (update-match-job! (cond-> {:match-job-id   match-job-id
+                                        :message        (case status
+                                                          "pending" (println (str "Step " step " STARTED"))
+                                                          "success" (println (str "Step " step " DONE. Result: " result)))}
+                                 (and (= step "mdrop-elmfire") (= "success" status))
+                                 (assoc :elmfire-done? true)
+                                 (and (= step "mdrop-gridfire") (= "success" status))
+                                 (assoc :gridfire-done? true))))
+          (doseq [[_ step status] transitions]
+            (swap! state assoc-in [step status] true))
           (if job-done?
             (do (update-match-job! {:match-job-id match-job-id
                                     :md-status    (if job-succeded? 0 1)
