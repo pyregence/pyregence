@@ -1,23 +1,27 @@
 (ns pyregence.match-drop
-  (:import  java.util.UUID
-            javax.net.ssl.SSLSocket)
-  (:require [clojure.core.async         :refer [thread]]
-            [clojure.data.json          :as json]
-            [clojure.edn                :as edn]
-            [clojure.java.shell         :refer [sh]]
-            [clojure.set                :refer [rename-keys]]
-            [clojure.string             :as str]
-            [pyregence.capabilities     :refer [layers-exist?
-                                                remove-workspace!
-                                                set-capabilities!]]
-            [pyregence.utils            :as u]
-            [runway.simple-sockets      :as runway]
-            [runway.utils               :refer [json-str->edn log-response!]]
-            [triangulum.config          :refer [get-config]]
-            [triangulum.database        :refer [call-sql sql-primitive]]
-            [triangulum.logging         :refer [log-str]]
-            [triangulum.response        :refer [data-response]]
-            [triangulum.type-conversion :refer [json->clj clj->json]]))
+  (:require
+   [clj-http.client            :as client]
+   [clojure.core.async         :refer [thread]]
+   [clojure.data.json          :as json]
+   [clojure.edn                :as edn]
+   [clojure.java.shell         :refer [sh]]
+   [clojure.set                :refer [rename-keys]]
+   [clojure.string             :as str]
+   [pyregence.capabilities     :refer [layers-exist? remove-workspace!
+                                       set-capabilities!]]
+   [pyregence.utils            :as u]
+   [runway.simple-sockets      :as runway]
+   [runway.utils               :refer [json-str->edn log-response!]]
+   [triangulum.config          :refer [get-config]]
+   [triangulum.database        :refer [call-sql sql-primitive]]
+   [triangulum.logging         :refer [log-str]]
+   [triangulum.response        :refer [data-response]]
+   [triangulum.type-conversion :refer [clj->json json->clj]])
+  (:import
+   [java.time LocalDateTime ZoneId]
+   [java.time.format DateTimeFormatter]
+   java.util.UUID
+   javax.net.ssl.SSLSocket))
 
 ;;==============================================================================
 ;; Static Data
@@ -266,7 +270,27 @@
 ;; Create Match Job Functions
 ;;==============================================================================
 
-(defn- create-match-job!
+(defn- params->match-drop-args [{:keys [ignition-time lat lon wx-type]} match-job-id match-drop-prefix]
+  (let [model-time (u/convert-date-string ignition-time)] ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
+    {:west-buffer          12
+     :ignition-time        ignition-time
+     :east-buffer          12
+     :south-buffer         12
+     :lat                  lat
+     :lon                  lon
+     :north-buffer         12
+     :num-ensemble-members 200
+     :fuel-source          "landfire"
+     :fuel-version         "2.4.0"
+     :wx-type              wx-type
+     :ignition-radius      300
+     :run-hours            72
+     :model-time           model-time ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
+     :wx-start-time        (u/round-down-to-nearest-hour model-time)
+     :fire-name            (str match-drop-prefix "-match-drop-" match-job-id)
+     :geoserver-workspace  (str "fire-spread-forecast_" match-drop-prefix "-match-drop-" match-job-id "_" model-time)}))
+
+(defn- create-match-job-using-runway!
   [{:keys [display-name user-id ignition-time lat lon wx-type] :as params}]
   {:pre [(integer? user-id)]}
   (let [runway-job-id        (str (UUID/randomUUID))
@@ -353,7 +377,7 @@
                                                              :gridfire-deck       "TODO"}}} ; NOTE: this will be filled in at a later point once GridFire has finished running
         match-job            {:display-name        (or display-name (str "Match Drop " match-job-id))
                               :md-status           2
-                              :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.\n")
+                              :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.")
                               :elmfire-done?       false
                               :gridfire-done?      false
                               :dps-request         dps-request
@@ -371,6 +395,138 @@
                              (:match-job-id match-job)
                              (:dps-request match-job))
     {:match-job-id match-job-id}))
+
+(defn- utc-date->epoch-s [s]
+  (let [only-date-time (str/trim (first (str/split s #"UTC")))
+        fmt            (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm")
+        dt             (LocalDateTime/parse only-date-time fmt)]
+    (/ (.toEpochMilli (.toInstant (.atZone dt  (ZoneId/of "UTC"))))
+       1000)))
+
+(defn- match-drop-args->body [{:keys [fire-name lon lat wx-start-time ignition-time fuel-source wx-type fuel-version num-ensemble-members]}]
+  {:network   :match-drop
+   :arguments {:pyrc_fire_name       fire-name
+               :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
+                                      :pyrc_simspan_center_lat    lat
+                                      :pyrc_simspan_start_epoch_s (utc-date->epoch-s wx-start-time)}
+               :pyrc_ignition        {:pyrc_ignition_lon     lon
+                                      :pyrc_ignition_lat     lat
+                                      :pyrc_ignition_epoch_s (utc-date->epoch-s ignition-time)}
+               :pyrc_inputs          {:pyrc_fuel_source  fuel-source
+                                      :pyrc_wx_type      wx-type
+                                      :pyrc_fuel_version fuel-version}
+               :pyrc_sim_params      {:pyrc_sim_num_ensemble_members num-ensemble-members}}})
+
+(defn- submit-match-drop-job!
+  "Requests a match-drop job from kubernetes"
+  [params sig3-endpoint match-job-id]
+  (let [match-drop-prefix                  (get-md-config :md-prefix)
+        match-drop-inputs                  (params->match-drop-args params match-job-id match-drop-prefix)
+        request                            (match-drop-args->body match-drop-inputs)
+        api-url                            (format "%s/api/submit-job" sig3-endpoint)
+        http-request                       {:body         (json/write-str request)
+                                            :headers      {"sig-auth" (get-md-config :sig3-auth)}
+                                            :content-type :json
+                                            :accept       :json}
+        _                                  (println "POST" api-url request)
+        {:keys [body status] :as response} (client/post api-url http-request)]
+    (if (= 200 status)
+      {:match-drop-inputs match-drop-inputs
+       :job-id            (:job-id (json/read-str body :key-fn keyword))}
+      (throw (ex-info (format "match-drop request failed with status %d" status)
+                      {:request http-request :response response})))))
+
+(defn- poll-job!
+  [sig3-endpoint job-id]
+  (let [response (client/get (format "%s/api/poll/%s" sig3-endpoint job-id)
+                             {:headers {"sig-auth" (get-md-config :sig3-auth)}})]
+    (json/read-str (:body response))))
+
+(defn calculate-transitions
+  "Return a vector of state changes when compared with the current job-state
+   `order` is for sorting: control order of events
+   `step` is the step name in the match-drop network in sig3"
+  [state job-state match-job-id]
+  (mapcat (fn build-vector-of-transitions [[step {:strs [order pending success failure]}]]
+            (let [current-step-status (get-in job-state [step "job-status"])]
+              (cond-> []
+                (and (false? pending) (= current-step-status "pending"))
+                (concat [[order step "pending" {}  match-job-id]])
+                (and (false? failure) (= current-step-status "failure"))
+                (concat [[order step "failure" (get-in job-state [step "result"]) match-job-id]])
+                (and (false? success) (= current-step-status "success"))
+                (concat [[order step "success" (get-in job-state [step "result"])  match-job-id]]))))
+          @state))
+
+;; https://mikerowecode.com/2013/02/clojure-polling-function.html
+(defn- start-polling-results!
+  [sig3-endpoint
+   job-id
+   match-job-id
+   & {:keys [interval-in-seconds timeout-in-seconds]
+      :or   {interval-in-seconds 10
+             timeout-in-seconds  36000}}]
+  (let [end-time (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))
+        state    (atom {"mdrop-dps"      {"pending" false "success" false "failure" false "order" 1}
+                        "mdrop-gridfire" {"pending" false "success" false "failure" false "order" 2}
+                        "mdrop-elmfire"  {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo
+                        "mdrop-geosync"  {"pending" false "success" false "failure" false "order" 3}})]
+    (future
+      (loop []
+        (let [job-state     (poll-job! sig3-endpoint job-id)
+              transitions   (calculate-transitions state job-state match-job-id)
+              job-succeded? (= (get job-state "status") "success")
+              job-failed?   (= (get job-state "status") "failure")
+              job-done?     (or job-succeded? job-failed?)]
+          (doseq [[_ step status result match-job-id] (sort-by first transitions)]
+            (update-match-job! (cond-> {:match-job-id   match-job-id
+                                        :message        (case status
+                                                          "pending" (str "Step " step " STARTED")
+                                                          "failure" (str "Step " step " FAILED. Result: " result)
+                                                          "success" (str "Step " step " DONE. Result: " result))}
+                                 (and (= step "mdrop-elmfire") (= "success" status))
+                                 (assoc :elmfire-done? true)
+                                 (and (= step "mdrop-gridfire") (= "success" status))
+                                 (assoc :gridfire-done? true))))
+          (doseq [[_ step status] transitions]
+            (swap! state assoc-in [step status] true))
+          (if job-done?
+            (do (update-match-job! {:match-job-id match-job-id
+                                    :md-status    (if job-succeded? 0 1)
+                                    :message      job-state})
+                job-state)
+            (do
+              (Thread/sleep (* interval-in-seconds 1000))
+              (if (< (System/currentTimeMillis) end-time)
+                (recur)
+                (println "Timeout while waiting for job" job-id "results. Stopping progress recording.")))))))))
+
+(defn- create-match-job-using-kubernetes!
+  [{:keys [user-id display-name], :as params} sig3-endpoint]
+  (let [match-job-id                       (initialize-match-job! user-id)
+        {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3-endpoint match-job-id)
+        {:keys [geoserver-workspace]}      match-drop-inputs]
+    (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
+                        :md-status           2
+                        :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.")
+                        :elmfire-done?       false
+                        :gridfire-done?      false
+                        :dps-request         {}
+                        :elmfire-request     {}
+                        :gridfire-request    {}
+                        :geosync-request     {}
+                        :match-job-id        match-job-id
+                        :runway-job-id       job-id ;; NOTE: `k8s-job-id` actually
+                        :geoserver-workspace geoserver-workspace})
+    (start-polling-results! sig3-endpoint job-id match-job-id)
+    {:match-job-id match-job-id}))
+
+(defn- create-match-job!
+  [{:keys [user-id] :as params}]
+  {:pre [(integer? user-id)]}
+  (if-let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
+    (create-match-job-using-kubernetes! params sig3-endpoint)
+    (create-match-job-using-runway! params)))
 
 ;;==============================================================================
 ;; Public API
@@ -452,21 +608,26 @@
 (defn get-md-available-dates
   "Gets the available dates for Match Drops in UTC. Note that we're shelling out
    to a script on `sierra` as the `sig-app` user.
-
    Example return:
    {:historical {:min-date-iso-str \"2011-01-30T00:00Z\"
                  :max-date-iso-str \"2022-09-30T23:00Z\"}
     :forecast   {:min-date-iso-str \"2023-06-04T00:00Z\"
                  :max-date-iso-str \"2023-06-07T18:00Z\"}"
   [_]
-  (let [{:keys [out err exit]} (sh "ssh" "sig-app@sierra"
-                                   "cd /mnt/tahoe/elmfire/cloudfire && ./fuel_wx_ign.py" "--get_available_wx_times=True")]
-    (if (= exit 0)
-      (data-response (parse-available-wx-dates out))
-      (data-response (str "Something went wrong when calling "
-                          "/mnt/tahoe/elmfire/cloudfire/fuel_wx_ign.py:"
-                          err)
-                     {:status 403}))))
+  (if-let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
+    (let [api-url      (format "%s/api/get-available-wx-times" sig3-endpoint)
+          http-request {:headers {"sig-auth" (get-md-config :sig3-auth)}}
+          _            (println "GET" api-url)
+          response     (client/get api-url http-request)]
+      (data-response (parse-available-wx-dates (:body response))))
+    (let [{:keys [out err exit]} (sh "ssh" "sig-app@sierra"
+                                     "cd /mnt/tahoe/elmfire/cloudfire && ./fuel_wx_ign.py" "--get_available_wx_times=True")]
+      (if (= exit 0)
+        (data-response (parse-available-wx-dates out))
+        (data-response (str "Something went wrong when calling "
+                            "/mnt/tahoe/elmfire/cloudfire/fuel_wx_ign.py:"
+                            err)
+                       {:status 403})))))
 
 ;;==============================================================================
 ;; Runway Process Complete Functions

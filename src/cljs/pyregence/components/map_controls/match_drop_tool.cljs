@@ -1,22 +1,23 @@
 (ns pyregence.components.map-controls.match-drop-tool
-  (:require [clojure.core.async                    :refer [<! go timeout]]
-            [clojure.edn                           :as edn]
-            [clojure.pprint                        :refer [cl-format]]
-            [clojure.string                        :as str]
-            [herb.core                             :refer [<class]]
-            [pyregence.components.common           :refer [input-datetime
-                                                           labeled-input
-                                                           radio]]
-            [pyregence.components.mapbox           :as mb]
-            [pyregence.components.messaging        :refer [set-message-box-content!]]
-            [pyregence.components.resizable-window :refer [resizable-window]]
-            [pyregence.state                       :as !]
-            [pyregence.styles                      :as $]
-            [pyregence.utils.async-utils           :as u-async]
-            [pyregence.utils.dom-utils             :as u-dom]
-            [pyregence.utils.number-utils          :as u-num]
-            [pyregence.utils.time-utils            :as u-time]
-            [reagent.core                          :as r]))
+  (:require
+   [clojure.core.async                    :refer [<! go timeout]]
+   [clojure.edn                           :as edn]
+   [clojure.pprint                        :refer [cl-format]]
+   [clojure.string                        :as str]
+   [herb.core                             :refer [<class]]
+   [pyregence.components.common           :refer [input-datetime labeled-input
+                                                  radio]]
+   [pyregence.components.mapbox           :as mb]
+   [pyregence.components.messaging        :refer [set-message-box-content!]]
+   [pyregence.components.resizable-window :refer [resizable-window]]
+   [pyregence.config                      :as c]
+   [pyregence.state                       :as !]
+   [pyregence.styles                      :as $]
+   [pyregence.utils.async-utils           :as u-async]
+   [pyregence.utils.dom-utils             :as u-dom]
+   [pyregence.utils.number-utils          :as u-num]
+   [pyregence.utils.time-utils            :as u-time]
+   [reagent.core                          :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -93,10 +94,10 @@
                     geoserver-workspace
                     message
                     md-status
-                    log]} (-> (u-async/call-clj-async! "get-md-status" match-job-id)
-                              (<!)
-                              (:body)
-                              (edn/read-string))]
+                    job-log]} (-> (u-async/call-clj-async! "get-md-status" match-job-id)
+                                  (<!)
+                                  (:body)
+                                  (edn/read-string))]
         (case md-status
           0 (do
               (refresh-fire-names!)
@@ -116,12 +117,13 @@
 
           1 (do
               (println message)
-              (js/console.error log)
+              (js/console.error job-log)
               (set-message-box-content! {:body (str "Error running match-drop-" match-job-id ".\n\n" message)})
               (reset! poll? false))
 
-          (set-message-box-content! {:body message})))
-
+          (set-message-box-content! {:body (if (c/feature-enabled? :sig3-endpoint)
+                                             job-log
+                                             message)})))
       (<! (timeout 5000)))))
 
 (defn- initiate-match-drop!

@@ -77,6 +77,7 @@
                                      :auth-token                      "<changeme123456789>"
                                      :usage-terms-and-conditions-date "September 1, 2025"
                                      :features                        {:match-drop       true
+                                                                       :sig3-endpoint    "https://sig3.sig-gis-00.corespeq.com/"
                                                                        :fire-history     true
                                                                        :structures       true
                                                                        :gridfire         true
@@ -110,6 +111,7 @@
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
  :pyregence.match-drop/match-drop                   {:app-name       "Pyrecast Match Drop Server"
+                                                     :sig3-auth      "BkJiqP9qyIO"
                                                      :app-host       "localhost"
                                                      :app-port       31337
                                                      :dps-name       "Data Provisioning Server"
