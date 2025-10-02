@@ -306,7 +306,7 @@
             (nil? @!/md-available-dates)
             [:p
              "Something went wrong when loading the available weather dates. Please contact "
-             [:a {:href "mailto:support@pyregence.org"} "support@pyregence.org"]
+             [:a {:href "mailto:support@pyrecast.com"} "support@pyrecast.com"]
              "."]
 
             (empty? @!/md-available-dates)

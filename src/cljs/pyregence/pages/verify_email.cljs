@@ -35,4 +35,4 @@
     [:div {:style {:display "flex" :justify-content "center" :margin "5rem"}}
      [:h4 (if @pending?
             "Thank you for verifying your email. You will be automatically redirected to the near term forecast tool."
-            "Email verification has failed. Please contact support@pyregence.org for help.")]]))
+            "Email verification has failed. Please contact support@pyrecast.com for help.")]]))

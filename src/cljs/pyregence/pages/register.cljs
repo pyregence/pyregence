@@ -35,7 +35,7 @@
           (<! (timeout 4000))
           (u-browser/jump-to-url! "/forecast"))
       (toast-message! ["An error occurred while registering."
-                       "Please contact support@pyregence.org for help."]))))
+                       "Please contact support@pyrecast.com for help."]))))
 
 (defn- register! []
   (go

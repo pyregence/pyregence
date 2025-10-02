@@ -89,7 +89,7 @@
 (defn download-backup-codes!
   "Downloads backup codes as a text file"
   [codes]
-  (let [content (str "Pyregence 2FA Backup Codes\n"
+  (let [content (str "PyreCast 2FA Backup Codes\n"
                      "Generated: " (.toLocaleDateString (js/Date.)) "\n\n"
                      (str/join "\n" codes) "\n\n"
                      "Keep these codes safe. Each can only be used once.")
@@ -97,6 +97,6 @@
         url (.createObjectURL js/URL blob)
         a (.createElement js/document "a")]
     (set! (.-href a) url)
-    (set! (.-download a) "pyregence-backup-codes.txt")
+    (set! (.-download a) "pyrecast-backup-codes.txt")
     (.click a)
     (.revokeObjectURL js/URL url)))
