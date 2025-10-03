@@ -14,7 +14,7 @@ SELECT drop_statement FROM funcs \gexec
 -- Drop all triggers owned by the current user
 WITH triggers AS (
   SELECT DISTINCT
-    format('DROP TRIGGER IF EXISTS %I ON %I.%I;', 
+    format('DROP TRIGGER IF EXISTS %I ON %I.%I RESTRICT;',
            t.tgname, 
            n.nspname, 
            c.relname) AS drop_statement
