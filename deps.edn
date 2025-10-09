@@ -58,7 +58,6 @@
            :systemd          {:main-opts  ["-m" "triangulum.systemd"]}
            :rct-test         {:exec-fn    com.mjdowney.rich-comment-tests.test-runner/run-tests-in-file-tree!
                               :exec-args  {:dirs #{"src"}}}
-           ;; clojure -M:clj-watson scan -p deps.edn
            :clj-watson       {:replace-deps
                               {io.github.clj-holmes/clj-watson
                                {:git/tag "v6.0.1" :git/sha "b520351"}}
