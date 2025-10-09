@@ -225,7 +225,7 @@
        "Thanks," [:br] "The PyreCast Team"]
       [:hr {:style (:separator common-styles)}]
       [:p {:style (:p-top common-styles)}
-       [:strong "P.S."] " Need immediate help getting started? Just reply to this email – the PyreCast support team is always ready to help!"]
+       [:strong "P.S."] " Need immediate help getting started? Just reply to this email - the PyreCast support team is always ready to help!"]
       (fallback-url-note verify-url)])))
 
 ;; ============================================================================
