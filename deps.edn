@@ -61,4 +61,5 @@
            :clj-watson       {:replace-deps
                               {io.github.clj-holmes/clj-watson
                                {:git/tag "v6.0.1" :git/sha "b520351"}}
-                              :main-opts ["-m" "clj-watson.cli"]}}}
+                              :main-opts ["-e" "(spit \"deps-for-clj-watson.edn\" (update (clojure.edn/read-string (slurp \"deps.edn\")) :deps dissoc 'herb/herb))"
+                                          "-m" "clj-watson.cli"]}}}
