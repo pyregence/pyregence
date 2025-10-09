@@ -11,13 +11,21 @@
  :triangulum.build-db/dev-data   false
  :triangulum.build-db/verbose    true
 
- ;; email
- :triangulum.email/host     "<host"
- :triangulum.email/user     "<user>"
- :triangulum.email/pass     "<pass>"
- :triangulum.email/tls      <true/false>
- :triangulum.email/port     <port-number>
- :triangulum.email/base-url "<url>"
+ ;; email - support emails (default for new user, match drop, etc.)
+ :triangulum.email/host     "<smtp-host>"
+ :triangulum.email/user     "support@pyrecast.com"
+ :triangulum.email/pass     "<support-password>"
+ :triangulum.email/tls      true
+ :triangulum.email/port     587
+ :triangulum.email/base-url "<base-url>"
+
+ ;; email - security emails (password reset, 2FA)
+ ;; NOTE: Uses separate noreply address for security-related emails
+ :pyregence.email/security-host "<smtp-host>"
+ :pyregence.email/security-user "noreply@pyrecast.com"
+ :pyregence.email/security-pass "<noreply-password>"
+ :pyregence.email/security-tls  true
+ :pyregence.email/security-port 587
 
  ;; server
  :triangulum.server/http-port  8080

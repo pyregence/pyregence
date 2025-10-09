@@ -10,9 +10,9 @@
 
 (defn generate-totp-uri
   "Generate a TOTP URI for QR code generation.
-  Returns a URI string like: otpauth://totp/Pyregence:user@example.com?secret=..."
+  Returns a URI string like: otpauth://totp/PyreCast:user@example.com?secret=..."
   [user-email secret]
-  (uri/totp-uri {:label "Pyregence"
+  (uri/totp-uri {:label "PyreCast"
                  :user user-email
                  :secret secret}))
 
