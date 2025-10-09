@@ -363,7 +363,7 @@ java -jar target/pyregence-*
 The current notable actions are [[https://github.com/sig-gis/triangulum?tab=readme-ov-file#triangulumserver][running the server]] and the [[https://github.com/sig-gis/triangulum?tab=readme-ov-file#triangulumbuild-db][building the database]].
 
 ** Vulerability checking
-To check for vulerabilities in this project, use ~clojure -M:clj-watson scan -p deps.edn -s~
+To check for vulerabilities in this project, use ~clojure -M:clj-watson scan -p deps-for-clj-watson.edn -s~
 ** License and Distribution
 
 Copyright © 2020-2025 Spatial Informatics Group, LLC.
