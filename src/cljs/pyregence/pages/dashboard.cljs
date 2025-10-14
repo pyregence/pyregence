@@ -194,7 +194,7 @@
     [svg/exclamation-point :height "20px" :width "20px"]
     [:span {:style {:padding-left "0.5rem"}}
      "You don't have access to use Match Drop. Please contact "
-     [:a {:href "mailto:support@pyregence.org"} "support@pyregence.org"]
+     [:a {:href "mailto:support@pyrecast.com"} "support@pyrecast.com"]
      " for more information."]]])
 
 (defn root-component

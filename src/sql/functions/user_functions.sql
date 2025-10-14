@@ -41,11 +41,31 @@ CREATE OR REPLACE FUNCTION lower_trim(_str text)
 
 $$ LANGUAGE SQL;
 
+-- Returns user's settings for a given email
+CREATE OR REPLACE FUNCTION get_user_settings_by_email(_email text)
+RETURNS text AS $$
+
+    SELECT settings
+    FROM users
+    WHERE email = lower_trim(_email)
+
+$$ LANGUAGE SQL;
+
 -- Returns user id for a given email
 CREATE OR REPLACE FUNCTION get_user_id_by_email(_email text)
  RETURNS integer AS $$
 
     SELECT user_uid
+    FROM users
+    WHERE email = lower_trim(_email)
+
+$$ LANGUAGE SQL;
+
+-- Returns user's name for a given email
+CREATE OR REPLACE FUNCTION get_user_name_by_email(_email text)
+RETURNS text AS $$
+
+    SELECT name
     FROM users
     WHERE email = lower_trim(_email)
 

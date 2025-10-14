@@ -56,7 +56,7 @@
 
       :else
       (toast-message! ["An error occurred."
-                       "Please try again shortly or contact support@pyregence.org for help."]))
+                       "Please try again shortly or contact support@pyrecast.com for help."]))
     (reset! pending? false)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
