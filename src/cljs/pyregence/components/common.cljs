@@ -3,6 +3,7 @@
   (:require
    [clojure.core.async                   :refer [<! go timeout]]
    [herb.core                            :refer [<class]]
+   [pyregence.components.svg-icons       :as svg]
    [pyregence.styles                     :as $]
    [pyregence.utils.dom-utils            :as u-dom]
    [pyregence.utils.string-utils         :as u-str]
@@ -289,3 +290,25 @@
                    :sibling-ref    @sibling-ref
                    :arrow-position arrow-position
                    :show?          @show?}])])))
+
+;;;;;; TODO Consider moving these compoonents or giving this section a name.
+
+(defn account-settings
+  [{:keys [selected?]}]
+  [:div {:style
+         (cond->
+          {:display "flex"
+           :flex "1 1 auto"
+           :gap "10px"
+           :text-align "center"
+           :align-items "center"
+           :padding "16px"
+           :color "#000"
+           :font-family "Roboto"
+           :font-size "16px"
+           :font-style "normal"}
+           selected? (assoc
+                      :background-color "#FBF4E6"
+                      :border-left "5px solid #E5B154"))}
+   [svg/wheel :height "20px" :width "20px"]
+   [:p {:style {:padding-top "13px"}} "Account Settings"]])
