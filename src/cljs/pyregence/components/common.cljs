@@ -147,6 +147,26 @@
    [:div {:flex "0 0 auto"}
     [svg/trash-can :height "50px" :width "50px"]]])
 
+(defn button
+  "Generic button"
+  [text on-click]
+  [:button
+   ;; TODO consider sharing styles
+   {:style    {:display          "flex"
+               :height           "44px"
+               :align-items      "center"
+               :background-color "white"
+               :padding          "12px 14px"
+               :border-radius    "4px"
+               :border           "2px solid #E5B154"
+               :font-family      "Roboto"
+               :font-size        "14px"
+               :font-style       "normal"
+               :font-weight      "400"
+               :line-height      "16px"}
+    :on-click on-click}
+   text])
+
 (defn check-box
   "A component for check boxes."
   [label-text state]
