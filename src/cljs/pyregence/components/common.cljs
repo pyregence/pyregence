@@ -3,6 +3,7 @@
   (:require
    [clojure.core.async                   :refer [<! go timeout]]
    [herb.core                            :refer [<class]]
+   [pyregence.components.svg-icons :as svg]
    [pyregence.styles                     :as $]
    [pyregence.utils.dom-utils            :as u-dom]
    [pyregence.utils.string-utils         :as u-str]
@@ -129,6 +130,22 @@
                     :font-size ".8rem"
                     :margin    "4px .5rem 0 0"}}
     label]])
+
+(defn delete-button-trash-can
+  "A delete button symbolized by a trash can."
+  [on-click]
+  [:button {:style {:display         "flex"
+                    :width           "50px"
+                    :height          "50px"
+                    :justify-content "center"
+                    :align-items     "center"
+                    :border-radius   "4px"
+                    :border          "1px solid #D50000"
+                    :background      "white"
+                    :border-width    "1.5px"}
+            :on-click on-click}
+   [:div {:flex "0 0 auto"}
+    [svg/trash-can :height "50px" :width "50px"]]])
 
 (defn check-box
   "A component for check boxes."
