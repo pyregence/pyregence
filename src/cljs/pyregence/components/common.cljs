@@ -141,7 +141,6 @@
                     :align-items     "center"
                     :border-radius   "4px"
                     :border          "1px solid #D50000"
-                    :background      "white"
                     :border-width    "1.5px"}
             :on-click on-click}
    [:div {:flex "0 0 auto"}
