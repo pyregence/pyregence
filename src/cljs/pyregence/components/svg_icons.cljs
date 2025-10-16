@@ -369,3 +369,11 @@
          :width     width
          :xml-space "preserve"}
    [:rect {:height "64" :width "384" :x "64" :y "224"}]])
+
+(defn trash-can [& {:keys [height width]}]
+  [:svg {:width   width
+         :height  height
+         :viewBox "0 0 50 50"}
+   [:rect {:x "0.5" :y "0.5" :height "49" :rx "3.5" :fill "white"}]
+   [:rect {:x "0.5" :y "0.5" :height "49" :rx "3.5" :stroke "#D50000"}]
+   [:path {:d "M20 34C19.45 34 18.9792 33.8042 18.5875 33.4125C18.1958 33.0208 18 32.55 18 32V19H17V17H22V16H28V17H33V19H32V32C32 32.55 31.8042 33.0208 31.4125 33.4125C31.0208 33.8042 30.55 34 30 34H20ZM30 19H20V32H30V19ZM22 30H24V21H22V30ZM26 30H28V21H26V30Z" :fill "#D50000"}]])
