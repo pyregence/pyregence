@@ -57,4 +57,9 @@
            :server           {:main-opts  ["-m" "triangulum.server"]}
            :systemd          {:main-opts  ["-m" "triangulum.systemd"]}
            :rct-test         {:exec-fn    com.mjdowney.rich-comment-tests.test-runner/run-tests-in-file-tree!
-                              :exec-args  {:dirs #{"src"}}}}}
+                              :exec-args  {:dirs #{"src"}}}
+           :clj-watson       {:replace-deps
+                              {io.github.clj-holmes/clj-watson
+                               {:git/tag "v6.0.1" :git/sha "b520351"}}
+                              :main-opts ["-e" "(spit \"deps-for-clj-watson.edn\" (update (clojure.edn/read-string (slurp \"deps.edn\")) :deps dissoc 'herb/herb))"
+                                          "-m" "clj-watson.cli"]}}}
