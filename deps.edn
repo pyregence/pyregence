@@ -24,7 +24,7 @@
                                                        :git/sha "a3a2b218e15e9144af5e9064f686d253198f0c85"
                                                        :git/tag "2024.06.05-a3a2b21"}
            sig-gis/triangulum                         {:git/url "https://github.com/sig-gis/triangulum"
-                                                       :git/sha "2f40db75ff9b647a32ed909c8c4d52081ab9c22a"}
+                                                       :git/sha "d26aee81b1d1dd7c8c881cad1f7a015632591cac"}
            io.github.matthewdowney/rich-comment-tests {:git/tag "v1.0.3" :git/sha "a8711e9"}
            org.clojure/data.csv                       {:mvn/version "1.1.0"}
            semantic-csv/semantic-csv                  {:mvn/version "0.2.1-alpha1"}}

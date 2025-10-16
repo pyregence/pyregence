@@ -14,9 +14,10 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private alert-west-api-url      "https://alertwest.live/api/firecams/v0")
-(def ^:private alert-west-api-key      (get-config :pyregence.cameras/alert-west-api-key))
-(def ^:private alert-west-api-defaults {:headers {"X-Api-Key" alert-west-api-key}})
+(def ^:private alert-west-api-url "https://alertwest.live/api/firecams/v0")
+
+(defn- get-alert-west-api-defaults []
+  {:headers {"X-Api-Key" (get-config ::alert-west-api-key)}})
 
 (def ^:private cache-max-age            (* 24 60 1000)) ; Once a day
 
@@ -97,7 +98,7 @@
 
 (defn- get-wildfire-cameras!
   []
-  (api-all-cameras alert-west-api-url alert-west-api-defaults))
+  (api-all-cameras alert-west-api-url (get-alert-west-api-defaults)))
 
 (defn- get-and-conform-wildfire-cameras!
   "Fetches ALERTWest wildfire cameras and reformats them."
@@ -130,7 +131,7 @@
   [_ camera-name api-name]
   {:pre [(string? camera-name)]}
   (let [[api-url api-defaults] (case api-name
-                                 "alert-west" [alert-west-api-url alert-west-api-defaults]
+                                 "alert-west" [alert-west-api-url (get-alert-west-api-defaults)]
                                  nil)]
     (if (and api-url api-defaults)
       (data-response (api-current-image camera-name api-url api-defaults)
