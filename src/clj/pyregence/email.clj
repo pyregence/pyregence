@@ -11,13 +11,14 @@
   "Returns email config map for security emails, or nil if not configured."
   []
   (let [{:keys [security-host security-user security-pass
-                security-tls security-port]} (get-config :mail)]
+                security-tls security-port security-from]} (get-config :mail)]
     (when (and security-host security-user security-pass)
-      {:host security-host
-       :user security-user
-       :pass security-pass
-       :tls  security-tls
-       :port security-port})))
+      (cond-> {:host security-host
+               :user security-user
+               :pass security-pass
+               :tls  security-tls
+               :port security-port}
+        security-from (assoc :from security-from)))))
 
 (defn- get-email-format
   "Returns the email format preference for a user.

@@ -26,6 +26,7 @@
  :pyregence.email/security-pass "<noreply-password>"
  :pyregence.email/security-tls  true
  :pyregence.email/security-port 587
+ :pyregence.email/security-from "security@pyrecast.com"  ;; Optional: From address (defaults to security-user)
 
  ;; server
  :triangulum.server/http-port  8080
