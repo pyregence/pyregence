@@ -293,54 +293,6 @@
 
 ;;;;;; TODO Consider moving these compoonents or giving this section a name.
 
-(defn account-settings
-  [{:keys [selected?]}]
-  [:div {:style
-         (cond->
-          {:display "flex"
-           :flex "1 1 auto"
-           :gap "10px"
-           :text-align "center"
-           :align-items "center"
-           :padding "16px"
-           :color "#000"
-           :font-family "Roboto"
-           :font-size "16px"
-           :font-style "normal"}
-           selected? (assoc
-                      :background-color "#FBF4E6"
-                      :border-left "5px solid #E5B154"))}
-   [svg/wheel :height "20px" :width "20px"]
-   [:p {:style {:padding-top "13px"}} "Account Settings"]])
-
-(defn item
-  [{:keys [selected? on-click icon arrow text]}]
-  [:div {:style
-         (cond->
-          {:display "grid"
-           :grid-template-columns "1fr 6fr 2fr"
-           :align-items "center"
-           :color "#000"
-           :font-family "Roboto"
-           :font-size "16px"
-           :font-style "normal"}
-           selected? (assoc
-                      :background-color "#FBF4E6"))}
-   (or icon [:div])
-   [:div text]
-   (or arrow [:div])])
-
-(defn affilited-organizations
-  [{:keys [selected? expanded?] :as m}]
-  [:div {:display "grid"}
-   [item (assoc m :icon [svg/group :height "20px" :width "20px"]
-                :arrow (if expanded?
-                         [svg/dropdown-arrow]
-                         [svg/up-arrow])
-                :text "Affiliated Organizations")]
-   [item (assoc m :text "Public")]
-   [item (assoc m :text "Foobar")]])
-
 (defn settings-page
   []
   [:div
@@ -352,33 +304,6 @@
      :grid-template-rows "40px 20px 1fr"
      :grid-template-areas "\"banner banner\" \"header header\" \"nav body\""}}
    [:div {:style {:grid-area "banner"}}]])
-
-#_(defn nav-bar
-    []
-    [:div {:style {:display "flex"
-                   :padding-top "40px"
-                   :padding-bottom "40px"
-                   :width "360px"
-                   :flex-direction "column"}}
-     [:div {:style {;; grid
-                  ;; :display "grid"
-                  ;; :grid-template-columns "1fr 6fr 2fr"
-                  ;; :align-items "center"
-                  ;; :justify-items "start"
-                    :display "flex"
-                    :justify-content "space-between"
-
-                    :padding "16px"
-                    :color "#000"
-                    :font-family "Roboto"
-                    :font-size "16px"
-                    :font-style "normal"}}
-      [svg/group]
-      [:div {:style {:padding-left "15px"}} "Organization Settings"]
-      [svg/up-arrow]]
-     [:p "Search"]
-     (for [org ["org1" "org2" "org3"]]
-       [:p {:key org} org])])
 
 ;;TODO move to svg ns, its not there bc it was throwing errors there...
 (defn logout
