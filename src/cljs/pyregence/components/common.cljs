@@ -412,10 +412,7 @@
                         :width "320px"
                         :height "52px"
                         :padding "16px"
-                        ;;Don't do anything
-                        #_#_:align-items "center"
-                        #_#_:gap "12px"
-                        #_#_:align-self "stretch"}
+                        :align-self "stretch"}
                  selected?
                  (assoc
                   :background "#F8E8CC"
@@ -487,18 +484,11 @@
                      :padding "40px 0"
                      :flex-direction "column"
                      :justify-content "space-between"
-                     :align-items "flex-start"
-                     :align-self "stretch"
                      :border-right "1px solid #E1E1E1"
                      :backgrond "#FFF"}}
    [:settings {:style {:display "flex"
                        :flex-direction "column"
-                       ;;Don't do anything
-                       #_#_:align-items "flex-start"
-                       #_#_:align-self "stretch"
                        :border-top "1px solid #E1E1E1"
-                       :border-bottom "1px solid #E1E1E1"
-                       }}
-    ;;TODO move the settings state into it's own component.
+                       :border-bottom "1px solid #E1E1E1"}}
     [settings]]
    [button {:text "Logout" :icon logout :tag :logout}]])
