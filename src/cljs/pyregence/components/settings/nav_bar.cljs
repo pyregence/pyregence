@@ -3,18 +3,6 @@
    [pyregence.components.svg-icons       :as svg]
    [reagent.core                         :as r]))
 
-(defn settings-page
-  []
-  [:div
-   {:style
-    {:display              "grid"
-     :height "100%"
-     :width  "100%"
-     :grid-template-columns "1fr 4fr"
-     :grid-template-rows "40px 20px 1fr"
-     :grid-template-areas "\"banner banner\" \"header header\" \"nav body\""}}
-   [:div {:style {:grid-area "banner"}}]])
-
 (defn button
   [{:keys [icon text tag on-click selected?]}]
   [tag {:on-click on-click
