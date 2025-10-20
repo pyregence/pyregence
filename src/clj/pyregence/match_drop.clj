@@ -523,7 +523,7 @@
                         :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.")
                         :elmfire-done?       false
                         :gridfire-done?      false
-                        :dps-request         {}
+                        :dps-request         match-drop-inputs
                         :elmfire-request     {}
                         :gridfire-request    {}
                         :geosync-request     {}
