@@ -5,6 +5,8 @@
    [pyregence.components.svg-icons       :as svg]
    [reagent.core                         :as r]))
 
+;; Components pieces
+
 (defn button
   [{:keys [icon text tag on-click selected?]}]
   [tag {:on-click on-click
@@ -50,10 +52,7 @@
                      :width "100%"}
               selected?
              ;;TODO share this somehow with the button
-              (assoc
-               :background "#F8E8CC"
-               ;;TODO do we select the header border? I don't think so
-               #_#_:border-left "5px solid #E58154"))}
+              (assoc :background "#F8E8CC"))}
     [button (dissoc m :selected?)]
     (if selected?
       [svg/up-arrow :height "24px" :width "24px"]
@@ -63,30 +62,7 @@
       (for [option options]
         [button option])])])
 
-(defn text->id
-  [text]
-  (-> text
-      str/lower-case
-      (str/replace #"\s+" "-")
-      keyword))
-
-(defn add-selected-handlers
-  [m selected])
-
-(def settings-config
-  [{:type button
-    :text "Account Settings"
-    :icon svg/wheel}
-   {:type    drop-down
-    :text    "Organization Settings"
-    :options [{:type button
-               :text "Org1"}
-              {:type button
-               :text "Org2"}]
-    :icon svg/group}
-   {:type button
-    :text "Unaffilated Members"
-    :icon svg/individual}])
+;; Component functions
 
 (defmulti selected? :type)
 
@@ -105,9 +81,28 @@
   #(reset! selected-setting id))
 
 (defmethod on-click drop-down
-  [{:keys [selected-setting options] :as m}]
+  [{:keys [selected-setting options]}]
   ;;TODO improve this to remember the last-selected-option
   #(reset! selected-setting (:id (first options))))
+
+;; Nav bar configuration
+
+(def settings-config
+  [{:type button
+    :text "Account Settings"
+    :icon svg/wheel}
+   {:type    drop-down
+    :text    "Organization Settings"
+    :options [{:type button
+               :text "Org1"}
+              {:type button
+               :text "Org2"}]
+    :icon svg/group}
+   {:type button
+    :text "Unaffilated Members"
+    :icon svg/individual}])
+
+;;
 
 (defn settings
   []
@@ -118,13 +113,17 @@
             (if-not (and (map? m) (:type m))
               m
               (let [{:keys [type text]} m
-                    id (text->id text)
+                    id (-> text
+                           str/lower-case
+                           (str/replace #"\s+" "-")
+                           keyword)
                     m (assoc m :tag id :id id :selected-setting selected-setting)]
                 (assoc m :selected? (selected? m) :on-click (on-click m))))))
          (mapv (fn [{:keys [type] :as m}] [type m]))
          (cons :<>)
          vec)))
 
+;; parent
 
 (defn main
   []
