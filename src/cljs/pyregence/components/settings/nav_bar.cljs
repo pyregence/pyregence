@@ -21,9 +21,7 @@
    [:f1739327813 {:style {:display "flex"
                           :align-items "center"
                           :gap "12px"}}
-    ;;TODO don't use the this conditional instead compose.
-    (when icon
-      [icon :height "24px" :width "24px"])
+    (when icon [icon :height "24px" :width "24px"])
     [:label {:style {:color "#4A4A4A"
                      :text-align "justify"
                      :font-family "Roboto"
@@ -42,8 +40,7 @@
     (cond-> {:display "flex"
              :flex-direction "column"}
       selected?
-      (assoc
-       :background "#F8E8CC"))}
+      (assoc :background "#F8E8CC"))}
    [tag
     {:style (cond-> {:display "flex"
                      :align-items "center"
@@ -51,7 +48,6 @@
                      :padding-right "16px"
                      :width "100%"}
               selected?
-             ;;TODO share this somehow with the button
               (assoc :background "#F8E8CC"))}
     [button (dissoc m :selected?)]
     (if selected?
@@ -87,6 +83,8 @@
 
 ;; Nav bar configuration
 
+;;NOTE this only supports drop-downs having nested buttons,
+;; any further nesting will require changes outside the config.
 (def settings-config
   [{:type button
     :text "Account Settings"
@@ -102,7 +100,7 @@
     :text "Unaffilated Members"
     :icon svg/individual}])
 
-;;
+;; page
 
 (defn settings
   []
@@ -122,8 +120,6 @@
          (mapv (fn [{:keys [type] :as m}] [type m]))
          (cons :<>)
          vec)))
-
-;; parent
 
 (defn main
   []
