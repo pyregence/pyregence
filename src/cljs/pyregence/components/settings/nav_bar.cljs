@@ -60,26 +60,35 @@
 
 ;; Component functions
 
+(defn get-last-selected-drop-down
+  [{:keys [options selected-setting]}]
+  (some (set (map :id options))
+        (reverse @selected-setting)))
+
 (defmulti selected? :type)
 
 (defmethod selected? button
   [{:keys [id selected-setting]}]
-  (#{id} @selected-setting))
+  (#{id} (last @selected-setting)))
 
 (defmethod selected? drop-down
-  [{:keys [options selected-setting]}]
-  ((set (map :id options)) @selected-setting))
+  [{:keys [selected-setting options] :as m}]
+  (when ((set (map :id options))
+         (last @selected-setting))
+    (get-last-selected-drop-down m)))
 
 (defmulti on-click :type)
 
 (defmethod on-click button
   [{:keys [selected-setting id]}]
-  #(reset! selected-setting id))
+  #(swap! selected-setting conj id))
 
 (defmethod on-click drop-down
-  [{:keys [selected-setting options]}]
+  [{:keys [selected-setting options] :as m}]
   ;;TODO improve this to remember the last-selected-option
-  #(reset! selected-setting (:id (first options))))
+  #(swap! selected-setting conj
+          (or (get-last-selected-drop-down m)
+           (:id (first options)))))
 
 ;; Nav bar configuration
 
@@ -104,7 +113,7 @@
 
 (defn settings
   []
-  (r/with-let [selected-setting (r/atom nil)]
+  (r/with-let [selected-setting (r/atom [])]
     (->> settings-config
          (walk/postwalk
           (fn [m]
