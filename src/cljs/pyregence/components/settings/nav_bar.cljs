@@ -126,42 +126,6 @@
          vec)))
 
 
-#_(defn settings
-    []
-    (r/with-let [selected-setting (r/atom nil)]
-      (def selected-setting @selected-setting)
-      [:<>
-       [button
-        (let [id :account-settings]
-          {:text "Account Settings"
-           :icon svg/wheel
-           :tag id
-           :on-click #(reset! selected-setting id)
-           :selected? (#{id} @selected-setting)})]
-      ;;TODO handle on click correctly
-       [drop-down
-        (let [id :organization-settings]
-          {:icon svg/group
-           :tag id
-           :text "Organization Settings"
-           :selected? (#{:org1 :org2} @selected-setting)
-           :on-click #(reset! selected-setting :org1)
-           :options [{:text "org1"
-                      :tag :org1
-                      :on-click #(reset! selected-setting :org1)
-                      :selected? (= @selected-setting :org1)}
-                     {:text "org2"
-                      :tag :org2
-                      :on-click #(reset! selected-setting :org2)
-                      :selected? (= @selected-setting :org2)}]})]
-       [button
-        (let [id :unaffiliated-members]
-          {:text "Unaffiliated Members"
-           :icon svg/individual
-           :tag id
-           :on-click #(reset! selected-setting id)
-           :selected? (#{id} @selected-setting)})]]))
-
 (defn main
   []
   [:nav-bar {:style {:display "flex"
