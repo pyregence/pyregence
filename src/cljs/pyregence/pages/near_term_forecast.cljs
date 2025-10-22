@@ -3,6 +3,7 @@
    [cljs.core.async.interop                                                   :refer-macros [<p!]]
    [clojure.core.async                                                        :refer [<! go]]
    [clojure.edn                                                               :as edn]
+   [clojure.set                                                               :as set]
    [clojure.spec.alpha                                                        :as s]
    [clojure.string                                                            :as str]
    [cognitect.transit                                                         :as t]
@@ -185,14 +186,27 @@
 (defn- get-layers! [get-model-times?]
   (go
     (let [params       (dissoc (get @!/*params @!/*forecast) (when get-model-times? :model-init))
-          selected-set (or (some (fn [[key {:keys [options]}]]
-                                   (get-in options [(params key) :filter-set]))
-                                 @!/processed-params)
-                           (into #{(get-forecast-opt :filter)}
-                                 (->> @!/processed-params
-                                      (map (fn [[key {:keys [options]}]]
-                                             (get-in options [(params key) :filter])))
-                                      (remove nil?))))
+          ;; Check for the presence of an :exclusive-filter-set
+          exclusive-filter-set (->> @!/processed-params
+                                    (keep (fn [[k {:keys [options]}]]
+                                            (:exclusive-filter-set (get options (params k)))))
+                                    (apply set/union #{}))
+          ;; Merges all non top-level filter-sets and filters into one set
+          merged-filters       (->> @!/processed-params
+                                    (map (fn [[key {:keys [options]}]]
+                                           (let [option (get options (params key))]
+                                             (cond
+                                               (:filter-set option) (:filter-set option)
+                                               (:filter option)     #{(:filter option)}
+                                               :else                #{}))))
+                                    (apply set/union #{}))
+          ;; Default to exclusive-filter-set and ignore all other filters/filter-sets
+          selected-set         (if (seq exclusive-filter-set)
+                                 exclusive-filter-set
+                                 ;; If here's a top level filter we need to include it
+                                 (if-let [top (get-forecast-opt :filter)]
+                                   (conj merged-filters top)
+                                   merged-filters))
           {:keys [layers model-times]} (t/read (t/reader :json)
                                                (:body (<! (u-async/call-clj-async! "get-layers"
                                                                                    (get-any-level-key :geoserver-key)
@@ -331,9 +345,15 @@
                           :active-fire  :only-underlays
                           :psps-zonal   [:psps-zonal :utility]
                           nil)]
-      (let [selected-org-id   (if (= keypath :only-underlays)
-                                keypath
-                                (name (get-in @!/*params keypath)))
+      (let [;; TODO in the future we shouldn't force the layer_path key to be the same as org-unique-id from the DB, we should encode the org-id in the layer_config itself
+            raw-org-id      (if (= keypath :only-underlays)
+                              keypath
+                              (name (get-in @!/*params keypath)))
+            ;; Normalize utility fire-risk-planning keys from "utility-name-planning" -> "utility-name"
+            selected-org-id (if (and (string? raw-org-id)
+                                     (str/ends-with? raw-org-id "-planning"))
+                              (subs raw-org-id 0 (- (count raw-org-id) (count "-planning")))
+                              raw-org-id)
             matching-psps-org (cond
                                 (= selected-org-id "ecmwf") ; "ecmwf" is the Euro weather forecast which all utility companies have access to
                                 (first @!/user-psps-orgs-list)
@@ -580,6 +600,13 @@
               (select-keys params oc)
               (u-data/mapm (fn [[k v]] [k (keyword v)]) oc))})
 
+(defn- sort-by-opt-label [opts]
+  (when opts
+    (let [cmp (fn [a b]
+                (compare (str/lower-case (:opt-label (opts a)))
+                         (str/lower-case (:opt-label (opts b)))))]
+      (into (sorted-map-by cmp) opts))))
+
 ;;; Capabilities
 (defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list & [selected-options]]
   (reset! !/capabilities
@@ -611,6 +638,19 @@
                                           :filter     org-unique-id}))
                                 {}
                                 user-psps-orgs-list))))
+  ;; Sort the Risk tab "Ignition Pattern" options alphabetically by :opt-label
+  (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
+  ;; Sort the PSPS tab "Utility Company" options alphabetically by :opt-label
+  (swap! !/capabilities update-in [:psps-zonal :params :utility :options] sort-by-opt-label)
+  ;; Sort underlays on each tab alphabetically
+  (swap! !/capabilities
+         (fn [capabilities-contents]
+           (reduce (fn [acc [forecast cfg]]
+                     (if-let [uds (:underlays cfg)]
+                       (assoc-in acc [forecast :underlays] (sort-by-opt-label uds))
+                       acc))
+                   capabilities-contents
+                   @!/capabilities)))
   (reset! !/*params (u-data/mapm
                      (fn [[forecast _]]
                        (let [params (get-in @!/capabilities [forecast :params])]

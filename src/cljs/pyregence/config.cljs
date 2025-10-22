@@ -31,6 +31,18 @@
                         :filter-set    #{"fire-detections" "conus-buildings"}
                         :geoserver-key :shasta}})
 
+;; TODO add in an API route to dynamically grab this from the org_unique_id column in the organizations table
+(def all-utility-companies #{:anza :beartooth :bighorn :butte :canadian-valley
+                             :capital :clp :columbia-basin :consumers :cotton :cowlitz
+                             :dso :flathead :garkane :grand-valley :highline
+                             :holy-cross :la-plata :lea-county :liberty :lincoln
+                             :midwest :missoula :mountain-view :nodak :north-fork
+                             :northwestern :nve :okanogan-county :otec :pacificorp
+                             :pnm :poudre-valley :ravalli :rushmore :san-isabel
+                             :southeast-colorado :springer :srp :tep :trico :wasco})
+
+(def all-utility-companies-planning (into #{} (map #(keyword (str (name %) "-planning")) all-utility-companies)))
+
 (def near-term-forecast-underlays
   (array-map
    :state-boundaries        {:opt-label     "U.S. States"
@@ -376,7 +388,6 @@
                                                  :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :fire-risk    {:opt-label       "Risk"
-                  :filter          "fire-risk-forecast"
                   :geoserver-key   :shasta
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
@@ -410,26 +421,51 @@
                                                               [:br]
                                                               [:strong "Power Line Ignition Rate"]
                                                               " - Estimated power line ignition rate in ignitions per line-mile per hour."]
-                                                 :options    {:times-burned    {:opt-label "Relative burn probability"
-                                                                                :filter    "times-burned"
-                                                                                :units     "Times"}
-                                                              :impacted        {:opt-label "Impacted structures"
-                                                                                :filter    "impacted-structures"
-                                                                                :units     "Structures"}
-                                                              :fire-area       {:opt-label "Fire area"
-                                                                                :filter    "fire-area"
-                                                                                :units     "Acres"}
-                                                              :fire-volume     {:opt-label "Fire volume"
-                                                                                :filter    "fire-volume"
-                                                                                :units     "Acre-ft"}
+                                                 :options    (array-map
+                                                              :times-burned    {:opt-label    "Relative burn probability"
+                                                                                :filter-set   #{"fire-risk-forecast" "times-burned"}
+                                                                                :units        "Times"
+                                                                                :disabled-for all-utility-companies-planning}
+                                                              :impacted        {:opt-label  "Impacted structures"
+                                                                                :filter-set #{"fire-risk-forecast" "impacted-structures"}
+                                                                                :units      "Structures"
+                                                                                :disabled-for all-utility-companies-planning}
+                                                              :fire-area       {:opt-label  "Fire area"
+                                                                                :filter-set #{"fire-risk-forecast" "fire-area"}
+                                                                                :units      "Acres"
+                                                                                :disabled-for all-utility-companies-planning}
+                                                              :fire-volume     {:opt-label  "Fire volume"
+                                                                                :filter-set #{"fire-risk-forecast" "fire-volume"}
+                                                                                :disabled-for all-utility-companies-planning
+                                                                                :units      "Acre-ft"}
                                                               :crown-fire-area {:opt-label    "Crown fire area"
-                                                                                :filter       "crown-fire-area"
+                                                                                :filter-set   #{"fire-risk-forecast" "crown-fire-area"}
                                                                                 :units        "Acres"
-                                                                                :disabled-for #{:tlines :nve :liberty :northwestern :otec :pnm :tep :srp :cowlitz}}
+                                                                                :disabled-for (conj all-utility-companies-planning :tlines)}
                                                               :plignrate       {:opt-label    "Power line ignition rate"
-                                                                                :filter       "plignrate"
+                                                                                :filter-set   #{"fire-risk-forecast" "plignrate"}
                                                                                 :units        "Ignitions/line-mi/hr"
-                                                                                :disabled-for #{:all :tlines}}}}
+                                                                                :disabled-for (conj all-utility-companies-planning :all :tlines)}
+                                                              :area-p          {:opt-label    "Fire area percentile"
+                                                                                :filter-set   #{"fire-risk-planning" "area-p"}
+                                                                                :units        "%"
+                                                                                :time-slider? false
+                                                                                :disabled-for (conj all-utility-companies :all :tlines)}
+                                                              :struct-p        {:opt-label    "Structure consequence percentile"
+                                                                                :filter-set   #{"fire-risk-planning" "struct-p"}
+                                                                                :units        "%"
+                                                                                :time-slider? false
+                                                                                :disabled-for (conj all-utility-companies :all :tlines)}
+                                                              :timber-p        {:opt-label    "Timber consequence percentile"
+                                                                                :filter-set   #{"fire-risk-planning" "timber-p"}
+                                                                                :units        "%"
+                                                                                :time-slider? false
+                                                                                :disabled-for (conj all-utility-companies :all :tlines)}
+                                                              :comp-p          {:opt-label    "Composite consequence percentile"
+                                                                                :filter-set   #{"fire-risk-planning" "comp-p"}
+                                                                                :units        "%"
+                                                                                :time-slider? false
+                                                                                :disabled-for (conj all-utility-companies :all :tlines)})}
                                     :pattern    {:opt-label  "Ignition Pattern"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Fires are ignited randomly across California at various times in the future so their impacts can be modeled. Patterns include:"
@@ -444,12 +480,12 @@
                                                  :options    {:all    {:opt-label    "All-cause fires"
                                                                        :auto-zoom?   true
                                                                        :filter       "all"
-                                                                       :disabled-for #{:plignrate}}
+                                                                       :disabled-for #{:plignrate :area-p :struct-p :timber-p :comp-p}}
                                                               :tlines {:opt-label    "Transmission lines"
                                                                        :auto-zoom?   true
                                                                        :filter       "tlines"
                                                                        :clear-point? true
-                                                                       :disabled-for #{:plignrate :crown-fire-area}}}}
+                                                                       :disabled-for #{:crown-fire-area :plignrate :area-p :struct-p :timber-p :comp-p}}}}
                                     :fuel       {:opt-label  "Fuel"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
@@ -499,12 +535,12 @@
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
                                                  :default-option :active-fires
-                                                 :options        {:active-fires {:opt-label     "*All Active Fires"
-                                                                                 :style-fn      :default
-                                                                                 :filter-set    #{"fire-detections" "active-fires"}
-                                                                                 :auto-zoom?    true
-                                                                                 :time-slider?  false
-                                                                                 :geoserver-key :shasta}}}
+                                                 :options        {:active-fires {:opt-label            "*All Active Fires"
+                                                                                 :style-fn             :default
+                                                                                 :exclusive-filter-set #{"fire-detections" "active-fires"}
+                                                                                 :auto-zoom?           true
+                                                                                 :time-slider?         false
+                                                                                 :geoserver-key        :shasta}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "Available outputs are fire location, crown fire type (surface fire, passive, or active), flame length (ft), and surface fire spread rate (ft/min). Time can be advanced with the slider centered below."
                                                  :options    {:burned       {:opt-label       "Forecasted fire location"
@@ -719,6 +755,7 @@
    :fire-active-labels    {:forecast-layer? true}
    :fire-detections       {:forecast-layer? false}
    :fire-risk-forecast    {:forecast-layer? true}
+   :fire-risk-planning    {:forecast-layer? true}
    :fire-weather-forecast {:forecast-layer? true}
    :fuels-and-topography  {:forecast-layer? true}
    :fire-history          {:forecast-layer? false}

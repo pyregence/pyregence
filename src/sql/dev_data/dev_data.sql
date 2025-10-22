@@ -7,7 +7,7 @@ VALUES
     (2, 'delete-me', 'Delete Me Inc.', '@deleteme.com,@remove.com', TRUE, FALSE),
     (3, 'update-me', 'Update My Setttings and Company', '@updateme.com', FALSE, TRUE),
     (4, 'sig', 'Spatial Informatics Group', '@sig-gis.com', TRUE, TRUE),
-    (5, 'pyregence', 'Pyregence Consortium', '', FALSE, FALSE);
+    (5, 'pyregence-consortium', 'Pyregence Consortium', '', FALSE, FALSE);
 
 INSERT INTO users
     (user_uid, email, name, password, email_verified, match_drop_access, settings, user_role, org_membership_status, organization_rid)

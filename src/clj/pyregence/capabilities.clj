@@ -53,7 +53,9 @@
         init-timestamp                (str ts1 "_" ts2)
         [layer-group sim-timestamp]   (str/split layer #"_(?=\d{8}_)")]
     {:workspace   workspace
-     :layer-group (str workspace ":" layer-group)
+     :layer-group (if (= "fire-risk-planning" forecast) ; TODO this is used to force the fire-risk-planning layers to be processed as single-point-info layers in near-term-forecast/get-point-info! We should create a better mechanism for this such that point info isn't tied to layer-group
+                    ""
+                    (str workspace ":" layer-group))
      :forecast    forecast
      :filter-set  (into #{forecast init-timestamp model-name} (str/split layer-group #"_"))
      :model-init  init-timestamp
