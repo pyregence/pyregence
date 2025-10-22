@@ -12,7 +12,6 @@ WITH orgs AS (
       ' overhead lines Planning", ' ||
       ':filter "' || o.org_unique_id || '", ' ||
       ':geoserver-key :psps}'
-      -- ':disabled-for #{:times-burned :impacted :fire-area :fire-volume :crown-fire-area :plignrate}'
       AS layer_config
   FROM organizations o
   WHERE o.org_unique_id NOT IN ('public', 'pyregence-consortium')
