@@ -14,40 +14,39 @@
 ;; Components pieces
 
 (defn button
-  [{:keys [icon text tag on-click selected?]}]
-  [tag {:on-click on-click
-        :class (<class on-hover-darken-background)
-        :style (cond-> {:display "flex"
-                        :height "52px"
-                        :padding "16px"
-                        :align-self "stretch"}
-                 selected?
-                 (assoc
-                  :background "#F8E8CC"
-                  :border-left "5px solid #E58154"))}
-   [:f1739327813 {:style {:display "flex"
-                          :align-items "center"
-                          :gap "12px"}}
-    (when icon [icon :height "24px" :width "24px"])
-    [:label {:style {:color "#4A4A4A"
-                     :text-align "justify"
-                     :font-family "Roboto"
-                     :font-size "16px"
-                     :font-style "normal"
-                     :font-weight "400"
-                     :line-height "16px"
-                     :text-transform "capitalize"}} text]]])
+  [{:keys [icon text on-click selected?]}]
+  [:nav-button {:on-click on-click
+                :class (<class on-hover-darken-background)
+                :style (cond-> {:display "flex"
+                                :height "52px"
+                                :padding "16px"
+                                :gap "12px"
+                                :align-items "center"
+                                :align-self "stretch"}
+                         selected?
+                         (assoc
+                          :background "#F8E8CC"
+                          :border-left "5px solid #E58154"))}
+   (when icon [icon :height "24px" :width "24px"])
+   [:label {:style {:color "#4A4A4A"
+                    :text-align "justify"
+                    :font-family "Roboto"
+                    :font-size "16px"
+                    :font-style "normal"
+                    :font-weight "400"
+                    :line-height "16px"
+                    :text-transform "capitalize"}} text]])
 
 (defn drop-down
   "A button that when clicked shows options"
   [{:keys [selected? options on-click] :as m}]
-  [:drop-down-body
+  [:nav-drop-down
    {:style
     (cond-> {:display "flex"
              :flex-direction "column"}
       selected?
       (assoc :background "#FBF4E6"))}
-   [:drop-down-header
+   [:div
     {:class  (<class on-hover-darken-background)
      :on-click on-click
      :style {:display "flex"
@@ -137,7 +136,7 @@
                            str/lower-case
                            (str/replace #"\s+" "-")
                            keyword)
-                    m (assoc m :tag id :id id :key id :selected-setting selected-setting)]
+                    m (assoc m :id id :key id :selected-setting selected-setting)]
                 (assoc m :selected? (selected? m) :on-click (on-click m))))))
          (mapv (fn [{:keys [type id] :as m}] [type  m]))
          (cons :<>)
@@ -145,17 +144,17 @@
 
 (defn main
   []
-  [:nav-bar {:style {:display "flex"
-                     :height "100%"
-                     :width "360px"
-                     :padding "40px 0"
-                     :flex-direction "column"
-                     :justify-content "space-between"
-                     :border-right "1px solid #E1E1E1"
-                     :backgrond "#FFF"}}
-   [:settings {:style {:display "flex"
-                       :flex-direction "column"
-                       :border-top "1px solid #E1E1E1"
-                       :border-bottom "1px solid #E1E1E1"}}
+  [:nav-bar-main {:style {:display "flex"
+                          :height "100%"
+                          :width "360px"
+                          :padding "40px 0"
+                          :flex-direction "column"
+                          :justify-content "space-between"
+                          :border-right "1px solid #E1E1E1"
+                          :backgrond "#FFF"}}
+   [:div {:style {:display "flex"
+                  :flex-direction "column"
+                  :border-top "1px solid #E1E1E1"
+                  :border-bottom "1px solid #E1E1E1"}}
     [settings]]
-   [button {:text "Logout" :icon svg/logout :tag :logout}]])
+   [button {:text "Logout" :icon svg/logout}]])
