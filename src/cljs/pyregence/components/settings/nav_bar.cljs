@@ -2,14 +2,21 @@
   (:require
    [clojure.string :as str]
    [clojure.walk :as walk]
+   [herb.core                            :refer [<class]]
    [pyregence.components.svg-icons       :as svg]
    [reagent.core                         :as r]))
+
+;; css styles
+
+(defn on-hover-darken-background []
+  (with-meta {} {:pseudo {:hover {:background "#F8E8CC"}}}))
 
 ;; Components pieces
 
 (defn button
   [{:keys [icon text tag on-click selected?]}]
   [tag {:on-click on-click
+        :class (<class on-hover-darken-background)
         :style (cond-> {:display "flex"
                         :height "52px"
                         :padding "16px"
@@ -36,7 +43,8 @@
   [{:keys [selected? tag options] :as m}]
   ;;TODO each of these tags needs a specific name
   [tag
-   {:style
+   {:class  (<class on-hover-darken-background)
+    :style
     (cond-> {:display "flex"
              :flex-direction "column"}
       selected?
