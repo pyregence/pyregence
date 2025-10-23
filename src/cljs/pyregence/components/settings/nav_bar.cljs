@@ -40,7 +40,7 @@
     (cond-> {:display "flex"
              :flex-direction "column"}
       selected?
-      (assoc :background "#F8E8CC"))}
+      (assoc :background "#FBF4E6"))}
    [tag
     {:style (cond-> {:display "flex"
                      :align-items "center"
@@ -48,7 +48,7 @@
                      :padding-right "16px"
                      :width "100%"}
               selected?
-              (assoc :background "#F8E8CC"))}
+              (assoc :background "#FBF4E6"))}
     [button (dissoc m :selected?)]
     (if selected?
       [svg/up-arrow :height "24px" :width "24px"]
