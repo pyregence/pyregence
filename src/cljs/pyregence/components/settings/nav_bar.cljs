@@ -1,7 +1,7 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.string :as str]
-   [clojure.walk :as walk]
+   [clojure.string                       :as str]
+   [clojure.walk                         :as walk]
    [herb.core                            :refer [<class]]
    [pyregence.components.svg-icons       :as svg]
    [reagent.core                         :as r]))
@@ -16,25 +16,25 @@
 (defn button
   [{:keys [icon text on-click selected?]}]
   [:nav-button {:on-click on-click
-                :class (<class on-hover-darken-background)
-                :style (cond-> {:display "flex"
-                                :height "52px"
-                                :padding "16px"
-                                :gap "12px"
-                                :align-items "center"
-                                :align-self "stretch"}
-                         selected?
-                         (assoc
-                          :background "#F8E8CC"
-                          :border-left "5px solid #E58154"))}
+                :class    (<class on-hover-darken-background)
+                :style    (cond-> {:display "flex"
+                                   :height "52px"
+                                   :padding "16px"
+                                   :gap "12px"
+                                   :align-items "center"
+                                   :align-self "stretch"}
+                            selected?
+                            (assoc
+                             :background "#F8E8CC"
+                             :border-left "5px solid #E58154"))}
    (when icon [icon :height "24px" :width "24px"])
-   [:label {:style {:color "#4A4A4A"
-                    :text-align "justify"
-                    :font-family "Roboto"
-                    :font-size "16px"
-                    :font-style "normal"
-                    :font-weight "400"
-                    :line-height "16px"
+   [:label {:style {:color          "#4A4A4A"
+                    :text-align     "justify"
+                    :font-family    "Roboto"
+                    :font-size      "16px"
+                    :font-style     "normal"
+                    :font-weight    "400"
+                    :line-height    "16px"
                     :text-transform "capitalize"}} text]])
 
 (defn drop-down
@@ -47,13 +47,13 @@
       selected?
       (assoc :background "#FBF4E6"))}
    [:div
-    {:class  (<class on-hover-darken-background)
+    {:class    (<class on-hover-darken-background)
      :on-click on-click
-     :style {:display "flex"
-             :align-items "center"
-             :justify-content "space-between"
-             :padding-right "16px"
-             :width "100%"}}
+     :style    {:display         "flex"
+                :align-items     "center"
+                :justify-content "space-between"
+                :padding-right   "16px"
+                :width           "100%"}}
     [button (dissoc m :selected?)]
     (if selected?
       [svg/up-arrow :height "24px" :width "24px"]
@@ -116,7 +116,7 @@
                :text "Org1"}
               {:cmpt button
                :text "Org2"}]
-    :icon svg/group}
+    :icon    svg/group}
    {:cmpt button
     :text "Unaffilated Members"
     :icon svg/individual}])
@@ -132,11 +132,11 @@
             (if-not (and (map? m) (:cmpt m))
               m
               (let [{:keys [text]} m
-                    id (-> text
-                           str/lower-case
-                           (str/replace #"\s+" "-")
-                           keyword)
-                    m (assoc m :id id :key id :selected-setting selected-setting)]
+                    id             (-> text
+                                       str/lower-case
+                                       (str/replace #"\s+" "-")
+                                       keyword)
+                    m              (assoc m :id id :key id :selected-setting selected-setting)]
                 (assoc m :selected? (selected? m) :on-click (on-click m))))))
          (mapv (fn [{:keys [cmpt] :as m}] [cmpt  m]))
          (cons :<>)
@@ -144,17 +144,17 @@
 
 (defn main
   []
-  [:nav-bar-main {:style {:display "flex"
-                          :height "100%"
-                          :width "360px"
-                          :padding "40px 0"
-                          :flex-direction "column"
+  [:nav-bar-main {:style {:display         "flex"
+                          :height          "100%"
+                          :width           "360px"
+                          :padding         "40px 0"
+                          :flex-direction  "column"
                           :justify-content "space-between"
-                          :border-right "1px solid #E1E1E1"
-                          :backgrond "#FFF"}}
-   [:div {:style {:display "flex"
-                       :flex-direction "column"
-                       :border-top "1px solid #E1E1E1"
-                       :border-bottom "1px solid #E1E1E1"}}
+                          :border-right    "1px solid #E1E1E1"
+                          :backgrond       "#FFF"}}
+   [:div {:style {:display        "flex"
+                  :flex-direction "column"
+                  :border-top     "1px solid #E1E1E1"
+                  :border-bottom  "1px solid #E1E1E1"}}
     [settings]]
    [button {:text "Logout" :icon svg/logout}]])
