@@ -10,17 +10,17 @@
 ;; CSS Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn on-hover-darken-background []
+(defn- $on-hover-darken-background []
   (with-meta {} {:pseudo {:hover {:background "#F8E8CC"}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn button
+(defn- button
   [{:keys [icon text on-click selected?]}]
   [:nav-button {:on-click on-click
-                :class    (<class on-hover-darken-background)
+                :class    (<class $on-hover-darken-background)
                 :style    (cond-> {:display "flex"
                                    :height "52px"
                                    :padding "16px"
@@ -41,7 +41,7 @@
                     :line-height    "16px"
                     :text-transform "capitalize"}} text]])
 
-(defn drop-down
+(defn- drop-down
   "A button that when clicked shows options"
   [{:keys [selected? options on-click] :as m}]
   [:nav-drop-down
@@ -51,7 +51,7 @@
       selected?
       (assoc :background "#FBF4E6"))}
    [:div
-    {:class    (<class on-hover-darken-background)
+    {:class    (<class $on-hover-darken-background)
      :on-click on-click
      :style    {:display         "flex"
                 :align-items     "center"
@@ -71,12 +71,12 @@
 ;; UI Components Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-last-selected-drop-down
+(defn- get-last-selected-drop-down
   [{:keys [options selected-setting]}]
   (some (set (map :id options))
         (reverse @selected-setting)))
 
-(defn was-last-selected-an-option?
+(defn- was-last-selected-an-option?
   [selected-setting options]
   ((set (map :id options))
    (last selected-setting)))
@@ -115,7 +115,7 @@
 ;; NOTE this only supports drop-downs having nested buttons,
 ;; any further nesting will require changes outside the config.
 
-(def config
+(def ^:private config
   [{:cmpt button
     :text "Account Settings"
     :icon svg/wheel}
@@ -134,7 +134,7 @@
 ;; Page
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn settings
+(defn- settings
   []
   (r/with-let [selected-setting (r/atom [])]
     (->> config
