@@ -93,7 +93,6 @@
 
 (defmethod on-click drop-down
   [{:keys [selected-setting options] :as m}]
-  ;;TODO improve this to remember the last-selected-option
   #(swap! selected-setting conj
           (or (get-last-selected-drop-down m)
            (:id (first options)))))
