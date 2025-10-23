@@ -40,16 +40,15 @@
 
 (defn drop-down
   "A button that when clicked shows options"
-  [{:keys [selected? tag options] :as m}]
-  ;;TODO each of these tags needs a specific name
-  [tag
+  [{:keys [selected? tag options ] :as m}]
+  [:drop-down-body
    {:class  (<class on-hover-darken-background)
     :style
     (cond-> {:display "flex"
              :flex-direction "column"}
       selected?
       (assoc :background "#FBF4E6"))}
-   [tag
+   [:drop-down-header
     {:style (cond-> {:display "flex"
                      :align-items "center"
                      :justify-content "space-between"
