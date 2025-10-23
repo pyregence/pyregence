@@ -137,9 +137,9 @@
                            str/lower-case
                            (str/replace #"\s+" "-")
                            keyword)
-                    m (assoc m :tag id :id id :selected-setting selected-setting)]
+                    m (assoc m :tag id :id id :key id :selected-setting selected-setting)]
                 (assoc m :selected? (selected? m) :on-click (on-click m))))))
-         (mapv (fn [{:keys [type] :as m}] [type m]))
+         (mapv (fn [{:keys [type id] :as m}] [type  m]))
          (cons :<>)
          vec)))
 
