@@ -59,9 +59,7 @@
                 :padding-right   "16px"
                 :width           "100%"}}
     [button (dissoc m :selected?)]
-    (if selected?
-      [svg/up-arrow :height "24px" :width "24px"]
-      [svg/down-arrow :height "24px" :width "24px"])]
+    (if selected? [svg/up-arrow] [svg/down-arrow])]
    (when selected?
      [:<>
       (for [option options]
