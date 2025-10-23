@@ -6,12 +6,16 @@
    [pyregence.components.svg-icons       :as svg]
    [reagent.core                         :as r]))
 
-;; css styles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CSS Styles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn on-hover-darken-background []
   (with-meta {} {:pseudo {:hover {:background "#F8E8CC"}}}))
 
-;; Components pieces
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UI Components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn button
   [{:keys [icon text on-click selected?]}]
@@ -63,7 +67,9 @@
       (for [option options]
         [button option])])])
 
-;; Component functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UI Components Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-last-selected-drop-down
   [{:keys [options selected-setting]}]
@@ -102,10 +108,13 @@
             (or (get-last-selected-drop-down m)
                 (:id (first options))))))
 
-;; Nav bar configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;NOTE this only supports drop-downs having nested buttons,
+;; NOTE this only supports drop-downs having nested buttons,
 ;; any further nesting will require changes outside the config.
+
 (def config
   [{:cmpt button
     :text "Account Settings"
@@ -121,7 +130,9 @@
     :text "Unaffilated Members"
     :icon svg/individual}])
 
-;; page
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Page
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn settings
   []
