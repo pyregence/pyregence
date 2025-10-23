@@ -42,15 +42,15 @@
   "A button that when clicked shows options"
   [{:keys [selected? tag options on-click] :as m}]
   [:drop-down-body
-   {:class  (<class on-hover-darken-background)
-    :on-click on-click
+   {:on-click on-click
     :style
     (cond-> {:display "flex"
              :flex-direction "column"}
       selected?
       (assoc :background "#FBF4E6"))}
    [:drop-down-header
-    {:style (cond-> {:display "flex"
+    {:class  (<class on-hover-darken-background)
+     :style (cond-> {:display "flex"
                      :align-items "center"
                      :justify-content "space-between"
                      :padding-right "16px"
