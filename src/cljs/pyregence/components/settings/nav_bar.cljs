@@ -41,7 +41,6 @@
                     :line-height    "16px"}} text]])
 
 (defn- drop-down
-  "A button that when clicked shows options"
   [{:keys [selected? options on-click] :as m}]
   [:nav-drop-down
    {:style
