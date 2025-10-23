@@ -22,10 +22,11 @@
  ;; email - security emails (password reset, 2FA)
  ;; NOTE: Uses separate noreply address for security-related emails
  :pyregence.email/security-host "<smtp-host>"
- :pyregence.email/security-user "noreply@pyrecast.com"
+ :pyregence.email/security-user "security@pyrecast.com"
  :pyregence.email/security-pass "<noreply-password>"
  :pyregence.email/security-tls  true
  :pyregence.email/security-port 587
+ :pyregence.email/security-from "no-reply@pyrecast.com"  ;; Optional: From address (defaults to security-user)
 
  ;; server
  :triangulum.server/http-port  8080
