@@ -75,7 +75,7 @@
   ((set (map :id options))
    (last selected-setting)))
 
-(defmulti selected? :type)
+(defmulti selected? :cmpt)
 
 (defmethod selected? button
   [{:keys [id selected-setting]}]
@@ -86,17 +86,17 @@
   (when (was-last-selected-an-option? @selected-setting options)
     (get-last-selected-drop-down m)))
 
-(defmulti on-click :type)
+(defmulti on-click :cmpt)
 
 (defmethod on-click button
   [{:keys [selected-setting id]}]
   #(swap! selected-setting conj id))
 
 (defmethod on-click drop-down
-  [{:keys [selected-setting options type] :as m}]
+  [{:keys [selected-setting options cmpt] :as m}]
   "on clicking the drop down header, it will clear the header if an option has already
    been selected, otherwise open to the last selected option, or default to the first."
-  (if (and (= type drop-down) (was-last-selected-an-option? @selected-setting options))
+  (if (and (= cmpt drop-down) (was-last-selected-an-option? @selected-setting options))
     #(reset! selected-setting [])
     #(swap! selected-setting conj
             (or (get-last-selected-drop-down m)
@@ -107,17 +107,17 @@
 ;;NOTE this only supports drop-downs having nested buttons,
 ;; any further nesting will require changes outside the config.
 (def settings-config
-  [{:type button
+  [{:cmpt button
     :text "Account Settings"
     :icon svg/wheel}
-   {:type    drop-down
+   {:cmpt    drop-down
     :text    "Organization Settings"
-    :options [{:type button
+    :options [{:cmpt button
                :text "Org1"}
-              {:type button
+              {:cmpt button
                :text "Org2"}]
     :icon svg/group}
-   {:type button
+   {:cmpt button
     :text "Unaffilated Members"
     :icon svg/individual}])
 
@@ -129,16 +129,16 @@
     (->> settings-config
          (walk/postwalk
           (fn [m]
-            (if-not (and (map? m) (:type m))
+            (if-not (and (map? m) (:cmpt m))
               m
-              (let [{:keys [type text]} m
+              (let [{:keys [text]} m
                     id (-> text
                            str/lower-case
                            (str/replace #"\s+" "-")
                            keyword)
                     m (assoc m :id id :key id :selected-setting selected-setting)]
                 (assoc m :selected? (selected? m) :on-click (on-click m))))))
-         (mapv (fn [{:keys [type id] :as m}] [type  m]))
+         (mapv (fn [{:keys [cmpt] :as m}] [cmpt  m]))
          (cons :<>)
          vec)))
 
@@ -153,8 +153,8 @@
                           :border-right "1px solid #E1E1E1"
                           :backgrond "#FFF"}}
    [:div {:style {:display "flex"
-                  :flex-direction "column"
-                  :border-top "1px solid #E1E1E1"
-                  :border-bottom "1px solid #E1E1E1"}}
+                       :flex-direction "column"
+                       :border-top "1px solid #E1E1E1"
+                       :border-bottom "1px solid #E1E1E1"}}
     [settings]]
    [button {:text "Logout" :icon svg/logout}]])
