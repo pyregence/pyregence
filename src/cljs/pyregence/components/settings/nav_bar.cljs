@@ -40,9 +40,10 @@
 
 (defn drop-down
   "A button that when clicked shows options"
-  [{:keys [selected? tag options ] :as m}]
+  [{:keys [selected? tag options on-click] :as m}]
   [:drop-down-body
    {:class  (<class on-hover-darken-background)
+    :on-click on-click
     :style
     (cond-> {:display "flex"
              :flex-direction "column"}
