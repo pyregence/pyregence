@@ -106,7 +106,7 @@
 
 ;;NOTE this only supports drop-downs having nested buttons,
 ;; any further nesting will require changes outside the config.
-(def settings-config
+(def config
   [{:cmpt button
     :text "Account Settings"
     :icon svg/wheel}
@@ -126,7 +126,7 @@
 (defn settings
   []
   (r/with-let [selected-setting (r/atom [])]
-    (->> settings-config
+    (->> config
          (walk/postwalk
           (fn [m]
             (if-not (and (map? m) (:cmpt m))
