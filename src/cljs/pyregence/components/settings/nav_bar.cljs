@@ -40,23 +40,21 @@
 
 (defn drop-down
   "A button that when clicked shows options"
-  [{:keys [selected? tag options on-click] :as m}]
+  [{:keys [selected? options on-click] :as m}]
   [:drop-down-body
-   {:on-click on-click
-    :style
+   {:style
     (cond-> {:display "flex"
              :flex-direction "column"}
       selected?
       (assoc :background "#FBF4E6"))}
    [:drop-down-header
     {:class  (<class on-hover-darken-background)
-     :style (cond-> {:display "flex"
-                     :align-items "center"
-                     :justify-content "space-between"
-                     :padding-right "16px"
-                     :width "100%"}
-              selected?
-              (assoc :background "#FBF4E6"))}
+     :on-click on-click
+     :style {:display "flex"
+             :align-items "center"
+             :justify-content "space-between"
+             :padding-right "16px"
+             :width "100%"}}
     [button (dissoc m :selected?)]
     (if selected?
       [svg/up-arrow :height "24px" :width "24px"]
@@ -73,6 +71,11 @@
   (some (set (map :id options))
         (reverse @selected-setting)))
 
+(defn was-last-selected-an-option?
+  [selected-setting options]
+  ((set (map :id options))
+   (last selected-setting)))
+
 (defmulti selected? :type)
 
 (defmethod selected? button
@@ -81,8 +84,7 @@
 
 (defmethod selected? drop-down
   [{:keys [selected-setting options] :as m}]
-  (when ((set (map :id options))
-         (last @selected-setting))
+  (when (was-last-selected-an-option? @selected-setting options)
     (get-last-selected-drop-down m)))
 
 (defmulti on-click :type)
@@ -92,10 +94,14 @@
   #(swap! selected-setting conj id))
 
 (defmethod on-click drop-down
-  [{:keys [selected-setting options] :as m}]
-  #(swap! selected-setting conj
-          (or (get-last-selected-drop-down m)
-           (:id (first options)))))
+  [{:keys [selected-setting options type] :as m}]
+  "on clicking the drop down header, it will clear the header if an option has already
+   been selected, otherwise open to the last selected option, or default to the first."
+  (if (and (= type drop-down) (was-last-selected-an-option? @selected-setting options))
+    #(reset! selected-setting [])
+    #(swap! selected-setting conj
+            (or (get-last-selected-drop-down m)
+                (:id (first options))))))
 
 ;; Nav bar configuration
 
