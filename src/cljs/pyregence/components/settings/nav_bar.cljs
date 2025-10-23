@@ -57,7 +57,7 @@
                      :width "100%"}
               selected?
               (assoc :background "#FBF4E6"))}
-    [button (dissoc m :selected?)]
+    [button m]
     (if selected?
       [svg/up-arrow :height "24px" :width "24px"]
       [svg/down-arrow :height "24px" :width "24px"])]
