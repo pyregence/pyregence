@@ -38,8 +38,7 @@
                     :font-size      "16px"
                     :font-style     "normal"
                     :font-weight    "400"
-                    :line-height    "16px"
-                    :text-transform "capitalize"}} text]])
+                    :line-height    "16px"}} text]])
 
 (defn- drop-down
   "A button that when clicked shows options"
