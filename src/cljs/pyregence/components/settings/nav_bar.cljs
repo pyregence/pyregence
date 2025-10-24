@@ -88,7 +88,6 @@
                :when  (or (not @search) (same-letters-so-far? @search (:text option)))]
            [button option]))])]))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -170,16 +169,16 @@
     (->> m
          configure
          (walk/postwalk
-          (fn [m]
-            (if-not (and (map? m) (:component m))
-              m
-              (let [{:keys [text]} m
-                    id             (-> text
-                                       str/lower-case
-                                       (str/replace #"\s+" "-")
-                                       keyword)
-                    m              (assoc m :id id :key id :selected-log selected-log)]
-                (assoc m :selected? (selected? m) :on-click (on-click m))))))
+           (fn [m]
+             (if-not (and (map? m) (:component m))
+               m
+               (let [{:keys [text]} m
+                     id             (-> text
+                                        str/lower-case
+                                        (str/replace #"\s+" "-")
+                                        keyword)
+                     m              (assoc m :id id :key id :selected-log selected-log)]
+                 (assoc m :selected? (selected? m) :on-click (on-click m))))))
          (mapv (fn [{:keys [component] :as m}] [component  m]))
          (cons :<>)
          vec)))
