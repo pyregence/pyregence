@@ -32,13 +32,13 @@
                              :background "#F8E8CC"
                              :border-left "5px solid #E58154"))}
    (when icon [icon :height "24px" :width "24px"])
-   [:label {:style {:color          "#4A4A4A"
-                    :text-align     "justify"
-                    :font-family    "Roboto"
-                    :font-size      "16px"
-                    :font-style     "normal"
-                    :font-weight    "400"
-                    :line-height    "16px"}} text]])
+   [:label {:style {:color       "#4A4A4A"
+                    :text-align  "justify"
+                    :font-family "Roboto"
+                    :font-size   "16px"
+                    :font-style  "normal"
+                    :font-weight "400"
+                    :line-height "16px"}} text]])
 
 (defn same-letters-so-far? [s1 s2]
   (let [s1 (clojure.string/lower-case s1)
@@ -67,22 +67,22 @@
       (if selected? [svg/up-arrow] [svg/down-arrow])]
      (when selected?
        [:<>
-        [:div {:style {:height "52px"
-                       :display "flex"
+        [:div {:style {:height         "52px"
+                       :display        "flex"
                        :flex-direction "row"
-                       :align-items "center"
-                       :margin "16px"
-                       :border-radius "10px"
-                       :background "white"}}
+                       :align-items    "center"
+                       :margin         "16px"
+                       :border-radius  "10px"
+                       :background     "white"}}
          [svg/search :height "24px" :width "24px"]
-         [:input {:type "text"
-                  :style {:border "none"
-                          :width "100%"
-                          :outline "none"}
+         [:input {:type      "text"
+                  :style     {:border  "none"
+                              :width   "100%"
+                              :outline "none"}
                   :on-change #(reset! search (.-value (.-target %)))}]]
         (doall
          (for [option options
-               :when (or (not @search) (same-letters-so-far? @search (:text option)))]
+               :when  (or (not @search) (same-letters-so-far? @search (:text option)))]
            [button option]))])]))
 
 
