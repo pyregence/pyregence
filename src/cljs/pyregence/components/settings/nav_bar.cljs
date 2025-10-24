@@ -103,37 +103,34 @@
   [{:keys [selected-log id]}]
   #(swap! selected-log conj id))
 
-;; drop-down require a considerable amount of book keeping to keep track of the
-;; last known option for a drop down...
+;; If the `last-selected-was-a-drop-down-option` then it's `selected?` and
+;; `on-click`ing the drop down header, we log the headers id, as well as the last-selected-option-id
+;; or the default.
 
-(defn- ->oids
+(defn- ->option-ids
   [options]
   (->> options
        (map :id)
        set))
 
-(defn- last-selected-an-option?
+(defn- last-selected-was-a-drop-down-option?
   [selected-log options]
-  ((->oids options)
+  ((->option-ids options)
    (last selected-log)))
-
-(defn- get-option-id
-  [selected-log options]
-  (let [oids (->oids options)]
-    (or (some oids (reverse selected-log))
-        (first oids))))
 
 (defmethod selected? drop-down
   [{:keys [selected-log options]}]
-  (last-selected-an-option? @selected-log options))
+  (last-selected-was-a-drop-down-option? @selected-log options))
 
 (defmethod on-click drop-down
   [{:keys [selected-log options id]}]
   #(swap! selected-log (fn [sl]
                          (vec (concat sl
                                       [id]
-                                      (when-not (last-selected-an-option? sl options)
-                                        [(get-option-id sl options)]))))))
+                                      (when-not (last-selected-was-a-drop-down-option? sl options)
+                                        (let [oids (->option-ids options)]
+                                          [(or (some oids (reverse sl))
+                                               (first oids))])))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Configuration
