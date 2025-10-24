@@ -145,16 +145,14 @@
 ;; NOTE atm each `text` has to be unique because it's used as an ID.
 ;; (this can be added we hit this case!)
 
-(def ^:private config
+(defn- configure
+  [{:keys [organizations]}]
   [{:cmpt button
     :text "Account Settings"
     :icon svg/wheel}
    {:cmpt    drop-down
     :text    "Organization Settings"
-    :options [{:cmpt button
-               :text "Org1"}
-              {:cmpt button
-               :text "Org2"}]
+    :options (->> organizations (map #(hash-map :cmpt button :text %)))
     :icon    svg/group}
    {:cmpt button
     :text "Unaffilated Members"
@@ -165,9 +163,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- settings
-  []
+  [m]
   (r/with-let [selected-log (r/atom [])]
-    (->> config
+    (->> m
+         configure
          (walk/postwalk
           (fn [m]
             (if-not (and (map? m) (:cmpt m))
@@ -184,7 +183,7 @@
          vec)))
 
 (defn main
-  []
+  [m]
   [:nav-bar-main {:style {:display         "flex"
                           :height          "100%"
                           :width           "360px"
@@ -197,5 +196,5 @@
                   :flex-direction "column"
                   :border-top     "1px solid #E1E1E1"
                   :border-bottom  "1px solid #E1E1E1"}}
-    [settings]]
+    [settings m]]
    [button {:text "Logout" :icon svg/logout}]])
