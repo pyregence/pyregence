@@ -90,8 +90,8 @@
 ;; UI Components Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmulti selected? :cmpt)
-(defmulti on-click :cmpt)
+(defmulti selected? :component)
+(defmulti on-click :component)
 
 ;; buttons are simple...
 
@@ -144,14 +144,14 @@
 
 (defn- configure
   [{:keys [organizations]}]
-  [{:cmpt button
+  [{:component button
     :text "Account Settings"
     :icon svg/wheel}
-   {:cmpt    drop-down
+   {:component    drop-down
     :text    "Organization Settings"
-    :options (->> organizations (map #(hash-map :cmpt button :text %)))
+    :options (->> organizations (map #(hash-map :component button :text %)))
     :icon    svg/group}
-   {:cmpt button
+   {:component button
     :text "Unaffilated Members"
     :icon svg/individual}])
 
@@ -166,7 +166,7 @@
          configure
          (walk/postwalk
           (fn [m]
-            (if-not (and (map? m) (:cmpt m))
+            (if-not (and (map? m) (:component m))
               m
               (let [{:keys [text]} m
                     id             (-> text
@@ -175,7 +175,7 @@
                                        keyword)
                     m              (assoc m :id id :key id :selected-log selected-log)]
                 (assoc m :selected? (selected? m) :on-click (on-click m))))))
-         (mapv (fn [{:keys [cmpt] :as m}] [cmpt  m]))
+         (mapv (fn [{:keys [component] :as m}] [component  m]))
          (cons :<>)
          vec)))
 
