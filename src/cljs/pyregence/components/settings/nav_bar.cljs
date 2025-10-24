@@ -69,20 +69,23 @@
       (if selected? [svg/arrow-up] [svg/arrow-down])]
      (when selected?
        [:<>
-        [:div {:style {:height         "52px"
-                       :display        "flex"
+        [:div {:style {:display        "flex"
+                       :height         "42px"
                        :flex-direction "row"
                        :align-items    "center"
                        :margin         "16px"
-                       :border-radius  "10px"
-                       :background     "white"
+                       :border-radius  "4px"
+                       :border         "1px solid #E1E1E1"
+                       :background     "#F6F6F6"
                        :cursor         "pointer"}}
+         [:div {:style {:padding "5px"}}]
          [svg/search :height "16px" :width "16px"]
-         [:input {:type      "text"
-                  :style     {:border  "none"
-                              :width   "100%"
-                              :outline "none"}
-                  :on-change #(reset! search (.-value (.-target %)))}]]
+         [:input {:type        "text"
+                  :placeholder "search"
+                  :style       {:border "none"
+                                :width    "100%"
+                                :outline  "none"}
+                  :on-change   #(reset! search (.-value (.-target %)))}]]
         (doall
          (for [option options
                :when  (or (not @search) (same-letters-so-far? @search (:text option)))]
