@@ -40,28 +40,51 @@
                     :font-weight    "400"
                     :line-height    "16px"}} text]])
 
+(defn same-letters-so-far? [s1 s2]
+  (let [s1 (clojure.string/lower-case s1)
+        s2 (clojure.string/lower-case s2)]
+    (and (<= (count s1) (count s2))
+         (= s1 (subs s2 0 (count s1))))))
+
 (defn- drop-down
   [{:keys [selected? options on-click] :as m}]
-  [:nav-drop-down
-   {:style
-    (cond-> {:display "flex"
-             :flex-direction "column"}
-      selected?
-      (assoc :background "#FBF4E6"))}
-   [:div
-    {:class    (<class $on-hover-darken-background)
-     :on-click on-click
-     :style    {:display         "flex"
-                :align-items     "center"
-                :justify-content "space-between"
-                :padding-right   "16px"
-                :width           "100%"}}
-    [button (dissoc m :selected? :on-click)]
-    (if selected? [svg/up-arrow] [svg/down-arrow])]
-   (when selected?
-     [:<>
-      (for [option options]
-        [button option])])])
+  (r/with-let [search (r/atom nil)]
+    [:nav-drop-down
+     {:style
+      (cond-> {:display "flex"
+               :flex-direction "column"}
+        selected?
+        (assoc :background "#FBF4E6"))}
+     [:div
+      {:class    (<class $on-hover-darken-background)
+       :on-click on-click
+       :style    {:display         "flex"
+                  :align-items     "center"
+                  :justify-content "space-between"
+                  :padding-right   "16px"
+                  :width           "100%"}}
+      [button (dissoc m :selected? :on-click)]
+      (if selected? [svg/up-arrow] [svg/down-arrow])]
+     (when selected?
+       [:<>
+        [:div {:style {:height "52px"
+                       :display "flex"
+                       :flex-direction "row"
+                       :align-items "center"
+                       :margin "16px"
+                       :border-radius "10px"
+                       :background "white"}}
+         [svg/search :height "24px" :width "24px"]
+         [:input {:type "text"
+                  :style {:border "none"
+                          :width "100%"
+                          :outline "none"}
+                  :on-change #(reset! search (.-value (.-target %)))}]]
+        (doall
+         (for [option options
+               :when (or (not @search) (same-letters-so-far? @search (:text option)))]
+           [button option]))])]))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components Functions
