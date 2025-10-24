@@ -40,7 +40,7 @@
                     :font-weight "400"
                     :line-height "16px"}} text]])
 
-(defn same-letters-so-far? [s1 s2]
+(defn- same-letters-so-far? [s1 s2]
   (let [s1 (clojure.string/lower-case s1)
         s2 (clojure.string/lower-case s2)]
     (and (<= (count s1) (count s2))
