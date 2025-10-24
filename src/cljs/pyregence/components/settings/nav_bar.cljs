@@ -76,8 +76,7 @@
                        :margin         "16px"
                        :border-radius  "10px"
                        :background     "white"
-                       :cursor "pointer"
-                       }}
+                       :cursor         "pointer"}}
          [svg/search :height "24px" :width "24px"]
          [:input {:type      "text"
                   :style     {:border  "none"
@@ -149,15 +148,15 @@
 (defn- configure
   [{:keys [organizations]}]
   [{:component button
-    :text "Account Settings"
-    :icon svg/wheel}
-   {:component    drop-down
-    :text    "Organization Settings"
-    :options (->> organizations (map #(hash-map :component button :text %)))
-    :icon    svg/group}
+    :text      "Account Settings"
+    :icon      svg/wheel}
+   {:component drop-down
+    :text      "Organization Settings"
+    :options   (->> organizations (map #(hash-map :component button :text %)))
+    :icon      svg/group}
    {:component button
-    :text "Unaffilated Members"
-    :icon svg/individual}])
+    :text      "Unaffilated Members"
+    :icon      svg/individual}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
