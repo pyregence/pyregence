@@ -72,59 +72,45 @@
 
 ;; buttons are simple...
 
-(defmethod on-click button
-  [{:keys [selected-log id]}]
-  #(swap! selected-log conj id))
-
 (defmethod selected? button
   [{:keys [id selected-log]}]
   (#{id} (last @selected-log)))
 
+(defmethod on-click button
+  [{:keys [selected-log id]}]
+  #(swap! selected-log conj id))
+
 ;; drop-down require a considerable amount of book keeping to keep track of the
 ;; last known option for a drop down...
 
-
-(defn- oids
+(defn- ->oids
   [options]
   (->> options
        (map :id)
        set))
 
-(defn- get-default-option-id
-  [{:keys [options]}]
-  (-> options first :id))
-
-(defn- get-last-selected-option-id
-  [{:keys [options selected-log]}]
-  (some (oids options)
-        (reverse @selected-log)))
-
 (defn- last-selected-an-option?
-  [{:keys [selected-log options]}]
-  ((oids options)
-   (last @selected-log)))
+  [selected-log options]
+  ((->oids options)
+   (last selected-log)))
 
-(defn- toggled-on?
-  [{:keys [selected-log id]}]
-  (odd? ((frequencies @selected-log) id 0)))
+(defn- get-option-id
+  [selected-log options]
+  (let [oids (->oids options)]
+    (or (some oids (reverse selected-log))
+        (first oids))))
 
 (defmethod selected? drop-down
-  [m]
-  (println @(:selected-log m))
-  (and (toggled-on? m) (last-selected-an-option? m)))
+  [{:keys [selected-log options]}]
+  (last-selected-an-option? @selected-log options))
 
 (defmethod on-click drop-down
-  [{:keys [selected-log id] :as m}]
-  #(swap! selected-log
-          (fn [selected-log]
-            (vec
-              (concat
-                selected-log
-                [id]
-                (when-not (toggled-on? m)
-                  [(or
-                     (get-last-selected-option-id m)
-                     (get-default-option-id m))]))))))
+  [{:keys [selected-log options id]}]
+  #(swap! selected-log (fn [sl]
+                         (vec (concat sl
+                                      [id]
+                                      (when-not (last-selected-an-option? sl options)
+                                        [(get-option-id sl options)]))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Configuration
