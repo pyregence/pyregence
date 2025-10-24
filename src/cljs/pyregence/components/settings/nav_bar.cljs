@@ -56,7 +56,7 @@
                 :justify-content "space-between"
                 :padding-right   "16px"
                 :width           "100%"}}
-    [button (dissoc m :selected?)]
+    [button (dissoc m :selected? :on-click)]
     (if selected? [svg/up-arrow] [svg/down-arrow])]
    (when selected?
      [:<>
@@ -67,42 +67,64 @@
 ;; UI Components Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- get-last-selected-drop-down
-  [{:keys [options selected-setting]}]
-  (some (set (map :id options))
-        (reverse @selected-setting)))
-
-(defn- was-last-selected-an-option?
-  [selected-setting options]
-  ((set (map :id options))
-   (last selected-setting)))
-
 (defmulti selected? :cmpt)
-
-(defmethod selected? button
-  [{:keys [id selected-setting]}]
-  (#{id} (last @selected-setting)))
-
-(defmethod selected? drop-down
-  [{:keys [selected-setting options] :as m}]
-  (when (was-last-selected-an-option? @selected-setting options)
-    (get-last-selected-drop-down m)))
-
 (defmulti on-click :cmpt)
 
+;; buttons are simple...
+
 (defmethod on-click button
-  [{:keys [selected-setting id]}]
-  #(swap! selected-setting conj id))
+  [{:keys [selected-log id]}]
+  #(swap! selected-log conj id))
+
+(defmethod selected? button
+  [{:keys [id selected-log]}]
+  (#{id} (last @selected-log)))
+
+;; drop-down require a considerable amount of book keeping to keep track of the
+;; last known option for a drop down...
+
+
+(defn- oids
+  [options]
+  (->> options
+       (map :id)
+       set))
+
+(defn- get-default-option-id
+  [{:keys [options]}]
+  (-> options first :id))
+
+(defn- get-last-selected-option-id
+  [{:keys [options selected-log]}]
+  (some (oids options)
+        (reverse @selected-log)))
+
+(defn- last-selected-an-option?
+  [{:keys [selected-log options]}]
+  ((oids options)
+   (last @selected-log)))
+
+(defn- toggled-on?
+  [{:keys [selected-log id]}]
+  (odd? ((frequencies @selected-log) id 0)))
+
+(defmethod selected? drop-down
+  [m]
+  (println @(:selected-log m))
+  (and (toggled-on? m) (last-selected-an-option? m)))
 
 (defmethod on-click drop-down
-  [{:keys [selected-setting options cmpt] :as m}]
-  "on clicking the drop down header, it will clear the header if an option has already
-   been selected, otherwise open to the last selected option, or default to the first."
-  (if (and (= cmpt drop-down) (was-last-selected-an-option? @selected-setting options))
-    #(reset! selected-setting [])
-    #(swap! selected-setting conj
-            (or (get-last-selected-drop-down m)
-                (:id (first options))))))
+  [{:keys [selected-log id] :as m}]
+  #(swap! selected-log
+          (fn [selected-log]
+            (vec
+              (concat
+                selected-log
+                [id]
+                (when-not (toggled-on? m)
+                  [(or
+                     (get-last-selected-option-id m)
+                     (get-default-option-id m))]))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Configuration
@@ -110,6 +132,9 @@
 
 ;; NOTE this only supports drop-downs having nested buttons,
 ;; any further nesting will require changes outside the config.
+
+;; NOTE atm each `text` has to be unique because it's used as an ID.
+;; (this can be added we hit this case!)
 
 (def ^:private config
   [{:cmpt button
@@ -132,7 +157,7 @@
 
 (defn- settings
   []
-  (r/with-let [selected-setting (r/atom [])]
+  (r/with-let [selected-log (r/atom [])]
     (->> config
          (walk/postwalk
           (fn [m]
@@ -143,7 +168,7 @@
                                        str/lower-case
                                        (str/replace #"\s+" "-")
                                        keyword)
-                    m              (assoc m :id id :key id :selected-setting selected-setting)]
+                    m              (assoc m :id id :key id :selected-log selected-log)]
                 (assoc m :selected? (selected? m) :on-click (on-click m))))))
          (mapv (fn [{:keys [cmpt] :as m}] [cmpt  m]))
          (cons :<>)
