@@ -119,7 +119,7 @@
                                                      :geoserver-admin-password "password"}
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
- :pyregence.match-drop/match-drop                   {:sig3-auth         "BkJiqP9qyIO"
+ :pyregence.match-drop/match-drop                   {:sig3-auth         "<AUTH_TOKEN>"
                                                      :sig3-geosync-host "<geoserver-dev | geoserver-west>"
                                                      :sig3-geosync-port 31339
                                                      :app-name          "Pyrecast Match Drop Server"
