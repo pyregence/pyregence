@@ -77,7 +77,7 @@
                        :border-radius  "10px"
                        :background     "white"
                        :cursor         "pointer"}}
-         [svg/search :height "24px" :width "24px"]
+         [svg/search :height "16px" :width "16px"]
          [:input {:type      "text"
                   :style     {:border  "none"
                               :width   "100%"
