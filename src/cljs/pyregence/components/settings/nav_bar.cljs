@@ -1,10 +1,10 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.string                       :as str]
-   [clojure.walk                         :as walk]
-   [herb.core                            :refer [<class]]
-   [pyregence.components.svg-icons       :as svg]
-   [reagent.core                         :as r]))
+   [clojure.string                  :as str]
+   [clojure.walk                    :as walk]
+   [herb.core                       :refer [<class]]
+   [pyregence.components.svg-icons  :as svg]
+   [reagent.core                    :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
