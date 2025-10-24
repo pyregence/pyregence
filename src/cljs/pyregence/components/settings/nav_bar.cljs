@@ -75,7 +75,9 @@
                        :align-items    "center"
                        :margin         "16px"
                        :border-radius  "10px"
-                       :background     "white"}}
+                       :background     "white"
+                       :cursor "pointer"
+                       }}
          [svg/search :height "24px" :width "24px"]
          [:input {:type      "text"
                   :style     {:border  "none"
