@@ -30,8 +30,8 @@
                                    :align-self  "stretch"}
                             selected?
                             (assoc
-                             :background "#F8E8CC"
-                             :border-left "5px solid #E58154"))}
+                              :background "#F8E8CC"
+                              :border-left "5px solid #E58154"))}
    (when icon [icon :height "24px" :width "24px"])
    [:label {:style {:color       "#4A4A4A"
                     :text-align  "justify"
@@ -82,14 +82,14 @@
          [svg/search :height "16px" :width "16px"]
          [:input {:type        "text"
                   :placeholder "search"
-                  :style       {:border "none"
-                                :width    "100%"
-                                :outline  "none"}
+                  :style       {:border  "none"
+                                :width   "100%"
+                                :outline "none"}
                   :on-change   #(reset! search (.-value (.-target %)))}]]
         (doall
-         (for [option options
-               :when  (or (not @search) (same-letters-so-far? @search (:text option)))]
-           [button option]))])]))
+          (for [option options
+                :when  (or (not @search) (same-letters-so-far? @search (:text option)))]
+            [button option]))])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components Functions
