@@ -24,6 +24,7 @@
                 :style    (cond-> {:display "flex"
                                    :height "52px"
                                    :padding "16px"
+                                   :cursor "pointer"
                                    :gap "12px"
                                    :align-items "center"
                                    :align-self "stretch"}
@@ -52,6 +53,7 @@
     [:nav-drop-down
      {:style
       (cond-> {:display "flex"
+               :cursor "pointer"
                :flex-direction "column"}
         selected?
         (assoc :background "#FBF4E6"))}
