@@ -21,13 +21,13 @@
   [{:keys [icon text on-click selected?]}]
   [:nav-button {:on-click on-click
                 :class    (<class $on-hover-darken-background)
-                :style    (cond-> {:display "flex"
-                                   :height "52px"
-                                   :padding "16px"
-                                   :cursor "pointer"
-                                   :gap "12px"
+                :style    (cond-> {:display     "flex"
+                                   :height      "52px"
+                                   :padding     "16px"
+                                   :cursor      "pointer"
+                                   :gap         "12px"
                                    :align-items "center"
-                                   :align-self "stretch"}
+                                   :align-self  "stretch"}
                             selected?
                             (assoc
                              :background "#F8E8CC"
@@ -52,8 +52,8 @@
   (r/with-let [search (r/atom nil)]
     [:nav-drop-down
      {:style
-      (cond-> {:display "flex"
-               :cursor "pointer"
+      (cond-> {:display        "flex"
+               :cursor         "pointer"
                :flex-direction "column"}
         selected?
         (assoc :background "#FBF4E6"))}
@@ -127,13 +127,15 @@
 
 (defmethod on-click drop-down
   [{:keys [selected-log options id]}]
-  #(swap! selected-log (fn [sl]
-                         (vec (concat sl
-                                      [id]
-                                      (when-not (last-selected-was-a-drop-down-option? sl options)
-                                        (let [oids (->option-ids options)]
-                                          [(or (some oids (reverse sl))
-                                               (first oids))])))))))
+  #(swap! selected-log
+          (fn [sl]
+            (vec (concat
+                  sl
+                  [id]
+                  (when-not (last-selected-was-a-drop-down-option? sl options)
+                    (let [oids (->option-ids options)]
+                      [(or (some oids (reverse sl))
+                           (first oids))])))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Configuration
