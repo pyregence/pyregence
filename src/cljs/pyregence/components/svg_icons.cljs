@@ -226,7 +226,7 @@
    [:mask
     {:id        "mask0_228_3867",
      :style     {:mask-type "alpha"},
-     :maskunits "userSpaceOnUse",
+     :maskUnits "userSpaceOnUse",
      :x         "0",
      :y         "0",
      :width     "24",
@@ -428,7 +428,7 @@
      :stroke-width "0.25"}]
    [:mask
     {:id        "path-2-outside-1_215_1724"
-     :maskunits "userSpaceOnUse"
+     :maskUnits "userSpaceOnUse"
      :x         "1.5"
      :y         "0.5"
      :width     "21"
