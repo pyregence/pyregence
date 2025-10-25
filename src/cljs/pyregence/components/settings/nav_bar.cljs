@@ -54,7 +54,7 @@
      {:style
       (cond-> {:display        "flex"
                :cursor         "pointer"
-               :max-height     "500px"
+               :max-height     "572px"
                :overflow       "auto"
                :flex-direction "column"}
         selected?
