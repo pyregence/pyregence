@@ -11,8 +11,20 @@
 ;; CSS Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $on-hover-darken-background []
+(defn- $on-hover-darker-orange-background []
   (with-meta {} {:pseudo {:hover {:background ($/color-picker :soft-orange)}}}))
+
+(defn- $on-hover-darker-gray-border []
+
+  (with-meta
+    {:border        (str "1px solid " ($/color-picker :neutral-soft-gray))
+     :border-radius "4px"
+     ;;neutral-light-gray
+     :background    "rgba(246, 246, 246, 1)"}
+    ;; netural-md-gray
+    {:pseudo {:hover {:border "1px solid rgba(118, 117, 117, 1)" :border-radius "4px"}
+              ;; standard-orage
+              :focus-within {:border "1px solid rgba(229, 177, 84, 1)" :border-radius "4px" :font-weight 500}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tabs
@@ -21,26 +33,26 @@
 (defn- button
   [{:keys [icon text on-click selected?]}]
   [:nav-button {:on-click on-click
-                :class    (<class $on-hover-darken-background)
-                :style    (cond-> {:display     "flex"
-                                   :height      "52px"
-                                   :padding     "16px"
-                                   :cursor      "pointer"
-                                   :gap         "12px"
-                                   :align-items "center"
-                                   :align-self  "stretch"}
-                            selected?
-                            (assoc
-                             :background ($/color-picker :soft-orange)
-                             :border-left (str "5px solid " ($/color-picker :standard-orange))))}
+                :class (<class $on-hover-darker-orange-background)
+                :style (cond-> {:display     "flex"
+                                :height      "52px"
+                                :padding     "16px"
+                                :cursor      "pointer"
+                                :gap         "12px"
+                                :align-items "center"
+                                :align-self  "stretch"}
+                         selected?
+                         (assoc
+                          :background ($/color-picker :soft-orange)
+                          :border-left (str "5px solid " ($/color-picker :standard-orange))))}
    (when icon [icon :height "24px" :width "24px"])
-   [:p {:style {:color         ($/color-picker :neutral-dark-gray)
-                :text-align    "justify"
-                :font-family   "Roboto"
-                :font-size     "16px"
-                :font-style    "normal"
-                :font-weight   "400"
-                :line-height   "16px"
+   [:p {:style {:color                ($/color-picker :neutral-dark-gray)
+                :text-align                "justify"
+                :font-family                "Roboto"
+                :font-size                "16px"
+                :font-style                "normal"
+                :font-weight                "400"
+                :line-height                "16px"
                 :margin-bottom "0px"}} text]])
 
 (defn- same-letters-so-far? [s1 s2]
@@ -62,32 +74,35 @@
         selected?
         (assoc :background ($/color-picker :light-orange)))}
      [:div
-      {:class    (<class $on-hover-darken-background)
+      {:class    (<class $on-hover-darker-orange-background)
        :on-click on-click
        :style    {:display         "flex"
                   :align-items     "center"
                   :justify-content "space-between"
-                  :padding-right   "16px"
-                  :width           "100%"}}
+                  :width           "100%"
+                  :padding-right   "16px"}}
       [button (dissoc m :selected? :on-click)]
       (if selected? [svg/arrow-up] [svg/arrow-down])]
      (when selected?
        [:<>
-        [:div {:style {:display        "flex"
+        [:div {:class (<class $on-hover-darker-gray-border)
+               :style {:display        "flex"
                        :height         "42px"
                        :flex-direction "row"
                        :align-items    "center"
                        :margin         "16px"
-                       :border-radius  "4px"
-                       :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
-                       :cursor         "pointer"}}
-         [:div {:style {:padding "5px"}}]
+                       ;;:border-radius  "4px"
+                       ;; :neutral-light-gray
+                       ;;:background     "rgba(246, 246, 246, 1)"
+
+                       :cursor "pointer"}}
          [svg/search :height "16px" :width "16px"]
          [:input {:type        "text"
                   :placeholder "search"
-                  :style       {:border  "none"
-                                :width   "100%"
-                                :outline "none"}
+                  :style       {:border     "none"
+                                :background "transparent"
+                                :width      "100%"
+                                :outline    "none"}
                   :on-change   #(reset! search (.-value (.-target %)))}]]
         (doall
          (for [option options
