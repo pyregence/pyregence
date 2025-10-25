@@ -202,7 +202,7 @@
                           :flex-direction  "column"
                           :justify-content "space-between"
                           :border-right    "1px solid #E1E1E1"
-                          :backgrond       "#FFF"}}
+                          :background      "#FFF"}}
    [:div {:style {:display        "flex"
                   :flex-direction "column"
                   :border-top     "1px solid #E1E1E1"
