@@ -3,6 +3,7 @@
   (:require
    [clojure.core.async                   :refer [<! go timeout]]
    [herb.core                            :refer [<class]]
+   [pyregence.components.svg-icons       :as svg]
    [pyregence.styles                     :as $]
    [pyregence.utils.dom-utils            :as u-dom]
    [pyregence.utils.string-utils         :as u-str]
