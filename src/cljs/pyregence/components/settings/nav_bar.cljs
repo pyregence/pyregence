@@ -4,6 +4,7 @@
    [clojure.walk                    :as walk]
    [herb.core                       :refer [<class]]
    [pyregence.components.svg-icons  :as svg]
+   [pyregence.styles                :as $]
    [reagent.core                    :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -11,7 +12,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $on-hover-darken-background []
-  (with-meta {} {:pseudo {:hover {:background "#F8E8CC"}}}))
+  (with-meta {} {:pseudo {:hover {:background ($/color-picker :soft-orange)}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
@@ -30,10 +31,10 @@
                                    :align-self  "stretch"}
                             selected?
                             (assoc
-                              :background "#F8E8CC"
-                              :border-left "5px solid #E58154"))}
+                              :background ($/color-picker :soft-orange)
+                              :border-left (str "5px solid " ($/color-picker :standard-orange))))}
    (when icon [icon :height "24px" :width "24px"])
-   [:label {:style {:color       "#4A4A4A"
+   [:label {:style {:color       ($/color-picker :neutral-dark-gray)
                     :text-align  "justify"
                     :font-family "Roboto"
                     :font-size   "16px"
@@ -58,7 +59,7 @@
                :overflow       "auto"
                :flex-direction "column"}
         selected?
-        (assoc :background "#FBF4E6"))}
+        (assoc :background ($/color-picker :light-orange)))}
      [:div
       {:class    (<class $on-hover-darken-background)
        :on-click on-click
@@ -77,8 +78,7 @@
                        :align-items    "center"
                        :margin         "16px"
                        :border-radius  "4px"
-                       :border         "1px solid #E1E1E1"
-                       :background     "#F6F6F6"
+                       :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
                        :cursor         "pointer"}}
          [:div {:style {:padding "5px"}}]
          [svg/search :height "16px" :width "16px"]
@@ -201,11 +201,11 @@
                           :padding         "40px 0"
                           :flex-direction  "column"
                           :justify-content "space-between"
-                          :border-right    "1px solid #E1E1E1"
+                          :border-right    (str "1px solid " ($/color-picker :neutral-soft-gray))
                           :background      "#FFF"}}
    [:div {:style {:display        "flex"
                   :flex-direction "column"
-                  :border-top     "1px solid #E1E1E1"
-                  :border-bottom  "1px solid #E1E1E1"}}
+                  :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
+                  :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray)) }}
     [settings m]]
    [button {:text "Logout" :icon svg/logout}]])
