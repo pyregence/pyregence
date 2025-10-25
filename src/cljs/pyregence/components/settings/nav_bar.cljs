@@ -212,6 +212,6 @@
    [:div {:style {:display        "flex"
                   :flex-direction "column"
                   :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
-                  :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray)) }}
+                  :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
     [tabs tabs-data]]
    [button {:text "Logout" :icon svg/logout}]])
