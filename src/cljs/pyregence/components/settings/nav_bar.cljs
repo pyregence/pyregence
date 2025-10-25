@@ -54,6 +54,8 @@
      {:style
       (cond-> {:display        "flex"
                :cursor         "pointer"
+               :max-height     "500px"
+               :overflow       "auto"
                :flex-direction "column"}
         selected?
         (assoc :background "#FBF4E6"))}
