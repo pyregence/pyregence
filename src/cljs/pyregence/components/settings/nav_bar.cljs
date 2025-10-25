@@ -31,8 +31,8 @@
                                    :align-self  "stretch"}
                             selected?
                             (assoc
-                              :background ($/color-picker :soft-orange)
-                              :border-left (str "5px solid " ($/color-picker :standard-orange))))}
+                             :background ($/color-picker :soft-orange)
+                             :border-left (str "5px solid " ($/color-picker :standard-orange))))}
    (when icon [icon :height "24px" :width "24px"])
    [:p {:style {:color         ($/color-picker :neutral-dark-gray)
                 :text-align    "justify"
