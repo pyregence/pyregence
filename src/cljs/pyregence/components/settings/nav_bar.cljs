@@ -151,13 +151,10 @@
 ;; Tab Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; This is where you configure the settings nav bar by adding buttons, drop downs ,etc..!
+;; This is where you configure the settings nav by adding tabs: buttons, drop downs ,etc..!
 
-;; NOTE this only supports drop-downs having nested buttons,
-;; any further nesting will require changes outside the config.
-
-;; NOTE atm each `text` has to be unique because it's used as an ID.
-;; (this can be added we hit this case!)
+;; NOTE Each Tab's `:text` has to be unique because it's used as a component ID.
+;; NOTE `drop-down`'s only support `button`s as options (not other drop downs).
 
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
