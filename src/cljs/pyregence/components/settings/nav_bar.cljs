@@ -34,13 +34,14 @@
                               :background ($/color-picker :soft-orange)
                               :border-left (str "5px solid " ($/color-picker :standard-orange))))}
    (when icon [icon :height "24px" :width "24px"])
-   [:label {:style {:color       ($/color-picker :neutral-dark-gray)
-                    :text-align  "justify"
-                    :font-family "Roboto"
-                    :font-size   "16px"
-                    :font-style  "normal"
-                    :font-weight "400"
-                    :line-height "16px"}} text]])
+   [:p {:style {:color         ($/color-picker :neutral-dark-gray)
+                :text-align    "justify"
+                :font-family   "Roboto"
+                :font-size     "16px"
+                :font-style    "normal"
+                :font-weight   "400"
+                :line-height   "16px"
+                :margin-bottom "0px"}} text]])
 
 (defn- same-letters-so-far? [s1 s2]
   (let [s1 (str/lower-case s1)
