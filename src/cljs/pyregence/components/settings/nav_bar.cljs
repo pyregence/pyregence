@@ -15,7 +15,7 @@
   (with-meta {} {:pseudo {:hover {:background ($/color-picker :soft-orange)}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI Components
+;; Tabs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- button
@@ -90,16 +90,16 @@
                                 :outline "none"}
                   :on-change   #(reset! search (.-value (.-target %)))}]]
         (doall
-          (for [option options
-                :when  (or (not @search) (same-letters-so-far? @search (:text option)))]
-            [button option]))])]))
+         (for [option options
+               :when  (or (not @search) (same-letters-so-far? @search (:text option)))]
+           [button option]))])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI Components Functions
+;; Tabs Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmulti selected? :component)
-(defmulti on-click :component)
+(defmulti selected? :tab)
+(defmulti on-click :tab)
 
 ;; buttons are simple...
 
@@ -140,16 +140,18 @@
   #(swap! selected-log
           (fn [sl]
             (vec (concat
-                   sl
-                   [id]
-                   (when-not (last-selected-was-a-drop-down-option? sl options)
-                     (let [oids (->option-ids options)]
-                       [(or (some oids (reverse sl))
-                            (get-default-option-id options))])))))))
+                  sl
+                  [id]
+                  (when-not (last-selected-was-a-drop-down-option? sl options)
+                    (let [oids (->option-ids options)]
+                      [(or (some oids (reverse sl))
+                           (get-default-option-id options))])))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Configuration
+;; Tab Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; This is where you configure the settings nav bar by adding buttons, drop downs ,etc..!
 
 ;; NOTE this only supports drop-downs having nested buttons,
 ;; any further nesting will require changes outside the config.
@@ -157,45 +159,48 @@
 ;; NOTE atm each `text` has to be unique because it's used as an ID.
 ;; (this can be added we hit this case!)
 
-(defn- configure
+(defn- tab-data->tab-descriptions
+  "Returns a list of tab component descriptions from the provided `tab-data`."
   [{:keys [organizations]}]
-  [{:component button
-    :text      "Account Settings"
-    :icon      svg/wheel}
-   {:component drop-down
-    :text      "Organization Settings"
-    :options   (->> organizations (map #(hash-map :component button :text %)))
-    :icon      svg/group}
-   {:component button
-    :text      "Unaffilated Members"
-    :icon      svg/individual}])
+  [{:tab  button
+    :text "Account Settings"
+    :icon svg/wheel}
+   {:tab     drop-down
+    :text    "Organization Settings"
+    :options (->> organizations (map #(hash-map :tab button :text %)))
+    :icon    svg/group}
+   {:tab  button
+    :text "Unaffilated Members"
+    :icon svg/individual}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- settings
-  [m]
+(defn- tabs
+  "Returns a list of tab components"
+  [tab-data]
   (r/with-let [selected-log (r/atom [])]
-    (->> m
-         configure
+    (->> tab-data
+         tab-data->tab-descriptions
+         ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
          (walk/postwalk
-           (fn [m]
-             (if-not (and (map? m) (:component m))
-               m
-               (let [{:keys [text]} m
-                     id             (-> text
-                                        str/lower-case
-                                        (str/replace #"\s+" "-")
-                                        keyword)
-                     m              (assoc m :id id :key id :selected-log selected-log)]
-                 (assoc m :selected? (selected? m) :on-click (on-click m))))))
-         (mapv (fn [{:keys [component] :as m}] [component  m]))
+          (fn [m]
+            (if-not (and (map? m) (:tab m))
+              m
+              (let [{:keys [text]} m
+                    id             (-> text
+                                       str/lower-case
+                                       (str/replace #"\s+" "-")
+                                       keyword)
+                    m              (assoc m :id id :key id :selected-log selected-log)]
+                (assoc m :selected? (selected? m) :on-click (on-click m))))))
+         (mapv (fn [{:keys [tab] :as m}] [tab  m]))
          (cons :<>)
          vec)))
 
 (defn main
-  [m]
+  [tabs-data]
   [:nav-bar-main {:style {:display         "flex"
                           :height          "100%"
                           :width           "360px"
@@ -208,5 +213,5 @@
                   :flex-direction "column"
                   :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
                   :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray)) }}
-    [settings m]]
+    [tabs tabs-data]]
    [button {:text "Logout" :icon svg/logout}]])
