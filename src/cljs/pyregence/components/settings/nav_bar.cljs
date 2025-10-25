@@ -182,17 +182,17 @@
          tab-data->tab-descriptions
          ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
          (walk/postwalk
-          (fn [m]
-            (if-not (and (map? m) (:tab m))
-              m
-              (let [{:keys [text]} m
+          (fn [tab]
+            (if-not (and (map? tab) (:tab tab))
+              tab
+              (let [{:keys [text]} tab
                     id             (-> text
                                        str/lower-case
                                        (str/replace #"\s+" "-")
                                        keyword)
-                    m              (assoc m :id id :key id :selected-log selected-log)]
-                (assoc m :selected? (selected? m) :on-click (on-click m))))))
-         (mapv (fn [{:keys [tab] :as m}] [tab  m]))
+                    tab              (assoc tab :id id :key id :selected-log selected-log)]
+                (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))
+         (mapv (fn [{:keys [tab] :as tab-data}] [tab tab-data]))
          (cons :<>)
          vec)))
 
