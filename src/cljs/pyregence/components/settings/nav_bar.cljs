@@ -38,26 +38,26 @@
 (defn- button
   [{:keys [icon text on-click selected?]}]
   [:nav-button {:on-click on-click
-                :class (<class $on-hover-darker-orange-background)
-                :style (cond-> {:display     "flex"
-                                :height      "52px"
-                                :padding     "16px"
-                                :cursor      "pointer"
-                                :gap         "12px"
-                                :align-items "center"
-                                :align-self  "stretch"}
-                         selected?
-                         (assoc
-                          :background ($/color-picker :soft-orange)
-                          :border-left (str "5px solid " ($/color-picker :standard-orange))))}
+                :class    (<class $on-hover-darker-orange-background)
+                :style    (cond-> {:display     "flex"
+                                   :height      "52px"
+                                   :padding     "16px"
+                                   :cursor      "pointer"
+                                   :gap         "12px"
+                                   :align-items "center"
+                                   :align-self  "stretch"}
+                            selected?
+                            (assoc
+                             :background ($/color-picker :soft-orange)
+                             :border-left (str "5px solid " ($/color-picker :standard-orange))))}
    (when icon [icon :height "24px" :width "24px"])
-   [:p {:style {:color                ($/color-picker :neutral-dark-gray)
-                :text-align                "justify"
-                :font-family                "Roboto"
-                :font-size                "16px"
-                :font-style                "normal"
-                :font-weight                "400"
-                :line-height                "16px"
+   [:p {:style {:color         ($/color-picker :neutral-dark-gray)
+                :text-align    "justify"
+                :font-family   "Roboto"
+                :font-size     "16px"
+                :font-style    "normal"
+                :font-weight   "400"
+                :line-height   "16px"
                 :margin-bottom "0px"}} text]])
 
 (defn- drop-down
