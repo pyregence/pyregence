@@ -15,16 +15,26 @@
   (with-meta {} {:pseudo {:hover {:background ($/color-picker :soft-orange)}}}))
 
 (defn- $on-hover-darker-gray-border []
-
   (with-meta
     {:border        (str "1px solid " ($/color-picker :neutral-soft-gray))
      :border-radius "4px"
      ;;neutral-light-gray
      :background    "rgba(246, 246, 246, 1)"}
-    ;; netural-md-gray
-    {:pseudo {:hover {:border "1px solid rgba(118, 117, 117, 1)" :border-radius "4px"}
-              ;; standard-orage
-              :focus-within {:border "1px solid rgba(229, 177, 84, 1)" :border-radius "4px" :font-weight 500}}}))
+    {:pseudo {:hover {:border (str "1px solid " ($/color-picker :neutral-md-gray))
+                      :border-radius "4px"}
+              :focus-within {:border        (str "1px solid " ($/color-picker :standard-orange))
+                             :border-radius "4px"
+                             :font-weight 500}}}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helper functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- same-letters-so-far? [s1 s2]
+  (let [s1 (str/lower-case s1)
+        s2 (str/lower-case s2)]
+    (and (<= (count s1) (count s2))
+         (= s1 (subs s2 0 (count s1))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tabs
@@ -54,12 +64,6 @@
                 :font-weight                "400"
                 :line-height                "16px"
                 :margin-bottom "0px"}} text]])
-
-(defn- same-letters-so-far? [s1 s2]
-  (let [s1 (str/lower-case s1)
-        s2 (str/lower-case s2)]
-    (and (<= (count s1) (count s2))
-         (= s1 (subs s2 0 (count s1))))))
 
 (defn- drop-down
   [{:keys [selected? options on-click] :as m}]
