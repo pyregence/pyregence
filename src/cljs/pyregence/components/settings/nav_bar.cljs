@@ -19,8 +19,7 @@
     {:border        (str "1px solid " ($/color-picker :neutral-soft-gray))
      :background    "rgba(246, 246, 246, 1)"}
     {:pseudo {:hover {:border (str "1px solid " ($/color-picker :neutral-md-gray))}
-              :focus-within {:border        (str "1px solid " ($/color-picker :standard-orange))
-                             :font-weight 500}}}))
+              :focus-within {:border        (str "1px solid " ($/color-picker :standard-orange))}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper functions
