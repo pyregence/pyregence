@@ -17,13 +17,10 @@
 (defn- $on-hover-darker-gray-border []
   (with-meta
     {:border        (str "1px solid " ($/color-picker :neutral-soft-gray))
-     :border-radius "4px"
      ;;neutral-light-gray
      :background    "rgba(246, 246, 246, 1)"}
-    {:pseudo {:hover {:border (str "1px solid " ($/color-picker :neutral-md-gray))
-                      :border-radius "4px"}
+    {:pseudo {:hover {:border (str "1px solid " ($/color-picker :neutral-md-gray))}
               :focus-within {:border        (str "1px solid " ($/color-picker :standard-orange))
-                             :border-radius "4px"
                              :font-weight 500}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -38,7 +35,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tabs
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- button
   [{:keys [icon text on-click selected?]}]
@@ -95,11 +92,8 @@
                        :flex-direction "row"
                        :align-items    "center"
                        :margin         "16px"
-                       ;;:border-radius  "4px"
-                       ;; :neutral-light-gray
-                       ;;:background     "rgba(246, 246, 246, 1)"
-
-                       :cursor "pointer"}}
+                       :border-radius  "4px"
+                       :cursor         "pointer"}}
          [svg/search :height "16px" :width "16px"]
          [:input {:type        "text"
                   :placeholder "search"
