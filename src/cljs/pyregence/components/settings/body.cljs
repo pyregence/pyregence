@@ -1,11 +1,40 @@
 (ns pyregence.components.settings.body
   (:require
+   [herb.core                      :refer [<class]]
    [pyregence.components.svg-icons :as svg]
-   [pyregence.utils.dom-utils :refer [input-value]]))
+   [pyregence.styles               :as $]
+   [pyregence.utils.dom-utils      :refer [input-value]]
+   [reagent.core                   :as r]))
 
-;;TODO turn into herb styles
+(defn- $standard-input-field
+  []
+  (with-meta
+    {:background    ($/color-picker :neutral-white)
+     :border        (str "1px solid " ($/color-picker :neutral-soft-gray))}
+    ;;TODO figure out why visible-focus is kicking in and going "over" the focus styles,
+    ;; this seems to happen on all inputs...
+    {:pseudo {:focus {:background    ($/color-picker :neutral-white)
+                      :border (str "1px solid " ($/color-picker :primary-standard-orange))}
+              :hover {:background ($/color-picker :neutral-light-gray)}}}))
+
+(defn- input-field
+  [{:keys [value on-change]}]
+  [:input {:type      "text"
+           :class     (<class $standard-input-field)
+           :style     {:display       "flex"
+                       :weight        "500"
+                       :align-items   "center"
+                       :height        "50px"
+                       :font-size     "14px"
+                       :font-style    "normal"
+                       :line-weight   "22px"
+                       :padding       "14px"
+                       :border-radius "4px"}
+           :value     value
+           :on-change on-change}])
+
 (def label-styles
-  {:color       "var(--Neutral-Md-Gray, #767575)"
+  {:color ($/color-picker :neutral-md-gray)
    :font-family "Roboto"
    :font-size   "14px"
    :font-weight "500"
@@ -13,7 +42,7 @@
    :margin      "0"})
 
 (def font-styles
-  {:color       "var(--Neutral-Black, #000)"
+  {:color ($/color-picker :neutral-black)
    :font-family "Roboto"
    :font-size   "14px"
    :font-style  "normal"
@@ -21,7 +50,7 @@
    ;;TODO look into why all :p need margin-bottom 0 to look normal
    :margin      "0"})
 
-(defn input-show
+(defn- input-show
   [{:keys [label text icon]}]
   [:div {:style {:display        "flex"
                  :gap            "5px"
@@ -31,31 +60,24 @@
    [:p {:style font-styles} text]
    (when icon [icon :height "16px" :width "16px"])])
 
-(defn user-name
-  [{:keys [name-part name]}]
+(defn- user-name
+  [{:keys [name-part] :as name-info}]
   [:div {:style {:display        "flex"
                  :flex-direction "column"}}
-   [:div {:style (assoc label-styles :color "var(--Neutral-Dark-gray, #4A4A4A)")}
+   [:div {:style label-styles}
     (let [styles {:font-family "Roboto"
                   :font-size   "14px"
                   :font-style  "normal"
-                  :font-weight "500"}]
+                  :font-weight "500"
+                  :color ($/color-picker :neutral-black)}]
       [:div {:style {:display        "flex"
                      :flex-direction "row"
                      :height         "24px"}}
        [:p {:style styles}  (str name-part " Name")]
-       [:p {:style (assoc styles :color "red")}  "*"]])
-    [:input {:type  "text"
-             :style {:display       "flex"
-                     :align-items   "center"
-                     :height        "50px"
-                     :padding       "14px"
-                     :border-radius "4px"
-                     :border        "1px solid var(--Neutral-soft-gray, #E1E1E1)"
-                     :background    "var(--Neutral-White, #FFF)"}
-             :value name}]]])
+       [:p {:style (assoc styles :color ($/color-picker :error-red))}  "*"]])
+    [input-field name-info]]])
 
-(defn card
+(defn- card
   [{:keys [title children]}]
   [:card
    {:style {:display        "flex"
@@ -80,27 +102,29 @@
     title]
    children])
 
-(defn my-account-details
-  []
-  [:my-account-details
-   {:style {:display        "flex"
-            :width          "100%"
-            :padding        "16px"
-            :flex-direction "column"
-            :align-items    "flex-start"
-            :gap            "16px"
-            :align-self     "stretch"
-            :border-radius  "4px"
-            :border         "1px solid var(--Neutral-Soft-gray, #E1E1E1)"
-            :background     "var(--Neutral-White, #FFF)"}}
-   ;; neutral-black
-   ])
-
-(defn labled-toggle
+(defn- labled-toggle
   [{:keys [label]}]
   [:<>
    [:p {:style (assoc font-styles :font-weight "400")} label]
    [:p "TODO TOGGLE"]])
+
+(defn- user-full-name
+  []
+  (r/with-let [full-name (r/atom {:first-name "Adi" :last-name "mcfly"})]
+    [:div {:style {:display "flex"
+                   :gap "16px"
+                   :flex-direction "column"}}
+     [:div {:style {:display        "flex"
+                    :flex-direction "row"
+                    :gap            "16px"}}
+      [user-name {:name-part "First"
+                  :value (:first-name @full-name)
+                  :on-change #(swap! full-name assoc :first-name (input-value %))}]
+      [user-name {:name-part "Last"
+                  :value (:last-name @full-name)
+                  :on-change #(swap! full-name assoc :last-name (input-value %))}]]
+     ;;TODO add button here, on click submit data.
+     [:TODO-BUTTON "TODO SAVE NAME BUTTON"]]))
 
 (defn main
   []
@@ -119,13 +143,7 @@
            [input-show {:label "Role Type"
                         :text  "Account Manager"
                         :icon  svg/info-with-circle}]
-           [:div {:style {:display        "flex"
-                          :flex-direction "row"
-                          :gap            "16px"}}
-            [user-name {:name-part "First" :name "Adi"}]
-            [user-name {:name-part "Last" :name "Gorule"}]]]}
-   ;;TODO add the button here, those are in another PR though
-    [:TODO-BUTTON]]
+           [user-full-name]]}]
    [card {:title "RESET MY PASSWORD"
           :children
           [:<>
@@ -136,7 +154,7 @@
                           :justify-content "space-between"
                           :align-items     "flex-end"
                           :width           "100%"}}
-            [:p {:style {:margin "0px"}} "TODO BUTTON"]
+            [:p {:style {:margin "0px"}} "TODO SAVE BUTTON"]
             [input-show {:label "Last Updated"
                          :text  "11/16/2024"}]]]}]
    [card {:title "NOTIFICATION PREFERENCES"
