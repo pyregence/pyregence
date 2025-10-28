@@ -125,7 +125,7 @@
      [:TODO-BUTTON "TODO SAVE NAME BUTTON"]]))
 
 (defn main
-  []
+  [{:keys [last-updated-password]}]
   [:div {:style {:display        "flex"
                  :height         "942px"
                  :flex-direction "column"
@@ -154,7 +154,7 @@
                           :width           "100%"}}
             [:p {:style {:margin "0px"}} "TODO SAVE BUTTON"]
             [input-show {:label "Last Updated"
-                         :text  "11/16/2024"}]]]}]
+                         :text last-updated-password}]]]}]
    [card {:title "NOTIFICATION PREFERENCES"
           :children
           [:<>
