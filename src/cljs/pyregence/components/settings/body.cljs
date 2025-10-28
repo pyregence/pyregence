@@ -104,7 +104,7 @@
             :border         "1px solid var(--Neutral-Soft-gray, #E1E1E1)"
             :background     "var(--Neutral-White, #FFF)"}}
    ;; neutral-black
-   [:p {:style {:color          "#000"
+   [:p {:style {:color          ($/color-picker :black)
                 :font-family    "Public Sans"
                 :font-size      "14px"
                 :font-style     "normal"
