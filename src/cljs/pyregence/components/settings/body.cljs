@@ -112,8 +112,8 @@
    [:p "TOGGLE"]])
 
 (defn- user-full-name
-  []
-  (r/with-let [full-name (r/atom {:first-name "Adi" :last-name "mcfly"})]
+  [user-full-name]
+  (r/with-let [full-name (r/atom user-full-name)]
     [:div {:style {:display "flex"
                    :width   "100%"
                    :gap     "16px"
@@ -132,7 +132,11 @@
      [:TODO-BUTTON "SAVE"]]))
 
 (defn main
-  [{:keys [password-set-date]}]
+  [{:keys [password-set-date
+           email-address
+           role-type
+           first-name
+           last-name]}]
   [:div {:style {:display        "flex"
                  :height         "942px"
                  :flex-direction "column"
@@ -144,11 +148,11 @@
           :children
           [:<>
            [input-show {:label "Email Address"
-                        :text  "agorule@sig-gis.com"}]
+                        :text  email-address}]
            [input-show {:label "Role Type"
-                        :text  "Account Manager"
+                        :text  role-type
                         :icon  svg/info-with-circle}]
-           [user-full-name]]}]
+           [user-full-name {:first-name first-name :last-name last-name}]]}]
    [card {:title "RESET MY PASSWORD"
           :children
           [:<>
