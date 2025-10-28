@@ -11,6 +11,8 @@
   (with-meta
     {:background    ($/color-picker :neutral-white)
      :border        (str "1px solid " ($/color-picker :neutral-soft-gray))}
+    ;;TODO On some browsers, aka chrome, there is a black border that is being
+    ;;imposed ontop of the focused orange border. Try to fix this!
     {:pseudo {:focus {:background    ($/color-picker :neutral-white)
                       :border (str "1px solid " ($/color-picker :primary-standard-orange))}
               :hover {:background ($/color-picker :neutral-light-gray)}}}))
