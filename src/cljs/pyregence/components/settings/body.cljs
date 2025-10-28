@@ -62,16 +62,18 @@
 (defn- user-name
   [{:keys [name-part] :as name-info}]
   [:div {:style {:display        "flex"
-                 :flex-direction "column"}}
+                 :flex-direction "column"
+                 :width          "100%"}}
    [:div {:style label-styles}
     (let [styles {:font-family "Roboto"
                   :font-size   "14px"
                   :font-style  "normal"
                   :font-weight "500"
                   :color ($/color-picker :neutral-black)}]
-      [:div {:style {:display        "flex"
-                     :flex-direction "row"
-                     :height         "24px"}}
+      [:div {:style {:display         "flex"
+                     :flex-direction  "row"
+                     :width           "100%"
+                     :height          "24px"}}
        [:p {:style styles}  (str name-part " Name")]
        [:p {:style (assoc styles :color ($/color-picker :error-red))}  "*"]])
     [input-field name-info]]])
@@ -80,6 +82,7 @@
   [{:keys [title children]}]
   [:card
    {:style {:display        "flex"
+            :max-width      "750px"
             :width          "100%"
             :padding        "16px"
             :flex-direction "column"
@@ -111,10 +114,12 @@
   []
   (r/with-let [full-name (r/atom {:first-name "Adi" :last-name "mcfly"})]
     [:div {:style {:display "flex"
-                   :gap "16px"
+                   :width   "100%"
+                   :gap     "16px"
                    :flex-direction "column"}}
      [:div {:style {:display        "flex"
                     :flex-direction "row"
+                    :width          "100%"
                     :gap            "16px"}}
       [user-name {:name-part "First"
                   :value (:first-name @full-name)
