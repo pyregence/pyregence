@@ -11,8 +11,6 @@
   (with-meta
     {:background    ($/color-picker :neutral-white)
      :border        (str "1px solid " ($/color-picker :neutral-soft-gray))}
-    ;;TODO figure out why visible-focus is kicking in and going "over" the focus styles,
-    ;; this seems to happen on all inputs...
     {:pseudo {:focus {:background    ($/color-picker :neutral-white)
                       :border (str "1px solid " ($/color-picker :primary-standard-orange))}
               :hover {:background ($/color-picker :neutral-light-gray)}}}))
