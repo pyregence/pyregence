@@ -21,6 +21,7 @@
            :class     (<class $standard-input-field)
            :style     {:display       "flex"
                        :weight        "500"
+                       :width         "100%"
                        :align-items   "center"
                        :height        "50px"
                        :font-size     "14px"
