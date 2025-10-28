@@ -6,16 +6,41 @@
    [pyregence.utils.dom-utils      :refer [input-value]]
    [reagent.core                   :as r]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Styles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn- $standard-input-field
   []
   (with-meta
-    {:background    ($/color-picker :neutral-white)
-     :border        (str "1px solid " ($/color-picker :neutral-soft-gray))}
+    {:background ($/color-picker :neutral-white)
+     :border     (str "1px solid " ($/color-picker :neutral-soft-gray))}
     ;;TODO On some browsers, aka chrome, there is a black border that is being
     ;;imposed ontop of the focused orange border. Try to fix this!
-    {:pseudo {:focus {:background    ($/color-picker :neutral-white)
-                      :border (str "1px solid " ($/color-picker :primary-standard-orange))}
+    {:pseudo {:focus {:background ($/color-picker :neutral-white)
+                      :border     (str "1px solid " ($/color-picker :primary-standard-orange))}
               :hover {:background ($/color-picker :neutral-light-gray)}}}))
+
+(def label-styles
+  {:color       ($/color-picker :neutral-md-gray)
+   :font-family "Roboto"
+   :font-size   "14px"
+   :font-weight "500"
+   :font-style  "normal"
+   :margin      "0"})
+
+(def font-styles
+  {:color       ($/color-picker :neutral-black)
+   :font-family "Roboto"
+   :font-size   "14px"
+   :font-style  "normal"
+   :font-weight "600"
+   ;;TODO look into why all :p need margin-bottom 0 to look normal
+   :margin      "0"})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- input-field
   [{:keys [value on-change]}]
@@ -33,23 +58,6 @@
                        :border-radius "4px"}
            :value     value
            :on-change on-change}])
-
-(def label-styles
-  {:color ($/color-picker :neutral-md-gray)
-   :font-family "Roboto"
-   :font-size   "14px"
-   :font-weight "500"
-   :font-style  "normal"
-   :margin      "0"})
-
-(def font-styles
-  {:color ($/color-picker :neutral-black)
-   :font-family "Roboto"
-   :font-size   "14px"
-   :font-style  "normal"
-   :font-weight "600"
-   ;;TODO look into why all :p need margin-bottom 0 to look normal
-   :margin      "0"})
 
 (defn- input-show
   [{:keys [label text icon]}]
@@ -71,11 +79,11 @@
                   :font-size   "14px"
                   :font-style  "normal"
                   :font-weight "500"
-                  :color ($/color-picker :neutral-black)}]
-      [:div {:style {:display         "flex"
-                     :flex-direction  "row"
-                     :width           "100%"
-                     :height          "24px"}}
+                  :color       ($/color-picker :neutral-black)}]
+      [:div {:style {:display        "flex"
+                     :flex-direction "row"
+                     :width          "100%"
+                     :height         "24px"}}
        [:p {:style styles}  (str name-part " Name")]
        [:p {:style (assoc styles :color ($/color-picker :error-red))}  "*"]])
     [input-field name-info]]])
@@ -111,27 +119,32 @@
   [{:keys [label]}]
   [:<>
    [:p {:style (assoc font-styles :font-weight "400")} label]
+   ;;TODO add toggle
    [:p "TOGGLE"]])
 
 (defn- user-full-name
-  [user-full-name]
-  (r/with-let [full-name (r/atom user-full-name)]
-    [:div {:style {:display "flex"
-                   :width   "100%"
-                   :gap     "16px"
+  [full-name]
+  (r/with-let [full-name (r/atom full-name)]
+    [:div {:style {:display        "flex"
+                   :width          "100%"
+                   :gap            "16px"
                    :flex-direction "column"}}
      [:div {:style {:display        "flex"
                     :flex-direction "row"
                     :width          "100%"
                     :gap            "16px"}}
       [user-name {:name-part "First"
-                  :value (:first-name @full-name)
+                  :value     (:first-name @full-name)
                   :on-change #(swap! full-name assoc :first-name (input-value %))}]
       [user-name {:name-part "Last"
-                  :value (:last-name @full-name)
+                  :value     (:last-name @full-name)
                   :on-change #(swap! full-name assoc :last-name (input-value %))}]]
      ;;TODO add button here, on click submit data.
      [:TODO-BUTTON "SAVE"]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Page
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn main
   [{:keys [password-set-date
@@ -159,7 +172,7 @@
           :children
           [:<>
            [:p {:style (assoc font-styles :font-weight "400")} "Once you send a request to reset your password, you will receive a link on your email to set up your new password."]
-   ;;TODO add the button here, those are in another PR though
+           ;;TODO add the button here, those are in another PR though
            [:div {:style {:display         "flex"
                           :flex-direction  "row"
                           :justify-content "space-between"
@@ -167,7 +180,7 @@
                           :width           "100%"}}
             [:p {:style {:margin "0px"}} "SAVE"]
             [input-show {:label "Last Updated"
-                         :text password-set-date}]]]}]
+                         :text  password-set-date}]]]}]
    [card {:title "NOTIFICATION PREFERENCES"
           :children
           [:<>
