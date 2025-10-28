@@ -83,6 +83,7 @@
   [:card
    {:style {:display        "flex"
             :max-width      "750px"
+            :min-width      "300px"
             :width          "100%"
             :padding        "16px"
             :flex-direction "column"
