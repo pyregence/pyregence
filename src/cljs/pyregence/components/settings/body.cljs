@@ -128,7 +128,7 @@
                   :value (:last-name @full-name)
                   :on-change #(swap! full-name assoc :last-name (input-value %))}]]
      ;;TODO add button here, on click submit data.
-     [:TODO-BUTTON "TODO SAVE NAME BUTTON"]]))
+     [:TODO-BUTTON "SAVE"]]))
 
 (defn main
   [{:keys [password-set-date]}]
@@ -158,7 +158,7 @@
                           :justify-content "space-between"
                           :align-items     "flex-end"
                           :width           "100%"}}
-            [:p {:style {:margin "0px"}} "TODO SAVE BUTTON"]
+            [:p {:style {:margin "0px"}} "SAVE"]
             [input-show {:label "Last Updated"
                          :text password-set-date}]]]}]
    [card {:title "NOTIFICATION PREFERENCES"
