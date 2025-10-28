@@ -109,7 +109,7 @@
   [{:keys [label]}]
   [:<>
    [:p {:style (assoc font-styles :font-weight "400")} label]
-   [:p "TODO TOGGLE"]])
+   [:p "TOGGLE"]])
 
 (defn- user-full-name
   []
