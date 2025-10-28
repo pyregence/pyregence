@@ -101,8 +101,8 @@
             :gap            "16px"
             :align-self     "stretch"
             :border-radius  "4px"
-            :border         "1px solid var(--Neutral-Soft-gray, #E1E1E1)"
-            :background     "var(--Neutral-White, #FFF)"}}
+            :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
+            :background     ($/color-picker :white)}}
    ;; neutral-black
    [:p {:style {:color          ($/color-picker :black)
                 :font-family    "Public Sans"
