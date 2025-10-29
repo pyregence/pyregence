@@ -4,6 +4,7 @@
             [goog.dom                           :as dom]
             [reagent.dom                        :refer [render]]
             [pyregence.components.page-layout   :refer [wrap-page]]
+            [pyregence.pages.account-settings   :as account-settings]
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.backup-codes       :as backup-codes]
             [pyregence.pages.dashboard          :as dashboard]
@@ -28,6 +29,7 @@
 (def ^:private uri->root-component-h
   "All root-components for URIs that should have just a header."
   {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/account-settings"   account-settings/root-component
    "/admin"              admin/root-component
    "/backup-codes"       backup-codes/root-component
    "/dashboard"          dashboard/root-component
