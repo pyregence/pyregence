@@ -896,7 +896,7 @@
 
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
-  [{:keys [user-id user-role user-email] :as params}]
+  [{:keys [user-id user-role user-email account-settings?] :as params}]
   (r/create-class
    {:component-did-mount
     (fn [_]
@@ -913,8 +913,10 @@
       [:div#near-term-forecast
        {:style ($/combine $/root {:height "100%" :padding 0 :position "relative" :overflow :hidden})}
        [message-box-modal]
+       ;; NOTE 1. when on /account-settings this is always loading.
        (when @!/loading? [loading-modal])
        [message-modal]
+       ;; NOTE 2. And the nav bar doesn't show the forecast tabs
        [nav-bar {:capabilities     @!/capabilities
                  :current-forecast @!/*forecast
                  :is-admin?        (roles-who-can-see-admin-btn user-role)
@@ -923,11 +925,17 @@
                  :user-orgs-list   @!/user-orgs-list
                  :select-forecast! select-forecast!
                  :user-id          user-id ; TODO we might be able to get rid of this
-                 :user-role        user-role}]
-       [:div {:style {:height "100%" :position "relative" :width "100%"}}
-        (when (and @mb/the-map
-                   (not-empty @!/capabilities)
-                   (not-empty @!/*params))
-          [control-layer user-id user-email])
-        [map-layer]
-        [pop-up]]])}))
+                 :user-role        user-role
+                 :account-settings? account-settings?}]
+       (if account-settings?
+         [:p "show account settings"]
+
+         [:div {:style {:height "100%" :position "relative" :width "100%"}}
+          (when (and @mb/the-map
+                     (not-empty @!/capabilities)
+                     (not-empty @!/*params))
+            [control-layer user-id user-email])
+
+          ;; NOTE 3. Because the forecast tabs and loading both seem coupled to this map-layer cmpt.
+          [map-layer]
+          [pop-up]])])}))

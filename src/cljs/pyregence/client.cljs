@@ -29,7 +29,7 @@
 (def ^:private uri->root-component-h
   "All root-components for URIs that should have just a header."
   {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
-   "/account-settings"   account-settings/root-component
+   "/account-settings"   #(ntf/root-component (merge % {:forecast-type :near-term :account-settings? true}))
    "/admin"              admin/root-component
    "/backup-codes"       backup-codes/root-component
    "/dashboard"          dashboard/root-component
