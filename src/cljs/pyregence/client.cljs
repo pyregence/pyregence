@@ -27,41 +27,43 @@
 (defonce ^:private original-params  (atom {}))
 (defonce ^:private original-session (atom {}))
 
-(def ^:private uri->cmpt-info
-  {"/"                   {:root-component ntf/root-component
-                          :forecast-type  :near-term}
-   "/account-settings"   {:root-component account-settings/root-component}
-   "/admin"              {:root-component admin/root-component}
-   "/backup-codes"       {:root-component backup-codes/root-component}
-   "/dashboard"          {:root-component dashboard/root-component}
-   "/forecast"           {:root-component ntf/root-component
-                          :forecast-type  :near-term}
-   "/login"              {:root-component login/root-component}
-   "/long-term-forecast" {:root-component ntf/root-component
-                          :forecast-type  :long-term}
-   "/near-term-forecast" {:root-component ntf/root-component
-                          :forecast-type  :near-term}
-   "/register"           {:root-component register/root-component}
-   "/reset-password"     {:root-component reset-password/root-component}
-   "/settings"           {:root-component settings/root-component}
-   "/totp-setup"         {:root-component totp-setup/root-component}
-   "/users-table"        {:root-component users-table/root-component}
-   "/verify-2fa"         {:root-component verify-2fa/root-component}
-   "/verify-email"       {:root-component verify-email/root-component}
-   "/help"               {:root-component help/root-component
-                          :footer?        true}
-   "/privacy-policy"     {:root-component privacy/root-component
-                          :footer?        true}
-   "/terms-of-use"       {:root-component terms/root-component
-                          :footer?        true}})
+(def ^:private uri->root-component-h
+  "All root-components for URIs that should have just a header."
+  {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/account-settings"   account-settings/root-component
+   "/admin"              admin/root-component
+   "/backup-codes"       backup-codes/root-component
+   "/dashboard"          dashboard/root-component
+   "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/login"              login/root-component
+   "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
+   "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/register"           register/root-component
+   "/reset-password"     reset-password/root-component
+   "/settings"           settings/root-component
+   "/totp-setup"         totp-setup/root-component
+   "/users-table"        users-table/root-component
+   "/verify-2fa"         verify-2fa/root-component
+   "/verify-email"       verify-email/root-component})
+
+(def ^:private uri->root-component-hf
+  "All root-components for URIs that should have a header and a footer."
+  {"/help"           help/root-component
+   "/privacy-policy" privacy/root-component
+   "/terms-of-use"   terms/root-component})
 (defn- render-root
   "Renders the root component for the current URI."
   [params]
-  (render
-   [wrap-page
-    (#(assoc % :params (merge params (select-keys % [:forecast-type])))
-     (get uri->cmpt-info (.. js/window -location -pathname) {:root-component not-found/root-component :footer? true}))]
-   (dom/getElement "app")))
+  (let [uri           (.. js/window -location -pathname)
+        root-cmpt-h   (get uri->root-component-h uri)
+        root-cmpt-hf  (get uri->root-component-hf uri)
+        root-cmpt     (or root-cmpt-h root-cmpt-hf not-found/root-component)
+        footer?       (some? root-cmpt-hf)]
+    (render
+     [wrap-page {:root-component root-cmpt
+                 :params         params
+                 :footer?        footer?}]
+     (dom/getElement "app"))))
 
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."
