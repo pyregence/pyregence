@@ -94,7 +94,6 @@
             :background     "var(--Neutral-White, #FFF)"}}
    ;; neutral-black
    [:p {:style {:color          "#000"
-                :font-family    "Public Sans"
                 :font-size      "14px"
                 :font-style     "normal"
                 :font-weight    "700"
@@ -133,6 +132,7 @@
 (defn main
   [{:keys [password-set-date]}]
   [:div {:style {:display        "flex"
+                 :font-family    "Roboto"
                  :height         "942px"
                  :flex-direction "column"
                  :align-items    "flex-start"
