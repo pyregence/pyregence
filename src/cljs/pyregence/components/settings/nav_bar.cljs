@@ -90,15 +90,16 @@
                        :flex-direction "row"
                        :align-items    "center"
                        :margin         "16px"
-                       :border-radius  "4px"
-                       :cursor         "pointer"}}
+                       :padding-left   "16px"
+                       :border-radius  "4px"}}
          [svg/search :height "16px" :width "16px"]
          [:input {:type        "text"
-                  :placeholder "search"
-                  :style       {:border     "none"
-                                :background "transparent"
-                                :width      "100%"
-                                :outline    "none"}
+                  :placeholder "Search"
+                  :style       {:border       "none"
+                                :background   "transparent"
+                                :padding-left "8px"
+                                :width        "100%"
+                                :outline      "none"}
                   :on-change   #(reset! search (.-value (.-target %)))}]]
         (doall
          (for [option options
@@ -210,6 +211,7 @@
 (defn main
   [tabs-data]
   [:nav-bar-main {:style {:display         "flex"
+                          :font-family     "Roboto"
                           :height          "100%"
                           :width           "360px"
                           :padding         "40px 0"
