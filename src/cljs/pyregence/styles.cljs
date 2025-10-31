@@ -40,6 +40,7 @@
      :font-hover-color        (color-picker :black)
      :header-color            (str "rgb(24, 30, 36, "     alpha ")")
      :light-gray              (str "rgba(230, 230, 230, " alpha ")")
+     :lighter-gray            (str "rgba(247, 247, 247, " alpha ")")
      :light-orange            (str "rgba(251, 244, 230, " alpha ")")
      :light-red               (str "rgba(254, 226, 226, " alpha ")")
      :neutral-black           (str "rgba(0, 0, 0, " alpha ")")

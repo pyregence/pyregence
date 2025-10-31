@@ -1,6 +1,7 @@
 (ns pyregence.components.settings.body
   (:require
    [herb.core                      :refer [<class]]
+   [pyregence.components.settings.buttons :as buttons]
    [pyregence.components.svg-icons :as svg]
    [pyregence.styles               :as $]
    [pyregence.utils.dom-utils      :refer [input-value]]
@@ -139,8 +140,7 @@
       [user-name {:name-part "Last"
                   :value     (:last-name @full-name)
                   :on-change #(swap! full-name assoc :last-name (input-value %))}]]
-     ;;TODO add button here, on click submit data.
-     [:TODO-BUTTON "SAVE"]]))
+     [buttons/ghost {:text "Save Changes"}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
@@ -179,7 +179,8 @@
                           :justify-content "space-between"
                           :align-items     "flex-end"
                           :width           "100%"}}
-            [:p {:style {:margin "0px"}} "SAVE"]
+            [:p {:style {:margin "0px"}}
+             [buttons/ghost {:text "Send Reset Link"}]]
             [input-show {:label "Last Updated"
                          :text  password-set-date}]]]}]
    [card {:title "NOTIFICATION PREFERENCES"

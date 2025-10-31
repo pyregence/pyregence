@@ -90,16 +90,15 @@
                        :flex-direction "row"
                        :align-items    "center"
                        :margin         "16px"
-                       :padding-left   "16px"
-                       :border-radius  "4px"}}
+                       :border-radius  "4px"
+                       :cursor         "pointer"}}
          [svg/search :height "16px" :width "16px"]
          [:input {:type        "text"
-                  :placeholder "Search"
-                  :style       {:border       "none"
-                                :background   "transparent"
-                                :padding-left "8px"
-                                :width        "100%"
-                                :outline      "none"}
+                  :placeholder "search"
+                  :style       {:border     "none"
+                                :background "transparent"
+                                :width      "100%"
+                                :outline    "none"}
                   :on-change   #(reset! search (.-value (.-target %)))}]]
         (doall
          (for [option options
@@ -188,30 +187,28 @@
 
 (defn- tabs
   "Returns a list of tab components"
-  [tab-data]
-  (r/with-let [selected-log (r/atom [])]
-    (->> tab-data
-         tab-data->tab-descriptions
+  [{:keys [selected-log] :as tab-data}]
+  (->> tab-data
+       tab-data->tab-descriptions
          ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
-         (walk/postwalk
-          (fn [tab]
-            (if-not (and (map? tab) (:tab tab))
-              tab
-              (let [{:keys [text]} tab
-                    id             (-> text
-                                       str/lower-case
-                                       (str/replace #"\s+" "-")
-                                       keyword)
-                    tab              (assoc tab :id id :key id :selected-log selected-log)]
-                (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))
-         (mapv (fn [{:keys [tab] :as tab-data}] [tab tab-data]))
-         (cons :<>)
-         vec)))
+       (walk/postwalk
+        (fn [tab]
+          (if-not (and (map? tab) (:tab tab))
+            tab
+            (let [{:keys [text]} tab
+                  id             (-> text
+                                     str/lower-case
+                                     (str/replace #"\s+" "-")
+                                     keyword)
+                  tab              (assoc tab :id id :key id :selected-log selected-log)]
+              (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))
+       (mapv (fn [{:keys [tab] :as tab-data}] [tab tab-data]))
+       (cons :<>)
+       vec))
 
 (defn main
   [tabs-data]
   [:nav-bar-main {:style {:display         "flex"
-                          :font-family     "Roboto"
                           :height          "100%"
                           :width           "360px"
                           :padding         "40px 0"
