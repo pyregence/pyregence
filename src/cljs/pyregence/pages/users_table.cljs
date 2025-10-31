@@ -34,6 +34,7 @@
        #js {:backgroundColor                ($/color-picker :white)
             :headerBackgroundColor          ($/color-picker :neutral-light-gray)
             :headerTextColor                ($/color-picker :black)
+            :headerFontWeight               600
             :rowHoverColor                  ($/color-picker :light-orange)
             :selectedRowBackgroundColor     ($/color-picker :soft-orange)
             :checkboxCheckedBackgroundColor ($/color-picker :primary-main-orange)
@@ -56,6 +57,26 @@
                      :color           (if v "green" "red")}}
       (if v "✓" "✗")])))
 
+(defn- user-role-renderer [params]
+  (let [v (.-value params)]
+    (r/as-element
+     [:span
+      (condp = v
+       "super_admin"         "Super Admin"
+       "organization_admin"  "Organization Admin"
+       "organization_member" "Organization Member"
+       "account_manager"     "Account Manager"
+       "member"              "Member")])))
+    
+(defn- org-membership-status-renderer [params]
+  (let [v (.-value params)]
+    (r/as-element
+     [:span
+      (condp = v
+       "none"     "None"
+       "pending"  "Pending"
+       "accepted" "Accepted")])))
+
 (defn- wrap-text-style [_]
   #js {:whiteSpace "normal" :lineHeight "1.4" :overflow "visible" :textAlign "left"})
 
@@ -68,16 +89,16 @@
 
 (defonce all-users-table-data
   (r/atom {:row-data []
-           :col-defs [{:field "user-id"               :headerName "User ID"               :filter "agNumberColumnFilter" :width 110}
+           :col-defs [{:field "user-id"               :headerName "User ID"               :filter false :width 110}
                       {:field "email"                 :headerName "Email"                 :filter "agTextColumnFilter"}
                       {:field "name"                  :headerName "Full Name"             :filter "agTextColumnFilter" :width 150}
                       {:field "organization-name"     :headerName "Org Name"              :filter "agTextColumnFilter"}
-                      {:field "match-drop-access"     :headerName "Match Drop?"           :filter "agTextColumnFilter" :width 150 :cellRenderer boolean-renderer}
-                      {:field "email-verified"        :headerName "Email Verified?"       :filter "agTextColumnFilter" :width 150 :cellRenderer boolean-renderer}
-                      {:field "user-role"             :headerName "Role"                  :filter "agTextColumnFilter"}
-                      {:field "org-membership-status" :headerName "Org Membership Status" :filter "agTextColumnFilter"}
+                      {:field "match-drop-access"     :headerName "Match Drop?"           :filter false :width 150 :cellRenderer boolean-renderer}
+                      {:field "email-verified"        :headerName "Email Verified?"       :filter false :width 150 :cellRenderer boolean-renderer}
+                      {:field "user-role"             :headerName "Role"                  :filter "agTextColumnFilter" :cellRenderer user-role-renderer}
+                      {:field "org-membership-status" :headerName "Org Membership Status" :filter false :cellRenderer org-membership-status-renderer}
                       {:field "last-login-date"       :headerName "Last Login Date"       :filter "agDateColumnFilter" :width 300}
-                      {:field "settings"              :headerName "Settings"              :filter "agTextColumnFilter" :width 200 :autoHeight true :cellStyle wrap-text-style}]}))
+                      {:field "settings"              :headerName "Settings"              :filter false :width 200 :autoHeight true :cellStyle wrap-text-style}]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
