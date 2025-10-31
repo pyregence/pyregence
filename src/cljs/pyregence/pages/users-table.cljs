@@ -103,22 +103,12 @@
   (.toISOString (js/Date.)) ; => "2025-05-27T15:26:09.123Z"
   (subs (.toISOString (js/Date.)) 0 10)) ; => "2025-05-27"
 
-(defn- export-button-on-click-fn [file-name & [date-fields-set]]
+(defn- export-button-on-click-fn [file-name]
   (some-> @grid-api
     (.exportDataAsCsv #js {:fileName (str (today-str) "_" file-name)
                            :processCellCallback
                            (fn [params]
-                             (let [col-id (.. params -column -colId)
-                                   value  (.-value params)]
-                               (cond
-                                 ;; Optionally export date fields as ISO strings
-                                 (and value
-                                      date-fields-set
-                                      (some date-fields-set [col-id]))
-                                 (.toISOString value)
-
-                                 ;; fallback: use raw value
-                                 :else value)))})))
+                             (.-value params))})))
 
 (defn log-selected-rows! []
   (when-let [api @grid-api]
