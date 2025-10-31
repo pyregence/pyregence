@@ -30,6 +30,11 @@
 (defn- get-md-config [k]
   (get-config ::match-drop k))
 
+(defn- get-md-configs [ks]
+  (->> (for [k ks]
+         [k (get-md-config k)])
+       (into {})))
+
 (defn- get-runway-server-pretty-names []
   {"dps"      (get-md-config :dps-name)
    "elmfire"  (get-md-config :elmfire-name)
@@ -270,7 +275,9 @@
 ;; Create Match Job Functions
 ;;==============================================================================
 
-(defn- params->match-drop-args [{:keys [ignition-time lat lon wx-type]} match-job-id match-drop-prefix]
+(defn- params->match-drop-args [match-job-id
+                                {:keys [ignition-time lat lon wx-type]}
+                                {:keys [md-prefix sig3-geosync-host sig3-geosync-port]}]
   (let [model-time (u/convert-date-string ignition-time)] ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
     {:west-buffer          12
      :ignition-time        ignition-time
@@ -287,8 +294,10 @@
      :run-hours            72
      :model-time           model-time ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
      :wx-start-time        (u/round-down-to-nearest-hour model-time)
-     :fire-name            (str match-drop-prefix "-match-drop-" match-job-id)
-     :geoserver-workspace  (str "fire-spread-forecast_" match-drop-prefix "-match-drop-" match-job-id "_" model-time)}))
+     :fire-name            (str md-prefix "-match-drop-" match-job-id)
+     :geoserver-workspace  (str "fire-spread-forecast_" md-prefix "-match-drop-" match-job-id "_" model-time)
+     :geosync-host         sig3-geosync-host
+     :geosync-port         sig3-geosync-port}))
 
 (defn- create-match-job-using-runway!
   [{:keys [display-name user-id ignition-time lat lon wx-type] :as params}]
@@ -403,9 +412,12 @@
     (/ (.toEpochMilli (.toInstant (.atZone dt  (ZoneId/of "UTC"))))
        1000)))
 
-(defn- match-drop-args->body [{:keys [fire-name lon lat wx-start-time ignition-time fuel-source wx-type fuel-version num-ensemble-members]}]
+(defn- match-drop-args->body
+  [{:keys [fire-name lon lat wx-start-time ignition-time fuel-source wx-type fuel-version num-ensemble-members geosync-host geosync-port]}]
   {:network   :match-drop
-   :arguments {:pyrc_fire_name       fire-name
+   :arguments {:geosync-host         geosync-host
+               :geosync-port         geosync-port
+               :pyrc_fire_name       fire-name
                :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
                                       :pyrc_simspan_center_lat    lat
                                       :pyrc_simspan_start_epoch_s (utc-date->epoch-s wx-start-time)}
@@ -420,8 +432,8 @@
 (defn- submit-match-drop-job!
   "Requests a match-drop job from kubernetes"
   [params sig3-endpoint match-job-id]
-  (let [match-drop-prefix                  (get-md-config :md-prefix)
-        match-drop-inputs                  (params->match-drop-args params match-job-id match-drop-prefix)
+  (let [match-drop-config                  (get-md-configs [:md-prefix :sig3-geosync-host :sig3-geosync-port])
+        match-drop-inputs                  (params->match-drop-args match-job-id params match-drop-config)
         request                            (match-drop-args->body match-drop-inputs)
         api-url                            (format "%s/api/submit-job" sig3-endpoint)
         http-request                       {:body         (json/write-str request)
@@ -502,7 +514,7 @@
                 (println "Timeout while waiting for job" job-id "results. Stopping progress recording.")))))))))
 
 (defn- create-match-job-using-kubernetes!
-  [{:keys [user-id display-name], :as params} sig3-endpoint]
+  [{:keys [user-id display-name] :as params} sig3-endpoint]
   (let [match-job-id                       (initialize-match-job! user-id)
         {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3-endpoint match-job-id)
         {:keys [geoserver-workspace]}      match-drop-inputs]
@@ -511,7 +523,7 @@
                         :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.")
                         :elmfire-done?       false
                         :gridfire-done?      false
-                        :dps-request         {}
+                        :dps-request         match-drop-inputs
                         :elmfire-request     {}
                         :gridfire-request    {}
                         :geosync-request     {}
