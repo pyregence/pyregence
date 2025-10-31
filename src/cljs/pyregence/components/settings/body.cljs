@@ -106,7 +106,6 @@
             :background     ($/color-picker :white)}}
    ;; neutral-black
    [:p {:style {:color          ($/color-picker :black)
-                :font-family    "Public Sans"
                 :font-size      "14px"
                 :font-style     "normal"
                 :font-weight    "700"
