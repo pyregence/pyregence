@@ -41,7 +41,7 @@ Notably contains any fire names and/or user layers (obtained from the back-end) 
 (defonce ^{:doc "Contains the map associated with the :params key inside of the currently selected forecast in the capabilities atom.
 For example, the processed-params for a user on the Weather tab would be a map containing the :band, :model, and :model-init maps."}
   processed-params (r/atom []))
-(defonce ^{:doc " A vector of maps containing all of the layers for the current forecast sorted by hour. These layers are obtained from
+(defonce ^{:doc "A vector of maps containing all of the layers for the current forecast sorted by hour. These layers are obtained from
 the back-end through the capabilities.clj/get-layers function which returns all layers that match a given set of strings for filtering.
 For example, if the user is on the Weather tab looking at the Temperature (F) forecast, param-layers will be a vector of length 145
 where each entry in the vector (which is a map) contains information about one Temperature (F) layer. A length of 145 also indicates

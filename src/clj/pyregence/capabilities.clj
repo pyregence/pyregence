@@ -13,9 +13,15 @@
 
 (defonce layers (atom {}))
 
-(def site-url (get-config :triangulum.email/base-url))
-(def psps-geoserver-admin-username (get-config :pyregence.capabilities/psps :geoserver-admin-username))
-(def psps-geoserver-admin-password (get-config :pyregence.capabilities/psps :geoserver-admin-password))
+(defn- get-site-url []
+  (get-config :triangulum.email/base-url))
+
+(defn- get-psps-geoserver-admin-username []
+  (get-config ::psps :geoserver-admin-username))
+
+(defn- get-psps-geoserver-admin-password []
+  (get-config ::psps :geoserver-admin-password))
+
 (def private-layer-geoservers #{:psps})
 
 ;;; Helper Functions
@@ -47,7 +53,9 @@
         init-timestamp                (str ts1 "_" ts2)
         [layer-group sim-timestamp]   (str/split layer #"_(?=\d{8}_)")]
     {:workspace   workspace
-     :layer-group (str workspace ":" layer-group)
+     :layer-group (if (= "fire-risk-planning" forecast) ; TODO this is used to force the fire-risk-planning layers to be processed as single-point-info layers in near-term-forecast/get-point-info! We should create a better mechanism for this such that point info isn't tied to layer-group
+                    ""
+                    (str workspace ":" layer-group))
      :forecast    forecast
      :filter-set  (into #{forecast init-timestamp model-name} (str/split layer-group #"_"))
      :model-init  init-timestamp
@@ -227,7 +235,7 @@
            update
            (keyword geoserver-key)
            #(vec (remove matching-workspace? %))))
-  (data-response (str workspace-name " removed from " site-url ".")))
+  (data-response (str workspace-name " removed from " (get-site-url) ".")))
 
 ^:rct/test
 (comment
@@ -270,7 +278,7 @@
   [_ {:strs [geoserver-key workspace-name]}]
   (let [geoserver-key (keyword geoserver-key)
         basic-auth    (when (private-layer-geoservers geoserver-key)
-                        (str psps-geoserver-admin-username ":" psps-geoserver-admin-password))]
+                        (str (get-psps-geoserver-admin-username) ":" (get-psps-geoserver-admin-password)))]
     (if-not (contains? (get-config :triangulum.views/client-keys :geoserver) geoserver-key)
       (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn.")
       (let [timeout-ms    (* 2.5 60 1000) ; 2.5 minutes
@@ -279,7 +287,7 @@
                               (let [stdout?       (= 0 (count @layers))
                                     geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
                                     new-layers    (process-layers! geoserver-url workspace-name basic-auth)
-                                    message       (str (count new-layers) " layers from " geoserver-url " added to " site-url ".")]
+                                    message       (str (count new-layers) " layers from " geoserver-url " added to " (get-site-url) ".")]
                                 (if workspace-name
                                   (do
                                     (remove-workspace! nil {"geoserver-key"  (name geoserver-key)
@@ -303,7 +311,7 @@
   (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
     (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))
   (data-response (str (reduce + (map count (vals @layers)))
-                      " total layers added to " site-url ".")))
+                      " total layers added to " (get-site-url) ".")))
 
 (defn fire-name-capitalization [fire-name]
   (let [parts (str/split fire-name #"-")]

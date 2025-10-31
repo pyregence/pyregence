@@ -140,7 +140,7 @@
   "Pans/zooms the map to the provided extents."
   [[minx miny maxx maxy] current-layer & [max-zoom]]
   (let [config (-> {:linear  true
-                    :padding (if (#{"fire-active" "fire-risk-forecast" "fire-detections"} (get-layer-type (:layer current-layer)))
+                    :padding (if (#{"fire-active" "fire-risk-forecast" "fire-risk-planning" "fire-detections"} (get-layer-type (:layer current-layer)))
                                {:top 150 :bottom 150 :left 150 :right 150}
                                0)}
                    (merge (when max-zoom {:maxZoom max-zoom})))]

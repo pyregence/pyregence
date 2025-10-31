@@ -243,7 +243,7 @@
         reset-url (str base-url "/reset-password?email=" (url-encode email) "&verification-token=" (url-encode verification-token))]
     (str "Hi " greeting ",\n\n"
          "  You recently requested to reset your password for your PyreCast account. "
-         "Use the link below to reset it. This password reset is only valid for the next 24 hours.\n\n"
+         "Use the link below to reset it.\n\n"
          "  " reset-url "\n\n"
          "  If you did not request a password reset, please ignore this email or "
          "contact us at support@pyrecast.com if you have questions.\n\n"
@@ -264,8 +264,7 @@
        (str "Hi " greeting ",")]
       [:p {:style (:p common-styles)}
        "You recently requested to reset your password for your PyreCast account. "
-       "Use the button below to reset it. "
-       [:strong "This password reset is only valid for the next 24 hours."]]
+       "Use the button below to reset it."]
       (html-button "Reset Your Password" reset-url)
       [:p {:style (:p common-styles)}
        "If you did not request a password reset, please ignore this email or "
