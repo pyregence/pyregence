@@ -37,6 +37,9 @@
                                                   :auth-type :member
                                                   :auth-action :redirect}
    [:get "/terms-of-use"]                        {:handler (render-page "/terms-of-use")}
+   [:get "/users-table"]                         {:handler (render-page "/users-table")
+                                                  :auth-type :super-admin
+                                                  :auth-action :redirect}
    [:get "/verify-2fa"]                          {:handler (render-page "/verify-2fa")}
    [:get "/verify-email"]                        {:handler (render-page "/verify-email")}
 
@@ -102,6 +105,9 @@
                                                      :auth-type #{:organization-admin :token}
                                                      :auth-action :block}
    [:post "/clj/get-all-organizations"]             {:handler (clj-handler authentication/get-all-organizations)
+                                                     :auth-type #{:super-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/get-all-users"]                     {:handler (clj-handler authentication/get-all-users)
                                                      :auth-type #{:super-admin :token}
                                                      :auth-action :block}
    [:post "/clj/get-current-user-organization"]     {:handler (clj-handler authentication/get-current-user-organization)

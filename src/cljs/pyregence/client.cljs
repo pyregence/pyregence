@@ -17,6 +17,7 @@
             [pyregence.pages.settings           :as settings]
             [pyregence.pages.terms-of-use       :as terms]
             [pyregence.pages.totp-setup         :as totp-setup]
+            [pyregence.pages.users-table        :as users-table]
             [pyregence.pages.verify-2fa         :as verify-2fa]
             [pyregence.pages.verify-email       :as verify-email]
             [pyregence.state                    :as !]
@@ -39,6 +40,7 @@
    "/reset-password"     reset-password/root-component
    "/settings"           settings/root-component
    "/totp-setup"         totp-setup/root-component
+   "/users-table"        users-table/root-component
    "/verify-2fa"         verify-2fa/root-component
    "/verify-email"       verify-email/root-component})
 
