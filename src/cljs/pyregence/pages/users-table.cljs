@@ -32,11 +32,11 @@
   (-> themeQuartz
       (.withParams
        #js {:backgroundColor                ($/color-picker :white)
-            :headerBackgroundColor          ($/color-picker :lighter-gray)
+            :headerBackgroundColor          ($/color-picker :neutral-light-gray)
             :headerTextColor                ($/color-picker :black)
             :rowHoverColor                  ($/color-picker :light-orange)
             :selectedRowBackgroundColor     ($/color-picker :soft-orange)
-            :checkboxCheckedBackgroundColor ($/color-picker :primary-orange)
+            :checkboxCheckedBackgroundColor ($/color-picker :primary-main-orange)
             :checkboxCheckedBorderColor     ($/color-picker :light-orange)
             :focusShadow                    "none"
             :cellHorizontalPadding          12
