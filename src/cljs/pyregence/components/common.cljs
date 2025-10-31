@@ -1,15 +1,14 @@
 (ns pyregence.components.common
   (:require-macros [pyregence.herb-patch :refer [style->class]])
   (:require
-   [clojure.core.async                   :refer [<! go timeout]]
-   [herb.core                            :refer [<class]]
-   [pyregence.components.svg-icons       :as svg]
-   [pyregence.styles                     :as $]
-   [pyregence.utils.dom-utils            :as u-dom]
-   [pyregence.utils.string-utils         :as u-str]
-   [pyregence.utils.time-utils           :as u-time]
-   [react                                :as react]
-   [reagent.core                         :as r]))
+   [clojure.core.async           :refer [<! go timeout]]
+   [herb.core                    :refer [<class]]
+   [pyregence.styles             :as $]
+   [pyregence.utils.dom-utils    :as u-dom]
+   [pyregence.utils.string-utils :as u-str]
+   [pyregence.utils.time-utils   :as u-time]
+   [react                        :as react]
+   [reagent.core                 :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
