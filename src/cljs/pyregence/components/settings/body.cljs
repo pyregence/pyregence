@@ -133,12 +133,9 @@
                     :flex-direction "row"
                     :width          "100%"
                     :gap            "16px"}}
-      [user-name {:name-part "First"
-                  :value     (:first-name @full-name)
-                  :on-change #(swap! full-name assoc :first-name (input-value %))}]
-      [user-name {:name-part "Last"
-                  :value     (:last-name @full-name)
-                  :on-change #(swap! full-name assoc :last-name (input-value %))}]]
+      [user-name {:name-part "Full-name"
+                  :value     @full-name
+                  :on-change #(reset! full-name (input-value %))}]]
      [buttons/ghost {:text "Save Changes"}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -149,8 +146,7 @@
   [{:keys [password-set-date
            email-address
            role-type
-           first-name
-           last-name]}]
+           full-name]}]
   [:div {:style {:display        "flex"
                  :font-family    "Roboto"
                  :height         "942px"
@@ -167,7 +163,7 @@
            [input-show {:label "Role Type"
                         :text  role-type
                         :icon  svg/info-with-circle}]
-           [user-full-name {:first-name first-name :last-name last-name}]]}]
+           [user-full-name {:full-name full-name}]]}]
    [card {:title "RESET MY PASSWORD"
           :children
           [:<>
