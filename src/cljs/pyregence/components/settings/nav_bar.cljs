@@ -90,16 +90,15 @@
                        :flex-direction "row"
                        :align-items    "center"
                        :margin         "16px"
-                       :padding-left   "16px"
-                       :border-radius  "4px"}}
+                       :border-radius  "4px"
+                       :cursor         "pointer"}}
          [svg/search :height "16px" :width "16px"]
          [:input {:type        "text"
-                  :placeholder "Search"
-                  :style       {:border       "none"
-                                :background   "transparent"
-                                :padding-left "8px"
-                                :width        "100%"
-                                :outline      "none"}
+                  :placeholder "search"
+                  :style       {:border     "none"
+                                :background "transparent"
+                                :width      "100%"
+                                :outline    "none"}
                   :on-change   #(reset! search (.-value (.-target %)))}]]
         (doall
          (for [option options
@@ -168,16 +167,25 @@
 ;; NOTE Each Tab's `:text` has to be unique because it's used as a component ID.
 ;; NOTE `drop-down`'s only support `button`s as options (not other drop downs).
 
+;; TODO should the conditional checks on user-role use the isa? role-hierarchy?
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
-  [{:keys [organizations]}]
+  [{:keys [organizations user-role]}]
   [{:tab  button
     :text "Account Settings"
     :icon svg/wheel}
-   {:tab     drop-down
-    :text    "Organization Settings"
-    :options (->> organizations (map #(hash-map :tab button :text %)))
-    :icon    svg/group}
+   ;;TODO the user-role should be the same keyword as it is on the backend
+   ;;it being a string on the fe is a huge security issue because it's easy
+   ;; to get wrong.
+   (when (#{"account_managers" "super_admin"} user-role)
+     {:tab     drop-down
+      :text    "Organization Settings"
+      :options (->> organizations (map #(hash-map :tab button :text %)))
+      :icon    svg/group})
+   (when (#{"organization_admin"} user-role)
+     {:tab  button
+      :text "Organization Settings"
+      :icon svg/group})
    {:tab  button
     :text "Unaffilated Members"
     :icon svg/individual}])
@@ -188,30 +196,30 @@
 
 (defn- tabs
   "Returns a list of tab components"
-  [tab-data]
-  (r/with-let [selected-log (r/atom [])]
-    (->> tab-data
-         tab-data->tab-descriptions
+  [{:keys [selected-log] :as tab-data}]
+  (->> tab-data
+       ;;TODO think of a better way then remove empty?
+       tab-data->tab-descriptions
+       (remove empty?)
          ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
-         (walk/postwalk
-          (fn [tab]
-            (if-not (and (map? tab) (:tab tab))
-              tab
-              (let [{:keys [text]} tab
-                    id             (-> text
-                                       str/lower-case
-                                       (str/replace #"\s+" "-")
-                                       keyword)
-                    tab              (assoc tab :id id :key id :selected-log selected-log)]
-                (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))
-         (mapv (fn [{:keys [tab] :as tab-data}] [tab tab-data]))
-         (cons :<>)
-         vec)))
+       (walk/postwalk
+        (fn [tab]
+          (if-not (and (map? tab) (:tab tab))
+            tab
+            (let [{:keys [text]} tab
+                  id             (-> text
+                                     str/lower-case
+                                     (str/replace #"\s+" "-")
+                                     keyword)
+                  tab              (assoc tab :id id :key id :selected-log selected-log)]
+              (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))
+       (mapv (fn [{:keys [tab] :as tab-data}] [tab tab-data]))
+       (cons :<>)
+       vec))
 
 (defn main
   [tabs-data]
   [:nav-bar-main {:style {:display         "flex"
-                          :font-family     "Roboto"
                           :height          "100%"
                           :width           "360px"
                           :padding         "40px 0"

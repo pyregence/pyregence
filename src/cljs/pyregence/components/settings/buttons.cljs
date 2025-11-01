@@ -11,6 +11,7 @@
 (def $primary-styles
   {:display          "flex"
    :height           "44px"
+   :width            "fit-content"
    :align-items      "center"
    :background-color ($/color-picker :primary-standard-orange)
    :padding          "12px 14px"
