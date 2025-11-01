@@ -1,10 +1,12 @@
 (ns pyregence.components.settings.nav-bar
   (:require
+   [clojure.core.async              :refer [<! go]]
    [clojure.string                  :as str]
    [clojure.walk                    :as walk]
    [herb.core                       :refer [<class]]
    [pyregence.components.svg-icons  :as svg]
    [pyregence.styles                :as $]
+   [pyregence.utils.async-utils :as u-async]
    [reagent.core                    :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -232,4 +234,6 @@
                   :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
                   :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
     [tabs tabs-data]]
-   [button {:text "Logout" :icon svg/logout}]])
+   [button {:text "Logout" :icon svg/logout
+            :on-click #(go (<! (u-async/call-clj-async! "log-out"))
+                                 (-> js/window .-location .reload))}]])
