@@ -174,7 +174,7 @@
    [card {:title "RESET MY PASSWORD"
           :children
           [:<>
-           [:p {:style (assoc font-styles :font-weight "400")} "Once you send a request to reset your password, you will receive a link on your email to set up your new password."]
+           [:p {:style (assoc font-styles :font-weight "400")} "Once you send a request to reset your password, you will receive a link in your email to set up your new password."]
            [:div {:style {:display         "flex"
                           :flex-direction  "row"
                           :justify-content "space-between"
