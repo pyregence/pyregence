@@ -123,7 +123,7 @@
    [:p "TOGGLE"]])
 
 (defn- user-full-name
-  [full-name]
+  [{:keys [full-name]}]
   (r/with-let [full-name (r/atom full-name)]
     [:div {:style {:display        "flex"
                    :width          "100%"
