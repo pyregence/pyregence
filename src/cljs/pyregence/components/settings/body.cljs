@@ -172,7 +172,6 @@
           :children
           [:<>
            [:p {:style (assoc font-styles :font-weight "400")} "Once you send a request to reset your password, you will receive a link on your email to set up your new password."]
-           ;;TODO add the button here, those are in another PR though
            [:div {:style {:display         "flex"
                           :flex-direction  "row"
                           :justify-content "space-between"
