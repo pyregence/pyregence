@@ -50,6 +50,7 @@
            :style     {:display       "flex"
                        :weight        "500"
                        :width         "100%"
+                       :max-width     "350px"
                        :align-items   "center"
                        :height        "50px"
                        :font-size     "14px"
