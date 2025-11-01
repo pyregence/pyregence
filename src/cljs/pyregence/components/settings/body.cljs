@@ -91,7 +91,7 @@
 
 (defn- card
   [{:keys [title children]}]
-  [:card
+  [:settings-body-card
    {:style {:display        "flex"
             :max-width      "750px"
             :min-width      "300px"
