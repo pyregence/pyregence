@@ -182,7 +182,8 @@
              [buttons/ghost {:text "Send Reset Link"}]]
             [input-show {:label "Last Updated"
                          :text  password-set-date}]]]}]
-   [card {:title "NOTIFICATION PREFERENCES"
+   ;;TODO commented out because component isn't ready
+   #_[card {:title "NOTIFICATION PREFERENCES"
           :children
           [:<>
            [labled-toggle {:label "Receive emails about new fires (need proper text here)"}]
