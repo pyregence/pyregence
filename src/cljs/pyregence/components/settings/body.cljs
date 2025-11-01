@@ -1,11 +1,12 @@
 (ns pyregence.components.settings.body
   (:require
-   [herb.core                      :refer [<class]]
-   [pyregence.components.settings.buttons :as buttons]
-   [pyregence.components.svg-icons :as svg]
-   [pyregence.styles               :as $]
-   [pyregence.utils.dom-utils      :refer [input-value]]
-   [reagent.core                   :as r]))
+   [clojure.string                         :as str]
+   [herb.core                              :refer [<class]]
+   [pyregence.components.settings.buttons  :as buttons]
+   [pyregence.components.svg-icons         :as svg]
+   [pyregence.styles                       :as $]
+   [pyregence.utils.dom-utils              :refer [input-value]]
+   [reagent.core                           :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -165,7 +166,9 @@
            [input-show {:label "Email Address"
                         :text  email-address}]
            [input-show {:label "Role Type"
-                        :text  role-type
+                        :text (->> (str/split (str role-type) #"_")
+                                   (map str/capitalize)
+                                   (str/join " "))
                         :icon  svg/info-with-circle}]
            [user-full-name {:first-name first-name :last-name last-name}]]}]
    [card {:title "RESET MY PASSWORD"
