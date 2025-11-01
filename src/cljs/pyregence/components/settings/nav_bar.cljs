@@ -189,7 +189,9 @@
   "Returns a list of tab components"
   [{:keys [selected-log] :as tab-data}]
   (->> tab-data
+       ;;TODO think of a better way then remove empty?
        tab-data->tab-descriptions
+       (remove empty?)
          ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
        (walk/postwalk
         (fn [tab]
