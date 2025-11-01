@@ -167,16 +167,25 @@
 ;; NOTE Each Tab's `:text` has to be unique because it's used as a component ID.
 ;; NOTE `drop-down`'s only support `button`s as options (not other drop downs).
 
+;; TODO should the conditional checks on user-role use the isa? role-hierarchy?
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
-  [{:keys [organizations]}]
+  [{:keys [organizations user-role]}]
   [{:tab  button
     :text "Account Settings"
     :icon svg/wheel}
-   {:tab     drop-down
-    :text    "Organization Settings"
-    :options (->> organizations (map #(hash-map :tab button :text %)))
-    :icon    svg/group}
+   ;;TODO the user-role should be the same keyword as it is on the backend
+   ;;it being a string on the fe is a huge security issue because it's easy
+   ;; to get wrong.
+   (when (#{"account_managers" "super_admin"} user-role)
+     {:tab     drop-down
+      :text    "Organization Settings"
+      :options (->> organizations (map #(hash-map :tab button :text %)))
+      :icon    svg/group})
+   (when (#{"organization_admin"} user-role)
+     {:tab  button
+      :text "Organization Settings"
+      :icon svg/group})
    {:tab  button
     :text "Unaffilated Members"
     :icon svg/individual}])
