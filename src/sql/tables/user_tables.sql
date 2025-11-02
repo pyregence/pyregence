@@ -28,6 +28,7 @@ CREATE TABLE users (
     email                 text NOT NULL UNIQUE,
     name                  text NOT NULL,
     password              varchar(72) NOT NULL,
+    password_set_date     TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     settings              text,
     match_drop_access     BOOLEAN DEFAULT FALSE,
     email_verified        BOOLEAN DEFAULT FALSE,
