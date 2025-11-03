@@ -67,7 +67,7 @@
        "organization_member" "Organization Member"
        "account_manager"     "Account Manager"
        "member"              "Member")])))
-    
+
 (defn- org-membership-status-renderer [params]
   (let [v (.-value params)]
     (r/as-element
@@ -175,10 +175,11 @@
     {:onGridReady                (fn [params]
                                    (reset! grid-api (.-api params)))
      :theme                      light-theme ; dark-theme
-     :rowSelection               (clj->js {:mode "multiRow"}) ; :enableClickSelection true})
+     :rowSelection               #js {:mode "multiRow"}
      :pagination                 true
      :paginationPageSize         25
-     :paginationPageSizeSelector #js [25 50 100] ;; include 25
+     :paginationPageSizeSelector #js [25 50 100]
+     :defaultColDef              #js {:unSortIcon true} ;; always show sort icons
      :enableCellTextSelection    true
      :rowData                    (clj->js (:row-data @all-users-table-data))
      :columnDefs                 (clj->js (:col-defs @all-users-table-data))}]])
@@ -201,7 +202,8 @@
    [:div {:style {:align-items     "center"
                   :display         "flex"
                   :grid-area       "users-button"
-                  :justify-content "flex-end"}}
+                  :justify-content "flex-end"
+                  :z-index         1000}}
     [log-rows-button]
     [csv-export-button "users-table"]]
    [:div {:style {:grid-area   "users-content"
