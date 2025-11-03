@@ -19,6 +19,7 @@
                                         :user-email            (:user_email user-data)
                                         :user-id               (:user_id user-data)
                                         :user-role             (:user_role user-data)
+                                        :password_set_date     (:password_set_date user-data)
                                         :organization-id       (:organization_rid user-data)
                                         :org-membership-status (:org_membership_status user-data)}
                                        (get-config :app :client-keys))})))

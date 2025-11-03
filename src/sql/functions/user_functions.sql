@@ -92,11 +92,12 @@ CREATE OR REPLACE FUNCTION add_new_user(
     _settings text
  ) RETURNS integer AS $$
     INSERT INTO users
-        (email, name, password, settings, email_verified, user_role, org_membership_status)
+        (email, name, password, password_set_date, settings, email_verified, user_role, org_membership_status)
     VALUES (
         lower_trim(_email),
         _name,
         crypt(_password, gen_salt('bf')),
+        NOW(),
         _settings,
         FALSE,                        -- by default a user is pending email verification
         'member'::user_role,          -- by default a user becomes a member
@@ -148,10 +149,11 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    match_drop_access     boolean,
    user_role             user_role,
    org_membership_status org_membership_status,
-   organization_rid      integer
+   organization_rid      integer,
+   password_set_date     timestamp
  ) AS $$
 
-    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid
+    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid, password_set_date
     FROM users
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
@@ -186,7 +188,8 @@ RETURNS TABLE (
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
-    organization_rid      integer
+    organization_rid      integer,
+    password_set_date     timestamp
 ) AS $$
 
     UPDATE users
@@ -199,7 +202,7 @@ RETURNS TABLE (
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid
+    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid, password_set_date
     FROM users
     WHERE email = lower_trim(_email)
       AND email_verified = TRUE;
@@ -214,7 +217,8 @@ RETURNS TABLE (
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
-    organization_rid      integer
+    organization_rid      integer,
+    password_set_date     timestamp
 ) AS $$
 
     UPDATE users
@@ -226,7 +230,7 @@ RETURNS TABLE (
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid
+    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid, password_set_date
     FROM users
     WHERE email = lower_trim(_email)
       AND email_verified = TRUE;
