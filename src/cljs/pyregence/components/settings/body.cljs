@@ -134,8 +134,7 @@
                     :flex-direction "row"
                     :width          "100%"
                     :gap            "16px"}}
-      [user-name {:name-part "Full-name"
-                  :value     @full-name
+      [user-name {:value     @full-name
                   :on-change #(reset! full-name (input-value %))}]]
      [buttons/ghost {:text "Save Changes"}]]))
 
