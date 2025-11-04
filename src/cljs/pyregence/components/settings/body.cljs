@@ -72,7 +72,7 @@
    (when icon [icon :height "16px" :width "16px"])])
 
 (defn- user-name
-  [{:keys [name-part] :as name-info}]
+  [name-info]
   [:div {:style {:display        "flex"
                  :flex-direction "column"
                  :width          "100%"}}
