@@ -8,6 +8,7 @@
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]
    [pyregence.utils.dom-utils             :refer [input-value]]
+   [clojure.string                        :as str]
    [reagent.core                          :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -176,14 +177,15 @@
            [input-show {:label "Email Address"
                         :text  email-address}]
            [input-show {:label "Role Type"
-                        :text  role-type
+                        :text (->> (str/split (str role-type) #"_")
+                                   (map str/capitalize)
+                                   (str/join " "))
                         :icon  svg/info-with-circle}]
            [user-full-name (select-keys user-info [:email-address :user-name])]]}]
    [card {:title "RESET MY PASSWORD"
           :children
           [:<>
-           [:p {:style (assoc font-styles :font-weight "400")} "Once you send a request to reset your password, you will receive a link on your email to set up your new password."]
-           ;;TODO add the button here, those are in another PR though
+           [:p {:style (assoc font-styles :font-weight "400")} "Once you send a request to reset your password, you will receive a link in your email to set up your new password."]
            [:div {:style {:display         "flex"
                           :flex-direction  "row"
                           :justify-content "space-between"
@@ -193,7 +195,8 @@
              [buttons/ghost {:text "Send Reset Link"}]]
             [input-show {:label "Last Updated"
                          :text  password-set-date}]]]}]
-   [card {:title "NOTIFICATION PREFERENCES"
+   ;;TODO commented out because component isn't ready
+   #_[card {:title "NOTIFICATION PREFERENCES"
           :children
           [:<>
            [labled-toggle {:label "Receive emails about new fires (need proper text here)"}]
