@@ -42,7 +42,7 @@
 
 (defn root-component
   "The root component of the /account-settings page."
-  [{:keys [user-role user-email]}]
+  [{:keys [user-role user-email user-name]}]
   ;; TODO it feels awkward to just have this get-organizations api
   ;; call floating at the top, but how else to organize it?
   ;; TODO get-organizations could happen just when they click
@@ -69,9 +69,9 @@
                      :user-role     user-role}]
       (case (last @selected-log)
         :account-settings
+        ;;TODO consider just passing args through, not renaming or re-mapping.
         [body/main {:password-set-date "1/2/2020"
                     :email-address     user-email
                     :role-type         user-role
-                    :first-name        "drew"
-                    :last-name         "verlee"}]
+                    :user-name         user-name}]
         [:p "TODO"])])])

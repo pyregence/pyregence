@@ -1,12 +1,15 @@
 (ns pyregence.components.settings.body
   (:require
-   [clojure.string                         :as str]
-   [herb.core                              :refer [<class]]
-   [pyregence.components.settings.buttons  :as buttons]
-   [pyregence.components.svg-icons         :as svg]
-   [pyregence.styles                       :as $]
-   [pyregence.utils.dom-utils              :refer [input-value]]
-   [reagent.core                           :as r]))
+   [clojure.core.async                    :refer [<! go]]
+   [herb.core                             :refer [<class]]
+   [pyregence.components.messaging        :refer [toast-message!]]
+   [pyregence.components.settings.buttons :as buttons]
+   [pyregence.components.svg-icons        :as svg]
+   [pyregence.styles                      :as $]
+   [pyregence.utils.async-utils           :as u-async]
+   [pyregence.utils.dom-utils             :refer [input-value]]
+   [clojure.string                        :as str]
+   [reagent.core                          :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -41,6 +44,18 @@
    :margin      "0"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;TODO copied from admin.cljs, so either share that logic or deprecate admin.cljs eventually.
+(defn- update-org-user! [email new-name]
+  (go
+    (let [res (<! (u-async/call-clj-async! "update-user-name" email new-name))]
+      (if (:success res)
+        (toast-message! (str "The user " new-name " with the email " email  " has been updated."))
+        (toast-message! (:body res))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -51,6 +66,7 @@
            :style     {:display       "flex"
                        :weight        "500"
                        :width         "100%"
+                       :max-width     "350px"
                        :align-items   "center"
                        :height        "50px"
                        :font-size     "14px"
@@ -71,8 +87,8 @@
    [:p {:style font-styles} text]
    (when icon [icon :height "16px" :width "16px"])])
 
-(defn- user-name
-  [{:keys [name-part] :as name-info}]
+(defn- user-name-card
+  [user-name]
   [:div {:style {:display        "flex"
                  :flex-direction "column"
                  :width          "100%"}}
@@ -86,9 +102,9 @@
                      :flex-direction "row"
                      :width          "100%"
                      :height         "24px"}}
-       [:p {:style styles}  (str name-part " Name")]
+       [:p {:style styles}  "Full Name"]
        [:p {:style (assoc styles :color ($/color-picker :error-red))}  "*"]])
-    [input-field name-info]]])
+    [input-field user-name]]])
 
 (defn- card
   [{:keys [title children]}]
@@ -124,8 +140,8 @@
    [:p "TOGGLE"]])
 
 (defn- user-full-name
-  [full-name]
-  (r/with-let [full-name (r/atom full-name)]
+  [{:keys [user-name email-address]}]
+  (r/with-let [user-name (r/atom user-name)]
     [:div {:style {:display        "flex"
                    :width          "100%"
                    :gap            "16px"
@@ -134,13 +150,10 @@
                     :flex-direction "row"
                     :width          "100%"
                     :gap            "16px"}}
-      [user-name {:name-part "First"
-                  :value     (:first-name @full-name)
-                  :on-change #(swap! full-name assoc :first-name (input-value %))}]
-      [user-name {:name-part "Last"
-                  :value     (:last-name @full-name)
-                  :on-change #(swap! full-name assoc :last-name (input-value %))}]]
-     [buttons/ghost {:text "Save Changes"}]]))
+      [user-name-card {:value     @user-name
+                       :on-change #(reset! user-name (input-value %))}]]
+     [buttons/ghost {:text     "Save Changes"
+                     :on-click #(go (<! (update-org-user! email-address @user-name)))}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
@@ -149,9 +162,7 @@
 (defn main
   [{:keys [password-set-date
            email-address
-           role-type
-           first-name
-           last-name]}]
+           role-type] :as user-info}]
   [:div {:style {:display        "flex"
                  :font-family    "Roboto"
                  :height         "942px"
@@ -170,7 +181,7 @@
                                    (map str/capitalize)
                                    (str/join " "))
                         :icon  svg/info-with-circle}]
-           [user-full-name {:first-name first-name :last-name last-name}]]}]
+           [user-full-name (select-keys user-info [:email-address :user-name])]]}]
    [card {:title "RESET MY PASSWORD"
           :children
           [:<>
