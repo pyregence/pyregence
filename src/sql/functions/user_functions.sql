@@ -184,6 +184,7 @@ CREATE OR REPLACE FUNCTION set_user_password(
 RETURNS TABLE (
     user_id               integer,
     user_email            text,
+    user_name             text,
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
@@ -200,7 +201,7 @@ RETURNS TABLE (
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid
+    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
     FROM users
     WHERE email = lower_trim(_email)
       AND email_verified = TRUE;
@@ -212,6 +213,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
 RETURNS TABLE (
     user_id               integer,
     user_email            text,
+    user_name             text,
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
@@ -227,7 +229,7 @@ RETURNS TABLE (
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid
+    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
     FROM users
     WHERE email = lower_trim(_email)
       AND email_verified = TRUE;
