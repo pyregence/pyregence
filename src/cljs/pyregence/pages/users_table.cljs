@@ -47,7 +47,7 @@
             :fontWeight                     400})))
 
 (defn- boolean-renderer [params]
-  (let [v (.-value params)]
+  (let [v (aget params "value")]
     (r/as-element
      [:span {:style {:align-items     "center"
                      :display         "flex"
@@ -58,7 +58,7 @@
       (if v "✓" "✗")])))
 
 (defn- user-role-renderer [params]
-  (let [v (.-value params)]
+  (let [v (aget params "value")]
     (r/as-element
      [:span
       (condp = v
@@ -69,7 +69,7 @@
        "member"              "Member")])))
 
 (defn- org-membership-status-renderer [params]
-  (let [v (.-value params)]
+  (let [v (aget params "value")]
     (r/as-element
      [:span
       (condp = v
@@ -104,6 +104,14 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn api-call
+  "A helper functoin to safely call GridApi methods under advanced compilation."
+  [^js api method & args]
+  (let [f (aget api method)]
+    (if (instance? js/Function f)
+      (.apply f api (to-array args))
+      (js/console.error "GridApi method not found:" method "on" api))))
+
 (defn- get-all-users! []
   (go
     (let [resp-chan              (u-async/call-clj-async! "get-all-users")
@@ -125,16 +133,17 @@
   (subs (.toISOString (js/Date.)) 0 10)) ; => "2025-05-27"
 
 (defn- export-button-on-click-fn [file-name]
-  (some-> @grid-api
-    (.exportDataAsCsv #js {:fileName (str (today-str) "_" file-name)
-                           :processCellCallback
-                           (fn [params]
-                             (.-value params))})))
+  (when-let [api @grid-api]
+    (api-call api "exportDataAsCsv"
+              #js {:fileName (str (today-str) "_" file-name)
+                   :processCellCallback
+                   (fn [params]
+                     (aget params "value"))})))
 
 (defn log-selected-rows! []
   (when-let [api @grid-api]
-    (let [rows (.getSelectedRows api)]
-      (js/console.log "Selected rows:\n" rows)
+    (let [rows (api-call api "getSelectedRows")]
+      (js/console.log "Selected rows:" rows)
       (js/alert (str "Selected rows:\n" (js/JSON.stringify rows nil 2)))
       rows)))
 
@@ -173,7 +182,7 @@
   [:div {:style {:height "100%" :width "100%"}}
    [:> AgGridReact
     {:onGridReady                (fn [params]
-                                   (reset! grid-api (.-api params)))
+                                   (reset! grid-api (aget params "api")))
      :theme                      light-theme ; dark-theme
      :rowSelection               #js {:mode "multiRow"}
      :pagination                 true
