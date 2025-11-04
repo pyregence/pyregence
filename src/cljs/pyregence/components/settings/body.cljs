@@ -86,7 +86,7 @@
                      :flex-direction "row"
                      :width          "100%"
                      :height         "24px"}}
-       [:p {:style styles}  "Name"]
+       [:p {:style styles}  "Full Name"]
        [:p {:style (assoc styles :color ($/color-picker :error-red))}  "*"]])
     [input-field name-info]]])
 
