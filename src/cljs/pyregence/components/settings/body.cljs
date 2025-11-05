@@ -177,6 +177,7 @@
            [input-show {:label "Email Address"
                         :text  email-address}]
            [input-show {:label "Role Type"
+                        ;; TODO consider having a Namespace that handles all things roles.
                         :text (->> (str/split (str role-type) #"_")
                                    (map str/capitalize)
                                    (str/join " "))
