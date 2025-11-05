@@ -192,6 +192,7 @@
                           :align-items     "flex-end"
                           :width           "100%"}}
             [:p {:style {:margin "0px"}}
+             ;;TODO pass on-click to generate reset link.
              [buttons/ghost {:text "Send Reset Link"}]]
             [input-show {:label "Last Updated"
                          :text  password-set-date}]]]}]
