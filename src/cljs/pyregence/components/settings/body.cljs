@@ -180,7 +180,8 @@
                         :text (->> (str/split (str role-type) #"_")
                                    (map str/capitalize)
                                    (str/join " "))
-                        :icon  svg/info-with-circle}]
+                        ;; TODO add back in info tab when we get text that's associated with it.
+                        #_#_:icon  svg/info-with-circle}]
            [user-full-name (select-keys user-info [:email-address :user-name])]]}]
    [card {:title "RESET MY PASSWORD"
           :children
