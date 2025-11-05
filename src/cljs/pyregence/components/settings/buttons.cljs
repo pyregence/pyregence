@@ -17,7 +17,6 @@
    :padding          "12px 14px"
    :border-radius    "4px"
    :border           (str "2px solid " ($/color-picker :primary-standard-orange))
-   ;;TODO move topography properties to top of page.
    :font-size        "14px"
    :font-weight      "400"})
 
@@ -81,5 +80,5 @@
                     :border          (str "1px solid " ($/color-picker :error-red))
                     :border-width    "1.5px"}
             :on-click on-click}
-   [:div {:flex "0 0 auto"}
+   [:div {:style {:flex "0 0 auto"}}
     [svg/trash-can :height "50px" :width "50px"]]])
