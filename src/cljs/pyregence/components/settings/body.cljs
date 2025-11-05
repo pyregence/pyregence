@@ -55,6 +55,13 @@
         (toast-message! (str "The user " new-name " with the email " email  " has been updated."))
         (toast-message! (:body res))))))
 
+;; TODO consider having a Namespace that handles all things roles.
+(defn role-type->label
+  [role-type]
+  (->> (str/split (str role-type) #"_")
+       (map str/capitalize)
+       (str/join " ")))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -176,10 +183,7 @@
            [input-show {:label "Email Address"
                         :text  email-address}]
            [input-show {:label "Role Type"
-                        ;; TODO consider having a Namespace that handles all things roles.
-                        :text (->> (str/split (str role-type) #"_")
-                                   (map str/capitalize)
-                                   (str/join " "))
+                        :text (role-type->label role-type)
                         ;; TODO add back in info tab when we get text that's associated with it.
                         #_#_:icon  svg/info-with-circle}]
            [user-full-name (select-keys user-info [:email-address :user-name])]]}]
