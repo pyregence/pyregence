@@ -56,22 +56,22 @@
   (let [uri (-> js/window .-location .-pathname)]
     (render
 
-      ;; This means :reagent-render gets passed args
-      [account-settings/root-component params]
+      ;; This works, and correctly means :reagent-render gets passed args
+     #_[account-settings/root-component params]
 
-      ;; this does means :reagent-render isn't getting passed args..
-            #_(cond
-                (uri->root-component-h uri)
-                (wrap-page #((uri->root-component-h uri) params))
+     (cond
+       (uri->root-component-h uri)
+       ;; This alsow works and :reagent-render gets passed args
+       [wrap-page account-settings/root-component params]
 
-                (uri->root-component-hf uri)
-                (wrap-page #((uri->root-component-hf uri) params)
-                           :footer? true)
+       #_(uri->root-component-hf uri)
+       #_(wrap-page #((uri->root-component-hf uri) params)
+                  :footer? true)
 
-                :else
-                (wrap-page not-found/root-component
-                           :footer? true))
-            (dom/getElement "app"))))
+       #_:else
+       #_(wrap-page not-found/root-component
+                  :footer? true))
+     (dom/getElement "app"))))
 
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."

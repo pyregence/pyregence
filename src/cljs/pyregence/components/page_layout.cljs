@@ -57,7 +57,7 @@
 (defn wrap-page
   "Specifies the content to go inside of the [:body [:div#app]] for a page.
    By default, a page does not include a footer unless specified."
-  [root-component & {:keys [footer?]}]
+  [root-component params]
   (process-toast-messages!)
   (fn [_]
     [:div {:style {:display        :flex
@@ -65,6 +65,5 @@
                    :height         "100%"}}
      [header]
      [toast-message]
-     [root-component]
-     (when footer?
-       [footer])]))
+     [root-component params]
+     ]))
