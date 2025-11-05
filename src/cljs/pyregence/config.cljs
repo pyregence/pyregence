@@ -607,12 +607,19 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "GridFire"]
-                                                              " is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."]
-                                                 :options    {:elmfire  {:opt-label "ELMFIRE"
-                                                                         :filter    "elmfire"}
-                                                              :gridfire {:enabled?  #(feature-enabled? :gridfire)
-                                                                         :opt-label "GridFire"
-                                                                         :filter    "gridfire"}}}
+                                                              " is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "Pyretechnics"]
+                                                              " is a library that provides modules that implement the fundamental equations used in most operational wildland fire behavior models like GridFire, ELMFIRE, FlamMap, FARSITE, FSIM, and BehavePlus."]
+                                                 :options    {:elmfire      {:opt-label "ELMFIRE"
+                                                                             :filter    "elmfire"}
+                                                              :pyretechnics {:enabled?  #(feature-enabled? :pyretechnics)
+                                                                             :opt-label "Pyretechnics"
+                                                                             :filter    "pyretechnics"}
+                                                              :gridfire     {:enabled?  #(feature-enabled? :gridfire)
+                                                                             :opt-label "GridFire"
+                                                                             :filter    "gridfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :disabled   (fn [selected-set]
