@@ -20,7 +20,7 @@
     {:background ($/color-picker :neutral-white)
      :border     (str "1px solid " ($/color-picker :neutral-soft-gray))}
     ;;TODO On some browsers, aka chrome, there is a black border that is being
-    ;;imposed ontop of the focused orange border. Try to fix this!
+    ;;imposed on top of the focused orange border. Try to fix this!
     {:pseudo {:focus {:background ($/color-picker :neutral-white)
                       :border     (str "1px solid " ($/color-picker :primary-standard-orange))}
               :hover {:background ($/color-picker :neutral-light-gray)}}}))
@@ -48,7 +48,7 @@
 
 ;;TODO copied from admin.cljs, so either share that logic or deprecate admin.cljs eventually.
 (defn- update-org-user!
-  "Updates user idenfitied by their `email` to have the `new-name`. Then makes a toast."
+  "Updates user identified by their `email` to have the `new-name`. Then makes a toast."
   [email new-name]
   (go
     (let [res (<! (u-async/call-clj-async! "update-user-name" email new-name))]
@@ -71,11 +71,9 @@
   [{:keys [value on-change]}]
   [:input {:type      "text"
            :class     (<class $standard-input-field)
-           :style     {:display       "flex"
-                       :weight        "500"
+           :style     {:weight        "500"
                        :width         "100%"
                        :max-width     "350px"
-                       :align-items   "center"
                        :height        "50px"
                        :font-size     "14px"
                        :font-style    "normal"
@@ -140,7 +138,7 @@
     title]
    children])
 
-(defn- labled-toggle
+(defn- labeled-toggle
   [{:keys [label]}]
   [:<>
    [:p {:style (assoc font-styles :font-weight "400")} label]
@@ -161,7 +159,7 @@
       [user-name-card {:value     @user-name
                        :on-change #(reset! user-name (input-value %))}]]
      [buttons/ghost {:text     "Save Changes"
-                     :on-click #(go (<! (update-org-user! email-address @user-name)))}]]))
+                     :on-click #(update-org-user! email-address @user-name)}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
@@ -207,5 +205,5 @@
    #_[card {:title "NOTIFICATION PREFERENCES"
             :children
             [:<>
-             [labled-toggle {:label "Receive emails about new fires (need proper text here)"}]
-             [labled-toggle {:label "Receive emails about new fires (need proper text here)"}]]}]])
+             [labeled-toggle {:label "Receive emails about new fires (need proper text here)"}]
+             [labeled-toggle {:label "Receive emails about new fires (need proper text here)"}]]}]])
