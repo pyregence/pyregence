@@ -27,17 +27,13 @@
 
 (def label-styles
   {:color       ($/color-picker :neutral-md-gray)
-   :font-family "Roboto"
    :font-size   "14px"
    :font-weight "500"
-   :font-style  "normal"
    :margin      "0"})
 
 (def font-styles
   {:color       ($/color-picker :neutral-black)
-   :font-family "Roboto"
    :font-size   "14px"
-   :font-style  "normal"
    :font-weight "600"
    ;;TODO look into why all :p need margin-bottom 0 to look normal
    :margin      "0"})
@@ -99,9 +95,7 @@
                  :flex-direction "column"
                  :width          "100%"}}
    [:div {:style label-styles}
-    (let [styles {:font-family "Roboto"
-                  :font-size   "14px"
-                  :font-style  "normal"
+    (let [styles {:font-size   "14px"
                   :font-weight "500"
                   :color       ($/color-picker :neutral-black)}]
       [:div {:style {:display        "flex"
@@ -170,7 +164,6 @@
            email-address
            role-type] :as user-info}]
   [:div {:style {:display        "flex"
-                 :font-family    "Roboto"
                  :flex-direction "column"
                  :align-items    "flex-start"
                  :padding        "40px 160px"

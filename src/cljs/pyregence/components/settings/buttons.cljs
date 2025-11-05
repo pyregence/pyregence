@@ -18,10 +18,7 @@
    :border-radius    "4px"
    :border           (str "2px solid " ($/color-picker :primary-standard-orange))
    ;;TODO move topography properties to top of page.
-   :line-height      "normal"
-   :font-family      "Roboto"
    :font-size        "14px"
-   :font-style       "normal"
    :font-weight      "400"})
 
 (def $ghost-styles
