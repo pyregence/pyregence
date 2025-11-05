@@ -94,13 +94,15 @@
                        :margin         "16px"
                        :border-radius  "4px"
                        :cursor         "pointer"}}
-         [svg/search :height "16px" :width "16px"]
+         [:div {:style {:padding-right "8px"
+                        :padding-left  "16px"}}
+          [svg/search :height "16px" :width "16px"]]
          [:input {:type        "text"
                   :placeholder "search"
-                  :style       {:border     "none"
-                                :background "transparent"
-                                :width      "100%"
-                                :outline    "none"}
+                  :style       {:border       "none"
+                                :background   "transparent"
+                                :width        "100%"
+                                :outline      "none"}
                   :on-change   #(reset! search (.-value (.-target %)))}]]
         (doall
          (for [option options
