@@ -192,7 +192,8 @@
                           :flex-direction  "row"
                           :justify-content "space-between"
                           :align-items     "flex-end"
-                          :width           "100%"}}
+                          :width           "100%"
+                          :gap             "10px"}}
             [:p {:style {:margin "0px"}}
              ;;TODO pass on-click to generate reset link.
              [buttons/ghost {:text "Send Reset Link"}]]
