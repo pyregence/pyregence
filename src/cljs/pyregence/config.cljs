@@ -615,7 +615,7 @@
                                                  :options    {:elmfire      {:opt-label "ELMFIRE"
                                                                              :filter    "elmfire"}
                                                               :pyretechnics {:enabled?  #(feature-enabled? :pyretechnics)
-                                                                             :opt-label "Pyretechnics"
+                                                                             :opt-label "Pyretechnics (Beta)"
                                                                              :filter    "pyretechnics"}
                                                               :gridfire     {:enabled?  #(feature-enabled? :gridfire)
                                                                              :opt-label "GridFire"
