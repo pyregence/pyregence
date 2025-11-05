@@ -4,7 +4,6 @@
    [herb.core                             :refer [<class]]
    [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons]
-   [pyregence.components.svg-icons        :as svg]
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]
    [pyregence.utils.dom-utils             :refer [input-value]]
@@ -48,7 +47,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;TODO copied from admin.cljs, so either share that logic or deprecate admin.cljs eventually.
-(defn- update-org-user! [email new-name]
+(defn- update-org-user!
+  "Updates user idenfitied by their `email` to have the `new-name`. Then makes a toast."
+  [email new-name]
   (go
     (let [res (<! (u-async/call-clj-async! "update-user-name" email new-name))]
       (if (:success res)
@@ -198,7 +199,7 @@
                           :width           "100%"
                           :gap             "10px"}}
             [:p {:style {:margin "0px"}}
-             ;;TODO pass on-click to generate reset link.
+             ;;TODO pass on-click to generate reset link, this will be handled in a future ticket.
              [buttons/ghost {:text "Send Reset Link"}]]
             [input-show {:label "Last Updated"
                          :text  password-set-date}]]]}]
