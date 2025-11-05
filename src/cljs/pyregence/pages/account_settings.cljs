@@ -19,7 +19,7 @@
   ;; call floating at the top, but how else to organize it?
   ;; TODO get-organizations could happen just when they click
   ;;organization settings, but then that would be slower...
-  (r/with-let [orgs (r/atom [])]
+  (r/with-let [orgs (r/atom nil)]
     ;; TODO this conditional check on @orgs prevents repeating calls to the backend
     ;; But it might not make sense if we need to update orgs at other points. Consider other ways.
     (when-not @orgs
