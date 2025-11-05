@@ -426,18 +426,18 @@
                                                                                 :filter-set   #{"fire-risk-forecast" "times-burned"}
                                                                                 :units        "Times"
                                                                                 :disabled-for all-utility-companies-planning}
-                                                              :impacted        {:opt-label  "Impacted structures"
-                                                                                :filter-set #{"fire-risk-forecast" "impacted-structures"}
-                                                                                :units      "Structures"
+                                                              :impacted        {:opt-label    "Impacted structures"
+                                                                                :filter-set   #{"fire-risk-forecast" "impacted-structures"}
+                                                                                :units        "Structures"
                                                                                 :disabled-for all-utility-companies-planning}
-                                                              :fire-area       {:opt-label  "Fire area"
-                                                                                :filter-set #{"fire-risk-forecast" "fire-area"}
-                                                                                :units      "Acres"
+                                                              :fire-area       {:opt-label    "Fire area"
+                                                                                :filter-set   #{"fire-risk-forecast" "fire-area"}
+                                                                                :units        "Acres"
                                                                                 :disabled-for all-utility-companies-planning}
-                                                              :fire-volume     {:opt-label  "Fire volume"
-                                                                                :filter-set #{"fire-risk-forecast" "fire-volume"}
+                                                              :fire-volume     {:opt-label    "Fire volume"
+                                                                                :filter-set   #{"fire-risk-forecast" "fire-volume"}
                                                                                 :disabled-for all-utility-companies-planning
-                                                                                :units      "Acre-ft"}
+                                                                                :units        "Acre-ft"}
                                                               :crown-fire-area {:opt-label    "Crown fire area"
                                                                                 :filter-set   #{"fire-risk-forecast" "crown-fire-area"}
                                                                                 :units        "Acres"
