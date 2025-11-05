@@ -56,7 +56,7 @@
         (toast-message! (:body res))))))
 
 ;; TODO consider having a Namespace that handles all things roles.
-(defn role-type->label
+(defn- role-type->label
   [role-type]
   (->> (str/split (str role-type) #"_")
        (map str/capitalize)
