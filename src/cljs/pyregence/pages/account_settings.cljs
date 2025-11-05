@@ -14,50 +14,49 @@
 
 (defn root-component
   "The root component of the /account-settings page."
-  [{:keys [user-role user-email user-name]}]
-  ;; TODO it feels awkward to just have this get-organizations api
-  ;; call floating at the top, but how else to organize it?
-  ;; TODO get-organizations could happen just when they click
-  ;;organization settings, but then that would be slower...
-  (r/with-let [orgs (r/atom nil)]
-    ;; TODO this conditional check on @orgs prevents repeating calls to the backend
-    ;; But it might not make sense if we need to update orgs at other points. Consider other ways.
-    (when-not @orgs
-      (go
-        ;;TODO double check the security aspect of this... is get-all-organizations
-        ;; some how more open then it should be?
-        (let [api-route (if (= user-role "super_admin")
-                          "get-all-organizations"
-                          "get-current-user-organization")
-              response  (<! (u-async/call-clj-async! api-route))]
-          (reset! orgs (if (:success response)
-                         (->> (:body response)
-                              (edn/read-string))
-                         [])))))
-    [:div {:style {:height         "100%"
-                   :display        "flex"
-                   :flex-direction "column"
-                   :font-family    "Roboto"}}
-   ;; TODO replace with actual upper nav bar
-     [:nav  {:style {:display         "flex"
-                     :justify-content "center"
-                     :align-items     "center"
-                     :width           "100%"
-                     :height          "33px"
-                     :background      ($/color-picker :yellow)}} "mock nav"]
-     (r/with-let [selected-log (r/atom [:account-settings])]
-       [:div {:style {:display        "flex"
-                      :flex-direction "row"
-                      :height         "100%"
-                      :background     ($/color-picker :lighter-gray)}}
-        [nav-bar/main {:selected-log  selected-log
-                       :organizations (mapv :org-name @orgs)
-                       :user-role     user-role}]
-        (case (last @selected-log)
-          :account-settings
-        ;;TODO consider just passing args through, not renaming or re-mapping.
-          [body/main {:password-set-date "1/2/2020"
-                      :email-address     user-email
-                      :role-type         user-role
-                      :user-name         user-name}]
-          [:p "TODO"])])]))
+  [{:keys [user-role] :as m}]
+  (let [orgs (r/atom nil)]
+    (r/create-class
+     {:display-name "account-sttings"
+      :component-did-mount
+      #(go
+         (let [api-route (if (= user-role "super_admin")
+                           "get-all-organizations"
+                           "get-current-user-organization")
+               response  (<! (u-async/call-clj-async! api-route))]
+           (println "reset")
+           (println
+            (reset! orgs (if (:success response)
+                           (->> (:body response)
+                                (edn/read-string))
+                           [])))))
+      :reagent-render
+      (fn [{:keys [user-role user-email user-name] :as m}]
+        (println "reagent-render")
+        [:div {:style {:height         "100%"
+                       :display        "flex"
+                       :flex-direction "column"
+                       :font-family    "Roboto"}}
+        ;; TODO replace with actual upper nav bar
+         [:nav  {:style {:display         "flex"
+                         :justify-content "center"
+                         :align-items     "center"
+                         :width           "100%"
+                         :height          "33px"
+                         :background      ($/color-picker :yellow)}} "mock nav"]
+         (r/with-let [selected-log (r/atom [:account-settings])]
+           [:div {:style {:display        "flex"
+                          :flex-direction "row"
+                          :height         "100%"
+                          :background     ($/color-picker :lighter-gray)}}
+            [nav-bar/main {:selected-log  selected-log
+                           :organizations (mapv :org-name @orgs)
+                           :user-role     user-role}]
+            (case (last @selected-log)
+              :account-settings
+             ;;TODO consider just passing args through, not renaming or re-mapping.
+              [body/main {:password-set-date "1/2/2020"
+                          :email-address     user-email
+                          :role-type         user-role
+                          :user-name         user-name}]
+              [:p "TODO"])])])})))
