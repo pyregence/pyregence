@@ -165,7 +165,6 @@
            role-type] :as user-info}]
   [:div {:style {:display        "flex"
                  :font-family    "Roboto"
-                 :height         "942px"
                  :flex-direction "column"
                  :align-items    "flex-start"
                  :padding        "40px 160px"
