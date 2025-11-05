@@ -205,7 +205,7 @@
                          :text  password-set-date}]]]}]
    ;;TODO commented out because component isn't ready
    #_[card {:title "NOTIFICATION PREFERENCES"
-          :children
-          [:<>
-           [labled-toggle {:label "Receive emails about new fires (need proper text here)"}]
-           [labled-toggle {:label "Receive emails about new fires (need proper text here)"}]]}]])
+            :children
+            [:<>
+             [labled-toggle {:label "Receive emails about new fires (need proper text here)"}]
+             [labled-toggle {:label "Receive emails about new fires (need proper text here)"}]]}]])
