@@ -198,9 +198,12 @@
      {:tab  button
       :text "Organization Settings"
       :icon svg/group})
-   {:tab  button
-    :text "Unaffilated Members"
-    :icon svg/individual}])
+   ;; No Notes in 1214 on unaffiliated members, but the wireframes
+   ;; imply AM and SA https://www.figma.com/design/QitY9QZbsGqFL1OuUZDKsG/Pyrecast?node-id=490-6056&m=dev
+   (when (#{"account_manager" "super_admin"} user-role)
+     {:tab  button
+      :text "Unaffilated Members"
+      :icon svg/individual})])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
