@@ -32,7 +32,7 @@
                            [])))))
       :reagent-render
       (fn [{:keys [user-role user-email user-name] :as m}]
-        (println @orgs)
+        (println "orgs:" (mapv :org-name @orgs))
         [:div {:style {:height         "100%"
                        :display        "flex"
                        :flex-direction "column"

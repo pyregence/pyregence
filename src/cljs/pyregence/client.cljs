@@ -54,17 +54,23 @@
   "Renders the root component for the current URI."
   [params]
   (let [uri (-> js/window .-location .-pathname)]
-    (render (cond
-              (uri->root-component-h uri)
-              (wrap-page #((uri->root-component-h uri) params))
+    (render
 
-              (uri->root-component-hf uri)
-              (wrap-page #((uri->root-component-hf uri) params)
-                         :footer? true)
+      ;; This means :reagent-render gets passed args
+      [account-settings/root-component params]
 
-              :else
-              (wrap-page not-found/root-component
-                         :footer? true))
+      ;; this does means :reagent-render isn't getting passed args..
+            #_(cond
+                (uri->root-component-h uri)
+                (wrap-page #((uri->root-component-h uri) params))
+
+                (uri->root-component-hf uri)
+                (wrap-page #((uri->root-component-hf uri) params)
+                           :footer? true)
+
+                :else
+                (wrap-page not-found/root-component
+                           :footer? true))
             (dom/getElement "app"))))
 
 (defn- ^:export init

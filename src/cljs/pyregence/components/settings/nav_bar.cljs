@@ -178,6 +178,9 @@
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
   [{:keys [organizations user-role]}]
+  (def user-role user-role)
+  user-role
+
   ;; All authenticated Members can see the Account Settings category.
   [{:tab  button
     :text "Account Settings"
