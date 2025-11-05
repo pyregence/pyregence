@@ -10,7 +10,7 @@
 
 (def $primary-styles
   {:display          "flex"
-   :height           "44px"
+   :min-height       "44px"
    :width            "fit-content"
    :align-items      "center"
    :background-color ($/color-picker :primary-standard-orange)
