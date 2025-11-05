@@ -172,20 +172,28 @@
 ;; NOTE `drop-down`'s only support `button`s as options (not other drop downs).
 
 ;; TODO should the conditional checks on user-role use the isa? role-hierarchy?
+
+;; Auth notes from https://sig-gis.atlassian.net/browse/PYR1-1214.
+;; Authenticated Super Admins and Account Managers can see all categories.
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
   [{:keys [organizations user-role]}]
+  ;; All authenticated Members can see the Account Settings category.
   [{:tab  button
     :text "Account Settings"
     :icon svg/wheel}
    ;;TODO the user-role should be the same keyword as it is on the backend
-   ;;it being a string on the fe is a huge security issue because it's easy
-   ;; to get wrong.
-   (when (#{"account_managers" "super_admin"} user-role)
+   ;; it being a string on the fe is a security risk because it's easy to get wrong.
+
+   (when (#{"account_manager" "super_admin"} user-role)
      {:tab     drop-down
       :text    "Organization Settings"
       :options (->> organizations (map #(hash-map :tab button :text %)))
       :icon    svg/group})
+
+   ;; Authenticated Org Admins can see the Account Settings and Organization Settings categories.
+   ;; Org Admins will only see their Organization.
+   ;; Org Admins will not have the expand/collapse feature because they will only have one Organization.
    (when (#{"organization_admin"} user-role)
      {:tab  button
       :text "Organization Settings"
