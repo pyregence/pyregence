@@ -28,49 +28,54 @@
 
 (def ^:private uri->root-component-h
   "All root-components for URIs that should have just a header."
-  {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
-   "/account-settings"   account-settings/root-component
-   "/admin"              admin/root-component
-   "/backup-codes"       backup-codes/root-component
-   "/dashboard"          dashboard/root-component
-   "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
-   "/login"              login/root-component
-   "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
-   "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
-   "/register"           register/root-component
-   "/reset-password"     reset-password/root-component
-   "/settings"           settings/root-component
-   "/totp-setup"         totp-setup/root-component
-   "/verify-2fa"         verify-2fa/root-component
-   "/verify-email"       verify-email/root-component})
+  {"/"                   {:root-component ntf/root-component
+                          :forecast-type  :near-term}
+   "/account-settings"   {:root-component account-settings/root-component}
+   "/admin"              {:root-component admin/root-component}
+   "/backup-codes"       {:root-component backup-codes/root-component}
+   "/dashboard"          {:root-component dashboard/root-component}
+   "/forecast"           {:root-component ntf/root-component
+                          :forecast-type  :near-term}
+   "/login"              {:root-component login/root-component}
+   "/long-term-forecast" {:root-component ntf/root-component
+                          :forecast-type  :long-term}
+   "/near-term-forecast" {:root-component ntf/root-component
+                          :forecast-type  :near-term}
+   "/register"           {:root-component register/root-component}
+   "/reset-password"     {:root-component reset-password/root-component}
+   "/settings"           {:root-component settings/root-component}
+   "/totp-setup"         {:root-component totp-setup/root-component}
+   "/verify-2fa"         {:root-component verify-2fa/root-component}
+   "/verify-email"       {:root-component verify-email/root-component}})
 
 (def ^:private uri->root-component-hf
   "All root-components for URIs that should have a header and a footer."
-  {"/help"           help/root-component
-   "/privacy-policy" privacy/root-component
-   "/terms-of-use"   terms/root-component})
+  {"/help"           {:root-component help/root-component}
+   "/privacy-policy" {:root-component privacy/root-component}
+   "/terms-of-use"   {:root-component terms/root-component}})
 
 (defn- render-root
   "Renders the root component for the current URI."
   [params]
   (let [uri (-> js/window .-location .-pathname)]
     (render
-
-      ;; This works, and correctly means :reagent-render gets passed args
-     #_[account-settings/root-component params]
-
      (cond
        (uri->root-component-h uri)
-       ;; This alsow works and :reagent-render gets passed args
-       [wrap-page account-settings/root-component params]
+       [wrap-page
+        (let [{:keys [forecast-type] :as m} (uri->root-component-h uri)]
+          (assoc m
+                 :params (assoc params :forecast-type forecast-type)))]
 
-       #_(uri->root-component-hf uri)
-       #_(wrap-page #((uri->root-component-hf uri) params)
-                  :footer? true)
+       (uri->root-component-hf uri)
+       [wrap-page
+        (let [{:keys [forecast-type] :as m} (uri->root-component-hf uri)]
+          (assoc m
+                 :params (assoc params :forecast-type forecast-type)
+                 :footer? true))]
 
-       #_:else
-       #_(wrap-page not-found/root-component
-                  :footer? true))
+       :else
+       [wrap-page {:root-component not-found/root-component
+                   :footer?        true}])
      (dom/getElement "app"))))
 
 (defn- ^:export init
