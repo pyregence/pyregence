@@ -26,7 +26,7 @@
 (defonce ^:private original-params  (atom {}))
 (defonce ^:private original-session (atom {}))
 
-(def ^:private uri->root-component-h
+(def ^:private uri->cmpt-info
   "All root-components for URIs that should have just a header."
   {"/"                   {:root-component ntf/root-component
                           :forecast-type  :near-term}
@@ -46,37 +46,22 @@
    "/settings"           {:root-component settings/root-component}
    "/totp-setup"         {:root-component totp-setup/root-component}
    "/verify-2fa"         {:root-component verify-2fa/root-component}
-   "/verify-email"       {:root-component verify-email/root-component}})
-
-(def ^:private uri->root-component-hf
-  "All root-components for URIs that should have a header and a footer."
-  {"/help"           {:root-component help/root-component}
-   "/privacy-policy" {:root-component privacy/root-component}
-   "/terms-of-use"   {:root-component terms/root-component}})
+   "/verify-email"       {:root-component verify-email/root-component}
+   "/help"               {:root-component help/root-component
+                          :footer?        true}
+   "/privacy-policy"     {:root-component privacy/root-component
+                          :footer?        true}
+   "/terms-of-use"       {:root-component terms/root-component
+                          :footer?        true}})
 
 (defn- render-root
   "Renders the root component for the current URI."
   [params]
-  (let [uri (-> js/window .-location .-pathname)]
-    (render
-     (cond
-       (uri->root-component-h uri)
-       [wrap-page
-        (let [{:keys [forecast-type] :as m} (uri->root-component-h uri)]
-          (assoc m
-                 :params (assoc params :forecast-type forecast-type)))]
-
-       (uri->root-component-hf uri)
-       [wrap-page
-        (let [{:keys [forecast-type] :as m} (uri->root-component-hf uri)]
-          (assoc m
-                 :params (assoc params :forecast-type forecast-type)
-                 :footer? true))]
-
-       :else
-       [wrap-page {:root-component not-found/root-component
-                   :footer?        true}])
-     (dom/getElement "app"))))
+  (render
+   [wrap-page
+    (#(assoc % :params (merge params (select-keys % [:forecast-type])))
+     (get uri->cmpt-info (.. js/window -location -pathname) {:root-component not-found/root-component :footer? true}))]
+   (dom/getElement "app")))
 
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."
