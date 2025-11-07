@@ -19,7 +19,8 @@
   ;; call floating at the top, but how else to organize it?
   ;; TODO get-organizations could happen just when they click
   ;;organization settings, but then that would be slower...
-  (r/with-let [orgs (r/atom nil)]
+  (r/with-let [orgs (r/atom nil)
+               selected-log (r/atom [:account-settings])]
     ;; TODO this conditional check on @orgs prevents repeating calls to the backend
     ;; But it might not make sense if we need to update orgs at other points. Consider other ways.
     (when-not @orgs
@@ -45,19 +46,25 @@
                      :width           "100%"
                      :height          "33px"
                      :background      ($/color-picker :yellow)}} "mock nav"]
-     (r/with-let [selected-log (r/atom [:account-settings])]
+     (let [tabs     (nav-bar/tab-data->tabs
+                      {:selected-log  selected-log
+                       :organizations (mapv :org-name @orgs)
+                       :user-role     user-role})
+           selected->tab-id (fn [selected]
+                              (:id (first ((group-by :selected? tabs) selected))))
+           selected (-> @selected-log last)
+           selected-page (selected->tab-id selected)]
        [:div {:style {:display        "flex"
                       :flex-direction "row"
                       :height         "100%"
                       :background     ($/color-picker :lighter-gray)}}
-        [nav-bar/main {:selected-log  selected-log
-                       :organizations (mapv :org-name @orgs)
-                       :user-role     user-role}]
-        (case (last @selected-log)
+        [nav-bar/main tabs]
+        (case selected-page
           :account-settings
-        ;;TODO consider just passing args through, not renaming or re-mapping.
           [body/main {:password-set-date "1/2/2020"
                       :email-address     user-email
                       :role-type         user-role
                       :user-name         user-name}]
+          :organization-settings
+          [:p selected]
           [:p "TODO"])])]))

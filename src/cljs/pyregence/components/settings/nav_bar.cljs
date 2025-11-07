@@ -1,13 +1,13 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.core.async              :refer [<! go]]
-   [clojure.string                  :as str]
-   [clojure.walk                    :as walk]
-   [herb.core                       :refer [<class]]
-   [pyregence.components.svg-icons  :as svg]
-   [pyregence.styles                :as $]
-   [pyregence.utils.async-utils :as u-async]
-   [reagent.core                    :as r]))
+   [clojure.core.async                 :refer [<! go]]
+   [clojure.string                     :as str]
+   [clojure.walk                       :as walk]
+   [herb.core                          :refer [<class]]
+   [pyregence.components.svg-icons     :as svg]
+   [pyregence.styles                   :as $]
+   [pyregence.utils.async-utils        :as u-async]
+   [reagent.core                       :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -209,25 +209,32 @@
 ;; Page
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- tabs
-  "Returns a list of tab components"
-  [{:keys [selected-log] :as tab-data}]
-  (->> tab-data
+(defn- text->id [text]
+  (-> text
+      str/lower-case
+      (str/replace #"\s+" "-")
+      keyword))
+
+(defn tab-data->tabs
+  [{:keys [selected-log] :as tabs-data}]
+  (->> tabs-data
        ;;TODO think of a better way then remove empty?
        tab-data->tab-descriptions
        (remove empty?)
-         ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
+       ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
        (walk/postwalk
-        (fn [tab]
-          (if-not (and (map? tab) (:tab tab))
-            tab
-            (let [{:keys [text]} tab
-                  id             (-> text
-                                     str/lower-case
-                                     (str/replace #"\s+" "-")
-                                     keyword)
-                  tab              (assoc tab :id id :key id :selected-log selected-log)]
-              (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))
+         (fn [tab]
+           (if-not (and (map? tab) (:tab tab))
+             tab
+             (let [{:keys [text]} tab
+                   id               (text->id text)
+                   tab              (assoc tab :id id :key id :selected-log selected-log)]
+               (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))))
+
+(defn- tabs
+  "Returns a list of tab components"
+  [tabs-data]
+  (->> tabs-data
        (mapv (fn [{:keys [tab] :as tab-data}] [tab tab-data]))
        (cons :<>)
        vec))
