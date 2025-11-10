@@ -18,10 +18,10 @@
 
 (defn- $on-hover-darker-gray-border []
   (with-meta
-    {:border        (str "1px solid " ($/color-picker :neutral-soft-gray))
-     :background    "rgba(246, 246, 246, 1)"}
-    {:pseudo {:hover {:border (str "1px solid " ($/color-picker :neutral-md-gray))}
-              :focus-within {:border        (str "1px solid " ($/color-picker :standard-orange))}}}))
+    {:border     (str "1px solid " ($/color-picker :neutral-soft-gray))
+     :background "rgba(246, 246, 246, 1)"}
+    {:pseudo {:hover        {:border (str "1px solid " ($/color-picker :neutral-md-gray))}
+              :focus-within {:border (str "1px solid " ($/color-picker :standard-orange))}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper functions
@@ -99,10 +99,10 @@
           [svg/search :height "16px" :width "16px"]]
          [:input {:type        "text"
                   :placeholder "search"
-                  :style       {:border       "none"
-                                :background   "transparent"
-                                :width        "100%"
-                                :outline      "none"}
+                  :style       {:border     "none"
+                                :background "transparent"
+                                :width      "100%"
+                                :outline    "none"}
                   :on-change   #(reset! search (.-value (.-target %)))}]]
         (doall
          (for [option options
@@ -188,7 +188,9 @@
    (when (#{"account_manager" "super_admin"} user-role)
      {:tab     drop-down
       :text    "Organization Settings"
-      :options (->> organizations (map #(hash-map :tab button :text %)))
+      :options (->> organizations
+                    (map (fn [{:keys [org-id org-name]}]
+                           {:tab button :text org-name :id org-id})))
       :icon    svg/group})
 
    ;; Authenticated Org Admins can see the Account Settings and Organization Settings categories.
@@ -209,12 +211,6 @@
 ;; Page
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- text->id [text]
-  (-> text
-      str/lower-case
-      (str/replace #"\s+" "-")
-      keyword))
-
 (defn tab-data->tabs
   [{:keys [selected-log] :as tabs-data}]
   (->> tabs-data
@@ -223,13 +219,13 @@
        (remove empty?)
        ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
        (walk/postwalk
-         (fn [tab]
-           (if-not (and (map? tab) (:tab tab))
-             tab
-             (let [{:keys [text]} tab
-                   id               (text->id text)
-                   tab              (assoc tab :id id :key id :selected-log selected-log)]
-               (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))))
+        (fn [tab]
+          (if-not (and (map? tab) (:tab tab))
+            tab
+            (let [{:keys [text id]} tab
+                  id                (or id text)
+                  tab               (assoc tab :id id :key id :selected-log selected-log)]
+              (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))))
 
 (defn- tabs
   "Returns a list of tab components"
@@ -254,6 +250,6 @@
                   :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
                   :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
     [tabs tabs-data]]
-   [button {:text "Logout" :icon svg/logout
+   [button {:text     "Logout" :icon svg/logout
             :on-click #(go (<! (u-async/call-clj-async! "log-out"))
-                                 (-> js/window .-location .reload))}]])
+                           (-> js/window .-location .reload))}]])
