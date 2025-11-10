@@ -611,7 +611,7 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "Pyretechnics"]
-                                                              " is a library that provides modules that implement the fundamental equations used in most operational wildland fire behavior models like GridFire, ELMFIRE, FlamMap, FARSITE, FSIM, and BehavePlus."]
+                                                              " is a Python library, created by the PyreCast team, that provides modules for surface, crown, and spot fire behavior along with areal burning and fire perimeter tracking. In PyreCast, it is configured to run using a novel implementation of the Eulerian Level Set Model of Fire Spread, similar to the ELMFIRE model."]
                                                  :options    {:elmfire      {:opt-label "ELMFIRE"
                                                                              :filter    "elmfire"}
                                                               :pyretechnics {:enabled?  #(feature-enabled? :pyretechnics)
