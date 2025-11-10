@@ -481,8 +481,8 @@
   (let [end-time (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))
         state    (atom {"mdrop-dps"          {"pending" false "success" false "failure" false "order" 1}
                         "mdrop-gridfire"     {"pending" false "success" false "failure" false "order" 2}
-                        "mdrop-elmfire"      {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallell
-                        "mdrop-pyretechnics" {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallell
+                        "mdrop-elmfire"      {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
+                        "mdrop-pyretechnics" {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
                         "mdrop-geosync"      {"pending" false "success" false "failure" false "order" 3}})]
     (future
       (loop []
