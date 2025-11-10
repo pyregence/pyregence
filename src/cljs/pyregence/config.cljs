@@ -611,7 +611,14 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "Pyretechnics"]
-                                                              " is a Python library, created by the PyreCast team, that provides modules for surface, crown, and spot fire behavior along with areal burning and fire perimeter tracking. In PyreCast, it is configured to run using a novel implementation of the Eulerian Level Set Model of Fire Spread, similar to the ELMFIRE model."]
+                                                              " is a Python"
+                                                              [:a {:href   "https://github.com/pyregence/pyretechnics/ "}
+                                                                " open source"]
+                                                              [:a {:href   "https://pypi.org/project/pyretechnics/"}
+                                                                " library"]
+                                                              ", created by the PyreCast team, that provides modules for surface, crown, and spot fire behavior along with areal burning and fire perimeter tracking. In PyreCast, it is configured to run using a novel implementation of the Eulerian Level Set Model of Fire Spread, similar to the ELMFIRE model. Comprehensive documentation can be found on its official documentation"
+                                                              [:a {:href  "https://pyregence.github.io/pyretechnics/"}
+                                                               " site."]]
                                                  :options    {:elmfire      {:opt-label "ELMFIRE"
                                                                              :filter    "elmfire"}
                                                               :pyretechnics {:enabled?  #(feature-enabled? :pyretechnics)
