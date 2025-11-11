@@ -88,7 +88,7 @@
        [:<>
         [:div {:class (<class $on-hover-darker-gray-border)
                :style {:display        "flex"
-                       :height         "42px"
+                       :min-height     "42px"
                        :flex-direction "row"
                        :align-items    "center"
                        :margin         "16px"
@@ -98,11 +98,11 @@
                         :padding-left  "16px"}}
           [svg/search :height "16px" :width "16px"]]
          [:input {:type        "text"
-                  :placeholder "search"
-                  :style       {:border     "none"
-                                :background "transparent"
-                                :width      "100%"
-                                :outline    "none"}
+                  :placeholder "Search"
+                  :style       {:border       "none"
+                                :background   "transparent"
+                                :width        "100%"
+                                :outline      "none"}
                   :on-change   #(reset! search (.-value (.-target %)))}]]
         (doall
          (for [option options
@@ -250,6 +250,6 @@
                   :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
                   :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
     [tabs tabs-data]]
-   [button {:text     "Logout" :icon svg/logout
+  [button {:text "Logout" :icon svg/logout
             :on-click #(go (<! (u-async/call-clj-async! "log-out"))
                            (-> js/window .-location .reload))}]])
