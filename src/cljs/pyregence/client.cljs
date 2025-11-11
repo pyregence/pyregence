@@ -18,6 +18,7 @@
             [pyregence.pages.settings           :as settings]
             [pyregence.pages.terms-of-use       :as terms]
             [pyregence.pages.totp-setup         :as totp-setup]
+            [pyregence.pages.users-table        :as users-table]
             [pyregence.pages.verify-2fa         :as verify-2fa]
             [pyregence.pages.verify-email       :as verify-email]
             [pyregence.state                    :as !]
@@ -27,7 +28,6 @@
 (defonce ^:private original-session (atom {}))
 
 (def ^:private uri->cmpt-info
-  "All root-components for URIs that should have just a header."
   {"/"                   {:root-component ntf/root-component
                           :forecast-type  :near-term}
    "/account-settings"   {:root-component account-settings/root-component}
@@ -45,6 +45,7 @@
    "/reset-password"     {:root-component reset-password/root-component}
    "/settings"           {:root-component settings/root-component}
    "/totp-setup"         {:root-component totp-setup/root-component}
+   "/users-table"        {:root-component users-table/root-component}
    "/verify-2fa"         {:root-component verify-2fa/root-component}
    "/verify-email"       {:root-component verify-email/root-component}
    "/help"               {:root-component help/root-component
@@ -53,7 +54,6 @@
                           :footer?        true}
    "/terms-of-use"       {:root-component terms/root-component
                           :footer?        true}})
-
 (defn- render-root
   "Renders the root component for the current URI."
   [params]

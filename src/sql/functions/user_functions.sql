@@ -262,6 +262,36 @@ $$ LANGUAGE SQL;
 --------------------------------------------------------------------------------
 -- Misc functions
 --------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION get_all_users()
+ RETURNS TABLE (
+  user_uid              integer,
+  email                 text,
+  name                  text,
+  settings              text,
+  match_drop_access     boolean,
+  email_verified        boolean,
+  last_login_date       timestamptz,
+  user_role             user_role,
+  org_membership_status org_membership_status,
+  organization_name     text
+ ) AS $$
+    SELECT
+      u.user_uid,
+      u.email,
+      u.name,
+      u.settings,
+      u.match_drop_access,
+      u.email_verified,
+      u.last_login_date,
+      u.user_role,
+      u.org_membership_status,
+      o.org_name
+    FROM users u
+    LEFT JOIN organizations o
+      ON u.organization_rid = o.organization_uid
+
+$$ LANGUAGE SQL;
+
 CREATE OR REPLACE FUNCTION get_user_settings(_user_id integer)
  RETURNS TABLE (settings text) AS $$
 

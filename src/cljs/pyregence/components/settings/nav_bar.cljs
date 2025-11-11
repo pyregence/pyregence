@@ -1,13 +1,13 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.core.async              :refer [<! go]]
-   [clojure.string                  :as str]
-   [clojure.walk                    :as walk]
-   [herb.core                       :refer [<class]]
-   [pyregence.components.svg-icons  :as svg]
-   [pyregence.styles                :as $]
-   [pyregence.utils.async-utils :as u-async]
-   [reagent.core                    :as r]))
+   [clojure.core.async                 :refer [<! go]]
+   [clojure.string                     :as str]
+   [clojure.walk                       :as walk]
+   [herb.core                          :refer [<class]]
+   [pyregence.components.svg-icons     :as svg]
+   [pyregence.styles                   :as $]
+   [pyregence.utils.async-utils        :as u-async]
+   [reagent.core                       :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -88,17 +88,16 @@
        [:<>
         [:div {:class (<class $on-hover-darker-gray-border)
                :style {:display        "flex"
-                       :height         "42px"
+                       :min-height     "42px"
                        :flex-direction "row"
                        :align-items    "center"
                        :margin         "16px"
-                       :border-radius  "4px"
-                       :cursor         "pointer"}}
+                       :border-radius  "4px"}}
          [:div {:style {:padding-right "8px"
                         :padding-left  "16px"}}
           [svg/search :height "16px" :width "16px"]]
          [:input {:type        "text"
-                  :placeholder "search"
+                  :placeholder "Search"
                   :style       {:border       "none"
                                 :background   "transparent"
                                 :width        "100%"
@@ -178,9 +177,6 @@
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
   [{:keys [organizations user-role]}]
-  (def user-role user-role)
-  user-role
-
   ;; All authenticated Members can see the Account Settings category.
   [{:tab  button
     :text "Account Settings"
@@ -212,25 +208,32 @@
 ;; Page
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- tabs
-  "Returns a list of tab components"
-  [{:keys [selected-log] :as tab-data}]
-  (->> tab-data
+(defn- text->id [text]
+  (-> text
+      str/lower-case
+      (str/replace #"\s+" "-")
+      keyword))
+
+(defn tab-data->tabs
+  [{:keys [selected-log] :as tabs-data}]
+  (->> tabs-data
        ;;TODO think of a better way then remove empty?
        tab-data->tab-descriptions
        (remove empty?)
-         ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
+       ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
        (walk/postwalk
-        (fn [tab]
-          (if-not (and (map? tab) (:tab tab))
-            tab
-            (let [{:keys [text]} tab
-                  id             (-> text
-                                     str/lower-case
-                                     (str/replace #"\s+" "-")
-                                     keyword)
-                  tab              (assoc tab :id id :key id :selected-log selected-log)]
-              (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))
+         (fn [tab]
+           (if-not (and (map? tab) (:tab tab))
+             tab
+             (let [{:keys [text]} tab
+                   id               (text->id text)
+                   tab              (assoc tab :id id :key id :selected-log selected-log)]
+               (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))))
+
+(defn- tabs
+  "Returns a list of tab components"
+  [tabs-data]
+  (->> tabs-data
        (mapv (fn [{:keys [tab] :as tab-data}] [tab tab-data]))
        (cons :<>)
        vec))
@@ -252,4 +255,4 @@
     [tabs tabs-data]]
    [button {:text "Logout" :icon svg/logout
             :on-click #(go (<! (u-async/call-clj-async! "log-out"))
-                                 (-> js/window .-location .reload))}]])
+                           (-> js/window .-location .reload))}]])
