@@ -13,6 +13,9 @@
 (def routes
   {;; Page Routes
    [:get "/"]                                    {:handler (render-page "/")}
+   [:get "/account-settings"]                    {:handler     (render-page "/account-settings")
+                                                  :auth-type   :member
+                                                  :auth-action :redirect}
    [:get "/admin"]                               {:handler (render-page "/admin")
                                                   :auth-type :organization-admin
                                                   :auth-action :redirect}

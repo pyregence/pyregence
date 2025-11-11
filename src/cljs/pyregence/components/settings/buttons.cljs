@@ -10,17 +10,14 @@
 
 (def $primary-styles
   {:display          "flex"
-   :height           "44px"
+   :min-height       "44px"
+   :width            "fit-content"
    :align-items      "center"
    :background-color ($/color-picker :primary-standard-orange)
    :padding          "12px 14px"
    :border-radius    "4px"
    :border           (str "2px solid " ($/color-picker :primary-standard-orange))
-   ;;TODO move topography properties to top of page.
-   :line-height      "normal"
-   :font-family      "Roboto"
    :font-size        "14px"
-   :font-style       "normal"
    :font-weight      "400"})
 
 (def $ghost-styles
@@ -83,5 +80,5 @@
                     :border          (str "1px solid " ($/color-picker :error-red))
                     :border-width    "1.5px"}
             :on-click on-click}
-   [:div {:flex "0 0 auto"}
+   [:div {:style {:flex "0 0 auto"}}
     [svg/trash-can :height "50px" :width "50px"]]])

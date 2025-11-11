@@ -1,11 +1,13 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.string                  :as str]
-   [clojure.walk                    :as walk]
-   [herb.core                       :refer [<class]]
-   [pyregence.components.svg-icons  :as svg]
-   [pyregence.styles                :as $]
-   [reagent.core                    :as r]))
+   [clojure.core.async                 :refer [<! go]]
+   [clojure.string                     :as str]
+   [clojure.walk                       :as walk]
+   [herb.core                          :refer [<class]]
+   [pyregence.components.svg-icons     :as svg]
+   [pyregence.styles                   :as $]
+   [pyregence.utils.async-utils        :as u-async]
+   [reagent.core                       :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -86,18 +88,18 @@
        [:<>
         [:div {:class (<class $on-hover-darker-gray-border)
                :style {:display        "flex"
-                       :height         "42px"
+                       :min-height     "42px"
                        :flex-direction "row"
                        :align-items    "center"
                        :margin         "16px"
-                       :padding-left   "16px"
                        :border-radius  "4px"}}
-         [svg/search :height "16px" :width "16px"]
+         [:div {:style {:padding-right "8px"
+                        :padding-left  "16px"}}
+          [svg/search :height "16px" :width "16px"]]
          [:input {:type        "text"
                   :placeholder "Search"
                   :style       {:border       "none"
                                 :background   "transparent"
-                                :padding-left "8px"
                                 :width        "100%"
                                 :outline      "none"}
                   :on-change   #(reset! search (.-value (.-target %)))}]]
@@ -168,50 +170,77 @@
 ;; NOTE Each Tab's `:text` has to be unique because it's used as a component ID.
 ;; NOTE `drop-down`'s only support `button`s as options (not other drop downs).
 
+;; TODO should the conditional checks on user-role use the isa? role-hierarchy?
+
+;; Auth notes from https://sig-gis.atlassian.net/browse/PYR1-1214.
+;; Authenticated Super Admins and Account Managers can see all categories.
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
-  [{:keys [organizations]}]
+  [{:keys [organizations user-role]}]
+  ;; All authenticated Members can see the Account Settings category.
   [{:tab  button
     :text "Account Settings"
     :icon svg/wheel}
-   {:tab     drop-down
-    :text    "Organization Settings"
-    :options (->> organizations (map #(hash-map :tab button :text %)))
-    :icon    svg/group}
-   {:tab  button
-    :text "Unaffilated Members"
-    :icon svg/individual}])
+   ;;TODO the user-role should be the same keyword as it is on the backend
+   ;; it being a string on the fe is a security risk because it's easy to get wrong.
+
+   (when (#{"account_manager" "super_admin"} user-role)
+     {:tab     drop-down
+      :text    "Organization Settings"
+      :options (->> organizations (map #(hash-map :tab button :text %)))
+      :icon    svg/group})
+
+   ;; Authenticated Org Admins can see the Account Settings and Organization Settings categories.
+   ;; Org Admins will only see their Organization.
+   ;; Org Admins will not have the expand/collapse feature because they will only have one Organization.
+   (when (#{"organization_admin"} user-role)
+     {:tab  button
+      :text "Organization Settings"
+      :icon svg/group})
+   ;; No Notes in 1214 on unaffiliated members, but the wireframes
+   ;; imply AM and SA https://www.figma.com/design/QitY9QZbsGqFL1OuUZDKsG/Pyrecast?node-id=490-6056&m=dev
+   (when (#{"account_manager" "super_admin"} user-role)
+     {:tab  button
+      :text "Unaffilated Members"
+      :icon svg/individual})])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- text->id [text]
+  (-> text
+      str/lower-case
+      (str/replace #"\s+" "-")
+      keyword))
+
+(defn tab-data->tabs
+  [{:keys [selected-log] :as tabs-data}]
+  (->> tabs-data
+       ;;TODO think of a better way then remove empty?
+       tab-data->tab-descriptions
+       (remove empty?)
+       ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
+       (walk/postwalk
+         (fn [tab]
+           (if-not (and (map? tab) (:tab tab))
+             tab
+             (let [{:keys [text]} tab
+                   id               (text->id text)
+                   tab              (assoc tab :id id :key id :selected-log selected-log)]
+               (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))))
+
 (defn- tabs
   "Returns a list of tab components"
-  [tab-data]
-  (r/with-let [selected-log (r/atom [])]
-    (->> tab-data
-         tab-data->tab-descriptions
-         ;; This keeps the Tab Configuration (above) minimal by adding implied data via a tree walk.
-         (walk/postwalk
-          (fn [tab]
-            (if-not (and (map? tab) (:tab tab))
-              tab
-              (let [{:keys [text]} tab
-                    id             (-> text
-                                       str/lower-case
-                                       (str/replace #"\s+" "-")
-                                       keyword)
-                    tab              (assoc tab :id id :key id :selected-log selected-log)]
-                (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))
-         (mapv (fn [{:keys [tab] :as tab-data}] [tab tab-data]))
-         (cons :<>)
-         vec)))
+  [tabs-data]
+  (->> tabs-data
+       (mapv (fn [{:keys [tab] :as tab-data}] [tab tab-data]))
+       (cons :<>)
+       vec))
 
 (defn main
   [tabs-data]
   [:nav-bar-main {:style {:display         "flex"
-                          :font-family     "Roboto"
                           :height          "100%"
                           :width           "360px"
                           :padding         "40px 0"
@@ -224,4 +253,6 @@
                   :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
                   :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
     [tabs tabs-data]]
-   [button {:text "Logout" :icon svg/logout}]])
+   [button {:text "Logout" :icon svg/logout
+            :on-click #(go (<! (u-async/call-clj-async! "log-out"))
+                           (-> js/window .-location .reload))}]])
