@@ -105,8 +105,9 @@
                                 updated-at
                                 dps-request
                                 job-log]}]
-  ;; NOTE if/when `common-args` is deprecated, we'll need to get these params from `dps-args` instead of `common-args`
-  (let [{:keys [common-args]} (:script-args dps-request)]
+  (let [{:keys [common-args]} (:script-args dps-request)
+        ;; WORKAROUND for sig3 requests
+        common-args           (or common-args dps-request)]
     [:tr
      [:td match-job-id] ; "Job ID"
      [:td {:width "10%"} (when-not (nil? display-name) display-name)] ; "Fire Name"

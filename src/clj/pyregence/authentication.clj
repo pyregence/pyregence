@@ -725,6 +725,24 @@
                 :membership-status org_membership_status}))
        (data-response)))
 
+(defn get-all-users
+  "Returns a vector of all users in the DB."
+  [_]
+  (->> (call-sql "get_all_users")
+       (mapv (fn [{:keys [user_uid email name settings match_drop_access email_verified
+                          last_login_date user_role org_membership_status organization_name]}]
+               {:user-id               user_uid
+                :email                 email
+                :name                  name
+                :settings              settings
+                :match-drop-access     match_drop_access
+                :email-verified        email_verified
+                :last-login-date       last_login_date
+                :user-role             user_role
+                :org-membership-status org_membership_status
+                :organization-name     organization_name}))
+       (data-response)))
+
 (defn get-psps-organizations
   "Returns the list of all organizations that have PSPS layers (currently denoted
    by the presence of a value in the `geoserver_credentials` column)."
