@@ -88,17 +88,16 @@
        [:<>
         [:div {:class (<class $on-hover-darker-gray-border)
                :style {:display        "flex"
-                       :height         "42px"
+                       :min-height     "42px"
                        :flex-direction "row"
                        :align-items    "center"
                        :margin         "16px"
-                       :border-radius  "4px"
-                       :cursor         "pointer"}}
+                       :border-radius  "4px"}}
          [:div {:style {:padding-right "8px"
                         :padding-left  "16px"}}
           [svg/search :height "16px" :width "16px"]]
          [:input {:type        "text"
-                  :placeholder "search"
+                  :placeholder "Search"
                   :style       {:border       "none"
                                 :background   "transparent"
                                 :width        "100%"
@@ -256,4 +255,4 @@
     [tabs tabs-data]]
    [button {:text "Logout" :icon svg/logout
             :on-click #(go (<! (u-async/call-clj-async! "log-out"))
-                                 (-> js/window .-location .reload))}]])
+                           (-> js/window .-location .reload))}]])
