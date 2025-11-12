@@ -67,7 +67,7 @@
 (defn- split-fire-spread-forecast-layer-name
   "Gets information about a fire spread layer based on the layer's name.
    The layer is assumed to be in the format:
-   `fire-spread-forecast_fire-name_forecast-start-time:<elmfire|gridfire>_landfire_percentile_output-type
+   `fire-spread-forecast_fire-name_forecast-start-time:<elmfire|gridfire|pyretechnics>_landfire_percentile_output-type
    e.g. `fire-spread-forecast_ky-bradford-town_20231105_191700:elmfire_landfire_10_hours-since-burned`"
   [name-string]
   (let [[workspace layer]              (str/split name-string #":")
