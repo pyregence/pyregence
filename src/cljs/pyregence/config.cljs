@@ -677,14 +677,18 @@
                                                                [:strong "Note"]
                                                                ": The impacted structrures, fire area, fire volume, and power line ignition rate quantities are only available with the ELMFIRE model."]]
                                                  :options    (array-map
-                                                              :str   {:opt-label "Impacted structures"
-                                                                      :units     "Structures"}
-                                                              :area  {:opt-label "Fire area (acres)"
-                                                                      :units     "Acres"}
-                                                              :vol   {:opt-label "Fire volume (acre-ft)"
-                                                                      :units     "Acre-ft"}
-                                                              :pligr {:opt-label "Power line ignition rate"
-                                                                      :units     "Ignitions/line-mi/hr"}
+                                                              :str   {:opt-label    "Impacted structures"
+                                                                      :units        "Structures"
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                              :area  {:opt-label    "Fire area (acres)"
+                                                                      :units        "Acres"
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                              :vol   {:opt-label    "Fire volume (acre-ft)"
+                                                                      :units        "Acre-ft"
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                              :pligr {:opt-label    "Power line ignition rate"
+                                                                      :units        "Ignitions/line-mi/hr"
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
                                                               :ws    {:opt-label    "Sustained wind speed (mph)"
                                                                       :units        "mph"
                                                                       :disabled-for #{:m}}
@@ -747,8 +751,7 @@
                                                               [:br]
                                                               [:strong "NBM"]
                                                               " - National Blend of Models at 2.5 km to 11 days."]
-                                                 :options    {:m  {:opt-label    "ELMFIRE"
-                                                                   :disabled-for #{:ws}}
+                                                 :options    {:m  {:opt-label "ELMFIRE"}
                                                               :r  {:opt-label "HRRR"}
                                                               :n1 {:opt-label "NAM 3 km"}
                                                               :n2 {:opt-label "NAM 12 km"}
