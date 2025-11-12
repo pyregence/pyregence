@@ -610,15 +610,18 @@
                                                               " is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "Pyretechnics"]
-                                                              " is a Python"
-                                                              [:a {:href   "https://github.com/pyregence/pyretechnics/ "}
-                                                                " open source"]
-                                                              [:a {:href   "https://pypi.org/project/pyretechnics/"}
-                                                                " library"]
-                                                              ", created by the PyreCast team, that provides modules for surface, crown, and spot fire behavior along with areal burning and fire perimeter tracking. In PyreCast, it is configured to run using a novel implementation of the Eulerian Level Set Model of Fire Spread, similar to the ELMFIRE model. Comprehensive documentation can be found on its official documentation"
-                                                              [:a {:href  "https://pyregence.github.io/pyretechnics/"}
-                                                               " site."]]
+                                                              [:a {:href   "https://pypi.org/project/pyretechnics/"
+                                                                   :target "_blank"}
+                                                               [:strong "Pyretechnics"]]
+                                                              " is an "
+                                                              [:a {:href   "https://github.com/pyregence/pyretechnics/ "
+                                                                   :target "_blank"}
+                                                               "open source"]
+                                                              " library, created by the PyreCast team, that provides modules for surface, crown, and spot fire behavior along with areal burning and fire perimeter tracking. In PyreCast, it is configured to run using a novel implementation of the Eulerian Level Set Model of Fire Spread, similar to the ELMFIRE model. Comprehensive documentation can be found on its official documentation "
+                                                              [:a {:href  "https://pyregence.github.io/pyretechnics/"
+                                                                   :target "_blank"}
+                                                               "site"]
+                                                              "."]
                                                  :options    {:elmfire      {:opt-label "ELMFIRE"
                                                                              :filter    "elmfire"}
                                                               :pyretechnics {:enabled?  #(feature-enabled? :pyretechnics)
