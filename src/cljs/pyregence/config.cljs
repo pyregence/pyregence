@@ -617,7 +617,7 @@
                                                               [:a {:href   "https://github.com/pyregence/pyretechnics/ "
                                                                    :target "_blank"}
                                                                "open source library"]
-                                                              ", created by the PyreCast team, that provides modules for surface, crown, and spot fire behavior along with areal burning and fire perimeter tracking. In PyreCast, it is configured to run using a novel implementation of the Eulerian Level Set Model of Fire Spread, similar to the ELMFIRE model. Comprehensive documentation can be found on its official documentation "
+                                                              ", created by the PyreCast team, that provides modules for surface, crown, and spot fire behavior along with areal burning and fire perimeter tracking. In PyreCast, it is configured to run using a novel implementation of the Eulerian Level Set Model of Fire Spread, similar to the ELMFIRE model. Pyretechnics documentation can be found on its official documentation "
                                                               [:a {:href  "https://pyregence.github.io/pyretechnics/"
                                                                    :target "_blank"}
                                                                "site"]
