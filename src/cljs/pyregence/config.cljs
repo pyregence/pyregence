@@ -669,6 +669,9 @@
                                                               :vol   {:opt-label    "Fire volume (acre-ft)"
                                                                       :units        "Acre-ft"
                                                                       :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                              :pligr {:opt-label    "Power line ignition rate"
+                                                                      :units        "Ignitions/line-mi/hr"
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
                                                               :ws    {:opt-label    "Sustained wind speed (mph)"
                                                                       :units        "mph"
                                                                       :disabled-for #{:m}}
@@ -1031,7 +1034,7 @@
              "g2_pign_h" "g2_pign_l" "g2_rh_a" "g2_rh_h" "g2_rh_l" "g2_tmpf_a"
              "g2_tmpf_h" "g2_tmpf_l" "g2_wd_a" "g2_wd_h" "g2_wd_l" "g2_wg_a"
              "g2_wg_h" "g2_wg_l" "g2_ws_a" "g2_ws_h" "g2_ws_l"
-             "m_area_a" "m_area_h" "m_area_l"
+             "m_area_a" "m_area_h" "m_area_l" "m_pligr_a" "m_pligr_h" "m_pligr_l"
              "m_str_a" "m_str_h" "m_str_l" "m_vol_a" "m_vol_h" "m_vol_l" "n1_ffwi_a"
              "n1_ffwi_h" "n1_ffwi_l" "n1_pign_a" "n1_pign_h" "n1_pign_l" "n1_rh_a"
              "n1_rh_h" "n1_rh_l" "n1_tmpf_a" "n1_tmpf_h" "n1_tmpf_l" "n1_wd_a"
