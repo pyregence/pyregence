@@ -34,7 +34,7 @@
   "The root component of the /account-settings page."
   [{:keys [user-role user-email user-name]}]
   (let [org-id->org (r/atom nil)
-        selected-log (r/atom [:account-settings])]
+        selected-log (r/atom ["Account Settings"])]
     (r/create-class
      {:display-name "account-settings"
       :component-did-mount
