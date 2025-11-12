@@ -47,6 +47,7 @@
    "/settings"           {:root-component settings/root-component}
    "/totp-setup"         {:root-component totp-setup/root-component}
    "/users-table"        {:root-component users-table/root-component}
+   "/members-table"      {:root-component members-table/root-component}
    "/verify-2fa"         {:root-component verify-2fa/root-component}
    "/verify-email"       {:root-component verify-email/root-component}
    "/help"               {:root-component help/root-component
