@@ -176,7 +176,7 @@
      :rowData                    (clj->js (:row-data @all-users-table-data))
      :columnDefs                 (clj->js (:col-defs @all-users-table-data))}]])
 
-(defn- users-view []
+(defn- users-view [user-info]
   [:div#users-view
    {:style {:display               "grid"
             :font-family           "Roboto"
@@ -209,15 +209,13 @@
 
 (defn root-component
   "The root component for the /users-table page."
-  []
+  [{:keys [user-role]}]
   (r/create-class
    {:component-did-mount
     (fn [_]
-      ;;TODO fix this so were passing in user-role info
-      (initialize! "super_admin"))
-
+      (initialize! user-role))
     :reagent-render
-    (fn [_]
+    (fn [user-info]
       [:div {:style {:height "100vh"
                      :padding "2rem"}}
-       [users-view]])}))
+       [users-view user-info]])}))
