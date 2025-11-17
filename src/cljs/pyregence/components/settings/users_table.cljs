@@ -1,0 +1,221 @@
+(ns pyregence.components.settings.users-table
+  (:require
+   ["ag-grid-community"                   :refer [AllCommunityModule
+                                                  ModuleRegistry]]
+   ["ag-grid-react"                       :refer [AgGridReact]]
+   [clojure.core.async                    :as async :refer [<! go]]
+   [clojure.string                        :as str]
+   [pyregence.components.messaging        :refer [toast-message!]]
+   [pyregence.components.settings.buttons :as buttons]
+   [pyregence.components.settings.utils   :refer [search-cmpt]]
+   [pyregence.styles                      :as $]
+   [pyregence.utils.async-utils           :as u-async]
+   [reagent.core                          :as r]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Grid functionality
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Runs immediately the first time the namespace is loaded, and then never again, even across Figwheel reloads
+;; Ensure the AG Grid modules are registered (no-op if already done)
+(defonce ag-grid-modules-registered?
+  (do
+    (.registerModules ModuleRegistry #js [AllCommunityModule])
+    true))
+
+(defn- get-selected-rows
+  [grid-api]
+  (js->clj
+   ((goog/get grid-api "getSelectedRows") grid-api)
+   :keywordize-keys true))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- update-users-roles
+  [role users-to-update]
+  (go (<! (u-async/call-clj-async! "update-users-roles" role users-to-update))))
+
+(defn- update-users-status
+  [status users-to-update]
+  (go (<! (u-async/call-clj-async! "update-users-status" status users-to-update))))
+
+(defn- user-role-renderer [params]
+  (let [v (aget params "value")]
+    (r/as-element
+     [:span
+      (condp = v
+        ;; TODO consider if these mappings should sync all the way back to the db
+        "super_admin"         "Super Admin"
+        "organization_admin"  "Organization Admin"
+        "organization_member" "Organization Member"
+        "account_manager"     "Account Manager"
+        "member"              "Member")])))
+
+(defn- org-membership-status-renderer [params]
+  (let [v (aget params "value")]
+    (r/as-element
+     [:span
+      (condp = v
+        ;; TODO consider if these mappings should sync all the way back to the db
+        "none"     "None"
+        "pending"  "Pending"
+        "accepted" "Accepted")])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; State
+;; TODO consider if this state should be on a component.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce table-loading? (r/atom false))
+(defonce all-users-table-data
+  (r/atom {:row-data []
+           :col-defs
+           [{:field "name"                  :headerName "User Name"      :filter "agTextColumnFilter" :width 150}
+            {:field "email"                 :headerName "Email Address"  :filter "agTextColumnFilter"}
+            {:field "user-role"             :headerName "User Role"      :filter "agTextColumnFilter" :cellRenderer user-role-renderer}
+            {:field "org-membership-status" :headerName "Status"         :filter false :cellRenderer org-membership-status-renderer}]}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; API Calls
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;TODO find out why this is necessary and use it or remove it.
+(defn api-call
+  "A helper function to safely call GridApi methods under advanced compilation."
+  [^js api method & args]
+  (let [f (aget api method)]
+    (if (instance? js/Function f)
+      (.apply f api (to-array args))
+      (js/console.error "GridApi method not found:" method "on" api))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Processing Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;TODO ideally the loading state would be attached to a component and not be global
+(defn- initialize! [users]
+  (reset! table-loading? true)
+  (swap! all-users-table-data assoc :row-data users)
+  (reset! table-loading? false))
+
+;; TODO consider if we need this user-grid component or if we should merge it into tale.
+(defn- users-grid [grid-api]
+  [:div {:style {:height "100%" :width "100%"}}
+   [:> AgGridReact
+    {:onGridReady                (fn [params] (reset! grid-api (aget params "api")))
+     :rowSelection               #js {:mode "multiRow"}
+     :pagination                 true
+     :paginationPageSize         25
+     :paginationPageSizeSelector #js [25 50 100]
+     :defaultColDef              #js {:unSortIcon true} ;; always show sort icons
+     :enableCellTextSelection    true
+     :rowData                    (clj->js (:row-data @all-users-table-data))
+     :columnDefs                 (clj->js (:col-defs @all-users-table-data))}]])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn table
+  "The root component for the /users-table page."
+  [grid-api users]
+  (r/create-class
+    ;; TODO the table state should probably be part of users-grid not in initialize!
+   {:component-did-mount
+    (fn [_]
+      (initialize! users))
+    :reagent-render
+    (fn [grid-api users]
+      ;;TODO figure out why height is vh not 100%?
+      [:div {:style {:height "700px"
+                     :width  "100%"}}
+       [users-grid grid-api]])}))
+
+(defn drop-down
+  [{:keys [options on-click-apply]}]
+  (r/with-let [checked (r/atom nil)]
+    (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
+      [:div {:style {:display "flex"
+                     :width "100%"
+                     :border border-styles
+                     :border-radius "4px"
+                     :flex-direction "column"}}
+       [:div {:style {:display "flex"
+                      :flex-direction "column"}}
+        (doall
+         (for [opt options]
+           [:div {:key opt
+                  :style {:display "flex"
+                          :align-items "center"
+                          :gap "12px"
+                          :padding "14px 12px 14px 14px"
+                          :flex-direction "row"}}
+            ;;TODO the checkbox is supposed to be a circle
+            [:input {:type "checkbox"
+                     :checked (= @checked opt)
+                     :on-change #(reset! checked opt)}]
+           ;;TODO shouldn't have to reset the font stuff why is this coming from the body?
+            [:label {:style {:color "black"
+                             :font-weight "normal"}}
+             (->>
+              (str/split opt #"_")
+              (map str/capitalize)
+              (str/join " "))]]))]
+       [:div {:style {:border-top border-styles
+                      :padding "10px 12px"}}
+        [buttons/primary {:text "Apply"
+                          :on-click (on-click-apply @checked)}]]])))
+
+(defn table-with-buttons
+  [{:keys [users]}]
+  (r/with-let [selected-drop-down (r/atom :role)
+               grid-api (r/atom nil)
+               search   (r/atom nil)]
+    (let [update-dd (fn [to] (reset! selected-drop-down (when-not (= @selected-drop-down to) to)))
+          selected-emails (fn []
+                            (->> @grid-api get-selected-rows (map :email)))
+          on-click-apply (fn [update!]
+                           (fn [option]
+                             (fn []
+                               (let [emails (selected-emails)]
+                                 ;;TODO this needs error handling.
+                                 (update! option emails)
+                                 (toast-message! (str (str/join ", " emails)  " updated!"))))))
+          on-change-search (fn [e]
+                             (let [s (.-value (.-target e))]
+                               (.setGridOption @grid-api "quickFilterText" s)
+                               (reset! search s)))]
+      [:<>
+       [:div
+        {:style {:min-width "400px"}}
+        [search-cmpt {:on-change on-change-search
+                      :value     @search}]]
+       [:div {:style {:display "flex"
+                      :flex-direction "row"
+                      :gap "16px"}}
+        [buttons/ghost-drop-down {:text "Update User Role"
+                                  :selected? (= @selected-drop-down :role)
+                                  :on-click #(update-dd :role)}]
+        [buttons/ghost-drop-down {:text "Update User Status"
+                                  :selected? (= @selected-drop-down :status)
+                                  :on-click #(update-dd :status)}]
+        [buttons/ghost-remove-user {:text "Remove User"}]
+        [buttons/add {:text "Add A New User"}]]
+       (case @selected-drop-down
+         ;; TODO ideally these roles should be queried from the database
+         :role   [drop-down {:options ["super_admin"
+                                       "organization_admin"
+                                       "organization_member"
+                                       "account_manager"
+                                       ;;TODO handling member would mean we have to kick them out of
+                                       ;; the organization
+                                       #_"member"]
+                             :on-click-apply (on-click-apply update-users-roles)}]
+         ;; TODO ideally these org_membership statuses should be queried from the database
+         ;; TODO check if none is a valid option, noting that it would remove them from the org.
+         :status [drop-down {:options ["accepted" "pending" "none"]
+                             :on-click-apply (on-click-apply update-users-status)}]
+         nil)
+       [table grid-api users]])))
