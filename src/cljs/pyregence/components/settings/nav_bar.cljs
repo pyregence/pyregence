@@ -81,11 +81,13 @@
      (when selected?
        [:<>
         [:div {:style {:margin "16px"}}
-         [search-cmpt {:on-change #(reset! search (.-value (.-target %)))}]]
+         [search-cmpt {:on-change #(reset! search (.-value (.-target %)))
+                       :value @search}]]
         (doall
          (for [option options
                :when  (or (not @search) (same-letters-so-far? @search (:text option)))]
            [button option]))])]))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tabs Functions

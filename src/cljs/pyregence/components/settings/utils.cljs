@@ -120,7 +120,7 @@
    children])
 
 (defn search-cmpt
-  [{:keys [on-change]}]
+  [{:keys [on-change value]}]
   [:div {:class (<class $on-hover-darker-gray-border)
          :style {:display        "flex"
                  :min-height     "42px"
@@ -132,6 +132,7 @@
                   :padding-left  "16px"}}
     [svg/search :height "16px" :width "16px"]]
    [:input {:type        "text"
+            :value       value
             :placeholder "Search"
             :style       {:border       "none"
                           :background   "transparent"
