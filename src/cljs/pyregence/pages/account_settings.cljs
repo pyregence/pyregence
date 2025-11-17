@@ -81,6 +81,8 @@
                                   (:id (first ((group-by :selected? tabs) selected))))
                selected         (-> @selected-log last)
                selected-page    (selected->tab-id selected)]
+           (println (-> @users first keys))
+
            [:div {:style {:display        "flex"
                           :flex-direction "row"
                           :height         "100%"
@@ -95,8 +97,12 @@
               "Organization Settings"
               [os/main
                (let [{:keys [email-domains unsaved-org-name
-                             org-id auto-add? auto-accept?]} (@org-id->org selected)]
-                 {:users @users
+                             org-id auto-add? auto-accept? org-name]} (@org-id->org selected)]
+                 {:users (filter (fn [{:keys [user-role organization-name]}]
+                                   (and
+                                     ;;TODO this conditional should be based on the og-id or org-unique name
+                                    (= organization-name org-name)
+                                    (#{"organization_admin" "organization_member"} user-role))) @users)
                   :email-domains-list (str/split email-domains #",")
                   :unsaved-org-name unsaved-org-name
                   :on-click-save-changes
@@ -132,4 +138,4 @@
                            assoc-in
                            [selected :unsaved-org-name]
                            (.-value (.-target e))))})]
-              [um/main {:users (filter (fn [{:keys [user-role]}] (#{"member" "none"} user-role)) @users)}])])])})))
+              [um/main {:users (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)}])])])})))

@@ -4,6 +4,7 @@
                                                   ModuleRegistry]]
    ["ag-grid-react"                       :refer [AgGridReact]]
    [clojure.core.async                    :as async :refer [<! go]]
+   [goog.object                           :as goog]
    [clojure.string                        :as str]
    [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons]
@@ -68,15 +69,6 @@
 ;; TODO consider if this state should be on a component.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce table-loading? (r/atom false))
-(defonce all-users-table-data
-  (r/atom {:row-data []
-           :col-defs
-           [{:field "name"                  :headerName "User Name"      :filter "agTextColumnFilter" :width 150}
-            {:field "email"                 :headerName "Email Address"  :filter "agTextColumnFilter"}
-            {:field "user-role"             :headerName "User Role"      :filter "agTextColumnFilter" :cellRenderer user-role-renderer}
-            {:field "org-membership-status" :headerName "Status"         :filter false :cellRenderer org-membership-status-renderer}]}))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -91,47 +83,28 @@
       (js/console.error "GridApi method not found:" method "on" api))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Data Processing Functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;TODO ideally the loading state would be attached to a component and not be global
-(defn- initialize! [users]
-  (reset! table-loading? true)
-  (swap! all-users-table-data assoc :row-data users)
-  (reset! table-loading? false))
-
-;; TODO consider if we need this user-grid component or if we should merge it into tale.
-(defn- users-grid [grid-api]
-  [:div {:style {:height "100%" :width "100%"}}
-   [:> AgGridReact
-    {:onGridReady                (fn [params] (reset! grid-api (aget params "api")))
-     :rowSelection               #js {:mode "multiRow"}
-     :pagination                 true
-     :paginationPageSize         25
-     :paginationPageSizeSelector #js [25 50 100]
-     :defaultColDef              #js {:unSortIcon true} ;; always show sort icons
-     :enableCellTextSelection    true
-     :rowData                    (clj->js (:row-data @all-users-table-data))
-     :columnDefs                 (clj->js (:col-defs @all-users-table-data))}]])
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn table
   "The root component for the /users-table page."
   [grid-api users]
-  (r/create-class
-    ;; TODO the table state should probably be part of users-grid not in initialize!
-   {:component-did-mount
-    (fn [_]
-      (initialize! users))
-    :reagent-render
-    (fn [grid-api users]
-      ;;TODO figure out why height is vh not 100%?
-      [:div {:style {:height "700px"
-                     :width  "100%"}}
-       [users-grid grid-api]])}))
+  [:div {:style {:height "700px"
+                 :width  "100%"}}
+   [:div {:style {:height "100%" :width "100%"}}
+    [:> AgGridReact
+     {:onGridReady                (fn [params] (reset! grid-api (aget params "api")))
+      :rowSelection               #js {:mode "multiRow"}
+      :pagination                 true
+      :paginationPageSize         25
+      :paginationPageSizeSelector #js [25 50 100]
+      :defaultColDef              #js {:unSortIcon true} ;; always show sort icons
+      :enableCellTextSelection    true
+      :rowData                    (clj->js users)
+      :columnDefs                 (clj->js [{:field "name"                  :headerName "User Name"      :filter "agTextColumnFilter" :width 150}
+                                            {:field "email"                 :headerName "Email Address"  :filter "agTextColumnFilter"}
+                                            {:field "user-role"             :headerName "User Role"      :filter "agTextColumnFilter" :cellRenderer user-role-renderer}
+                                            {:field "org-membership-status" :headerName "Status"         :filter false :cellRenderer org-membership-status-renderer}])}]]])
 
 (defn drop-down
   [{:keys [options on-click-apply]}]
@@ -169,7 +142,7 @@
                           :on-click (on-click-apply @checked)}]]])))
 
 (defn table-with-buttons
-  [{:keys [users]}]
+  [{:keys [users] :as m}]
   (r/with-let [selected-drop-down (r/atom nil)
                grid-api (r/atom nil)
                search   (r/atom nil)]
@@ -201,7 +174,10 @@
         [buttons/ghost-drop-down {:text "Update User Status"
                                   :selected? (= @selected-drop-down :status)
                                   :on-click #(update-dd :status)}]
-        [buttons/ghost-remove-user {:text "Remove User"}]
+        ;; TODO add this back in when we get a more well defined acceptance criteria
+        ;; aka this is being handled later.
+        #_(when (:show-remove-user? m)
+          [buttons/ghost-remove-user {:text "Remove User"}])
         [buttons/add {:text "Add A New User"}]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database

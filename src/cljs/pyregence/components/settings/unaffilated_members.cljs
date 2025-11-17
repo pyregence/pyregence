@@ -7,4 +7,6 @@
   [m]
   [:div {:style main-styles}
    [card {:title    "UNAFFILIATED MEMBERS USER-LIST"
+          ;; TODO the `update-roles` won't work here because anything higher then
+          ;; `member` needs an organization attached.
           :children [table-with-buttons m]}]])
