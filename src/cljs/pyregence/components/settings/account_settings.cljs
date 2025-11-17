@@ -16,7 +16,7 @@
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;TODO copied from admin.cljs, so either share that logic or deprecate admin.cljs eventually.
+;; TODO copied from admin.cljs, so either share that logic or deprecate admin.cljs eventually.
 (defn- update-org-user!
   "Updates user identified by their `email` to have the `new-name`. Then makes a toast."
   [email new-name]
@@ -48,7 +48,7 @@
                     :width          "100%"
                     :gap            "16px"}}
       [input-labeled {:value     @user-name
-                      :label "Full Name"
+                      :label     "Full Name"
                       :on-change #(reset! user-name (input-value %))}]]
      [buttons/ghost {:text     "Save Changes"
                      :on-click #(update-org-user! email-address @user-name)}]]))
@@ -58,22 +58,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn main
-  [{:keys [password-set-date
-           email-address
-           role-type] :as user-info}]
+  [{:keys             [password-set-date
+                       email-address
+                       role-type] :as user-info}]
   [:div {:style main-styles}
    [card {:title "MY ACCOUNT DETAILS"
           :children
           [:<>
            [text-labeled {:label "Email Address"
                           :text  email-address}]
-           [text-labeled {:label    "Role Type"
-                          :text     (role-type->label role-type)}]
+           [text-labeled {:label "Role Type"
+                          :text  (role-type->label role-type)}]
            [user-full-name (select-keys user-info [:email-address :user-name])]]}]
    [card {:title "RESET MY PASSWORD"
           :children
           [:<>
-           [:p {:style (assoc font-styles :font-weight "400")} "Once you send a request to reset your password, you will receive a link in your email to set up your new password."]
+           [:p {:style (assoc font-styles :font-weight "400")}
+            "Once you send a request to reset your password, you will receive a link in your email to set up your new password."]
            [:div {:style {:display         "flex"
                           :flex-direction  "row"
                           :justify-content "space-between"

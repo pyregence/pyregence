@@ -1,7 +1,8 @@
 (ns pyregence.components.settings.utils
   (:require
-   [pyregence.styles :as $]
-   [herb.core        :refer [<class]]))
+   [herb.core                      :refer [<class]]
+   [pyregence.components.svg-icons :as svg]
+   [pyregence.styles               :as $]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -38,6 +39,13 @@
    :font-weight "600"
    ;;TODO look into why all :p need margin-bottom 0 to look normal
    :margin      "0"})
+
+(defn- $on-hover-darker-gray-border []
+  (with-meta
+    {:border     (str "1px solid " ($/color-picker :neutral-soft-gray))
+     :background "rgba(246, 246, 246, 1)"}
+    {:pseudo {:hover        {:border (str "1px solid " ($/color-picker :neutral-md-gray))}
+              :focus-within {:border (str "1px solid " ($/color-picker :standard-orange))}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
@@ -90,7 +98,7 @@
   [{:keys [title children]}]
   [:settings-body-card
    {:style {:display        "flex"
-            :max-width      "750px"
+            :max-width      "1000px"
             :min-width      "300px"
             :width          "100%"
             :padding        "16px"
@@ -101,7 +109,6 @@
             :border-radius  "4px"
             :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
             :background     ($/color-picker :white)}}
-   ;; neutral-black
    [:p {:style {:color          ($/color-picker :black)
                 :font-size      "14px"
                 :font-style     "normal"
@@ -111,3 +118,23 @@
                 :margin-bottom  "0px"}}
     title]
    children])
+
+(defn search-cmpt
+  [{:keys [on-change]}]
+  [:div {:class (<class $on-hover-darker-gray-border)
+         :style {:display        "flex"
+                 :min-height     "42px"
+                 :flex-direction "row"
+                 :align-items    "center"
+                 :border-radius  "4px"
+                 :cursor         "pointer"}}
+   [:div {:style {:padding-right "8px"
+                  :padding-left  "16px"}}
+    [svg/search :height "16px" :width "16px"]]
+   [:input {:type        "text"
+            :placeholder "Search"
+            :style       {:border       "none"
+                          :background   "transparent"
+                          :width        "100%"
+                          :outline      "none"}
+            :on-change on-change}]])

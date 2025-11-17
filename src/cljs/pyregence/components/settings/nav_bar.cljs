@@ -1,13 +1,14 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.core.async                 :refer [<! go]]
-   [clojure.string                     :as str]
-   [clojure.walk                       :as walk]
-   [herb.core                          :refer [<class]]
-   [pyregence.components.svg-icons     :as svg]
-   [pyregence.styles                   :as $]
-   [pyregence.utils.async-utils        :as u-async]
-   [reagent.core                       :as r]))
+   [clojure.core.async                  :refer [<! go]]
+   [clojure.string                      :as str]
+   [clojure.walk                        :as walk]
+   [herb.core                           :refer [<class]]
+   [pyregence.components.svg-icons      :as svg]
+   [pyregence.components.settings.utils :refer [search-cmpt]]
+   [pyregence.styles                    :as $]
+   [pyregence.utils.async-utils         :as u-async]
+   [reagent.core                        :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -15,13 +16,6 @@
 
 (defn- $on-hover-darker-orange-background []
   (with-meta {} {:pseudo {:hover {:background ($/color-picker :soft-orange)}}}))
-
-(defn- $on-hover-darker-gray-border []
-  (with-meta
-    {:border     (str "1px solid " ($/color-picker :neutral-soft-gray))
-     :background "rgba(246, 246, 246, 1)"}
-    {:pseudo {:hover        {:border (str "1px solid " ($/color-picker :neutral-md-gray))}
-              :focus-within {:border (str "1px solid " ($/color-picker :standard-orange))}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper functions
@@ -86,24 +80,8 @@
       (if selected? [svg/arrow-up] [svg/arrow-down])]
      (when selected?
        [:<>
-        [:div {:class (<class $on-hover-darker-gray-border)
-               :style {:display        "flex"
-                       :min-height     "42px"
-                       :flex-direction "row"
-                       :align-items    "center"
-                       :margin         "16px"
-                       :border-radius  "4px"
-                       :cursor         "pointer"}}
-         [:div {:style {:padding-right "8px"
-                        :padding-left  "16px"}}
-          [svg/search :height "16px" :width "16px"]]
-         [:input {:type        "text"
-                  :placeholder "Search"
-                  :style       {:border       "none"
-                                :background   "transparent"
-                                :width        "100%"
-                                :outline      "none"}
-                  :on-change   #(reset! search (.-value (.-target %)))}]]
+        [:div {:style {:margin "16px"}}
+         [search-cmpt {:on-change #(reset! search (.-value (.-target %)))}]]
         (doall
          (for [option options
                :when  (or (not @search) (same-letters-so-far? @search (:text option)))]
@@ -250,6 +228,6 @@
                   :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
                   :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
     [tabs tabs-data]]
-  [button {:text "Logout" :icon svg/logout
+   [button {:text     "Logout" :icon svg/logout
             :on-click #(go (<! (u-async/call-clj-async! "log-out"))
                            (-> js/window .-location .reload))}]])

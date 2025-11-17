@@ -2,16 +2,19 @@
   (:require
    [clojure.core.async                                  :refer [<! go]]
    [clojure.edn                                         :as edn]
-   [clojure.string :as str]
+   [clojure.string                                      :as str]
+   [pyregence.components.messaging :refer [toast-message!]]
    [pyregence.components.settings.account-settings      :as as]
    [pyregence.components.settings.nav-bar               :as nav-bar]
    [pyregence.components.settings.organization-settings :as os]
+   [pyregence.components.settings.unaffilated-members   :as um]
    [pyregence.styles                                    :as $]
    [pyregence.utils.async-utils                         :as u-async]
    [reagent.core                                        :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
+;; TODO consider making 1 api call to get all the data...
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-orgs!
@@ -26,25 +29,36 @@
              (edn/read-string))
         {}))))
 
+(defn- get-users! [user-role]
+  (go
+    (let [route (if (= user-role "super_admin") "get-all-users" "get-org-member-users")
+          resp-chan              (u-async/call-clj-async! route)
+          {:keys [body success]} (<! resp-chan)
+          users                  (edn/read-string body)]
+      (if success users []))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn root-component
   "The root component of the /account-settings page."
-  [{:keys [user-role user-email user-name]}]
+  [{:keys [user-role]}]
   (let [org-id->org (r/atom nil)
+        ;; TODO consider if `users` needs to be a ratom or just data we pass down.
+        users       (r/atom nil)
         selected-log (r/atom ["Account Settings"])]
     (r/create-class
      {:display-name "account-settings"
       :component-did-mount
-      #(go (reset! org-id->org
-                   (reduce
-                    (fn [org-id->org {:keys [org-id org-name] :as org}]
-                      (assoc org-id->org org-id
-                             (assoc org :unsaved-org-name org-name)))
-                    {} (<! (get-orgs! "super_admin")))))
-
+      #(go
+         (reset! users (<! (get-users! user-role)))
+         (reset! org-id->org
+                 (reduce
+                  (fn [org-id->org {:keys [org-id org-name] :as org}]
+                    (assoc org-id->org org-id
+                           (assoc org :unsaved-org-name org-name)))
+                  {} (<! (get-orgs! user-role)))))
       :reagent-render
       (fn [{:keys [user-role user-email user-name]}]
         [:div
@@ -52,7 +66,7 @@
                   :display        "flex"
                   :flex-direction "column"
                   :font-family    "Roboto"}}
-        ;; TODO replace with actual upper nav bar
+        ;; TODO this mock `:nav` with actual upper nav bar, this will happen in another PR.
          [:nav  {:style {:display         "flex"
                          :justify-content "center"
                          :align-items     "center"
@@ -82,7 +96,8 @@
               [os/main
                (let [{:keys [email-domains unsaved-org-name
                              org-id auto-add? auto-accept?]} (@org-id->org selected)]
-                 {:email-domains-list (str/split email-domains #",")
+                 {:users @users
+                  :email-domains-list (str/split email-domains #",")
                   :unsaved-org-name unsaved-org-name
                   :on-click-save-changes
                   (fn [email-domains]
@@ -97,18 +112,24 @@
                                                            unsaved-email-domains
                                                            auto-add?
                                                            auto-accept?))]
+                          ;; TODO if not success case.
                           (if success
-                            (swap! org-id->org
-                                   (fn [o]
-                                     (-> o
-                                         (assoc-in [org-id :org-name] unsaved-org-name)
-                                         (assoc-in [org-id :email-domains] unsaved-email-domains))))
-                                                  ;;TODO what if it fails?
-                            )))))
+                            (do
+                              (let [{:keys [org-name email-domains]} (@org-id->org org-id)]
+                                (println org-name)
+                                (swap! org-id->org
+                                       (fn [o]
+                                         (-> o
+                                             (assoc-in [org-id :org-name] unsaved-org-name)
+                                             (assoc-in [org-id :email-domains] unsaved-email-domains))))
+                                (let [new-name? (not= org-name unsaved-org-name)
+                                      new-email? (not= email-domains unsaved-email-domains)]
+                                  (when new-name? (toast-message! (str "Updated Organization Name : " unsaved-org-name)))
+                                  (when new-email? (toast-message! (str "Updated Domain emails: " unsaved-email-domains)))))))))))
                   :on-change-organization-name
                   (fn [e]
                     (swap! org-id->org
                            assoc-in
                            [selected :unsaved-org-name]
                            (.-value (.-target e))))})]
-              [:p "Page Not Found"])])])})))
+              [um/main {:users (filter (fn [{:keys [user-role]}] (#{"member" "none"} user-role)) @users)}])])])})))

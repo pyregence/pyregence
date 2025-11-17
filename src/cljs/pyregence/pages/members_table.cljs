@@ -2,12 +2,9 @@
   (:require
    ["ag-grid-react"     :refer [AgGridReact]]
    ["ag-grid-community" :refer [ModuleRegistry
-                                AllCommunityModule
-                                colorSchemeDarkBlue
-                                themeQuartz]]
+                                AllCommunityModule]]
    [clojure.core.async          :as async :refer [<! go]]
    [clojure.edn                 :as edn]
-   [pyregence.styles            :as $]
    [pyregence.utils.async-utils :as u-async]
    [reagent.core                :as r]))
 
@@ -22,40 +19,6 @@
   (do
     (.registerModules ModuleRegistry #js [AllCommunityModule])
     true))
-
-(def dark-theme
-  (-> themeQuartz
-      (.withPart colorSchemeDarkBlue)
-      (.withParams #js {:oddRowBackgroundColor "rgb(42, 51, 64, 0.5)"})))
-
-(def light-theme
-  (-> themeQuartz
-      (.withParams
-       #js {:backgroundColor                ($/color-picker :white)
-            :headerBackgroundColor          ($/color-picker :neutral-light-gray)
-            :headerTextColor                ($/color-picker :black)
-            :headerFontWeight               600
-            :rowHoverColor                  ($/color-picker :light-orange)
-            :selectedRowBackgroundColor     ($/color-picker :soft-orange)
-            :checkboxCheckedBackgroundColor ($/color-picker :primary-main-orange)
-            :checkboxCheckedBorderColor     ($/color-picker :light-orange)
-            :focusShadow                    "none"
-            :cellHorizontalPadding          12
-            :rowHeight                      62
-            :fontFamily                     "Roboto"
-            :fontSize                       14
-            :fontWeight                     400})))
-
-(defn- boolean-renderer [params]
-  (let [v (aget params "value")]
-    (r/as-element
-     [:span {:style {:align-items     "center"
-                     :display         "flex"
-                     :font-size       "30px"
-                     :font-weight     "bold"
-                     :justify-content "center"
-                     :color           (if v "green" "red")}}
-      (if v "✓" "✗")])))
 
 (defn- user-role-renderer [params]
   (let [v (aget params "value")]
@@ -84,21 +47,15 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce grid-api       (r/atom nil))
 (defonce table-loading? (r/atom false))
 
 (defonce all-users-table-data
   (r/atom {:row-data []
-           :col-defs [{:field "user-id"               :headerName "User ID"               :filter false :width 110}
-                      {:field "email"                 :headerName "Email"                 :filter "agTextColumnFilter"}
-                      {:field "name"                  :headerName "Full Name"             :filter "agTextColumnFilter" :width 150}
-                      {:field "organization-name"     :headerName "Org Name"              :filter "agTextColumnFilter"}
-                      {:field "match-drop-access"     :headerName "Match Drop?"           :filter false :width 150 :cellRenderer boolean-renderer}
-                      {:field "email-verified"        :headerName "Email Verified?"       :filter false :width 150 :cellRenderer boolean-renderer}
-                      {:field "user-role"             :headerName "Role"                  :filter "agTextColumnFilter" :cellRenderer user-role-renderer}
-                      {:field "org-membership-status" :headerName "Org Membership Status" :filter false :cellRenderer org-membership-status-renderer}
-                      {:field "last-login-date"       :headerName "Last Login Date"       :filter "agDateColumnFilter" :width 300}
-                      {:field "settings"              :headerName "Settings"              :filter false :width 200 :autoHeight true :cellStyle wrap-text-style}]}))
+           :col-defs [{:field "name"                  :headerName "User Name"             :filter "agTextColumnFilter" :width 150}
+                      {:field "email"                 :headerName "Email Address"                 :filter "agTextColumnFilter"}
+                      {:field "user-role"             :headerName "User Role"                  :filter "agTextColumnFilter" :cellRenderer user-role-renderer}
+                      {:field "org-membership-status" :headerName "Status" :filter false :cellRenderer org-membership-status-renderer}
+                      #_{:field "settings"              :headerName "Settings"              :filter false :width 200 :autoHeight false :cellStyle wrap-text-style}]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -133,24 +90,6 @@
   (get-all-users user-role)
   (reset! table-loading? false))
 
-(defn- today-str []
-  (.toISOString (js/Date.)) ; => "2025-05-27T15:26:09.123Z"
-  (subs (.toISOString (js/Date.)) 0 10)) ; => "2025-05-27"
-
-(defn- export-button-on-click-fn [file-name]
-  (when-let [api @grid-api]
-    (api-call api "exportDataAsCsv"
-              #js {:fileName (str (today-str) "_" file-name)
-                   :processCellCallback
-                   (fn [params]
-                     (aget params "value"))})))
-
-(defn log-selected-rows! []
-  (when-let [api @grid-api]
-    (let [rows (api-call api "getSelectedRows")]
-      (js/console.log "Selected rows:" rows)
-      (js/alert (str "Selected rows:\n" (js/JSON.stringify rows nil 2)))
-      rows)))
 
 (defn add-new-user!
   []
@@ -161,12 +100,10 @@
 ;; Users UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- users-grid []
+(defn- users-grid [user-info grid-api]
   [:div {:style {:height "100%" :width "100%"}}
    [:> AgGridReact
-    {:onGridReady                (fn [params]
-                                   (reset! grid-api (aget params "api")))
-     :theme                      light-theme ; dark-theme
+    {:onGridReady                (fn [params] (reset! grid-api (aget params "api")))
      :rowSelection               #js {:mode "multiRow"}
      :pagination                 true
      :paginationPageSize         25
@@ -176,46 +113,20 @@
      :rowData                    (clj->js (:row-data @all-users-table-data))
      :columnDefs                 (clj->js (:col-defs @all-users-table-data))}]])
 
-(defn- users-view [user-info]
-  [:div#users-view
-   {:style {:display               "grid"
-            :font-family           "Roboto"
-            :grid-template-columns "1fr 1fr"
-            :grid-template-rows    "auto 1fr"
-            :grid-template-areas   "'users-header  users-button'
-                                    'users-content users-content'"
-            :height                "100%"}}
-   [:div {:style {:align-items     "center"
-                  :display         "flex"
-                  :grid-area       "users-header"
-                  :font-size       "36px"
-                  :justify-content "flex-start"}}
-    "Users Table"]
-   [:div {:style {:align-items     "center"
-                  :display         "flex"
-                  :grid-area       "users-button"
-                  :justify-content "flex-end"
-                  :z-index         1000}}]
-   [:div {:style {:grid-area   "users-content"
-                  :padding-top "1rem"}}
-    (if @table-loading?
-      [:div {:style {:display "flex" :justify-content "center"}}
-       [:h1 "Loading..."]]
-      [users-grid])]])
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn root-component
   "The root component for the /users-table page."
-  [{:keys [user-role]}]
+  [{:keys [user-role]} grid-api]
   (r/create-class
    {:component-did-mount
     (fn [_]
       (initialize! user-role))
     :reagent-render
     (fn [user-info]
-      [:div {:style {:height "100vh"
-                     :padding "2rem"}}
-       [users-view user-info]])}))
+      ;;TODO figure out why height is vh not 100%?
+      [:div {:style {:height "700px"
+                     :width  "100%"}}
+       [users-grid user-info grid-api]])}))

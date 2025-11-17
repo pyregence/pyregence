@@ -10,6 +10,7 @@
 ;;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
 (defn- create-session-from-user-data
   "Creates a session response from user data returned by SQL functions.
    This is the single source of truth for session structure."
@@ -636,6 +637,38 @@
         (data-response (str "User's name successfully updated to " new-name)))
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
+
+;;TODO ideally this would be handled by the database.
+(defn- can-upgrade-role?
+  "True if `from` role is greater then `to`"
+  [from to]
+  (let [role->n
+        {"member" 0
+         "organization_member" 1
+         "organization_admin" 2
+         "account_manager" 3
+         "super_admin" 4}]
+    (<= (role->n to) (role->n from))))
+
+(defn update-users-status
+  [{:keys [user-id]} requested-status users-to-update]
+  ;; TODO consider using user id's instead of emails.
+  (call-sql "update_users_status_by_email" user-id requested-status
+            (into-array String users-to-update))
+  (data-response "success"))
+
+(defn update-users-roles
+  "Updates users roles"
+  [{:keys [user-id user-role]} requested-role users-to-update]
+  ;; TODO consider what happens if this sql call fails.
+  ;; TODO consider using user id's instead of emails.
+  (if (can-upgrade-role? user-role requested-role)
+    (do
+      (call-sql "update_users_roles_by_email" user-id requested-role
+                (into-array String users-to-update))
+      (data-response "success"))
+    ;; TODO what should this failure message be.
+    (data-response "" {:status 400})))
 
 (defn user-email-taken
   ([_ email]
