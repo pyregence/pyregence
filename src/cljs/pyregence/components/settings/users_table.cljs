@@ -170,7 +170,7 @@
 
 (defn table-with-buttons
   [{:keys [users]}]
-  (r/with-let [selected-drop-down (r/atom :role)
+  (r/with-let [selected-drop-down (r/atom nil)
                grid-api (r/atom nil)
                search   (r/atom nil)]
     (let [update-dd (fn [to] (reset! selected-drop-down (when-not (= @selected-drop-down to) to)))
