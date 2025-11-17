@@ -14,10 +14,9 @@
 
 (defn- email-domain-cmpt
   [{:keys [email on-change] :as m}]
-  (r/with-let [email (r/atom email)]
-    [input-field (assoc m
-                        :value @email
-                        :on-change (on-change email))]))
+  [input-field (assoc m
+                      :value email
+                      :on-change on-change)])
 
 ;;TODO consider sharing styles with labeled-input cmpt
 (defn- email-domains-cmpt
@@ -48,31 +47,26 @@
 
 (defn- organization-settings
   [{:keys [on-change-organization-name
+           on-change-email-name
+           on-click-add-email
+           on-delete-email
            on-click-save-changes
            unsaved-org-name
-           email-domains-list]}]
-  (r/with-let [og-email->email (r/atom (reduce #(assoc %1 %2 %2) {} email-domains-list))]
-    [:<>
-     [input-labeled {:label     "Organization Name"
-                     :on-change on-change-organization-name
-                     :value     unsaved-org-name}]
-     [email-domains-cmpt {:og-email->email @og-email->email
-                          :on-change       (fn [og-email]
-                                             (fn [*current-email]
-                                               (fn [e]
-                                                 (let [new-email (.-value (.-target e))]
-                                                   (swap! og-email->email assoc og-email new-email)
-                                                   (reset! *current-email new-email)))))
-                          :on-delete       (fn [og-email]
-                                             (fn [_]
-                                               (swap! og-email->email dissoc og-email)))}]
-     [:div {:style {:display        "flex"
-                    :flex-direction "row"
-                    :gap            "16px"}}
-      [buttons/add {:text     "Add Another Domain"
-                    :on-click #(swap! og-email->email assoc (random-uuid) "")}]
-      [buttons/ghost {:text     "Save Changes"
-                      :on-click (on-click-save-changes (remove empty? (vals @og-email->email)))}]]]))
+           og-email->email]}]
+  [:<>
+   [input-labeled {:label     "Organization Name"
+                   :on-change on-change-organization-name
+                   :value     unsaved-org-name}]
+   [email-domains-cmpt {:on-change on-change-email-name
+                        :on-delete on-delete-email
+                        :og-email->email og-email->email}]
+   [:div {:style {:display        "flex"
+                  :flex-direction "row"
+                  :gap            "16px"}}
+    [buttons/add {:text     "Add Another Domain"
+                  :on-click on-click-add-email}]
+    [buttons/ghost {:text     "Save Changes"
+                    :on-click on-click-save-changes}]]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page

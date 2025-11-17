@@ -55,9 +55,16 @@
          (reset! users (<! (get-users! user-role)))
          (reset! org-id->org
                  (reduce
-                  (fn [org-id->org {:keys [org-id org-name] :as org}]
+                  (fn [org-id->org {:keys [org-id org-name email-domains] :as org}]
                     (assoc org-id->org org-id
-                           (assoc org :unsaved-org-name org-name)))
+                           (assoc org
+                                  :unsaved-org-name org-name
+                                  ;; NOTE this mapping is used to keep track of the email
+                                  :og-email->email (reduce
+                                                    (fn [m e]
+                                                      (assoc m e e))
+                                                    {}
+                                                    (str/split email-domains #",")))))
                   {} (<! (get-orgs! user-role)))))
       :reagent-render
       (fn [{:keys [user-role user-email user-name]}]
@@ -94,41 +101,50 @@
                         :user-name         user-name}]
               "Organization Settings"
               [os/main
-               (let [{:keys [email-domains unsaved-org-name
-                             org-id auto-add? auto-accept? org-name]} (@org-id->org selected)]
-                 {:users (filter (fn [{:keys [user-role organization-name]}]
+               (let [{:keys [unsaved-org-name org-id auto-add? auto-accept? org-name og-email->email]} (@org-id->org selected)]
+                 {:og-email->email og-email->email
+                  :users (filter (fn [{:keys [user-role organization-name]}]
                                    (and
                                      ;;TODO this conditional should be based on the og-id or org-unique name
                                     (= organization-name org-name)
                                     (#{"organization_admin" "organization_member"} user-role))) @users)
-                  :email-domains-list (str/split email-domains #",")
                   :unsaved-org-name unsaved-org-name
+                  :on-click-add-email  (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] ""))
+                  :on-delete-email (fn [og-email]
+                                     (fn [_]
+                                       ;;TODO this means i might have to filter out empty ones.
+                                       (swap! org-id->org update-in [selected :og-email->email] dissoc og-email)))
+                  :on-change-email-name
+                  (fn [og-email]
+                    (fn [e]
+                      (let [new-email (.-value (.-target e))]
+                        (swap! org-id->org assoc-in [selected :og-email->email og-email] new-email))))
+
                   :on-click-save-changes
-                  (fn [email-domains]
+                  (fn []
                   ;; TODO consider adding a toast on success and something if there is a long delay.
-                    (fn []
-                      (go
-                        (let [unsaved-email-domains (str/join "," email-domains)
-                              {:keys [success]}
-                              (<! (u-async/call-clj-async! "update-org-info"
-                                                           org-id
-                                                           unsaved-org-name
-                                                           unsaved-email-domains
-                                                           auto-add?
-                                                           auto-accept?))]
+                    (go
+                      (let [unsaved-email-domains (->> og-email->email vals (str/join ","))
+                            {:keys [success]}
+                            (<! (u-async/call-clj-async! "update-org-info"
+                                                         org-id
+                                                         unsaved-org-name
+                                                         unsaved-email-domains
+                                                         auto-add?
+                                                         auto-accept?))]
                           ;; TODO if not success case.
-                          (if success
-                            (do
-                              (let [{:keys [org-name email-domains]} (@org-id->org org-id)]
-                                (swap! org-id->org
-                                       (fn [o]
-                                         (-> o
-                                             (assoc-in [org-id :org-name] unsaved-org-name)
-                                             (assoc-in [org-id :email-domains] unsaved-email-domains))))
-                                (let [new-name? (not= org-name unsaved-org-name)
-                                      new-email? (not= email-domains unsaved-email-domains)]
-                                  (when new-name? (toast-message! (str "Updated Organization Name : " unsaved-org-name)))
-                                  (when new-email? (toast-message! (str "Updated Domain emails: " unsaved-email-domains)))))))))))
+                        (if success
+                          (do
+                            (let [{:keys [org-name email-domains]} (@org-id->org org-id)]
+                              (swap! org-id->org
+                                     (fn [o]
+                                       (-> o
+                                           (assoc-in [org-id :org-name] unsaved-org-name)
+                                           (assoc-in [org-id :email-domains] unsaved-email-domains))))
+                              (let [new-name? (not= org-name unsaved-org-name)
+                                    new-email? (not= email-domains unsaved-email-domains)]
+                                (when new-name? (toast-message! (str "Updated Organization Name : " unsaved-org-name)))
+                                (when new-email? (toast-message! (str "Updated Domain emails: " unsaved-email-domains))))))))))
                   :on-change-organization-name
                   (fn [e]
                     (swap! org-id->org
