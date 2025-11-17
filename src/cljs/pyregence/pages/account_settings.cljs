@@ -81,8 +81,6 @@
                                   (:id (first ((group-by :selected? tabs) selected))))
                selected         (-> @selected-log last)
                selected-page    (selected->tab-id selected)]
-           (println (-> @users first keys))
-
            [:div {:style {:display        "flex"
                           :flex-direction "row"
                           :height         "100%"
@@ -122,7 +120,6 @@
                           (if success
                             (do
                               (let [{:keys [org-name email-domains]} (@org-id->org org-id)]
-                                (println org-name)
                                 (swap! org-id->org
                                        (fn [o]
                                          (-> o
