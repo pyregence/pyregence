@@ -722,18 +722,18 @@
 
 (defn swap-active-layer!
   "Swaps the active layer. Used to scan through time-series WMS layers."
-  [geo-layer geoserver-key opacity css-style & [layer-time]]
+  [geo-layer geoserver-key opacity style & [layer-time]]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
-  (let [style  (get-style)
-        layers (hide-forecast-layers (get style "layers"))
+  (let [map-style  (get-style)
+        layers (hide-forecast-layers (get map-style "layers"))
         [new-sources new-layers] (build-wms geo-layer
                                             geo-layer
                                             geoserver-key
                                             opacity
                                             true
-                                            :style css-style
+                                            :style style
                                             :layer-time layer-time)]
-    (update-style! style
+    (update-style! map-style
                    :layers      layers
                    :new-sources new-sources
                    :new-layers  new-layers)))
@@ -741,11 +741,11 @@
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
-  [geo-layer style-fn geoserver-key opacity css-style & [layer-time]]
+  [geo-layer style-fn geoserver-key opacity style & [layer-time]]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (go
-    (let [style                    (get-style)
-          layers                   (hide-forecast-layers (get style "layers"))
+    (let [map-style                (get-style)
+          layers                   (hide-forecast-layers (get map-style "layers"))
           [new-sources new-layers] (if style-fn
                                      (<! (build-wfs fire-active geo-layer geoserver-key opacity))
                                      (build-wms geo-layer
@@ -753,9 +753,9 @@
                                                 geoserver-key
                                                 opacity
                                                 true
-                                                :style css-style
+                                                :style style
                                                 :layer-time layer-time))]
-      (update-style! style
+      (update-style! map-style
                      :layers      layers
                      :new-sources new-sources
                      :new-layers  new-layers))))
@@ -770,6 +770,175 @@
         (update-style! (get-style)
                        :new-sources new-source
                        :new-layers  new-layer)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Animation Layer Management
+;;
+;; Uses opacity swapping instead of visibility to prevent GPU tile unload.
+;; Layers stay visible at opacity 0, tiles stay in GPU so no flashing.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private transparent 0.01)
+(def ^:private instant-transition {:delay 0 :duration 0})
+(def ^:private animation-marker "_anim_")
+
+(defonce ^:private ^{:doc "Set of created layer IDs"}
+  layers
+  (atom #{}))
+
+(defonce ^:private ^{:doc "Currently visible layer ID"}
+  visible-layer
+  (atom nil))
+
+(defn- layer-id
+  "Generates animation layer ID with marker suffix."
+  [layer-name layer-time]
+  (str layer-name animation-marker (or layer-time "none")))
+
+(defn- ensure-layer!
+  "Creates layer at opacity 0 if it doesn't exist."
+  [layer-name geoserver-key style layer-time]
+  (let [id (layer-id layer-name layer-time)]
+    (if (@layers id)
+      true
+      (let [tiles-url (c/wms-layer-url layer-name geoserver-key style layer-time)]
+        (try
+          (js-invoke @the-map "addSource" id
+                     (clj->js {:tiles    [tiles-url]
+                               :tileSize 256
+                               :type     "raster"}))
+          (js-invoke @the-map "addLayer"
+                     (clj->js {:id       id
+                               :layout   {:visibility "visible"}
+                               :paint    {:raster-fade-duration        0
+                                          :raster-opacity              transparent
+                                          :raster-opacity-transition   instant-transition}
+                               :source   id
+                               :type     "raster"}))
+          (swap! layers conj id)
+          true
+          (catch js/Error e
+            (js/console.warn "Failed to create animation layer:" id (.-message e))
+            (try
+              (when (js-invoke @the-map "getSource" id)
+                (js-invoke @the-map "removeSource" id))
+              (catch js/Error cleanup-error
+                (js/console.warn "Failed to cleanup source:" id (.-message cleanup-error))))
+            false))))))
+
+(defn- hide-forecast-layers!
+  "Hides regular forecast layers to prevent overlap with animation."
+  []
+  (let [map-style (get-style)
+        map-layers (get map-style "layers")]
+    (doseq [layer map-layers
+            :let [layer-id (get layer "id")
+                  layer-type (get-layer-metadata layer "type")]
+            :when (and layer-type
+                      (get-layer-type-metadata-property layer-type :forecast-layer?)
+                      (not (str/includes? layer-id animation-marker)))]
+      (when (js-invoke @the-map "getLayer" layer-id)
+        (js-invoke @the-map "setLayoutProperty" layer-id "visibility" "none")))))
+
+(defn swap-animation-layer!
+  "Swaps animation frames by changing opacity (keeps tiles in GPU)."
+  [layer-name geoserver-key opacity style layer-time]
+  (let [new-layer-id (layer-id layer-name layer-time)
+        first-swap? (nil? @visible-layer)
+        layer-created? (ensure-layer! layer-name geoserver-key style layer-time)]
+
+    (if layer-created?
+      (do
+        (when first-swap?
+          (hide-forecast-layers!))
+
+        (when-let [prev-id @visible-layer]
+          (when (js-invoke @the-map "getLayer" prev-id)
+            (js-invoke @the-map "setPaintProperty" prev-id "raster-opacity" transparent)))
+        (when (js-invoke @the-map "getLayer" new-layer-id)
+          (js-invoke @the-map "setPaintProperty" new-layer-id "raster-opacity" opacity)
+          (reset! visible-layer new-layer-id))
+        true)
+
+      (do
+        (js/console.warn "Failed to swap to animation layer:" new-layer-id)
+        false))))
+
+(defn cleanup-animation-layers!
+  "Removes all animation layers and resets cache."
+  []
+  (try
+    (doseq [layer-id @layers]
+      (try
+        (when (js-invoke @the-map "getLayer" layer-id)
+          (js-invoke @the-map "removeLayer" layer-id))
+        (when (js-invoke @the-map "getSource" layer-id)
+          (js-invoke @the-map "removeSource" layer-id))
+        (catch js/Error e
+          (js/console.warn "Failed to remove animation layer:" layer-id (.-message e)))))
+    (finally
+      (reset! layers #{})
+      (reset! visible-layer nil))))
+
+(defn create-animation-layers!
+  "Creates all animation layers. Returns {:total :succeeded :failed}."
+  [geoserver-key style]
+  (let [param-layers @!/param-layers
+        single-layer? (= 1 (count param-layers))
+        frame-data (if single-layer?
+                     (let [{:keys [layer times]} (first param-layers)]
+                       (when (seq times)
+                         (map (fn [t] {:layer-name layer :layer-time t}) times)))
+                     (when (seq param-layers)
+                       (map (fn [p] {:layer-name (:layer p) :layer-time nil}) param-layers)))]
+    (if (seq frame-data)
+      (let [results (mapv (fn [{:keys [layer-name layer-time]}]
+                            (ensure-layer! layer-name geoserver-key style layer-time))
+                          frame-data)
+            succeeded (count (filter true? results))
+            failed (count (filter false? results))
+            total (count results)]
+        (when (pos? failed)
+          (js/console.warn "Failed to create" failed "of" total "animation layers"))
+        {:total total :succeeded succeeded :failed failed})
+      {:total 0 :succeeded 0 :failed 0})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Viewport Lock (for Animation Playback)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- toggle-interactions!
+  "Enables or disables map interactions."
+  [enable?]
+  (let [action (if enable? "enable" "disable")
+        controls ["dragPan" "scrollZoom" "boxZoom" "doubleClickZoom" "touchZoomRotate"]]
+    (doseq [control controls]
+      (js-invoke (aget @the-map control) action))))
+
+(defn lock-viewport!
+  "Locks map viewport to prevent zoom/pan during animation playback."
+  []
+  (let [current-zoom (first (get-zoom-info))]
+    (js-invoke @the-map "setMinZoom" current-zoom)
+    (js-invoke @the-map "setMaxZoom" current-zoom)
+    (toggle-interactions! false)))
+
+(defn unlock-viewport!
+  "Unlocks map viewport after animation completes."
+  []
+  (js-invoke @the-map "setMinZoom" 0)
+  (js-invoke @the-map "setMaxZoom" 28)
+  (toggle-interactions! true))
+
+(defn reset-animation!
+  "Resets animation state - cleans up layers and unlocks viewport."
+  []
+  (cleanup-animation-layers!)
+  (unlock-viewport!))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Camera Layer
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."

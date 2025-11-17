@@ -105,6 +105,11 @@ the user is not an Admin or Member of their organization."}
   user-psps-orgs-list (r/atom []))
 (defonce ^{:doc "A boolean that enables time-step animation for the Time Slider when true."}
   animate? (r/atom false))
+(defonce ^{:doc "Shows loading modal while animation layers are being prepared."}
+  preparing? (r/atom false))
+(defonce ^{:doc "Tracks whether animation layers have been created for current layer sequence.
+Prevents showing modal on replay. Reset when layers change."}
+  layers-ready? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the loading modal dialog."}
   loading? (r/atom true))
 (defonce ^{:doc "A boolean that designates if the browser's innerwidth reaches below the 800 pixel wide breakpoint.

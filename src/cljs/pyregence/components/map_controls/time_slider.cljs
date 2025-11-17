@@ -1,6 +1,7 @@
 (ns pyregence.components.map-controls.time-slider
   (:require [pyregence.components.common                   :refer [radio tool-tip-wrapper]]
             [pyregence.components.map-controls.tool-button :refer [tool-button]]
+            [pyregence.components.mapbox                   :as mb]
             [pyregence.config                              :as c]
             [pyregence.state                               :as !]
             [pyregence.styles                              :as $]
@@ -27,16 +28,77 @@
 ;; Root Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn time-slider [layer-full-time select-layer! select-time-zone!]
-  (r/with-let [*speed          (r/atom 2)
-               step-count      #(count (or (:times (first @!/param-layers))
-                                           @!/param-layers))
-               cycle-layer!    (fn [change]
-                                 (select-layer! (mod (+ change @!/*layer-idx) (step-count))))
+(defn time-slider [layer-full-time select-layer! select-time-zone! get-layer-info-fn]
+  (r/with-let [*speed     (r/atom 2)
+               *loop-id   (r/atom nil)
+               *init-id   (r/atom nil)
+               step-count #(count (or (:times (first @!/param-layers))
+                                      @!/param-layers))
+
+               cycle-layer! (fn [change]
+                              (select-layer! (mod (+ change @!/*layer-idx) (step-count))))
+
                loop-animation! (fn la []
                                  (when @!/animate?
+                                   (reset! *init-id nil)
+                                   (reset! !/preparing? false)
                                    (cycle-layer! 1)
-                                   (js/setTimeout la (get-in c/speeds [@*speed :delay]))))]
+                                   (reset! *loop-id
+                                     (js/setTimeout la (get-in c/speeds [@*speed :delay])))))
+
+               begin-animation! (fn [initial-delay]
+                                 (mb/lock-viewport!)
+                                 (reset! !/animate? true)
+                                 (if initial-delay
+                                   (reset! *init-id (js/setTimeout loop-animation! initial-delay))
+                                   (loop-animation!)))
+
+               start-animation! (fn []
+                                 (let [{:keys [geoserver-key style]} (get-layer-info-fn)
+                                       first-play? (not @!/layers-ready?)
+
+                                       create-layers-fn (fn []
+                                                         (if (zero? (step-count))
+                                                           (do
+                                                             (reset! !/preparing? false)
+                                                             (js/console.warn "Cannot start animation: layers not loaded yet"))
+                                                           (do
+                                                             (let [{:keys [total succeeded failed]} (mb/create-animation-layers! geoserver-key style)]
+                                                               (if (and (pos? total) (>= succeeded (/ total 2)))
+                                                                 (reset! !/layers-ready? true)
+                                                                 (do
+                                                                   (reset! !/layers-ready? false)
+                                                                   (reset! !/preparing? false)
+                                                                   (js/console.error "Animation failed:" failed "of" total "layers failed")
+                                                                   (mb/cleanup-animation-layers!))))
+
+                                                             (when @!/layers-ready?
+                                                               (let [initial-delay (max 1500 (min 4000 (* (step-count) 25)))]
+                                                                 (begin-animation! initial-delay))))))]
+
+                                   (if first-play?
+                                     (do
+                                       (reset! !/preparing? true)
+                                       (if (pos? (step-count))
+                                         (create-layers-fn)
+                                         (js/setTimeout create-layers-fn 800)))
+                                     (when @!/layers-ready?
+                                       (begin-animation! nil)))))
+
+               toggle-animation! (fn []
+                                  (if (or @!/animate? @!/preparing?)
+                                    (do
+                                      (reset! !/animate? false)
+                                      (reset! !/preparing? false)
+                                      (when-let [id @*loop-id]
+                                        (js/clearTimeout id)
+                                        (reset! *loop-id nil))
+                                      (when-let [id @*init-id]
+                                        (js/clearTimeout id)
+                                        (reset! *init-id nil))
+                                      (mb/unlock-viewport!))
+                                    (start-animation!)))]
+
     [:div#time-slider {:style ($/combine $/tool $time-slider)}
      (when-not @!/mobile?
        [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
@@ -56,12 +118,17 @@
        :bottom
        [tool-button :previous-button #(cycle-layer! -1)]]
       [tool-tip-wrapper
-       (str (if @!/animate? "Pause" "Play") " animation")
+       (cond
+         @!/preparing? "Preparing animation..."
+         @!/animate? "Pause animation"
+         :else "Play animation")
        :bottom
        [tool-button
-        (if @!/animate? :pause-button :play-button)
-        #(do (swap! !/animate? not)
-             (loop-animation!))]]
+        (cond
+          @!/preparing? :pause-button
+          @!/animate? :pause-button
+          :else :play-button)
+        toggle-animation!]]
       [tool-tip-wrapper
        "Next layer"
        :bottom
@@ -72,4 +139,13 @@
                  :on-change #(reset! *speed (u-dom/input-int-value %))}
         (map-indexed (fn [id {:keys [opt-label]}]
                        [:option {:key id :value id} opt-label])
-                     c/speeds)])]))
+                     c/speeds)])]
+    (finally
+      (when-let [id @*loop-id]
+        (js/clearTimeout id))
+      (when-let [id @*init-id]
+        (js/clearTimeout id))
+      (reset! !/preparing? false)
+      (when @!/animate?
+        (reset! !/animate? false)
+        (mb/unlock-viewport!)))))
