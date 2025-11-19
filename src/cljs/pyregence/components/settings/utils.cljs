@@ -1,5 +1,6 @@
 (ns pyregence.components.settings.utils
   (:require
+   [clojure.string                 :as str]
    [herb.core                      :refer [<class]]
    [pyregence.components.svg-icons :as svg]
    [pyregence.styles               :as $]))
@@ -141,3 +142,16 @@
                           :width        "100%"
                           :outline      "none"}
             :on-change on-change}]])
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; db functions
+;; TODO consider a better organization then this.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn db->display
+  [db-cell-name]
+  (->>
+   (str/split db-cell-name #"_")
+   (map str/capitalize)
+   (str/join " ")))

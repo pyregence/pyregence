@@ -8,7 +8,7 @@
    [pyregence.components.settings.buttons :as buttons]
    [pyregence.components.settings.roles   :as roles]
    [pyregence.components.settings.status  :as status]
-   [pyregence.components.settings.utils   :refer [search-cmpt]]
+   [pyregence.components.settings.utils   :refer [search-cmpt db->display]]
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]
    [reagent.core                          :as r]))
@@ -63,12 +63,12 @@
 (defn- user-role-renderer [params]
   (let [role (aget params "value")]
     (r/as-element
-     [:span (roles/role->display role)])))
+     [:span (db->display role)])))
 
 (defn- org-membership-status-renderer [params]
   (let [status (aget params "value")]
     (r/as-element
-     [:span (status/status->display status)])))
+     [:span (db->display status)])))
 
 (defn table
   [grid-api users]
@@ -117,7 +117,7 @@
            ;;TODO shouldn't have to reset the font stuff why is this coming from the body?
             [:label {:style {:color "black"
                              :font-weight "normal"}}
-             (roles/role->display opt)]]))]
+             (db->display opt)]]))]
        [:div {:style {:border-top border-styles
                       :padding "10px 12px"}}
         ;; TODO [Important!] This needs to update the table with the changes and emit a toast.
