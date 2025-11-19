@@ -12,6 +12,8 @@
    ;; the organization
    #_"member"])
 
+;; TODO this is the same as the status display, and all db displays probably,
+;; consider a generic solution for displaying.
 (defn role->display
   [role]
   (->>
