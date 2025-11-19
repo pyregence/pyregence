@@ -333,7 +333,6 @@ CREATE OR REPLACE FUNCTION update_user_match_drop_access(_user_id integer, _matc
 $$ LANGUAGE SQL;
 
 -- TODO ideally this would check if the requesting_user has permissions to do this.
--- TODO find out if the user_role param type be more specific then string aka user_role
 -- TODO consider using a different identifier then email.
 CREATE OR REPLACE FUNCTION update_users_roles_by_email(_requesting_user_id integer, _user_role text, _users_to_be_updated text[])
 RETURNS void AS $$
@@ -345,6 +344,8 @@ END;
 
 $$ LANGUAGE plpgsql;
 
+-- TODO ideally this would check if the requesting_user has permissions to do this.
+-- TODO consider using a different identifier then email.
 CREATE OR REPLACE FUNCTION update_users_status_by_email(_requesting_user_id integer, _status text, _users_to_be_updated text[])
 RETURNS void AS $$
 BEGIN
