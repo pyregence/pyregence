@@ -94,6 +94,8 @@
        [:p {:style (assoc styles :color ($/color-picker :error-red))}  "*"]])
     [input-field m]]])
 
+;; TODO taking children cmpts here is strange,
+;; i think to share this `card` it should just share the styles instead.
 (defn card
   [{:keys [title children]}]
   [:settings-body-card
