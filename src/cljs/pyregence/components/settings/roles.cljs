@@ -20,15 +20,3 @@
    (str/split role #"_")
    (map str/capitalize)
    (str/join " ")))
-
-(defn- can-upgrade-role?
-  "True if `from` role is greater then `to`"
-  [from to]
-  (let [role->n
-        ;;TODO consider extracting this from roles variable
-        {"member" 0
-         "organization_member" 1
-         "organization_admin" 2
-         "account_manager" 3
-         "super_admin" 4}]
-    (<= (role->n to) (role->n from))))
