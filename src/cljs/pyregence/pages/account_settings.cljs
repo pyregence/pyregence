@@ -67,7 +67,20 @@
                selected->tab-id (fn [selected]
                                   (:id (first ((group-by :selected? tabs) selected))))
                selected         (-> @selected-log last)
-               selected-page    (selected->tab-id selected)]
+               selected-page    (selected->tab-id selected)
+               on-click-apply-update-users
+               (fn [get-selected-emails]
+                 (fn [update!]
+                   (fn [option]
+                     (fn []
+                       (let [emails (get-selected-emails)]
+                         ;; TODO this needs error handling.
+                         (update! option emails)
+                         ;; TODO instead of this hacky sleep i think we have two options,
+                         ;; first, we have the update function return the users, this seems ideal. the second is,
+                         ;; we get the success from the update function and we then poll the users.
+                         (js/setTimeout (fn [] (go (reset! users (<! (get-users! user-role))))) 3000)
+                         (toast-message! (str (str/join ", " emails)  " updated!")))))))]
            [:div {:style {:display        "flex"
                           :flex-direction "row"
                           :height         "100%"
@@ -89,19 +102,7 @@
                                     (= organization-name org-name)
                                     (#{"organization_admin" "organization_member"} user-role))) @users)
                   :unsaved-org-name unsaved-org-name
-                  :on-click-apply-update-users
-                  (fn [get-selected-emails]
-                    (fn [update!]
-                      (fn [option]
-                        (fn []
-                          (let [emails (get-selected-emails)]
-                            ;; TODO this needs error handling.
-                            (update! option emails)
-                            ;; TODO instead of this hacky sleep i think we have two options,
-                            ;; first, we have the update function return the users, this seems ideal. the second is,
-                            ;; we get the success from the update function and we then poll the users.
-                            (js/setTimeout (fn [] (go (reset! users (<! (get-users! user-role))))) 3000)
-                            (toast-message! (str (str/join ", " emails)  " updated!")))))))
+                  :on-click-apply-update-users on-click-apply-update-users
                   :on-click-add-email  (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] ""))
                   :on-delete-email (fn [og-email]
                                      (fn [_]
@@ -144,4 +145,6 @@
                            assoc-in
                            [selected :unsaved-org-name]
                            (.-value (.-target e))))})]
-              [um/main {:users (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)}])])])})))
+              [um/main {:users (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
+                        :on-click-apply-update-users on-click-apply-update-users
+                        }])])])})))
