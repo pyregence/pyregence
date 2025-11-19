@@ -53,7 +53,7 @@
                   :display        "flex"
                   :flex-direction "column"
                   :font-family    "Roboto"}}
-        ;; TODO this mock `:nav` with actual upper nav bar, this will happen in another PR.
+        ;; rODO this mock `:nav` with actual upper nav bar, this will happen in another PR.
          [:nav  {:style {:display         "flex"
                          :justify-content "center"
                          :align-items     "center"
@@ -69,13 +69,13 @@
                selected         (-> @selected-log last)
                selected-page    (selected->tab-id selected)
                on-click-apply-update-users
-               (fn [get-selected-emails]
-                 (fn [update!]
-                   (fn [option]
+               (fn [get-selected-emails-fn]
+                 (fn [update-users-role-by-email]
+                   (fn [new-role]
                      (fn []
-                       (let [emails (get-selected-emails)]
+                       (let [emails (get-selected-emails-fn)]
                          ;; TODO this needs error handling.
-                         (update! option emails)
+                         (update-users-role-by-email new-role emails)
                          ;; TODO instead of this hacky sleep i think we have two options,
                          ;; first, we have the update function return the users, this seems ideal. the second is,
                          ;; we get the success from the update function and we then poll the users.
