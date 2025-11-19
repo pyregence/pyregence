@@ -3,8 +3,11 @@
             [pyregence.totp      :as totp]
             [pyregence.utils     :refer [nil-on-error]]
             [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.response :refer [data-response]]))
+            [triangulum.database :refer [call-sql sql-primitive insert-rows!]]
+            [triangulum.type-conversion :as tc]
+            [triangulum.response :refer [data-response]])
+  (:import  [java.util Base64]
+            [java.security SecureRandom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -729,6 +732,59 @@
       (data-response ""))
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
+
+;; TODO move password logic
+
+;;TODO triple check this is a secure way to generate a password
+;; TODO should we reuse pyregence totp?
+(defn generate-password
+  ([] (generate-password 32))         ;; 32 bytes → 43-char Base64 password
+  ([n-bytes]
+   (let [bytes (byte-array n-bytes)
+         _ (.nextBytes (SecureRandom.) bytes)]
+     (.encodeToString (Base64/getEncoder) bytes))))
+
+(defn add-org-users [_ org-id users]
+  ;;TODO this is add a single user make it add multiple users
+  ;; TODO send out welcome emails
+  (def users users)
+  org-id
+  ;; => 1
+
+  (def org-id org-id)
+
+  users
+  ;; => ({:email "drewg@gmail.com", :role "admin", :invalid-email? false})
+
+  (->> users
+       (map (fn [{:keys [email ]}])))
+
+
+  (insert-rows!
+   "users"
+   [{:email "drew@gmail.com"
+     :password (generate-password)
+     :name  ""
+     :user_role (tc/str->pg "organization_member" "user_role")
+     :organization_rid 1
+     :org_membership_status (tc/str->pg "accepted" "org_membership_status")}]))
+
+
+
+
+(comment
+
+  (insert-rows!
+   "users"
+   [{:email "drew@gmail.com"
+     :password (generate-password)
+     :name  ""
+     :user_role (tc/str->pg "organization_member" "user_role")
+     :organization_rid 1
+     :org_membership_status (tc/str->pg "accepted" "org_membership_status")}])
+
+  ;;
+  )
 
 (defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that

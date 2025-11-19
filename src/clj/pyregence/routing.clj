@@ -113,6 +113,12 @@
                                                   :auth-action :block}
 
    ;; -- Organization Management
+   ;; TODO add this back in when we add the settings page add-user functionality
+   ;; [:post "/clj/add-org-users"]                      {:handler (clj-handler authentication/add-org-users)
+   ;;                                                    ;;TODO make sure to comment this back in.
+   ;;                                                   #_#_:auth-type #{:organization-admin :token}
+   ;;                                                   :auth-action :block}
+
    [:post "/clj/add-org-user"]                      {:handler (clj-handler authentication/add-org-user)
                                                      :auth-type #{:organization-admin :token}
                                                      :auth-action :block}
