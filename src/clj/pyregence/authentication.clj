@@ -1,10 +1,12 @@
 (ns pyregence.authentication
-  (:require [pyregence.email     :as email]
-            [pyregence.totp      :as totp]
-            [pyregence.utils     :refer [nil-on-error]]
-            [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.response :refer [data-response]]))
+  (:require
+   [pyregence.email                     :as email]
+   [pyregence.totp                      :as totp]
+   [pyregence.utils                     :refer [nil-on-error]]
+   [pyregence.components.settings.roles :as roles]
+   [triangulum.config                   :refer [get-config]]
+   [triangulum.database                 :refer [call-sql sql-primitive]]
+   [triangulum.response                 :refer [data-response]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -639,16 +641,7 @@
                    {:status 403})))
 
 ;;TODO ideally this would be handled by the database.
-(defn- can-upgrade-role?
-  "True if `from` role is greater then `to`"
-  [from to]
-  (let [role->n
-        {"member" 0
-         "organization_member" 1
-         "organization_admin" 2
-         "account_manager" 3
-         "super_admin" 4}]
-    (<= (role->n to) (role->n from))))
+
 
 ;; Consider if status=none implies no organization, what is status=none?
 (defn update-users-status
@@ -665,7 +658,7 @@
   [{:keys [user-id user-role]} requested-role users-to-update]
   ;; TODO consider what happens if this sql call fails.
   ;; TODO consider using user id's instead of emails.
-  (if (can-upgrade-role? user-role requested-role)
+  (if (roles/can-upgrade-role? user-role requested-role)
     (do
       (call-sql "update_users_roles_by_email" user-id requested-role
                 (into-array String users-to-update))
