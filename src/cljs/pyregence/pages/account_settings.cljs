@@ -3,7 +3,8 @@
    [clojure.core.async                                  :refer [<! go]]
    [clojure.edn                                         :as edn]
    [clojure.string                                      :as str]
-   [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.components.messaging                      :refer [toast-message!]]
+   [pyregence.components.settings.fetch                 :refer [get-orgs! get-users!]]
    [pyregence.components.settings.account-settings      :as as]
    [pyregence.components.settings.nav-bar               :as nav-bar]
    [pyregence.components.settings.organization-settings :as os]
@@ -12,30 +13,22 @@
    [pyregence.utils.async-utils                         :as u-async]
    [reagent.core                                        :as r]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Functions
-;; TODO consider making 1 api call to get all the data...
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-orgs!
-  [user-role]
-  (go
-    (let [api-route (if (= user-role "super_admin")
-                      "get-all-organizations"
-                      "get-current-user-organization")
-          response  (<! (u-async/call-clj-async! api-route))]
-      (if (:success response)
-        (->> (:body response)
-             (edn/read-string))
-        {}))))
-
-(defn- get-users! [user-role]
-  (go
-    (let [route (if (= user-role "super_admin") "get-all-users" "get-org-member-users")
-          resp-chan              (u-async/call-clj-async! route)
-          {:keys [body success]} (<! resp-chan)
-          users                  (edn/read-string body)]
-      (if success users []))))
+(defn orgs->org->id
+  [orgs]
+  (reduce
+   (fn [org-id->org {:keys [org-id org-name email-domains] :as org}]
+     (assoc org-id->org org-id
+            (assoc org
+                   :unsaved-org-name org-name
+                   ;; NOTE this mapping is used to keep track of the email
+                   :og-email->email (reduce
+                                     (fn [m e]
+                                       (assoc m e e))
+                                     {}
+                                     (str/split email-domains #",")))))
+   {}
+   orgs))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
@@ -45,7 +38,6 @@
   "The root component of the /account-settings page."
   [{:keys [user-role]}]
   (let [org-id->org (r/atom nil)
-        ;; TODO consider if `users` needs to be a ratom or just data we pass down.
         users       (r/atom nil)
         selected-log (r/atom ["Account Settings"])]
     (r/create-class
@@ -53,19 +45,7 @@
       :component-did-mount
       #(go
          (reset! users (<! (get-users! user-role)))
-         (reset! org-id->org
-                 (reduce
-                  (fn [org-id->org {:keys [org-id org-name email-domains] :as org}]
-                    (assoc org-id->org org-id
-                           (assoc org
-                                  :unsaved-org-name org-name
-                                  ;; NOTE this mapping is used to keep track of the email
-                                  :og-email->email (reduce
-                                                    (fn [m e]
-                                                      (assoc m e e))
-                                                    {}
-                                                    (str/split email-domains #",")))))
-                  {} (<! (get-orgs! user-role)))))
+         (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role)))))
       :reagent-render
       (fn [{:keys [user-role user-email user-name]}]
         [:div
@@ -109,6 +89,19 @@
                                     (= organization-name org-name)
                                     (#{"organization_admin" "organization_member"} user-role))) @users)
                   :unsaved-org-name unsaved-org-name
+                  :on-click-apply-update-users
+                  (fn [get-selected-emails]
+                    (fn [update!]
+                      (fn [option]
+                        (fn []
+                          (let [emails (get-selected-emails)]
+                            ;; TODO this needs error handling.
+                            (update! option emails)
+                            ;; TODO instead of this hacky sleep i think we have two options,
+                            ;; first, we have the update function return the users, this seems ideal. the second is,
+                            ;; we get the success from the update function and we then poll the users.
+                            (js/setTimeout (fn [] (go (reset! users (<! (get-users! user-role))))) 3000)
+                            (toast-message! (str (str/join ", " emails)  " updated!")))))))
                   :on-click-add-email  (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] ""))
                   :on-delete-email (fn [og-email]
                                      (fn [_]

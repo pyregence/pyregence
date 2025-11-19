@@ -127,20 +127,14 @@
                           :on-click (on-click-apply @checked)}]]])))
 
 (defn table-with-buttons
-  [{:keys [users]}]
+  [{:keys [users on-click-apply-update-users]}]
   (r/with-let [selected-drop-down (r/atom nil)
                grid-api (r/atom nil)
                search   (r/atom nil)]
     (let [update-dd (fn [to] (reset! selected-drop-down (when-not (= @selected-drop-down to) to)))
-          selected-emails (fn []
-                            (->> @grid-api get-selected-rows (map :email)))
-          on-click-apply (fn [update!]
-                           (fn [option]
-                             (fn []
-                               (let [emails (selected-emails)]
-                                 ;;TODO this needs error handling.
-                                 (update! option emails)
-                                 (toast-message! (str (str/join ", " emails)  " updated!"))))))
+          get-selected-emails (fn []
+                                (->> @grid-api get-selected-rows (map :email)))
+          on-click-apply (on-click-apply-update-users get-selected-emails)
           on-change-search (fn [e]
                              (let [s (.-value (.-target e))]
                                (.setGridOption @grid-api "quickFilterText" s)
@@ -159,17 +153,15 @@
         [buttons/ghost-drop-down {:text "Update User Status"
                                   :selected? (= @selected-drop-down :status)
                                   :on-click #(update-dd :status)}]
-        ;; TODO add this back in when we get a more well defined acceptance criteria
-        ;; aka this is being handled later.
+        ;; TODO add this back in when we get a more well defined acceptance criteria.
         #_(when (:show-remove-user? m)
             [buttons/ghost-remove-user {:text "Remove User"}])
-        ;;TODO add this back in when we get more well defined acceptance criteria aka another ticket
+        ;;TODO add this back in when we get more well defined acceptance criteria.
         #_[add-user/add-user-dialog]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database
          :role   [drop-down {:options roles/roles
                              :on-click-apply (on-click-apply update-users-roles)}]
-         ;; TODO ideally these org_membership statuses should be queried from the database
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
          :status [drop-down {:options status/statuses
                              :on-click-apply (on-click-apply update-users-status)}]
