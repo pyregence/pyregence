@@ -36,7 +36,7 @@
       {:pseudo {:hover {:background main-orange
                         :border     (str "2px solid " main-orange)}}})))
 
-(defn- $on-hover-gray
+(defn $on-hover-gray
   [styles]
   (with-meta
     styles
@@ -105,8 +105,7 @@
             :align-items "center"
             :justify-content "center"
             :border-left (str "2px solid " ($/color-picker :primary-standard-orange))
-            :width "40px"
-            :height "100%"}}
+            :width "40px"}}
      (if-not selected?
        ;;TODO these are supposed to be black triangles
        [svg/arrow-down]

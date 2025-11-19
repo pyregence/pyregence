@@ -2,6 +2,9 @@
   (:require
    [clojure.string :as str]))
 
+(def statuses
+  ["accepted" "pending" "none"])
+
 (defn status->display
   [status]
   (->>

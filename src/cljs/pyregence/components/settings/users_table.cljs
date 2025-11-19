@@ -4,10 +4,12 @@
                                                   ModuleRegistry]]
    ["ag-grid-react"                       :refer [AgGridReact]]
    [clojure.core.async                    :as async :refer [<! go]]
-   [goog.object                           :as goog]
    [clojure.string                        :as str]
+   [goog.object                           :as goog]
    [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons]
+   [pyregence.components.settings.roles   :as roles]
+   [pyregence.components.settings.status  :as status]
    [pyregence.components.settings.utils   :refer [search-cmpt]]
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]
@@ -42,38 +44,11 @@
   [status users-to-update]
   (go (<! (u-async/call-clj-async! "update-users-status" status users-to-update))))
 
-(defn- user-role-renderer [params]
-  (let [v (aget params "value")]
-    (r/as-element
-     [:span
-      (condp = v
-        ;; TODO consider if these mappings should sync all the way back to the db
-        "super_admin"         "Super Admin"
-        "organization_admin"  "Organization Admin"
-        "organization_member" "Organization Member"
-        "account_manager"     "Account Manager"
-        "member"              "Member")])))
-
-(defn- org-membership-status-renderer [params]
-  (let [v (aget params "value")]
-    (r/as-element
-     [:span
-      (condp = v
-        ;; TODO consider if these mappings should sync all the way back to the db
-        "none"     "None"
-        "pending"  "Pending"
-        "accepted" "Accepted")])))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; State
-;; TODO consider if this state should be on a component.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;TODO find out why this is necessary and use it or remove it.
+;;TODO find out why this `api-call` is necessary and use it or remove it.
 (defn api-call
   "A helper function to safely call GridApi methods under advanced compilation."
   [^js api method & args]
@@ -86,8 +61,18 @@
 ;; components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;TODO user-role-renderer and org-render can probably be one function
+(defn- user-role-renderer [params]
+  (let [role (aget params "value")]
+    (r/as-element
+     [:span (roles/role->display role)])))
+
+(defn- org-membership-status-renderer [params]
+  (let [status (aget params "value")]
+    (r/as-element
+     [:span (status/status->display status)])))
+
 (defn table
-  "The root component for the /users-table page."
   [grid-api users]
   [:div {:style {:height "700px"
                  :width  "100%"}}
@@ -101,11 +86,13 @@
       :defaultColDef              #js {:unSortIcon true} ;; always show sort icons
       :enableCellTextSelection    true
       :rowData                    (clj->js users)
-      :columnDefs                 (clj->js [{:field "name"                  :headerName "User Name"      :filter "agTextColumnFilter" :width 150}
-                                            {:field "email"                 :headerName "Email Address"  :filter "agTextColumnFilter"}
-                                            {:field "user-role"             :headerName "User Role"      :filter "agTextColumnFilter" :cellRenderer user-role-renderer}
-                                            {:field "org-membership-status" :headerName "Status"         :filter false :cellRenderer org-membership-status-renderer}])}]]])
+      :columnDefs
+      (clj->js [{:field "name" :headerName "User Name" :filter "agTextColumnFilter" :width 150}
+                {:field "email" :headerName "Email Address" :filter "agTextColumnFilter"}
+                {:field "user-role" :headerName "User Role" :filter "agTextColumnFilter" :cellRenderer user-role-renderer}
+                {:field "org-membership-status" :headerName "Status" :filter false :cellRenderer org-membership-status-renderer}])}]]])
 
+;;TODO consider decoupling this from roles and moving into buttons
 (defn drop-down
   [{:keys [options on-click-apply]}]
   (r/with-let [checked (r/atom nil)]
@@ -132,17 +119,15 @@
            ;;TODO shouldn't have to reset the font stuff why is this coming from the body?
             [:label {:style {:color "black"
                              :font-weight "normal"}}
-             (->>
-              (str/split opt #"_")
-              (map str/capitalize)
-              (str/join " "))]]))]
+             (roles/role->display opt)]]))]
        [:div {:style {:border-top border-styles
                       :padding "10px 12px"}}
+        ;; TODO [Important!] This needs to update the table with the changes and emit a toast.
         [buttons/primary {:text "Apply"
                           :on-click (on-click-apply @checked)}]]])))
 
 (defn table-with-buttons
-  [{:keys [users] :as m}]
+  [{:keys [users]}]
   (r/with-let [selected-drop-down (r/atom nil)
                grid-api (r/atom nil)
                search   (r/atom nil)]
@@ -177,21 +162,16 @@
         ;; TODO add this back in when we get a more well defined acceptance criteria
         ;; aka this is being handled later.
         #_(when (:show-remove-user? m)
-          [buttons/ghost-remove-user {:text "Remove User"}])
-        [buttons/add {:text "Add A New User"}]]
+            [buttons/ghost-remove-user {:text "Remove User"}])
+        ;;TODO add this back in when we get more well defined acceptance criteria aka another ticket
+        #_[add-user/add-user-dialog]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database
-         :role   [drop-down {:options ["super_admin"
-                                       "organization_admin"
-                                       "organization_member"
-                                       "account_manager"
-                                       ;;TODO handling member would mean we have to kick them out of
-                                       ;; the organization
-                                       #_"member"]
+         :role   [drop-down {:options roles/roles
                              :on-click-apply (on-click-apply update-users-roles)}]
          ;; TODO ideally these org_membership statuses should be queried from the database
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
-         :status [drop-down {:options ["accepted" "pending" "none"]
+         :status [drop-down {:options status/statuses
                              :on-click-apply (on-click-apply update-users-status)}]
          nil)
        [table grid-api users]])))
