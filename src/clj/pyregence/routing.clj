@@ -43,6 +43,7 @@
    [:get "/users-table"]                         {:handler (render-page "/users-table")
                                                   :auth-type :super-admin
                                                   :auth-action :redirect}
+
    [:get "/verify-2fa"]                          {:handler (render-page "/verify-2fa")}
    [:get "/verify-email"]                        {:handler (render-page "/verify-email")}
 
@@ -98,7 +99,15 @@
                                                   :auth-type #{:organization-admin :token}
                                                   :auth-action :block}
 
-   ;; -- Access Control
+   [:post "/clj/update-users-roles"]             {:handler (clj-handler authentication/update-users-roles)
+                                                  :auth-type #{:organization-admin :token}
+                                                  :auth-action :block}
+
+   [:post "/clj/update-users-status"]             {:handler (clj-handler authentication/update-users-status)
+                                                  :auth-type #{:organization-admin :token}
+                                                  :auth-action :block}
+
+;; -- Access Control
    [:post "/clj/get-user-match-drop-access"]     {:handler (clj-handler authentication/get-user-match-drop-access)
                                                   :auth-type #{:member :token}
                                                   :auth-action :block}
