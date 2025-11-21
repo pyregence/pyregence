@@ -752,15 +752,20 @@
 (defn get-org-member-users
   "Returns a vector of member users for the given org-id, if the user is an
    admin of the given org."
-  [{:keys [organization-id]}]
-  (->> (call-sql "get_org_member_users" organization-id)
-       (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
-               {:user-id           user_id
-                :full-name         full_name
-                :email             email
-                :user-role         user_role
-                :membership-status org_membership_status}))
-       (data-response)))
+  ([session]
+   ;;TODO passing nil here his hacky but its to support admin.cljs which was previously ignoring
+   ;; the session and the new setting page which calls get-org-member-users correct with just the session
+   ;; in the end will probably need to different api calls.
+   (get-org-member-users session nil))
+  ([{:keys [organization-id user-role]} org-id]
+   (->> (call-sql "get_org_member_users" (if (= user-role "super_admin") org-id organization-id))
+        (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
+                {:user-id           user_id
+                 :full-name         full_name
+                 :email             email
+                 :user-role         user_role
+                 :membership-status org_membership_status}))
+        (data-response))))
 
 (defn get-all-users
   "Returns a vector of all users in the DB."
