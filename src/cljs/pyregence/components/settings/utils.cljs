@@ -26,6 +26,7 @@
    :align-items    "flex-start"
    :padding        "40px 160px"
    :flex           "1 0 0"
+   :overflow       "hidden"
    :gap            "24px"})
 
 (def label-styles
