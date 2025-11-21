@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "ag-grid-community": "^34.3.1",
     "ag-grid-react": "^34.3.1",
     "mapbox-gl": "^3.9.3",
     "react": "^16.13.0",
