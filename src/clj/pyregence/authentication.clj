@@ -752,8 +752,8 @@
 (defn get-org-member-users
   "Returns a vector of member users for the given org-id, if the user is an
    admin of the given org."
-  [_ org-id]
-  (->> (call-sql "get_org_member_users" org-id)
+  [{:keys [organization-id]}]
+  (->> (call-sql "get_org_member_users" organization-id)
        (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
                {:user-id           user_id
                 :full-name         full_name
