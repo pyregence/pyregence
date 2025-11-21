@@ -1,11 +1,12 @@
 (ns pyregence.pages.account-settings
   (:require
    [clojure.core.async                                  :refer [<! go]]
-   [clojure.edn                                         :as edn]
+   [clojure.set                                         :as set]
    [clojure.string                                      :as str]
    [pyregence.components.messaging                      :refer [toast-message!]]
-   [pyregence.components.settings.fetch                 :refer [get-orgs! get-users!]]
    [pyregence.components.settings.account-settings      :as as]
+   [pyregence.components.settings.fetch                 :refer [get-orgs!
+                                                                get-users!]]
    [pyregence.components.settings.nav-bar               :as nav-bar]
    [pyregence.components.settings.organization-settings :as os]
    [pyregence.components.settings.unaffilated-members   :as um]
@@ -94,13 +95,22 @@
                         :user-name         user-name}]
               "Organization Settings"
               [os/main
-               (let [{:keys [unsaved-org-name org-id auto-add? auto-accept? org-name og-email->email]} (@org-id->org selected)]
+               (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
+                     selected (if (= user-role "super_admin")
+                                (@org-id->org selected)
+                                (-> @org-id->org keys first))
+                     {:keys [unsaved-org-name org-id auto-add? auto-accept? org-name og-email->email]} (@org-id->org selected)
+                     selected-orgs-users
+                     (if-not (= user-role "super_admin")
+                       ;;TODO check if this shouldn't happen in the db instead.
+                       (map #(set/rename-keys % {:full-name :name}) @users)
+                       (filter (fn [{:keys [user-role organization-name]}]
+                                 (and
+                                  ;;TODO this conditional should be based on the og-id or org-unique name
+                                  (= organization-name org-name)
+                                  (#{"organization_admin" "organization_member"} user-role))) @users))]
                  {:og-email->email og-email->email
-                  :users (filter (fn [{:keys [user-role organization-name]}]
-                                   (and
-                                     ;;TODO this conditional should be based on the og-id or org-unique name
-                                    (= organization-name org-name)
-                                    (#{"organization_admin" "organization_member"} user-role))) @users)
+                  :users selected-orgs-users
                   :unsaved-org-name unsaved-org-name
                   :on-click-apply-update-users on-click-apply-update-users
                   :on-click-add-email  (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] ""))
@@ -146,5 +156,4 @@
                            [selected :unsaved-org-name]
                            (.-value (.-target e))))})]
               [um/main {:users (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
-                        :on-click-apply-update-users on-click-apply-update-users
-                        }])])])})))
+                        :on-click-apply-update-users on-click-apply-update-users}])])])})))
