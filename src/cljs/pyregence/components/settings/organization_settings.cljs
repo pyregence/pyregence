@@ -12,11 +12,19 @@
 ;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;TODO should be "domain" not "email"
 (defn- email-domain-cmpt
   [{:keys [email on-change] :as m}]
-  [input-field (assoc m
-                      :value email
-                      :on-change on-change)])
+  ;;TODO This position stuff feels hacky!
+  [:div {:style {:position "relative"}}
+   [:span {:style {:position "absolute"
+                   :color    "grey"
+                   :left     "3px"
+                   :top      "12px"}} "@"]
+   [input-field (assoc m
+                       :style {:padding "14px 14px 14px 20px"}
+                       :value email
+                       :on-change on-change)]])
 
 ;;TODO consider sharing styles with labeled-input cmpt
 (defn- email-domains-cmpt
@@ -36,13 +44,19 @@
    [:div {:style {:display        "flex"
                   :flex-direction "column"
                   :gap            "8px"}}
-    (for [[og-email email] og-email->email]
+    (for [[og-email {:keys [email invalid?]}] og-email->email]
       [:div {:key   og-email
              :style {:display        "flex"
                      :flex-direction "row"
                      :gap            "8px"}}
-       [email-domain-cmpt {:email     email
-                           :on-change (on-change og-email)}]
+
+       [:div {:style {:display "flex"
+                      :flex-direction "column"
+                      :gap "3px"}}
+        [email-domain-cmpt {:email     email
+                            :on-change (on-change og-email)}]
+        (when invalid?
+          [:p "invalid!"])]
        [buttons/delete {:on-click (on-delete og-email)}]])]])
 
 (defn- organization-settings
