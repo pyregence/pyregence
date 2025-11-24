@@ -15,7 +15,6 @@
    [pyregence.utils.async-utils                         :as u-async]
    [reagent.core                                        :as r]))
 
-
 (defn orgs->org->id
   [orgs]
   (reduce
@@ -41,8 +40,8 @@
 (defn root-component
   "The root component of the /account-settings page."
   [{:keys [user-role]}]
-  (let [org-id->org (r/atom nil)
-        users       (r/atom nil)
+  (let [org-id->org  (r/atom nil)
+        users        (r/atom nil)
         selected-log (r/atom ["Account Settings"])]
     (r/create-class
      {:display-name "account-settings"
@@ -99,9 +98,9 @@
               "Organization Settings"
               [os/main
                (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
-                     selected (if (= user-role "super_admin")
-                                (@org-id->org selected)
-                                (-> @org-id->org keys first))
+                     selected                                                                          (if (= user-role "super_admin")
+                                                                                                         (@org-id->org selected)
+                                                                                                         (-> @org-id->org keys first))
                      {:keys [unsaved-org-name org-id auto-add? auto-accept? org-name og-email->email]} (@org-id->org selected)
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
@@ -112,15 +111,15 @@
                                   ;;TODO this conditional should be based on the og-id or org-unique name
                                   (= organization-name org-name)
                                   (#{"organization_admin" "organization_member"} user-role))) @users))]
-                 {:og-email->email og-email->email
-                  :users selected-orgs-users
-                  :unsaved-org-name unsaved-org-name
+                 {:og-email->email             og-email->email
+                  :users                       selected-orgs-users
+                  :unsaved-org-name            unsaved-org-name
                   :on-click-apply-update-users on-click-apply-update-users
-                  :on-click-add-email  (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] {:email ""}))
-                  :on-delete-email (fn [og-email]
-                                     (fn [_]
+                  :on-click-add-email          (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] {:email ""}))
+                  :on-delete-email             (fn [og-email]
+                                                 (fn [_]
                                        ;;TODO this means i might have to filter out empty ones.
-                                       (swap! org-id->org update-in [selected :og-email->email] dissoc og-email)))
+                                                   (swap! org-id->org update-in [selected :og-email->email] dissoc og-email)))
                   :on-change-email-name
                   (fn [og-email]
                     (fn [e]
@@ -141,7 +140,7 @@
                                 {}))
                           invalid? (->> checked-og-email->email vals (some :invalid?))]
                       (if invalid?
-                        (swap! org-id->org assoc [selected :og-email->email] checked-og-email->email)
+                        (swap! org-id->org assoc-in [selected :og-email->email] checked-og-email->email)
                         (go
                           (let [unsaved-email-domains (->> checked-og-email->email
                                                            vals
@@ -165,7 +164,7 @@
                                            (-> o
                                                (assoc-in [org-id :org-name] unsaved-org-name)
                                                (assoc-in [org-id :email-domains] unsaved-email-domains))))
-                                  (let [new-name? (not= org-name unsaved-org-name)
+                                  (let [new-name?  (not= org-name unsaved-org-name)
                                         new-email? (not= email-domains unsaved-email-domains)]
                                     (when new-name? (toast-message! (str "Updated Organization Name : " unsaved-org-name)))
                                     (when new-email? (toast-message! (str "Updated Domain emails: " unsaved-email-domains))))))))))))
@@ -175,5 +174,5 @@
                            assoc-in
                            [selected :unsaved-org-name]
                            (.-value (.-target e))))})]
-              [um/main {:users (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
+              [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                         :on-click-apply-update-users on-click-apply-update-users}])])])})))

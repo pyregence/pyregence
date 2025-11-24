@@ -56,7 +56,7 @@
         [email-domain-cmpt {:email     email
                             :on-change (on-change og-email)}]
         (when invalid?
-          [:p "invalid!"])]
+          [:p {:style {:color "red"}} "Invalid domain"])]
        [buttons/delete {:on-click (on-delete og-email)}]])]])
 
 (defn- organization-settings
