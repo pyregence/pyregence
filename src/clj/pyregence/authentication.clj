@@ -685,6 +685,13 @@
 ;;; Access Control
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn get-current-user-name-by-email
+  [{:keys [user-email]}]
+  (if-let [user-name (sql-primitive (call-sql "get_user_name_by_email" user-email))]
+    (data-response {:user-name user-name})
+    ;; TODO is there a better way to handle failure here, why pass an empty string?
+    (data-response "" {:status 403})))
+
 (defn get-user-match-drop-access [session]
   (let [{:keys [user-id match-drop-access?]} session]
     (if match-drop-access?

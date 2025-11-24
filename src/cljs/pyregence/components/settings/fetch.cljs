@@ -36,3 +36,12 @@
         ;;TODO toast message probably shouldnt be in this ns
         (toast-message! (str "The user " new-name " with the email " email  " has been updated."))
         (toast-message! (:body res))))))
+
+(defn get-user-name!
+  []
+  (go
+    ;; TODO is there a function that just assumes the body succeeds and will pull
+    ;; data from it? If so use that here.
+    (:user-name
+     (edn/read-string
+      (:body (<! (u-async/call-clj-async! "get-user-name-by-email")))))))

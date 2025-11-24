@@ -8,6 +8,7 @@
    [pyregence.components.settings.email                 :as email]
    [pyregence.components.settings.fetch                 :refer [get-orgs!
                                                                 get-users!
+                                                                get-user-name!
                                                                 update-org-user!]]
    [pyregence.components.settings.nav-bar               :as nav-bar]
    [pyregence.components.settings.organization-settings :as os]
@@ -41,19 +42,19 @@
 
 (defn root-component
   "The root component of the /account-settings page."
-  [{:keys [user-role user-name]}]
+  [{:keys [user-role]}]
   (let [org-id->org  (r/atom nil)
+        user-name    (r/atom nil)
         users        (r/atom nil)
-        selected-log (r/atom ["Account Settings"])
-        user-name    (r/atom user-name)]
+        selected-log (r/atom ["Account Settings"])]
     (r/create-class
      {:display-name "account-settings"
       :component-did-mount
       #(go
          (reset! users (<! (get-users! user-role)))
+         (reset! user-name (<! (get-user-name!)))
          (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role)))))
       :reagent-render
-      ;; TODO we move the user-name from the session to the atom so it will survive tab changes.
       (fn [{:keys [user-role user-email]}]
         [:div
          {:style {:height         "100%"
