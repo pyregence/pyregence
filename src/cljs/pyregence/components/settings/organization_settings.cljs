@@ -66,11 +66,17 @@
            on-delete-email
            on-click-save-changes
            unsaved-org-name
+           unsaved-org-name-support-message
            og-email->email]}]
   [:<>
-   [input-labeled {:label     "Organization Name"
-                   :on-change on-change-organization-name
-                   :value     unsaved-org-name}]
+   [input-labeled
+    (cond->
+     {:label     "Organization Name"
+      :on-change on-change-organization-name
+      :value     unsaved-org-name}
+      unsaved-org-name-support-message
+      (assoc :support-message unsaved-org-name-support-message))]
+
    [email-domains-cmpt {:on-change on-change-email-name
                         :on-delete on-delete-email
                         :og-email->email og-email->email}]

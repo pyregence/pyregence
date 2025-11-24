@@ -64,21 +64,25 @@
    (when icon [icon :height "16px" :width "16px"])])
 
 (defn input-field
-  [{:keys [value on-change style]}]
-  [:input {:type      "text"
-           :class     (<class $standard-input-field)
-           :style     (merge {:weight        "500"
-                              :width         "100%"
-                              :max-width     "350px"
-                              :height        "50px"
-                              :font-size     "14px"
-                              :font-style    "normal"
-                              :line-weight   "22px"
-                              :padding       "14px"
-                              :border-radius "4px"} style)
-           :value     value
-           :pattern   ".+"
-           :on-change on-change}])
+  [{:keys [value on-change style support-message]}]
+  [:div {:style {:display "flex"
+                 :flex-direction "column"}}
+   [:input {:type      "text"
+            :class     (<class $standard-input-field)
+            :style     (merge {:weight        "500"
+                               :width         "100%"
+                               :max-width     "350px"
+                               :height        "50px"
+                               :font-size     "14px"
+                               :font-style    "normal"
+                               :line-weight   "22px"
+                               :padding       "14px"
+                               :border-radius "4px"} style)
+            :value     value
+            :pattern   ".+"
+            :on-change on-change}]
+   (when support-message
+     [:p {:style {:color "red"}} support-message])])
 
 (defn input-labeled
   [{:keys [label] :as m}]

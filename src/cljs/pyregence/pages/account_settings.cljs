@@ -101,7 +101,12 @@
                      selected                                                                          (if (= user-role "super_admin")
                                                                                                          (@org-id->org selected)
                                                                                                          (-> @org-id->org keys first))
-                     {:keys [unsaved-org-name org-id auto-add? auto-accept? org-name og-email->email]} (@org-id->org selected)
+                     {:keys [unsaved-org-name
+                             org-id auto-add?
+                             auto-accept?
+                             org-name
+                             og-email->email
+                             unsaved-org-name-support-message]} (@org-id->org selected)
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
                        ;;TODO check if this shouldn't happen in the db instead.
@@ -114,6 +119,8 @@
                  {:og-email->email             og-email->email
                   :users                       selected-orgs-users
                   :unsaved-org-name            unsaved-org-name
+                  :unsaved-org-name-support-message
+                  unsaved-org-name-support-message
                   :on-click-apply-update-users on-click-apply-update-users
                   :on-click-add-email          (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] {:email ""}))
                   :on-delete-email             (fn [og-email]
@@ -138,9 +145,17 @@
                                                      (when-not (email/valid-email-domain? email)
                                                        {:invalid? true}))))
                                 {}))
-                          invalid? (->> checked-og-email->email vals (some :invalid?))]
-                      (if invalid?
+                          ;;TODO unifiy the ways were collecting support/error messages here.
+                          invalid-email-domains? (->> checked-og-email->email vals (some :invalid?))
+                          organization-name-support-message (when (str/blank? unsaved-org-name) "Name cannot be blank.")]
+
+                      (cond
+                        invalid-email-domains?
                         (swap! org-id->org assoc-in [selected :og-email->email] checked-og-email->email)
+
+                        organization-name-support-message
+                        (swap! org-id->org assoc-in [selected :unsaved-org-name-support-message] organization-name-support-message)
+                        :else
                         (go
                           (let [unsaved-email-domains (->> checked-og-email->email
                                                            vals
