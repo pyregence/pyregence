@@ -5,14 +5,16 @@
    [clojure.string                                      :as str]
    [pyregence.components.messaging                      :refer [toast-message!]]
    [pyregence.components.settings.account-settings      :as as]
+   [pyregence.components.settings.email                 :as email]
    [pyregence.components.settings.fetch                 :refer [get-orgs!
-                                                                get-users!]]
+                                                                get-users!
+                                                                update-org-user!]]
    [pyregence.components.settings.nav-bar               :as nav-bar]
    [pyregence.components.settings.organization-settings :as os]
    [pyregence.components.settings.unaffilated-members   :as um]
-   [pyregence.components.settings.email                 :as email]
    [pyregence.styles                                    :as $]
    [pyregence.utils.async-utils                         :as u-async]
+   [pyregence.utils.dom-utils :refer [input-value]]
    [reagent.core                                        :as r]))
 
 (defn orgs->org->id
@@ -39,10 +41,11 @@
 
 (defn root-component
   "The root component of the /account-settings page."
-  [{:keys [user-role]}]
+  [{:keys [user-role user-name]}]
   (let [org-id->org  (r/atom nil)
         users        (r/atom nil)
-        selected-log (r/atom ["Account Settings"])]
+        selected-log (r/atom ["Account Settings"])
+        user-name    (r/atom user-name)]
     (r/create-class
      {:display-name "account-settings"
       :component-did-mount
@@ -50,13 +53,14 @@
          (reset! users (<! (get-users! user-role)))
          (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role)))))
       :reagent-render
-      (fn [{:keys [user-role user-email user-name]}]
+      ;; TODO we move the user-name from the session to the atom so it will survive tab changes.
+      (fn [{:keys [user-role user-email]}]
         [:div
          {:style {:height         "100%"
                   :display        "flex"
                   :flex-direction "column"
                   :font-family    "Roboto"}}
-        ;; rODO this mock `:nav` with actual upper nav bar, this will happen in another PR.
+        ;; TODO this mock `:nav` with actual upper nav bar, this will happen in another PR.
          [:nav  {:style {:display         "flex"
                          :justify-content "center"
                          :align-items     "center"
@@ -92,9 +96,13 @@
             (case selected-page
               "Account Settings"
               [as/main {:password-set-date "1/2/2020"
-                        :email-address     user-email
                         :role-type         user-role
-                        :user-name         user-name}]
+                        :user-name         @user-name
+                        :on-change-update-user-name (fn [e]
+                                                      (reset! user-name (input-value e)))
+                        :on-click-save-user-name (fn []
+                                                   (update-org-user! user-email @user-name))}]
+
               "Organization Settings"
               [os/main
                (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
