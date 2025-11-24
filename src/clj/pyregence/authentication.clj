@@ -10,7 +10,6 @@
 ;;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn- create-session-from-user-data
   "Creates a session response from user data returned by SQL functions.
    This is the single source of truth for session structure."
