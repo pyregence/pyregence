@@ -43,7 +43,6 @@
    [:get "/users-table"]                         {:handler (render-page "/users-table")
                                                   :auth-type :super-admin
                                                   :auth-action :redirect}
-
    [:get "/verify-2fa"]                          {:handler (render-page "/verify-2fa")}
    [:get "/verify-email"]                        {:handler (render-page "/verify-email")}
 
