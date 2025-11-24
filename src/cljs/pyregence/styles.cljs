@@ -52,6 +52,7 @@
      :orange                  (str "rgba(249, 104, 65, "  alpha ")")
      :primary-main-orange     (str "rgba(217, 139, 0, "  alpha ")")
      :primary-standard-orange (str "rgba(229, 177, 84, "  alpha ")")
+     :primary-teal            (str "rgba(53, 106, 114, "  alpha ")")
      :red                     (str "rgba(200, 0, 0, "     alpha ")")
      :soft-orange             (str "rgba(248, 232, 204, " alpha ")")
      :standard-orange         (str "rgba(229, 177, 84, "  alpha ")")

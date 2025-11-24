@@ -18,7 +18,7 @@
   (let [orgs (r/atom nil)
         selected-log (r/atom [:account-settings])]
     (r/create-class
-     {:display-name "account-sttings"
+     {:display-name "account-settings"
       :component-did-mount
       #(go
           (let [api-route (if (= user-role "super_admin")

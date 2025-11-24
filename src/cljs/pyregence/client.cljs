@@ -8,6 +8,7 @@
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.backup-codes       :as backup-codes]
             [pyregence.pages.dashboard          :as dashboard]
+            [pyregence.pages.disable-2fa        :as disable-2fa]
             [pyregence.pages.help               :as help]
             [pyregence.pages.login              :as login]
             [pyregence.pages.near-term-forecast :as ntf]
@@ -15,9 +16,9 @@
             [pyregence.pages.privacy-policy     :as privacy]
             [pyregence.pages.register           :as register]
             [pyregence.pages.reset-password     :as reset-password]
-            [pyregence.pages.settings           :as settings]
             [pyregence.pages.terms-of-use       :as terms]
-            [pyregence.pages.totp-setup         :as totp-setup]
+            [pyregence.pages.setup-2fa          :as setup-2fa]
+            [pyregence.pages.switch-2fa         :as switch-2fa]
             [pyregence.pages.users-table        :as users-table]
             [pyregence.pages.verify-2fa         :as verify-2fa]
             [pyregence.pages.verify-email       :as verify-email]
@@ -34,14 +35,15 @@
    "/admin"              admin/root-component
    "/backup-codes"       backup-codes/root-component
    "/dashboard"          dashboard/root-component
+   "/disable-2fa"        disable-2fa/root-component
    "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/login"              login/root-component
    "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
    "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
    "/register"           register/root-component
    "/reset-password"     reset-password/root-component
-   "/settings"           settings/root-component
-   "/totp-setup"         totp-setup/root-component
+   "/setup-2fa"          setup-2fa/root-component
+   "/switch-2fa"         switch-2fa/root-component
    "/users-table"        users-table/root-component
    "/verify-2fa"         verify-2fa/root-component
    "/verify-email"       verify-email/root-component})

@@ -22,6 +22,12 @@
    [:get "/backup-codes"]                        {:handler (render-page "/backup-codes")
                                                   :auth-type :member
                                                   :auth-action :redirect}
+   [:get "/disable-2fa"]                         {:handler (render-page "/disable-2fa")
+                                                  :auth-type :member
+                                                  :auth-action :redirect}
+   [:get "/switch-2fa"]                          {:handler (render-page "/switch-2fa")
+                                                  :auth-type :member
+                                                  :auth-action :redirect}
    [:get "/dashboard"]                           {:handler (render-page "/dashboard")
                                                   :auth-type #{:match-drop :member}
                                                   :auth-action :redirect}
@@ -33,10 +39,7 @@
    [:get "/privacy-policy"]                      {:handler (render-page "/privacy-policy")}
    [:get "/register"]                            {:handler (render-page "/register")}
    [:get "/reset-password"]                      {:handler (render-page "/reset-password")}
-   [:get "/settings"]                            {:handler (render-page "/settings")
-                                                  :auth-type :member
-                                                  :auth-action :redirect}
-   [:get "/totp-setup"]                          {:handler (render-page "/totp-setup")
+   [:get "/setup-2fa"]                           {:handler (render-page "/setup-2fa")
                                                   :auth-type :member
                                                   :auth-action :redirect}
    [:get "/terms-of-use"]                        {:handler (render-page "/terms-of-use")}
