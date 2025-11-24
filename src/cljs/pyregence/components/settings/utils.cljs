@@ -117,7 +117,8 @@
             :align-self     "stretch"
             :border-radius  "4px"
             :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
-            :background     ($/color-picker :white)}}
+            :background     ($/color-picker :white)
+            :overflow       "auto"}}
    [:p {:style {:color          ($/color-picker :black)
                 :font-size      "14px"
                 :font-style     "normal"
