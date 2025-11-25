@@ -106,6 +106,7 @@
          (for [opt  options
                :let [checked? (= @checked opt)]]
            [:div {:key   opt
+                  :on-click #(reset! checked opt)
                   :style {:display        "flex"
                           :align-items    "center"
                           :gap            "12px"
@@ -113,7 +114,6 @@
                           :flex-direction "row"}}
             [:input {:type      "checkbox"
                      :checked   checked?
-                     :on-change #(reset! checked opt)
                      :style
                      (merge
                       {:appearance "none"
