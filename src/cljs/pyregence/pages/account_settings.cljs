@@ -115,6 +115,7 @@
                              auto-accept?
                              org-name
                              og-email->email
+                             auto-accept?
                              unsaved-org-name-support-message]} (@org-id->org selected)
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
@@ -197,6 +198,12 @@
                     (swap! org-id->org
                            assoc-in
                            [selected :unsaved-org-name]
-                           (.-value (.-target e))))})]
+                           (.-value (.-target e))))
+                  :auto-accept? auto-accept?
+                  :on-change-auto-accept-user-as-org-member
+                  #(swap! org-id->org update-in [selected :auto-accept?] not)})]
+
               [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                         :on-click-apply-update-users on-click-apply-update-users}])])])})))
+
+(not nil)
