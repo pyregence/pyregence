@@ -198,5 +198,7 @@
                            assoc-in
                            [selected :unsaved-org-name]
                            (.-value (.-target e))))})]
-              [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
+              [um/main {:users                       (filter (fn [{:keys [user-role]}]
+                                                               ;; TODO consider using the roles var in roles.cljs
+                                                               (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                         :on-click-apply-update-users on-click-apply-update-users}])])])})))
