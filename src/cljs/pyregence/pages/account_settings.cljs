@@ -108,7 +108,7 @@
               [os/main
                (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
                      selected                                                                          (if (= user-role "super_admin")
-                                                                                                         (@org-id->org selected)
+                                                                                                         selected
                                                                                                          (-> @org-id->org keys first))
                      {:keys [unsaved-org-name
                              org-id auto-add?
