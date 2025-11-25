@@ -1,23 +1,14 @@
 (ns pyregence.components.settings.account-settings
   (:require
-   [clojure.core.async                    :refer [<! go]]
    [clojure.string                        :as str]
-   [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons]
    [pyregence.components.settings.utils   :refer [card font-styles
-                                                  text-labeled
-                                                  main-styles
-                                                  input-labeled]]
-   [pyregence.utils.async-utils           :as u-async]
-   [pyregence.utils.dom-utils             :refer [input-value]]
-   [reagent.core                          :as r]))
+                                                  input-labeled main-styles
+                                                  text-labeled]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; TODO copied from admin.cljs, so either share that logic or deprecate admin.cljs eventually.
-
 
 (defn- role-type->label
   [role-type]

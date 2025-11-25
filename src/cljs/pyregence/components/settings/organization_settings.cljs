@@ -3,10 +3,9 @@
    [pyregence.components.settings.buttons     :as buttons]
    [pyregence.components.settings.users-table :refer [table-with-buttons]]
    [pyregence.components.settings.utils       :refer [card input-field
-                                                  input-labeled label-styles
-                                                  main-styles]]
-   [pyregence.styles                          :as $]
-   [reagent.core                              :as r]))
+                                                      input-labeled label-styles
+                                                      main-styles]]
+   [pyregence.styles                          :as $]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components

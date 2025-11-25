@@ -150,10 +150,8 @@
                           :outline      "none"}
             :on-change on-change}]])
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; db functions
-;; TODO consider a better organization then this.
+;; display functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn db->display

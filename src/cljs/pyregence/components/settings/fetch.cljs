@@ -1,11 +1,10 @@
 (ns pyregence.components.settings.fetch
   (:require
-   [clojure.core.async          :refer [<! go]]
-   [clojure.edn                 :as edn]
+   [clojure.core.async             :refer [<! go]]
+   [clojure.edn                    :as edn]
    [pyregence.components.messaging :refer [toast-message!]]
-   [pyregence.utils.async-utils :as u-async]))
+   [pyregence.utils.async-utils    :as u-async]))
 
-;; TODO consider making 1 api call to get all the data...
 (defn get-users! [user-role]
   (go
     (let [route (if (= user-role "super_admin") "get-all-users" "get-org-member-users")
@@ -25,7 +24,6 @@
         (->> (:body response)
              (edn/read-string))
         {}))))
-
 
 (defn update-org-user!
   "Updates user identified by their `email` to have the `new-name`. Then makes a toast."
