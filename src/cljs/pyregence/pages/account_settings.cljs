@@ -112,7 +112,6 @@
                                  (-> @org-id->org keys first))
                      {:keys [unsaved-org-name
                              org-id auto-add?
-                             auto-accept?
                              org-name
                              og-email->email
                              auto-accept?
