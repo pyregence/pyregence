@@ -95,26 +95,40 @@
   [{:keys [options on-click-apply]}]
   (r/with-let [checked (r/atom nil)]
     (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
-      [:div {:style {:display "flex"
-                     :width "100%"
-                     :border border-styles
-                     :border-radius "4px"
+      [:div {:style {:display        "flex"
+                     :width          "100%"
+                     :border         border-styles
+                     :border-radius  "4px"
                      :flex-direction "column"}}
-       [:div {:style {:display "flex"
+       [:div {:style {:display        "flex"
                       :flex-direction "column"}}
         (doall
-         (for [opt options]
-           [:div {:key opt
-                  :style {:display "flex"
-                          :align-items "center"
-                          :gap "12px"
-                          :padding "14px 12px 14px 14px"
+         (for [opt  options
+               :let [checked? (= @checked opt)]]
+           [:div {:key   opt
+                  :style {:display        "flex"
+                          :align-items    "center"
+                          :gap            "12px"
+                          :padding        "14px 12px 14px 14px"
                           :flex-direction "row"}}
-            ;;TODO the checkbox is supposed to be a circle
-            [:input {:type "checkbox"
-                     :checked (= @checked opt)
-                     :on-change #(reset! checked opt)}]
-           ;;TODO shouldn't have to reset the font stuff why is this coming from the body?
+            [:input {:type      "checkbox"
+                     :checked   checked?
+                     :on-change #(reset! checked opt)
+                     :style
+                     (merge
+                      {:appearance "none"
+                       :width "18px"
+                       :height "18px"
+                       :border-radius "50%"
+                       :border "2px solid #555"
+                       :vertical-align "middle"
+                       :position "relative"}
+                      (if checked?
+                        {:background "#555"
+                         :boxShadow "inset 0 0 0 4px white"}
+                        {:background "white"
+                         :boxShadow "none"}))}]
+            ;;TODO shouldn't have to reset the font stuff why is this coming from the body?
             [:label {:style {:color "black"
                              :font-weight "normal"}}
              (db->display opt)]]))]
