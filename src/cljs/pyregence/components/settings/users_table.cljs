@@ -78,6 +78,7 @@
     [:> AgGridReact
      {:onGridReady                (fn [params] (reset! grid-api (aget params "api")))
       :rowSelection               #js {:mode "multiRow"}
+      :domLayout                  "autoHeight"
       :pagination                 true
       :paginationPageSize         25
       :paginationPageSizeSelector #js [25 50 100]
