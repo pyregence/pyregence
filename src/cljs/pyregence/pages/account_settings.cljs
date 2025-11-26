@@ -15,7 +15,7 @@
    [pyregence.components.settings.unaffilated-members   :as um]
    [pyregence.styles                                    :as $]
    [pyregence.utils.async-utils                         :as u-async]
-   [pyregence.utils.dom-utils :refer [input-value]]
+   [pyregence.utils.dom-utils                           :refer [input-value]]
    [reagent.core                                        :as r]))
 
 (defn orgs->org->id
