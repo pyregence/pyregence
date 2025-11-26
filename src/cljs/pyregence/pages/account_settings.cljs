@@ -15,7 +15,7 @@
    [pyregence.components.settings.unaffilated-members   :as um]
    [pyregence.styles                                    :as $]
    [pyregence.utils.async-utils                         :as u-async]
-   [pyregence.utils.dom-utils :refer [input-value]]
+   [pyregence.utils.dom-utils                           :refer [input-value]]
    [reagent.core                                        :as r]))
 
 (defn orgs->org->id
@@ -191,7 +191,7 @@
                                   (let [new-name?  (not= org-name unsaved-org-name)
                                         new-email? (not= email-domains unsaved-email-domains)]
                                     (when new-name? (toast-message! (str "Updated Organization Name : " unsaved-org-name)))
-                                    (when new-email? (toast-message! (str "Updated Domain emails: " unsaved-email-domains))))))))))))
+                                    (when new-email? (toast-message! (str "Updated Email Domains: " unsaved-email-domains))))))))))))
                   :on-change-organization-name
                   (fn [e]
                     (swap! org-id->org
