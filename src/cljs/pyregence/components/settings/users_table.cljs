@@ -8,7 +8,7 @@
    [pyregence.components.settings.buttons :as buttons]
    [pyregence.components.settings.roles   :as roles]
    [pyregence.components.settings.status  :as status]
-   [pyregence.components.settings.utils   :refer [search-cmpt db->display]]
+   [pyregence.components.settings.utils   :refer [db->display search-cmpt]]
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]
    [reagent.core                          :as r]))
@@ -72,16 +72,17 @@
 
 (defn table
   [grid-api users]
-  [:div {:style {:height "700px"
+  [:div {:style {:height "100%"
                  :width  "100%"}}
    [:div {:style {:height "100%" :width "100%"}}
     [:> AgGridReact
      {:onGridReady                (fn [params] (reset! grid-api (aget params "api")))
       :rowSelection               #js {:mode "multiRow"}
+      :domLayout                  "autoHeight"
       :pagination                 true
       :paginationPageSize         25
       :paginationPageSizeSelector #js [25 50 100]
-      :defaultColDef              #js {:unSortIcon true} ;; always show sort icons
+      :defaultColDef              #js {:unSortIcon true :flex 1} ;; always show sort icons
       :enableCellTextSelection    true
       :rowData                    (clj->js users)
       :columnDefs
@@ -92,7 +93,7 @@
 
 ;;TODO consider decoupling this from roles and moving into buttons
 (defn drop-down
-  [{:keys [options on-click-apply]}]
+  [{:keys [options on-click-apply opt->display]}]
   (r/with-let [checked (r/atom nil)]
     (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
       [:div {:style {:display        "flex"
@@ -131,15 +132,16 @@
             ;;TODO shouldn't have to reset the font stuff why is this coming from the body?
             [:label {:style {:color       "black"
                              :font-weight "normal"}}
-             (db->display opt)]]))]
+             (opt->display opt)]]))]
        [:div {:style {:border-top border-styles
                       :padding    "10px 12px"}}
-        ;; TODO [Important!] This needs to update the table with the changes and emit a toast.
         [buttons/primary {:text     "Apply"
                           :on-click (on-click-apply @checked)}]]])))
 
 (defn table-with-buttons
   [{:keys [users on-click-apply-update-users]}]
+  ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
+  ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
                grid-api           (r/atom nil)
                search             (r/atom nil)]
@@ -173,9 +175,18 @@
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database
          :role   [drop-down {:options        roles/roles
-                             :on-click-apply (on-click-apply update-users-roles)}]
+                             :opt->display   db->display
+                             :on-click-apply (on-click-apply
+                                               update-users-roles
+                                               "Role"
+                                               db->display)}]
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
+         ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
          :status [drop-down {:options        status/statuses
-                             :on-click-apply (on-click-apply update-users-status)}]
+                             :opt->display   status/status->display
+                             :on-click-apply (on-click-apply
+                                               update-users-status
+                                               "Status"
+                                               status/status->display)}]
          nil)
        [table grid-api users]])))
