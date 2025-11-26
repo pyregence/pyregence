@@ -1,9 +1,11 @@
 (ns pyregence.components.settings.add-user
-  (                                       :require
+  (:require
    [clojure.core.async                    :refer [<! go]]
    [herb.core                             :refer [<class]]
-   [pyregence.components.settings.buttons :as buttons]
+   [pyregence.components.settings.buttons :as buttons :refer [$drop-down-styles
+                                                              $on-hover-gray]]
    [pyregence.components.settings.roles   :as roles]
+   [pyregence.components.settings.utils   :as utils]
    [pyregence.components.svg-icons        :as svg]
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]
@@ -71,13 +73,36 @@
                             :display "flex"
                             :justify-content "start"
                             :width "100%"}}
-           (roles/role->display opt)]]))]]))
+           (utils/db->display opt)]]))]]))
+
+;;TODO try to merge this back into buttons ns, it was changed to gird and we assoced in a width.
+(defn ghost-drop-down
+  [{:keys [text class on-click selected?]
+    :or   {class (<class #($on-hover-gray (assoc $drop-down-styles :width "100%")))}}]
+  [:button
+   {:class class :on-click on-click}
+   [:div {:style {:display               "grid"
+                  :grid-template-columns "4fr 1fr"
+                  :gap                   "8px"
+                  :height                "100%"
+                  :width                 "100%"}}
+    [:span {:style {:padding "12px 14px"}} text]
+    [:div {:style
+           {:display         "flex"
+            :align-items     "center"
+            :justify-content "center"
+            :border-left     (str "2px solid " ($/color-picker :primary-standard-orange))}}
+     (if-not selected?
+       ;;TODO these are supposed to be black triangles
+       [svg/arrow-down]
+       [svg/arrow-up])]]])
 
 (defn select-user-role
   [{:keys [role on-click on-click-role selected?]}]
   [:div
-   [buttons/ghost-drop-down {:text role
-                             :on-click on-click}]
+   [:div
+    [ghost-drop-down {:text role
+                      :on-click on-click}]]
    [:div {:style {:display (if selected? "block" "none")
                   :background "white"
                   :position "absolute"}}
@@ -111,7 +136,7 @@
                       ;; TODO this `grid-template-columns` choice might need to double checked.
                       ;; TODO the user role box ideally would be the same size no matter the text, which means
                       ;; it has to be the text size of the largest option...
-                        :grid-template-columns "1fr auto auto"}}
+                        :grid-template-columns "1fr 250px auto"}}
           [:p {:style {:margin-bottom "0px"}} "Email Address"]
           [:p {:style {:margin-bottom "0px"}} "User Role"]
         ;;NOTE Left blank on purpose
@@ -126,7 +151,7 @@
                                      :on-change (fn [e]
                                                   (let [email (.-value (.-target e))]
                                                     (swap! id->user assoc-in [id :email] email)))}]
-               [select-user-role {:role (roles/role->display role)
+               [select-user-role {:role (utils/db->display role)
                                   :selected? (= @selected-id id)
                                   :on-click-role (fn [new-role]
                                                  ;;TODO his needs to close dialog box
@@ -184,8 +209,7 @@
      ;; The dialog element with a ref that stores the DOM node
      [:dialog {:ref #(reset! dialog-elem %)}
       [:div
-       [invite-modal {:on-click-close-dialog #(.close @dialog-elem)}]
-       [:p "This is the dialog."]]]
+       [invite-modal {:on-click-close-dialog #(.close @dialog-elem)}]]]
      ;; Button that shows the dialog modally
      [buttons/add {:text "Add A New User"
                    :on-click #(.showModal @dialog-elem)}]]))
