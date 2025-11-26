@@ -99,6 +99,7 @@
               [as/main {:password-set-date "1/2/2020"
                         :role-type         user-role
                         :user-name         @user-name
+                        :email-address     user-email
                         :on-change-update-user-name (fn [e]
                                                       (reset! user-name (input-value e)))
                         :on-click-save-user-name (fn []
