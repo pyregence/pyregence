@@ -135,7 +135,6 @@
              (opt->display opt)]]))]
        [:div {:style {:border-top border-styles
                       :padding    "10px 12px"}}
-        ;; TODO [Important!] This needs to update the table with the changes and emit a toast.
         [buttons/primary {:text     "Apply"
                           :on-click (on-click-apply @checked)}]]])))
 
