@@ -81,7 +81,7 @@
       :pagination                 true
       :paginationPageSize         25
       :paginationPageSizeSelector #js [25 50 100]
-      :defaultColDef              #js {:unSortIcon true} ;; always show sort icons
+      :defaultColDef              #js {:unSortIcon true :flex 1} ;; always show sort icons
       :enableCellTextSelection    true
       :rowData                    (clj->js users)
       :columnDefs
