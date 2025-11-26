@@ -77,8 +77,9 @@
                selected         (-> @selected-log last)
                selected-page    (selected->tab-id selected)
                on-click-apply-update-users
+
                (fn [get-selected-users-emails-fn]
-                 (fn [update-user-info-by-email]
+                 (fn [update-user-info-by-email opt-type opt->display]
                    (fn [new-user-info]
                      (fn []
                        (let [emails (get-selected-users-emails-fn)]
@@ -88,7 +89,9 @@
                          ;; first, we have the update function return the users, this seems ideal. the second is,
                          ;; we get the success from the update function and we then poll the users.
                          (js/setTimeout (fn [] (go (reset! users (<! (get-users! user-role))))) 3000)
-                         (toast-message! (str (str/join ", " emails)  " updated!")))))))]
+                         (toast-message!
+                           ;;TODO make this handle plural case e.g roles and statues.
+                          (str (str/join ", " emails)  " updated " opt-type " to " (opt->display new-user-info) ".")))))))]
            [:div {:style {:display        "flex"
                           :flex-direction "row"
                           :height         "100%"

@@ -8,7 +8,7 @@
    [pyregence.components.settings.buttons :as buttons]
    [pyregence.components.settings.roles   :as roles]
    [pyregence.components.settings.status  :as status]
-   [pyregence.components.settings.utils   :refer [search-cmpt db->display]]
+   [pyregence.components.settings.utils   :refer [db->display search-cmpt]]
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]
    [reagent.core                          :as r]))
@@ -176,11 +176,17 @@
          ;; TODO ideally these roles should be queried from the database
          :role   [drop-down {:options        roles/roles
                              :opt->display   db->display
-                             :on-click-apply (on-click-apply update-users-roles)}]
+                             :on-click-apply (on-click-apply
+                                               update-users-roles
+                                               "Role"
+                                               db->display)}]
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
          ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
          :status [drop-down {:options        status/statuses
                              :opt->display   status/status->display
-                             :on-click-apply (on-click-apply update-users-status)}]
+                             :on-click-apply (on-click-apply
+                                               update-users-status
+                                               "Status"
+                                               status/status->display)}]
          nil)
        [table grid-api users]])))
