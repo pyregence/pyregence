@@ -13,7 +13,6 @@
 ;;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn- create-session-from-user-data
   "Creates a session response from user data returned by SQL functions.
    This is the single source of truth for session structure."
@@ -641,7 +640,8 @@
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
 
-;;TODO ideally this would be handled by the database.
+;;TODO ideally this would be handled by the database but we should at the very least have a cljc file
+;;for the fe and be to share.
 (defn- can-upgrade-role?
   "True if `from` role is greater then `to`"
   [from to]
@@ -687,6 +687,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Access Control
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-current-user-name-by-email
+  [{:keys [user-email]}]
+  (if-let [user-name (sql-primitive (call-sql "get_user_name_by_email" user-email))]
+    (data-response {:user-name user-name})
+    ;; TODO is there a better way to handle failure here, why pass an empty string?
+    (data-response "" {:status 403})))
 
 (defn get-user-match-drop-access [session]
   (let [{:keys [user-id match-drop-access?]} session]
@@ -807,15 +814,20 @@
 (defn get-org-member-users
   "Returns a vector of member users for the given org-id, if the user is an
    admin of the given org."
-  [_ org-id]
-  (->> (call-sql "get_org_member_users" org-id)
-       (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
-               {:user-id           user_id
-                :full-name         full_name
-                :email             email
-                :user-role         user_role
-                :membership-status org_membership_status}))
-       (data-response)))
+  ([session]
+   ;;TODO passing nil here his hacky but its to support admin.cljs which was previously ignoring
+   ;; the session and the new setting page which calls get-org-member-users correct with just the session
+   ;; in the end will probably need to different api calls.
+   (get-org-member-users session nil))
+  ([{:keys [organization-id user-role]} org-id]
+   (->> (call-sql "get_org_member_users" (if (= user-role "super_admin") org-id organization-id))
+        (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
+                {:user-id           user_id
+                 :full-name         full_name
+                 :email             email
+                 :user-role         user_role
+                 :membership-status org_membership_status}))
+        (data-response))))
 
 (defn get-all-users
   "Returns a vector of all users in the DB."

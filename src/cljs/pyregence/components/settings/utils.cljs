@@ -1,5 +1,6 @@
 (ns pyregence.components.settings.utils
   (:require
+   [clojure.string                 :as str]
    [herb.core                      :refer [<class]]
    [pyregence.components.svg-icons :as svg]
    [pyregence.styles               :as $]))
@@ -25,6 +26,7 @@
    :align-items    "flex-start"
    :padding        "40px 160px"
    :flex           "1 0 0"
+   :overflow       "hidden"
    :gap            "24px"})
 
 (def label-styles
@@ -62,20 +64,25 @@
    (when icon [icon :height "16px" :width "16px"])])
 
 (defn input-field
-  [{:keys [value on-change]}]
-  [:input {:type      "text"
-           :class     (<class $standard-input-field)
-           :style     {:weight        "500"
-                       :width         "100%"
-                       :max-width     "350px"
-                       :height        "50px"
-                       :font-size     "14px"
-                       :font-style    "normal"
-                       :line-weight   "22px"
-                       :padding       "14px"
-                       :border-radius "4px"}
-           :value     value
-           :on-change on-change}])
+  [{:keys [value on-change style support-message]}]
+  [:div {:style {:display "flex"
+                 :flex-direction "column"}}
+   [:input {:type      "text"
+            :class     (<class $standard-input-field)
+            :style     (merge {:weight        "500"
+                               :width         "100%"
+                               :max-width     "350px"
+                               :height        "50px"
+                               :font-size     "14px"
+                               :font-style    "normal"
+                               :line-weight   "22px"
+                               :padding       "14px"
+                               :border-radius "4px"} style)
+            :value     value
+            :pattern   ".+"
+            :on-change on-change}]
+   (when support-message
+     [:p {:style {:color "red"}} support-message])])
 
 (defn input-labeled
   [{:keys [label] :as m}]
@@ -110,7 +117,8 @@
             :align-self     "stretch"
             :border-radius  "4px"
             :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
-            :background     ($/color-picker :white)}}
+            :background     ($/color-picker :white)
+            :overflow       "auto"}}
    [:p {:style {:color          ($/color-picker :black)
                 :font-size      "14px"
                 :font-style     "normal"
@@ -141,3 +149,14 @@
                           :width        "100%"
                           :outline      "none"}
             :on-change on-change}]])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; display functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn db->display
+  [db-cell-name]
+  (->>
+   (str/split db-cell-name #"_")
+   (map str/capitalize)
+   (str/join " ")))

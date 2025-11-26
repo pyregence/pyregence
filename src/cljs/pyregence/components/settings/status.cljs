@@ -1,13 +1,3 @@
-(ns pyregence.components.settings.status
-  (:require
-   [clojure.string :as str]))
+(ns pyregence.components.settings.status)
 
-(def statuses
-  ["accepted" "pending" "none"])
-
-(defn status->display
-  [status]
-  (->>
-   (str/split status #"_")
-   (map str/capitalize)
-   (str/join " ")))
+(def statuses ["accepted" "pending" "none"])

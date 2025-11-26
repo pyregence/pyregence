@@ -3,20 +3,27 @@
    [pyregence.components.settings.buttons     :as buttons]
    [pyregence.components.settings.users-table :refer [table-with-buttons]]
    [pyregence.components.settings.utils       :refer [card input-field
-                                                  input-labeled label-styles
-                                                  main-styles]]
-   [pyregence.styles                          :as $]
-   [reagent.core                              :as r]))
+                                                      input-labeled label-styles
+                                                      main-styles]]
+   [pyregence.styles                          :as $]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;TODO should be "domain" not "email"
 (defn- email-domain-cmpt
   [{:keys [email on-change] :as m}]
-  [input-field (assoc m
-                      :value email
-                      :on-change on-change)])
+  ;;TODO This position stuff feels hacky!
+  [:div {:style {:position "relative"}}
+   [:span {:style {:position "absolute"
+                   :color    "grey"
+                   :left     "3px"
+                   :top      "12px"}} "@"]
+   [input-field (assoc m
+                       :style {:padding "14px 14px 14px 20px"}
+                       :value email
+                       :on-change on-change)]])
 
 ;;TODO consider sharing styles with labeled-input cmpt
 (defn- email-domains-cmpt
@@ -36,13 +43,19 @@
    [:div {:style {:display        "flex"
                   :flex-direction "column"
                   :gap            "8px"}}
-    (for [[og-email email] og-email->email]
+    (for [[og-email {:keys [email invalid?]}] og-email->email]
       [:div {:key   og-email
              :style {:display        "flex"
                      :flex-direction "row"
                      :gap            "8px"}}
-       [email-domain-cmpt {:email     email
-                           :on-change (on-change og-email)}]
+
+       [:div {:style {:display "flex"
+                      :flex-direction "column"
+                      :gap "3px"}}
+        [email-domain-cmpt {:email     email
+                            :on-change (on-change og-email)}]
+        (when invalid?
+          [:p {:style {:color "red"}} "Invalid domain"])]
        [buttons/delete {:on-click (on-delete og-email)}]])]])
 
 (defn- organization-settings
@@ -52,11 +65,17 @@
            on-delete-email
            on-click-save-changes
            unsaved-org-name
+           unsaved-org-name-support-message
            og-email->email]}]
   [:<>
-   [input-labeled {:label     "Organization Name"
-                   :on-change on-change-organization-name
-                   :value     unsaved-org-name}]
+   [input-labeled
+    (cond->
+     {:label     "Organization Name"
+      :on-change on-change-organization-name
+      :value     unsaved-org-name}
+      unsaved-org-name-support-message
+      (assoc :support-message unsaved-org-name-support-message))]
+
    [email-domains-cmpt {:on-change on-change-email-name
                         :on-delete on-delete-email
                         :og-email->email og-email->email}]

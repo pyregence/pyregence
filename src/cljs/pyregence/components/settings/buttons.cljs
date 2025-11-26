@@ -25,8 +25,7 @@
   (assoc $primary-styles :background ($/color-picker :white)))
 
 (def $drop-down-styles
-  (assoc $ghost-styles
-         :padding "0px"))
+  (assoc $ghost-styles :padding "0px"))
 
 (defn- $on-hover-darken-orange
   [styles]
@@ -80,16 +79,6 @@
   [primary (assoc m :class
                   (<class #($on-hover-darken-orange $ghost-styles)))])
 
-(defn ghost-remove-user
-  [m]
-  [primary (assoc m
-                  :icon [:div {:style {:height "24px" :width "24px"}} [svg/trash-can-inner]]
-                  :class
-                  (<class #($on-hover-darken-red
-                            (assoc $ghost-styles
-                                   :color ($/color-picker :error-red)
-                                   :border (str "2px solid " ($/color-picker :error-red))))))])
-
 (defn ghost-drop-down
   [{:keys [text class on-click selected?]
     :or   {class (<class #($on-hover-gray $drop-down-styles))}}]
@@ -111,8 +100,7 @@
        [svg/arrow-down]
        [svg/arrow-up])]]])
 
-(defn add [m]
-  [primary (assoc m :icon [svg/add])])
+(defn add [m] [primary (assoc m :icon [svg/add])])
 
 (defn delete
   [{:keys [on-click]}]
