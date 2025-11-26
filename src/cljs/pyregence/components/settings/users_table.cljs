@@ -141,6 +141,8 @@
 
 (defn table-with-buttons
   [{:keys [users on-click-apply-update-users]}]
+  ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
+  ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
                grid-api           (r/atom nil)
                search             (r/atom nil)]
