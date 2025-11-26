@@ -2,6 +2,7 @@
   (:require
    [clojure.core.async                    :refer [<! go]]
    [herb.core                             :refer [<class]]
+   [pyregence.components.messaging :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons :refer [$drop-down-styles
                                                               $on-hover-gray]]
    [pyregence.components.settings.roles   :as roles]
@@ -106,14 +107,13 @@
    [:div {:style {:display (if selected? "block" "none")
                   :background "white"
                   :position "absolute"}}
-    [drop-down-options {:options roles/roles
-                        ;; DOING actually save to db on click
+    [drop-down-options {:options (roles/role->roles-below role)
+                        ;; TODO actually save to db on click
                         :on-click-role on-click-role}]]])
 
 (defn invite-modal
-  [{:keys [on-click-close-dialog users-role org-id]}]
-  ;;TODO role shouldnt be admin, it should be the highest role the user an promote to, so the users-role
-  (let [default-user {:email "" :role users-role}]
+  [{:keys [on-click-close-dialog user-role org-id]}]
+  (let [default-user {:email "" :role user-role}]
     (r/with-let [id->user (r/atom {1 default-user})
                  selected-id (r/atom nil)]
       (let [border (str "1px solid " ($/color-picker :neutral-soft-gray))]
@@ -154,7 +154,6 @@
                [select-user-role {:role (utils/db->display role)
                                   :selected? (= @selected-id id)
                                   :on-click-role (fn [new-role]
-                                                 ;;TODO his needs to close dialog box
                                                    (fn []
                                                      (swap! id->user assoc-in [id :role] new-role)
                                                      (reset! selected-id nil)))
@@ -162,6 +161,7 @@
              ;;TODO this needs to remove the item
                [:div {:on-click #(swap! id->user dissoc id)
                       :style {:cursor "pointer"
+                              :padding-right "20px"
                               ;; TODO adding marging is a hack because we can't align center, because
                               ;; when the invalid state hits it throws things off.
                               :margin-top "10px"}}
@@ -175,7 +175,11 @@
                         :flex-direction "row"
                         :gap "8px"
                         :justify-content "flex-end"
-                        :padding "16px 24px"
+                        :padding-top "24px"
+                        :padding-right "24px"
+                        ;;TODO this is large because of the drop down options, think of a better way.
+                        :padding-bottom "58px"
+                        :padding-left "24px"
                         :border-top border}}
           [buttons/ghost {:text "Cancel"
                           :on-click on-click-close-dialog}
@@ -186,30 +190,31 @@
                                               (swap! id->user
                                                      (fn [id->user]
                                                        (reduce-kv
-                                                        (fn [id->user id {:keys [email] :as user}]
-                                                          (assoc id->user id (assoc user :invalid-email? (not (valid-email? email)))))
-                                                        {}
-                                                        id->user)))
+                                                         (fn [id->user id {:keys [email] :as user}]
+                                                           (assoc id->user id (assoc user :invalid-email? (not (valid-email? email)))))
+                                                         {}
+                                                         id->user)))
                                               invalid-emails? (->> id->user
                                                                    vals
                                                                    (some :invalid-email?))]
                                           (when-not invalid-emails?
-                                            ;; TODO this will need to take the organization
-                                            (add-new-users! org-id (->> id->user vals (map #(dissoc % :invalid-email?)))))))
+                                            (add-new-users! org-id (->> id->user vals (map #(dissoc % :invalid-email?))))
+                                            ;;TODO better toast
+                                            (toast-message! "Invite Emails sent!")
+                                            ;; TODO this needs to update the client
+                                            ;; TODO this needs to do some light validations on the emails and report back
+                                            )))}]]]))))
 
-;; TODO this needs to do some light validations on the emails and report back
-                            ;; DOING this needs to update the db
-                            ;; TODO this needs to toast
-                            ;; TODO this needs to update the client
-                            }]]]))))
-
-(defn add-user-dialog []
+(defn add-user-dialog [{:keys [user-role]}]
   (r/with-let [dialog-elem (atom nil)]
     [:div
-     ;; The dialog element with a ref that stores the DOM node
-     [:dialog {:ref #(reset! dialog-elem %)}
-      [:div
-       [invite-modal {:on-click-close-dialog #(.close @dialog-elem)}]]]
-     ;; Button that shows the dialog modally
+     ;;TODO consider making the background darker with a pseudo background.
+     [:dialog {:ref #(reset! dialog-elem %)
+               :style {:border "none"
+                       :padding "0px"
+                       :border-radius "10px"}}
+      [:div {:style {:overflow "hidden"}}
+       [invite-modal {:on-click-close-dialog #(.close @dialog-elem)
+                      :user-role user-role}]]]
      [buttons/add {:text "Add A New User"
                    :on-click #(.showModal @dialog-elem)}]]))

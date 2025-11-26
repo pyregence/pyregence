@@ -5,10 +5,11 @@
    ["ag-grid-react"                       :refer [AgGridReact]]
    [clojure.core.async                    :as async :refer [<! go]]
    [goog.object                           :as goog]
+   [pyregence.components.settings.add-user :as add-user]
    [pyregence.components.settings.buttons :as buttons]
    [pyregence.components.settings.roles   :as roles]
    [pyregence.components.settings.status  :as status]
-   [pyregence.components.settings.utils   :refer [search-cmpt db->display]]
+   [pyregence.components.settings.utils   :refer [db->display search-cmpt]]
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]
    [reagent.core                          :as r]))
@@ -139,7 +140,7 @@
                           :on-click (on-click-apply @checked)}]]])))
 
 (defn table-with-buttons
-  [{:keys [users on-click-apply-update-users]}]
+  [{:keys [users on-click-apply-update-users user-role]}]
   (r/with-let [selected-drop-down (r/atom nil)
                grid-api           (r/atom nil)
                search             (r/atom nil)]
@@ -156,20 +157,24 @@
         {:style {:min-width "400px"}}
         [search-cmpt {:on-change on-change-search
                       :value     @search}]]
-       [:div {:style {:display        "flex"
+       [:div {:style {:display "flex"
                       :flex-direction "row"
-                      :gap            "16px"}}
-        [buttons/ghost-drop-down {:text      "Update User Role"
-                                  :selected? (= @selected-drop-down :role)
-                                  :on-click  #(update-dd :role)}]
-        [buttons/ghost-drop-down {:text      "Update User Status"
-                                  :selected? (= @selected-drop-down :status)
-                                  :on-click  #(update-dd :status)}]
+                      :width "100%"
+                      :gap "16px"
+                      :justify-content "space-between"}}
+        [:div {:style {:display        "flex"
+                       :flex-direction "row"
+                       :gap            "16px"}}
+         [buttons/ghost-drop-down {:text      "Update User Role"
+                                   :selected? (= @selected-drop-down :role)
+                                   :on-click  #(update-dd :role)}]
+         [buttons/ghost-drop-down {:text      "Update User Status"
+                                   :selected? (= @selected-drop-down :status)
+                                   :on-click  #(update-dd :status)}]
         ;; TODO add this back in when we get a more well defined acceptance criteria.
-        #_(when (:show-remove-user? m)
-            [buttons/ghost-remove-user {:text "Remove User"}])
-        ;;TODO add this back in when we get more well defined acceptance criteria.
-        #_[add-user/add-user-dialog]]
+         #_(when (:show-remove-user? m)
+             [buttons/ghost-remove-user {:text "Remove User"}])]
+        [add-user/add-user-dialog {:user-role user-role}]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database
          :role   [drop-down {:options        roles/roles

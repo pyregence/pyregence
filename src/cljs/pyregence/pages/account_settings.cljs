@@ -126,7 +126,8 @@
                                   ;;TODO this conditional should be based on the og-id or org-unique name
                                   (= organization-name org-name)
                                   (#{"organization_admin" "organization_member"} user-role))) @users))]
-                 {:og-email->email             og-email->email
+                 {:user-role user-role
+                  :og-email->email             og-email->email
                   :users                       selected-orgs-users
                   :unsaved-org-name            unsaved-org-name
                   :unsaved-org-name-support-message
@@ -199,7 +200,8 @@
                            assoc-in
                            [selected :unsaved-org-name]
                            (.-value (.-target e))))})]
-              [um/main {:users                       (filter (fn [{:keys [user-role]}]
+              [um/main {:user-role user-role
+                        :users                       (filter (fn [{:keys [user-role]}]
                                                                ;; TODO consider using the roles var in roles.cljs
                                                                (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                         :on-click-apply-update-users on-click-apply-update-users}])])])})))
