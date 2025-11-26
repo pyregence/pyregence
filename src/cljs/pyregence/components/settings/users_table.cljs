@@ -92,7 +92,7 @@
 
 ;;TODO consider decoupling this from roles and moving into buttons
 (defn drop-down
-  [{:keys [options on-click-apply]}]
+  [{:keys [options on-click-apply opt->display]}]
   (r/with-let [checked (r/atom nil)]
     (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
       [:div {:style {:display        "flex"
@@ -131,7 +131,7 @@
             ;;TODO shouldn't have to reset the font stuff why is this coming from the body?
             [:label {:style {:color       "black"
                              :font-weight "normal"}}
-             (db->display opt)]]))]
+             (opt->display opt)]]))]
        [:div {:style {:border-top border-styles
                       :padding    "10px 12px"}}
         ;; TODO [Important!] This needs to update the table with the changes and emit a toast.
@@ -173,9 +173,12 @@
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database
          :role   [drop-down {:options        roles/roles
+                             :opt->display   db->display
                              :on-click-apply (on-click-apply update-users-roles)}]
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
+         ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
          :status [drop-down {:options        status/statuses
+                             :opt->display   status/status->display
                              :on-click-apply (on-click-apply update-users-status)}]
          nil)
        [table grid-api users]])))
