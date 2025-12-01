@@ -49,14 +49,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn primary
-  [{:keys [text icon class on-click]
+  [{:keys [text icon class on-click disabled?]
     :or   {class (<class #($on-hover-darken-orange $primary-styles))}}]
   [:button
-   {:class class :on-click on-click}
-   [:div {:style {:display "flex"
-                  :gap     "8px"
-                  :height  "100%"
-                  :width   "100%"}}
+   {:class class
+    :on-click on-click
+    :disabled disabled?
+    :style (when disabled? {:opacity "0.5" :cursor "not-allowed"})}
+   [:div {:style {:display     "flex"
+                  :align-items "center"
+                  :gap         "8px"
+                  :height      "100%"
+                  :width       "100%"}}
     (when icon icon)
     [:span text]]])
 
@@ -82,3 +86,32 @@
             :on-click on-click}
    [:div {:style {:flex "0 0 auto"}}
     [svg/trash-can :height "50px" :width "50px"]]])
+
+(defn toggle
+  "Toggle switch with label."
+  [{:keys [on? label on-click]}]
+  [:button {:on-click on-click
+            :style    {:display     "flex"
+                       :align-items "center"
+                       :gap         "10px"
+                       :background  "transparent"
+                       :border      "none"
+                       :cursor      "pointer"
+                       :padding     "0"
+                       :font-family "inherit"
+                       :font-size   "14px"
+                       :color       ($/color-picker :neutral-black)}}
+   [:div {:style {:position      "relative"
+                  :width         "48px"
+                  :height        "24px"
+                  :background    ($/color-picker (if on? :primary-teal :neutral-soft-gray))
+                  :border-radius "12px"}}
+    [:div {:style {:position      "absolute"
+                   :top           "2px"
+                   :width         "20px"
+                   :height        "20px"
+                   :background    "white"
+                   :border-radius "50%"
+                   :right         (when on? "2px")
+                   :left          (when-not on? "2px")}}]]
+   [:span {:style {:font-weight "600"}} label]])

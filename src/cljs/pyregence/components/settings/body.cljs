@@ -1,6 +1,7 @@
 (ns pyregence.components.settings.body
   (:require
    [clojure.core.async                    :refer [<! go]]
+   [cljs.reader                           :as reader]
    [herb.core                             :refer [<class]]
    [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons]
@@ -67,13 +68,13 @@
   [{:keys [value on-change]}]
   [:input {:type      "text"
            :class     (<class $standard-input-field)
-           :style     {:weight        "500"
+           :style     {:font-weight   "500"
                        :width         "100%"
                        :max-width     "350px"
                        :height        "50px"
                        :font-size     "14px"
                        :font-style    "normal"
-                       :line-weight   "22px"
+                       :line-height   "22px"
                        :padding       "14px"
                        :border-radius "4px"}
            :value     value
@@ -95,9 +96,9 @@
                  :flex-direction "column"
                  :width          "100%"}}
    [:div {:style label-styles}
-    (let [styles {:font-size   "14px"
-                  :font-weight "500"
-                  :color       ($/color-picker :neutral-black)}]
+    (let [styles {:color       ($/color-picker :neutral-black)
+                  :font-size   "14px"
+                  :font-weight "500"}]
       [:div {:style {:display        "flex"
                      :flex-direction "row"
                      :width          "100%"
@@ -121,8 +122,7 @@
             :border-radius  "4px"
             :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
             :background     ($/color-picker :white)}}
-   ;; neutral-black
-   [:p {:style {:color          ($/color-picker :black)
+   [:p {:style {:color          ($/color-picker :neutral-black)
                 :font-size      "14px"
                 :font-style     "normal"
                 :font-weight    "700"
@@ -138,6 +138,112 @@
    [:p {:style (assoc font-styles :font-weight "400")} label]
    ;;TODO add toggle
    [:p "TOGGLE"]])
+
+(defonce security-state (r/atom {:error    false  ;; Error state
+                                 :loading  true   ;; Loading state
+                                 :settings nil    ;; User settings
+                                 :user     nil})) ;; User data
+
+(defn- fetch-user-settings! []
+  (go
+    (let [response (<! (u-async/call-clj-async! "get-current-user-settings"))]
+      (if (and (:success response) (:body response))
+        (let [parsed-body (reader/read-string (:body response))
+              settings (if (string? (:settings parsed-body))
+                         (try
+                           (reader/read-string (:settings parsed-body))
+                           (catch :default _ {}))
+                         (or (:settings parsed-body) {}))]
+          (swap! security-state assoc
+                 :error false
+                 :loading false
+                 :settings settings
+                 :user parsed-body))
+        (do
+          (toast-message! "Failed to load security settings")
+          (swap! security-state assoc
+                 :error true
+                 :loading false))))))
+
+(defn- security-2fa-enabled []
+  (let [{:keys [settings]} @security-state
+        two-factor (:two-factor settings)
+        is-totp? (= two-factor :totp)]
+    [:div {:style {:display        "flex"
+                   :flex-direction "column"
+                   :gap            "24px"}}
+     [:p {:style {:color       ($/color-picker :neutral-black)
+                  :font-size   "14px"
+                  :font-weight "400"
+                  :line-height "1.5"
+                  :margin      "0"}}
+      (str "Two-Factor Authentication is on via "
+           (if is-totp? "Authenticator App" "Email"))]
+     [buttons/toggle {:on?      true
+                      :label    "Turn Off"
+                      :on-click #(set! (.-location js/window)
+                                       (str "/disable-2fa?method=" (if is-totp? "totp" "email")))}]
+     [:div {:style {:display   "flex"
+                    :flex-wrap "wrap"
+                    :gap       "12px"}}
+      [buttons/ghost {:text     (if is-totp? "Switch to Email 2FA" "Switch to Authenticator")
+                      :on-click #(set! (.-location js/window)
+                                       (if is-totp? "/switch-2fa" "/setup-2fa?mode=switch"))}]
+      (when is-totp?
+        [buttons/ghost {:text     "View Backup Codes"
+                        :on-click #(set! (.-location js/window) "/backup-codes")}])]]))
+
+(defn- security-2fa-disabled []
+  [:div {:style {:display        "flex"
+                 :flex-direction "column"
+                 :gap            "24px"}}
+   [:p {:style {:color       ($/color-picker :neutral-black)
+                :font-size   "14px"
+                :font-weight "400"
+                :line-height "1.5"
+                :margin      "0"}}
+    "Enable Two Factor Authentication to secure your account. Each time you login you will need your password, and a verification code."]
+   [:div {:style {:display        "flex"
+                  :flex-direction "column"
+                  :gap            "12px"}}
+    [:p {:style {:color       ($/color-picker :neutral-black)
+                 :font-size   "14px"
+                 :font-weight "600"
+                 :margin      "0"}}
+     "Two-step verification is off"]
+    [buttons/ghost {:text     "Setup 2FA"
+                    :on-click #(set! (.-location js/window) "/setup-2fa")}]]])
+
+(defn- security-card []
+  (r/create-class
+   {:component-did-mount fetch-user-settings!
+    :reagent-render
+    (fn []
+      (let [{:keys [loading settings error]} @security-state
+            two-factor (:two-factor settings)]
+        [card {:title "MANAGE TWO FACTOR AUTHENTICATION (2FA)"
+               :children
+               (cond
+                 loading
+                 [:p {:style (assoc font-styles :font-weight "400")} "Loading..."]
+
+                 error
+                 [:div {:style {:display        "flex"
+                                :flex-direction "column"
+                                :gap            "12px"}}
+                  [:p {:style {:color       ($/color-picker :neutral-black)
+                               :font-size   "14px"
+                               :font-weight "400"
+                               :margin      "0"}}
+                   "Failed to load security settings. Please try again."]
+                  [buttons/ghost {:text     "Retry"
+                                  :on-click fetch-user-settings!}]]
+
+                 (or (= two-factor :totp) (= two-factor :email))
+                 [security-2fa-enabled]
+
+                 :else
+                 [security-2fa-disabled])}]))}))
 
 (defn- user-full-name
   [{:keys [user-name email-address]}]
@@ -179,6 +285,7 @@
                         ;; TODO add back in info tab when we get text that's associated with it.
                         #_#_:icon  svg/info-with-circle}]
            [user-full-name (select-keys user-info [:email-address :user-name])]]}]
+   [security-card]
    [card {:title "RESET MY PASSWORD"
           :children
           [:<>
