@@ -1,6 +1,7 @@
 (ns pyregence.components.settings.users-table
   (:require
    ["ag-grid-community"                   :refer [AllCommunityModule
+                                                  themeQuartz
                                                   ModuleRegistry]]
    ["ag-grid-react"                       :refer [AgGridReact]]
    [clojure.core.async                    :as async :refer [<! go]]
@@ -70,6 +71,28 @@
     (r/as-element
      [:span (db->display status)])))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Table components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def light-theme
+  (-> themeQuartz
+      (.withParams
+       #js {:backgroundColor                ($/color-picker :white)
+            :headerBackgroundColor          ($/color-picker :neutral-light-gray)
+            :headerTextColor                ($/color-picker :black)
+            :headerFontWeight               600
+            :rowHoverColor                  ($/color-picker :light-orange)
+            :selectedRowBackgroundColor     ($/color-picker :soft-orange)
+            :checkboxCheckedBackgroundColor ($/color-picker :primary-main-orange)
+            :checkboxCheckedBorderColor     ($/color-picker :light-orange)
+            :focusShadow                    "none"
+            :cellHorizontalPadding          12
+            :rowHeight                      62
+            :fontFamily                     "Roboto"
+            :fontSize                       14
+            :fontWeight                     400})))
+
 (defn table
   [grid-api users]
   [:div {:style {:height "100%"
@@ -79,6 +102,7 @@
      {:onGridReady                (fn [params] (reset! grid-api (aget params "api")))
       :rowSelection               #js {:mode "multiRow"}
       :domLayout                  "autoHeight"
+      :theme                      light-theme
       :pagination                 true
       :paginationPageSize         25
       :paginationPageSizeSelector #js [25 50 100]
