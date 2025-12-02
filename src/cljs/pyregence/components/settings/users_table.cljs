@@ -160,6 +160,8 @@
        [:div {:style {:border-top border-styles
                       :padding    "10px 12px"}}
         [buttons/primary {:text     "Apply"
+                          ;; TODO also disable if they haven't selected a user.
+                          :disabled? (not checked)
                           :on-click (on-click-apply @checked)}]]])))
 
 (defn table-with-buttons
