@@ -67,7 +67,7 @@
            unsaved-org-name
            unsaved-org-name-support-message
            og-email->email
-           auto-accept?
+           unsaved-auto-accept?
            on-change-auto-accept-user-as-org-member]}]
   [:<>
    [input-labeled
@@ -81,7 +81,7 @@
                   :flex-direction "row"
                   :gap "10px"}}
     [:input {:id "auto-accept"
-             :checked auto-accept?
+             :checked unsaved-auto-accept?
              :on-change on-change-auto-accept-user-as-org-member
              :type "checkbox"}]
      ;; TODO add some version of this description (below), maybe as a pop-up info box?

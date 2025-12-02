@@ -21,9 +21,10 @@
 (defn orgs->org->id
   [orgs]
   (reduce
-   (fn [org-id->org {:keys [org-id org-name email-domains] :as org}]
+   (fn [org-id->org {:keys [org-id org-name email-domains auto-accept?] :as org}]
      (assoc org-id->org org-id
             (assoc org
+                   :unsaved-auto-accept? auto-accept?
                    :unsaved-org-name org-name
                    ;; NOTE this mapping is used to keep track of the email
                    :og-email->email (reduce
@@ -119,6 +120,7 @@
                              org-name
                              og-email->email
                              auto-accept?
+                             unsaved-auto-accept?
                              unsaved-org-name-support-message]} (@org-id->org selected)
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
@@ -182,7 +184,7 @@
                                                              unsaved-org-name
                                                              unsaved-email-domains
                                                              auto-add?
-                                                             auto-accept?))]
+                                                             unsaved-auto-accept?))]
                           ;; TODO if not success case.
                             (if success
                               (let [{:keys [org-name email-domains]} (@org-id->org org-id)]
@@ -199,10 +201,14 @@
                                          (-> o
                                              (assoc-in [org-id :org-name] unsaved-org-name)
                                              (assoc-in [org-id :email-domains] unsaved-email-domains))))
-                                (let [new-name?  (not= org-name unsaved-org-name)
-                                      new-email? (not= email-domains unsaved-email-domains)]
+                                (let [new-name?        (not= org-name unsaved-org-name)
+                                      new-email?       (not= email-domains unsaved-email-domains)
+                                      new-auto-accept? (not= auto-accept? unsaved-auto-accept?)]
+                                  ;; TODO instead of three separate toasts maybe it would be better to have one that just said everything?
+                                  ;; TODO these messages could probably be improved.
                                   (when new-name? (toast-message! (str "Updated Organization Name : " unsaved-org-name)))
-                                  (when new-email? (toast-message! (str "Updated Email Domains: " unsaved-email-domains)))))))))))
+                                  (when new-email? (toast-message! (str "Updated Email Domains: " unsaved-email-domains)))
+                                  (when new-auto-accept? (toast-message! (str "Updated Auto Accept: " (if unsaved-auto-accept? "On" "Off"))))))))))))
                   :on-change-organization-name
                   (fn [e]
                     (swap! org-id->org
@@ -210,8 +216,9 @@
                            [selected :unsaved-org-name]
                            (.-value (.-target e))))
                   :auto-accept? auto-accept?
+                  :unsaved-auto-accept? unsaved-auto-accept?
                   :on-change-auto-accept-user-as-org-member
-                  #(swap! org-id->org update-in [selected :auto-accept?] not)})]
+                  #(swap! org-id->org update-in [selected :unsaved-auto-accept?] not)})]
 
               [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                         :on-click-apply-update-users on-click-apply-update-users}])])])})))
