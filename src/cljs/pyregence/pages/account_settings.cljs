@@ -185,17 +185,24 @@
                                                              auto-accept?))]
                           ;; TODO if not success case.
                             (if success
-                              (do
-                                (let [{:keys [org-name email-domains]} (@org-id->org org-id)]
-                                  (swap! org-id->org
-                                         (fn [o]
-                                           (-> o
-                                               (assoc-in [org-id :org-name] unsaved-org-name)
-                                               (assoc-in [org-id :email-domains] unsaved-email-domains))))
-                                  (let [new-name?  (not= org-name unsaved-org-name)
-                                        new-email? (not= email-domains unsaved-email-domains)]
-                                    (when new-name? (toast-message! (str "Updated Organization Name : " unsaved-org-name)))
-                                    (when new-email? (toast-message! (str "Updated Email Domains: " unsaved-email-domains))))))))))))
+                              (let [{:keys [org-name email-domains]} (@org-id->org org-id)]
+                                ;; TODO Below is a good example of how we have the same relationship in our ratoms, as we do in our db, which leads me to believe
+                                ;; we need a client db that can mirror (in query language and reltionship semantics) our backend db.
+                                (swap! users #(map
+                                               (fn [{:keys [organization-name] :as user}]
+                                                 (if (= organization-name org-name)
+                                                   (assoc user :organization-name unsaved-org-name)
+                                                   user))
+                                               %))
+                                (swap! org-id->org
+                                       (fn [o]
+                                         (-> o
+                                             (assoc-in [org-id :org-name] unsaved-org-name)
+                                             (assoc-in [org-id :email-domains] unsaved-email-domains))))
+                                (let [new-name?  (not= org-name unsaved-org-name)
+                                      new-email? (not= email-domains unsaved-email-domains)]
+                                  (when new-name? (toast-message! (str "Updated Organization Name : " unsaved-org-name)))
+                                  (when new-email? (toast-message! (str "Updated Email Domains: " unsaved-email-domains)))))))))))
                   :on-change-organization-name
                   (fn [e]
                     (swap! org-id->org
