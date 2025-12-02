@@ -77,21 +77,13 @@
       :value     unsaved-org-name}
       unsaved-org-name-support-message
       (assoc :support-message unsaved-org-name-support-message))]
-
    [:div {:style {:display "flex"
-                  :gap "15px"
-                  :flex-direction "column"}}
-    [email-domains-cmpt {:on-change on-change-email-name
-                         :on-delete on-delete-email
-                         :og-email->email og-email->email}]
-    ;; TODO consider re-using existing checkbox logic with circle options
-    [:div {:style {:display "flex"
-                   :flex-direction "row"
-                   :gap "10px"}}
-     [:input {:id "auto-accept"
-              :checked auto-accept?
-              :on-change on-change-auto-accept-user-as-org-member
-              :type "checkbox"}]
+                  :flex-direction "row"
+                  :gap "10px"}}
+    [:input {:id "auto-accept"
+             :checked auto-accept?
+             :on-change on-change-auto-accept-user-as-org-member
+             :type "checkbox"}]
      ;; TODO add some version of this description (below), maybe as a pop-up info box?
      ;; "When enabled, users who join your organization through automatic email
      ;; domain registration will be automatically \"Accepted\". This allows them to
@@ -100,9 +92,12 @@
      ;; eligible for auto-acceptance (e.g. user@company.com). If this box is
      ;; unchecked, your Organization Admin(s) will need to manually approve members
      ;; before they can log in and view your organization's private layers."
-     [:label {:for "auto-accept"
-              :style {:color "black"}}
-      "Auto Accept User as Organization Member"]]]
+    [:label {:for "auto-accept"
+             :style {:color "black"}}
+     "Auto Accept User as Organization Member"]]
+   [email-domains-cmpt {:on-change on-change-email-name
+                        :on-delete on-delete-email
+                        :og-email->email og-email->email}]
    [:div {:style {:display        "flex"
                   :flex-direction "row"
                   :gap            "16px"}}
