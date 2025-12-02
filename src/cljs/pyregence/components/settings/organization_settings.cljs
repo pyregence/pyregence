@@ -100,7 +100,9 @@
      ;; eligible for auto-acceptance (e.g. user@company.com). If this box is
      ;; unchecked, your Organization Admin(s) will need to manually approve members
      ;; before they can log in and view your organization's private layers."
-     [:label {:for "auto-accept"} "Auto Accept User as Organization Member"]]]
+     [:label {:for "auto-accept"
+              :style {:color "black"}}
+      "Auto Accept User as Organization Member"]]]
    [:div {:style {:display        "flex"
                   :flex-direction "row"
                   :gap            "16px"}}
