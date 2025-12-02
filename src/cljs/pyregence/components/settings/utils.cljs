@@ -65,17 +65,17 @@
 
 (defn input-field
   [{:keys [value on-change style support-message]}]
-  [:div {:style {:display "flex"
+  [:div {:style {:display        "flex"
                  :flex-direction "column"}}
    [:input {:type      "text"
             :class     (<class $standard-input-field)
-            :style     (merge {:weight        "500"
+            :style     (merge {:font-weight   "500"
                                :width         "100%"
                                :max-width     "350px"
                                :height        "50px"
                                :font-size     "14px"
                                :font-style    "normal"
-                               :line-weight   "22px"
+                               :line-height   "22px"
                                :padding       "14px"
                                :border-radius "4px"} style)
             :value     value
@@ -119,7 +119,7 @@
             :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
             :background     ($/color-picker :white)
             :overflow       "auto"}}
-   [:p {:style {:color          ($/color-picker :black)
+   [:p {:style {:color          ($/color-picker :neutral-black)
                 :font-size      "14px"
                 :font-style     "normal"
                 :font-weight    "700"

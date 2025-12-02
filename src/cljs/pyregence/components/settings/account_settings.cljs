@@ -1,10 +1,25 @@
 (ns pyregence.components.settings.account-settings
   (:require
+   [cljs.reader                           :as reader]
+   [clojure.core.async                    :refer [<! go]]
    [clojure.string                        :as str]
+   [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons]
    [pyregence.components.settings.utils   :refer [card font-styles
                                                   input-labeled main-styles
-                                                  text-labeled]]))
+                                                  text-labeled]]
+   [pyregence.styles                      :as $]
+   [pyregence.utils.async-utils           :as u-async]
+   [reagent.core                          :as r]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce security-state (r/atom {:error    false  ;; Error state
+                                 :loading  true   ;; Loading state
+                                 :settings nil    ;; User settings
+                                 :user     nil}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
@@ -15,6 +30,107 @@
   (->> (str/split (str role-type) #"_")
        (map str/capitalize)
        (str/join " ")))
+
+(defn- fetch-user-settings! []
+  (go
+    (let [response (<! (u-async/call-clj-async! "get-current-user-settings"))]
+      (if (and (:success response) (:body response))
+        (let [parsed-body (reader/read-string (:body response))
+              settings (if (string? (:settings parsed-body))
+                         (try
+                           (reader/read-string (:settings parsed-body))
+                           (catch :default _ {}))
+                         (or (:settings parsed-body) {}))]
+          (swap! security-state assoc
+                 :error false
+                 :loading false
+                 :settings settings
+                 :user parsed-body))
+        (do
+          (toast-message! "Failed to load security settings")
+          (swap! security-state assoc
+                 :error true
+                 :loading false))))))
+
+(defn- security-2fa-enabled []
+  (let [{:keys [settings]} @security-state
+        two-factor (:two-factor settings)
+        is-totp? (= two-factor :totp)]
+    [:div {:style {:display        "flex"
+                   :flex-direction "column"
+                   :gap            "24px"}}
+     [:p {:style {:color       ($/color-picker :neutral-black)
+                  :font-size   "14px"
+                  :font-weight "400"
+                  :line-height "1.5"
+                  :margin      "0"}}
+      (str "Two-Factor Authentication is on via "
+           (if is-totp? "Authenticator App" "Email"))]
+     [buttons/toggle {:on?      true
+                      :label    "Turn Off"
+                      :on-click #(set! (.-location js/window)
+                                       (str "/disable-2fa?method=" (if is-totp? "totp" "email")))}]
+     [:div {:style {:display   "flex"
+                    :flex-wrap "wrap"
+                    :gap       "12px"}}
+      [buttons/ghost {:text     (if is-totp? "Switch to Email 2FA" "Switch to Authenticator")
+                      :on-click #(set! (.-location js/window)
+                                       (if is-totp? "/switch-2fa" "/setup-2fa?mode=switch"))}]
+      (when is-totp?
+        [buttons/ghost {:text     "View Backup Codes"
+                        :on-click #(set! (.-location js/window) "/backup-codes")}])]]))
+
+(defn- security-2fa-disabled []
+  [:div {:style {:display        "flex"
+                 :flex-direction "column"
+                 :gap            "24px"}}
+   [:p {:style {:color       ($/color-picker :neutral-black)
+                :font-size   "14px"
+                :font-weight "400"
+                :line-height "1.5"
+                :margin      "0"}}
+    "Enable Two Factor Authentication to secure your account. Each time you login you will need your password, and a verification code."]
+   [:div {:style {:display        "flex"
+                  :flex-direction "column"
+                  :gap            "12px"}}
+    [:p {:style {:color       ($/color-picker :neutral-black)
+                 :font-size   "14px"
+                 :font-weight "600"
+                 :margin      "0"}}
+     "Two-step verification is off"]
+    [buttons/ghost {:text     "Setup 2FA"
+                    :on-click #(set! (.-location js/window) "/setup-2fa")}]]])
+
+(defn- security-card []
+  (r/create-class
+   {:component-did-mount fetch-user-settings!
+    :reagent-render
+    (fn []
+      (let [{:keys [loading settings error]} @security-state
+            two-factor (:two-factor settings)]
+        [card {:title "MANAGE TWO FACTOR AUTHENTICATION (2FA)"
+               :children
+               (cond
+                 loading
+                 [:p {:style (assoc font-styles :font-weight "400")} "Loading..."]
+
+                 error
+                 [:div {:style {:display        "flex"
+                                :flex-direction "column"
+                                :gap            "12px"}}
+                  [:p {:style {:color       ($/color-picker :neutral-black)
+                               :font-size   "14px"
+                               :font-weight "400"
+                               :margin      "0"}}
+                   "Failed to load security settings. Please try again."]
+                  [buttons/ghost {:text     "Retry"
+                                  :on-click fetch-user-settings!}]]
+
+                 (or (= two-factor :totp) (= two-factor :email))
+                 [security-2fa-enabled]
+
+                 :else
+                 [security-2fa-disabled])}]))}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
@@ -53,6 +169,7 @@
            [text-labeled {:label    "Role Type"
                           :text     (role-type->label role-type)}]
            [user-full-name user-info]]}]
+   [security-card]
    [card {:title "RESET MY PASSWORD"
           :children
           [:<>
