@@ -215,5 +215,3 @@
 
               [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                         :on-click-apply-update-users on-click-apply-update-users}])])])})))
-
-(not nil)
