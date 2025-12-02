@@ -160,6 +160,8 @@
        [:div {:style {:border-top border-styles
                       :padding    "10px 12px"}}
         [buttons/primary {:text     "Apply"
+                          ;; TODO also disable if they haven't selected a user.
+                          :disabled? (not checked)
                           :on-click (on-click-apply @checked)}]]])))
 
 (defn table-with-buttons
@@ -207,10 +209,10 @@
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
          ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
          :status [drop-down {:options        status/statuses
-                             :opt->display   status/status->display
+                             :opt->display   db->display
                              :on-click-apply (on-click-apply
                                                update-users-status
                                                "Status"
-                                               status/status->display)}]
+                                               db->display)}]
          nil)
        [table grid-api users]])))
