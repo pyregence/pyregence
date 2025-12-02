@@ -8,6 +8,7 @@
             [pyregence.pages.admin              :as admin]
             [pyregence.pages.backup-codes       :as backup-codes]
             [pyregence.pages.dashboard          :as dashboard]
+            [pyregence.pages.disable-2fa        :as disable-2fa]
             [pyregence.pages.help               :as help]
             [pyregence.pages.login              :as login]
             [pyregence.pages.near-term-forecast :as ntf]
@@ -15,9 +16,9 @@
             [pyregence.pages.privacy-policy     :as privacy]
             [pyregence.pages.register           :as register]
             [pyregence.pages.reset-password     :as reset-password]
-            [pyregence.pages.settings           :as settings]
             [pyregence.pages.terms-of-use       :as terms]
-            [pyregence.pages.totp-setup         :as totp-setup]
+            [pyregence.pages.setup-2fa          :as setup-2fa]
+            [pyregence.pages.switch-2fa         :as switch-2fa]
             [pyregence.pages.users-table        :as users-table]
             [pyregence.pages.verify-2fa         :as verify-2fa]
             [pyregence.pages.verify-email       :as verify-email]
@@ -27,41 +28,44 @@
 (defonce ^:private original-params  (atom {}))
 (defonce ^:private original-session (atom {}))
 
-(def ^:private uri->cmpt-info
-  {"/"                   {:root-component ntf/root-component
-                          :forecast-type  :near-term}
-   "/account-settings"   {:root-component account-settings/root-component}
-   "/admin"              {:root-component admin/root-component}
-   "/backup-codes"       {:root-component backup-codes/root-component}
-   "/dashboard"          {:root-component dashboard/root-component}
-   "/forecast"           {:root-component ntf/root-component
-                          :forecast-type  :near-term}
-   "/login"              {:root-component login/root-component}
-   "/long-term-forecast" {:root-component ntf/root-component
-                          :forecast-type  :long-term}
-   "/near-term-forecast" {:root-component ntf/root-component
-                          :forecast-type  :near-term}
-   "/register"           {:root-component register/root-component}
-   "/reset-password"     {:root-component reset-password/root-component}
-   "/settings"           {:root-component settings/root-component}
-   "/totp-setup"         {:root-component totp-setup/root-component}
-   "/users-table"        {:root-component users-table/root-component}
-   "/verify-2fa"         {:root-component verify-2fa/root-component}
-   "/verify-email"       {:root-component verify-email/root-component}
-   "/help"               {:root-component help/root-component
-                          :footer?        true}
-   "/privacy-policy"     {:root-component privacy/root-component
-                          :footer?        true}
-   "/terms-of-use"       {:root-component terms/root-component
-                          :footer?        true}})
+(def ^:private uri->root-component-h
+  "All root-components for URIs that should have just a header."
+  {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/account-settings"   account-settings/root-component
+   "/admin"              admin/root-component
+   "/backup-codes"       backup-codes/root-component
+   "/dashboard"          dashboard/root-component
+   "/disable-2fa"        disable-2fa/root-component
+   "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/login"              login/root-component
+   "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
+   "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
+   "/register"           register/root-component
+   "/reset-password"     reset-password/root-component
+   "/setup-2fa"          setup-2fa/root-component
+   "/switch-2fa"         switch-2fa/root-component
+   "/users-table"        users-table/root-component
+   "/verify-2fa"         verify-2fa/root-component
+   "/verify-email"       verify-email/root-component})
+
+(def ^:private uri->root-component-hf
+  "All root-components for URIs that should have a header and a footer."
+  {"/help"           help/root-component
+   "/privacy-policy" privacy/root-component
+   "/terms-of-use"   terms/root-component})
 (defn- render-root
   "Renders the root component for the current URI."
   [params]
-  (render
-   [wrap-page
-    (#(assoc % :params (merge params (select-keys % [:forecast-type])))
-     (get uri->cmpt-info (.. js/window -location -pathname) {:root-component not-found/root-component :footer? true}))]
-   (dom/getElement "app")))
+  (let [uri           (.. js/window -location -pathname)
+        root-cmpt-h   (get uri->root-component-h uri)
+        root-cmpt-hf  (get uri->root-component-hf uri)
+        root-cmpt     (or root-cmpt-h root-cmpt-hf not-found/root-component)
+        footer?       (some? root-cmpt-hf)]
+    (render
+     [wrap-page {:root-component root-cmpt
+                 :params         params
+                 :footer?        footer?}]
+     (dom/getElement "app"))))
 
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."
