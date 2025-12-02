@@ -90,6 +90,7 @@
                                                                        :fire-history     true
                                                                        :structures       true
                                                                        :gridfire         true
+                                                                       :pyretechnics     true
                                                                        :image-mosaic-gwc true}
                                      :geoserver                       {:trinity     "https://trinity.pyregence.org/geoserver"
                                                                        ;; :trinity     "https://swift.sig-gis.com/geoserver"

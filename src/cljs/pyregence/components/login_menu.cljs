@@ -21,10 +21,6 @@
                 :aria-label "Visit the admin page"
                 :href       "/admin"}
             [svg/admin-user :height "25px"]]])
-        ;; Hidden for internal beta - access via direct URL only
-        #_[:label {:style    {:cursor "pointer" :margin-right "1rem"}
-                   :on-click #(u-browser/jump-to-url! "/settings")}
-           "2FA Settings"]
         [:label {:style    {:cursor "pointer"}
                  :on-click (fn []
                              (go (<! (u-async/call-clj-async! "log-out"))
