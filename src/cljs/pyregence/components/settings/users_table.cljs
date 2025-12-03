@@ -94,7 +94,7 @@
             :fontWeight                     400})))
 
 (defn table
-  [grid-api users]
+  [grid-api users users-selected?]
   [:div {:style {:height "100%"
                  :width  "100%"}}
    [:div {:style {:height "100%" :width "100%"}}
@@ -102,6 +102,7 @@
      {:onGridReady                (fn [params] (reset! grid-api (aget params "api")))
       :rowSelection               #js {:mode "multiRow"}
       :domLayout                  "autoHeight"
+      :onRowSelected              #(reset! users-selected? (seq (get-selected-rows @grid-api)))
       :theme                      light-theme
       :pagination                 true
       :paginationPageSize         25
@@ -117,7 +118,7 @@
 
 ;;TODO consider decoupling this from roles and moving into buttons
 (defn drop-down
-  [{:keys [options on-click-apply opt->display]}]
+  [{:keys [options on-click-apply opt->display users-selected?] :as m}]
   (r/with-let [checked (r/atom nil)]
     (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
       [:div {:style {:display        "flex"
@@ -138,6 +139,8 @@
                              :padding        "14px 12px 14px 14px"
                              :flex-direction "row"}}
             [:input {:type    "checkbox"
+                     ;;TODO react complains if i don't have an onChange here.
+                     :onChange #(reset! checked opt)
                      :checked checked?
                      :style
                      (merge
@@ -161,11 +164,11 @@
                       :padding    "10px 12px"}}
         [buttons/primary {:text     "Apply"
                           ;; TODO also disable if they haven't selected a user.
-                          :disabled? (not @checked)
+                          :disabled? (and (not @checked) (not users-selected?))
                           :on-click (on-click-apply @checked)}]]])))
 
 (defn table-with-buttons
-  [{:keys [users on-click-apply-update-users]}]
+  [{:keys [users on-click-apply-update-users users-selected?]}]
   ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
@@ -201,18 +204,20 @@
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database
          :role   [drop-down {:options        roles/roles
+                             :users-selected? @users-selected?
                              :opt->display   db->display
                              :on-click-apply (on-click-apply
-                                               update-users-roles
-                                               "Role"
-                                               db->display)}]
+                                              update-users-roles
+                                              "Role"
+                                              db->display)}]
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
          ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
          :status [drop-down {:options        status/statuses
+                             :users-selected? @users-selected?
                              :opt->display   db->display
                              :on-click-apply (on-click-apply
-                                               update-users-status
-                                               "Status"
-                                               db->display)}]
+                                              update-users-status
+                                              "Status"
+                                              db->display)}]
          nil)
-       [table grid-api users]])))
+       [table grid-api users users-selected?]])))

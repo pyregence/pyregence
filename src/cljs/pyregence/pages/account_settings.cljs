@@ -43,10 +43,11 @@
 (defn root-component
   "The root component of the /account-settings page."
   [{:keys [user-role]}]
-  (let [org-id->org  (r/atom nil)
-        user-name    (r/atom nil)
-        users        (r/atom nil)
-        selected-log (r/atom ["Account Settings"])]
+  (let [org-id->org     (r/atom nil)
+        user-name       (r/atom nil)
+        users           (r/atom nil)
+        selected-log    (r/atom ["Account Settings"])
+        users-selected? (r/atom false)]
     (r/create-class
      {:display-name "account-settings"
       :component-did-mount
@@ -88,6 +89,7 @@
                          ;; TODO instead of this hacky sleep i think we have two options,
                          ;; first, we have the update function return the users, this seems ideal. the second is,
                          ;; we get the success from the update function and we then poll the users.
+                         ;; TODO this could use the core async timeout instead.
                          (js/setTimeout (fn [] (go (reset! users (<! (get-users! user-role))))) 3000)
                          (toast-message!
                            ;;TODO make this handle plural case e.g roles and statues.
@@ -99,6 +101,7 @@
             [nav-bar/main tabs]
             (case selected-page
               "Account Settings"
+              ;;TODO don't use hardcoded password-set date.
               [as/main {:password-set-date "1/2/2020"
                         :role-type         user-role
                         :user-name         @user-name
@@ -131,6 +134,8 @@
                                   (#{"organization_admin" "organization_member"} user-role))) @users))]
                  {:og-email->email             og-email->email
                   :users                       selected-orgs-users
+                  ;;TODO get selected-rows
+                  :users-selected?             users-selected?
                   :unsaved-org-name            unsaved-org-name
                   :unsaved-org-name-support-message
                   unsaved-org-name-support-message
