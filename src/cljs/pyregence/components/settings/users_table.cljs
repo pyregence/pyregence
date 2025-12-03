@@ -166,6 +166,7 @@
                         :disabled? (or (not @checked) (not users-selected?))
                         :on-click  (on-click-apply @checked)}]]]))
 
+;; current
 (defn table-with-buttons
   [{:keys [users on-click-apply-update-users users-selected? user-role]}]
   ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
@@ -187,21 +188,25 @@
         {:style {:min-width "400px"}}
         [search-cmpt {:on-change on-change-search
                       :value     @search}]]
-       [:div {:style {:display "flex"
+       [:div {:style {:display         "flex"
+                      :width          "100%"
                       :flex-direction  "row"
-                      :gap             "16px"
-                      :width           "100%"
                       :justify-content "space-between"}}
-        [buttons/ghost-drop-down {:text      "Update User Role"
-                                  :selected? (= @selected-drop-down :role)
-                                  :on-click  (fn []
-                                               (reset! checked nil)
-                                               (update-dd :role))}]
-        [buttons/ghost-drop-down {:text      "Update User Status"
-                                  :selected? (= @selected-drop-down :status)
-                                  :on-click  (fn []
-                                               (reset! checked nil)
-                                               (update-dd :status))}]
+        [:div {:style {:display "flex"
+                       :flex-direction  "row"
+                       :gap             "16px"
+                       :width           "100%"
+                       :justify-content "flex-start"}}
+         [buttons/ghost-drop-down {:text      "Update User Role"
+                                   :selected? (= @selected-drop-down :role)
+                                   :on-click  (fn []
+                                                (reset! checked nil)
+                                                (update-dd :role))}]
+         [buttons/ghost-drop-down {:text      "Update User Status"
+                                   :selected? (= @selected-drop-down :status)
+                                   :on-click  (fn []
+                                                (reset! checked nil)
+                                                (update-dd :status))}]
         ;; TODO add this back in when we get a more well defined acceptance criteria.
          #_(when (:show-remove-user? m)
              [buttons/ghost-remove-user {:text "Remove User"}])]
@@ -227,4 +232,60 @@
                                               "Status"
                                               db->display)}]
          nil)
-       [table grid-api users users-selected?])))
+       [table grid-api users users-selected?]])))
+
+;; main
+#_(defn table-with-buttons
+  [{:keys [users on-click-apply-update-users users-selected?]}]
+  ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
+  ;; Do we want that?
+  (r/with-let [selected-drop-down (r/atom nil)
+               grid-api           (r/atom nil)
+               search             (r/atom nil)]
+    (let [update-dd           (fn [to] (reset! selected-drop-down (when-not (= @selected-drop-down to) to)))
+          get-selected-emails (fn []
+                                (->> @grid-api get-selected-rows (map :email)))
+          on-click-apply      (on-click-apply-update-users get-selected-emails)
+          on-change-search    (fn [e]
+                                (let [s (.-value (.-target e))]
+                                  (.setGridOption @grid-api "quickFilterText" s)
+                                  (reset! search s)))]
+      [:<>
+       [:div
+        {:style {:min-width "400px"}}
+        [search-cmpt {:on-change on-change-search
+                      :value     @search}]]
+       [:div {:style {:display        "flex"
+                      :flex-direction "row"
+                      :gap            "16px"}}
+        [buttons/ghost-drop-down {:text      "Update User Role"
+                                  :selected? (= @selected-drop-down :role)
+                                  :on-click  #(update-dd :role)}]
+        [buttons/ghost-drop-down {:text      "Update User Status"
+                                  :selected? (= @selected-drop-down :status)
+                                  :on-click  #(update-dd :status)}]
+        ;; TODO add this back in when we get a more well defined acceptance criteria.
+        #_(when (:show-remove-user? m)
+            [buttons/ghost-remove-user {:text "Remove User"}])
+        ;;TODO add this back in when we get more well defined acceptance criteria.
+        #_[add-user/add-user-dialog]]
+       (case @selected-drop-down
+         ;; TODO ideally these roles should be queried from the database
+         :role   [drop-down {:options        roles/roles
+                             :users-selected? @users-selected?
+                             :opt->display   db->display
+                             :on-click-apply (on-click-apply
+                                              update-users-roles
+                                              "Role"
+                                              db->display)}]
+         ;; TODO check if none is a valid option, noting that it would remove them from the org.
+         ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
+         :status [drop-down {:options        status/statuses
+                             :users-selected? @users-selected?
+                             :opt->display   db->display
+                             :on-click-apply (on-click-apply
+                                              update-users-status
+                                              "Status"
+                                              db->display)}]
+         nil)
+       [table grid-api users users-selected?]])))

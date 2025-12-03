@@ -207,7 +207,8 @@
 
 (defn add-user-dialog [{:keys [user-role]}]
   (r/with-let [dialog-elem (atom nil)]
-    [:div
+    ;;TODO find why does this need no wrap when the other buttons don't?
+    [:div {:style {:white-space "nowrap"}}
      ;;TODO consider making the background darker with a pseudo background.
      [:dialog {:ref #(reset! dialog-elem %)
                :style {:border "none"
