@@ -153,6 +153,7 @@
                       (let [new-email (.-value (.-target e))]
                         (swap! org-id->org assoc-in [selected :og-email->email og-email :email] new-email))))
 
+                  ;;TODO on "save change" when nothing has changed, it doesn't do anything (it should probably help the user or re-save).
                   :on-click-save-changes
                   (fn []
                   ;; TODO consider adding a toast on success and something if there is a long delay.
