@@ -77,6 +77,7 @@
       :value     unsaved-org-name}
       unsaved-org-name-support-message
       (assoc :support-message unsaved-org-name-support-message))]
+   ;; TODO consider having this share styles with Update User checkbox.
    [:div {:style {:display "flex"
                   :flex-direction "row"
                   :gap "10px"}}
