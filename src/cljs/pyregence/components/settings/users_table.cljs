@@ -118,7 +118,7 @@
 
 ;;TODO consider decoupling this from roles and moving into buttons
 (defn drop-down
-  [{:keys [options on-click-apply opt->display users-selected?] :as m}]
+  [{:keys [options on-click-apply opt->display users-selected?]}]
   (r/with-let [checked (r/atom nil)]
     (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
       [:div {:style {:display        "flex"
@@ -163,8 +163,7 @@
        [:div {:style {:border-top border-styles
                       :padding    "10px 12px"}}
         [buttons/primary {:text     "Apply"
-                          ;; TODO also disable if they haven't selected a user.
-                          :disabled? (and (not @checked) (not users-selected?))
+                          :disabled? (or (not @checked) (not users-selected?))
                           :on-click (on-click-apply @checked)}]]])))
 
 (defn table-with-buttons
