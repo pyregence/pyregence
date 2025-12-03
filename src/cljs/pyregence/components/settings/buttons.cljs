@@ -20,8 +20,12 @@
    :font-size        "14px"
    :font-weight      "400"})
 
+;; TODO sync with primary styles
 (def $ghost-styles
   (assoc $primary-styles :background ($/color-picker :white)))
+
+(def $drop-down-styles
+  (assoc $ghost-styles :padding "0px"))
 
 (defn- $on-hover-darken-orange
   [styles]
@@ -31,21 +35,30 @@
       {:pseudo {:hover {:background main-orange
                         :border     (str "2px solid " main-orange)}}})))
 
+(defn $on-hover-gray
+  [styles]
+  (with-meta
+    styles
+    {:pseudo {:hover {:background ($/color-picker :neutral-soft-gray)}}}))
+
+(defn- $on-hover-darken-red
+  [styles]
+  (with-meta
+    styles
+    (let [red ($/color-picker :error-red)]
+      {:pseudo {:hover {:background red
+                        :color      "white"
+                        :border     (str "2px solid " red)}}})))
+
 (defn- $white-to-red-on-hover
   []
   (with-meta {:background ($/color-picker :white)}
     {:pseudo {:hover {:background ($/color-picker :light-red)}}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Icons
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def add-icon
-  [:div {:style {:height "11px" :width "11px"}}
-   [svg/add :height "11px" :width "11px"]])
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
+;; TODO consider only having one component per function (e.g drop-down, button, etc.)
+;; and just re-using styles between them rather then this split of functionality.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn primary
@@ -69,8 +82,28 @@
   [primary (assoc m :class
                   (<class #($on-hover-darken-orange $ghost-styles)))])
 
-(defn add [m]
-  [primary (assoc m :icon add-icon)])
+(defn ghost-drop-down
+  [{:keys [text class on-click selected?]
+    :or   {class (<class #($on-hover-gray $drop-down-styles))}}]
+  [:button
+   {:class class :on-click on-click}
+   [:div {:style {:display "flex"
+                  :gap     "8px"
+                  :height  "100%"
+                  :width   "100%"}}
+    [:span {:style {:padding "12px 14px"}} text]
+    [:div {:style
+           {:display "flex"
+            :align-items "center"
+            :justify-content "center"
+            :border-left (str "2px solid " ($/color-picker :primary-standard-orange))
+            :width "40px"}}
+     (if-not selected?
+       ;;TODO these are supposed to be black triangles
+       [svg/arrow-down]
+       [svg/arrow-up])]]])
+
+(defn add [m] [primary (assoc m :icon [svg/add])])
 
 (defn delete
   [{:keys [on-click]}]

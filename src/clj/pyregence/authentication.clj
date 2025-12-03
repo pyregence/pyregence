@@ -637,6 +637,42 @@
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
 
+;;TODO ideally this would be handled by the database but we should at the very least have a cljc file
+;;for the fe and be to share.
+(defn- can-upgrade-role?
+  "True if `from` role is greater then `to`"
+  [from to]
+  (let [role->n
+        {"member" 0
+         "organization_member" 1
+         "organization_admin" 2
+         "account_manager" 3
+         "super_admin" 4}]
+    (<= (role->n to) (role->n from))))
+
+;; Consider if status=none implies no organization, what is status=none?
+(defn update-users-status
+  [{:keys [user-id]} requested-status users-to-update]
+  ;; TODO consider using user id's instead of emails.
+  (call-sql "update_users_status_by_email" user-id requested-status
+            (into-array String users-to-update))
+  (data-response "success"))
+
+;;TODO consider the database constraints, or data integrity of some role switches
+;; that this fn doesn't try to handle, such as organization_admin to member or super admin, which would require losing the org
+(defn update-users-roles
+  "Updates users roles"
+  [{:keys [user-id user-role]} requested-role users-to-update]
+  ;; TODO consider what happens if this sql call fails.
+  ;; TODO consider using user id's instead of emails.
+  (if (can-upgrade-role? user-role requested-role)
+    (do
+      (call-sql "update_users_roles_by_email" user-id requested-role
+                (into-array String users-to-update))
+      (data-response "success"))
+    ;; TODO what should this failure message be.
+    (data-response "" {:status 400})))
+
 (defn user-email-taken
   ([_ email]
    (user-email-taken nil email -1))
@@ -648,6 +684,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Access Control
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-current-user-name-by-email
+  [{:keys [user-email]}]
+  (if-let [user-name (sql-primitive (call-sql "get_user_name_by_email" user-email))]
+    (data-response {:user-name user-name})
+    ;; TODO is there a better way to handle failure here, why pass an empty string?
+    (data-response "" {:status 403})))
 
 (defn get-user-match-drop-access [session]
   (let [{:keys [user-id match-drop-access?]} session]
@@ -715,15 +758,20 @@
 (defn get-org-member-users
   "Returns a vector of member users for the given org-id, if the user is an
    admin of the given org."
-  [_ org-id]
-  (->> (call-sql "get_org_member_users" org-id)
-       (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
-               {:user-id           user_id
-                :full-name         full_name
-                :email             email
-                :user-role         user_role
-                :membership-status org_membership_status}))
-       (data-response)))
+  ([session]
+   ;;TODO passing nil here his hacky but its to support admin.cljs which was previously ignoring
+   ;; the session and the new setting page which calls get-org-member-users correct with just the session
+   ;; in the end will probably need to different api calls.
+   (get-org-member-users session nil))
+  ([{:keys [organization-id user-role]} org-id]
+   (->> (call-sql "get_org_member_users" (if (= user-role "super_admin") org-id organization-id))
+        (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
+                {:user-id           user_id
+                 :full-name         full_name
+                 :email             email
+                 :user-role         user_role
+                 :membership-status org_membership_status}))
+        (data-response))))
 
 (defn get-all-users
   "Returns a vector of all users in the DB."

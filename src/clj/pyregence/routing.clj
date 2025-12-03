@@ -94,6 +94,9 @@
    [:post "/clj/get-current-user-settings"]      {:handler (clj-handler authentication/get-current-user-settings)
                                                   :auth-type :member
                                                   :auth-action :block}
+   [:post "/clj/get-user-name-by-email"]         {:handler (clj-handler authentication/get-current-user-name-by-email)
+                                                  :auth-type   :member
+                                                  :auth-action :block}
    [:post "/clj/user-email-taken"]               {:handler (clj-handler authentication/user-email-taken)
                                                   :auth-type :token
                                                   :auth-action :block}
@@ -101,7 +104,15 @@
                                                   :auth-type #{:organization-admin :token}
                                                   :auth-action :block}
 
-   ;; -- Access Control
+   [:post "/clj/update-users-roles"]             {:handler (clj-handler authentication/update-users-roles)
+                                                  :auth-type #{:organization-admin :token}
+                                                  :auth-action :block}
+
+   [:post "/clj/update-users-status"]             {:handler (clj-handler authentication/update-users-status)
+                                                  :auth-type #{:organization-admin :token}
+                                                  :auth-action :block}
+
+;; -- Access Control
    [:post "/clj/get-user-match-drop-access"]     {:handler (clj-handler authentication/get-user-match-drop-access)
                                                   :auth-type #{:member :token}
                                                   :auth-action :block}

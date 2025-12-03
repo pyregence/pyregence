@@ -1,9 +1,9 @@
 (ns pyregence.components.svg-icons)
 
-(defn add [{:keys [height width]}]
+(defn add []
   [:svg
-   {:width width
-    :height height
+   {:width "15px"
+    :height "15px"
     :viewBox "0 0 15 15"
     :fill "none"
     :xmlns "http://www.w3.org/2000/svg"}
@@ -437,6 +437,7 @@
    [:path {:d "m173.398438 154.703125c-5.523438 0-10 4.476563-10 10v189c0 5.519531 4.476562 10 10 10
                5.523437 0 10-4.480469 10-10v-189c0-5.523437-4.476563-10-10-10zm0 0"}]])
 
+;; TODO use trash-can or trash-can-inner not both
 (defn trash-can [& {:keys [height width]}]
   [:svg {:width   width
          :height  height
@@ -444,6 +445,19 @@
    [:rect {:x "0.5" :y "0.5" :height "49" :rx "3.5" :fill "white"}]
    [:rect {:x "0.5" :y "0.5" :height "49" :rx "3.5" :stroke "#D50000"}]
    [:path {:d "M20 34C19.45 34 18.9792 33.8042 18.5875 33.4125C18.1958 33.0208 18 32.55 18 32V19H17V17H22V16H28V17H33V19H32V32C32 32.55 31.8042 33.0208 31.4125 33.4125C31.0208 33.8042 30.55 34 30 34H20ZM30 19H20V32H30V19ZM22 30H24V21H22V30ZM26 30H28V21H26V30Z" :fill "#D50000"}]])
+
+(defn trash-can-inner
+  []
+  [:svg
+   {:width "24px"
+    :height "24px",
+    :viewBox "0 0 24 24",
+    :fill "none",
+    :xmlns "http://www.w3.org/2000/svg"}
+   [:path
+    {:d
+     "M7 21C6.45 21 5.97917 20.8042 5.5875 20.4125C5.19583 20.0208 5 19.55 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8042 20.0208 18.4125 20.4125C18.0208 20.8042 17.55 21 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z",
+     :fill "#D50000"}]])
 
 (defn zoom-in [& {:keys [height width]}]
   [:svg {:height    height
@@ -531,6 +545,18 @@
      :stroke       "black"
      :stroke-width "0.5"
      :mask         "url(#path-2-outside-1_215_1724)"}]])
+
+(defn x-mark
+  []
+  [:svg
+   {:width   "14"
+    :height  "14"
+    :viewBox "0 0 14 14"
+    :fill    "none"
+    :xmlns   "http://www.w3.org/2000/svg"}
+   [:path
+    {:d    "M1.4 14L0 12.6L5.6 7L0 1.4L1.4 0L7 5.6L12.6 0L14 1.4L8.4 7L14 12.6L12.6 14L7 8.4L1.4 14Z"
+     :fill "black"}]])
 
 (defn download [& {:keys [height width]}]
   [:svg {:height  (or height "24px")
