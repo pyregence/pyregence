@@ -163,7 +163,9 @@
        [:div {:style {:border-top border-styles
                       :padding    "10px 12px"}}
         [buttons/primary {:text     "Apply"
-                          :disabled? (or (not @checked) (not users-selected?))
+                          ;; NOTE we have to check if the checked option is in the set of current options because their shared.
+                          ;; TODO which means we should probably isolate the state of the checkbox better.
+                          :disabled? (or (not ((set options) @checked)) (not @checked) (not users-selected?))
                           :on-click (on-click-apply @checked)}]]])))
 
 (defn table-with-buttons

@@ -227,4 +227,5 @@
                   #(swap! org-id->org update-in [selected :unsaved-auto-accept?] not)})]
 
               [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
+                        :users-selected?             users-selected?
                         :on-click-apply-update-users on-click-apply-update-users}])])])})))
