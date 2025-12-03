@@ -741,8 +741,7 @@
                    {:status 403})))
 
 ;; TODO move password logic
-
-;;TODO triple check this is a secure way to generate a password
+;; TODO triple check this is a secure way to generate a password
 ;; TODO should we reuse pyregence totp?
 (defn generate-password
   ([] (generate-password 32))         ;; 32 bytes → 43-char Base64 password
@@ -751,47 +750,25 @@
          _ (.nextBytes (SecureRandom.) bytes)]
      (.encodeToString (Base64/getEncoder) bytes))))
 
+;; TODO handle adding new Unaffiliated member (probably by fixing upstream callers) which won't have an org-id
+;; TODO check if user isn't AM or SA and verify the org-id is the same as their org-id, or check if org-admin and use session org-id
+;; TODO send out welcome emails
+;; TODO what the rest of the user columns?
+;; - match_drop_access
+;; - settings
+;; - email verified
+;; - password_set_date
 (defn add-org-users [_ org-id users]
-  ;;TODO this is add a single user make it add multiple users
-  ;; TODO send out welcome emails
-  (def users users)
-  org-id
-  ;; => 1
-
-  (def org-id org-id)
-
-  users
-  ;; => ({:email "drewg@gmail.com", :role "admin", :invalid-email? false})
-
-  (->> users
-       (map (fn [{:keys [email ]}])))
-
-
-  (insert-rows!
-   "users"
-   [{:email "drew@gmail.com"
-     :password (generate-password)
-     :name  ""
-     :user_role (tc/str->pg "organization_member" "user_role")
-     :organization_rid 1
-     :org_membership_status (tc/str->pg "accepted" "org_membership_status")}]))
-
-
-
-
-(comment
-
-  (insert-rows!
-   "users"
-   [{:email "drew@gmail.com"
-     :password (generate-password)
-     :name  ""
-     :user_role (tc/str->pg "organization_member" "user_role")
-     :organization_rid 1
-     :org_membership_status (tc/str->pg "accepted" "org_membership_status")}])
-
-  ;;
-  )
+  (->>
+   users
+   (map (fn [{:keys [email role]}]
+          {:email   email
+           :user_role (tc/str->pg role "user_role")
+           :org_membership_status (tc/str->pg "accepted" "org_membership_status")
+           :organization_rid org-id
+           :name     ""
+           :password (generate-password)}))
+   (insert-rows! "users")))
 
 (defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that

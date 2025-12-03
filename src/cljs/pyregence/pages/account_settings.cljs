@@ -134,7 +134,8 @@
                                   ;;TODO this conditional should be based on the og-id or org-unique name
                                   (= organization-name org-name)
                                   (#{"organization_admin" "organization_member"} user-role))) @users))]
-                 {:user-role user-role
+                 {:org-id                      org-id
+                  :user-role                   user-role
                   :og-email->email             og-email->email
                   :users                       selected-orgs-users
                   ;;TODO get selected-rows

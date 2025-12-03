@@ -205,7 +205,7 @@
                                             ;; TODO this needs to do some light validations on the emails and report back
                                             )))}]]]))))
 
-(defn add-user-dialog [{:keys [user-role]}]
+(defn add-user-dialog [{:keys [user-role org-id]}]
   (r/with-let [dialog-elem (atom nil)]
     ;;TODO find why does this need no wrap when the other buttons don't?
     [:div {:style {:white-space "nowrap"}}
@@ -216,6 +216,7 @@
                        :border-radius "10px"}}
       [:div {:style {:overflow "hidden"}}
        [invite-modal {:on-click-close-dialog #(.close @dialog-elem)
-                      :user-role user-role}]]]
+                      :org-id                org-id
+                      :user-role             user-role}]]]
      [buttons/add {:text "Add A New User"
                    :on-click #(.showModal @dialog-elem)}]]))
