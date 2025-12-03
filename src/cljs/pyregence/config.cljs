@@ -426,18 +426,18 @@
                                                                                 :filter-set   #{"fire-risk-forecast" "times-burned"}
                                                                                 :units        "Times"
                                                                                 :disabled-for all-utility-companies-planning}
-                                                              :impacted        {:opt-label  "Impacted structures"
-                                                                                :filter-set #{"fire-risk-forecast" "impacted-structures"}
-                                                                                :units      "Structures"
+                                                              :impacted        {:opt-label    "Impacted structures"
+                                                                                :filter-set   #{"fire-risk-forecast" "impacted-structures"}
+                                                                                :units        "Structures"
                                                                                 :disabled-for all-utility-companies-planning}
-                                                              :fire-area       {:opt-label  "Fire area"
-                                                                                :filter-set #{"fire-risk-forecast" "fire-area"}
-                                                                                :units      "Acres"
+                                                              :fire-area       {:opt-label    "Fire area"
+                                                                                :filter-set   #{"fire-risk-forecast" "fire-area"}
+                                                                                :units        "Acres"
                                                                                 :disabled-for all-utility-companies-planning}
-                                                              :fire-volume     {:opt-label  "Fire volume"
-                                                                                :filter-set #{"fire-risk-forecast" "fire-volume"}
+                                                              :fire-volume     {:opt-label    "Fire volume"
+                                                                                :filter-set   #{"fire-risk-forecast" "fire-volume"}
                                                                                 :disabled-for all-utility-companies-planning
-                                                                                :units      "Acre-ft"}
+                                                                                :units        "Acre-ft"}
                                                               :crown-fire-area {:opt-label    "Crown fire area"
                                                                                 :filter-set   #{"fire-risk-forecast" "crown-fire-area"}
                                                                                 :units        "Acres"
@@ -607,12 +607,29 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "GridFire"]
-                                                              " is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."]
-                                                 :options    {:elmfire  {:opt-label "ELMFIRE"
-                                                                         :filter    "elmfire"}
-                                                              :gridfire {:enabled?  #(feature-enabled? :gridfire)
-                                                                         :opt-label "GridFire"
-                                                                         :filter    "gridfire"}}}
+                                                              " is a fire behavior model developed by Gary Johnson of Spatial Informatics Group. It combines empirical equations from the wildland fire science literature with the performance of a raster-based spread algorithm using the method of adaptive time steps and fractional distances."
+                                                              [:br]
+                                                              [:br]
+                                                              [:a {:href   "https://pypi.org/project/pyretechnics/"
+                                                                   :target "_blank"}
+                                                               [:strong "Pyretechnics"]]
+                                                              " is an "
+                                                              [:a {:href   "https://github.com/pyregence/pyretechnics/ "
+                                                                   :target "_blank"}
+                                                               "open source library"]
+                                                              ", created by the PyreCast team, that provides modules for surface, crown, and spot fire behavior along with areal burning and fire perimeter tracking. In PyreCast, it is configured to run using a novel implementation of the Eulerian Level Set Model of Fire Spread, similar to the ELMFIRE model. Pyretechnics documentation can be found on its official documentation "
+                                                              [:a {:href  "https://pyregence.github.io/pyretechnics/"
+                                                                   :target "_blank"}
+                                                               "site"]
+                                                              "."]
+                                                 :options    {:elmfire      {:opt-label "ELMFIRE"
+                                                                             :filter    "elmfire"}
+                                                              :pyretechnics {:enabled?  #(feature-enabled? :pyretechnics)
+                                                                             :opt-label "Pyretechnics (Beta)"
+                                                                             :filter    "pyretechnics"}
+                                                              :gridfire     {:enabled?  #(feature-enabled? :gridfire)
+                                                                             :opt-label "GridFire"
+                                                                             :filter    "gridfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :disabled   (fn [selected-set]
@@ -660,14 +677,18 @@
                                                                [:strong "Note"]
                                                                ": The impacted structrures, fire area, fire volume, and power line ignition rate quantities are only available with the ELMFIRE model."]]
                                                  :options    (array-map
-                                                              :str   {:opt-label "Impacted structures"
-                                                                      :units     "Structures"}
-                                                              :area  {:opt-label "Fire area (acres)"
-                                                                      :units     "Acres"}
-                                                              :vol   {:opt-label "Fire volume (acre-ft)"
-                                                                      :units     "Acre-ft"}
-                                                              :pligr {:opt-label "Power line ignition rate"
-                                                                      :units     "Ignitions/line-mi/hr"}
+                                                              :str   {:opt-label    "Impacted structures"
+                                                                      :units        "Structures"
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                              :area  {:opt-label    "Fire area (acres)"
+                                                                      :units        "Acres"
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                              :vol   {:opt-label    "Fire volume (acre-ft)"
+                                                                      :units        "Acre-ft"
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                              :pligr {:opt-label    "Power line ignition rate"
+                                                                      :units        "Ignitions/line-mi/hr"
+                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
                                                               :ws    {:opt-label    "Sustained wind speed (mph)"
                                                                       :units        "mph"
                                                                       :disabled-for #{:m}}
@@ -730,8 +751,7 @@
                                                               [:br]
                                                               [:strong "NBM"]
                                                               " - National Blend of Models at 2.5 km to 11 days."]
-                                                 :options    {:m  {:opt-label    "ELMFIRE"
-                                                                   :disabled-for #{:ws}}
+                                                 :options    {:m  {:opt-label "ELMFIRE"}
                                                               :r  {:opt-label "HRRR"}
                                                               :n1 {:opt-label "NAM 3 km"}
                                                               :n2 {:opt-label "NAM 12 km"}
