@@ -137,10 +137,10 @@
                            :gap            "12px"
                            :padding        "14px 12px 14px 14px"
                            :flex-direction "row"}}
-          [:input {:type    "checkbox"
+          [:input {:type     "checkbox"
                      ;;TODO react complains if i don't have an onChange here.
                    :onChange #(reset! checked opt)
-                   :checked checked?
+                   :checked  checked?
                    :style
                    (merge
                     {:appearance     "none"
@@ -161,9 +161,9 @@
            (opt->display opt)]]))]
      [:div {:style {:border-top border-styles
                     :padding    "10px 12px"}}
-      [buttons/primary {:text     "Apply"
+      [buttons/primary {:text      "Apply"
                         :disabled? (or (not @checked) (not users-selected?))
-                        :on-click (on-click-apply @checked)}]]]))
+                        :on-click  (on-click-apply @checked)}]]]))
 
 (defn table-with-buttons
   [{:keys [users on-click-apply-update-users users-selected?]}]

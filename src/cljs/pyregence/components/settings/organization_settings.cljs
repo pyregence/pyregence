@@ -78,13 +78,13 @@
       unsaved-org-name-support-message
       (assoc :support-message unsaved-org-name-support-message))]
    ;; TODO consider having this share styles with Update User checkbox.
-   [:div {:style {:display "flex"
+   [:div {:style {:display        "flex"
                   :flex-direction "row"
-                  :gap "10px"}}
-    [:input {:id "auto-accept"
-             :checked unsaved-auto-accept?
+                  :gap            "10px"}}
+    [:input {:id        "auto-accept"
+             :checked   unsaved-auto-accept?
              :on-change on-change-auto-accept-user-as-org-member
-             :type "checkbox"}]
+             :type      "checkbox"}]
      ;; TODO add some version of this description (below), maybe as a pop-up info box?
      ;; "When enabled, users who join your organization through automatic email
      ;; domain registration will be automatically \"Accepted\". This allows them to
@@ -93,11 +93,11 @@
      ;; eligible for auto-acceptance (e.g. user@company.com). If this box is
      ;; unchecked, your Organization Admin(s) will need to manually approve members
      ;; before they can log in and view your organization's private layers."
-    [:label {:for "auto-accept"
+    [:label {:for   "auto-accept"
              :style {:color "black"}}
      "Auto Accept User as Organization Member"]]
-   [email-domains-cmpt {:on-change on-change-email-name
-                        :on-delete on-delete-email
+   [email-domains-cmpt {:on-change       on-change-email-name
+                        :on-delete       on-delete-email
                         :og-email->email og-email->email}]
    [:div {:style {:display        "flex"
                   :flex-direction "row"
