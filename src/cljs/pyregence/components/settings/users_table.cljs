@@ -227,4 +227,4 @@
                                               "Status"
                                               db->display)}]
          nil)
-       [table grid-api users users-selected?]])))
+       [table grid-api users users-selected?])))
