@@ -161,17 +161,17 @@
                                (reduce-kv
                                 (fn [m id {:keys [email]}]
 
-                                  (assoc m id (merge {:email email}
-                                                     (when-not (email/valid-email-domain? email)
-                                                       {:invalid? true}))))
+                                  (assoc m id {:email email :invalid? (not (email/valid-email-domain? email))}))
                                 {}))
                           ;;TODO unifiy the ways were collecting support/error messages here.
                           invalid-email-domains? (->> checked-og-email->email vals (some :invalid?))
                           organization-name-support-message (when (str/blank? unsaved-org-name) "Name cannot be blank.")]
+                      (swap! org-id->org assoc-in [selected :og-email->email] checked-og-email->email)
 
                       (cond
                         invalid-email-domains?
-                        (swap! org-id->org assoc-in [selected :og-email->email] checked-og-email->email)
+                        ;;TODO find a better when then using a cond with nil
+                        nil
 
                         organization-name-support-message
                         (swap! org-id->org assoc-in [selected :unsaved-org-name-support-message] organization-name-support-message)
