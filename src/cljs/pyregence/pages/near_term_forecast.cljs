@@ -896,13 +896,13 @@
             [header "Disclaimers & Limitations"]
             [:label {:style {:margin-top ".2rem"}} "FORECASTING DISCLAIMER: PyreCast forecasts and models are provided for informational purposes only. Wildfire behavior involves inherent uncertainties and rapidly changing conditions. Past forecast performance does not guarantee future accuracy. Users assume full responsibility for any decisions based on PyreCast data."]
             [:label {:style {:margin-top ".2rem"}} "NO WARRANTIES: The platform and all data are provided \"AS IS\" without warranties of any kind, express or implied, including but not limited to accuracy, completeness, timeliness, or fitness for a particular purpose."]
-            [:label {:style {:margin-top ".2rem"}}  "LIMITATION OF LIABILITY: To the maximum extent permitted by law, PyreCast operators shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from use of the platform or reliance on forecasts."]]
+            [:label {:style {:margin-top ".2rem"}} "LIMITATION OF LIABILITY: To the maximum extent permitted by law, PyreCast operators shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from use of the platform or reliance on forecasts."]]
            [:div
             [header "Commercial Authorization"]
             [:label "To inquire about commercial licensing, integration partnerships, or enterprise use authorization, contact: " [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"] "."]]
            [:div
             [header "Terms Modification"]
-            [:label  "These terms may be updated periodically. Continued use of any PyreCast platform constitutes acceptance of revised terms. Current terms are effective as of " usage-terms-and-conditions-date "."]
+            [:label "These terms may be updated periodically. Continued use of any PyreCast platform constitutes acceptance of revised terms. Current terms are effective as of " usage-terms-and-conditions-date "."]
             [:label {:style {:margin-top ".2rem"}} "Unauthorized commercial use may result in legal action and monetary damages. For questions about permitted use, contact the licensing team above."]
             [:label {:style {:margin "1rem .25rem 0 0"}}
              "Please see our "
