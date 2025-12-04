@@ -610,16 +610,12 @@
           (call-sql "delete_match_job" match-job-id)
           (data-response (str "Match Job #" match-job-id " was deleted from the database."))))))
 
-;; FIXME
 (defn- remove-match-drop-args->body
-  [original-request]
-  (let [{:keys [fire-name ignition-time geosync-host geosync-port]} {}]
-    {:network   :remove-match-drop
-     :arguments {:action         "remove"
-                 :geosync-host   geosync-host
-                 :geosync-port   geosync-port
-                 :pyrc_fire_name fire-name
-                 :pyrc_ignition  {:pyrc_ignition_epoch_s ignition-time}}}))
+  [{:keys [geosync-host geosync-port geoserver-workspace] :as _original-request}]
+  {:network   :remove-match-drop
+   :arguments {:geosync-host        geosync-host
+               :geosync-port        geosync-port
+               :geoserver-workspace geoserver-workspace}})
 
 ;; FIXME
 (defn- submit-match-drop-removal-job!
