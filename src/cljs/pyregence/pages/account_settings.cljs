@@ -9,7 +9,8 @@
    [pyregence.components.settings.fetch                 :refer [get-orgs!
                                                                 get-users!
                                                                 get-user-name!
-                                                                update-org-user!]]
+                                                                update-org-user!
+                                                                update-own-user-name!]]
    [pyregence.components.settings.nav-bar               :as nav-bar]
    [pyregence.components.settings.organization-settings :as os]
    [pyregence.components.settings.unaffilated-members   :as um]
@@ -111,7 +112,7 @@
                         :on-change-update-user-name (fn [e]
                                                       (reset! user-name (input-value e)))
                         :on-click-save-user-name (fn []
-                                                   (update-org-user! user-email @user-name))}]
+                                                   (update-own-user-name! @user-name))}]
 
               "Organization Settings"
               [os/main
