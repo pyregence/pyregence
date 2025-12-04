@@ -178,8 +178,9 @@
                                 (->> @grid-api get-selected-rows (map :email)))
           on-click-apply      (on-click-apply-update-users get-selected-emails)
           on-change-search    (fn [e]
-                                (let [s (.-value (.-target e))]
-                                  (.setGridOption @grid-api "quickFilterText" s)
+                                (let [s (aget (aget e "target") "value")]
+                                  (when @grid-api
+                                    (api-call @grid-api "setGridOption" "quickFilterText" s))
                                   (reset! search s)))]
       [:<>
        [:div
