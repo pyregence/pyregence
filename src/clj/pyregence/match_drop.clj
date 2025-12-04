@@ -577,15 +577,12 @@
            (mapv sql-result->job)
            (data-response)))))
 
-(defn delete-match-drop!
-  "Deletes the specified match drop from the DB and removes it from the GeoServer
-   via the 'remove' action passed to the GeoSync Runway server."
-  [_ match-job-id]
+(defn- delete-match-drop-using-runway! [match-job-id]
   (let [{:keys [geosync-request geoserver-workspace]} (get-match-job-from-match-job-id match-job-id)
-        updated-geosync-request (-> geosync-request
-                                    (assoc-in [:script-args :geosync-args :action] "remove"))
-        geosync-host            (get-md-config :geosync-host)
-        geosync-port            (get-md-config :geosync-port)]
+        updated-geosync-request                       (-> geosync-request
+                                                          (assoc-in [:script-args :geosync-args :action] "remove"))
+        geosync-host                                  (get-md-config :geosync-host)
+        geosync-port                                  (get-md-config :geosync-port)]
     (update-match-job! {:match-job-id    match-job-id
                         :md-status       3
                         :geosync-request updated-geosync-request
@@ -611,6 +608,63 @@
       (do (log-str "Deleting Match Job #" match-job-id " from the database.")
           (call-sql "delete_match_job" match-job-id)
           (data-response (str "Match Job #" match-job-id " was deleted from the database."))))))
+
+;; FIXME
+(defn- remove-match-drop-args->body
+  [original-request]
+  (let [{:keys [fire-name ignition-time geosync-host geosync-port]} {}]
+    {:network   :remove-match-drop
+     :arguments {:action         "remove"
+                 :geosync-host   geosync-host
+                 :geosync-port   geosync-port
+                 :pyrc_fire_name fire-name
+                 :pyrc_ignition  {:pyrc_ignition_epoch_s ignition-time}}}))
+
+;; FIXME
+(defn- submit-match-drop-removal-job!
+  "Requests a match-drop job from kubernetes"
+  [sig3-endpoint original-request]
+  (let [request                            (remove-match-drop-args->body original-request)
+        api-url                            (format "%s/api/submit-job" sig3-endpoint)
+        http-request                       {:body         (json/write-str request)
+                                            :headers      {"sig-auth" (get-md-config :sig3-auth)}
+                                            :content-type :json
+                                            :accept       :json}
+        _                                  (println "POST" api-url request)
+        {:keys [body status] :as response} (client/post api-url http-request)]
+    (if (= 200 status)
+      {:job-id (:job-id (json/read-str body :key-fn keyword))}
+      (throw (ex-info (format "match-drop removal request failed with status %d" status)
+                      {:request http-request :response response})))))
+
+(defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
+  (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id match-job-id)
+                                        ; HACK: it has the whole sig3 request FIXME create a db table that represents the whole request
+        original-request                          dps-request
+        geosync-host                              (:geosync-host dps-request)
+        geosync-port                              (:geosync-port dps-request)]
+    (if (layers-exist? :match-drop geoserver-workspace)
+      ;; If the specified workspace exists in the layer atom, we need to use GeoSync to remove the workspace from the GeoServer
+      (try
+        (submit-match-drop-removal-job! sig3-endpoint original-request)
+        (catch Exception _
+          (update-match-job! {:match-job-id match-job-id
+                              :md-status    1
+                              :message      (format "Something went wrong when trying to delete Match Drop #%s." match-job-id)})
+          (data-response (str "Connection to " geosync-host ":" geosync-port " failed.")
+                         {:status 500})))
+      ;; Otherwise we can just remove the match drop from the database, it doesn't exist anywhere else (normally used for Match Drops that errored out)
+      (do (log-str "Deleting Match Job #" match-job-id " from the database.")
+          (call-sql "delete_match_job" match-job-id)
+          (data-response (str "Match Job #" match-job-id " was deleted from the database."))))))
+
+(defn delete-match-drop!
+  "Deletes the specified match drop from the DB and removes it from the GeoServer
+   via the 'remove' action passed to the GeoSync Runway server."
+  [_ match-job-id]
+  (if-let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
+    (delete-match-drop-using-kubernetes! sig3-endpoint match-job-id)
+    (delete-match-drop-using-runway! match-job-id)))
 
 (defn get-md-status
   "Returns the current status of the given match drop run."
