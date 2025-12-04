@@ -617,7 +617,6 @@
                :geosync-port        geosync-port
                :geoserver-workspace geoserver-workspace}})
 
-;; FIXME
 (defn- submit-match-drop-removal-job!
   "Requests a match-drop job from kubernetes"
   [sig3-endpoint original-request]
@@ -643,6 +642,7 @@
       ;; If the specified workspace exists in the layer atom, we need to use GeoSync to remove the workspace from the GeoServer
       (try
         (submit-match-drop-removal-job! sig3-endpoint original-request)
+        ;; TODO: check results
         (catch Exception _
           (update-match-job! {:match-job-id match-job-id
                               :md-status    1
