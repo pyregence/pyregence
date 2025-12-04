@@ -110,7 +110,7 @@
     [:h3 "OTHER THINGS TO KNOW."]
     [:p
      [:em "Third Party Content. "]
-     "The Site may link to other websites and online services. Such links are provided for your convenience only. We have no control over such third parties and if you decide to access any third-party link, you do so solely at your own risk and subject to the terms and conditions and privacy policy that third-party."]
+     "The Site may link to other websites and online services. Such links are provided for your convenience only. We have no control over such third parties and if you decide to access any third-party link, you do so solely at your own risk and subject to the terms and conditions and privacy policy of that third-party."]
     [:p
      [:em "Social Media Features and Widgets. "]
      "The Site may include social media features and widgets, such as the LinkedIn button. These features may collect your IP address, which page you are visiting on the Site, and may set a cookie to enable the feature to function properly. Social media features and widgets are either hosted by a third party or hosted directly on our online Services. Your interactions with these features and widgets are governed by the privacy policy of the company providing them."]
