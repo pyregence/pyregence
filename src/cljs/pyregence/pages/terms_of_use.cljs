@@ -11,7 +11,7 @@
    [:div {:style {:margin "1rem" :width  "75%"}}
     [:div
      [:h2 "TERMS OF USE"]
-     [:p "Last Updated: September 1, 2025"]
+     [:p "Last Updated: December 2, 2025"]
      [:p
       "Welcome to Pyregence! We, the Pyregence Consortium, and each and every individual, entity and collaborator therein (“Pyregence”, “we”, “us” or “our”), operate web sites, research facilities, mobile applications, social media pages, and all site-related services (collectively, the “Site”). The Site is provided for your personal and noncommercial use. These Terms of Use, together with the "
       [:a {:href "/privacy-policy"} "Privacy Policy"]
@@ -136,10 +136,10 @@
      [:p
       [:strong [:u "Informal Dispute Resolution."]]
       " To give us an opportunity to resolve informally any disputes between you and us arising out of or relating in any way to our Site, these Terms, or any services or products provided (“Claims”), you agree to communicate your Claim to us by emailing us at by emailing us at "
-      [:a {:href   "mailto:contact@pyregence.org"
+      [:a {:href   "mailto:info@pyrecast.com"
            :target "_blank"
            :rel    "noreferrer noopener"}
-       "contact@pyregence.org"]
+       "info@pyrecast.com"]
       " You agree not to bring any suit or to initiate arbitration proceedings until 60 days after the date on which you communicated your Claim to us have elapsed. If we are not able to resolve your Claim within 60 days, you may seek relief through arbitration or in small claims court, as set forth in this Section VII."]
      [:p
       [:strong [:u "Choice of Arbitrator and Rules"]]
@@ -197,7 +197,7 @@
      [:p
       [:strong [:u "Notices"]]
       " Notices to you may be made via posting to the Site, by email, or by regular mail, in our sole discretion.  Notices to us should be made by emailing us at "
-      [:a {:href "mailto:contact@pyregence.org"} "contact@pyregence.org"]
+      [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"]
       "."]
      [:p
       [:strong [:u "Evidence"]]
@@ -211,12 +211,12 @@
      [:p
       [:strong [:u "Information or Complaints"]]
       " If you have a question or complaint regarding the Site, please send an e-mail to us at "
-      [:a {:href "mailto:contact@pyregence.org"} "contact@pyregence.org."]
+      [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com."]
       " Please note that e-mail communications will not necessarily be secure; accordingly, you should not include credit card information or other sensitive information in your e-mail correspondence with us. California residents may reach the Complaint Assistance Unit of the Division of Consumer Services of the California Department of Consumer Affairs by mail at 1625 North Market Blvd., Sacramento, CA 95834, or by telephone at (916) 445-1254 or (800) 952-5210."]
      [:p
       [:strong [:u "Claims of Copyright Infringement"]]
       " We respect the intellectual property rights of others. If you believe that any content on our Site or other activity taking place on our Site infringes a work protected by copyright, please notice us by e-mail at "
-      [:a {:href "mailto:contact@pyregence.org"} "contact@pyregence.org."]
+      [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com."]
       " Your notice must comply with the Digital Millennium Copyright Act (17 U.S.C. §512) (the “DMCA”).  Upon receipt of a DMCA-compliant notice, we will respond and proceed in accordance with the DMCA."]
      [:p "We have also put in place a Repeat Infringer Policy to address situations in which a particular individual is the subject of multiple DMCA notices.  If we determine that an individual has violated our Repeat Infringer Policy, then we may, in our sole discretion, take any number of steps, such as issuing warnings, suspending or terminating the individual’s account, or any other measures that we deem appropriate."]]
     [:div
