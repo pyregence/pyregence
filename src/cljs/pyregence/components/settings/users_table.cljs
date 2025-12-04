@@ -118,54 +118,52 @@
 
 ;;TODO consider decoupling this from roles and moving into buttons
 (defn drop-down
-  [{:keys [options on-click-apply opt->display users-selected?] :as m}]
-  (r/with-let [checked (r/atom nil)]
-    (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
-      [:div {:style {:display        "flex"
-                     :width          "100%"
-                     :border         border-styles
-                     :border-radius  "4px"
-                     :flex-direction "column"}}
-       [:div {:style {:display        "flex"
-                      :flex-direction "column"}}
-        (doall
-         (for [opt  options
-               :let [checked? (= @checked opt)]]
-           [:div {:key      opt
-                  :on-click #(reset! checked opt)
-                  :style    {:display        "flex"
-                             :align-items    "center"
-                             :gap            "12px"
-                             :padding        "14px 12px 14px 14px"
-                             :flex-direction "row"}}
-            [:input {:type    "checkbox"
+  [{:keys [options on-click-apply opt->display users-selected? checked]}]
+  (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
+    [:div {:style {:display        "flex"
+                   :width          "100%"
+                   :border         border-styles
+                   :border-radius  "4px"
+                   :flex-direction "column"}}
+     [:div {:style {:display        "flex"
+                    :flex-direction "column"}}
+      (doall
+       (for [opt  options
+             :let [checked? (= @checked opt)]]
+         [:div {:key      opt
+                :on-click #(reset! checked opt)
+                :style    {:display        "flex"
+                           :align-items    "center"
+                           :gap            "12px"
+                           :padding        "14px 12px 14px 14px"
+                           :flex-direction "row"}}
+          [:input {:type     "checkbox"
                      ;;TODO react complains if i don't have an onChange here.
-                     :onChange #(reset! checked opt)
-                     :checked checked?
-                     :style
-                     (merge
-                      {:appearance     "none"
-                       :width          "18px"
-                       :height         "18px"
-                       :border-radius  "50%"
-                       :border         "2px solid #555"
-                       :vertical-align "middle"
-                       :position       "relative"}
-                      (if checked?
-                        {:background "#555"
-                         :boxShadow  "inset 0 0 0 4px white"}
-                        {:background "white"
-                         :boxShadow  "none"}))}]
+                   :onChange #(reset! checked opt)
+                   :checked  checked?
+                   :style
+                   (merge
+                    {:appearance     "none"
+                     :width          "18px"
+                     :height         "18px"
+                     :border-radius  "50%"
+                     :border         "2px solid #555"
+                     :vertical-align "middle"
+                     :position       "relative"}
+                    (if checked?
+                      {:background "#555"
+                       :boxShadow  "inset 0 0 0 4px white"}
+                      {:background "white"
+                       :boxShadow  "none"}))}]
             ;;TODO shouldn't have to reset the font stuff why is this coming from the body?
-            [:label {:style {:color       "black"
-                             :font-weight "normal"}}
-             (opt->display opt)]]))]
-       [:div {:style {:border-top border-styles
-                      :padding    "10px 12px"}}
-        [buttons/primary {:text     "Apply"
-                          ;; TODO also disable if they haven't selected a user.
-                          :disabled? (and (not @checked) (not users-selected?))
-                          :on-click (on-click-apply @checked)}]]])))
+          [:label {:style {:color       "black"
+                           :font-weight "normal"}}
+           (opt->display opt)]]))]
+     [:div {:style {:border-top border-styles
+                    :padding    "10px 12px"}}
+      [buttons/primary {:text      "Apply"
+                        :disabled? (or (not @checked) (not users-selected?))
+                        :on-click  (on-click-apply @checked)}]]]))
 
 (defn table-with-buttons
   [{:keys [users on-click-apply-update-users users-selected?]}]
@@ -173,7 +171,8 @@
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
                grid-api           (r/atom nil)
-               search             (r/atom nil)]
+               search             (r/atom nil)
+               checked            (r/atom nil)]
     (let [update-dd           (fn [to] (reset! selected-drop-down (when-not (= @selected-drop-down to) to)))
           get-selected-emails (fn []
                                 (->> @grid-api get-selected-rows (map :email)))
@@ -192,10 +191,14 @@
                       :gap            "16px"}}
         [buttons/ghost-drop-down {:text      "Update User Role"
                                   :selected? (= @selected-drop-down :role)
-                                  :on-click  #(update-dd :role)}]
+                                  :on-click  (fn []
+                                               (reset! checked nil)
+                                               (update-dd :role))}]
         [buttons/ghost-drop-down {:text      "Update User Status"
                                   :selected? (= @selected-drop-down :status)
-                                  :on-click  #(update-dd :status)}]
+                                  :on-click  (fn []
+                                               (reset! checked nil)
+                                               (update-dd :status))}]
         ;; TODO add this back in when we get a more well defined acceptance criteria.
         #_(when (:show-remove-user? m)
             [buttons/ghost-remove-user {:text "Remove User"}])
@@ -203,7 +206,8 @@
         #_[add-user/add-user-dialog]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database
-         :role   [drop-down {:options        roles/roles
+         :role   [drop-down {:options         roles/roles
+                             :checked         checked
                              :users-selected? @users-selected?
                              :opt->display   db->display
                              :on-click-apply (on-click-apply
@@ -212,7 +216,8 @@
                                               db->display)}]
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
          ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
-         :status [drop-down {:options        status/statuses
+         :status [drop-down {:options         status/statuses
+                             :checked         checked
                              :users-selected? @users-selected?
                              :opt->display   db->display
                              :on-click-apply (on-click-apply

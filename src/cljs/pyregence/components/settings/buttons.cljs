@@ -41,15 +41,6 @@
     styles
     {:pseudo {:hover {:background ($/color-picker :neutral-soft-gray)}}}))
 
-(defn- $on-hover-darken-red
-  [styles]
-  (with-meta
-    styles
-    (let [red ($/color-picker :error-red)]
-      {:pseudo {:hover {:background red
-                        :color      "white"
-                        :border     (str "2px solid " red)}}})))
-
 (defn- $white-to-red-on-hover
   []
   (with-meta {:background ($/color-picker :white)}

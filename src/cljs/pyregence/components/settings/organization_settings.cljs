@@ -58,6 +58,19 @@
           [:p {:style {:color "red"}} "Invalid domain"])]
        [buttons/delete {:on-click (on-delete og-email)}]])]])
 
+(defn checkbox
+  [checked on-change text]
+  [:div {:style {:display        "flex"
+                 :flex-direction "row"
+                 :gap            "10px"}}
+   [:input {:id        text
+            :checked   checked
+            :on-change on-change
+            :type      "checkbox"}]
+   [:label {:for   text
+            :style {:color "black"}}
+    text]])
+
 (defn- organization-settings
   [{:keys [on-change-organization-name
            on-change-email-name
@@ -66,7 +79,11 @@
            on-click-save-changes
            unsaved-org-name
            unsaved-org-name-support-message
-           og-email->email]}]
+           og-email->email
+           unsaved-auto-accept?
+           on-change-auto-accept-user-as-org-member
+           unsaved-auto-add?
+           on-change-auto-add-user-as-org-member]}]
   [:<>
    [input-labeled
     (cond->
@@ -75,9 +92,12 @@
       :value     unsaved-org-name}
       unsaved-org-name-support-message
       (assoc :support-message unsaved-org-name-support-message))]
-
-   [email-domains-cmpt {:on-change on-change-email-name
-                        :on-delete on-delete-email
+   ;; TODO consider having this share styles with Update User checkbox.
+   ;; TODO consider adding pop up info, maybe what displays on the admin page
+   [checkbox unsaved-auto-accept? on-change-auto-accept-user-as-org-member "Auto Accept User as Organization Member"]
+   [checkbox unsaved-auto-add? on-change-auto-add-user-as-org-member       "Auto Add User as Organization Member"]
+   [email-domains-cmpt {:on-change       on-change-email-name
+                        :on-delete       on-delete-email
                         :og-email->email og-email->email}]
    [:div {:style {:display        "flex"
                   :flex-direction "row"

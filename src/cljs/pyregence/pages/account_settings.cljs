@@ -21,10 +21,12 @@
 (defn orgs->org->id
   [orgs]
   (reduce
-   (fn [org-id->org {:keys [org-id org-name email-domains] :as org}]
+   (fn [org-id->org {:keys [org-id org-name email-domains auto-accept? auto-add?] :as org}]
      (assoc org-id->org org-id
             (assoc org
-                   :unsaved-org-name org-name
+                   :unsaved-auto-accept? auto-accept?
+                   :unsaved-auto-add?    auto-add?
+                   :unsaved-org-name     org-name
                    ;; NOTE this mapping is used to keep track of the email
                    :og-email->email (reduce
                                      (fn [m e]
@@ -119,9 +121,11 @@
                                  (-> @org-id->org keys first))
                      {:keys [unsaved-org-name
                              org-id auto-add?
-                             auto-accept?
                              org-name
                              og-email->email
+                             auto-accept?
+                             unsaved-auto-accept?
+                             unsaved-auto-add?
                              unsaved-org-name-support-message]} (@org-id->org selected)
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
@@ -151,6 +155,7 @@
                       (let [new-email (.-value (.-target e))]
                         (swap! org-id->org assoc-in [selected :og-email->email og-email :email] new-email))))
 
+                  ;;TODO on "save change" when nothing has changed, it doesn't do anything (it should probably help the user or re-save).
                   :on-click-save-changes
                   (fn []
                   ;; TODO consider adding a toast on success and something if there is a long delay.
@@ -159,17 +164,17 @@
                                (reduce-kv
                                 (fn [m id {:keys [email]}]
 
-                                  (assoc m id (merge {:email email}
-                                                     (when-not (email/valid-email-domain? email)
-                                                       {:invalid? true}))))
+                                  (assoc m id {:email email :invalid? (not (email/valid-email-domain? email))}))
                                 {}))
                           ;;TODO unifiy the ways were collecting support/error messages here.
                           invalid-email-domains? (->> checked-og-email->email vals (some :invalid?))
                           organization-name-support-message (when (str/blank? unsaved-org-name) "Name cannot be blank.")]
+                      (swap! org-id->org assoc-in [selected :og-email->email] checked-og-email->email)
 
                       (cond
                         invalid-email-domains?
-                        (swap! org-id->org assoc-in [selected :og-email->email] checked-og-email->email)
+                        ;;TODO find a better when then using a cond with nil
+                        nil
 
                         organization-name-support-message
                         (swap! org-id->org assoc-in [selected :unsaved-org-name-support-message] organization-name-support-message)
@@ -186,8 +191,8 @@
                                                              org-id
                                                              unsaved-org-name
                                                              unsaved-email-domains
-                                                             auto-add?
-                                                             auto-accept?))]
+                                                             unsaved-auto-add?
+                                                             unsaved-auto-accept?))]
                           ;; TODO if not success case.
                             (if success
                               (let [{:keys [org-name email-domains]} (@org-id->org org-id)]
@@ -204,17 +209,34 @@
                                          (-> o
                                              (assoc-in [org-id :org-name] unsaved-org-name)
                                              (assoc-in [org-id :email-domains] unsaved-email-domains))))
-                                (let [new-name?  (not= org-name unsaved-org-name)
-                                      new-email? (not= email-domains unsaved-email-domains)]
+                                (let [new-name?        (not= org-name unsaved-org-name)
+                                      new-email?       (not= email-domains unsaved-email-domains)
+                                      new-auto-accept? (not= auto-accept? unsaved-auto-accept?)
+                                      new-auto-add?    (not= auto-add?    unsaved-auto-add?)]
+                                    ;; TODO instead of three separate toasts maybe it would be better to have one that just said everything?
+                                    ;; TODO these messages could probably be improved.
+                                    ;; TODO these toasts dont work on the second time, e.g change auto-add save you correctly get a toast, change again, and save and you don't.
+                                    ;;      Because, whats supposed to be the original data, e.g auto-add? isn't being updated.
                                   (when new-name? (toast-message! (str "Updated Organization Name : " unsaved-org-name)))
-                                  (when new-email? (toast-message! (str "Updated Email Domains: " unsaved-email-domains)))))))))))
+                                  (when new-email? (toast-message! (str "Updated Email Domains: " unsaved-email-domains)))
+                                  (when new-auto-accept? (toast-message! (str "Updated Auto Accept: " (if unsaved-auto-accept? "On" "Off"))))
+                                  (when new-auto-add? (toast-message! (str "Updated Auto Add: " (if unsaved-auto-add? "On" "Off"))))))))))))
+
                   :on-change-organization-name
                   (fn [e]
                     (swap! org-id->org
                            assoc-in
                            [selected :unsaved-org-name]
-                           (.-value (.-target e))))})]
-              [um/main {:users                       (filter (fn [{:keys [user-role]}]
-                                                               ;; TODO consider using the roles var in roles.cljs
-                                                               (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
+                           (.-value (.-target e))))
+                  :auto-accept? auto-accept?
+                  :unsaved-auto-accept? unsaved-auto-accept?
+                  :on-change-auto-accept-user-as-org-member
+                  #(swap! org-id->org update-in [selected :unsaved-auto-accept?] not)
+                  :auto-add? auto-add?
+                  :unsaved-auto-add? unsaved-auto-add?
+                  :on-change-auto-add-user-as-org-member
+                  #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)})]
+
+              [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
+                        :users-selected?             users-selected?
                         :on-click-apply-update-users on-click-apply-update-users}])])])})))
