@@ -629,13 +629,21 @@
       (data-response "User settings were not able to be updated." {:status 403}))))
 
 (defn update-user-name
-  "Allows a super admin to update the name of a user by their email."
+  "Allows an organization admin to update the name of a user by their email."
   [_ email new-name]
   (if-let [user-id-to-update (sql-primitive (call-sql "get_user_id_by_email" email))]
     (do (call-sql "update_user_name" user-id-to-update new-name)
         (data-response (str "User's name successfully updated to " new-name)))
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
+
+(defn update-own-user-name
+  "Allows a logged-in user to update their own user name."
+  [session new-name]
+  (if-let [user-id (:user-id session)]
+    (do (call-sql "update_user_name" user-id new-name)
+        (data-response (str "User's name successfully updated to " new-name)))
+    (data-response "" {:status 403})))
 
 ;;TODO ideally this would be handled by the database but we should at the very least have a cljc file
 ;;for the fe and be to share.
