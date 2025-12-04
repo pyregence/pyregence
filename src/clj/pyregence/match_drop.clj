@@ -413,11 +413,12 @@
        1000)))
 
 (defn- match-drop-args->body
-  [{:keys [fire-name lon lat wx-start-time ignition-time fuel-source wx-type fuel-version num-ensemble-members geosync-host geosync-port]}]
+  [{:keys [fire-name lon lat wx-start-time ignition-time fuel-source wx-type fuel-version num-ensemble-members geosync-host geosync-port geoserver-workspace]}]
   {:network   :match-drop
    :arguments {:geosync-host         geosync-host
                :geosync-port         geosync-port
                :pyrc_fire_name       fire-name
+               :geoserver-workspace  geoserver-workspace
                :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
                                       :pyrc_simspan_center_lat    lat
                                       :pyrc_simspan_start_epoch_s (utc-date->epoch-s wx-start-time)}
@@ -639,8 +640,7 @@
 
 (defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
   (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id match-job-id)
-                                        ; HACK: it has the whole sig3 request FIXME create a db table that represents the whole request
-        original-request                          dps-request
+        original-request                          dps-request ; HACK: it has the whole sig3 request FIXME create a db table that represents the whole request
         geosync-host                              (:geosync-host dps-request)
         geosync-port                              (:geosync-port dps-request)]
     (if (layers-exist? :match-drop geoserver-workspace)
