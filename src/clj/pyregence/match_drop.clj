@@ -171,7 +171,7 @@
             (first)
             (sql-result->job))))
 
-(defn- get-match-job-from-match-job-id
+(defn- get-match-job-from-match-job-id!
   "Returns a specific entry in the match_jobs table based on its match-job-id."
   [match-job-id]
   (when (integer? match-job-id)
@@ -579,7 +579,7 @@
            (data-response)))))
 
 (defn- delete-match-drop-using-runway! [match-job-id]
-  (let [{:keys [geosync-request geoserver-workspace]} (get-match-job-from-match-job-id match-job-id)
+  (let [{:keys [geosync-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
         updated-geosync-request                       (-> geosync-request
                                                           (assoc-in [:script-args :geosync-args :action] "remove"))
         geosync-host                                  (get-md-config :geosync-host)
@@ -630,7 +630,7 @@
                       {:request http-request :response response})))))
 
 (defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
-  (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id match-job-id)
+  (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
         original-request                          dps-request ; TODO https://sig-gis.atlassian.net/browse/PYR1-1317
         geosync-host                              (:geosync-host dps-request)
         geosync-port                              (:geosync-port dps-request)]
@@ -661,7 +661,7 @@
 (defn get-md-status
   "Returns the current status of the given match drop run."
   [_ match-job-id]
-  (data-response (-> (get-match-job-from-match-job-id match-job-id)
+  (data-response (-> (get-match-job-from-match-job-id! match-job-id)
                      (select-keys [:display-name :geoserver-workspace :message :md-status :job-log]))))
 
 (defn get-md-available-dates
@@ -756,7 +756,7 @@
                                                           job-id
                                                           geosync-request
                                                           (edn/read-string message))
-        {:keys [gridfire-done?]} (get-match-job-from-match-job-id match-job-id)]
+        {:keys [gridfire-done?]} (get-match-job-from-match-job-id! match-job-id)]
     (if gridfire-done?
       (do
         (log-str "Both ELMFIRE and GridFire have finished running. Initiating GeoSync run...")
@@ -783,7 +783,7 @@
                                                          job-id
                                                          geosync-request
                                                          (edn/read-string message))
-        {:keys [elmfire-done?]} (get-match-job-from-match-job-id match-job-id)]
+        {:keys [elmfire-done?]} (get-match-job-from-match-job-id! match-job-id)]
     (if elmfire-done?
       (do
         (log-str "Both GridFire and ELMFIRE have finished running. Initiating GeoSync run...")
