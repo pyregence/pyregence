@@ -610,17 +610,13 @@
           (call-sql "delete_match_job" match-job-id)
           (data-response (str "Match Job #" match-job-id " was deleted from the database."))))))
 
-(defn- remove-match-drop-args->body
-  [{:keys [geosync-host geosync-port geoserver-workspace] :as _original-request}]
-  {:network   :remove-match-drop
-   :arguments {:geosync-host        geosync-host
-               :geosync-port        geosync-port
-               :geoserver-workspace geoserver-workspace}})
-
 (defn- submit-match-drop-removal-job!
   "Requests a match-drop job from kubernetes"
-  [sig3-endpoint original-request]
-  (let [request                            (remove-match-drop-args->body original-request)
+  [sig3-endpoint {:keys [geosync-host geosync-port geoserver-workspace] :as _original-request}]
+  (let [request                            {:network   :remove-match-drop
+                                            :arguments {:geosync-host        geosync-host
+                                                        :geosync-port        geosync-port
+                                                        :geoserver-workspace geoserver-workspace}}
         api-url                            (format "%s/api/submit-job" sig3-endpoint)
         http-request                       {:body         (json/write-str request)
                                             :headers      {"sig-auth" (get-md-config :sig3-auth)}
