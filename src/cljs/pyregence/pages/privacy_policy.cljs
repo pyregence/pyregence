@@ -13,7 +13,7 @@
     [:h2 "PRIVACY POLICY"]
     [:p
      [:em "Last Updated"]
-     " November 10, 2020"
+     " December 2, 2025"
      [:br]
      [:br]
      "The Pyregence Consortium, and each and every individual, entity and collaborator therein; (“Pyregence”, “we”, “us” or “our”) respects your desire for privacy. This Privacy Policy explains what information we collect about you, whether on our web site, mobile application, or elsewhere (collectively, the “Site”). It also explains why we collect the information, as well as how we collect and use the information."
@@ -105,18 +105,18 @@
     [:p
      [:em "Submitting a Request. "]
      "You have the right not to be discriminated against if you exercise your privacy rights. To make a request to access or delete your Personal Information, please email us at "
-     [:a {:href "mailto:contact@pyregence.org"} "contact@pyregence.org"]
+     [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"]
      ". Please provide your name, state of residence, home or business address with zip code, the services you utilized, so that we can authenticate and verify your request as we are required to do by law.  You may designate an authorized agent to submit a request on your behalf. In order to designate an authorized agent, please send us your written authorization for that agent. Both you and your agent must sign and date the form."]
     [:h3 "OTHER THINGS TO KNOW."]
     [:p
      [:em "Third Party Content. "]
-     "The Site may link to other websites and online services. Such links are provided for your convenience only. We have no control over such third parties and if you decide to access any third-party link, you do so solely at your own risk and subject to the terms and conditions and privacy policy that third-party."]
+     "The Site may link to other websites and online services. Such links are provided for your convenience only. We have no control over such third parties and if you decide to access any third-party link, you do so solely at your own risk and subject to the terms and conditions and privacy policy of that third-party."]
     [:p
      [:em "Social Media Features and Widgets. "]
      "The Site may include social media features and widgets, such as the LinkedIn button. These features may collect your IP address, which page you are visiting on the Site, and may set a cookie to enable the feature to function properly. Social media features and widgets are either hosted by a third party or hosted directly on our online Services. Your interactions with these features and widgets are governed by the privacy policy of the company providing them."]
     [:p
      [:em "Minors. "]
-     "The Site is not directed toward minors under age 18. If we discover that we have inadvertently collected Personal Information from a person under 18, we will delete that information immediately. If you are a parent or guardian of a minor and believe he or she has disclosed personal information to us, please contact us at " [:a {:href "mailto:contact@pyregence.org"} "contact@pyregence.org"] "."]
+     "The Site is not directed toward minors under age 18. If we discover that we have inadvertently collected Personal Information from a person under 18, we will delete that information immediately. If you are a parent or guardian of a minor and believe he or she has disclosed personal information to us, please contact us at " [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"] "."]
     [:h3 "CHANGES TO THIS POLICY."]
     [:p "We may update or change this Privacy Policy from time to time. You can see when we last updated the Policy by checking in the “Last Updated” date at the top of this page. All changes to the Policy are effective as of the date it is posted."]
     [:h3 "QUESTIONS."]
