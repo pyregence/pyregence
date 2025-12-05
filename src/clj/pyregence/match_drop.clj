@@ -630,8 +630,8 @@
                       {:request http-request :response response})))))
 
 (defn- poll-delete-match-drop-results-then-remove-from-db!
-  [sig3-endpoint
-   job-id
+  [{:keys [job-id]}
+   sig3-endpoint
    match-job-id
    & {:keys [interval-in-seconds timeout-in-seconds]
       :or   {interval-in-seconds 10
@@ -662,8 +662,8 @@
     (if (layers-exist? :match-drop geoserver-workspace)
       ;; If the specified workspace exists in the layer atom, we need to use GeoSync to remove the workspace from the GeoServer
       (try
-        (let [{:keys [job-id]} (submit-match-drop-removal-job! sig3-endpoint original-request)]
-          (poll-delete-match-drop-results-then-remove-from-db! sig3-endpoint job-id match-job-id))
+        (-> (submit-match-drop-removal-job! sig3-endpoint original-request)
+            (poll-delete-match-drop-results-then-remove-from-db! sig3-endpoint match-job-id))
         (catch Exception _
           (update-match-job! {:match-job-id match-job-id
                               :md-status    1
