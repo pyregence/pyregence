@@ -236,8 +236,10 @@
                   :auto-add? auto-add?
                   :unsaved-auto-add? unsaved-auto-add?
                   :on-change-auto-add-user-as-org-member
-                  #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)})]
+                  #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)
+                  :user-role user-role})]
 
-              [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
+              [um/main {:user-role                   user-role
+                        :users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                         :users-selected?             users-selected?
                         :on-click-apply-update-users on-click-apply-update-users}])])])})))

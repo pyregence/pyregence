@@ -167,9 +167,6 @@
 
 (defn table-with-buttons
   [{:keys [users on-click-apply-update-users users-selected? user-role]}]
-  (def user-role user-role)
-  user-role
-
   ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
