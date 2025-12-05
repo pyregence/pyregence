@@ -24,7 +24,7 @@
      [:p
       [:strong [:u "Limitation of Liability"]]
       " We recognize that some laws provide consumers specific rights and remedies and prohibit waiver of the same. Except with respect to such laws, you waive all damages under any cause of action other than actual damage for out-of-pocket loss limited to the amount you paid to access and use the Site. For example, except with respect to such laws, you waive nominal damages, liquidated damages, statutory damages, consequential damages, presumed damages, as well as the imposition of costs and attorney’s fees."]
-     [:h3 "II. Data Protection."]
+     [:h3 "II. DATA PROTECTION."]
      [:p
       [:strong [:u "Security"]]
       " We maintain safeguards intended to protect the integrity and security of the Site. However, we cannot guarantee that the Site will be secure, complete, correct or up-to-date, or that access to the Site will remain uninterrupted."]
