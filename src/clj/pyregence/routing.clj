@@ -121,6 +121,9 @@
                                                   :auth-action :block}
 
    ;; -- Organization Management
+   [:post "/clj/add-org-users"]                     {:handler (clj-handler authentication/add-org-users)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
    [:post "/clj/add-org-user"]                      {:handler (clj-handler authentication/add-org-user)
                                                      :auth-type #{:organization-admin :token}
                                                      :auth-action :block}

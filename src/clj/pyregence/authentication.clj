@@ -1,10 +1,13 @@
 (ns pyregence.authentication
-  (:require [pyregence.email     :as email]
-            [pyregence.totp      :as totp]
-            [pyregence.utils     :refer [nil-on-error]]
-            [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.response :refer [data-response]]))
+  (:require [pyregence.email            :as email]
+            [pyregence.totp             :as totp]
+            [pyregence.utils            :refer [nil-on-error]]
+            [triangulum.config          :refer [get-config]]
+            [triangulum.database        :refer [call-sql sql-primitive insert-rows!]]
+            [triangulum.type-conversion :as tc]
+            [triangulum.response        :refer [data-response]])
+  (:import  [java.util Base64]
+            [java.security SecureRandom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -744,6 +747,34 @@
       (data-response ""))
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
+
+;; TODO move password logic
+;; TODO triple check this is a secure way to generate a password
+;; TODO should we reuse pyregence totp?
+(defn generate-password
+  ([] (generate-password 32))         ;; 32 bytes → 43-char Base64 password
+  ([n-bytes]
+   (let [bytes (byte-array n-bytes)
+         _ (.nextBytes (SecureRandom.) bytes)]
+     (.encodeToString (Base64/getEncoder) bytes))))
+
+;; TODO handle adding new Unaffiliated member (probably by fixing upstream callers) which won't have an org-id
+;; TODO check if user isn't AM or SA and verify the org-id is the same as their org-id, or check if org-admin and use session org-id
+;; TODO send out welcome emails
+(defn add-org-users [_ org-id users]
+  (->>
+   users
+   (map (fn [{:keys [email role]}]
+          {:email   email
+           :user_role (tc/str->pg role "user_role")
+           ;; TODO should `org_membership_status` be pending until they accept the email or accepted?
+           :org_membership_status (tc/str->pg "pending" "org_membership_status")
+           :organization_rid org-id
+           :name     ""
+           :password (generate-password)
+           :match_drop_access false
+           :email_verfied false}))
+   (insert-rows! "users")))
 
 (defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that
