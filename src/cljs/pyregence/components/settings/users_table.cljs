@@ -190,22 +190,26 @@
         {:style {:min-width "400px"}}
         [search-cmpt {:on-change on-change-search
                       :value     @search}]]
-       [:div {:style {:display        "flex"
-                      :flex-direction "row"
-                      :gap            "16px"}}
-        [buttons/ghost-drop-down {:text      "Update User Role"
-                                  :selected? (= @selected-drop-down :role)
-                                  :on-click  (fn []
-                                               (reset! checked nil)
-                                               (update-dd :role))}]
-        [buttons/ghost-drop-down {:text      "Update User Status"
-                                  :selected? (= @selected-drop-down :status)
-                                  :on-click  (fn []
-                                               (reset! checked nil)
-                                               (update-dd :status))}]
+       [:div {:style {:display "flex"
+                      :width   "100%"
+                      :flex-direction "space-between"}}
+        [:div {:style {:display        "flex"
+                       :flex-direction "row"
+                       :gap            "16px"
+                       :width          "100%"}}
+         [buttons/ghost-drop-down {:text      "Update User Role"
+                                   :selected? (= @selected-drop-down :role)
+                                   :on-click  (fn []
+                                                (reset! checked nil)
+                                                (update-dd :role))}]
+         [buttons/ghost-drop-down {:text      "Update User Status"
+                                   :selected? (= @selected-drop-down :status)
+                                   :on-click  (fn []
+                                                (reset! checked nil)
+                                                (update-dd :status))}]
         ;; TODO add this back in when we get a more well defined acceptance criteria.
-        #_(when (:show-remove-user? m)
-            [buttons/ghost-remove-user {:text "Remove User"}])
+         #_(when (:show-remove-user? m)
+             [buttons/ghost-remove-user {:text "Remove User"}])]
         [add-user/add-user-dialog {:user-role user-role}]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database

@@ -66,7 +66,7 @@
                   :height      "100%"
                   :width       "100%"}}
     (when icon icon)
-    [:span text]]])
+    [:span {:style {:white-space "nowrap"}} text]]])
 
 (defn ghost
   [m]
