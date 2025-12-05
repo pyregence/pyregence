@@ -629,6 +629,31 @@
       (throw (ex-info (format "match-drop removal request failed with status %d" status)
                       {:request http-request :response response})))))
 
+(defn- poll-delete-match-drop-results-then-remove-from-db!
+  [sig3-endpoint
+   job-id
+   match-job-id
+   & {:keys [interval-in-seconds timeout-in-seconds]
+      :or   {interval-in-seconds 10
+             timeout-in-seconds  36000}}]
+  (let [end-time (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))]
+    (future
+      (loop []
+        (let [job-state     (poll-job! sig3-endpoint job-id)
+              job-succeded? (= (get job-state "status") "success")
+              job-failed?   (= (get job-state "status") "failure")
+              job-done?     (or job-succeded? job-failed?)]
+          (if job-done?
+            (if job-succeded?
+              (do (log-str "Deleting Match Job #" match-job-id " from the database.")
+                  (call-sql "delete_match_job" match-job-id))
+              (log-str "ERROR deleting match-drop '" match-job-id "'\n" job-state))
+            (do
+              (Thread/sleep (* interval-in-seconds 1000))
+              (if (< (System/currentTimeMillis) end-time)
+                (recur)
+                (println "Timeout while waiting for job" job-id "results. Stopping progress recording.")))))))))
+
 (defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
   (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
         original-request                          dps-request ; TODO https://sig-gis.atlassian.net/browse/PYR1-1317
@@ -637,8 +662,8 @@
     (if (layers-exist? :match-drop geoserver-workspace)
       ;; If the specified workspace exists in the layer atom, we need to use GeoSync to remove the workspace from the GeoServer
       (try
-        (submit-match-drop-removal-job! sig3-endpoint original-request)
-        ;; TODO: check results
+        (let [{:keys [job-id]} (submit-match-drop-removal-job! sig3-endpoint original-request)]
+          (poll-delete-match-drop-results-then-remove-from-db! sig3-endpoint job-id match-job-id))
         (catch Exception _
           (update-match-job! {:match-job-id match-job-id
                               :md-status    1
