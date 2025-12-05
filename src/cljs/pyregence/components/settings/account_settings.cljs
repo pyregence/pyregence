@@ -182,6 +182,10 @@
                           :width           "100%"
                           :gap             "10px"}}
             [:p {:style {:margin "0px"}}
-             [buttons/ghost {:text "Send Reset Link"}]]
+             [buttons/ghost {:text "Send Reset Link"
+                             :on-click (fn []
+                                         ;; TODO what should we do if this fails? Log it? ask them to contact us?
+                                         (go (:success (<! (u-async/call-clj-async! "send-email" email-address :reset))))
+                                         (toast-message! (str "Reset Link sent to " email-address ".")))}]]
             [text-labeled {:label "Last Updated"
                            :text  password-set-date}]]]}]])
