@@ -1,11 +1,11 @@
 (ns pyregence.components.settings.users-table
   (:require
    ["ag-grid-community"                   :refer [AllCommunityModule
-                                                  themeQuartz
-                                                  ModuleRegistry]]
+                                                  ModuleRegistry themeQuartz]]
    ["ag-grid-react"                       :refer [AgGridReact]]
    [clojure.core.async                    :as async :refer [<! go]]
    [goog.object                           :as goog]
+   [pyregence.components.settings.add-user :as add-user]
    [pyregence.components.settings.buttons :as buttons]
    [pyregence.components.settings.roles   :as roles]
    [pyregence.components.settings.status  :as status]
@@ -166,7 +166,10 @@
                         :on-click  (on-click-apply @checked)}]]]))
 
 (defn table-with-buttons
-  [{:keys [users on-click-apply-update-users users-selected?]}]
+  [{:keys [users on-click-apply-update-users users-selected? user-role]}]
+  (def user-role user-role)
+  user-role
+
   ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
@@ -203,8 +206,7 @@
         ;; TODO add this back in when we get a more well defined acceptance criteria.
         #_(when (:show-remove-user? m)
             [buttons/ghost-remove-user {:text "Remove User"}])
-        ;;TODO add this back in when we get more well defined acceptance criteria.
-        #_[add-user/add-user-dialog]]
+        [add-user/add-user-dialog {:user-role user-role}]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database
          :role   [drop-down {:options         roles/roles
