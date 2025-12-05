@@ -664,6 +664,8 @@
       (try
         (-> (submit-match-drop-removal-job! sig3-endpoint original-request)
             (poll-delete-match-drop-results-then-remove-from-db! sig3-endpoint match-job-id))
+        (data-response (str "The " geoserver-workspace " workspace is queued to be removed from "
+                            (get-config :triangulum.views/client-keys :geoserver :match-drop) "."))
         (catch Exception _
           (update-match-job! {:match-job-id match-job-id
                               :md-status    1
