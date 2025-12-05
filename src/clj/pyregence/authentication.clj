@@ -773,7 +773,7 @@
            :name     ""
            :password (generate-password)
            :match_drop_access false
-           :email_verfied false}))
+           :email_verified false}))
    (insert-rows! "users")))
 
 (defn get-current-user-organization
