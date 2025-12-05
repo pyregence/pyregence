@@ -652,7 +652,7 @@
               (Thread/sleep (* interval-in-seconds 1000))
               (if (< (System/currentTimeMillis) end-time)
                 (recur)
-                (println "Timeout while waiting for job" job-id "results. Stopping progress recording.")))))))))
+                (println "Timeout while waiting for job" job-id "results. Aborting.")))))))))
 
 (defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
   (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
