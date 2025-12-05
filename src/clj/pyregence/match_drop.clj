@@ -635,7 +635,7 @@
 
 (defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
   (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id match-job-id)
-        original-request                          dps-request ; HACK: it has the whole sig3 request FIXME create a db table that represents the whole request
+        original-request                          dps-request ; TODO https://sig-gis.atlassian.net/browse/PYR1-1317
         geosync-host                              (:geosync-host dps-request)
         geosync-port                              (:geosync-port dps-request)]
     (if (layers-exist? :match-drop geoserver-workspace)
