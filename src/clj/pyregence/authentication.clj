@@ -762,13 +762,15 @@
 ;; TODO check if user isn't AM or SA and verify the org-id is the same as their org-id, or check if org-admin and use session org-id
 ;; TODO send out welcome emails
 (defn add-org-users [_ org-id users]
+  (def org-id org-id)
   (->>
    users
    (map (fn [{:keys [email role]}]
           {:email   email
            :user_role (tc/str->pg role "user_role")
            ;; TODO should `org_membership_status` be pending until they accept the email or accepted?
-           :org_membership_status (tc/str->pg "pending" "org_membership_status")
+           ;; It has to be accepted if we want to add them now.
+           :org_membership_status (tc/str->pg "accepted" "org_membership_status")
            :organization_rid org-id
            :name     ""
            :password (generate-password)

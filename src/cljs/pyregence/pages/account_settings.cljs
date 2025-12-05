@@ -237,7 +237,8 @@
                   :unsaved-auto-add? unsaved-auto-add?
                   :on-change-auto-add-user-as-org-member
                   #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)
-                  :user-role user-role})]
+                  :user-role user-role
+                  :org-id    org-id})]
 
               [um/main {:user-role                   user-role
                         :users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
