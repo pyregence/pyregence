@@ -656,7 +656,7 @@
 
 (defn delete-match-drop!
   "Deletes the specified match drop from the DB and removes it from the GeoServer
-   via the 'remove' action passed to the GeoSync Runway server."
+   via the 'remove' action passed to the GeoSync Microservice"
   [_ match-job-id]
   (if-let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
     (delete-match-drop-using-kubernetes! sig3-endpoint match-job-id)
