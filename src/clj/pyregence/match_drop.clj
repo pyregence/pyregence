@@ -640,8 +640,9 @@
     (future
       (loop []
         (let [job-state     (poll-job! sig3-endpoint job-id)
-              job-succeded? (= (get job-state "status") "success")
-              job-failed?   (= (get job-state "status") "failure")
+              status        (get job-state "status")
+              job-succeded? (= status "success")
+              job-failed?   (= status "failure")
               job-done?     (or job-succeded? job-failed?)]
           (if job-done?
             (if job-succeded?
