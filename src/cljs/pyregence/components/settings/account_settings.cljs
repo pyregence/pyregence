@@ -73,6 +73,7 @@
                                          (go
                                            (if (:success (<! (u-async/call-clj-async! "send-email" email-address :reset)))
                                              (toast-message! (str "Reset Link sent to " email-address "."))
+                                             ;;TODO consider pulling support email from config.
                                              (toast-message! "Something went wrong when sending the Reset Link. Please contact support@pyrecast.com or try again later."))))}]]
             [text-labeled {:label "Last Updated"
                            :text  password-set-date}]]]}]])
