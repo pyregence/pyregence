@@ -2,7 +2,7 @@
   (:require
    [clojure.core.async                    :refer [<! go]]
    [herb.core                             :refer [<class]]
-   [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons :refer [$drop-down-styles
                                                               $on-hover-gray]]
    [pyregence.components.settings.roles   :as roles]
