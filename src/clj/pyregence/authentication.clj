@@ -764,15 +764,15 @@
     (->>
      users
      (map (fn [{:keys [email role]}]
-            {:email   email
-             :user_role (tc/str->pg role "user_role")
+            {:email                 email
+             :user_role             (tc/str->pg role "user_role")
              :org_membership_status (tc/str->pg "accepted" "org_membership_status")
-             :organization_rid org-id
-             :name     ""
-             :password (generate-password)
-             :email_verified false
-             :match_drop_access false
-             :settings "{:timezone :utc}"}))
+             :organization_rid      org-id
+             :name                  ""
+             :password              (generate-password)
+             :email_verified        false
+             :match_drop_access     false
+             :settings              "{:timezone :utc}"}))
      (insert-rows! "users"))))
 
 (defn get-current-user-organization
