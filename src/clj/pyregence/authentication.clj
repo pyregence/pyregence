@@ -1,11 +1,11 @@
 (ns pyregence.authentication
-  (:require [pyregence.email     :as email]
-            [pyregence.totp      :as totp]
-            [pyregence.utils     :refer [nil-on-error]]
-            [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive insert-rows!]]
+  (:require [pyregence.email            :as email]
+            [pyregence.totp             :as totp]
+            [pyregence.utils            :refer [nil-on-error]]
+            [triangulum.config          :refer [get-config]]
+            [triangulum.database        :refer [call-sql sql-primitive insert-rows!]]
             [triangulum.type-conversion :as tc]
-            [triangulum.response :refer [data-response]])
+            [triangulum.response        :refer [data-response]])
   (:import  [java.util Base64]
             [java.security SecureRandom]))
 
