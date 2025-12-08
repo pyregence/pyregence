@@ -1,19 +1,19 @@
 (ns pyregence.components.settings.users-table
   (:require
-   ["ag-grid-community"                   :refer [AllCommunityModule
+   ["ag-grid-community"                    :refer [AllCommunityModule
                                                   themeQuartz
                                                   ModuleRegistry]]
-   ["ag-grid-react"                       :refer [AgGridReact]]
-   [clojure.core.async                    :as async :refer [<! go]]
-   [goog.object                           :as goog]
+   ["ag-grid-react"                        :refer [AgGridReact]]
+   [clojure.core.async                     :as async :refer [<! go]]
+   [goog.object                            :as goog]
    [pyregence.components.settings.add-user :as add-user]
-   [pyregence.components.settings.buttons :as buttons]
-   [pyregence.components.settings.roles   :as roles]
-   [pyregence.components.settings.status  :as status]
-   [pyregence.components.settings.utils   :refer [db->display search-cmpt]]
-   [pyregence.styles                      :as $]
-   [pyregence.utils.async-utils           :as u-async]
-   [reagent.core                          :as r]))
+   [pyregence.components.settings.buttons  :as buttons]
+   [pyregence.components.settings.roles    :as roles]
+   [pyregence.components.settings.status   :as status]
+   [pyregence.components.settings.utils    :refer [db->display search-cmpt]]
+   [pyregence.styles                       :as $]
+   [pyregence.utils.async-utils            :as u-async]
+   [reagent.core                           :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid functionality
