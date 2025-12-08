@@ -1,7 +1,8 @@
 (ns pyregence.components.two-fa
   "Shared components for two-factor authentication UI"
-  (:require [herb.core        :refer [<class]]
-            [pyregence.styles :as $]))
+  (:require [herb.core                       :refer [<class]]
+            [pyregence.components.login-menu :refer [login-menu]]
+            [pyregence.styles                :as $]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -23,10 +24,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn code-box [code & [used?]]
-  [:div {:style (merge {:background-color "white"
+  [:div {:style (merge {:background-color ($/color-picker :neutral-light-gray)
                         :border           (str "1px solid " ($/color-picker :light-gray))
                         :border-radius    "4px"
-                        :color            "#333"
+                        :color            ($/color-picker :neutral-dark-gray)
                         :font-family      "monospace"
                         :font-size        "0.9rem"
                         :padding          "8px 4px"
@@ -49,7 +50,7 @@
 (defn code-input
   "Code input field. Options: :on-submit :auto-focus? :placeholder"
   [code-atom & [{:keys [on-submit auto-focus? placeholder]
-                 :or   {placeholder "Enter code"}}]]
+                 :or   {placeholder "6-Digit Code"}}]]
   [:input {:auto-focus  auto-focus?
            :class       (<class $/p-bordered-input)
            :maxLength   "8"
@@ -62,10 +63,56 @@
                               (.preventDefault e)
                               (on-submit))))
            :placeholder placeholder
-           :style       {:font-size      "0.9rem"
-                         :height         "2.2rem"
-                         :letter-spacing "0.1em"
-                         :text-align     "center"
-                         :width          "160px"}
+           :style       {:border-color  ($/color-picker :neutral-soft-gray)
+                         :border-radius "4px"
+                         :font-size     "1rem"
+                         :height        "3rem"
+                         :padding-left  "0.75rem"
+                         :text-align    "left"
+                         :width         "280px"}
            :type        "text"
            :value       @code-atom}])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Layout
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn tfa-layout
+  "Page layout wrapper for TFA flows. Takes :title and children."
+  [{:keys [title]} & children]
+  [:div {:style {:height         "100%"
+                 :display        "flex"
+                 :flex-direction "column"
+                 :font-family    "Roboto"}}
+   [:nav {:style {:display         "flex"
+                  :justify-content "center"
+                  :align-items     "center"
+                  :width           "100%"
+                  :height          "33px"
+                  :background      ($/color-picker :yellow)
+                  :flex-shrink     "0"
+                  :font-size       "14px"}}
+    [login-menu {:logged-in? true}]]
+   [:div {:style {:display         "flex"
+                  :justify-content "center"
+                  :align-items     "flex-start"
+                  :padding         "40px 160px"
+                  :background      ($/color-picker :lighter-gray)
+                  :flex            "1 0 0"}}
+    [:div {:style {:display        "flex"
+                   :flex-direction "column"
+                   :gap            "16px"
+                   :max-width      "750px"
+                   :min-width      "500px"
+                   :padding        "16px"
+                   :border-radius  "4px"
+                   :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
+                   :background     ($/color-picker :white)}}
+     [:p {:style {:color          ($/color-picker :neutral-black)
+                  :font-size      "14px"
+                  :font-weight    "700"
+                  :text-transform "uppercase"
+                  :line-height    "14px"
+                  :margin         "0"}}
+      title]
+     (into [:<>] children)]]])

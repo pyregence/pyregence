@@ -1,6 +1,7 @@
 (ns pyregence.email
   (:import java.util.UUID)
-  (:require [pyregence.email.messages :as messages]
+  (:require [clojure.string           :as str]
+            [pyregence.email.messages :as messages]
             [triangulum.config        :refer [get-config]]
             [triangulum.database      :refer [call-sql sql-primitive]]
             [triangulum.email         :refer [send-mail]]
@@ -90,6 +91,23 @@
       (data-response "Match Drop email successfully sent.")
       (data-response "There was an issue sending the Match Drop email." {:status 400}))))
 
+(defn- send-invite-email!
+  "Send invitation email to admin-created user."
+  [email invite-args]
+  (let [user-name (sql-primitive (call-sql "get_user_name_by_email" email))
+        token     (str (UUID/randomUUID))
+        base-url  (get-config :triangulum.email/base-url)
+        fmt       (get-email-format email)
+        org-name  (:organization-name invite-args)
+        org       (some-> org-name (str/trim) (not-empty))
+        subject   (if org
+                    (str "You're Invited to Join " org " on PyreCast")
+                    "You're Invited to Join PyreCast")
+        body      (messages/invite-email fmt base-url email user-name token org)
+        result    (send-mail email nil "PyreCast Support" subject body fmt)]
+    (call-sql "set_verification_token" email token nil)
+    (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
+
 ;; Testing version of send-2fa-code that just prints the code
 (defn mock-send-2fa-code
   "For testing only: generates a 2FA code and stores it, but doesn't send an email"
@@ -132,5 +150,6 @@
     :match-drop (send-match-drop-email! email
                                         "Match Drop Ready"
                                         match-drop-args)
-    (data-response "Invalid email type. Options are `:reset`, `:new-user`, `:2fa`, or `:match-drop.`"
+    :invite     (send-invite-email! email match-drop-args)
+    (data-response "Invalid email type. Options are `:reset`, `:new-user`, `:2fa`, `:match-drop`, or `:invite`."
                    {:status 400})))
