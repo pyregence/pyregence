@@ -506,8 +506,7 @@
             (swap! state assoc-in [step status] true))
           (if job-done?
             (do (update-match-job! {:match-job-id match-job-id
-                                    :md-status    (if job-succeded? 0 1)
-                                    :message      job-state})
+                                    :md-status    (if job-succeded? 0 1)})
                 job-state)
             (do
               (Thread/sleep (* interval-in-seconds 1000))
