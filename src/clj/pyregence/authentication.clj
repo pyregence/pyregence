@@ -777,8 +777,9 @@
     ;; TODO ideally `send-invite-email!` wouldn't need to make an additional db call to get the user name
     ;; as we already know it's blank.
     ;; TODO `send-invite-email` probably doesn't need to return a data response.
-    (doseq [{:keys [email]} users]
-     (email/send-invite-email! email {:organization-name "TODO get ORG NAME"} ))))
+    (let [organization-name (sql-primitive (call-sql "get_organization_name" 1))]
+      (doseq [{:keys [email]} users]
+        (email/send-invite-email! email {:organization-name organization-name})))))
 
 (defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that
