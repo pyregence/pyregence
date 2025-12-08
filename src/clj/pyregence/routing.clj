@@ -100,6 +100,9 @@
    [:post "/clj/user-email-taken"]               {:handler (clj-handler authentication/user-email-taken)
                                                   :auth-type :token
                                                   :auth-action :block}
+   [:post "/clj/update-own-user-name"]           {:handler (clj-handler authentication/update-own-user-name)
+                                                  :auth-type #{:member :token}
+                                                  :auth-action :block}
    [:post "/clj/update-user-name"]               {:handler (clj-handler authentication/update-user-name)
                                                   :auth-type #{:organization-admin :token}
                                                   :auth-action :block}
@@ -109,8 +112,8 @@
                                                   :auth-action :block}
 
    [:post "/clj/update-users-status"]             {:handler (clj-handler authentication/update-users-status)
-                                                  :auth-type #{:organization-admin :token}
-                                                  :auth-action :block}
+                                                   :auth-type #{:organization-admin :token}
+                                                   :auth-action :block}
 
 ;; -- Access Control
    [:post "/clj/get-user-match-drop-access"]     {:handler (clj-handler authentication/get-user-match-drop-access)

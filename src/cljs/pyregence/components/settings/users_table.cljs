@@ -241,14 +241,16 @@
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
                grid-api           (r/atom nil)
-               search             (r/atom nil)]
+               search             (r/atom nil)
+               checked            (r/atom nil)]
     (let [update-dd           (fn [to] (reset! selected-drop-down (when-not (= @selected-drop-down to) to)))
           get-selected-emails (fn []
                                 (->> @grid-api get-selected-rows (map :email)))
           on-click-apply      (on-click-apply-update-users get-selected-emails)
           on-change-search    (fn [e]
-                                (let [s (.-value (.-target e))]
-                                  (.setGridOption @grid-api "quickFilterText" s)
+                                (let [s (aget (aget e "target") "value")]
+                                  (when @grid-api
+                                    (api-call @grid-api "setGridOption" "quickFilterText" s))
                                   (reset! search s)))]
       [:<>
        [:div
@@ -260,10 +262,14 @@
                       :gap            "16px"}}
         [buttons/ghost-drop-down {:text      "Update User Role"
                                   :selected? (= @selected-drop-down :role)
-                                  :on-click  #(update-dd :role)}]
+                                  :on-click  (fn []
+                                               (reset! checked nil)
+                                               (update-dd :role))}]
         [buttons/ghost-drop-down {:text      "Update User Status"
                                   :selected? (= @selected-drop-down :status)
-                                  :on-click  #(update-dd :status)}]
+                                  :on-click  (fn []
+                                               (reset! checked nil)
+                                               (update-dd :status))}]
         ;; TODO add this back in when we get a more well defined acceptance criteria.
         #_(when (:show-remove-user? m)
             [buttons/ghost-remove-user {:text "Remove User"}])
@@ -271,7 +277,8 @@
         #_[add-user/add-user-dialog]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database
-         :role   [drop-down {:options        roles/roles
+         :role   [drop-down {:options         roles/roles
+                             :checked         checked
                              :users-selected? @users-selected?
                              :opt->display   db->display
                              :on-click-apply (on-click-apply
@@ -280,7 +287,8 @@
                                               db->display)}]
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
          ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
-         :status [drop-down {:options        status/statuses
+         :status [drop-down {:options         status/statuses
+                             :checked         checked
                              :users-selected? @users-selected?
                              :opt->display   db->display
                              :on-click-apply (on-click-apply
