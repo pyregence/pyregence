@@ -48,6 +48,13 @@
   [user-id settings]
   (call-sql "update_user_settings" user-id (pr-str settings)))
 
+(defn generate-password
+  ([] (generate-password 32))         ;; 32 bytes → 43-char Base64 password
+  ([n-bytes]
+   (let [bytes (byte-array n-bytes)
+         _ (.nextBytes (SecureRandom.) bytes)]
+     (.encodeToString (Base64/getEncoder) bytes))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Authentication & Session Management
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -747,16 +754,6 @@
       (data-response ""))
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
-
-;; TODO move password logic
-;; TODO triple check this is a secure way to generate a password
-;; TODO should we reuse pyregence totp?
-(defn generate-password
-  ([] (generate-password 32))         ;; 32 bytes → 43-char Base64 password
-  ([n-bytes]
-   (let [bytes (byte-array n-bytes)
-         _ (.nextBytes (SecureRandom.) bytes)]
-     (.encodeToString (Base64/getEncoder) bytes))))
 
 ;; TODO handle adding new Unaffiliated member (probably by fixing upstream callers) which won't have an org-id
 ;; TODO check if user isn't AM or SA and verify the org-id is the same as their org-id, or check if org-admin and use session org-id
