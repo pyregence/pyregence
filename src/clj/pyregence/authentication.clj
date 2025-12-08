@@ -48,7 +48,7 @@
   [user-id settings]
   (call-sql "update_user_settings" user-id (pr-str settings)))
 
-(defn generate-password
+(defn- generate-password
   ([] (generate-password 32))         ;; 32 bytes → 43-char Base64 password
   ([n-bytes]
    (let [bytes (byte-array n-bytes)
