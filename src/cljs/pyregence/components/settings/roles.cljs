@@ -9,8 +9,6 @@
    ;; the organization
    #_"member"])
 
-
-
 ;;TODO maybe the roles should be reversed? (super_admin = 6)
 ;;TODO consider having this replace the roles var above
 (def role->rank
