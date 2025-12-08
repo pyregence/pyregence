@@ -756,24 +756,21 @@
                    {:status 403})))
 
 ;; TODO handle adding new Unaffiliated member (probably by fixing upstream callers) which won't have an org-id
-;; TODO check if user isn't AM or SA and verify the org-id is the same as their org-id, or check if org-admin and use session org-id
 ;; TODO send out welcome emails
-;; TODO what the rest of the user columns?
-;; - match_drop_access
-;; - settings
-;; - email verified
-;; - password_set_date
-(defn add-org-users [_ org-id users]
-  (->>
-   users
-   (map (fn [{:keys [email role]}]
-          {:email   email
-           :user_role (tc/str->pg role "user_role")
-           :org_membership_status (tc/str->pg "accepted" "org_membership_status")
-           :organization_rid org-id
-           :name     ""
-           :password (generate-password)}))
-   (insert-rows! "users")))
+(defn add-org-users [{:keys [user-role organization-id]} org-id users]
+  ;; Prevent none SA&AM from changing other orgs.
+  (when (or (#{"super_admin" "account_manager"} user-role)
+            (= organization-id org-id))
+    (->>
+     users
+     (map (fn [{:keys [email role]}]
+            {:email   email
+             :user_role (tc/str->pg role "user_role")
+             :org_membership_status (tc/str->pg "accepted" "org_membership_status")
+             :organization_rid org-id
+             :name     ""
+             :password (generate-password)}))
+     (insert-rows! "users"))))
 
 (defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that
