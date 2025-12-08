@@ -756,7 +756,7 @@
                    {:status 403})))
 
 ;; TODO handle adding new Unaffiliated member (probably by fixing upstream callers) which won't have an org-id
-;; TODO send out welcome emails
+;; DOING send out welcome emails
 (defn add-org-users [{:keys [user-role organization-id]} org-id users]
   ;; Prevent none SA&AM from changing other orgs.
   (when (or (#{"super_admin" "account_manager"} user-role)
@@ -773,7 +773,12 @@
              :email_verified        false
              :match_drop_access     false
              :settings              "{:timezone :utc}"}))
-     (insert-rows! "users"))))
+     (insert-rows! "users"))
+    ;; TODO ideally `send-invite-email!` wouldn't need to make an additional db call to get the user name
+    ;; as we already know it's blank.
+    ;; TODO `send-invite-email` probably doesn't need to return a data response.
+    (doseq [{:keys [email]} users]
+     (email/send-invite-email! email {:organization-name "TODO get ORG NAME"} ))))
 
 (defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that
