@@ -10,12 +10,6 @@ AS $$
   SELECT org_name
   FROM organizations o
   WHERE o.organization_uid = _org_id;
-$$ LANGUAGE sql;
-
-CREATE OR REPLACE FUNCTION get_organization_name(_org_id integer)
-  SELECT o.org_name
-  FROM organizations o
-  WHERE _org_id = o.org_id
 
 $$ LANGUAGE SQL;
 

@@ -183,7 +183,7 @@
                         :border-top border}}
           [buttons/ghost {:text "Cancel"
                           :on-click on-click-close-dialog}
-           "Cancle"]
+           "Cancel"]
           [buttons/primary {:text "Confirm"
                             :on-click (fn []
                                         (let [id->user
