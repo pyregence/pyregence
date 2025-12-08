@@ -769,7 +769,10 @@
              :org_membership_status (tc/str->pg "accepted" "org_membership_status")
              :organization_rid org-id
              :name     ""
-             :password (generate-password)}))
+             :password (generate-password)
+             :email_verified false
+             :match_drop_access false
+             :settings "{:timezone :utc}"}))
      (insert-rows! "users"))))
 
 (defn get-current-user-organization
