@@ -84,7 +84,7 @@
                                                                        :long-term :fire-scenarios}
                                      :mapbox-access-token             "<access-token>"
                                      :auth-token                      "<changeme123456789>"
-                                     :usage-terms-and-conditions-date "September 1, 2025"
+                                     :usage-terms-and-conditions-date "December 2, 2025"
                                      :features                        {:match-drop       true
                                                                        :sig3-endpoint    "https://sig3.sig-gis-00.corespeq.com/"
                                                                        :fire-history     true
