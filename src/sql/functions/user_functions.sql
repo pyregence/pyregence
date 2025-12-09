@@ -188,7 +188,8 @@ RETURNS TABLE (
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
-    organization_rid      integer
+    organization_rid      integer,
+    password_set_date     timestamptz
 ) AS $$
 
     UPDATE users
@@ -202,7 +203,7 @@ RETURNS TABLE (
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
+    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid, password_set_date
     FROM users
     WHERE email = lower_trim(_email)
       AND email_verified = TRUE;
@@ -218,7 +219,8 @@ RETURNS TABLE (
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
-    organization_rid      integer
+    organization_rid      integer,
+    password_set_date     timestamptz
 ) AS $$
 
     UPDATE users
@@ -230,7 +232,7 @@ RETURNS TABLE (
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
+    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid, password_set_date
     FROM users
     WHERE email = lower_trim(_email)
       AND email_verified = TRUE;
