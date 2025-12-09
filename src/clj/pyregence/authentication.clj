@@ -4,7 +4,8 @@
             [pyregence.utils     :refer [nil-on-error]]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.response :refer [data-response]]))
+            [triangulum.response :refer [data-response]])
+  (:import  [java.text SimpleDateFormat]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -21,7 +22,11 @@
                                         :user-name             (:user_name user-data)
                                         :user-role             (:user_role user-data)
                                         :organization-id       (:organization_rid user-data)
-                                        :org-membership-status (:org_membership_status user-data)}
+                                        :org-membership-status (:org_membership_status user-data)
+                                        ;; TODO is there a better way to format this DATE?
+                                        ;; TODO do we need to consider timezones?
+                                        :password-set-date     (.format (SimpleDateFormat. "yyyy-MM-dd")
+                                                                        (-> user-data :password_set_date))}
                                        (get-config :app :client-keys))})))
 
 (defn- parse-user-settings

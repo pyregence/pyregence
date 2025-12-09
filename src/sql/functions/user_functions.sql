@@ -149,10 +149,10 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    match_drop_access     boolean,
    user_role             user_role,
    org_membership_status org_membership_status,
-   organization_rid      integer
- ) AS $$
+   organization_rid      integer,
+   password_set_date     timestamptz) AS $$
 
-    SELECT user_uid, name, email, match_drop_access, user_role, org_membership_status, organization_rid
+    SELECT user_uid, name, email, match_drop_access, user_role, org_membership_status, organization_rid, password_set_date
     FROM users
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
@@ -195,7 +195,8 @@ RETURNS TABLE (
     SET password = crypt(_password, gen_salt('bf')),
         email_verified = TRUE,
         verification_token = NULL,
-        token_expiration = NULL
+        token_expiration = NULL,
+        password_set_date = NOW()
     WHERE email = lower_trim(_email)
         AND verification_token = _token
         AND verification_token IS NOT NULL
