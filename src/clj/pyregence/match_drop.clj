@@ -277,7 +277,7 @@
 
 (defn- params->match-drop-args [match-job-id
                                 {:keys [ignition-time lat lon wx-type]}
-                                {:keys [md-prefix sig3-geosync-host sig3-geosync-port]}]
+                                {:keys [md-prefix sig3-geosync-host sig3-geosync-port sig3-gcp-bucket]}]
   (let [model-time (u/convert-date-string ignition-time)] ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
     {:west-buffer          12
      :ignition-time        ignition-time
@@ -297,7 +297,8 @@
      :fire-name            (str md-prefix "-match-drop-" match-job-id)
      :geoserver-workspace  (str "fire-spread-forecast_" md-prefix "-match-drop-" match-job-id "_" model-time)
      :geosync-host         sig3-geosync-host
-     :geosync-port         sig3-geosync-port}))
+     :geosync-port         sig3-geosync-port
+     :gcp-bucket           sig3-gcp-bucket}))
 
 (defn- create-match-job-using-runway!
   [{:keys [display-name user-id ignition-time lat lon wx-type] :as params}]
@@ -433,7 +434,7 @@
 (defn- submit-match-drop-job!
   "Requests a match-drop job from kubernetes"
   [params sig3-endpoint match-job-id]
-  (let [match-drop-config                  (get-md-configs [:md-prefix :sig3-geosync-host :sig3-geosync-port])
+  (let [match-drop-config                  (get-md-configs [:md-prefix :sig3-geosync-host :sig3-geosync-port :sig3-gcp-bucket])
         match-drop-inputs                  (params->match-drop-args match-job-id params match-drop-config)
         request                            (match-drop-args->body match-drop-inputs)
         api-url                            (format "%s/api/submit-job" sig3-endpoint)
