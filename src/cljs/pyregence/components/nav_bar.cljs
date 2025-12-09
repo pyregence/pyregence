@@ -1,6 +1,7 @@
 (ns pyregence.components.nav-bar
   (:require [pyregence.components.forecast-tabs :refer [forecast-tabs]]
-            [pyregence.components.login-menu    :refer [login-menu]]
+            #_[pyregence.components.login-menu    :refer [login-menu]]
+            [pyregence.components.settings-menu :refer [settings-menu]]
             [pyregence.styles                   :as $]))
 
 (defn- $nav-bar
@@ -19,4 +20,6 @@
   [props]
   [:nav {:style ($/combine $nav-bar {:background ($/color-picker :yellow)})}
    [forecast-tabs props]
-   [login-menu props]])
+   #_[login-menu props]
+   [settings-menu props]
+   ])
