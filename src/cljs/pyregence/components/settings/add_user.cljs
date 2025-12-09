@@ -198,6 +198,8 @@
                                                                    vals
                                                                    (some :invalid-email?))]
                                           (when-not invalid-emails?
+                                            ;; TODO what do we do if the user already exists in the system or there are other issues?
+                                            ;; Maybe a toast like "Something went wrong..." I'm not sure we want to tell them the user is in the system (thats a security risk)
                                             (add-new-users! org-id (->> id->user vals (map #(dissoc % :invalid-email?))))
                                             ;;TODO better toast
                                             (toast-message! "Invite Emails sent!")
