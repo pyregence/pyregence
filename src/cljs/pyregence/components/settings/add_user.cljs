@@ -156,18 +156,16 @@
                                                      (reset! selected-id nil)))
                                   ;; NOTE condition allows de-selecting by clicking the toggle
                                   :on-click      #(reset! selected-id (when-not (= @selected-id id) id))}]
-             ;;TODO this needs to remove the item
                [:div {:on-click #(swap! id->user dissoc id)
                       :style    {:cursor        "pointer"
                                  :padding-right "20px"
-                              ;; TODO adding marging is a hack because we can't align center, because
-                              ;; when the invalid state hits it throws things off.
+                                 ;; TODO adding marging is a hack because we can't align center, because
+                                 ;; when the invalid state hits it throws things off.
                                  :margin-top    "10px"}}
                 (when-not (= 1 (count @id->user))
                   [svg/x-mark])]]))]]
          [:div {:style {:padding-left "16px"}}
           [buttons/ghost {:text     "Add Another User"
-                        ;;TODO what email and role should be assoced?
                           :on-click #(swap! id->user assoc (random-uuid) default-user)
                           :icon     [svg/add]}]]
          [:div {:style {:display         "flex"
@@ -198,8 +196,6 @@
                                             (add-new-users! org-id (->> id->user vals (map #(dissoc % :invalid-email?))))
                                             ;;TODO better toast
                                             (toast-message! "Invite Emails sent!")
-                                            ;; TODO this needs to update the client
-                                            ;; TODO this needs to do some light validations on the emails and report back
                                             (on-click-close-dialog))))}]]]))))
 
 (defn add-user-dialog [{:keys [user-role org-id]}]
