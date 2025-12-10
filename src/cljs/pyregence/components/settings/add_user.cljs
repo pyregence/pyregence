@@ -165,7 +165,8 @@
                               ;; TODO adding marging is a hack because we can't align center, because
                               ;; when the invalid state hits it throws things off.
                               :margin-top "10px"}}
-                [svg/x-mark]]]))]]
+                (when-not (= 1 (count @id->user))
+                  [svg/x-mark])]]))]]
          [:div {:style {:padding-left "16px"}}
           [buttons/ghost {:text "Add Another User"
                         ;;TODO what email and role should be assoced?
