@@ -388,3 +388,11 @@ RETURNS TABLE (
     LEFT JOIN organizations o
         ON u.organization_rid = o.organization_uid;
 $$ LANGUAGE SQL;
+
+  -- Returns the date the password was last reset.
+CREATE OR REPLACE FUNCTION get_password_set_date(_user_id integer)
+RETURNS timestamptz AS $$
+    SELECT password_set_date
+    FROM users
+    WHERE user_uid = _user_id;
+$$ LANGUAGE SQL
