@@ -217,7 +217,7 @@
 (defn main
   [tabs-data]
   [:nav-bar-main {:style {:display         "flex"
-                          :height          "100vh"
+                          :height          "100%"
                           :width           "360px"
                           :padding         "40px 0"
                           :flex-direction  "column"

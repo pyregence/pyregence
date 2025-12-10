@@ -61,7 +61,7 @@
       :reagent-render
       (fn [{:keys [user-role user-email]}]
         [:div
-         {:style {:height         "100%"
+         {:style {:height         "100vh"
                   :display        "flex"
                   :flex-direction "column"
                   :font-family    "Roboto"}}
