@@ -64,7 +64,8 @@
                     :flex-direction "column"}}
       (doall
        (for [opt options]
-         [:button {:on-click (on-click-role opt)
+         [:button {:key opt
+                   :on-click (on-click-role opt)
                    :class (<class #(buttons/$on-hover-gray {:background "white"}))
                    :style {:border "none"
                            :display "flex"
