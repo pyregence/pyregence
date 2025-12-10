@@ -45,7 +45,7 @@
 
 (defn root-component
   "The root component of the /account-settings page."
-  [{:keys [user-role]}]
+  [{:keys [user-role password-set-date]}]
   (let [org-id->org     (r/atom nil)
         user-name       (r/atom nil)
         users           (r/atom nil)
@@ -104,8 +104,7 @@
             [nav-bar/main tabs]
             (case selected-page
               "Account Settings"
-              ;;TODO don't use hardcoded password-set date.
-              [as/main {:password-set-date "1/2/2020"
+              [as/main {:password-set-date password-set-date
                         :role-type         user-role
                         :user-name         @user-name
                         :email-address     user-email
@@ -130,8 +129,8 @@
                              unsaved-org-name-support-message]} (@org-id->org selected)
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
-                       ;;TODO check if this shouldn't happen in the db instead.
-                       (map #(set/rename-keys % {:full-name :name}) @users)
+                       ;;TODO check if this shouldn't happen in the db or server instead.
+                       (map #(set/rename-keys % {:full-name :name :membership-status :org-membership-status}) @users)
                        (filter (fn [{:keys [user-role organization-name]}]
                                  (and
                                   ;;TODO this conditional should be based on the og-id or org-unique name

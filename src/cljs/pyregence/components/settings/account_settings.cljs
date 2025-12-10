@@ -2,6 +2,7 @@
   (:require
    [cljs.reader                           :as reader]
    [clojure.core.async                    :refer [<! go]]
+   [clojure.edn                           :as edn]
    [clojure.string                        :as str]
    [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons]
@@ -20,6 +21,8 @@
                                  :loading  true   ;; Loading state
                                  :settings nil    ;; User settings
                                  :user     nil}))
+
+(defonce password-set-date (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
@@ -152,13 +155,28 @@
    [buttons/ghost {:text     "Save Changes"
                    :on-click (:on-click-save-user-name m)}]])
 
+(defn show-password-set-date
+  []
+  (r/create-class
+   {:component-did-mount
+    #(go
+       (reset! password-set-date
+               (if-let [date
+                        (edn/read-string
+                         (:body (<! (u-async/call-clj-async! "get-password-set-date"))))]
+                 date
+                 "Never")))
+    :reagent-render
+    (fn []
+      [text-labeled {:label "Last Updated"
+                     :text  @password-set-date}])}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn main
-  [{:keys [password-set-date
-           email-address
+  [{:keys [email-address
            role-type] :as user-info}]
   [:div {:style main-styles}
    [card {:title "MY ACCOUNT DETAILS"
@@ -189,5 +207,4 @@
                                              (toast-message! (str "Reset Link sent to " email-address "."))
                                              ;;TODO consider pulling support email from config. See PYR1-1319.
                                              (toast-message! "Something went wrong when sending the Reset Link. Please contact support@pyrecast.com or try again later."))))}]]
-            [text-labeled {:label "Last Updated"
-                           :text  password-set-date}]]]}]])
+            [show-password-set-date]]]}]])
