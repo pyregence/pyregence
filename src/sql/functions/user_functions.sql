@@ -149,10 +149,10 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    match_drop_access     boolean,
    user_role             user_role,
    org_membership_status org_membership_status,
-   organization_rid      integer,
-   password_set_date     timestamptz) AS $$
+   organization_rid      integer
+   ) AS $$
 
-    SELECT user_uid, name, email, match_drop_access, user_role, org_membership_status, organization_rid, password_set_date
+    SELECT user_uid, name, email, match_drop_access, user_role, org_membership_status, organization_rid
     FROM users
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
@@ -188,8 +188,7 @@ RETURNS TABLE (
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
-    organization_rid      integer,
-    password_set_date     timestamptz
+    organization_rid      integer
 ) AS $$
 
     UPDATE users
@@ -203,7 +202,7 @@ RETURNS TABLE (
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid, password_set_date
+    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
     FROM users
     WHERE email = lower_trim(_email)
       AND email_verified = TRUE;
@@ -219,8 +218,7 @@ RETURNS TABLE (
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
-    organization_rid      integer,
-    password_set_date     timestamptz
+    organization_rid      integer
 ) AS $$
 
     UPDATE users
@@ -232,7 +230,7 @@ RETURNS TABLE (
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW());
 
-    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid, password_set_date
+    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
     FROM users
     WHERE email = lower_trim(_email)
       AND email_verified = TRUE;

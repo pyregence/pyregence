@@ -22,11 +22,7 @@
                                         :user-name             (:user_name user-data)
                                         :user-role             (:user_role user-data)
                                         :organization-id       (:organization_rid user-data)
-                                        :org-membership-status (:org_membership_status user-data)
-                                        ;; TODO is there a better way to format this DATE?
-                                        ;; TODO do we need to consider timezones?
-                                        :password-set-date     (.format (SimpleDateFormat. "yyyy-MM-dd")
-                                                                        (-> user-data :password_set_date))}
+                                        :org-membership-status (:org_membership_status user-data)}
                                        (get-config :app :client-keys))})))
 
 (defn- parse-user-settings
@@ -803,6 +799,14 @@
                 :org-membership-status org_membership_status
                 :organization-name     organization_name}))
        (data-response)))
+
+(defn get-password-set-date
+  [{:keys [user-id]}]
+  (let [row (sql-primitive (call-sql "get_password_set_date" user-id))
+        format-date (fn [sql-time]
+                      (.format (SimpleDateFormat. "yyyy-MM-dd")
+                               sql-time))]
+    (data-response (when row (format-date row)))))
 
 (defn get-psps-organizations
   "Returns the list of all organizations that have PSPS layers (currently denoted

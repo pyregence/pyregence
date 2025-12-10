@@ -88,6 +88,9 @@
                                                   :auth-action :block}
 
    ;; -- User Management
+   [:post "/clj/get-password-set-date"]          {:handler     (clj-handler authentication/get-password-set-date)
+                                                  :auth-type   :member
+                                                  :auth-action :block}
    [:post "/clj/add-new-user"]                   {:handler (clj-handler authentication/add-new-user)
                                                   :auth-type :token
                                                   :auth-action :block}
