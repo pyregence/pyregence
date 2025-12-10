@@ -160,12 +160,7 @@
          [:div {:style ($/combine $/flex-col {:padding "1rem"})}
           (if (vector? body)
             body
-            [:label {:style {:font-size          ".95rem"
-                             :display            "-webkit-box"
-                             :-webkit-box-orient "vertical"
-                             :-webkit-line-clamp "10"
-                             :overflow           "hidden"
-                             :max-width          "80ch"}}
+            [:label {:style {:font-size ".95rem"}}
              (show-line-break body)])
           (condp = mode
             :close   [:div {:style ($/combine [$/align :flex :right] [$/margin "1.25rem" :t])}
