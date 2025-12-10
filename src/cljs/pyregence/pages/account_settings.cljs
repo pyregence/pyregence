@@ -130,8 +130,8 @@
                              unsaved-org-name-support-message]} (@org-id->org selected)
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
-                       ;;TODO check if this shouldn't happen in the db instead.
-                       (map #(set/rename-keys % {:full-name :name}) @users)
+                       ;;TODO check if this shouldn't happen in the db or server instead.
+                       (map #(set/rename-keys % {:full-name :name :membership-status :org-membership-status}) @users)
                        (filter (fn [{:keys [user-role organization-name]}]
                                  (and
                                   ;;TODO this conditional should be based on the og-id or org-unique name
