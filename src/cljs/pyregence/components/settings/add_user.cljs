@@ -98,7 +98,7 @@
   [{:keys [role on-click on-click-role selected?]}]
   [:div
    [:div
-    [ghost-drop-down {:text role
+    [ghost-drop-down {:text (utils/db->display role)
                       :selected? selected?
                       :on-click on-click}]]
    [:div {:style {:display (if selected? "block" "none")
@@ -147,7 +147,7 @@
                                      :on-change (fn [e]
                                                   (let [email (.-value (.-target e))]
                                                     (swap! id->user assoc-in [id :email] email)))}]
-               [select-user-role {:role (utils/db->display role)
+               [select-user-role {:role role
                                   :selected? (= @selected-id id)
                                   :on-click-role (fn [new-role]
                                                    (fn []
