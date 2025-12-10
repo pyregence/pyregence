@@ -63,7 +63,6 @@
     [:div {:style {:display        :flex
                    :flex-direction :column
                    :height         "100%"}}
-     [header]
      [toast-message]
      [root-component params]
      (when footer?

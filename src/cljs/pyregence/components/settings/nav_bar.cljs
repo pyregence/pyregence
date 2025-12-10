@@ -216,19 +216,20 @@
 
 (defn main
   [tabs-data]
-  [:nav-bar-main {:style {:display         "flex"
-                          :height          "100%"
-                          :width           "360px"
-                          :padding         "40px 0"
-                          :flex-direction  "column"
-                          :justify-content "space-between"
-                          :border-right    (str "1px solid " ($/color-picker :neutral-soft-gray))
-                          :background      "#FFF"}}
-   [:div {:style {:display        "flex"
-                  :flex-direction "column"
-                  :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
-                  :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
-    [tabs tabs-data]]
-   [button {:text     "Logout" :icon svg/logout
-            :on-click #(go (<! (u-async/call-clj-async! "log-out"))
-                           (-> js/window .-location .reload))}]])
+  [:nav-bar-main {:style {:height "100%"}}
+   [:div {:style {:display         "flex"
+                  :height          "100vh"
+                  :width           "360px"
+                  :padding         "40px 0"
+                  :flex-direction  "column"
+                  :justify-content "space-between"
+                  :border-right    (str "1px solid " ($/color-picker :neutral-soft-gray))
+                  :background      "#FFF"}}
+    [:div {:style {:display        "flex"
+                   :flex-direction "column"
+                   :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
+                   :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
+     [tabs tabs-data]]
+    [button {:text     "Logout" :icon svg/logout
+             :on-click #(go (<! (u-async/call-clj-async! "log-out"))
+                            (-> js/window .-location .reload))}]]])
