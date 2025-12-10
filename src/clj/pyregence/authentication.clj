@@ -756,8 +756,6 @@
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
 
-;; TODO handle adding new Unaffiliated member (probably by fixing upstream callers) which won't have an org-id
-;; DOING send out welcome emails
 (defn add-org-users [{:keys [user-role organization-id]} org-id users]
   ;; Prevent none SA&AM from changing other orgs.
   (when (or (#{"super_admin" "account_manager"} user-role)
@@ -767,7 +765,7 @@
      (map (fn [{:keys [email role]}]
             {:email                 email
              :user_role             (tc/str->pg role "user_role")
-             :org_membership_status (tc/str->pg "accepted" "org_membership_status")
+             :org_membership_status (tc/str->pg (if org-id "accepted" "none") "org_membership_status")
              :organization_rid      org-id
              :name                  ""
              :password              (generate-password)
