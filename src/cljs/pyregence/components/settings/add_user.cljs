@@ -114,22 +114,22 @@
     (r/with-let [id->user (r/atom {1 default-user})
                  selected-id (r/atom nil)]
       (let [border (str "1px solid " ($/color-picker :neutral-soft-gray))]
-        [:div {:style {:display "flex"
-                       :gap "16px"
+        [:div {:style {:display        "flex"
+                       :gap            "16px"
                        :flex-direction "column"
-                       :width "600px"}}
-         [:p {:style {:display "flex"
-                      :padding "16px 24px"
+                       :width          "600px"}}
+         [:p {:style {:display         "flex"
+                      :padding         "16px 24px"
                       :justify-content "space-between"
-                      :align-self "stretch"
-                      :border-bottom (str "1px solid " ($/color-picker :neutral-soft-gray))
-                      :font-size "18px"
-                      :font-weight "500"}}
+                      :align-self      "stretch"
+                      :border-bottom   (str "1px solid " ($/color-picker :neutral-soft-gray))
+                      :font-size       "18px"
+                      :font-weight     "500"}}
           "Add New User"]
-         [:div {:style {:display "grid"
-                        :padding-left "16px"
-                        :gap "16px"
-                        :align-items "start"
+         [:div {:style {:display               "grid"
+                        :padding-left          "16px"
+                        :gap                   "16px"
+                        :align-items           "start"
                       ;; TODO this `grid-template-columns` choice might need to double checked.
                       ;; TODO the user role box ideally would be the same size no matter the text, which means
                       ;; it has to be the text size of the largest option...
@@ -143,52 +143,52 @@
            ;;TODO hashmap might be unsorted... think about that.
             (for [[id {:keys [email role invalid-email?]}] @id->user]
               [:<> {:key id}
-               [enter-email-address {:email email
+               [enter-email-address {:email          email
                                      :invalid-email? invalid-email?
-                                     :on-change (fn [e]
-                                                  (let [email (.-value (.-target e))]
-                                                    (swap! id->user assoc-in [id :email] email)))}]
-               [select-user-role {:role role
-                                  :selected? (= @selected-id id)
+                                     :on-change      (fn [e]
+                                                       (let [email (.-value (.-target e))]
+                                                         (swap! id->user assoc-in [id :email] email)))}]
+               [select-user-role {:role          role
+                                  :selected?     (= @selected-id id)
                                   :on-click-role (fn [new-role]
                                                    (fn []
                                                      (swap! id->user assoc-in [id :role] new-role)
                                                      (reset! selected-id nil)))
                                   ;; NOTE condition allows de-selecting by clicking the toggle
-                                  :on-click #(reset! selected-id (when-not (= @selected-id id) id))}]
+                                  :on-click      #(reset! selected-id (when-not (= @selected-id id) id))}]
              ;;TODO this needs to remove the item
                [:div {:on-click #(swap! id->user dissoc id)
-                      :style {:cursor "pointer"
-                              :padding-right "20px"
+                      :style    {:cursor        "pointer"
+                                 :padding-right "20px"
                               ;; TODO adding marging is a hack because we can't align center, because
                               ;; when the invalid state hits it throws things off.
-                              :margin-top "10px"}}
+                                 :margin-top    "10px"}}
                 (when-not (= 1 (count @id->user))
                   [svg/x-mark])]]))]]
          [:div {:style {:padding-left "16px"}}
-          [buttons/ghost {:text "Add Another User"
+          [buttons/ghost {:text     "Add Another User"
                         ;;TODO what email and role should be assoced?
                           :on-click #(swap! id->user assoc (random-uuid) default-user)
-                          :icon [svg/add]}]]
-         [:div {:style {:display "flex"
-                        :flex-direction "row"
-                        :gap "8px"
+                          :icon     [svg/add]}]]
+         [:div {:style {:display         "flex"
+                        :flex-direction  "row"
+                        :gap             "8px"
                         :justify-content "flex-end"
-                        :padding "24px"
-                        :border-top border}}
-          [buttons/ghost {:text "Cancel"
+                        :padding         "24px"
+                        :border-top      border}}
+          [buttons/ghost {:text     "Cancel"
                           :on-click on-click-close-dialog}
            "Cancel"]
-          [buttons/primary {:text "Confirm"
+          [buttons/primary {:text     "Confirm"
                             :on-click (fn []
                                         (let [id->user
                                               (swap! id->user
                                                      (fn [id->user]
                                                        (reduce-kv
-                                                         (fn [id->user id {:keys [email] :as user}]
-                                                           (assoc id->user id (assoc user :invalid-email? (not (valid-email? email)))))
-                                                         {}
-                                                         id->user)))
+                                                        (fn [id->user id {:keys [email] :as user}]
+                                                          (assoc id->user id (assoc user :invalid-email? (not (valid-email? email)))))
+                                                        {}
+                                                        id->user)))
                                               invalid-emails? (->> id->user
                                                                    vals
                                                                    (some :invalid-email?))]
@@ -200,8 +200,7 @@
                                             (toast-message! "Invite Emails sent!")
                                             ;; TODO this needs to update the client
                                             ;; TODO this needs to do some light validations on the emails and report back
-                                            (on-click-close-dialog)
-                                            )))}]]]))))
+                                            (on-click-close-dialog))))}]]]))))
 
 (defn add-user-dialog [{:keys [user-role org-id]}]
   (r/with-let [dialog-elem (atom nil)]
