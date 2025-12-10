@@ -122,5 +122,5 @@
     [:h3 "QUESTIONS."]
     [:p
      "If you have any questions regarding this Privacy Policy, you can contact us at "
-     [:a {:href "mailto:contact@pyregence.org"} "contact@pyregence.org"
+     [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"
       "."]]]])
