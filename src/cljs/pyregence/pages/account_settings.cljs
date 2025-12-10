@@ -45,7 +45,7 @@
 
 (defn root-component
   "The root component of the /account-settings page."
-  [{:keys [user-role]}]
+  [{:keys [user-role password-set-date]}]
   (let [org-id->org     (r/atom nil)
         user-name       (r/atom nil)
         users           (r/atom nil)
@@ -104,8 +104,7 @@
             [nav-bar/main tabs]
             (case selected-page
               "Account Settings"
-              ;;TODO don't use hardcoded password-set date.
-              [as/main {:password-set-date "1/2/2020"
+              [as/main {:password-set-date password-set-date
                         :role-type         user-role
                         :user-name         @user-name
                         :email-address     user-email

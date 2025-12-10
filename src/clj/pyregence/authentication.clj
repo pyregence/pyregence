@@ -4,7 +4,8 @@
             [pyregence.utils     :refer [nil-on-error]]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.response :refer [data-response]]))
+            [triangulum.response :refer [data-response]])
+  (:import  [java.text SimpleDateFormat]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -798,6 +799,14 @@
                 :org-membership-status org_membership_status
                 :organization-name     organization_name}))
        (data-response)))
+
+(defn get-password-set-date
+  [{:keys [user-id]}]
+  (let [row (sql-primitive (call-sql "get_password_set_date" user-id))
+        format-date (fn [sql-time]
+                      (.format (SimpleDateFormat. "yyyy-MM-dd")
+                               sql-time))]
+    (data-response (when row (format-date row)))))
 
 (defn get-psps-organizations
   "Returns the list of all organizations that have PSPS layers (currently denoted
