@@ -67,6 +67,7 @@
                    :height         "100%"}}
      [header]
      [toast-message]
-     [root-component params]
+     [:div {:style {:height "100vh"}}
+      [root-component params]]
      (when footer?
        [footer])]))
