@@ -64,19 +64,14 @@
                     :flex-direction "column"}}
       (doall
        (for [opt options]
-         [:div {:key opt
-                :style {:display "flex"
-                        :flex-direction "row"}}
-          ;; TODO [Important!] This needs to update the table with the changes and emit a toast.
-          [:button {:on-click (on-click-role opt)
-                    :class (<class #(buttons/$on-hover-gray {:background "white"}))
-                    :style {:border "none"
-                            :display "flex"
-                            :justify-content "start"
-                            :width "100%"}}
-           (utils/db->display opt)]]))]]))
+         [:button {:on-click (on-click-role opt)
+                   :class (<class #(buttons/$on-hover-gray {:background "white"}))
+                   :style {:border "none"
+                           :display "flex"
+                           :justify-content "start"
+                           :width "100%"}}
+          (utils/db->display opt)]))]]))
 
-;;TODO try to merge this back into buttons ns, it was changed to gird and we assoced in a width.
 (defn ghost-drop-down
   [{:keys [text class on-click selected?]
     :or   {class (<class #($on-hover-gray (assoc $drop-down-styles :width "100%")))}}]
@@ -87,7 +82,8 @@
                   :gap                   "8px"
                   :height                "100%"
                   :width                 "100%"}}
-    [:span {:style {:padding "12px 14px"}} text]
+    [:span {:style {:padding "12px 14px"
+                    :text-align "start"}} text]
     [:div {:style
            {:display         "flex"
             :align-items     "center"
@@ -103,12 +99,12 @@
   [:div
    [:div
     [ghost-drop-down {:text role
+                      :selected? selected?
                       :on-click on-click}]]
    [:div {:style {:display (if selected? "block" "none")
                   :background "white"
                   :position "absolute"}}
     [drop-down-options {:options (roles/role->roles-below role)
-                        ;; TODO actually save to db on click
                         :on-click-role on-click-role}]]])
 
 (defn invite-modal
@@ -157,7 +153,8 @@
                                                    (fn []
                                                      (swap! id->user assoc-in [id :role] new-role)
                                                      (reset! selected-id nil)))
-                                  :on-click #(reset! selected-id id)}]
+                                  ;; NOTE condition allows de-selecting by clicking the toggle
+                                  :on-click #(reset! selected-id (when-not (= @selected-id id) id))}]
              ;;TODO this needs to remove the item
                [:div {:on-click #(swap! id->user dissoc id)
                       :style {:cursor "pointer"
