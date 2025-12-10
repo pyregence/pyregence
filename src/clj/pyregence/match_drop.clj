@@ -414,10 +414,11 @@
        1000)))
 
 (defn- match-drop-args->body
-  [{:keys [fire-name lon lat wx-start-time ignition-time fuel-source wx-type fuel-version num-ensemble-members geosync-host geosync-port geoserver-workspace]}]
+  [{:keys [fire-name lon lat wx-start-time ignition-time fuel-source wx-type fuel-version num-ensemble-members geosync-host geosync-port geoserver-workspace gcp-bucket]}]
   {:network   :match-drop
    :arguments {:geosync-host         geosync-host
                :geosync-port         geosync-port
+               :gcp-bucket           gcp-bucket
                :pyrc_fire_name       fire-name
                :geoserver-workspace  geoserver-workspace
                :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
