@@ -200,6 +200,7 @@
                                             (toast-message! "Invite Emails sent!")
                                             ;; TODO this needs to update the client
                                             ;; TODO this needs to do some light validations on the emails and report back
+                                            (on-click-close-dialog)
                                             )))}]]]))))
 
 (defn add-user-dialog [{:keys [user-role org-id]}]
