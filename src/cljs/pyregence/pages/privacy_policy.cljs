@@ -72,7 +72,7 @@
     [:p
      [:em "Modifying your Personal Information. "]
      "To update or change Personal Information that you already have submitted in connection with a product registration, warranty claim, or employment application, please contact us at "
-     [:a {:href "mailto:contact@pyregence.org"} "contact@pyregence.org"]
+     [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"]
      [:br]
      [:br]
      [:em "Cookies. "]
@@ -122,5 +122,5 @@
     [:h3 "QUESTIONS."]
     [:p
      "If you have any questions regarding this Privacy Policy, you can contact us at "
-     [:a {:href "mailto:contact@pyregence.org"} "contact@pyregence.org"
+     [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"
       "."]]]])
