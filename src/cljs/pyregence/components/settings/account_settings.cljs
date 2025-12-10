@@ -22,7 +22,7 @@
                                  :settings nil    ;; User settings
                                  :user     nil}))
 
-(def password-set-date (r/atom nil))
+(defonce password-set-date (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
