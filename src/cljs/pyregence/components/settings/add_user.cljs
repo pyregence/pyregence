@@ -175,11 +175,7 @@
                         :flex-direction "row"
                         :gap "8px"
                         :justify-content "flex-end"
-                        :padding-top "24px"
-                        :padding-right "24px"
-                        ;;TODO this is large because of the drop down options, think of a better way.
-                        :padding-bottom "58px"
-                        :padding-left "24px"
+                        :padding "24px"
                         :border-top border}}
           [buttons/ghost {:text "Cancel"
                           :on-click on-click-close-dialog}
@@ -215,7 +211,8 @@
      [:dialog {:ref #(reset! dialog-elem %)
                :style {:border "none"
                        :padding "0px"
-                       :border-radius "10px"}}
+                       :border-radius "10px"
+                       :overflow      "visible"}}
       [:div {:style {:overflow "hidden"}}
        [invite-modal {:on-click-close-dialog #(.close @dialog-elem)
                       :org-id                org-id
