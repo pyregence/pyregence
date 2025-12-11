@@ -167,7 +167,7 @@
                         :on-click  (on-click-apply @checked)}]]]))
 
 (defn table-with-buttons
-  [{:keys [users on-click-apply-update-users users-selected? user-role org-id]}]
+  [{:keys [users on-click-apply-update-users users-selected? org-id role-options default-role-option]}]
   ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
@@ -210,10 +210,10 @@
         ;; TODO add this back in when we get a more well defined acceptance criteria.
          #_(when (:show-remove-user? m)
              [buttons/ghost-remove-user {:text "Remove User"}])]
-        [add-user/add-user-dialog {:user-role user-role :org-id org-id}]]
+        [add-user/add-user-dialog {:org-id org-id :role-options role-options :default-role-option default-role-option}]]
        (case @selected-drop-down
-         ;; TODO ideally these roles should be queried from the database
-         :role   [drop-down {:options         roles/roles
+         ;; TODO ideally these roles should be queried from the database from a sql function.
+         :role   [drop-down {:options         roles/organization-roles
                              :checked         checked
                              :users-selected? @users-selected?
                              :opt->display   db->display
