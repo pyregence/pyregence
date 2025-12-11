@@ -18,7 +18,7 @@
 (defn valid-email? [email]
   (boolean (re-matches email-regex email)))
 
-(defn add-new-users!
+(defn- add-new-users!
   [org-id users]
   (go (<! (u-async/call-clj-async! "add-org-users" org-id users))))
 
@@ -159,7 +159,7 @@
                [:div {:on-click #(swap! id->user dissoc id)
                       :style    {:cursor        "pointer"
                                  :padding-right "20px"
-                                 ;; TODO adding marging is a hack because we can't align center, because
+                                 ;; TODO adding margin is a hack because we can't align center, because
                                  ;; when the invalid state hits it throws things off.
                                  :margin-top    "10px"}}
                 (when-not (= 1 (count @id->user))
@@ -190,13 +190,17 @@
                                               invalid-emails? (->> id->user
                                                                    vals
                                                                    (some :invalid-email?))]
-                                          (when-not invalid-emails?
-                                            ;; TODO what do we do if the user already exists in the system or there are other issues?
-                                            ;; Maybe a toast like "Something went wrong..." I'm not sure we want to tell them the user is in the system (thats a security risk)
-                                            (add-new-users! org-id (->> id->user vals (map #(dissoc % :invalid-email?))))
-                                            ;;TODO better toast
-                                            (toast-message! "Invite Emails sent!")
-                                            (on-click-close-dialog))))}]]]))))
+                                          (if invalid-emails?
+                                            (toast-message! "One or more email addresses are invalid.")
+                                            (go
+                                              (let [resp (<! (add-new-users!
+                                                              org-id
+                                                              (->> id->user vals (map #(dissoc % :invalid-email?)))))]
+                                                (if (:success resp)
+                                                  (do
+                                                    (toast-message! "User(s) added and invite email(s) sent!")
+                                                    (on-click-close-dialog))
+                                                  (toast-message! "Something went wrong when adding the new user(s).")))))))}]]]))))
 
 (defn add-user-dialog [{:keys [user-role org-id]}]
   (r/with-let [dialog-elem (atom nil)]
