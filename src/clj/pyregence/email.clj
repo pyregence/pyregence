@@ -91,7 +91,7 @@
       (data-response "Match Drop email successfully sent.")
       (data-response "There was an issue sending the Match Drop email." {:status 400}))))
 
-(defn- send-invite-email!
+(defn send-invite-email!
   "Send invitation email to admin-created user."
   [email invite-args]
   (let [user-name (sql-primitive (call-sql "get_user_name_by_email" email))

@@ -1,11 +1,14 @@
 (ns pyregence.authentication
-  (:require [pyregence.email     :as email]
-            [pyregence.totp      :as totp]
-            [pyregence.utils     :refer [nil-on-error]]
-            [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.response :refer [data-response]])
-  (:import  [java.text SimpleDateFormat]))
+  (:require [pyregence.email            :as email]
+            [pyregence.totp             :as totp]
+            [pyregence.utils            :refer [nil-on-error]]
+            [triangulum.config          :refer [get-config]]
+            [triangulum.database        :refer [call-sql sql-primitive insert-rows!]]
+            [triangulum.type-conversion :as tc]
+            [triangulum.response        :refer [data-response]])
+  (:import  [java.util Base64]
+            [java.security SecureRandom]
+            [java.text SimpleDateFormat]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -45,6 +48,13 @@
   "Saves user settings to the database."
   [user-id settings]
   (call-sql "update_user_settings" user-id (pr-str settings)))
+
+(defn- generate-password
+  ([] (generate-password 32))         ;; 32 bytes → 43-char Base64 password
+  ([n-bytes]
+   (let [bytes (byte-array n-bytes)
+         _ (.nextBytes (SecureRandom.) bytes)]
+     (.encodeToString (Base64/getEncoder) bytes))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Authentication & Session Management
@@ -745,6 +755,30 @@
       (data-response ""))
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
+
+(defn add-org-users [{:keys [user-role organization-id]} org-id users]
+  ;; Prevent none SA&AM from changing other orgs.
+  (when (or (#{"super_admin" "account_manager"} user-role)
+            (= organization-id org-id))
+    (->>
+     users
+     (map (fn [{:keys [email role]}]
+            {:email                 email
+             :user_role             (tc/str->pg role "user_role")
+             :org_membership_status (tc/str->pg (if org-id "accepted" "none") "org_membership_status")
+             :organization_rid      org-id
+             :name                  ""
+             :password              (generate-password)
+             :email_verified        false
+             :match_drop_access     false
+             :settings              "{:timezone :utc}"}))
+     (insert-rows! "users"))
+    ;; TODO ideally `send-invite-email!` wouldn't need to make an additional db call to get the user name
+    ;; as we already know it's blank.
+    ;; TODO `send-invite-email` probably doesn't need to return a data response.
+    (let [organization-name (sql-primitive (call-sql "get_organization_name" org-id))]
+      (doseq [{:keys [email]} users]
+        (email/send-invite-email! email {:organization-name organization-name})))))
 
 (defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that

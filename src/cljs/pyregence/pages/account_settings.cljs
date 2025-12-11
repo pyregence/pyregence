@@ -136,7 +136,9 @@
                                   ;;TODO this conditional should be based on the og-id or org-unique name
                                   (= organization-name org-name)
                                   (#{"organization_admin" "organization_member"} user-role))) @users))]
-                 {:og-email->email             og-email->email
+                 {:org-id                      org-id
+                  :user-role                   user-role
+                  :og-email->email             og-email->email
                   :users                       selected-orgs-users
                   ;;TODO get selected-rows
                   :users-selected?             users-selected?
@@ -239,4 +241,5 @@
 
               [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                         :users-selected?             users-selected?
-                        :on-click-apply-update-users on-click-apply-update-users}])])])})))
+                        :on-click-apply-update-users on-click-apply-update-users
+                        :user-role user-role}])])])})))
