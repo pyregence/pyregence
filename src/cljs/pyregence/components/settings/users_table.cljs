@@ -213,7 +213,7 @@
         [add-user/add-user-dialog {:org-id org-id :role-options role-options :default-role-option default-role-option}]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database from a sql function.
-         :role   [drop-down {:options         roles/organization-roles
+         :role   [drop-down {:options         role-options
                              :checked         checked
                              :users-selected? @users-selected?
                              :opt->display   db->display
