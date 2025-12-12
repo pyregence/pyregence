@@ -22,5 +22,4 @@
    [forecast-tabs props]
    (if (:logged-in? props)
      [settings-menu props]
-     [login-menu props])
-   ])
+     [login-menu props])])
