@@ -19,7 +19,5 @@
   "Defines the horizontal navigation component for the application."
   [props]
   [:nav {:style ($/combine $nav-bar {:background ($/color-picker :yellow)})}
-   [forecast-tabs props]
-   (if (:logged-in? props)
-     [settings-menu props]
-     [login-menu props])])
+   [forecast-tabs props]   
+   [login-menu props]])

@@ -23,15 +23,21 @@
       (when-not mobile?
         [:div {:style {:position "absolute" :right "3rem"}
                :class (<class $/p-add-hover)}
-         [:label {:style {:cursor "pointer" :margin ".16rem .2rem 0 0"}
-                  :on-click #(swap! expanded? not)}
-          "Log In"
-          [:span {:style {:min-width  "25px"
-                          :display    :inline-block
-                          :text-align :center}}
-           (if @expanded?
-             [svg/arrow-up   :height "25px"]
-             [svg/arrow-down :height "25px"])]]
+         (if logged-in?
+           [:label {:style {:cursor "pointer" :margin ".16rem .2rem 0 0"}
+                    :on-click #(-> js/window .-location (.assign "/account-settings"))}
+            [svg/wheel :height "25px"]
+            [:span {:style {:margin-left "8px" :vertical-align :middle}}
+             "Settings"]]           
+           [:label {:style {:cursor "pointer" :margin ".16rem .2rem 0 0"}
+                    :on-click #(swap! expanded? not)}
+            "Log In"
+            [:span {:style {:min-width  "25px"
+                            :display    :inline-block
+                            :text-align :center}}
+             (if @expanded?
+               [svg/arrow-up   :height "25px"]
+               [svg/arrow-down :height "25px"])]])
          (when @expanded?
            [:div
             {:style {:position :absolute
