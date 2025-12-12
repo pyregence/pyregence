@@ -229,8 +229,6 @@
                   :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
                   :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
     [tabs tabs-data]]
-   ;; NOTE this margin-bottom is to account for the header.
-   [:div {:style {:margin-bottom "40px"}}
-    [button {:text     "Logout" :icon svg/logout
-             :on-click #(go (<! (u-async/call-clj-async! "log-out"))
-                            (-> js/window .-location .reload))}]]])
+   [button {:text     "Logout" :icon svg/logout
+            :on-click #(go (<! (u-async/call-clj-async! "log-out"))
+                           (-> js/window .-location .reload))}]])

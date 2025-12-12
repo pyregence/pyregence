@@ -62,9 +62,12 @@
       (fn [{:keys [user-role user-email]}]
         [:div
          {:style {:height         "100vh"
+                  :margin-bottom  "40px"
                   :display        "flex"
                   :flex-direction "column"
-                  :font-family    "Roboto"}}
+                  :font-family    "Roboto"
+                  ;;NOTE this padding-bottom is to account for the header, there is probably a better way.
+                  :padding-bottom "40px"}}
         ;; TODO this mock `:nav` with actual upper nav bar, this will happen in another PR.
          [:nav  {:style {:display         "flex"
                          :justify-content "center"
