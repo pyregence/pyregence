@@ -95,23 +95,24 @@
        [svg/arrow-down]
        [svg/arrow-up])]]])
 
-(defn select-user-role
-  [{:keys [role on-click on-click-role selected?]}]
+(defn select-default-role-option
+  [{:keys [role on-click on-click-role selected? role-options]}]
   [:div
    [:div
-    [ghost-drop-down {:text (utils/db->display role)
+    [ghost-drop-down {:text      (utils/db->display role)
                       :selected? selected?
-                      :on-click on-click}]]
+                      :on-click  on-click}]]
    [:div {:style {:display (if selected? "block" "none")
                   :background "white"
                   :position "absolute"}}
-    [drop-down-options {:options (roles/role->roles-below role)
+    [drop-down-options {:options       (remove #{role} role-options)
                         :on-click-role on-click-role}]]])
 
 (defn invite-modal
-  [{:keys [on-click-close-dialog user-role org-id]}]
-  (let [default-user {:email "" :role user-role}]
-    (r/with-let [id->user (r/atom {1 default-user})
+  [{:keys [on-click-close-dialog default-role-option org-id role-options]}]
+  (let [default-user  {:email "" :role default-role-option}
+        default-state {1 default-user}]
+    (r/with-let [id->user    (r/atom default-state)
                  selected-id (r/atom nil)]
       (let [border (str "1px solid " ($/color-picker :neutral-soft-gray))]
         [:div {:style {:display        "flex"
@@ -148,14 +149,15 @@
                                      :on-change      (fn [e]
                                                        (let [email (.-value (.-target e))]
                                                          (swap! id->user assoc-in [id :email] email)))}]
-               [select-user-role {:role          role
-                                  :selected?     (= @selected-id id)
-                                  :on-click-role (fn [new-role]
-                                                   (fn []
-                                                     (swap! id->user assoc-in [id :role] new-role)
-                                                     (reset! selected-id nil)))
+               [select-default-role-option {:role          role
+                                            :role-options  role-options
+                                            :selected?     (= @selected-id id)
+                                            :on-click-role (fn [new-role]
+                                                             (fn []
+                                                               (swap! id->user assoc-in [id :role] new-role)
+                                                               (reset! selected-id nil)))
                                   ;; NOTE condition allows de-selecting by clicking the toggle
-                                  :on-click      #(reset! selected-id (when-not (= @selected-id id) id))}]
+                                            :on-click      #(reset! selected-id (when-not (= @selected-id id) id))}]
                [:div {:on-click #(swap! id->user dissoc id)
                       :style    {:cursor        "pointer"
                                  :padding-right "20px"
@@ -179,7 +181,7 @@
            "Cancel"]
           [buttons/primary {:text     "Confirm"
                             :on-click (fn []
-                                        (let [id->user
+                                        (let [id->user*
                                               (swap! id->user
                                                      (fn [id->user]
                                                        (reduce-kv
@@ -187,7 +189,7 @@
                                                           (assoc id->user id (assoc user :invalid-email? (not (valid-email? email)))))
                                                         {}
                                                         id->user)))
-                                              invalid-emails? (->> id->user
+                                              invalid-emails? (->> id->user*
                                                                    vals
                                                                    (some :invalid-email?))]
                                           (if invalid-emails?
@@ -195,26 +197,28 @@
                                             (go
                                               (let [resp (<! (add-new-users!
                                                               org-id
-                                                              (->> id->user vals (map #(dissoc % :invalid-email?)))))]
+                                                              (->> id->user* vals (map #(dissoc % :invalid-email?)))))]
                                                 (if (:success resp)
                                                   (do
+                                                    (reset! id->user default-state)
                                                     (toast-message! "User(s) added and invite email(s) sent!")
                                                     (on-click-close-dialog))
                                                   (toast-message! "Something went wrong when adding the new user(s).")))))))}]]]))))
 
-(defn add-user-dialog [{:keys [user-role org-id]}]
+(defn add-user-dialog [{:keys [org-id role-options default-role-option]}]
   (r/with-let [dialog-elem (atom nil)]
     ;;TODO find why does this need no wrap when the other buttons don't?
     [:div {:style {:white-space "nowrap"}}
      ;;TODO consider making the background darker with a pseudo background.
-     [:dialog {:ref #(reset! dialog-elem %)
-               :style {:border "none"
-                       :padding "0px"
+     [:dialog {:ref   #(reset! dialog-elem %)
+               :style {:border        "none"
+                       :padding       "0px"
                        :border-radius "10px"
                        :overflow      "visible"}}
       [:div {:style {:overflow "hidden"}}
        [invite-modal {:on-click-close-dialog #(.close @dialog-elem)
+                      :default-role-option     default-role-option
                       :org-id                org-id
-                      :user-role             user-role}]]]
-     [buttons/add {:text "Add A New User"
+                      :role-options          role-options}]]]
+     [buttons/add {:text     "Add A New User"
                    :on-click #(.showModal @dialog-elem)}]]))

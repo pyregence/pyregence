@@ -7,12 +7,12 @@
    [pyregence.components.settings.account-settings      :as as]
    [pyregence.components.settings.email                 :as email]
    [pyregence.components.settings.fetch                 :refer [get-orgs!
-                                                                get-users!
                                                                 get-user-name!
-                                                                update-org-user!
+                                                                get-users!
                                                                 update-own-user-name!]]
    [pyregence.components.settings.nav-bar               :as nav-bar]
    [pyregence.components.settings.organization-settings :as os]
+   [pyregence.components.settings.roles                 :as roles]
    [pyregence.components.settings.unaffilated-members   :as um]
    [pyregence.styles                                    :as $]
    [pyregence.utils.async-utils                         :as u-async]
@@ -127,6 +127,7 @@
                              unsaved-auto-accept?
                              unsaved-auto-add?
                              unsaved-org-name-support-message]} (@org-id->org selected)
+                     roles (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/organization-roles) role))))
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
                        ;;TODO check if this shouldn't happen in the db or server instead.
@@ -137,7 +138,7 @@
                                   (= organization-name org-name)
                                   (#{"organization_admin" "organization_member"} user-role))) @users))]
                  {:org-id                      org-id
-                  :user-role                   user-role
+                  :default-role-option         (first roles)
                   :og-email->email             og-email->email
                   :users                       selected-orgs-users
                   ;;TODO get selected-rows
@@ -237,9 +238,13 @@
                   :auto-add? auto-add?
                   :unsaved-auto-add? unsaved-auto-add?
                   :on-change-auto-add-user-as-org-member
-                  #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)})]
+                  #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)
+                  :role-options roles})]
 
-              [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
-                        :users-selected?             users-selected?
-                        :on-click-apply-update-users on-click-apply-update-users
-                        :user-role user-role}])])])})))
+              (let [roles (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/none-organization-roles) role))))]
+                [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
+                          :users-selected?             users-selected?
+                          :on-click-apply-update-users on-click-apply-update-users
+                          ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
+                          :default-role-option    (first roles)
+                          :role-options           roles}]))])])})))

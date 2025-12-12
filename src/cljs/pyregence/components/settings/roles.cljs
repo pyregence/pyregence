@@ -1,14 +1,5 @@
 (ns pyregence.components.settings.roles)
 
-(def roles
-  ["super_admin"
-   "organization_admin"
-   "organization_member"
-   "account_manager"
-   ;;TODO handling member would mean we have to kick them out of
-   ;; the organization
-   #_"member"])
-
 ;;TODO maybe the roles should be reversed? (super_admin = 6)
 ;;TODO consider having this replace the roles var above
 (def role->rank
@@ -30,3 +21,7 @@
          roles))
      []
      role->rank)))
+
+(def organization-roles ["organization_admin" "organization_member"])
+;;NOTE this isnt all the non-organization-role-options
+(def none-organization-roles ["super_admin" "account_manager" "member"])
