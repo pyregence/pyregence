@@ -13,7 +13,7 @@
            :style {:align-items     "center"
                    :display         "flex"
                    :justify-content "space-between"
-                   :min-height      0
+                   :min-height      "fit-content"
                    :flex            "1 1 auto"}}
      [:a {:rel   "home"
           :href  (if pyrecast? "/" "https://pyregence.org")
