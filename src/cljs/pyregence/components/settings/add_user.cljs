@@ -110,8 +110,9 @@
 
 (defn invite-modal
   [{:keys [on-click-close-dialog default-role-option org-id role-options]}]
-  (let [default-user {:email "" :role default-role-option}]
-    (r/with-let [id->user    (r/atom {1 default-user})
+  (let [default-user  {:email "" :role default-role-option}
+        default-state {1 default-user}]
+    (r/with-let [id->user    (r/atom default-state)
                  selected-id (r/atom nil)]
       (let [border (str "1px solid " ($/color-picker :neutral-soft-gray))]
         [:div {:style {:display        "flex"
@@ -149,14 +150,14 @@
                                                        (let [email (.-value (.-target e))]
                                                          (swap! id->user assoc-in [id :email] email)))}]
                [select-default-role-option {:role          role
-                                  :role-options  role-options
-                                  :selected?     (= @selected-id id)
-                                  :on-click-role (fn [new-role]
-                                                   (fn []
-                                                     (swap! id->user assoc-in [id :role] new-role)
-                                                     (reset! selected-id nil)))
+                                            :role-options  role-options
+                                            :selected?     (= @selected-id id)
+                                            :on-click-role (fn [new-role]
+                                                             (fn []
+                                                               (swap! id->user assoc-in [id :role] new-role)
+                                                               (reset! selected-id nil)))
                                   ;; NOTE condition allows de-selecting by clicking the toggle
-                                  :on-click      #(reset! selected-id (when-not (= @selected-id id) id))}]
+                                            :on-click      #(reset! selected-id (when-not (= @selected-id id) id))}]
                [:div {:on-click #(swap! id->user dissoc id)
                       :style    {:cursor        "pointer"
                                  :padding-right "20px"
@@ -180,7 +181,7 @@
            "Cancel"]
           [buttons/primary {:text     "Confirm"
                             :on-click (fn []
-                                        (let [id->user
+                                        (let [id->user*
                                               (swap! id->user
                                                      (fn [id->user]
                                                        (reduce-kv
@@ -188,7 +189,7 @@
                                                           (assoc id->user id (assoc user :invalid-email? (not (valid-email? email)))))
                                                         {}
                                                         id->user)))
-                                              invalid-emails? (->> id->user
+                                              invalid-emails? (->> id->user*
                                                                    vals
                                                                    (some :invalid-email?))]
                                           (if invalid-emails?
@@ -196,9 +197,10 @@
                                             (go
                                               (let [resp (<! (add-new-users!
                                                               org-id
-                                                              (->> id->user vals (map #(dissoc % :invalid-email?)))))]
+                                                              (->> id->user* vals (map #(dissoc % :invalid-email?)))))]
                                                 (if (:success resp)
                                                   (do
+                                                    (reset! id->user default-state)
                                                     (toast-message! "User(s) added and invite email(s) sent!")
                                                     (on-click-close-dialog))
                                                   (toast-message! "Something went wrong when adding the new user(s).")))))))}]]]))))
