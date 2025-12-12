@@ -114,7 +114,6 @@
                                                    (update-own-user-name! @user-name))}]
 
               "Organization Settings"
-
               [os/main
                (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
                      selected  (if (= user-role "super_admin")
