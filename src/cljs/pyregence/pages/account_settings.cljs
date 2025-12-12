@@ -46,17 +46,20 @@
 (defn root-component
   "The root component of the /account-settings page."
   [{:keys [user-role password-set-date]}]
-  (let [org-id->org     (r/atom nil)
-        user-name       (r/atom nil)
-        users           (r/atom nil)
-        selected-log    (r/atom ["Account Settings"])
-        users-selected? (r/atom false)]
+  (let [org-id->org       (r/atom nil)
+        user-name         (r/atom nil)
+        unsaved-user-name (r/atom nil)
+        users             (r/atom nil)
+        selected-log      (r/atom ["Account Settings"])
+        users-selected?   (r/atom false)]
     (r/create-class
      {:display-name "account-settings"
       :component-did-mount
       #(go
          (reset! users (<! (get-users! user-role)))
+         ;; TODO using two atoms here might be awkward.
          (reset! user-name (<! (get-user-name!)))
+         (reset! unsaved-user-name @user-name)
          (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role)))))
       :reagent-render
       (fn [{:keys [user-role user-email]}]
@@ -104,21 +107,24 @@
             [nav-bar/main tabs]
             (case selected-page
               "Account Settings"
-              [as/main {:password-set-date password-set-date
-                        :role-type         user-role
-                        :user-name         @user-name
-                        :email-address     user-email
-                        :on-change-update-user-name (fn [e]
-                                                      (reset! user-name (input-value e)))
-                        :on-click-save-user-name (fn []
-                                                   (update-own-user-name! @user-name))}]
+              [as/main {:password-set-date              password-set-date
+                        :role-type                      user-role
+                        :user-name                      @unsaved-user-name
+                        :email-address                  user-email
+                        :account-details-save-disabled? (= @user-name @unsaved-user-name)
+                        :on-change-update-user-name     (fn [e]
+                                                          (reset! unsaved-user-name (input-value e)))
+                        :on-click-save-user-name        (fn []
+                                                          ;;TODO should this be on success?
+                                                          (update-own-user-name! @unsaved-user-name)
+                                                          (reset! user-name @unsaved-user-name))}]
 
               "Organization Settings"
               [os/main
                (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
-                     selected  (if (= user-role "super_admin")
-                                 selected
-                                 (-> @org-id->org keys first))
+                     selected                                   (if (= user-role "super_admin")
+                                                                  selected
+                                                                  (-> @org-id->org keys first))
                      {:keys [unsaved-org-name
                              org-id auto-add?
                              org-name
@@ -127,7 +133,7 @@
                              unsaved-auto-accept?
                              unsaved-auto-add?
                              unsaved-org-name-support-message]} (@org-id->org selected)
-                     roles (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/organization-roles) role))))
+                     roles                                      (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/organization-roles) role))))
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
                        ;;TODO check if this shouldn't happen in the db or server instead.
@@ -137,7 +143,9 @@
                                   ;;TODO this conditional should be based on the og-id or org-unique name
                                   (= organization-name org-name)
                                   (#{"organization_admin" "organization_member"} user-role))) @users))]
-                 {:org-id                      org-id
+                 ;; TODO need to check email domains in save-changes-disabled?
+                 {:save-changes-disabled? (or (= unsaved-org-name org-name))
+                  :org-id                      org-id
                   :default-role-option         (first roles)
                   :og-email->email             og-email->email
                   :users                       selected-orgs-users
@@ -170,7 +178,7 @@
                                   (assoc m id {:email email :invalid? (not (email/valid-email-domain? email))}))
                                 {}))
                           ;;TODO unifiy the ways were collecting support/error messages here.
-                          invalid-email-domains? (->> checked-og-email->email vals (some :invalid?))
+                          invalid-email-domains?            (->> checked-og-email->email vals (some :invalid?))
                           organization-name-support-message (when (str/blank? unsaved-org-name) "Name cannot be blank.")]
                       (swap! org-id->org assoc-in [selected :og-email->email] checked-og-email->email)
 
@@ -231,20 +239,20 @@
                            assoc-in
                            [selected :unsaved-org-name]
                            (.-value (.-target e))))
-                  :auto-accept? auto-accept?
+                  :auto-accept?         auto-accept?
                   :unsaved-auto-accept? unsaved-auto-accept?
                   :on-change-auto-accept-user-as-org-member
                   #(swap! org-id->org update-in [selected :unsaved-auto-accept?] not)
-                  :auto-add? auto-add?
-                  :unsaved-auto-add? unsaved-auto-add?
+                  :auto-add?            auto-add?
+                  :unsaved-auto-add?    unsaved-auto-add?
                   :on-change-auto-add-user-as-org-member
                   #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)
-                  :role-options roles})]
+                  :role-options         roles})]
 
               (let [roles (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/none-organization-roles) role))))]
                 [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                           :users-selected?             users-selected?
                           :on-click-apply-update-users on-click-apply-update-users
                           ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
-                          :default-role-option    (first roles)
-                          :role-options           roles}]))])])})))
+                          :default-role-option         (first roles)
+                          :role-options                roles}]))])])})))

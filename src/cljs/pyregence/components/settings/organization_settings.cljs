@@ -83,7 +83,8 @@
            unsaved-auto-accept?
            on-change-auto-accept-user-as-org-member
            unsaved-auto-add?
-           on-change-auto-add-user-as-org-member]}]
+           on-change-auto-add-user-as-org-member
+           save-changes-disabled?]}]
   [:<>
    [input-labeled
     (cond->
@@ -104,8 +105,9 @@
                   :gap            "16px"}}
     [buttons/add {:text     "Add Another Domain"
                   :on-click on-click-add-email}]
-    [buttons/ghost {:text     "Save Changes"
-                    :on-click on-click-save-changes}]]])
+    [buttons/ghost {:text      "Save Changes"
+                    :disabled? save-changes-disabled?
+                    :on-click  on-click-save-changes}]]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
