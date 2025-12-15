@@ -80,8 +80,23 @@
   (:layer (current-layer) ""))
 
 (defn- get-current-layer-time []
-  (when (:times (current-layer))
-    (nth (:times (current-layer)) @!/*layer-idx)))
+  (when-let [times (:times (current-layer))]
+    (when (and (seq times) (< @!/*layer-idx (count times)))
+      (nth times @!/*layer-idx))))
+
+(defn- layer-at-idx [idx]
+  (if (= (count @!/param-layers) 1)
+    (first @!/param-layers)
+    (get @!/param-layers idx)))
+
+(defn- get-layer-time-for-idx [idx]
+  (when-let [layer (layer-at-idx idx)]
+    (when-let [times (:times layer)]
+      (when (and (seq times) (< idx (count times)))
+        (nth times idx)))))
+
+(defn- get-layer-name-for-idx [idx]
+  (:layer (layer-at-idx idx) ""))
 
 (defn- get-current-layer-hour []
   (if-let [current-layer-time (get-current-layer-time)]
@@ -483,15 +498,29 @@
 ;; More Data Processing Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- select-layer! [new-layer]
-  (reset! !/*layer-idx new-layer)
-  (let [layer-name  (get-current-layer-name)
-        geoserver   (get-any-level-key :geoserver-key)
-        opacity     (/ @!/active-opacity 100)
-        style       (get-psps-layer-style)
-        layer-time  (get-current-layer-time)
-        swap-fn     (if @!/animate? mb/swap-animation-layer! mb/swap-active-layer!)]
-    (swap-fn layer-name geoserver opacity style layer-time)))
+(defn- select-layer!
+  ([new-layer] (select-layer! new-layer nil))
+  ([new-layer on-complete]
+   (let [geoserver   (get-any-level-key :geoserver-key)
+         opacity     (/ @!/active-opacity 100)
+         style       (get-psps-layer-style)
+         layer-name  (get-layer-name-for-idx new-layer)
+         layer-time  (get-layer-time-for-idx new-layer)
+         total       (count (or (:times (first @!/param-layers)) @!/param-layers))]
+     (when (and (not @!/layers-ready?) (pos? total))
+       (let [{:keys [succeeded]} (mb/create-animation-layers! geoserver style)]
+         (when (pos? succeeded)
+           (reset! !/layers-ready? true)
+           (reset! !/total-frames total))))
+     (if @!/animate?
+       (mb/swap-animation-layer! layer-name geoserver opacity style layer-time new-layer
+                                 (fn []
+                                   (reset! !/*layer-idx new-layer)
+                                   (when on-complete (on-complete))))
+       (do
+         (reset! !/*layer-idx new-layer)
+         (mb/swap-animation-layer! layer-name geoserver opacity style layer-time new-layer nil)
+         (when on-complete (on-complete)))))))
 
 (defn- select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -920,7 +949,7 @@
             [:label "To inquire about commercial licensing, integration partnerships, or enterprise use authorization, contact: " [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"] "."]]
            [:div
             [header "Terms Modification"]
-            [:label "These terms may be updated periodically. Continued use of any PyreCast platform constitutes acceptance of revised terms. Current terms are effective as of " usage-terms-and-conditions-date "."]
+            [:label  "These terms may be updated periodically. Continued use of any PyreCast platform constitutes acceptance of revised terms. Current terms are effective as of " usage-terms-and-conditions-date "."]
             [:label {:style {:margin-top ".2rem"}} "Unauthorized commercial use may result in legal action and monetary damages. For questions about permitted use, contact the licensing team above."]
             [:label {:style {:margin "1rem .25rem 0 0"}}
              "Please see our "
@@ -970,9 +999,6 @@
        {:style ($/combine $/root {:height "100%" :padding 0 :position "relative" :overflow :hidden})}
        [message-box-modal]
        (when @!/loading? [status-modal "Loading..."])
-       (when @!/preparing?
-         (let [n (count (or (:times (first @!/param-layers)) @!/param-layers))]
-           [status-modal (str "Loading " n " animation " (if (= n 1) "frame" "frames") "...")]))
        [message-modal]
        [nav-bar {:capabilities       @!/capabilities
                  :current-forecast   @!/*forecast
