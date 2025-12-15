@@ -31,7 +31,7 @@
                    ;; NOTE this mapping is used to keep track of the email
                    :og-email->email (reduce
                                      (fn [m e]
-                                       (assoc m e {:email e}))
+                                       (assoc m e {:email e :unsaved-email e}))
                                      {}
                                      (->>
                                       (str/split email-domains #",")
@@ -143,28 +143,29 @@
                                   ;;TODO this conditional should be based on the og-id or org-unique name
                                   (= organization-name org-name)
                                   (#{"organization_admin" "organization_member"} user-role))) @users))]
-                 ;; TODO need to check email domains in save-changes-disabled?
-                 {:save-changes-disabled? (or (= unsaved-org-name org-name))
+                 {:save-changes-disabled? (and (= unsaved-org-name org-name)
+                                               (= unsaved-auto-accept? auto-accept?)
+                                               (= unsaved-auto-add? auto-add?)
+                                               (not (some (fn [[_ {:keys [email unsaved-email]}]] (not= email unsaved-email)) og-email->email)))
                   :org-id                      org-id
                   :default-role-option         (first roles)
                   :og-email->email             og-email->email
                   :users                       selected-orgs-users
-                  ;;TODO get selected-rows
                   :users-selected?             users-selected?
                   :unsaved-org-name            unsaved-org-name
                   :unsaved-org-name-support-message
                   unsaved-org-name-support-message
                   :on-click-apply-update-users on-click-apply-update-users
-                  :on-click-add-email          (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] {:email ""}))
+                  :on-click-add-email          (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] {:email "" :unsaved-email ""}))
                   :on-delete-email             (fn [og-email]
-                                                 (fn [_]
-                                       ;;TODO this means i might have to filter out empty ones.
-                                                   (swap! org-id->org update-in [selected :og-email->email] dissoc og-email)))
+                                                 (fn [e]
+                                                   (let [new-email (.-value (.-target e))]
+                                                     (swap! org-id->org assoc-in [selected :og-email->email og-email :unsaved-email] new-email))))
                   :on-change-email-name
                   (fn [og-email]
                     (fn [e]
                       (let [new-email (.-value (.-target e))]
-                        (swap! org-id->org assoc-in [selected :og-email->email og-email :email] new-email))))
+                        (swap! org-id->org assoc-in [selected :og-email->email og-email :unsaved-email] new-email))))
 
                   ;;TODO on "save change" when nothing has changed, it doesn't do anything (it should probably help the user or re-save).
                   :on-click-save-changes
@@ -173,9 +174,9 @@
                     (let [checked-og-email->email
                           (->> og-email->email
                                (reduce-kv
-                                (fn [m id {:keys [email]}]
+                                (fn [m id {:keys [unsaved-email email]}]
 
-                                  (assoc m id {:email email :invalid? (not (email/valid-email-domain? email))}))
+                                  (assoc m id {:email email :unsaved-email unsaved-email :invalid? (not (email/valid-email-domain? unsaved-email))}))
                                 {}))
                           ;;TODO unifiy the ways were collecting support/error messages here.
                           invalid-email-domains?            (->> checked-og-email->email vals (some :invalid?))
@@ -193,7 +194,7 @@
                         (go
                           (let [unsaved-email-domains (->> checked-og-email->email
                                                            vals
-                                                           (map :email)
+                                                           (map :unsaved-email)
                                                            (map #(str "@" %))
                                                            (str/join ","))
 
@@ -218,8 +219,15 @@
                                 (swap! org-id->org
                                        (fn [o]
                                          (-> o
+                                             ;; TODO find a way to save unsaved state better then having to know that you have to come here to always deal with it.
                                              (assoc-in [org-id :org-name] unsaved-org-name)
-                                             (assoc-in [org-id :email-domains] unsaved-email-domains))))
+                                             (assoc-in [org-id :email-domains] unsaved-email-domains)
+                                             (assoc-in [org-id :og-email->email] (reduce-kv (fn [m id {:keys [unsaved-email]}]
+                                                                                              (assoc m id {:email unsaved-email :unsaved-email unsaved-email}))
+                                                                                            {}
+                                                                                            og-email->email))
+                                             (assoc-in [org-id :auto-accept?] unsaved-auto-accept?)
+                                             (assoc-in [org-id :auto-add?] unsaved-auto-add?))))
                                 (let [new-name?        (not= org-name unsaved-org-name)
                                       new-email?       (not= email-domains unsaved-email-domains)
                                       new-auto-accept? (not= auto-accept? unsaved-auto-accept?)

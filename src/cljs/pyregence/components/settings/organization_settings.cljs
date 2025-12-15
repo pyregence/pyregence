@@ -43,7 +43,8 @@
    [:div {:style {:display        "flex"
                   :flex-direction "column"
                   :gap            "8px"}}
-    (for [[og-email {:keys [email invalid?]}] og-email->email]
+    (for [[og-email {:keys [unsaved-email invalid?]}] og-email->email
+          :when unsaved-email]
       [:div {:key   og-email
              :style {:display        "flex"
                      :flex-direction "row"
@@ -52,7 +53,7 @@
        [:div {:style {:display "flex"
                       :flex-direction "column"
                       :gap "3px"}}
-        [email-domain-cmpt {:email     email
+        [email-domain-cmpt {:email     unsaved-email
                             :on-change (on-change og-email)}]
         (when invalid?
           [:p {:style {:color "red"}} "Invalid domain"])]
