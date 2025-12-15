@@ -225,8 +225,8 @@
        "Thanks," [:br] "The PyreCast Team"]
       [:hr {:style (:separator common-styles)}]
       [:p {:style (:p-top common-styles)}
-       [:strong "P.S."] " Need immediate help getting started? Check out our help "
-       [:a {:href "https://support.pyrecast.com/support/solutions/32000023528" :style (:link common-styles)} "Documentation"]
+       [:strong "P.S."] " Need immediate help getting started? Check out our "
+       [:a {:href "https://support.pyrecast.com/support/solutions/32000023528" :style (:link common-styles)} "help documentation"]
        ". Or, just reply to this email, the PyreCast support team is always ready to help!"]
       (fallback-url-note verify-url)])))
 
