@@ -1,11 +1,11 @@
 (ns pyregence.components.settings.add-user
   (:require
    [clojure.core.async                    :refer [<! go]]
+   [clojure.string                        :as str]
    [herb.core                             :refer [<class]]
    [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons :refer [$drop-down-styles
                                                               $on-hover-gray]]
-   [pyregence.components.settings.roles   :as roles]
    [pyregence.components.settings.utils   :as utils]
    [pyregence.components.svg-icons        :as svg]
    [pyregence.styles                      :as $]
@@ -180,30 +180,33 @@
                           :on-click on-click-close-dialog}
            "Cancel"]
           [buttons/primary {:text     "Confirm"
-                            :on-click (fn []
-                                        (let [id->user*
-                                              (swap! id->user
-                                                     (fn [id->user]
-                                                       (reduce-kv
-                                                        (fn [id->user id {:keys [email] :as user}]
-                                                          (assoc id->user id (assoc user :invalid-email? (not (valid-email? email)))))
-                                                        {}
-                                                        id->user)))
-                                              invalid-emails? (->> id->user*
-                                                                   vals
-                                                                   (some :invalid-email?))]
-                                          (if invalid-emails?
-                                            (toast-message! "One or more email addresses are invalid.")
-                                            (go
-                                              (let [resp (<! (add-new-users!
-                                                              org-id
-                                                              (->> id->user* vals (map #(dissoc % :invalid-email?)))))]
-                                                (if (:success resp)
-                                                  (do
-                                                    (reset! id->user default-state)
-                                                    (toast-message! "User(s) added and invite email(s) sent!")
-                                                    (on-click-close-dialog))
-                                                  (toast-message! "Something went wrong when adding the new user(s).")))))))}]]]))))
+                            :disabled? (or (every? (fn [[_ {:keys [email]}]] (str/blank? email)) @id->user)
+                                           (= @id->user default-state))
+                            :on-click  (fn []
+                                         ;;TODO it would be better to check email validity on every keystroke.
+                                         (let [id->user*
+                                               (swap! id->user
+                                                      (fn [id->user]
+                                                        (reduce-kv
+                                                         (fn [id->user id {:keys [email] :as user}]
+                                                           (assoc id->user id (assoc user :invalid-email? (not (valid-email? email)))))
+                                                         {}
+                                                         id->user)))
+                                               invalid-emails? (->> id->user*
+                                                                    vals
+                                                                    (some :invalid-email?))]
+                                           (if invalid-emails?
+                                             (toast-message! "One or more email addresses are invalid.")
+                                             (go
+                                               (let [resp (<! (add-new-users!
+                                                               org-id
+                                                               (->> id->user* vals (map #(dissoc % :invalid-email?)))))]
+                                                 (if (:success resp)
+                                                   (do
+                                                     (reset! id->user default-state)
+                                                     (toast-message! "User(s) added and invite email(s) sent!")
+                                                     (on-click-close-dialog))
+                                                   (toast-message! "Something went wrong when adding the new user(s).")))))))}]]]))))
 
 (defn add-user-dialog [{:keys [org-id role-options default-role-option]}]
   (r/with-let [dialog-elem (atom nil)]
