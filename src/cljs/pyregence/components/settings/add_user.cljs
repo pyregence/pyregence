@@ -55,27 +55,23 @@
                  :width                      "250px"
                  :border-color               ($/color-picker :neutral-soft-gray)
                  :flex-direction             "column"
-                 :padding                    "10px"
                  :gap                        "4px"
                  :border-style               "solid"
                  :border-top-style           "none"
                  :border-bottom-right-radius "4px"
                  :border-bottom-left-radius  "4px"
                  :border-width               "2px"}}
-   [:div {:style {:display        "flex"
-                  :padding        "10px"
-                  :gap            "4px"
-                  :flex-direction "column"}}
-    (doall
-     (for [opt options]
-       [:button {:key      opt
-                 :on-click (on-click-role opt)
-                 :class    (<class #(buttons/$on-hover-gray {:background "white"}))
-                 :style    {:border          "none"
-                            :display         "flex"
-                            :justify-content "start"
-                            :width           "100%"}}
-        (utils/db->display opt)]))]])
+   (doall
+    (for [opt options]
+      [:button {:key      opt
+                :on-click (on-click-role opt)
+                :class    (<class #(buttons/$on-hover-gray {:background "white"}))
+                :style    {:border          "none"
+                           :display         "flex"
+                           :padding         "12px 14px"
+                           :justify-content "start"
+                           :width           "100%"}}
+       (utils/db->display opt)]))])
 
 (defn ghost-drop-down
   [{:keys [text class on-click selected?]
