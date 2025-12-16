@@ -68,13 +68,13 @@
                   :flex-direction "column"}}
     (doall
      (for [opt options]
-       [:button {:key opt
+       [:button {:key      opt
                  :on-click (on-click-role opt)
-                 :class (<class #(buttons/$on-hover-gray {:background "white"}))
-                 :style {:border "none"
-                         :display "flex"
-                         :justify-content "start"
-                         :width "100%"}}
+                 :class    (<class #(buttons/$on-hover-gray {:background "white"}))
+                 :style    {:border          "none"
+                            :display         "flex"
+                            :justify-content "start"
+                            :width           "100%"}}
         (utils/db->display opt)]))]])
 
 (defn ghost-drop-down
