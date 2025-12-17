@@ -12,7 +12,9 @@
     [:div {:id    "header"
            :style {:align-items     "center"
                    :display         "flex"
-                   :justify-content "space-between"}}
+                   :justify-content "space-between"
+                   :min-height      "fit-content"
+                   :flex            "1 1 auto"}}
      [:a {:rel   "home"
           :href  (if pyrecast? "/" "https://pyregence.org")
           :title "Pyregence"
@@ -65,6 +67,7 @@
                    :height         "100%"}}
      [header]
      [toast-message]
-     [root-component params]
+     [:div {:style {:height "100vh"}}
+      [root-component params]]
      (when footer?
        [footer])]))
