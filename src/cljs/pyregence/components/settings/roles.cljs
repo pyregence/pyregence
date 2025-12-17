@@ -22,6 +22,6 @@
      []
      role->rank)))
 
-(def organization-roles ["organization_admin" "organization_member"])
+(def organization-roles #{"organization_admin" "organization_member"})
 ;;NOTE this isnt all the non-organization-role-options
-(def none-organization-roles ["super_admin" "account_manager" "member"])
+(def none-organization-roles #{"super_admin" "account_manager" "member"})

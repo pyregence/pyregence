@@ -130,7 +130,7 @@
                              unsaved-auto-accept?
                              unsaved-auto-add?
                              unsaved-org-name-support-message]} (@org-id->org selected)
-                     roles (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/organization-roles) role))))
+                     roles (->> user-role roles/role->roles-below (filter roles/organization-roles))
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
                        ;;TODO check if this shouldn't happen in the db or server instead.
@@ -244,7 +244,7 @@
                   #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)
                   :role-options roles})]
 
-              (let [roles (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/none-organization-roles) role))))]
+              (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
                 [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                           :users-selected?             users-selected?
                           :on-click-apply-update-users on-click-apply-update-users
