@@ -152,8 +152,9 @@
     [input-labeled {:value     (:user-name m)
                     :label     "Full Name"
                     :on-change (:on-change-update-user-name m)}]]
-   [buttons/ghost {:text     "Save Changes"
-                   :on-click (:on-click-save-user-name m)}]])
+   [buttons/ghost {:text       "Save Changes"
+                   :disabled?  (:account-details-save-disabled? m)
+                   :on-click   (:on-click-save-user-name m)}]])
 
 (defn show-password-set-date
   []

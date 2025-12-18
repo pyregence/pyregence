@@ -43,7 +43,8 @@
    [:div {:style {:display        "flex"
                   :flex-direction "column"
                   :gap            "8px"}}
-    (for [[og-email {:keys [email invalid?]}] og-email->email]
+    (for [[og-email {:keys [unsaved-email invalid?]}] og-email->email
+          :when unsaved-email]
       [:div {:key   og-email
              :style {:display        "flex"
                      :flex-direction "row"
@@ -52,7 +53,7 @@
        [:div {:style {:display "flex"
                       :flex-direction "column"
                       :gap "3px"}}
-        [email-domain-cmpt {:email     email
+        [email-domain-cmpt {:email     unsaved-email
                             :on-change (on-change og-email)}]
         (when invalid?
           [:p {:style {:color "red"}} "Invalid domain"])]
@@ -83,15 +84,16 @@
            unsaved-auto-accept?
            on-change-auto-accept-user-as-org-member
            unsaved-auto-add?
-           on-change-auto-add-user-as-org-member]}]
+           on-change-auto-add-user-as-org-member
+           save-changes-disabled?]}]
   [:<>
    [input-labeled
     (cond->
      {:label     "Organization Name"
       :on-change on-change-organization-name
       :value     unsaved-org-name}
-      unsaved-org-name-support-message
-      (assoc :support-message unsaved-org-name-support-message))]
+     unsaved-org-name-support-message
+     (assoc :support-message unsaved-org-name-support-message))]
    ;; TODO consider having this share styles with Update User checkbox.
    ;; TODO consider adding pop up info, maybe what displays on the admin page
    [checkbox unsaved-auto-accept? on-change-auto-accept-user-as-org-member "Auto Accept User as Organization Member"]
@@ -104,8 +106,9 @@
                   :gap            "16px"}}
     [buttons/add {:text     "Add Another Domain"
                   :on-click on-click-add-email}]
-    [buttons/ghost {:text     "Save Changes"
-                    :on-click on-click-save-changes}]]])
+    [buttons/ghost {:text      "Save Changes"
+                    :disabled? save-changes-disabled?
+                    :on-click  on-click-save-changes}]]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
