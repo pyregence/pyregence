@@ -92,8 +92,8 @@
      {:label     "Organization Name"
       :on-change on-change-organization-name
       :value     unsaved-org-name}
-      unsaved-org-name-support-message
-      (assoc :support-message unsaved-org-name-support-message))]
+     unsaved-org-name-support-message
+     (assoc :support-message unsaved-org-name-support-message))]
    ;; TODO consider having this share styles with Update User checkbox.
    ;; TODO consider adding pop up info, maybe what displays on the admin page
    [checkbox unsaved-auto-accept? on-change-auto-accept-user-as-org-member "Auto Accept User as Organization Member"]
