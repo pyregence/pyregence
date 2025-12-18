@@ -64,10 +64,13 @@
       :reagent-render
       (fn [{:keys [user-role user-email]}]
         [:div
-         {:style {:height         "100%"
+         {:style {:height         "100vh"
+                  :margin-bottom  "40px"
                   :display        "flex"
                   :flex-direction "column"
-                  :font-family    "Roboto"}}
+                  :font-family    "Roboto"
+                  ;;NOTE this padding-bottom is to account for the header, there is probably a better way.
+                  :padding-bottom "60px"}}
         ;; TODO this mock `:nav` with actual upper nav bar, this will happen in another PR.
          [:nav  {:style {:display         "flex"
                          :justify-content "center"
@@ -122,9 +125,9 @@
               "Organization Settings"
               [os/main
                (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
-                     selected                                   (if (= user-role "super_admin")
-                                                                  selected
-                                                                  (-> @org-id->org keys first))
+                     selected (if (= user-role "super_admin")
+                                selected
+                                (-> @org-id->org keys first))
                      {:keys [unsaved-org-name
                              org-id auto-add?
                              org-name
@@ -133,7 +136,7 @@
                              unsaved-auto-accept?
                              unsaved-auto-add?
                              unsaved-org-name-support-message]} (@org-id->org selected)
-                     roles                                      (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/organization-roles) role))))
+                     roles (->> user-role roles/role->roles-below (filter roles/organization-roles))
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
                        ;;TODO check if this shouldn't happen in the db or server instead.
@@ -257,7 +260,7 @@
                   #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)
                   :role-options         roles})]
 
-              (let [roles (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/none-organization-roles) role))))]
+              (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
                 [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                           :users-selected?             users-selected?
                           :on-click-apply-update-users on-click-apply-update-users
