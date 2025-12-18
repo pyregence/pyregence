@@ -24,10 +24,9 @@
   {:display        "flex"
    :flex-direction "column"
    :align-items    "flex-start"
-   :padding        "40px 160px"
+   :padding        "40px 60px"
    :flex           "1 0 0"
-   :gap            "24px"
-   :overflow       "auto"})
+   :gap            "24px"})
 
 (def label-styles
   {:color       ($/color-picker :neutral-md-gray)
@@ -107,7 +106,6 @@
   [{:keys [title children]}]
   [:settings-body-card
    {:style {:display        "flex"
-            :max-width      "1000px"
             :min-width      "300px"
             :width          "100%"
             :padding        "16px"

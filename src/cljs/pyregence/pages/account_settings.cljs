@@ -61,17 +61,15 @@
       :reagent-render
       (fn [{:keys [user-role user-email]}]
         [:div
-         {:style {:height         "100vh"
-                  :margin-bottom  "40px"
+         {:style {:height         "100%"
                   :display        "flex"
                   :flex-direction "column"
-                  :font-family    "Roboto"
-                  ;;NOTE this padding-bottom is to account for the header, there is probably a better way.
-                  :padding-bottom "60px"}}
+                  :font-family    "Roboto"}}
         ;; TODO this mock `:nav` with actual upper nav bar, this will happen in another PR.
          [:nav  {:style {:display         "flex"
                          :justify-content "center"
                          :align-items     "center"
+                         :flex            "0 0 auto"
                          :width           "100%"
                          :height          "33px"
                          :background      ($/color-picker :yellow)}} "mock nav"]
@@ -102,7 +100,9 @@
                           (str (str/join ", " emails)  " updated " opt-type " to " (opt->display new-user-info) ".")))))))]
            [:div {:style {:display        "flex"
                           :flex-direction "row"
-                          :height         "100%"
+                          :flex           "1 1 auto"
+                          :min-height     0
+                          :overflow       "auto"
                           :background     ($/color-picker :lighter-gray)}}
             [nav-bar/main tabs]
             (case selected-page

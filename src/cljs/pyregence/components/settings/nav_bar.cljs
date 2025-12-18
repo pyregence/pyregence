@@ -86,7 +86,9 @@
         (doall
          (for [option options
                :when  (or (not @search) (same-letters-so-far? @search (:text option)))]
-           [button option]))])]))
+           ^{:key (:id option)}
+           [:div {:style {:padding-left "16px"}}
+            [button option]]))])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tabs Functions
@@ -217,7 +219,8 @@
 (defn main
   [tabs-data]
   [:nav-bar-main {:style {:display         "flex"
-                          :height          "100%"
+                          :flex            "0 0 360px"
+                          :align-self      "stretch"
                           :width           "360px"
                           :padding         "40px 0"
                           :flex-direction  "column"
