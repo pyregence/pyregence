@@ -150,7 +150,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    user_role             user_role,
    org_membership_status org_membership_status,
    organization_rid      integer
- ) AS $$
+   ) AS $$
 
     SELECT user_uid, name, email, match_drop_access, user_role, org_membership_status, organization_rid
     FROM users
@@ -195,7 +195,8 @@ RETURNS TABLE (
     SET password = crypt(_password, gen_salt('bf')),
         email_verified = TRUE,
         verification_token = NULL,
-        token_expiration = NULL
+        token_expiration = NULL,
+        password_set_date = NOW()
     WHERE email = lower_trim(_email)
         AND verification_token = _token
         AND verification_token IS NOT NULL
@@ -387,3 +388,11 @@ RETURNS TABLE (
     LEFT JOIN organizations o
         ON u.organization_rid = o.organization_uid;
 $$ LANGUAGE SQL;
+
+  -- Returns the date the password was last reset.
+CREATE OR REPLACE FUNCTION get_password_set_date(_user_id integer)
+RETURNS timestamptz AS $$
+    SELECT password_set_date
+    FROM users
+    WHERE user_uid = _user_id;
+$$ LANGUAGE SQL

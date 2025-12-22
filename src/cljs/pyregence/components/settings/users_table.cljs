@@ -1,18 +1,19 @@
 (ns pyregence.components.settings.users-table
   (:require
-   ["ag-grid-community"                   :refer [AllCommunityModule
+   ["ag-grid-community"                    :refer [AllCommunityModule
                                                   themeQuartz
                                                   ModuleRegistry]]
-   ["ag-grid-react"                       :refer [AgGridReact]]
-   [clojure.core.async                    :as async :refer [<! go]]
-   [goog.object                           :as goog]
-   [pyregence.components.settings.buttons :as buttons]
-   [pyregence.components.settings.roles   :as roles]
-   [pyregence.components.settings.status  :as status]
-   [pyregence.components.settings.utils   :refer [db->display search-cmpt]]
-   [pyregence.styles                      :as $]
-   [pyregence.utils.async-utils           :as u-async]
-   [reagent.core                          :as r]))
+   ["ag-grid-react"                        :refer [AgGridReact]]
+   [clojure.core.async                     :as async :refer [<! go]]
+   [goog.object                            :as goog]
+   [pyregence.components.settings.add-user :as add-user]
+   [pyregence.components.settings.buttons  :as buttons]
+   [pyregence.components.settings.roles    :as roles]
+   [pyregence.components.settings.status   :as status]
+   [pyregence.components.settings.utils    :refer [db->display search-cmpt]]
+   [pyregence.styles                       :as $]
+   [pyregence.utils.async-utils            :as u-async]
+   [reagent.core                           :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid functionality
@@ -166,7 +167,7 @@
                         :on-click  (on-click-apply @checked)}]]]))
 
 (defn table-with-buttons
-  [{:keys [users on-click-apply-update-users users-selected?]}]
+  [{:keys [users on-click-apply-update-users users-selected? org-id role-options default-role-option]}]
   ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
@@ -187,27 +188,32 @@
         {:style {:min-width "400px"}}
         [search-cmpt {:on-change on-change-search
                       :value     @search}]]
-       [:div {:style {:display        "flex"
-                      :flex-direction "row"
-                      :gap            "16px"}}
-        [buttons/ghost-drop-down {:text      "Update User Role"
-                                  :selected? (= @selected-drop-down :role)
-                                  :on-click  (fn []
-                                               (reset! checked nil)
-                                               (update-dd :role))}]
-        [buttons/ghost-drop-down {:text      "Update User Status"
-                                  :selected? (= @selected-drop-down :status)
-                                  :on-click  (fn []
-                                               (reset! checked nil)
-                                               (update-dd :status))}]
+       [:div {:style {:display         "flex"
+                      :width          "100%"
+                      :flex-direction  "row"
+                      :justify-content "space-between"}}
+        [:div {:style {:display "flex"
+                       :flex-direction  "row"
+                       :gap             "16px"
+                       :width           "100%"
+                       :justify-content "flex-start"}}
+         [buttons/ghost-drop-down {:text      "Update User Role"
+                                   :selected? (= @selected-drop-down :role)
+                                   :on-click  (fn []
+                                                (reset! checked nil)
+                                                (update-dd :role))}]
+         [buttons/ghost-drop-down {:text      "Update User Status"
+                                   :selected? (= @selected-drop-down :status)
+                                   :on-click  (fn []
+                                                (reset! checked nil)
+                                                (update-dd :status))}]
         ;; TODO add this back in when we get a more well defined acceptance criteria.
-        #_(when (:show-remove-user? m)
-            [buttons/ghost-remove-user {:text "Remove User"}])
-        ;;TODO add this back in when we get more well defined acceptance criteria.
-        #_[add-user/add-user-dialog]]
+         #_(when (:show-remove-user? m)
+             [buttons/ghost-remove-user {:text "Remove User"}])]
+        [add-user/add-user-dialog {:org-id org-id :role-options role-options :default-role-option default-role-option}]]
        (case @selected-drop-down
-         ;; TODO ideally these roles should be queried from the database
-         :role   [drop-down {:options         roles/roles
+         ;; TODO ideally these roles should be queried from the database from a sql function.
+         :role   [drop-down {:options         role-options
                              :checked         checked
                              :users-selected? @users-selected?
                              :opt->display   db->display

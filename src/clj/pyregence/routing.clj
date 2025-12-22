@@ -94,6 +94,9 @@
    [:post "/clj/get-current-user-settings"]      {:handler (clj-handler authentication/get-current-user-settings)
                                                   :auth-type :member
                                                   :auth-action :block}
+   [:post "/clj/get-password-set-date"]          {:handler     (clj-handler authentication/get-password-set-date)
+                                                  :auth-type   :member
+                                                  :auth-action :block}
    [:post "/clj/get-user-name-by-email"]         {:handler (clj-handler authentication/get-current-user-name-by-email)
                                                   :auth-type   :member
                                                   :auth-action :block}
@@ -121,6 +124,10 @@
                                                   :auth-action :block}
 
    ;; -- Organization Management
+   [:post "/clj/add-org-users"]                     {:handler (clj-handler authentication/add-org-users)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+
    [:post "/clj/add-org-user"]                      {:handler (clj-handler authentication/add-org-user)
                                                      :auth-type #{:organization-admin :token}
                                                      :auth-action :block}

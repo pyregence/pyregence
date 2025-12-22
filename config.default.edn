@@ -123,6 +123,10 @@
  :pyregence.match-drop/match-drop                   {:sig3-auth         "<AUTH_TOKEN>"
                                                      :sig3-geosync-host "<geoserver-dev | geoserver-west>"
                                                      :sig3-geosync-port 31339
+                                                     ;; DEV/STAGING
+                                                     :sig3-gcp-bucket "<pyrecast-dev-gis-data | pyrecast-stg-gis-data>"
+                                                     ;; PROD
+                                                     #_#_:sig3-gcp-bucket ["pyrecast-prod-gis-data-west" "pyrecast-prod-gis-data-central" "pyrecast-prod-gis-data-east"]
                                                      :app-name          "Pyrecast Match Drop Server"
                                                      :app-host          "localhost"
                                                      :app-port          31337

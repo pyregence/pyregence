@@ -26,8 +26,8 @@
    :align-items    "flex-start"
    :padding        "40px 160px"
    :flex           "1 0 0"
-   :overflow       "hidden"
-   :gap            "24px"})
+   :gap            "24px"
+   :overflow       "auto"})
 
 (def label-styles
   {:color       ($/color-picker :neutral-md-gray)
@@ -117,8 +117,7 @@
             :align-self     "stretch"
             :border-radius  "4px"
             :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
-            :background     ($/color-picker :white)
-            :overflow       "auto"}}
+            :background     ($/color-picker :white)}}
    [:p {:style {:color          ($/color-picker :neutral-black)
                 :font-size      "14px"
                 :font-style     "normal"
