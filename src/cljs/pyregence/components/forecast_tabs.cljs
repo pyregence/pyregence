@@ -14,9 +14,10 @@
    :fire-risk    {:opt-label  "Risk"
                   :hover-text "5-day forecast of fire consequence maps. Every day over 500 million hypothetical fires are ignited across California to evaluate potential fire risk.\n"}
    :active-fire  {:opt-label  "Active Fire"
-                  :hover-text "14-day forecasts of active fires with burning areas established from satellite-based heat detection."}
-   :psps-zonal   {:opt-label  "PSPS"
-                  :hover-text "Public Safety Power Shutoffs (PSPS) zonal statistics."}})
+                  :hover-text "14-day forecasts of active fires with burning areas established from satellite-based heat detection."}})
+   ; TODO we need a mechanism to selectively show the PSPS tab when on the /account-settings page
+   ; :psps-zonal   {:opt-label  "PSPS"
+   ;                :hover-text "Public Safety Power Shutoffs (PSPS) zonal statistics."}})
 
 (defn- $forecast-label [selected? mobile?]
   {:background-color (when selected? ($/color-picker :primary-main-orange))
