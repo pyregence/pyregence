@@ -101,7 +101,7 @@
   {:background-color ($/color-picker :font-color)
    :border           (str "1.5px solid " ($/color-picker :bg-color))
    :border-radius    "6px"
-   :color            ($/color-picker :bg-color)
+   :color            ($/color-picker :black)
    :left             tip-x
    :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
    :opacity          (if show? 1.0 0.0)

@@ -9,6 +9,7 @@
   {:display         "flex"
    :justify-content "center"
    :align-items     "center"
+   :height          "45px"
    :width           "100%"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -18,6 +19,6 @@
 (defn nav-bar
   "Defines the horizontal navigation component for the application."
   [props]
-  [:nav {:style ($/combine $nav-bar {:background ($/color-picker :yellow)})}
-   [forecast-tabs props]   
+  [:nav {:style ($/combine $nav-bar {:background ($/color-picker :primary-standard-orange)})}
+   [forecast-tabs props]
    [login-menu props]])

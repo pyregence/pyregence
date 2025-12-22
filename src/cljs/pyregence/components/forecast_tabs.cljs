@@ -1,11 +1,15 @@
 (ns pyregence.components.forecast-tabs
-  (:require [pyregence.components.common :refer [tool-tip-wrapper]]))
+  (:require [pyregence.components.common :refer [tool-tip-wrapper]]
+            [pyregence.styles             :as $]))
 
 (defn- $forecast-label [selected?]
-  (merge
-   {:cursor "pointer"
-    :margin "0 1rem 0 1rem"}
-   (when selected? {:color "white"})))
+  {:background-color (when selected? ($/color-picker :primary-main-orange))
+   :color            ($/color-picker :black)
+   :cursor           "pointer"
+   :font-family      "Roboto"
+   :font-weight      (if selected? 600 400)
+   :font-size        "16px"
+   :padding          "16px 24px"})
 
 (defn forecast-tabs
   "Declares a component that displayes interactive tabs for selecting distinct forecasts.

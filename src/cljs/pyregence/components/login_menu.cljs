@@ -28,7 +28,7 @@
                     :on-click #(-> js/window .-location (.assign "/account-settings"))}
             [svg/wheel :height "25px"]
             [:span {:style {:margin-left "8px" :vertical-align :middle}}
-             "Settings"]]           
+             "Settings"]]
            [:label {:style {:cursor "pointer" :margin ".16rem .2rem 0 0"}
                     :on-click #(swap! expanded? not)}
             "Log In"
@@ -50,8 +50,7 @@
                      :align-items :flex-start
                      :border-radius "4px"
                      :border "1px solid var(--Md_gray, #6C6C6C)"
-                     :background ($/color-picker :light-gray)
-                     }}
+                     :background ($/color-picker :light-gray)}}
             (map
              (fn [[key option]]
                (let [{:keys [label on-click icon-height]} option]
