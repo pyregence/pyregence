@@ -8,6 +8,7 @@
    [pyregence.components.settings.utils :refer [search-cmpt]]
    [pyregence.styles                    :as $]
    [pyregence.utils.async-utils         :as u-async]
+   [pyregence.utils.browser-utils       :as u-browser]
    [reagent.core                        :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -231,4 +232,4 @@
     [tabs tabs-data]]
    [button {:text     "Logout" :icon svg/logout
             :on-click #(go (<! (u-async/call-clj-async! "log-out"))
-                           (-> js/window .-location .reload))}]])
+                           (u-browser/jump-to-url! "/"))}]])

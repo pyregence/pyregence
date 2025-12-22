@@ -26,31 +26,27 @@
                c8.359-6.269,16.718-13.584,24.033-20.898c8.359-8.359,16.718-17.241,24.033-27.167c5.224-6.792,9.927-13.584,14.106-20.898
                C436.8,341.682,437.322,338.024,435.755,334.89z"}]])
 
-(defn arrow-up
-  []
-  [:svg
-   {:width   "13px"
-    :height  "9px"
-    :viewBox "0 0 13 9"
-    :fill    "none"
-    :xmlns   "http://www.w3.org/2000/svg"}
-   [:path
-    {:d
-     "M1.9 8.37461L0.5 6.97461L6.5 0.974609L12.5 6.97461L11.1 8.37461L6.5 3.77461L1.9 8.37461Z"
-     :fill "black"}]])
+(defn arrow-up [& {:keys [height width]
+                   :or   {height "9px"
+                          width  "13px"}}]
+  [:svg {:width   width
+         :height  height
+         :viewBox "0 0 13 9"
+         :fill    "none"
+         :xmlns   "http://www.w3.org/2000/svg"}
+   [:path {:d "M1.9 8.37461L0.5 6.97461L6.5 0.974609L12.5 6.97461L11.1 8.37461L6.5 3.77461L1.9 8.37461Z"
+           :fill "black"}]])
 
-(defn arrow-down
-  []
-  [:svg
-   {:width   "24px"
-    :height  "24px"
-    :viewBox "0 0 24 24"
-    :fill    "none"
-    :xmlns   "http://www.w3.org/2000/svg"}
-   [:path
-    {:d
-     "M11.5 15.3746L5.5 9.37461L6.9 7.97461L11.5 12.5746L16.1 7.97461L17.5 9.37461L11.5 15.3746Z"
-     :fill "black"}]])
+(defn arrow-down [& {:keys [height width]
+                     :or   {height "24px"
+                            width  "24px"}}]
+  [:svg {:width   width
+         :height  height
+         :viewBox "0 0 24 24"
+         :fill    "none"
+         :xmlns   "http://www.w3.org/2000/svg"}
+   [:path {:d "M11.5 15.3746L5.5 9.37461L6.9 7.97461L11.5 12.5746L16.1 7.97461L17.5 9.37461L11.5 15.3746Z"
+           :fill "black"}]])
 
 (defn binoculars [& {:keys [height width]}]
   [:svg {:height  height
