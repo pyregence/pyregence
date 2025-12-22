@@ -1,9 +1,9 @@
 (ns pyregence.components.login-menu
-  (:require [herb.core                          :refer [<class]]
-            [reagent.core                       :as r]
-            [pyregence.components.svg-icons     :as svg]
-            [pyregence.styles                   :as $]
-            [pyregence.utils.browser-utils      :as u-browser]))
+  (:require [herb.core                      :refer [<class]]
+            [reagent.core                   :as r]
+            [pyregence.components.svg-icons :as svg]
+            [pyregence.styles               :as $]
+            [pyregence.utils.browser-utils  :as u-browser]))
 
 (defn- $login-label [selected? logged-in?]
   {:background-color (when selected? ($/color-picker :primary-main-orange))
