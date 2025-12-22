@@ -20,9 +20,17 @@
                  :width           "100%"}}
    [forecast-tabs props]
    (if (:mobile? props)
-     [:span {:style    {:cursor   "pointer"
-                        :position "absolute"
-                        :right    "10px"}
-             :on-click #(u-browser/jump-to-url! "/login")}
-      [svg/login :height "25px"]]
+     (if (:logged-in? props)
+       [:<>]
+       ; TODO once the account-settings page is mobile friendly, we can add in this button to it
+       ; [:span {:style     {:cursor   "pointer"
+       ;                     :position "absolute"
+       ;                     :right    "10px"}
+       ;          :on-click #(u-browser/jump-to-url! "/account-settings")}
+       ;  [svg/wheel :height "25px"]]
+       [:span {:style    {:cursor   "pointer"
+                          :position "absolute"
+                          :right    "10px"}
+               :on-click #(u-browser/jump-to-url! "/login")}
+        [svg/login :height "25px"]])
      [login-menu props])])
