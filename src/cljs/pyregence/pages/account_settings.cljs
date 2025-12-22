@@ -3,6 +3,7 @@
    [clojure.core.async                                  :refer [<! go]]
    [clojure.set                                         :as set]
    [clojure.string                                      :as str]
+   [pyregence.components.nav-bar                        :refer [nav-bar]]
    [pyregence.components.messaging                      :refer [toast-message!]]
    [pyregence.components.settings.account-settings      :as as]
    [pyregence.components.settings.email                 :as email]
@@ -10,12 +11,14 @@
                                                                 get-user-name!
                                                                 get-users!
                                                                 update-own-user-name!]]
-   [pyregence.components.settings.nav-bar               :as nav-bar]
+   [pyregence.components.settings.nav-bar               :as side-nav-bar]
    [pyregence.components.settings.organization-settings :as os]
    [pyregence.components.settings.roles                 :as roles]
    [pyregence.components.settings.unaffilated-members   :as um]
+   [pyregence.state                                     :as !]
    [pyregence.styles                                    :as $]
    [pyregence.utils.async-utils                         :as u-async]
+   [pyregence.utils.browser-utils                       :as u-browser]
    [pyregence.utils.dom-utils                           :refer [input-value]]
    [reagent.core                                        :as r]))
 
@@ -56,11 +59,16 @@
      {:display-name "account-settings"
       :component-did-mount
       #(go
-         (reset! users (<! (get-users! user-role)))
-         ;; TODO using two atoms here might be awkward.
-         (reset! user-name (<! (get-user-name!)))
-         (reset! unsaved-user-name @user-name)
-         (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role)))))
+         (let [update-fn (fn [& _]
+                           (-> js/window (.scrollTo 0 0))
+                           (reset! !/mobile? (> 800.0 (.-innerWidth js/window))))]
+           (-> js/window (.addEventListener "touchend" update-fn))
+           (-> js/window (.addEventListener "resize"   update-fn))
+           (reset! users (<! (get-users! user-role)))
+           (reset! user-name (<! (get-user-name!)))
+           (reset! unsaved-user-name @user-name)
+           (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role))))
+           (update-fn)))
       :reagent-render
       (fn [{:keys [user-role user-email]}]
         [:div
@@ -71,14 +79,13 @@
                   :font-family    "Roboto"
                   ;;NOTE this padding-bottom is to account for the header, there is probably a better way.
                   :padding-bottom "60px"}}
-        ;; TODO this mock `:nav` with actual upper nav bar, this will happen in another PR.
-         [:nav  {:style {:display         "flex"
-                         :justify-content "center"
-                         :align-items     "center"
-                         :width           "100%"
-                         :height          "33px"
-                         :background      ($/color-picker :yellow)}} "mock nav"]
-         (let [tabs             (nav-bar/tab-data->tabs
+         [nav-bar {:logged-in?         true
+                   :mobile?            @!/mobile?
+                   :on-forecast-select (fn [forecast]
+                                         (u-browser/jump-to-url!
+                                          (str "/?forecast=" (name forecast))))
+                   :user-role          user-role}]
+         (let [tabs             (side-nav-bar/tab-data->tabs
                                  {:selected-log  selected-log
                                   :organizations (vals @org-id->org)
                                   :user-role     user-role})
@@ -107,7 +114,7 @@
                           :flex-direction "row"
                           :height         "100%"
                           :background     ($/color-picker :lighter-gray)}}
-            [nav-bar/main tabs]
+            [side-nav-bar/main tabs]
             (case selected-page
               "Account Settings"
               [as/main {:password-set-date              password-set-date

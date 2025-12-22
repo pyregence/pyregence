@@ -689,7 +689,11 @@
                 (or (keyword forecast)
                     (keyword (forecast-type @!/default-forecasts)))
 
-                ;; other wise it's near term
+                ;; other wise it's near term, default to a pssed in forecast via URL query params
+                ;; TODO we ignore !/default-forecasts for near-term right now, should we remove this from the config?
+                (some-> forecast keyword)
+                (keyword forecast)
+
                 (zero? active-fire-count)
                 :fire-weather
 
@@ -955,15 +959,14 @@
        [message-box-modal]
        (when @!/loading? [loading-modal])
        [message-modal]
-       [nav-bar {:capabilities     @!/capabilities
-                 :current-forecast @!/*forecast
-                 :is-admin?        (roles-who-can-see-admin-btn user-role)
-                 :logged-in?       user-id
-                 :mobile?          @!/mobile?
-                 :user-orgs-list   @!/user-orgs-list
-                 :select-forecast! select-forecast!
-                 :user-id          user-id ; TODO we might be able to get rid of this
-                 :user-role        user-role}]
+       [nav-bar {:capabilities       @!/capabilities
+                 :current-forecast   @!/*forecast
+                 :is-admin?          (roles-who-can-see-admin-btn user-role)
+                 :logged-in?         user-id
+                 :mobile?            @!/mobile?
+                 :user-orgs-list     @!/user-orgs-list
+                 :on-forecast-select select-forecast!
+                 :user-role          user-role}]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when (and @mb/the-map
                    (not-empty @!/capabilities)
