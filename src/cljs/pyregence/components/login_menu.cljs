@@ -22,10 +22,11 @@
    :register {:label      "Create an Account"
               :on-click  #(u-browser/jump-to-url! "/register")}})
 
-(defn login-dropdown-item []
+(defn login-dropdown-item [first-item?]
   (with-meta
     {:background-color ($/color-picker :white)
-     :border-top       (str "1px solid " ($/color-picker :neutral-soft-gray))
+     :border-top       (when-not first-item?
+                         (str "1px solid " ($/color-picker :neutral-soft-gray)))
      :color            ($/color-picker :black)
      :cursor           :pointer
      :font-family      "Roboto"
@@ -46,12 +47,13 @@
                  :top            "50px"
                  :position       :absolute
                  :z-index        9999}}
-   (map
-    (fn [[login-key option]]
-      (let [{:keys [label on-click]} option]
+   (map-indexed
+    (fn [idx [login-key option]]
+      (let [{:keys [label on-click]} option
+            first-item? (zero? idx)]
         ^{:key login-key}
         [:div {:on-click on-click
-               :class    (<class login-dropdown-item)}
+               :class    (<class login-dropdown-item first-item?)}
          label]))
     login-dropdowns)])
 
