@@ -67,29 +67,36 @@
   "The root component for the /register page.
    Displays the register form and a link to the login page."
   [_]
-  (r/create-class
-   {:component-did-mount
-    (fn [_]
-      (let [update-fn (fn [& _]
-                        (-> js/window (.scrollTo 0 0))
-                        (reset! !/mobile? (> 800.0 (.-innerWidth js/window))))]
+  (let [update-fn (atom nil)]
+    (r/create-class
+     {:component-did-mount
+      (fn [_]
+        (reset! update-fn (fn [& _]
+                            (-> js/window (.scrollTo 0 0))
+                            (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))))
         (-> js/window (.addEventListener "touchend" update-fn))
         (-> js/window (.addEventListener "resize"   update-fn))
-        (update-fn)))
-    :reagent-render
-    (fn [_]
-     [:<>
-      [:div {:style ($/combine ($/disabled-group @pending?)
-                               {:display "flex" :justify-content "center" :margin "5rem"})}
-       [simple-form
-        "Register"
-        "Register"
-        [["Email"            email       "email"    "email"]
-         ["Full Name"        full-name   "text"     "name"]
-         ["Password"         password    "password" "new-password"]
-         ["Confirm Password" re-password "password" "confirm-password"]]
-        register!]]
-      [:div {:style ($/align "flex" "center")}
-       "Already have an account?  "
-       [:a {:href "/login" :style {:margin-left "0.2rem"}} "Log in here"]
-       "."]])}))
+        (@update-fn))
+
+      :component-will-unmount
+      (fn [_]
+        (.removeEventListener js/window "touchend" @update-fn)
+        (.removeEventListener js/window "resize" @update-fn))
+    
+      :reagent-render
+      (fn [_]
+       [:<>
+        [:div {:style ($/combine ($/disabled-group @pending?)
+                                 {:display "flex" :justify-content "center" :margin "5rem"})}
+         [simple-form
+          "Register"
+          "Register"
+          [["Email"            email       "email"    "email"]
+           ["Full Name"        full-name   "text"     "name"]
+           ["Password"         password    "password" "new-password"]
+           ["Confirm Password" re-password "password" "confirm-password"]]
+          register!]]
+        [:div {:style ($/align "flex" "center")}
+         "Already have an account?  "
+         [:a {:href "/login" :style {:margin-left "0.2rem"}} "Log in here"]
+         "."]])})))
