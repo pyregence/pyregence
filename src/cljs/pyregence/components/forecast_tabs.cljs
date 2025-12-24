@@ -25,7 +25,9 @@
    :cursor           "pointer"
    :font-family      "Roboto"
    :font-weight      400
-   :font-size        "16px"
+   :font-size        (if mobile?
+                       "12px"
+                       "16px")
    :padding          (if mobile?
                        "16px 12px"
                        "16px 24px")})
