@@ -21,13 +21,11 @@
    [forecast-tabs props]
    (if (:mobile? props)
      (if (:logged-in? props)
-       [:<>]
-       ; TODO once the account-settings page is mobile friendly, we can add in this button to it
-       ; [:span {:style     {:cursor   "pointer"
-       ;                     :position "absolute"
-       ;                     :right    "10px"}
-       ;          :on-click #(u-browser/jump-to-url! "/account-settings")}
-       ;  [svg/wheel :height "25px"]]
+       [:span {:style     {:cursor   "pointer"
+                           :position "absolute"
+                           :right    "10px"}
+                :on-click #(u-browser/jump-to-url! "/account-settings")}
+        [svg/wheel :height "25px"]]
        [:span {:style    {:cursor   "pointer"
                           :position "absolute"
                           :right    "10px"}
