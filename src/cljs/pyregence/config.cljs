@@ -441,11 +441,11 @@
                                                               :crown-fire-area {:opt-label    "Crown fire area"
                                                                                 :filter-set   #{"fire-risk-forecast" "crown-fire-area"}
                                                                                 :units        "Acres"
-                                                                                :disabled-for (conj all-utility-companies-planning :tlines)}
+                                                                                :disabled-for (conj all-utility-companies all-utility-companies-planning :tlines)}
                                                               :plignrate       {:opt-label    "Power line ignition rate"
                                                                                 :filter-set   #{"fire-risk-forecast" "plignrate"}
                                                                                 :units        "Ignitions/line-mi/hr"
-                                                                                :disabled-for (conj all-utility-companies-planning :all :tlines)}
+                                                                                :disabled-for (conj all-utility-companies all-utility-companies-planning :all :tlines)}
                                                               :area-p          {:opt-label    "Fire area percentile"
                                                                                 :filter-set   #{"fire-risk-planning" "area-p"}
                                                                                 :units        "%"
