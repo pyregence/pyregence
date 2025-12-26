@@ -6,6 +6,7 @@
             [pyregence.components.common                      :refer [hs-str tool-tip-wrapper]]
             [pyregence.components.map-controls.panel-dropdown :refer [panel-dropdown]]
             [pyregence.components.map-controls.tool-button    :refer [tool-button]]
+            [pyregence.components.map-controls.system-assets  :as sa]
             [pyregence.components.mapbox                      :as mb]
             [pyregence.components.svg-icons                   :as svg]
             [pyregence.config                                 :as c]
@@ -333,6 +334,9 @@
                           selected-param-set]]))
                     @!/processed-params)
                [opacity-input]]]
+             [collapsible-panel-section
+              "system-assets"
+              [sa/panel-setion]]
              [collapsible-panel-section
               "optional-layers"
               [optional-layers

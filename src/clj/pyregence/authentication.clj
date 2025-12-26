@@ -816,6 +816,12 @@
                  :membership-status org_membership_status}))
         (data-response))))
 
+(defn get-orgs-with-system-assets
+  [{:keys [user-id]}]
+  (->> user-id
+       (call-sql "get_orgs_with_system_assets")
+       data-response))
+
 (defn get-all-users
   "Returns a vector of all users in the DB."
   [_]
