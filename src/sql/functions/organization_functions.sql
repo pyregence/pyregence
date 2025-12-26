@@ -116,6 +116,34 @@ CREATE OR REPLACE FUNCTION update_org_membership_status(
     WHERE user_uid = _user_id;
 $$ LANGUAGE SQL;
 
+-- Gets all orgs that a user has access to that have system-assets enabled.
+CREATE OR REPLACE FUNCTION get_orgs_with_system_assets(_user_uid int)
+RETURNS TABLE (org_unique_id text, org_name text)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM users
+    WHERE user_role IN ('super_admin', 'account_manager')
+      AND user_uid = _user_uid
+  ) THEN
+    RETURN QUERY
+    SELECT o.org_unique_id, o.org_name
+    FROM organizations o
+    WHERE system_assets = TRUE;
+  ELSE
+    RETURN QUERY
+    SELECT o.org_unique_id, o.org_name
+    FROM organizations o
+    JOIN users u
+    ON o.organization_uid = u.organization_rid
+      WHERE u.user_uid = _user_uid
+      AND system_assets = TRUE;
+  END IF;
+END;
+$$;
+
 --------------------------------------------------------------------------------
 ---  Organization Memberss
 --------------------------------------------------------------------------------
