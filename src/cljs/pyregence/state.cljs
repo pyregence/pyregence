@@ -55,7 +55,7 @@ that there are 145 different time steps in this specific forecast."}
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Wildfire Camera Tool."}
   show-camera? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Weather Station Tool."}
- show-weather-station? (r/atom false))
+  show-weather-station? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Fire History Tool."}
   show-fire-history? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the Point Information Tool."}
@@ -105,6 +105,56 @@ the user is not an Admin or Member of their organization."}
   user-psps-orgs-list (r/atom []))
 (defonce ^{:doc "A boolean that enables time-step animation for the Time Slider when true."}
   animate? (r/atom false))
+(defonce ^{:doc "True when animation layers exist in Mapbox."}
+  layers-ready? (r/atom false))
+(defonce ^{:doc "True while tiles loading during layer swap."}
+  swapping? (r/atom false))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Animation Buffer State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce ^{:doc "Total frame count for current animation sequence."}
+  total-frames (r/atom 0))
+
+(defonce ^{:doc "Set of frame indices with tiles fully loaded."}
+  frames-ready (r/atom #{}))
+
+(defonce ^{:doc "True when animation is paused waiting for buffer to fill."}
+  paused-for-buffer? (r/atom false))
+
+(defn buffer-ahead []
+  (let [current @*layer-idx
+        ready   @frames-ready
+        total   @total-frames]
+    (if (zero? total)
+      0
+      (count (take-while #(contains? ready (mod % total))
+                         (range (inc current) (+ current total)))))))
+
+(defn should-start-buffering? []
+  (and @animate?
+       (pos? @total-frames)
+       (zero? (buffer-ahead))))
+
+(defn buffer-healthy? []
+  (let [total     @total-frames
+        threshold (min 8 (max 1 (quot total 2)))]
+    (or (not @animate?)
+        (zero? total)
+        (>= (buffer-ahead) threshold))))
+
+(defn frame-ready? [idx]
+  (contains? @frames-ready idx))
+
+(defn mark-frame-ready! [idx]
+  (swap! frames-ready conj idx))
+
+(defn reset-buffer-state! []
+  (reset! total-frames 0)
+  (reset! frames-ready #{})
+  (reset! paused-for-buffer? false))
+
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the loading modal dialog."}
   loading? (r/atom true))
 (defonce ^{:doc "A boolean that designates if the browser's innerwidth reaches below the 800 pixel wide breakpoint.
@@ -131,7 +181,7 @@ California cameras. This atom is used to create the camera layer in mapbox.cljs.
 (defonce ^{:doc "A map that defines the default tab to display for the near-term and long-term forecast pages."}
   default-forecasts (atom {}))
 (defonce ^{:doc "The date of the current usage terms and conditions was updated"}
- usage-terms-and-conditions-date (atom nil))
+  usage-terms-and-conditions-date (atom nil))
 (defonce ^{:doc "A boolean map describing what features are enabled or disabled."}
   feature-flags (atom nil))
 (defonce ^{:doc "A map of Geoserver URLs that are used to query layer data from."}
