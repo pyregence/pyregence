@@ -47,7 +47,7 @@
                                 "You must fill in all required information to continue.")
 
                               (when (< (count @password) 8)
-                                "Your password must be at least 8 charactors long.")
+                                "Your password must be at least 8 characters long.")
 
                               (when-not (= @password @re-password)
                                 "The passwords you have entered do not match.")
@@ -82,7 +82,7 @@
       (fn [_]
         (.removeEventListener js/window "touchend" @update-fn)
         (.removeEventListener js/window "resize" @update-fn))
-    
+
       :reagent-render
       (fn [_]
        [:<>
