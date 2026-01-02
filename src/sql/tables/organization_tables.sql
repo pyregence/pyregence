@@ -13,7 +13,8 @@ CREATE TABLE organizations (
     auto_accept           boolean,
     archived              boolean DEFAULT FALSE,
     created_date          date DEFAULT NOW(),
-    archived_date         date
+    archived_date         date,
+    system_assets         boolean
 );
 
 --------------------------------------------------------------------------------

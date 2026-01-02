@@ -143,6 +143,9 @@
    [:post "/clj/get-org-member-users"]              {:handler (clj-handler authentication/get-org-member-users)
                                                      :auth-type #{:organization-admin :token}
                                                      :auth-action :block}
+   [:post "/clj/get-orgs-with-system-assets"]       {:handler     (clj-handler authentication/get-orgs-with-system-assets)
+                                                     :auth-type   #{:organization-member :token}
+                                                     :auth-action :block}
    [:post "/clj/get-psps-organizations"]            {:handler (clj-handler authentication/get-psps-organizations)
                                                      :auth-type :token
                                                      :auth-action :block}
