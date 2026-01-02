@@ -160,7 +160,7 @@
                                 "You must fill in all required information to continue.")
 
                               (when (< (count @new-user-password) 8)
-                                "Your password must be at least 8 charactors long.")
+                                "Your password must be at least 8 characters long.")
 
                               (when-not (= @new-user-password @new-user-re-password)
                                 "The passwords you have entered do not match.")
