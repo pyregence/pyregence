@@ -14,7 +14,6 @@
                :on-change #(on-change show?)}]
       [:label {:for id} label]]]))
 
-
 (defn collapsible-panel-section
   "A section component to differentiate content in the collapsible panel."
   [id body]
