@@ -87,4 +87,5 @@
   [:div {:style {:display "flex" :flex-direction "column"}}
    [:h6 {:style ($popup-header)} header]
    (for [{:keys [label value]} options]
-     [:div [:strong label  ": "] value])])
+     ^{:key label}
+     [:div  [:strong label  ": "] value])])
