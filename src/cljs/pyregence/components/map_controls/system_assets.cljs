@@ -13,7 +13,8 @@
 
 (defn panel-section
   []
-  (let [orgs-with-system-assets (r/atom nil)]
+  (let [orgs-with-system-assets (r/atom nil)
+        ID "System Assets"]
     (go
       (reset! orgs-with-system-assets
               (let [{:keys [body success]}
@@ -21,7 +22,7 @@
                 (when success (edn/read-string body)))))
     #(when-let [orgs-with-system-assets (seq @orgs-with-system-assets)]
        [u/collapsible-panel-section
-        "system-assets"
+        ID
         (let [geoserver "psps"
               system-assets-info
               (for [{:keys [org_unique_id org_name] :as o} orgs-with-system-assets
@@ -55,7 +56,7 @@
                        (mb/add-feature-highlight! id id
                                                   :click-fn
                                                   (fn [feature lnglat]
-                                                    (mb/init-popup! "system-assets" lnglat
+                                                    (mb/init-popup! ID lnglat
                                                                     [popup
                                                                      (let [{:keys [DVC_ID DVC_TYPE]}
                                                                            (js->clj (gobj/get feature "properties")
@@ -66,7 +67,7 @@
                                                   :source-layer source-layer))))
           [:<>
            [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
-            [:label "System Assets"]
+            [:label ID]
             (for [{:keys [id opt-label] :as m} system-assets-info]
               ^{:key id}
               [u/option
