@@ -18,7 +18,7 @@
                                  {:device "substation" :color "blue"}
                                  {:device "recloser" :color "green"}
                                  {:device "breaker" :color "orange"}]
-        ->id                    (fn [org_unique_id device] (str org_unique_id "-" device))]
+        ->id (fn [org_unique_id device] (str org_unique_id "-" device))]
     (r/create-class
      {:component-did-mount
       #(go
@@ -28,50 +28,27 @@
                              (let [{:keys [body success]}
                                    (<! (u-async/call-clj-async! "get-orgs-with-system-assets"))]
                                (when success (edn/read-string body)))))]
-           (let [add-layers-callback
-                 (fn []
-                   (println "add layers!")
-                   (let [geoserver   "psps"
-                         device-meta (for [{:keys [org_unique_id] :as o} orgs-with-system-assets
-                                           {:keys [device] :as d}        device-info]
-                                       (merge o d {:id (->id org_unique_id device) :source-layer (str org_unique_id "-devices")}))
-                         new-layers  (for [{:keys [id device color source-layer]} device-meta]
-                                       {:id           id
-                                        :source       id
-                                        :source-layer source-layer
-                                        :filter       ["==" ["get" "DVC_TYPE"] device]
-                                        :type         "circle"
-                                        :paint        {:circle-radius  6
-                                                       :circle-color   color
-                                                       :circle-opacity 1}})
-                         new-sources (reduce
-                                      (fn [new-sources {:keys [id org_unique_id source-layer]}]
-                                        (assoc new-sources id (mb/mvt-source (str geoserver "-static_" org_unique_id "%3A" source-layer) geoserver)))
-                                      {}
-                                      device-meta)]
-                     (mb/update-style! (mb/get-style)  :new-sources new-sources :new-layers (vec new-layers))
-                     (doseq [{:keys [id source-layer]} device-meta]
-                       (mb/set-visible-by-title! id false)
-                       (mb/add-feature-highlight! id id
-                                                  :click-fn
-                                                  (fn [feature lnglat]
-                                                    (mb/init-popup! "system-assets" lnglat
-                                                                    [popup
-                                                                     (let [{:keys [DVC_ID DVC_TYPE]}
-                                                                           (js->clj (gobj/get feature "properties")
-                                                                                    :keywordize-keys true)]
-                                                                       {:header  DVC_ID
-                                                                        :options [{:label "Device Type" :value DVC_TYPE}]})]
-                                                                    {:width "200px"}))
-                                                  :source-layer source-layer))))]
-             (if (.isStyleLoaded @mb/the-map)
-               (add-layers-callback)
-               (.once @mb/the-map "style.load" (fn []
-                                                 (println "once!!")
-                                                 (add-layers-callback)))))))
+           (doseq [{:keys [org_unique_id]} orgs-with-system-assets
+                   {:keys [device color]} device-info
+                   :let [id (->id org_unique_id device)
+                         source-layer (str org_unique_id "-devices")
+                         layer-name (str "psps-static_" org_unique_id "%3A" source-layer)]]
+
+             (when-not (.getSource @mb/the-map id)
+               (.addSource @mb/the-map id (clj->js (mb/mvt-source layer-name "psps"))))
+
+             (when-not (.getLayer @mb/the-map id)
+               (.addLayer @mb/the-map (clj->js {:id           id
+                                                :source       id
+                                                :source-layer source-layer
+                                                :filter       ["==" ["get" "DVC_TYPE"] device]
+                                                :type         "circle"
+                                                :paint        {:circle-radius 6 :circle-color color}})))
+             (mb/set-visible-by-title! id false))))
 
       :reagent-render
       #(when-let [orgs-with-system-assets (seq @orgs-with-system-assets)]
+         #_(print-layers)
          [u/collapsible-panel-section
           "System Assets"
           [:<>
