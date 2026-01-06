@@ -14,15 +14,15 @@
 (defn panel-section
   []
   (let [orgs-with-system-assets (r/atom nil)
-        device-info             [{:device "fuse" :color "red"}
+        device-info             [{:device "fuse"       :color "red"}
                                  {:device "substation" :color "blue"}
-                                 {:device "recloser" :color "green"}
-                                 {:device "breaker" :color "orange"}]]
+                                 {:device "recloser"   :color "green"}
+                                 {:device "breaker"    :color "orange"}]]
     (go
-       (reset! orgs-with-system-assets
-               (let [{:keys [body success]}
-                     (<! (u-async/call-clj-async! "get-orgs-with-system-assets"))]
-                 (when success (edn/read-string body)))))
+      (reset! orgs-with-system-assets
+              (let [{:keys [body success]}
+                    (<! (u-async/call-clj-async! "get-orgs-with-system-assets"))]
+                (when success (edn/read-string body)))))
     #(when-let [orgs-with-system-assets (seq @orgs-with-system-assets)]
        [u/collapsible-panel-section
         "System Assets"
@@ -31,13 +31,13 @@
           [:label "System Assets"]
           (for [{:keys [org_unique_id org_name]} orgs-with-system-assets
                 {:keys [device color]}           device-info
-                :let                             [id (str org_unique_id "-" device)
+                :let                             [id           (str org_unique_id "-" device)
                                                   source-layer (str org_unique_id "-devices")
-                                                  opt-label (str (str/capitalize device) "s " "(" org_name ")")
-                                                  layer-name (str "psps-static_" org_unique_id "%3A" source-layer)
-                                                  layer {:id         id
-                                                         :z-index    110
-                                                         :filter-set #{org_unique_id}}]]
+                                                  opt-label    (str (str/capitalize device) "s " "(" org_name ")")
+                                                  layer-name   (str "psps-static_" org_unique_id "%3A" source-layer)
+                                                  layer        {:id         id
+                                                                :z-index    110
+                                                                :filter-set #{org_unique_id}}]]
             ^{:key id}
             [u/option
              {:id    id
@@ -49,10 +49,13 @@
                     (when-not (js-invoke @mb/the-map "getSource" id)
                       (js-invoke @mb/the-map "addSource"  id (clj->js (mb/mvt-source layer-name "psps"))))
                     (when-not (js-invoke @mb/the-map "getLayer" id)
-                      (js-invoke @mb/the-map "addLayer" (clj->js {:id     id :source id :source-layer source-layer
-                                                                  :filter ["==" ["get" "DVC_TYPE"] device]
-                                                                  :type   "circle"
-                                                                  :paint  {:circle-radius 6 :circle-color color}}))
+                      ;;TODO consider using a different :source then :id because they might clash down the line.
+                      (js-invoke @mb/the-map "addLayer" (clj->js {:id           id
+                                                                  :source       id
+                                                                  :source-layer source-layer
+                                                                  :filter       ["==" ["get" "DVC_TYPE"] device]
+                                                                  :type         "circle"
+                                                                  :paint        {:circle-radius 6 :circle-color color}}))
                       (mb/add-feature-highlight! id id :click-fn (fn [feature lnglat]
                                                                    (mb/init-popup! "system-assets" lnglat
                                                                                    [popup
@@ -68,5 +71,5 @@
                       (swap! !/*optional-layers assoc id layer)
                       (reset! !/most-recent-optional-layer layer))
                     (do
-                      (swap! !/*optional-layers dissoc id) ;; Clean up the map
+                      (swap! !/*optional-layers dissoc id)
                       (reset! !/most-recent-optional-layer {})))))}])]]])))
