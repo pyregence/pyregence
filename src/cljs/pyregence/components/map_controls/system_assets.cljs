@@ -27,36 +27,39 @@
                              (let [{:keys [body success]}
                                    (<! (u-async/call-clj-async! "get-orgs-with-system-assets"))]
                                (when success (edn/read-string body)))))]
-           (doseq [{:keys [org_unique_id]} orgs-with-system-assets
-                   {:keys [device color]}  device-info
-                   :let                    [geoserver    "psps"
-                                            source-layer (str org_unique_id "-devices")
-                                            layer-name (str geoserver "-static_" org_unique_id "%3A" source-layer)
-                                            id (str org_unique_id "-" device)
-                                            new-layers [{:id           id
-                                                         :source       id
-                                                         :source-layer source-layer
-                                                         :filter       ["==" ["get" "DVC_TYPE"] device]
-                                                         :type         "circle"
-                                                         :paint        {:circle-radius  6
-                                                                        :circle-color   color
-                                                                        :circle-opacity 1}}]
-                                            new-sources {id (mb/mvt-source layer-name geoserver)}]]
-             (println {:new-layers new-layers :new-sources new-sources})
+           (let [geoserver "psps"
+                 info (for [{:keys [org_unique_id] :as o} orgs-with-system-assets
+                            {:keys [device] :as d}  device-info]
+                        (merge o d {:id (str org_unique_id "-" device) :source-layer (str org_unique_id "-devices")}))
+                 new-layers (for [{:keys [id device color source-layer]} info]
+                              {:id           id
+                               :source       id
+                               :source-layer source-layer
+                               :filter       ["==" ["get" "DVC_TYPE"] device]
+                               :type         "circle"
+                               :paint        {:circle-radius  6
+                                              :circle-color   color
+                                              :circle-opacity 1}})
+                 new-sources (reduce
+                              (fn [new-sources {:keys [id org_unique_id source-layer]}]
+                                (assoc new-sources id (mb/mvt-source (str geoserver "-static_" org_unique_id "%3A" source-layer) geoserver)))
+                              {}
+                              info)]
              (mb/update-style! (mb/get-style) :new-sources new-sources :new-layers new-layers)
-             (mb/set-visible-by-title! id false)
-             (mb/add-feature-highlight! id id
-                                        :click-fn
-                                        (fn [feature lnglat]
-                                          (mb/init-popup! "system-assets" lnglat
-                                                          [popup
-                                                           (let [{:keys [DVC_ID DVC_TYPE]}
-                                                                 (js->clj (gobj/get feature "properties")
-                                                                          :keywordize-keys true)]
-                                                             {:header  DVC_ID
-                                                              :options [{:label "Device Type" :value DVC_TYPE}]})]
-                                                          {:width "200px"}))
-                                        :source-layer source-layer))))
+             (doseq [{:keys [id source-layer]} info]
+               (mb/set-visible-by-title! id false)
+               (mb/add-feature-highlight! id id
+                                          :click-fn
+                                          (fn [feature lnglat]
+                                            (mb/init-popup! "system-assets" lnglat
+                                                            [popup
+                                                             (let [{:keys [DVC_ID DVC_TYPE]}
+                                                                   (js->clj (gobj/get feature "properties")
+                                                                            :keywordize-keys true)]
+                                                               {:header  DVC_ID
+                                                                :options [{:label "Device Type" :value DVC_TYPE}]})]
+                                                            {:width "200px"}))
+                                          :source-layer source-layer)))))
 
       :reagent-render
       #(when-let [orgs-with-system-assets (seq @orgs-with-system-assets)]
