@@ -14,7 +14,7 @@
 (defn panel-section
   []
   (let [orgs-with-system-assets (r/atom nil)
-        ID "System Assets"]
+        ID                      "System Assets"]
     (go
       (reset! orgs-with-system-assets
               (let [{:keys [body success]}
