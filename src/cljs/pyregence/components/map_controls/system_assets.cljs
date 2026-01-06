@@ -49,14 +49,13 @@
                 (fn [show?]
                   (let [show? (swap! show? not)]
                     (when show?
-                      (when-not (.getSource @mb/the-map id)
-                        (.addSource @mb/the-map id (clj->js (mb/mvt-source layer-name "psps"))))
-
-                      (when-not (.getLayer @mb/the-map id)
-                        (.addLayer @mb/the-map (clj->js {:id     id :source id :source-layer source-layer
-                                                         :filter ["==" ["get" "DVC_TYPE"] device]
-                                                         :type   "circle"
-                                                         :paint  {:circle-radius 6 :circle-color color}}))
+                      (when-not (js-invoke @mb/the-map "getSource" id)
+                        (js-invoke @mb/the-map "addSource"  id (clj->js (mb/mvt-source layer-name "psps"))))
+                      (when-not (js-invoke @mb/the-map "getLayer" id)
+                        (js-invoke @mb/the-map "addLayer" (clj->js {:id     id :source id :source-layer source-layer
+                                                                    :filter ["==" ["get" "DVC_TYPE"] device]
+                                                                    :type   "circle"
+                                                                    :paint  {:circle-radius 6 :circle-color color}}))
                         (mb/add-feature-highlight! id id :click-fn (fn [feature lnglat]
                                                                      (mb/init-popup! "system-assets" lnglat
                                                                                      [popup
@@ -66,7 +65,7 @@
                                                                                         {:header  DVC_ID
                                                                                          :options [{:label "Device Type" :value DVC_TYPE}]})]
                                                                                      {:width "200px"})) :source-layer source-layer)))
-                    (.setLayoutProperty @mb/the-map id "visibility" (if show? "visible" "none"))
+                    (js-invoke @mb/the-map "setLayoutProperty" id "visibility" (if show? "visible" "none"))
                     (if show?
                       (do
                         (swap! !/*optional-layers assoc id layer)
