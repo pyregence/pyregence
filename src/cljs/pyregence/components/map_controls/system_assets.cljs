@@ -1,23 +1,23 @@
 (ns pyregence.components.map-controls.system-assets
   (:require
-   [clojure.core.async                               :refer [<! go]]
-   [clojure.edn                                      :as edn]
-   [clojure.string                                   :as str]
-   [goog.object                                      :as gobj]
-   [pyregence.components.map-controls.utils          :as u]
-   [pyregence.components.mapbox                      :as mb]
-   [pyregence.components.popups                      :refer [popup]]
-   [pyregence.state                                  :as !]
-   [pyregence.utils.async-utils                      :as u-async]
-   [reagent.core                                     :as r]))
+   [clojure.core.async                      :refer [<! go]]
+   [clojure.edn                             :as edn]
+   [clojure.string                          :as str]
+   [goog.object                             :as gobj]
+   [pyregence.components.map-controls.utils :as u]
+   [pyregence.components.mapbox             :as mb]
+   [pyregence.components.popups             :refer [popup]]
+   [pyregence.state                         :as !]
+   [pyregence.utils.async-utils             :as u-async]
+   [reagent.core                            :as r]))
 
 (defn panel-section
   []
   (let [orgs-with-system-assets (r/atom nil)
-        device-info             [{:device "fuse"       :color "red"}
-                                 {:device "substation" :color "blue"}
-                                 {:device "recloser"   :color "green"}
-                                 {:device "breaker"    :color "orange"}]]
+        device-info             [{:device "fuse"       :color "red"    :hover-color "#9C2007" :selected-color "#F87C63"}
+                                 {:device "substation" :color "blue"   :hover-color "#072F9C" :selected-color "#638BF8"}
+                                 {:device "recloser"   :color "green"  :hover-color "#177005" :selected-color "#7CF863"}
+                                 {:device "breaker"    :color "orange" :hover-color "#9C5907" :selected-color "#FACA8F"}]]
     (go
       (reset! orgs-with-system-assets
               (let [{:keys [body success]}
@@ -30,7 +30,10 @@
          [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
           [:label "System Assets"]
           (for [{:keys [org_unique_id org_name]} orgs-with-system-assets
-                {:keys [device color]}           device-info
+                {:keys [device
+                        color
+                        hover-color
+                        selected-color]}         device-info
                 :let                             [id           (str org_unique_id "-" device)
                                                   source-layer (str org_unique_id "-devices")
                                                   opt-label    (str (str/capitalize device) "s " "(" org_name ")")
@@ -55,7 +58,9 @@
                                                                   :source-layer source-layer
                                                                   :filter       ["==" ["get" "DVC_TYPE"] device]
                                                                   :type         "circle"
-                                                                  :paint        {:circle-radius 6 :circle-color color}}))
+                                                                  :paint        {:circle-radius  6
+                                                                                 :circle-color   (mb/on-selected selected-color hover-color color)
+                                                                                 :circle-opacity (mb/on-hover 0.4 1)}}))
                       (mb/add-feature-highlight! id id :click-fn (fn [feature lnglat]
                                                                    (mb/init-popup! "system-assets" lnglat
                                                                                    [popup
@@ -65,7 +70,7 @@
                                                                                       {:header  DVC_ID
                                                                                        :options [{:label "Device Type" :value DVC_TYPE}]})]
                                                                                    {:width "200px"})) :source-layer source-layer)))
-                  (js-invoke @mb/the-map "setLayoutProperty" id "visibility" (if show? "visible" "none"))
+                  (mb/set-visible-by-title! id show?)
                   (if show?
                     (do
                       (swap! !/*optional-layers assoc id layer)

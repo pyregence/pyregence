@@ -126,8 +126,8 @@
                     :width  "32px"}}
       [svg/binoculars]]]
     (fn [child] [:div {:style {:bottom   "1.25rem"
-                              :position "absolute"
-                              :right    "1rem"}}
+                               :position "absolute"
+                               :right    "1rem"}}
                  child])]
    [:img {:src   @image-src
           :style {:height "auto" :width "100%"}}]])

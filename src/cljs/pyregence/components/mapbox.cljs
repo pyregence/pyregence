@@ -566,12 +566,12 @@
   [vmin vmax zmin zmax]
   ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
 
-(defn- on-hover [on off]
+(defn on-hover [on off]
   ["case" ["boolean" ["feature-state" "hover"] false]
    on
    off])
 
-(defn- on-selected [selected hovered off]
+(defn on-selected [selected hovered off]
   ["case"
    ["boolean" ["feature-state" "selected"] false] selected
    ["boolean" ["feature-state" "hover"] false] hovered
