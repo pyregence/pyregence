@@ -6,6 +6,8 @@
             [pyregence.components.common                      :refer [hs-str tool-tip-wrapper]]
             [pyregence.components.map-controls.panel-dropdown :refer [panel-dropdown]]
             [pyregence.components.map-controls.tool-button    :refer [tool-button]]
+            [pyregence.components.map-controls.system-assets  :as    sa]
+            [pyregence.components.map-controls.utils          :refer [collapsible-panel-section]]
             [pyregence.components.mapbox                      :as mb]
             [pyregence.components.svg-icons                   :as svg]
             [pyregence.config                                 :as c]
@@ -257,17 +259,6 @@
       :left
       [collapsible-button]])])
 
-(defn- collapsible-panel-section
-  "A section component to differentiate content in the collapsible panel."
-  [id body]
-  [:section {:id    (str "section-" id)
-             :style {:padding "0.75rem 0.6rem 0 0.6rem"}}
-   [:div {:style {:background-color ($/color-picker :header-color 0.6)
-                  :border-radius "8px"
-                  :box-shadow    "0px 0px 3px #bbbbbb"
-                  :padding       "0.5rem"}}
-    body]])
-
 (defn- help-section []
   [:div {:style {:display         "flex"
                  :justify-content "center"}}
@@ -333,6 +324,7 @@
                           selected-param-set]]))
                     @!/processed-params)
                [opacity-input]]]
+             [sa/panel-section]
              [collapsible-panel-section
               "optional-layers"
               [optional-layers
