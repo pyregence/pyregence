@@ -3,6 +3,7 @@
    [clojure.core.async                                  :refer [<! go]]
    [clojure.set                                         :as set]
    [clojure.string                                      :as str]
+   [pyregence.components.nav-bar                        :refer [nav-bar]]
    [pyregence.components.messaging                      :refer [toast-message!]]
    [pyregence.components.settings.account-settings      :as as]
    [pyregence.components.settings.email                 :as email]
@@ -10,12 +11,14 @@
                                                                 get-user-name!
                                                                 get-users!
                                                                 update-own-user-name!]]
-   [pyregence.components.settings.nav-bar               :as nav-bar]
+   [pyregence.components.settings.nav-bar               :as side-nav-bar]
    [pyregence.components.settings.organization-settings :as os]
    [pyregence.components.settings.roles                 :as roles]
    [pyregence.components.settings.unaffilated-members   :as um]
+   [pyregence.state                                     :as !]
    [pyregence.styles                                    :as $]
    [pyregence.utils.async-utils                         :as u-async]
+   [pyregence.utils.browser-utils                       :as u-browser]
    [pyregence.utils.dom-utils                           :refer [input-value]]
    [reagent.core                                        :as r]))
 
@@ -31,7 +34,7 @@
                    ;; NOTE this mapping is used to keep track of the email
                    :og-email->email (reduce
                                      (fn [m e]
-                                       (assoc m e {:email e}))
+                                       (assoc m e {:email e :unsaved-email e}))
                                      {}
                                      (->>
                                       (str/split email-domains #",")
@@ -46,33 +49,43 @@
 (defn root-component
   "The root component of the /account-settings page."
   [{:keys [user-role password-set-date]}]
-  (let [org-id->org     (r/atom nil)
-        user-name       (r/atom nil)
-        users           (r/atom nil)
-        selected-log    (r/atom ["Account Settings"])
-        users-selected? (r/atom false)]
+  (let [org-id->org       (r/atom nil)
+        user-name         (r/atom nil)
+        unsaved-user-name (r/atom nil)
+        users             (r/atom nil)
+        selected-log      (r/atom ["Account Settings"])
+        users-selected?   (r/atom false)]
     (r/create-class
      {:display-name "account-settings"
       :component-did-mount
       #(go
-         (reset! users (<! (get-users! user-role)))
-         (reset! user-name (<! (get-user-name!)))
-         (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role)))))
+         (let [update-fn (fn [& _]
+                           (-> js/window (.scrollTo 0 0))
+                           (reset! !/mobile? (> 800.0 (.-innerWidth js/window))))]
+           (-> js/window (.addEventListener "touchend" update-fn))
+           (-> js/window (.addEventListener "resize"   update-fn))
+           (reset! users (<! (get-users! user-role)))
+           (reset! user-name (<! (get-user-name!)))
+           (reset! unsaved-user-name @user-name)
+           (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role))))
+           (update-fn)))
       :reagent-render
       (fn [{:keys [user-role user-email]}]
         [:div
-         {:style {:height         "100%"
+         {:style {:height         "100vh"
+                  :margin-bottom  "40px"
                   :display        "flex"
                   :flex-direction "column"
-                  :font-family    "Roboto"}}
-        ;; TODO this mock `:nav` with actual upper nav bar, this will happen in another PR.
-         [:nav  {:style {:display         "flex"
-                         :justify-content "center"
-                         :align-items     "center"
-                         :width           "100%"
-                         :height          "33px"
-                         :background      ($/color-picker :yellow)}} "mock nav"]
-         (let [tabs             (nav-bar/tab-data->tabs
+                  :font-family    "Roboto"
+                  ;;NOTE this padding-bottom is to account for the header, there is probably a better way.
+                  :padding-bottom "60px"}}
+         [nav-bar {:logged-in?         true
+                   :mobile?            @!/mobile?
+                   :on-forecast-select (fn [forecast]
+                                         (u-browser/jump-to-url!
+                                          (str "/?forecast=" (name forecast))))
+                   :user-role          user-role}]
+         (let [tabs             (side-nav-bar/tab-data->tabs
                                  {:selected-log  selected-log
                                   :organizations (vals @org-id->org)
                                   :user-role     user-role})
@@ -101,24 +114,27 @@
                           :flex-direction "row"
                           :height         "100%"
                           :background     ($/color-picker :lighter-gray)}}
-            [nav-bar/main tabs]
+            [side-nav-bar/main tabs]
             (case selected-page
               "Account Settings"
-              [as/main {:password-set-date password-set-date
-                        :role-type         user-role
-                        :user-name         @user-name
-                        :email-address     user-email
-                        :on-change-update-user-name (fn [e]
-                                                      (reset! user-name (input-value e)))
-                        :on-click-save-user-name (fn []
-                                                   (update-own-user-name! @user-name))}]
+              [as/main {:password-set-date              password-set-date
+                        :role-type                      user-role
+                        :user-name                      @unsaved-user-name
+                        :email-address                  user-email
+                        :account-details-save-disabled? (= @user-name @unsaved-user-name)
+                        :on-change-update-user-name     (fn [e]
+                                                          (reset! unsaved-user-name (input-value e)))
+                        :on-click-save-user-name        (fn []
+                                                          ;;TODO should this be on success?
+                                                          (update-own-user-name! @unsaved-user-name)
+                                                          (reset! user-name @unsaved-user-name))}]
 
               "Organization Settings"
               [os/main
                (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
-                     selected  (if (= user-role "super_admin")
-                                 selected
-                                 (-> @org-id->org keys first))
+                     selected (if (= user-role "super_admin")
+                                selected
+                                (-> @org-id->org keys first))
                      {:keys [unsaved-org-name
                              org-id auto-add?
                              org-name
@@ -127,7 +143,7 @@
                              unsaved-auto-accept?
                              unsaved-auto-add?
                              unsaved-org-name-support-message]} (@org-id->org selected)
-                     roles (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/organization-roles) role))))
+                     roles (->> user-role roles/role->roles-below (filter roles/organization-roles))
                      selected-orgs-users
                      (if-not (= user-role "super_admin")
                        ;;TODO check if this shouldn't happen in the db or server instead.
@@ -137,26 +153,29 @@
                                   ;;TODO this conditional should be based on the og-id or org-unique name
                                   (= organization-name org-name)
                                   (#{"organization_admin" "organization_member"} user-role))) @users))]
-                 {:org-id                      org-id
+                 {:save-changes-disabled? (and (= unsaved-org-name org-name)
+                                               (= unsaved-auto-accept? auto-accept?)
+                                               (= unsaved-auto-add? auto-add?)
+                                               (not (some (fn [[_ {:keys [email unsaved-email]}]] (not= email unsaved-email)) og-email->email)))
+                  :org-id                      org-id
                   :default-role-option         (first roles)
                   :og-email->email             og-email->email
                   :users                       selected-orgs-users
-                  ;;TODO get selected-rows
                   :users-selected?             users-selected?
                   :unsaved-org-name            unsaved-org-name
                   :unsaved-org-name-support-message
                   unsaved-org-name-support-message
                   :on-click-apply-update-users on-click-apply-update-users
-                  :on-click-add-email          (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] {:email ""}))
+                  :on-click-add-email          (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] {:email "" :unsaved-email ""}))
                   :on-delete-email             (fn [og-email]
-                                                 (fn [_]
-                                       ;;TODO this means i might have to filter out empty ones.
-                                                   (swap! org-id->org update-in [selected :og-email->email] dissoc og-email)))
+                                                 (fn [e]
+                                                   (let [new-email (.-value (.-target e))]
+                                                     (swap! org-id->org assoc-in [selected :og-email->email og-email :unsaved-email] new-email))))
                   :on-change-email-name
                   (fn [og-email]
                     (fn [e]
                       (let [new-email (.-value (.-target e))]
-                        (swap! org-id->org assoc-in [selected :og-email->email og-email :email] new-email))))
+                        (swap! org-id->org assoc-in [selected :og-email->email og-email :unsaved-email] new-email))))
 
                   ;;TODO on "save change" when nothing has changed, it doesn't do anything (it should probably help the user or re-save).
                   :on-click-save-changes
@@ -165,12 +184,12 @@
                     (let [checked-og-email->email
                           (->> og-email->email
                                (reduce-kv
-                                (fn [m id {:keys [email]}]
+                                (fn [m id {:keys [unsaved-email email]}]
 
-                                  (assoc m id {:email email :invalid? (not (email/valid-email-domain? email))}))
+                                  (assoc m id {:email email :unsaved-email unsaved-email :invalid? (not (email/valid-email-domain? unsaved-email))}))
                                 {}))
                           ;;TODO unifiy the ways were collecting support/error messages here.
-                          invalid-email-domains? (->> checked-og-email->email vals (some :invalid?))
+                          invalid-email-domains?            (->> checked-og-email->email vals (some :invalid?))
                           organization-name-support-message (when (str/blank? unsaved-org-name) "Name cannot be blank.")]
                       (swap! org-id->org assoc-in [selected :og-email->email] checked-og-email->email)
 
@@ -185,7 +204,7 @@
                         (go
                           (let [unsaved-email-domains (->> checked-og-email->email
                                                            vals
-                                                           (map :email)
+                                                           (map :unsaved-email)
                                                            (map #(str "@" %))
                                                            (str/join ","))
 
@@ -210,8 +229,15 @@
                                 (swap! org-id->org
                                        (fn [o]
                                          (-> o
+                                             ;; TODO find a way to save unsaved state better then having to know that you have to come here to always deal with it.
                                              (assoc-in [org-id :org-name] unsaved-org-name)
-                                             (assoc-in [org-id :email-domains] unsaved-email-domains))))
+                                             (assoc-in [org-id :email-domains] unsaved-email-domains)
+                                             (assoc-in [org-id :og-email->email] (reduce-kv (fn [m id {:keys [unsaved-email]}]
+                                                                                              (assoc m id {:email unsaved-email :unsaved-email unsaved-email}))
+                                                                                            {}
+                                                                                            og-email->email))
+                                             (assoc-in [org-id :auto-accept?] unsaved-auto-accept?)
+                                             (assoc-in [org-id :auto-add?] unsaved-auto-add?))))
                                 (let [new-name?        (not= org-name unsaved-org-name)
                                       new-email?       (not= email-domains unsaved-email-domains)
                                       new-auto-accept? (not= auto-accept? unsaved-auto-accept?)
@@ -231,20 +257,20 @@
                            assoc-in
                            [selected :unsaved-org-name]
                            (.-value (.-target e))))
-                  :auto-accept? auto-accept?
+                  :auto-accept?         auto-accept?
                   :unsaved-auto-accept? unsaved-auto-accept?
                   :on-change-auto-accept-user-as-org-member
                   #(swap! org-id->org update-in [selected :unsaved-auto-accept?] not)
-                  :auto-add? auto-add?
-                  :unsaved-auto-add? unsaved-auto-add?
+                  :auto-add?            auto-add?
+                  :unsaved-auto-add?    unsaved-auto-add?
                   :on-change-auto-add-user-as-org-member
                   #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)
-                  :role-options roles})]
+                  :role-options         roles})]
 
-              (let [roles (->> user-role roles/role->roles-below (filter (fn [role] ((set roles/none-organization-roles) role))))]
+              (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
                 [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                           :users-selected?             users-selected?
                           :on-click-apply-update-users on-click-apply-update-users
                           ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
-                          :default-role-option    (first roles)
-                          :role-options           roles}]))])])})))
+                          :default-role-option         (first roles)
+                          :role-options                roles}]))])])})))
