@@ -388,3 +388,18 @@ RETURNS timestamptz AS $$
     FROM users
     WHERE user_uid = _user_id;
 $$ LANGUAGE SQL
+
+CREATE OR REPLACE FUNCTION remove_users(_user_email text, _users_to_be_removed text[])
+RETURNS boolean
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF EXISTS(SELECT 1 FROM users WHERE _user_email = email AND user_role = 'super_admin' FOR SHARE)
+  THEN
+    DELETE FROM users where email = ANY(_users_to_be_removed);
+    RETURN true;
+  ELSE
+    RETURN false;
+  END IF;
+END;
+$$;

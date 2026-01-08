@@ -854,6 +854,16 @@
   (call-sql "remove_org_user" org-user-id)
   (data-response ""))
 
+(defn remove-users [{:keys [user-email]} users-to-remove]
+  (data-response
+   ""
+   {:status
+    ;; TODO can we make this type conversion, to a string array, into call-sql, im not sure
+    ;; what choice I'm making here? why can't this be baked in?
+    (if (sql-primitive (call-sql "remove_users" user-email (into-array String users-to-remove)))
+      200
+      403)}))
+
 (defn update-org-info [_ org-id org-name email-domains auto-add? auto-accept?]
   (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
   (data-response ""))

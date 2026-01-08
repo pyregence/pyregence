@@ -41,6 +41,14 @@
     styles
     {:pseudo {:hover {:background ($/color-picker :neutral-soft-gray)}}}))
 
+(defn $on-hover-red
+  [styles]
+  (with-meta
+    styles
+    {:pseudo {:hover {:background   ($/color-picker :error-red-dark)
+                      :border-color ($/color-picker :error-red-dark)
+                      :color         "white"}}}))
+
 (defn- $white-to-red-on-hover
   []
   (with-meta {:background ($/color-picker :white)}
@@ -96,20 +104,39 @@
 
 (defn add [m] [primary (assoc m :icon [svg/add])])
 
+(def delete-styles {:class (<class $white-to-red-on-hover)
+                    :style {:display         "flex"
+                            :width           "50px"
+                            :height          "50px"
+                            :justify-content "center"
+                            :align-items     "center"
+                            :border-radius   "4px"
+                            :border          (str "1px solid " ($/color-picker :error-red))
+                            :border-width    "1.5px"}})
+
 (defn delete
   [{:keys [on-click]}]
-  [:button {:class (<class $white-to-red-on-hover)
-            :style {:display         "flex"
-                    :width           "50px"
-                    :height          "50px"
-                    :justify-content "center"
-                    :align-items     "center"
-                    :border-radius   "4px"
-                    :border          (str "1px solid " ($/color-picker :error-red))
-                    :border-width    "1.5px"}
-            :on-click on-click}
+  [:button (assoc delete-styles :on-click on-click)
    [:div {:style {:flex "0 0 auto"}}
     [svg/trash-can :height "50px" :width "50px"]]])
+
+;;TODO this is similar to the primary button but i'm not sure how to share the code effectively.
+(defn remove-cmpt
+  [{:keys [on-click text]}]
+  [:button
+   {:class (<class #($on-hover-red (assoc $ghost-styles
+                                          :color ($/color-picker :error-red)
+                                          ;; TODO the primary-styles shouldn't use css properties like border that compose information
+                                          ;; because then clients can change one thing.
+                                          :border (str "2px solid " ($/color-picker :error-red)))))
+    :on-click on-click}
+   [:div {:style {:display     "flex"
+                  :align-items "center"
+                  :gap         "8px"
+                  :height      "100%"
+                  :width       "100%"}}
+    [svg/trash-can-inner]
+    [:span text]]])
 
 (defn toggle
   "Toggle switch with label."
@@ -139,3 +166,18 @@
                    :right         (when on? "2px")
                    :left          (when-not on? "2px")}}]]
    [:span {:style {:font-weight "600"}} label]])
+
+(defn remove-user
+  [{:keys [on-click]}]
+  [:button {:class (<class $white-to-red-on-hover)
+            :style {:display         "flex"
+                    :width           "50px"
+                    :height          "50px"
+                    :justify-content "center"
+                    :align-items     "center"
+                    :border-radius   "4px"
+                    :border          (str "1px solid " ($/color-picker :error-red))
+                    :border-width    "1.5px"}
+            :on-click on-click}
+   [:div {:style {:flex "0 0 auto"}}
+    [svg/trash-can :height "50px" :width "50px"]]])
