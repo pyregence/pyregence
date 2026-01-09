@@ -24,7 +24,8 @@
    [pyregence.utils.dom-utils                           :refer [input-value]]
    [reagent.core                                        :as r]))
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;TODO user-role-renderer and org-render can probably be one function
