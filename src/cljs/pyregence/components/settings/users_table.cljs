@@ -172,8 +172,7 @@
            users-selected?
            org-id
            role-options
-           default-role-option
-           on-click-remove-users!]}]
+           default-role-option]}]
   ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
@@ -212,10 +211,7 @@
                                    :selected? (= @selected-drop-down :status)
                                    :on-click  (fn []
                                                 (reset! checked nil)
-                                                (update-dd :status))}]
-         (when on-click-remove-users!
-           [buttons/remove-cmpt {:text "Remove User"
-                                 :on-click (on-click-remove-users! get-selected-emails)}])]
+                                                (update-dd :status))}]]
         [add-user/add-user-dialog {:org-id org-id :role-options role-options :default-role-option default-role-option}]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database from a sql function.

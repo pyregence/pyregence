@@ -94,15 +94,6 @@
                                   (:id (first ((group-by :selected? tabs) selected))))
                selected         (-> @selected-log last)
                selected-page    (selected->tab-id selected)
-               ;;TODO `on-click-remove-users!` and `on-click-apply-update-users` should be unified somehow bc they share similar functionality.
-               on-click-remove-users!
-               (fn [get-selected-users-emails-fn]
-                 #(let [emails (get-selected-users-emails-fn)]
-                    (go (<! (u-async/call-clj-async! "remove-users" emails)))
-                    (js/setTimeout (fn [] (go (reset! users (<! (get-users! user-role))))) 3000)
-                    (toast-message!
-                      ;;TODO make this handle plural case
-                     (str (str/join ", " emails)  " were removed."))))
                on-click-apply-update-users
                (fn [get-selected-users-emails-fn]
                  (fn [update-user-info-by-email opt-type opt->display]
@@ -281,11 +272,9 @@
                 [admin/main {:users                       @users
                              :users-selected?             users-selected?
                              :on-click-apply-update-users on-click-apply-update-users
-                          ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
+                             ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
                              :default-role-option         (first roles)
-                             :role-options                roles
-                             :on-click-remove-users! on-click-remove-users!}])
-
+                             :role-options                roles}])
               (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
                 [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                           :users-selected?             users-selected?

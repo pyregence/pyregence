@@ -100,9 +100,6 @@
    [:post "/clj/get-user-name-by-email"]         {:handler (clj-handler authentication/get-current-user-name-by-email)
                                                   :auth-type   :member
                                                   :auth-action :block}
-   [:post "/clj/remove-users"]                   {:handler (clj-handler authentication/remove-users)
-                                                  :auth-type   :super-admin
-                                                  :auth-action :block}
    [:post "/clj/user-email-taken"]               {:handler (clj-handler authentication/user-email-taken)
                                                   :auth-type :token
                                                   :auth-action :block}
