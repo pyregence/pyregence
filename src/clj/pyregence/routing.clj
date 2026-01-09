@@ -43,9 +43,6 @@
                                                   :auth-type :member
                                                   :auth-action :redirect}
    [:get "/terms-of-use"]                        {:handler (render-page "/terms-of-use")}
-   [:get "/users-table"]                         {:handler (render-page "/users-table")
-                                                  :auth-type :super-admin
-                                                  :auth-action :redirect}
    [:get "/verify-2fa"]                          {:handler (render-page "/verify-2fa")}
    [:get "/verify-email"]                        {:handler (render-page "/verify-email")}
 
@@ -224,8 +221,4 @@
    [:post "/clj/get-red-flag-layer"]             {:handler (clj-handler red-flag/get-red-flag-layer)
                                                   :auth-type :token
                                                   :auth-action :block}
-
-   ;; Analytics API
-   [:get "/clj/get-all-users-last-login-dates"]  {:handler     (clj-handler analytics/get-all-users-last-login-dates)
-                                                  :auth-type   :account-manager
-                                                  :auth-action :block}})
+   })

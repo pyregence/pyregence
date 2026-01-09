@@ -25,7 +25,9 @@
   (assoc $primary-styles :background ($/color-picker :white)))
 
 (def $drop-down-styles
-  (assoc $ghost-styles :padding "0px"))
+  (assoc $ghost-styles
+         :padding "0px"
+         :height  "44px"))
 
 (defn- $on-hover-darken-orange
   [styles]
@@ -126,6 +128,7 @@
   [:button
    {:class (<class #($on-hover-red (assoc $ghost-styles
                                           :color ($/color-picker :error-red)
+                                          :height "44px"
                                           ;; TODO the primary-styles shouldn't use css properties like border that compose information
                                           ;; because then clients can change one thing.
                                           :border (str "2px solid " ($/color-picker :error-red)))))

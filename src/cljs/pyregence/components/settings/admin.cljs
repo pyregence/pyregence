@@ -7,4 +7,5 @@
   [m]
   [:div {:style main-styles}
    [card {:title    "MEMBER USER-LIST"
-          :children [table-with-buttons m]}]])
+          :children [table-with-buttons (assoc m :show-export-to-csv? true
+                                                 :on-click-remove-users! true)]}]])

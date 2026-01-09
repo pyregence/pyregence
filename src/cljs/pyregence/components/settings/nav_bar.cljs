@@ -189,7 +189,7 @@
    (when (#{"account_manager" "super_admin"} user-role)
      {:tab  button
       :text "Admin"
-      :icon svg/individual})])
+      :icon svg/admin})])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page

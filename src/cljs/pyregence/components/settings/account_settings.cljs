@@ -156,17 +156,16 @@
                    :disabled?  (:account-details-save-disabled? m)
                    :on-click   (:on-click-save-user-name m)}]])
 
+(def res (atom nil))
+
+
 (defn show-password-set-date
   []
   (r/create-class
    {:component-did-mount
     #(go
-       (reset! password-set-date
-               (if-let [date
-                        (edn/read-string
-                         (:body (<! (u-async/call-clj-async! "get-password-set-date"))))]
-                 date
-                 "Never")))
+       (reset! password-set-date "Never"
+               ))
     :reagent-render
     (fn []
       [text-labeled {:label "Last Updated"
