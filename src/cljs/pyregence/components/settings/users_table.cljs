@@ -8,7 +8,7 @@
    [pyregence.components.settings.add-user :as add-user]
    [pyregence.components.settings.buttons  :as buttons]
    [pyregence.components.settings.utils    :refer [db->display search-cmpt]]
-   [pyregence.components.svg-icons :as svg]
+   [pyregence.components.svg-icons         :as svg]
    [pyregence.styles                       :as $]
    [pyregence.utils.async-utils            :as u-async]
    [reagent.core                           :as r]))
@@ -62,19 +62,6 @@
                    :processCellCallback
                    (fn [params]
                      (aget params "value"))})))
-
-(defn- csv-export-button [grid-api file-name]
-  [:button
-   {:style    {:padding       "0.5rem 1rem"
-               :font-size     "1rem"
-               :background    "#E5B154"
-               :color         "black"
-               :border        "none"
-               :border-radius "4px"
-               :cursor        "pointer"
-               :height        "44px"}
-    :on-click #(export-button-on-click-fn grid-api file-name)}
-   "Export to CSV"])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Table components
