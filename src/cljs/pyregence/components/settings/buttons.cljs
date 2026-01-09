@@ -74,6 +74,7 @@
                   :align-items "center"
                   :gap         "8px"
                   :height      "100%"
+                  :min-width   "125px"
                   :width       "100%"}}
     (when icon icon)
     [:span text]]])

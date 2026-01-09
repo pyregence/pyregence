@@ -217,13 +217,15 @@
                                    :on-click  (fn []
                                                 (reset! checked nil)
                                                 (update-dd :status))}]
-         (when show-export-to-csv? [csv-export-button grid-api "users-table"])
          (when on-click-remove-users! [buttons/remove-cmpt {:text "Delete User"}])]
         [:div {:style {:display        "flex"
                        :flex-direction "column"
                        :gap            "10px"}}
          [add-user/add-user-dialog {:org-id org-id :role-options role-options :default-role-option default-role-option}]
-         [buttons/ghost {:text "Export" :icon [svg/export :height "24px" :width "24px"]}]]]
+         (when show-export-to-csv?
+           [buttons/ghost {:text     "Export"
+                           :icon     [svg/export :height "24px" :width "24px"]
+                           :on-click #(export-button-on-click-fn grid-api "users-table")}])]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database from a sql function.
          :role   [drop-down {:options         role-options
