@@ -19,7 +19,6 @@
             [pyregence.pages.terms-of-use       :as terms]
             [pyregence.pages.setup-2fa          :as setup-2fa]
             [pyregence.pages.switch-2fa         :as switch-2fa]
-            [pyregence.pages.users-table        :as users-table]
             [pyregence.pages.verify-2fa         :as verify-2fa]
             [pyregence.pages.verify-email       :as verify-email]
             [pyregence.state                    :as !]
@@ -44,7 +43,6 @@
    "/reset-password"     reset-password/root-component
    "/setup-2fa"          setup-2fa/root-component
    "/switch-2fa"         switch-2fa/root-component
-   "/users-table"        users-table/root-component
    "/verify-2fa"         verify-2fa/root-component
    "/verify-email"       verify-email/root-component})
 

@@ -36,6 +36,7 @@
      :dark-gray               (str "rgba(50, 50, 50, "    alpha ")")
      :dark-green              (str "rgba(0, 100, 0, "     alpha ")")
      :error-red               (str "rgba(213, 0, 0, "     alpha ")")
+     :error-red-dark          (str "rgba(158, 0, 0, "     alpha ")")
      :font-color              "rgb(235, 235, 235)"
      :font-hover-color        (color-picker :black)
      :header-color            (str "rgb(24, 30, 36, "     alpha ")")
