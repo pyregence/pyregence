@@ -2,7 +2,7 @@
   (:require [clojure.core.async                    :refer [go <!]]
             [cljs.reader                           :as reader]
             [pyregence.components.messaging        :refer [toast-message!]]
-            [pyregence.components.settings.buttons :as buttons]
+            [pyregence.components.buttons :as buttons]
             [pyregence.components.two-fa           :as two-fa]
             [pyregence.styles                      :as $]
             [pyregence.utils.async-utils           :as u-async]

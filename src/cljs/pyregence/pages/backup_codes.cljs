@@ -3,7 +3,7 @@
             [cljs.reader                           :as reader]
             [clojure.string                        :as str]
             [pyregence.components.messaging        :refer [toast-message!]]
-            [pyregence.components.settings.buttons :as buttons]
+            [pyregence.components.buttons :as buttons]
             [pyregence.components.svg-icons        :as svg]
             [pyregence.components.two-fa           :as two-fa]
             [pyregence.styles                      :as $]

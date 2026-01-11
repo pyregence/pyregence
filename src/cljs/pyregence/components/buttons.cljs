@@ -1,4 +1,4 @@
-(ns pyregence.components.settings.buttons
+(ns pyregence.components.buttons
   (:require
    [pyregence.components.svg-icons :as svg]
    [herb.core                      :refer [<class]]

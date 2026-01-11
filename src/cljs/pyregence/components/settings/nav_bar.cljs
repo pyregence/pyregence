@@ -5,7 +5,7 @@
    [clojure.walk                        :as walk]
    [herb.core                           :refer [<class]]
    [pyregence.components.svg-icons      :as svg]
-   [pyregence.components.settings.utils :refer [search-cmpt]]
+   [pyregence.components.utils :refer [search-cmpt]]
    [pyregence.styles                    :as $]
    [pyregence.utils.async-utils         :as u-async]
    [pyregence.utils.browser-utils       :as u-browser]

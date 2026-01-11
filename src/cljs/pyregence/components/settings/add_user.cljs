@@ -4,9 +4,9 @@
    [clojure.string                        :as str]
    [herb.core                             :refer [<class]]
    [pyregence.components.messaging        :refer [toast-message!]]
-   [pyregence.components.settings.buttons :as buttons :refer [$drop-down-styles
+   [pyregence.components.buttons :as buttons :refer [$drop-down-styles
                                                               $on-hover-gray]]
-   [pyregence.components.settings.utils   :as utils]
+   [pyregence.components.utils   :as utils]
    [pyregence.components.svg-icons        :as svg]
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]

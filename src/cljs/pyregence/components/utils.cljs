@@ -1,4 +1,4 @@
-(ns pyregence.components.settings.utils
+(ns pyregence.components.utils
   (:require
    [clojure.string                 :as str]
    [herb.core                      :refer [<class]]
