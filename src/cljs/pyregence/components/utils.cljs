@@ -64,10 +64,10 @@
    (when icon [icon :height "16px" :width "16px"])])
 
 (defn input-field
-  [{:keys [value on-change style support-message]}]
+  [{:keys [value on-change style support-message placeholder type] :or {type "text"}}]
   [:div {:style {:display        "flex"
                  :flex-direction "column"}}
-   [:input {:type      "text"
+   [:input {:type      type
             :class     (<class $standard-input-field)
             :style     (merge {:font-weight   "500"
                                :width         "100%"
@@ -79,6 +79,7 @@
                                :padding       "14px"
                                :border-radius "4px"} style)
             :value     value
+            :placeholder placeholder
             :pattern   ".+"
             :on-change on-change}]
    (when support-message

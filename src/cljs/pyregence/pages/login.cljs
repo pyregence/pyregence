@@ -3,8 +3,10 @@
    [cljs.reader                    :as edn]
    [clojure.core.async             :refer [<! go timeout]]
    [pyregence.analytics            :refer [gtag]]
-   [pyregence.components.common    :refer [simple-form]]
+   [pyregence.components.buttons   :as buttons]
    [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.components.nav-bar   :refer [nav-bar]]
+   [pyregence.components.utils     :as utils]
    [pyregence.state                :as !]
    [pyregence.styles               :as $]
    [pyregence.utils.async-utils    :as u-async]
@@ -26,6 +28,7 @@
 
 (defn- log-in! []
   (go
+    ;;TODO consider validating email before sending it.
     (let [response (<! (u-async/call-clj-async! "log-in" @email @password))]
       (if (:success response)
         (let [resp-data (edn/read-string (:body response))]
@@ -64,12 +67,6 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- reset-link []
-  [:a {:style    ($/align :block :left)
-       :href     "#"
-       :on-click #(reset! forgot? true)}
-   "Forgot Password?"])
-
 (defn root-component
   "The root component for the /login page.
    Displays either the login form or request new password form and a link to the register page."
@@ -84,30 +81,64 @@
         (-> js/window (.addEventListener "touchend" update-fn))
         (-> js/window (.addEventListener "resize"   update-fn))
         (@update-fn))
-
       :component-will-unmount
       (fn [_]
         (.removeEventListener js/window "touchend" @update-fn)
         (.removeEventListener js/window "resize" @update-fn))
-
       :reagent-render
       (fn [_]
-        [:<>
-         [:div {:style ($/combine ($/disabled-group @pending?)
-                                  {:display "flex" :justify-content "center" :margin "5rem"})}
-          (if @forgot?
-            [simple-form
-             "Request New Password"
-             "Submit"
-             [["Email" email "email" "email"]]
-             request-password!]
-            [simple-form
-             "Log in"
-             "Log in"
-             [["Email"    email    "email"    "email"]
-              ["Password" password "password" "current-password"]]
-             log-in!
-             reset-link])]
-         [:div {:style ($/align "flex" "center")}
-          "Don't have an account?  "
-          [:a {:href "/register" :style {:margin-left "0.2rem"}} "Register here."]]])})))
+        ;; TODO consider making a page component to share styles with account settings.
+        ;; At the very least the styles on the page div should probably be shared to avoid drift.
+        [:div
+         {:style {:height         "100vh"
+                  :margin-bottom  "40px"
+                  :display        "flex"
+                  :flex-direction "column"
+                  :font-family    "Roboto"
+                  :padding-bottom "60px"
+                  :background     ($/color-picker :lighter-gray)
+                  :place-items    "center"}}
+         [nav-bar {:mobile?            @!/mobile?
+                   :on-forecast-select (fn [forecast]
+                                         (u-browser/jump-to-url!
+                                          (str "/?forecast=" (name forecast))))}]
+         [:div {:style {:display         "flex"
+                        :justify-content "center"
+                        :align-content   "center"
+                        :height          "fit-content"
+                        :margin          "100px"
+                        :width           "fit-content"}}
+          (let [color         ($/color-picker :primary-main-orange)
+                email-cmpt    (fn [] [utils/input-labeled {:label        "Email"
+                                                           :placeholder "Enter Email Address"
+                                                           :on-change   #(reset! email (-> % .-target .-value))
+                                                           :value       @email}])
+                register-cmpt (fn [] [:p "Don't have an account? "
+                                      [:a {:href  "/register"
+                                           :style {:color color}}
+                                       [:u "Register Here."]]])]
+            (if-not @forgot?
+              [utils/card {:title "LOGIN"
+                           :children
+                           [:<>
+                            [email-cmpt]
+                            [utils/input-labeled {:label       "Password"
+                                                  :type        "password"
+                                                  :placeholder "Enter Password"
+                                                  :on-change   #(reset! password (-> % .-target .-value))
+                                                  :value       @password}]
+                            [:a {:href     "#"
+                                 :on-click #(reset! forgot? true)
+                                 :style    {:color     color
+                                            :underline true}}
+                             [:u "Forgot Password?"]]
+                            [buttons/primary {:text     "login"
+                                              :on-click log-in!}]
+                            [register-cmpt]]}]
+              [utils/card {:title "Request New Password"
+                           :children
+                           [:<>
+                            [email-cmpt]
+                            [buttons/primary {:text     "Submit"
+                                              :on-click request-password!}]
+                            [register-cmpt]]}]))]])})))
