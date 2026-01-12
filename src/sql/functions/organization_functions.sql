@@ -230,3 +230,117 @@ CREATE OR REPLACE FUNCTION add_org_layer(
         (_org_id, _layer_path, _layer_config)
 
 $$ LANGUAGE SQL;
+
+--------------------------------------------------------------------------------
+---  Marketplace
+--------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION create_marketplace_organization(
+    _org_name               text,
+    _org_unique_id          text,
+    _marketplace_account_id text,
+    _marketplace_order_id   text,
+    _subscription_tier      subscription_tier
+) RETURNS integer AS $$
+
+    INSERT INTO organizations
+        (org_name, org_unique_id, marketplace_account_id,
+         marketplace_order_id, subscription_tier, marketplace_status)
+    VALUES
+        (_org_name, _org_unique_id, _marketplace_account_id,
+         _marketplace_order_id, _subscription_tier, 'pending')
+    RETURNING organization_uid;
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION update_marketplace_status(
+    _org_id  integer,
+    _status  text
+) RETURNS void AS $$
+
+    UPDATE organizations
+    SET marketplace_status = _status
+    WHERE organization_uid = _org_id;
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION link_org_to_marketplace(
+    _org_id                 integer,
+    _marketplace_account_id text,
+    _marketplace_order_id   text
+) RETURNS void AS $$
+
+    UPDATE organizations
+    SET marketplace_account_id = _marketplace_account_id,
+        marketplace_order_id   = _marketplace_order_id,
+        marketplace_status     = 'pending'
+    WHERE organization_uid = _org_id;
+
+$$ LANGUAGE SQL;
+
+--------------------------------------------------------------------------------
+---  Marketplace Provisioning
+--------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION provision_marketplace_existing_user_with_org(
+    _org_id                 integer,
+    _user_id                integer,
+    _marketplace_account_id text,
+    _marketplace_order_id   text,
+    _procurement_account_id text,
+    _google_user_identity   text
+) RETURNS void AS $$
+BEGIN
+    PERFORM link_org_to_marketplace(_org_id, _marketplace_account_id, _marketplace_order_id);
+    PERFORM link_existing_user_to_marketplace(_user_id, _procurement_account_id, _google_user_identity);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION provision_marketplace_existing_user_new_org(
+    _org_name               text,
+    _org_unique_id          text,
+    _marketplace_account_id text,
+    _marketplace_order_id   text,
+    _subscription_tier      subscription_tier,
+    _user_id                integer,
+    _procurement_account_id text,
+    _google_user_identity   text
+) RETURNS integer AS $$
+DECLARE
+    _org_id integer;
+BEGIN
+    SELECT create_marketplace_organization(
+        _org_name, _org_unique_id, _marketplace_account_id,
+        _marketplace_order_id, _subscription_tier
+    ) INTO _org_id;
+    PERFORM link_user_to_marketplace_org(_user_id, _org_id, _procurement_account_id, _google_user_identity);
+    RETURN _org_id;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION provision_marketplace_new_user(
+    _org_name               text,
+    _org_unique_id          text,
+    _marketplace_account_id text,
+    _marketplace_order_id   text,
+    _subscription_tier      subscription_tier,
+    _email                  text,
+    _name                   text,
+    _password               text,
+    _settings               text,
+    _procurement_account_id text,
+    _google_user_identity   text
+) RETURNS TABLE (org_id integer, user_id integer) AS $$
+DECLARE
+    _org_id integer;
+    _user_id integer;
+BEGIN
+    SELECT create_marketplace_organization(
+        _org_name, _org_unique_id, _marketplace_account_id,
+        _marketplace_order_id, _subscription_tier
+    ) INTO _org_id;
+    SELECT create_marketplace_user(
+        _email, _name, _password, _settings, _org_id,
+        _procurement_account_id, _google_user_identity
+    ) INTO _user_id;
+    RETURN QUERY SELECT _org_id, _user_id;
+END;
+$$ LANGUAGE plpgsql;

@@ -454,4 +454,74 @@ RETURNS timestamptz AS $$
     SELECT password_set_date
     FROM users
     WHERE user_uid = _user_id;
-$$ LANGUAGE SQL
+$$ LANGUAGE SQL;
+
+--------------------------------------------------------------------------------
+--- Marketplace Provisioning
+--------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION get_user_with_org_info(_email text)
+RETURNS TABLE (
+    user_id                integer,
+    user_name              text,
+    user_email             text,
+    organization_rid       integer,
+    procurement_account_id text,
+    google_user_identity   text
+) AS $$
+    SELECT user_uid, name, email, organization_rid, procurement_account_id, google_user_identity
+    FROM users
+    WHERE email = lower_trim(_email);
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION create_marketplace_user(
+    _email                  text,
+    _name                   text,
+    _password               text,
+    _settings               text,
+    _org_id                 integer,
+    _procurement_account_id text,
+    _google_user_identity   text
+) RETURNS integer AS $$
+    INSERT INTO users
+        (email, name, password, settings, email_verified, user_role,
+         org_membership_status, organization_rid, procurement_account_id, google_user_identity)
+    VALUES (
+        lower_trim(_email),
+        _name,
+        crypt(_password, gen_salt('bf')),
+        _settings,
+        TRUE,
+        'organization_admin'::user_role,
+        'accepted'::org_membership_status,
+        _org_id,
+        _procurement_account_id,
+        _google_user_identity
+    )
+    RETURNING user_uid;
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION link_user_to_marketplace_org(
+    _user_id                integer,
+    _org_id                 integer,
+    _procurement_account_id text,
+    _google_user_identity   text
+) RETURNS void AS $$
+    UPDATE users
+    SET organization_rid       = _org_id,
+        user_role              = 'organization_admin'::user_role,
+        org_membership_status  = 'accepted'::org_membership_status,
+        procurement_account_id = _procurement_account_id,
+        google_user_identity   = _google_user_identity
+    WHERE user_uid = _user_id;
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION link_existing_user_to_marketplace(
+    _user_id                integer,
+    _procurement_account_id text,
+    _google_user_identity   text
+) RETURNS void AS $$
+    UPDATE users
+    SET procurement_account_id = _procurement_account_id,
+        google_user_identity   = _google_user_identity
+    WHERE user_uid = _user_id;
+$$ LANGUAGE SQL;

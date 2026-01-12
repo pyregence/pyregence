@@ -24,20 +24,22 @@ CREATE TYPE org_membership_status AS ENUM (
 -- Stores information about users
 --------------------------------------------------------------------------------
 CREATE TABLE users (
-    user_uid              SERIAL PRIMARY KEY,
-    email                 text NOT NULL UNIQUE,
-    name                  text NOT NULL,
-    password              varchar(72) NOT NULL,
-    settings              text,
-    match_drop_access     BOOLEAN DEFAULT FALSE,
-    email_verified        BOOLEAN DEFAULT FALSE,
-    verification_token    text DEFAULT NULL, -- used for both initial email verification and 2FA
-    token_expiration      TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    last_login_date       TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    user_role             user_role NOT NULL DEFAULT 'member',
-    org_membership_status org_membership_status NOT NULL DEFAULT 'none',
-    organization_rid      integer references organizations(organization_uid),
-    password_set_date     TIMESTAMP WITH TIME ZONE DEFAULT NULL
+    user_uid               SERIAL PRIMARY KEY,
+    email                  text NOT NULL UNIQUE,
+    name                   text NOT NULL,
+    password               varchar(72) NOT NULL,
+    settings               text,
+    match_drop_access      BOOLEAN DEFAULT FALSE,
+    email_verified         BOOLEAN DEFAULT FALSE,
+    verification_token     text DEFAULT NULL, -- used for both initial email verification and 2FA
+    token_expiration       TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    last_login_date        TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    user_role              user_role NOT NULL DEFAULT 'member',
+    org_membership_status  org_membership_status NOT NULL DEFAULT 'none',
+    organization_rid       integer references organizations(organization_uid),
+    password_set_date      TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    procurement_account_id text,
+    google_user_identity   text
 );
 
 ALTER TABLE users
