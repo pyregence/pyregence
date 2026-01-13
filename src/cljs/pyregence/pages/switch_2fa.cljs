@@ -1,12 +1,13 @@
 (ns pyregence.pages.switch-2fa
-  (:require [clojure.core.async                    :refer [go <!]]
-            [cljs.reader                           :as reader]
-            [pyregence.components.messaging        :refer [toast-message!]]
-            [pyregence.components.buttons :as buttons]
-            [pyregence.components.two-fa           :as two-fa]
-            [pyregence.styles                      :as $]
-            [pyregence.utils.async-utils           :as u-async]
-            [reagent.core                          :as r]))
+  (:require
+   [clojure.core.async             :refer [go <!]]
+   [cljs.reader                    :as reader]
+   [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.components.buttons   :as buttons]
+   [pyregence.components.two-fa    :as two-fa]
+   [pyregence.styles               :as $]
+   [pyregence.utils.async-utils    :as u-async]
+   [reagent.core                   :as r]))
 
 (def ^:private redirect-delay-ms 1500)
 

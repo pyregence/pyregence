@@ -1,16 +1,16 @@
 (ns pyregence.components.settings.add-user
   (:require
-   [clojure.core.async                    :refer [<! go]]
-   [clojure.string                        :as str]
-   [herb.core                             :refer [<class]]
-   [pyregence.components.messaging        :refer [toast-message!]]
-   [pyregence.components.buttons :as buttons :refer [$drop-down-styles
-                                                              $on-hover-gray]]
-   [pyregence.components.utils   :as utils]
-   [pyregence.components.svg-icons        :as svg]
-   [pyregence.styles                      :as $]
-   [pyregence.utils.async-utils           :as u-async]
-   [reagent.core                          :as r]))
+   [clojure.core.async                     :refer [<! go]]
+   [clojure.string                         :as str]
+   [herb.core                              :refer [<class]]
+   [pyregence.components.messaging         :refer [toast-message!]]
+   [pyregence.components.buttons           :as buttons :refer [$drop-down-styles
+                                                               $on-hover-gray]]
+   [pyregence.components.utils             :as utils]
+   [pyregence.components.svg-icons         :as svg]
+   [pyregence.styles                       :as $]
+   [pyregence.utils.async-utils            :as u-async]
+   [reagent.core                           :as r]))
 
 (def email-regex
   #"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")

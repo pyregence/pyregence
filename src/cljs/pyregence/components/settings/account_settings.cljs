@@ -5,8 +5,8 @@
    [clojure.edn                           :as edn]
    [clojure.string                        :as str]
    [pyregence.components.messaging        :refer [toast-message!]]
-   [pyregence.components.buttons :as buttons]
-   [pyregence.components.utils   :refer [card font-styles
+   [pyregence.components.buttons          :as buttons]
+   [pyregence.components.utils            :refer [card font-styles
                                                   input-labeled main-styles
                                                   text-labeled]]
    [pyregence.styles                      :as $]
