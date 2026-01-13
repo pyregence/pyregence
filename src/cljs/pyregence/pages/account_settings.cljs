@@ -329,4 +329,4 @@
                           ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
                           :default-role-option         (first roles)
                           :role-options                roles
-                          :statuses                     ["none"]}]))])])})))
+                          :statuses                    ["none"]}]))])])})))
