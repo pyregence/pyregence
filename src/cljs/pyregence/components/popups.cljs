@@ -80,3 +80,12 @@
    [:div
     [fire-property "Fire Year" fire-year]
     [fire-property "Acres Burned" (.toLocaleString (Math/ceil acres-burned))]]])
+
+;;TODO consider resusing this on fire-history and red-flag
+(defn popup
+  [{:keys [header options]}]
+  [:div {:style {:display "flex" :flex-direction "column"}}
+   [:h6 {:style ($popup-header)} header]
+   (for [{:keys [label value]} options]
+     ^{:key label}
+     [:div  [:strong label  ": "] value])])

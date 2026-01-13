@@ -75,7 +75,7 @@
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- get-style
+(defn get-style
   "Returns the Mapbox style object."
   []
   (when @the-map
@@ -210,7 +210,7 @@
   [layers]
   (sort-by #(get-layer-metadata % "z-index") layers))
 
-(defn- update-style!
+(defn update-style!
   "Updates the Mapbox Style object. Takes in the current Mapbox Style object
    and optionally updates the `sources` and `layers` keys."
   [style & {:keys [sources layers new-sources new-layers]}]
@@ -551,12 +551,12 @@
    :data       (c/wfs-layer-url layer-name geoserver-key)
    :generateId true})
 
-(defn- on-hover [on off]
+(defn on-hover [on off]
   ["case" ["boolean" ["feature-state" "hover"] false]
    on
    off])
 
-(defn- on-selected [selected hovered off]
+(defn on-selected [selected hovered off]
   ["case"
    ["boolean" ["feature-state" "selected"] false] selected
    ["boolean" ["feature-state" "hover"] false] hovered
@@ -1062,7 +1062,7 @@
                                 :fill-opacity       (on-hover 1 0.4)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
-(defn- mvt-source [layer-name geoserver-key]
+(defn mvt-source [layer-name geoserver-key]
   {:type  "vector"
    :tiles [(c/mvt-layer-url layer-name geoserver-key)]})
 
