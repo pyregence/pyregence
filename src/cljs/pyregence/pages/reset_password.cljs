@@ -1,12 +1,17 @@
 (ns pyregence.pages.reset-password
-  (:require [clojure.core.async             :refer [go <! timeout]]
-            [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]
-            [pyregence.styles               :as $]
-            [pyregence.utils.async-utils    :as u-async]
-            [pyregence.utils.browser-utils  :as u-browser]
-            [pyregence.utils.data-utils     :as u-data]
-            [reagent.core                   :as r]))
+  (:require
+   [clojure.core.async             :refer [<! go timeout]]
+   [clojure.string                 :as str]
+   [pyregence.components.buttons   :as buttons]
+   [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.components.nav-bar   :as nav-bar]
+   [pyregence.components.utils     :as utils]
+   [pyregence.state                :as !]
+   [pyregence.styles               :as $]
+   [pyregence.utils.async-utils    :as u-async]
+   [pyregence.utils.browser-utils  :as u-browser]
+   [pyregence.utils.data-utils     :as u-data]
+   [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -59,13 +64,41 @@
   (reset! email              (:email params ""))
   (reset! verification-token (:verification-token params ""))
   (fn [_]
-    [:<>
-     [:div {:style ($/combine ($/disabled-group @pending?)
-                              {:display "flex" :justify-content "center" :margin "5rem"})}
-      [simple-form
-       "Reset Password"
-       "Reset Password"
-       [["Email"                 email       "email"    "email"]
-        ["New Password"          password    "password" "new-password"]
-        ["Re-enter New Password" re-password "password" "confirm-password"]]
-       reset-password!]]]))
+    [:div
+     {:style {:height         "100vh"
+              :margin-bottom  "40px"
+              :display        "flex"
+              :flex-direction "column"
+              :font-family    "Roboto"
+              :padding-bottom "60px"
+              :background     ($/color-picker :lighter-gray)
+              :place-items    "center"}}
+     [nav-bar/nav-bar {:mobile?            @!/mobile?
+                       :on-forecast-select (fn [forecast]
+                                             (u-browser/jump-to-url!
+                                              (str "/?forecast=" (name forecast))))}]
+     [:div {:style {:display         "flex"
+                    :justify-content "center"
+                    :align-content   "center"
+                    :height          "fit-content"
+                    :margin          "100px"
+                    :width           "fit-content"}}
+      [utils/card {:title "Request New Password"
+                   :children
+                   [:<>
+                    [utils/input-labeled {:label       "Email"
+                                          :placeholder "Enter Email Address"
+                                          :on-change   #(reset! email (-> % .-target .-value))
+                                          :value       @email}]
+                    [utils/input-labeled {:label       "New Password"
+                                          :type        "password"
+                                          :placeholder "New Password"
+                                          :on-change   #(reset! password (-> % .-target .-value))
+                                          :value       @password}]
+                    [utils/input-labeled {:label       "Re-enter New Password"
+                                          :type        "password"
+                                          :placeholder "New Password"
+                                          :on-change   #(reset! re-password (-> % .-target .-value))
+                                          :value       @re-password}]
+                    [buttons/primary {:text     "RESET PASSWORD"
+                                      :on-click reset-password!}]]}]]]))

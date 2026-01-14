@@ -1,8 +1,8 @@
 (ns pyregence.components.settings.organization-settings
   (:require
-   [pyregence.components.settings.buttons     :as buttons]
+   [pyregence.components.buttons              :as buttons]
    [pyregence.components.settings.users-table :refer [table-with-buttons]]
-   [pyregence.components.settings.utils       :refer [card input-field
+   [pyregence.components.utils                :refer [card input-field
                                                       input-labeled label-styles
                                                       main-styles]]
    [pyregence.styles                          :as $]))

@@ -1,4 +1,4 @@
-(ns pyregence.components.settings.buttons
+(ns pyregence.components.buttons
   (:require
    [pyregence.components.svg-icons :as svg]
    [herb.core                      :refer [<class]]
@@ -14,7 +14,7 @@
    :width            "fit-content"
    :align-items      "center"
    :background-color ($/color-picker :primary-standard-orange)
-   :padding          "12px 14px"
+   :padding          "12px 18px"
    :border-radius    "4px"
    :border           (str "2px solid " ($/color-picker :primary-standard-orange))
    :font-size        "14px"
@@ -74,7 +74,6 @@
                   :align-items "center"
                   :gap         "8px"
                   :height      "100%"
-                  :min-width   "125px"
                   :width       "100%"}}
     (when icon icon)
     [:span text]]])

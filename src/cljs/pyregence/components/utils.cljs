@@ -1,4 +1,4 @@
-(ns pyregence.components.settings.utils
+(ns pyregence.components.utils
   (:require
    [clojure.string                 :as str]
    [herb.core                      :refer [<class]]
@@ -64,10 +64,10 @@
    (when icon [icon :height "16px" :width "16px"])])
 
 (defn input-field
-  [{:keys [value on-change style support-message]}]
+  [{:keys [value on-change style support-message placeholder type] :or {type "text"}}]
   [:div {:style {:display        "flex"
                  :flex-direction "column"}}
-   [:input {:type      "text"
+   [:input {:type      type
             :class     (<class $standard-input-field)
             :style     (merge {:font-weight   "500"
                                :width         "100%"
@@ -79,6 +79,7 @@
                                :padding       "14px"
                                :border-radius "4px"} style)
             :value     value
+            :placeholder placeholder
             :pattern   ".+"
             :on-change on-change}]
    (when support-message
@@ -110,7 +111,7 @@
             :max-width      "1000px"
             :min-width      "300px"
             :width          "100%"
-            :padding        "16px"
+            :padding        "32px"
             :flex-direction "column"
             :align-items    "flex-start"
             :gap            "16px"

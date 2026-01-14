@@ -1,15 +1,16 @@
 (ns pyregence.pages.backup-codes
-  (:require [clojure.core.async                    :refer [go <!]]
-            [cljs.reader                           :as reader]
-            [clojure.string                        :as str]
-            [pyregence.components.messaging        :refer [toast-message!]]
-            [pyregence.components.settings.buttons :as buttons]
-            [pyregence.components.svg-icons        :as svg]
-            [pyregence.components.two-fa           :as two-fa]
-            [pyregence.styles                      :as $]
-            [pyregence.utils.async-utils           :as u-async]
-            [pyregence.utils.browser-utils         :as u-browser]
-            [reagent.core                          :as r]))
+  (:require
+   [clojure.core.async             :refer [go <!]]
+   [cljs.reader                    :as reader]
+   [clojure.string                 :as str]
+   [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.components.buttons   :as buttons]
+   [pyregence.components.svg-icons :as svg]
+   [pyregence.components.two-fa    :as two-fa]
+   [pyregence.styles               :as $]
+   [pyregence.utils.async-utils    :as u-async]
+   [pyregence.utils.browser-utils  :as u-browser]
+   [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State

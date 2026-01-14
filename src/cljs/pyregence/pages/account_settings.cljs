@@ -16,7 +16,7 @@
    [pyregence.components.settings.roles                 :as roles]
    [pyregence.components.settings.unaffilated-members   :as um]
    [pyregence.components.settings.admin                 :as admin]
-   [pyregence.components.settings.utils                 :refer [db->display]]
+   [pyregence.components.utils                          :refer [db->display]]
    [pyregence.state                                     :as !]
    [pyregence.styles                                    :as $]
    [pyregence.utils.async-utils                         :as u-async]
