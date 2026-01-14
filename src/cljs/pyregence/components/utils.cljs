@@ -111,7 +111,7 @@
             :max-width      "1000px"
             :min-width      "300px"
             :width          "100%"
-            :padding        "16px"
+            :padding        "32px"
             :flex-direction "column"
             :align-items    "flex-start"
             :gap            "16px"
