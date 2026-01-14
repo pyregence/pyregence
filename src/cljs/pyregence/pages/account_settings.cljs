@@ -15,12 +15,43 @@
    [pyregence.components.settings.organization-settings :as os]
    [pyregence.components.settings.roles                 :as roles]
    [pyregence.components.settings.unaffilated-members   :as um]
+   [pyregence.components.settings.admin                 :as admin]
+   [pyregence.components.settings.utils                 :refer [db->display]]
    [pyregence.state                                     :as !]
    [pyregence.styles                                    :as $]
    [pyregence.utils.async-utils                         :as u-async]
    [pyregence.utils.browser-utils                       :as u-browser]
    [pyregence.utils.dom-utils                           :refer [input-value]]
    [reagent.core                                        :as r]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;TODO user-role-renderer and org-render can probably be one function
+(defn- user-role-renderer [params]
+  (let [role (aget params "value")]
+    (r/as-element
+     [:span (db->display role)])))
+
+(defn- org-membership-status-renderer [params]
+  (let [status (aget params "value")]
+    (r/as-element
+     [:span (db->display status)])))
+
+(defn- wrap-text-style [_]
+  #js {:whiteSpace "normal" :lineHeight "1.4" :overflow "visible" :textAlign "left"})
+
+(defn- boolean-renderer [params]
+  (let [v (aget params "value")]
+    (r/as-element
+     [:span {:style {:align-items     "center"
+                     :display         "flex"
+                     :font-size       "30px"
+                     :font-weight     "bold"
+                     :justify-content "center"
+                     :color           (if v "green" "red")}}
+      (if v "✓" "✗")])))
 
 (defn orgs->org->id
   [orgs]
@@ -85,7 +116,12 @@
                                          (u-browser/jump-to-url!
                                           (str "/?forecast=" (name forecast))))
                    :user-role          user-role}]
-         (let [tabs             (side-nav-bar/tab-data->tabs
+         (let [columns  [{:field "name"                  :headerName "User Name"     :filter "agTextColumnFilter"  :width 150}
+                         {:field "email"                 :headerName "Email Address" :filter "agTextColumnFilter"}
+                         {:field "user-role"             :headerName "User Role"     :filter "agTextColumnFilter"  :cellRenderer user-role-renderer}
+                         {:field "org-membership-status" :headerName "Status"        :filter false                 :cellRenderer org-membership-status-renderer}]
+
+               tabs             (side-nav-bar/tab-data->tabs
                                  {:selected-log  selected-log
                                   :organizations (vals @org-id->org)
                                   :user-role     user-role})
@@ -94,7 +130,6 @@
                selected         (-> @selected-log last)
                selected-page    (selected->tab-id selected)
                on-click-apply-update-users
-
                (fn [get-selected-users-emails-fn]
                  (fn [update-user-info-by-email opt-type opt->display]
                    (fn [new-user-info]
@@ -117,7 +152,8 @@
             [side-nav-bar/main tabs]
             (case selected-page
               "Account Settings"
-              [as/main {:password-set-date              password-set-date
+              [as/main {:columns                        columns
+                        :password-set-date              password-set-date
                         :role-type                      user-role
                         :user-name                      @unsaved-user-name
                         :email-address                  user-email
@@ -128,7 +164,6 @@
                                                           ;;TODO should this be on success?
                                                           (update-own-user-name! @unsaved-user-name)
                                                           (reset! user-name @unsaved-user-name))}]
-
               "Organization Settings"
               [os/main
                (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
@@ -153,7 +188,9 @@
                                   ;;TODO this conditional should be based on the og-id or org-unique name
                                   (= organization-name org-name)
                                   (#{"organization_admin" "organization_member"} user-role))) @users))]
-                 {:save-changes-disabled? (and (= unsaved-org-name org-name)
+                 {:columns                columns
+                  :statuses                ["accepted" "pending"]
+                  :save-changes-disabled? (and (= unsaved-org-name org-name)
                                                (= unsaved-auto-accept? auto-accept?)
                                                (= unsaved-auto-add? auto-add?)
                                                (not (some (fn [[_ {:keys [email unsaved-email]}]] (not= email unsaved-email)) og-email->email)))
@@ -266,11 +303,30 @@
                   :on-change-auto-add-user-as-org-member
                   #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)
                   :role-options         roles})]
-
+              "Admin"
+              (let [roles (->> user-role roles/role->roles-below)
+                    ;;TODO consider if we need to improve the width of the table to help with these columns.
+                    additional-columns
+                    [{:field "user-id"               :headerName "User ID"               :filter false :width 110}
+                     {:field "organization-name"     :headerName "Org Name"              :filter "agTextColumnFilter"}
+                     {:field "match-drop-access"     :headerName "Match Drop?"           :filter false :width 150 :cellRenderer boolean-renderer}
+                     {:field "email-verified"        :headerName "Email Verified?"       :filter false :width 150 :cellRenderer boolean-renderer}
+                     {:field "last-login-date"       :headerName "Last Login Date"       :filter "agDateColumnFilter" :width 300}
+                     {:field "settings"              :headerName "Settings"              :filter false :width 200 :autoHeight true :cellStyle wrap-text-style}]]
+                [admin/main {:columns                     (concat columns additional-columns)
+                             :users                       @users
+                             :users-selected?             users-selected?
+                             :on-click-apply-update-users on-click-apply-update-users
+                             ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
+                             :default-role-option         (first roles)
+                             :role-options                roles
+                             :statuses                     ["accepted" "pending" "none"]}])
               (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
-                [um/main {:users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
+                [um/main {:columns                     columns
+                          :users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
                           :users-selected?             users-selected?
                           :on-click-apply-update-users on-click-apply-update-users
                           ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
                           :default-role-option         (first roles)
-                          :role-options                roles}]))])])})))
+                          :role-options                roles
+                          :statuses                    ["none"]}]))])])})))
