@@ -109,7 +109,6 @@
          [:div {:style {:display         "flex"
                         :justify-content "center"
                         :align-content   "center"
-                        :height          "100%"
                         :margin          "100px"}}
           [utils/card {:title "Register"
                        :children
