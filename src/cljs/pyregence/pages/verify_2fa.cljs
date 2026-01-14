@@ -1,11 +1,15 @@
 (ns pyregence.pages.verify-2fa
-  (:require [clojure.core.async             :refer [go <! timeout]]
-            [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]
-            [pyregence.styles               :as $]
-            [pyregence.utils.async-utils    :as u-async]
-            [pyregence.utils.browser-utils  :as u-browser]
-            [reagent.core                   :as r]))
+  (:require
+   [clojure.core.async             :refer [<! go timeout]]
+   [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.components.nav-bar   :refer [nav-bar]]
+   [pyregence.components.utils     :as utils]
+   [pyregence.state                :as !]
+   [pyregence.styles               :as $]
+   [pyregence.utils.async-utils    :as u-async]
+   [pyregence.utils.browser-utils  :as u-browser]
+   [reagent.core                   :as r]
+   [pyregence.components.buttons   :as buttons]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -73,20 +77,36 @@
   (when (empty? @email)
     (u-browser/jump-to-url! "/login"))
   (fn [_]
-    [:<>
-     [:div {:style ($/combine ($/disabled-group @pending?)
-                              {:display "flex" :justify-content "center" :margin "5rem"})}
-      [simple-form
-       "Two-Factor Authentication"
-       "Verify"
-       [["Verification Code" verification-code "text" "verification-code"]]
-       verify-2fa!]]
-     [:div {:style {:align-items    "center"
-                    :display        "flex"
-                    :flex-direction "column"
-                    :margin-top     "1rem"}}
-      [prompt {:auth-method @method :user-email @email}
-       #(go
-          (if (:success (<! (u-async/call-clj-async! "send-email" @email :2fa)))
-            (toast-message! "A new verification code has been sent to your email.")
-            (toast-message! "Failed to send verification code. Please try again.")))]]]))
+    [:div
+     {:style {:height         "100vh"
+              :margin-bottom  "40px"
+              :display        "flex"
+              :flex-direction "column"
+              :font-family    "Roboto"
+              :padding-bottom "60px"
+              :background     ($/color-picker :lighter-gray)
+              :place-items    "center"}}
+     [nav-bar {:mobile?            @!/mobile?
+               :on-forecast-select (fn [forecast]
+                                     (u-browser/jump-to-url!
+                                      (str "/?forecast=" (name forecast))))}]
+     [:div {:style {:display         "flex"
+                    :justify-content "center"
+                    :align-content   "center"
+                    :height          "fit-content"
+                    :margin          "100px"
+                    :width           "fit-content"}}
+      [utils/card
+       {:title "Two Factor Authentication"
+        :children
+        [:<>
+         [utils/input-labeled {:label     "Verification Code"
+                               :value     @verification-code
+                               :on-change #(reset! verification-code (-> % .-target .-value))}]
+         [buttons/primary {:text     "Verify"
+                           :on-click verify-2fa!}]
+         [prompt {:auth-method @method :user-email @email}
+          #(go
+             (if (:success (<! (u-async/call-clj-async! "send-email" @email :2fa)))
+               (toast-message! "A new verification code has been sent to your email.")
+               (toast-message! "Failed to send verification code. Please try again.")))]]}]]]))
