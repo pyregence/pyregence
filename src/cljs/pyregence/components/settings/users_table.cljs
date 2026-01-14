@@ -43,10 +43,6 @@
   [status users-to-update]
   (go (<! (u-async/call-clj-async! "update-users-status" status users-to-update))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; API Calls
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;;TODO find out why this `api-call` is necessary and use it or remove it.
 (defn api-call
   "A helper function to safely call GridApi methods under advanced compilation."
@@ -56,20 +52,17 @@
       (.apply f api (to-array args))
       (js/console.error "GridApi method not found:" method "on" api))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; components
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- today-str []
+  (.toISOString (js/Date.)) ; => "2025-05-27T15:26:09.123Z"
+  (subs (.toISOString (js/Date.)) 0 10)) ; => "2025-05-27"
 
-;;TODO user-role-renderer and org-render can probably be one function
-(defn- user-role-renderer [params]
-  (let [role (aget params "value")]
-    (r/as-element
-     [:span (db->display role)])))
-
-(defn- org-membership-status-renderer [params]
-  (let [status (aget params "value")]
-    (r/as-element
-     [:span (db->display status)])))
+(defn- export-button-on-click-fn [grid-api file-name]
+  (when-let [api @grid-api]
+    (api-call api "exportDataAsCsv"
+              #js {:fileName (str (today-str) "_" file-name)
+                   :processCellCallback
+                   (fn [params]
+                     (aget params "value"))})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Table components
@@ -94,12 +87,18 @@
             :fontWeight                     400})))
 
 (defn table
-  [grid-api users users-selected?]
+  [grid-api users users-selected? columns]
   [:div {:style {:height "100%"
                  :width  "100%"}}
    [:div {:style {:height "100%" :width "100%"}}
     [:> AgGridReact
-     {:onGridReady                (fn [params] (reset! grid-api (aget params "api")))
+     {:onGridReady                (fn [params]
+                                    (reset! grid-api (aget params "api")))
+      :onFirstDataRendered        (fn [params]
+                                    (let [api (.-api params)]
+                                      (api-call api "autoSizeAllColumns")
+                                      (doseq [col (api-call api "getAllDisplayedColumns")]
+                                        (.setFlex col 1))))
       :rowSelection               #js {:mode "multiRow"}
       :domLayout                  "autoHeight"
       :onRowSelected              #(reset! users-selected? (seq (get-selected-rows @grid-api)))
@@ -110,11 +109,7 @@
       :defaultColDef              #js {:unSortIcon true :flex 1} ;; always show sort icons
       :enableCellTextSelection    true
       :rowData                    (clj->js users)
-      :columnDefs
-      (clj->js [{:field "name" :headerName "User Name" :filter "agTextColumnFilter" :width 150}
-                {:field "email" :headerName "Email Address" :filter "agTextColumnFilter"}
-                {:field "user-role" :headerName "User Role" :filter "agTextColumnFilter" :cellRenderer user-role-renderer}
-                {:field "org-membership-status" :headerName "Status" :filter false :cellRenderer org-membership-status-renderer}])}]]])
+      :columnDefs                 (clj->js columns)}]]])
 
 ;;TODO consider decoupling this from roles and moving into buttons
 (defn drop-down
@@ -166,7 +161,17 @@
                         :on-click  (on-click-apply @checked)}]]]))
 
 (defn table-with-buttons
-  [{:keys [users on-click-apply-update-users users-selected? org-id role-options default-role-option]}]
+  [{:keys [users
+           on-click-apply-update-users
+           users-selected?
+           org-id
+           role-options
+           default-role-option
+           statuses
+           columns
+           ;;TODO if we get multiple show buttons then we should re-organize.
+           show-export-to-csv?
+           on-click-remove-users!]}]
   ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
@@ -206,10 +211,15 @@
                                    :on-click  (fn []
                                                 (reset! checked nil)
                                                 (update-dd :status))}]
-        ;; TODO add this back in when we get a more well defined acceptance criteria.
-         #_(when (:show-remove-user? m)
-             [buttons/ghost-remove-user {:text "Remove User"}])]
-        [add-user/add-user-dialog {:org-id org-id :role-options role-options :default-role-option default-role-option}]]
+         (when on-click-remove-users! [buttons/remove-cmpt {:text "Delete User"}])]
+        [:div {:style {:display        "flex"
+                       :flex-direction "column"
+                       :gap            "10px"}}
+         [add-user/add-user-dialog {:org-id org-id :role-options role-options :default-role-option default-role-option}]
+         (when show-export-to-csv?
+           [buttons/ghost {:text     "Export"
+                           :icon     [svg/export :height "24px" :width "24px"]
+                           :on-click #(export-button-on-click-fn grid-api "users-table")}])]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database from a sql function.
          :role   [drop-down {:options         role-options
@@ -222,7 +232,7 @@
                                               db->display)}]
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
          ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
-         :status [drop-down {:options         status/statuses
+         :status [drop-down {:options         statuses
                              :checked         checked
                              :users-selected? @users-selected?
                              :opt->display   db->display
@@ -231,4 +241,4 @@
                                               "Status"
                                               db->display)}]
          nil)
-       [table grid-api users users-selected?]])))
+       [table grid-api users users-selected? columns]])))

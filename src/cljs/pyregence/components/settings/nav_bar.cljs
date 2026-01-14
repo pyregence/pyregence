@@ -185,7 +185,11 @@
    (when (#{"account_manager" "super_admin"} user-role)
      {:tab  button
       :text "Unaffilated Members"
-      :icon svg/individual})])
+      :icon svg/individual})
+   (when (#{"account_manager" "super_admin"} user-role)
+     {:tab  button
+      :text "Admin"
+      :icon svg/admin})])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page

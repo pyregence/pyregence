@@ -121,6 +121,4 @@
           :children
           [organization-settings m]}]
    [card {:title    "MEMBER USER-LIST"
-          ;; TODO consider removing :show-remove-user and instead compose the table
-          ;; per use: org, unaffilated, etc..
-          :children [table-with-buttons (assoc m :show-remove-user? true)]}]])
+          :children [table-with-buttons m]}]])
