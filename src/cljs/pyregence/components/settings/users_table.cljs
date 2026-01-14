@@ -95,8 +95,8 @@
                                     (reset! grid-api (aget params "api")))
       :onFirstDataRendered        (fn [params]
                                     (let [api (.-api params)]
-                                      (.autoSizeAllColumns  false)
-                                      (doseq [col (.getAllDisplayedColumns api)]
+                                      (api-call api "autoSizeAllColumns")
+                                      (doseq [col (api-call api "getAllDisplayedColumns")]
                                         (.setFlex col 1))))
       :rowSelection               #js {:mode "multiRow"}
       :domLayout                  "autoHeight"
