@@ -901,7 +901,7 @@
           (and usage-terms-and-conditions-date (not= usage-terms-and-conditions-date-local-storage-mirror usage-terms-and-conditions-date))]
 
       (when not-accepted-current-usage-terms-and-conditions?
-        [:div#message-modal {:style (assoc ($/modal) :height "100%")}
+        [:div#message-modal {:style (merge ($/modal) {:height "100%" :position "fixed"})}
          [:div {:style ($message-modal false)}
           [:div
            [:div {:style {:background ($/color-picker :yellow)
