@@ -15,9 +15,6 @@
    [:get "/account-settings"]                    {:handler     (render-page "/account-settings")
                                                   :auth-type   :member
                                                   :auth-action :redirect}
-   [:get "/admin"]                               {:handler (render-page "/admin")
-                                                  :auth-type :organization-admin
-                                                  :auth-action :redirect}
    [:get "/backup-codes"]                        {:handler (render-page "/backup-codes")
                                                   :auth-type :member
                                                   :auth-action :redirect}
