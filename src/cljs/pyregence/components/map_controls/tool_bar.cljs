@@ -28,8 +28,8 @@
 (defn- init-red-flag-popup! [feature lnglat]
   (let [properties                         (-> feature (aget "properties") (js->clj))
         {:strs [url prod_type onset ends]} properties
-        body                               (red-flag-popup url prod_type onset ends)]
-    (mb/init-popup! "red-flag" lnglat body {:width "200px"})))
+        body                               [red-flag-popup url prod_type onset ends]]
+    (mb/init-popup! "red-flag" lnglat body {:width "500px"})))
 
 (defn- init-fire-history-popup! [feature lnglat]
   (let [properties (-> feature (aget "properties") (js->clj))
