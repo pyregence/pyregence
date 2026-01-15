@@ -1,5 +1,6 @@
 (ns pyregence.utils.misc-utils
-  (:require [clojure.set :as sets]))
+  (:require [clojure.string :as cstr]
+            [clojure.set :as sets]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions - Misc Utils
@@ -70,3 +71,10 @@
     337.5 "Northwest"
     360   "North"
     ""))
+
+(defn camel->text
+  "Transforms camelCase strings into normal text"
+  [string]
+  (-> string
+      (cstr/replace #"[A-Z]" #(str " " %))
+      (cstr/capitalize)))

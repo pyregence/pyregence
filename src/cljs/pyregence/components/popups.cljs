@@ -1,5 +1,6 @@
 (ns pyregence.components.popups
  (:require [clojure.core.async           :refer [<! go]]
+           [clojure.string               :as cstr]
            [herb.core                    :refer [<class]]
            [pyregence.styles             :as $]
            [pyregence.utils.async-utils  :as u-async]
@@ -92,6 +93,23 @@
    "event"
    "instruction"])
 
+(defn- format-values
+  "Formats red-flag description"
+  [desc]
+  (-> desc
+      (cstr/replace "..." ": ")
+      (cstr/trim)))
+
+(defn- properties->rows
+  "Create popup rows from json object"
+  [props]
+  (let [json (js->clj props)]
+    (for [k     red-flag-keys
+          :let  [value (get json k)]
+          :when (some? value)]
+      ^{:key k}
+      [fire-property (u-misc/camel->text k) (format-values value)])))
+
 (defn- get-red-flag-data
   "GET the red-flag URL and returns the parsed JSON on a channel"
   [url]
@@ -108,16 +126,6 @@
    [:button {:class (<class $popup-btn)
              :on-click on-click}
     (if expanded? "Show Less Info" "Show More Info")]])
-
-(defn- properties->rows
-  "Create popup rows from json object"
-  [props]
-  (let [json (js->clj props)]
-    (for [k     red-flag-keys
-          :let  [value (get json k)]
-          :when (some? value)]
-      ^{:key k}
-      [fire-property k (str value)])))
 
 (defn red-flag-popup
   "Expandable popup for red-flag warning layer"
