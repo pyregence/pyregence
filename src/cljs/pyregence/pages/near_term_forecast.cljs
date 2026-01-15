@@ -80,8 +80,23 @@
   (:layer (current-layer) ""))
 
 (defn- get-current-layer-time []
-  (when (:times (current-layer))
-    (nth (:times (current-layer)) @!/*layer-idx)))
+  (when-let [times (:times (current-layer))]
+    (when (and (seq times) (< @!/*layer-idx (count times)))
+      (nth times @!/*layer-idx))))
+
+(defn- layer-at-idx [idx]
+  (if (= (count @!/param-layers) 1)
+    (first @!/param-layers)
+    (get @!/param-layers idx)))
+
+(defn- get-layer-time-for-idx [idx]
+  (when-let [layer (layer-at-idx idx)]
+    (when-let [times (:times layer)]
+      (when (and (seq times) (< idx (count times)))
+        (nth times idx)))))
+
+(defn- get-layer-name-for-idx [idx]
+  (:layer (layer-at-idx idx) ""))
 
 (defn- get-current-layer-hour []
   (if-let [current-layer-time (get-current-layer-time)]
@@ -143,6 +158,12 @@
          (name (get-in @!/*params [:psps-zonal :statistic]))
          "-css")))
 
+(defn- get-animation-layer-info
+  "Returns layer information needed for animation."
+  []
+  {:geoserver-key (get-any-level-key :geoserver-key)
+   :style        (get-psps-layer-style)})
+
 (defn- get-psps-column-name
   "Returns the name of the point info column for a PSPS layer."
   []
@@ -185,6 +206,11 @@
 
 (defn- get-layers! [get-model-times?]
   (go
+    (when @!/animate?
+      (reset! !/animate? false))
+    (mb/reset-animation!)
+    (reset! !/layers-ready? false)
+
     (let [params       (dissoc (get @!/*params @!/*forecast) (when get-model-times? :model-init))
           ;; Check for the presence of an :exclusive-filter-set
           exclusive-filter-set (->> @!/processed-params
@@ -472,13 +498,29 @@
 ;; More Data Processing Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- select-layer! [new-layer]
-  (reset! !/*layer-idx new-layer)
-  (mb/swap-active-layer! (get-current-layer-name)
-                         (get-any-level-key :geoserver-key)
-                         (/ @!/active-opacity 100)
-                         (get-psps-layer-style)
-                         (get-current-layer-time)))
+(defn- select-layer!
+  ([new-layer] (select-layer! new-layer nil))
+  ([new-layer on-complete]
+   (let [geoserver   (get-any-level-key :geoserver-key)
+         opacity     (/ @!/active-opacity 100)
+         style       (get-psps-layer-style)
+         layer-name  (get-layer-name-for-idx new-layer)
+         layer-time  (get-layer-time-for-idx new-layer)
+         total       (count (or (:times (first @!/param-layers)) @!/param-layers))]
+     (when (and (not @!/layers-ready?) (pos? total))
+       (let [{:keys [succeeded]} (mb/create-animation-layers! geoserver style)]
+         (when (pos? succeeded)
+           (reset! !/layers-ready? true)
+           (reset! !/total-frames total))))
+     (if @!/animate?
+       (mb/swap-animation-layer! layer-name geoserver opacity style layer-time new-layer
+                                 (fn []
+                                   (reset! !/*layer-idx new-layer)
+                                   (when on-complete (on-complete))))
+       (do
+         (reset! !/*layer-idx new-layer)
+         (mb/swap-animation-layer! layer-name geoserver opacity style layer-time new-layer nil)
+         (when on-complete (on-complete)))))))
 
 (defn- select-layer-by-hour! [hour]
   (select-layer! (first (keep-indexed (fn [idx layer]
@@ -689,7 +731,11 @@
                 (or (keyword forecast)
                     (keyword (forecast-type @!/default-forecasts)))
 
-                ;; other wise it's near term
+                ;; other wise it's near term, default to a pssed in forecast via URL query params
+                ;; TODO we ignore !/default-forecasts for near-term right now, should we remove this from the config?
+                (some-> forecast keyword)
+                (keyword forecast)
+
                 (zero? active-fire-count)
                 :fire-weather
 
@@ -804,7 +850,8 @@
            [time-slider
             (get-current-layer-full-time)
             select-layer!
-            select-time-zone!])])})))
+            select-time-zone!
+            get-animation-layer-info])])})))
 
 (defn- pop-up []
   [:div#pin {:style ($/fixed-size "2rem")}
@@ -896,7 +943,7 @@
             [header "Disclaimers & Limitations"]
             [:label {:style {:margin-top ".2rem"}} "FORECASTING DISCLAIMER: PyreCast forecasts and models are provided for informational purposes only. Wildfire behavior involves inherent uncertainties and rapidly changing conditions. Past forecast performance does not guarantee future accuracy. Users assume full responsibility for any decisions based on PyreCast data."]
             [:label {:style {:margin-top ".2rem"}} "NO WARRANTIES: The platform and all data are provided \"AS IS\" without warranties of any kind, express or implied, including but not limited to accuracy, completeness, timeliness, or fitness for a particular purpose."]
-            [:label {:style {:margin-top ".2rem"}}  "LIMITATION OF LIABILITY: To the maximum extent permitted by law, PyreCast operators shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from use of the platform or reliance on forecasts."]]
+            [:label {:style {:margin-top ".2rem"}} "LIMITATION OF LIABILITY: To the maximum extent permitted by law, PyreCast operators shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from use of the platform or reliance on forecasts."]]
            [:div
             [header "Commercial Authorization"]
             [:label "To inquire about commercial licensing, integration partnerships, or enterprise use authorization, contact: " [:a {:href "mailto:info@pyrecast.com"} "info@pyrecast.com"] "."]]
@@ -926,13 +973,11 @@
                      :on-click set-accepted!}
              "Accept"]]]]]))))
 
-(defn- loading-modal []
-  [:div#loading-modal {:style ($/modal)}
+(defn- status-modal [message]
+  [:div.status-modal {:style ($/modal)}
    [:div {:style ($message-modal true)}
-    [:h3 {:style {:margin-bottom "0"
-                  :padding       "1rem"
-                  :text-align    "center"}}
-     "Loading..."]]])
+    [:h3 {:style {:margin "0" :padding "2rem" :text-align "center"}}
+     message]]])
 
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
@@ -953,17 +998,16 @@
       [:div#near-term-forecast
        {:style ($/combine $/root {:height "100%" :padding 0 :position "relative" :overflow :hidden})}
        [message-box-modal]
-       (when @!/loading? [loading-modal])
+       (when @!/loading? [status-modal "Loading..."])
        [message-modal]
-       [nav-bar {:capabilities     @!/capabilities
-                 :current-forecast @!/*forecast
-                 :is-admin?        (roles-who-can-see-admin-btn user-role)
-                 :logged-in?       user-id
-                 :mobile?          @!/mobile?
-                 :user-orgs-list   @!/user-orgs-list
-                 :select-forecast! select-forecast!
-                 :user-id          user-id ; TODO we might be able to get rid of this
-                 :user-role        user-role}]
+       [nav-bar {:capabilities       @!/capabilities
+                 :current-forecast   @!/*forecast
+                 :is-admin?          (roles-who-can-see-admin-btn user-role)
+                 :logged-in?         user-id
+                 :mobile?            @!/mobile?
+                 :user-orgs-list     @!/user-orgs-list
+                 :on-forecast-select select-forecast!
+                 :user-role          user-role}]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when (and @mb/the-map
                    (not-empty @!/capabilities)

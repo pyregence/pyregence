@@ -1,6 +1,5 @@
 (ns pyregence.routing
-  (:require [pyregence.analytics        :as analytics]
-            [pyregence.authentication   :as authentication]
+  (:require [pyregence.authentication   :as authentication]
             [pyregence.cameras          :as cameras]
             [pyregence.capabilities     :as capabilities]
             [pyregence.email            :as email]
@@ -43,9 +42,6 @@
                                                   :auth-type :member
                                                   :auth-action :redirect}
    [:get "/terms-of-use"]                        {:handler (render-page "/terms-of-use")}
-   [:get "/users-table"]                         {:handler (render-page "/users-table")
-                                                  :auth-type :super-admin
-                                                  :auth-action :redirect}
    [:get "/verify-2fa"]                          {:handler (render-page "/verify-2fa")}
    [:get "/verify-email"]                        {:handler (render-page "/verify-email")}
 
@@ -94,11 +90,17 @@
    [:post "/clj/get-current-user-settings"]      {:handler (clj-handler authentication/get-current-user-settings)
                                                   :auth-type :member
                                                   :auth-action :block}
+   [:post "/clj/get-password-set-date"]          {:handler     (clj-handler authentication/get-password-set-date)
+                                                  :auth-type   :member
+                                                  :auth-action :block}
    [:post "/clj/get-user-name-by-email"]         {:handler (clj-handler authentication/get-current-user-name-by-email)
                                                   :auth-type   :member
                                                   :auth-action :block}
    [:post "/clj/user-email-taken"]               {:handler (clj-handler authentication/user-email-taken)
                                                   :auth-type :token
+                                                  :auth-action :block}
+   [:post "/clj/update-own-user-name"]           {:handler (clj-handler authentication/update-own-user-name)
+                                                  :auth-type #{:member :token}
                                                   :auth-action :block}
    [:post "/clj/update-user-name"]               {:handler (clj-handler authentication/update-user-name)
                                                   :auth-type #{:organization-admin :token}
@@ -109,8 +111,8 @@
                                                   :auth-action :block}
 
    [:post "/clj/update-users-status"]             {:handler (clj-handler authentication/update-users-status)
-                                                  :auth-type #{:organization-admin :token}
-                                                  :auth-action :block}
+                                                   :auth-type #{:organization-admin :token}
+                                                   :auth-action :block}
 
 ;; -- Access Control
    [:post "/clj/get-user-match-drop-access"]     {:handler (clj-handler authentication/get-user-match-drop-access)
@@ -118,6 +120,10 @@
                                                   :auth-action :block}
 
    ;; -- Organization Management
+   [:post "/clj/add-org-users"]                     {:handler (clj-handler authentication/add-org-users)
+                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+
    [:post "/clj/add-org-user"]                      {:handler (clj-handler authentication/add-org-user)
                                                      :auth-type #{:organization-admin :token}
                                                      :auth-action :block}
@@ -132,6 +138,9 @@
                                                      :auth-action :block}
    [:post "/clj/get-org-member-users"]              {:handler (clj-handler authentication/get-org-member-users)
                                                      :auth-type #{:organization-admin :token}
+                                                     :auth-action :block}
+   [:post "/clj/get-orgs-with-system-assets"]       {:handler     (clj-handler authentication/get-orgs-with-system-assets)
+                                                     :auth-type   #{:organization-member :token}
                                                      :auth-action :block}
    [:post "/clj/get-psps-organizations"]            {:handler (clj-handler authentication/get-psps-organizations)
                                                      :auth-type :token
@@ -213,9 +222,4 @@
    ;; Red Flag API
    [:post "/clj/get-red-flag-layer"]             {:handler (clj-handler red-flag/get-red-flag-layer)
                                                   :auth-type :token
-                                                  :auth-action :block}
-
-   ;; Analytics API
-   [:get "/clj/get-all-users-last-login-dates"]  {:handler     (clj-handler analytics/get-all-users-last-login-dates)
-                                                  :auth-type   :account-manager
                                                   :auth-action :block}})

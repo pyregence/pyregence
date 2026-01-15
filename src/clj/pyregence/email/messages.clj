@@ -197,7 +197,7 @@
          "  Username: " email "\n\n"
          "  Thanks,\n"
          "  The PyreCast Team\n\n"
-         "  P.S. Need immediate help getting started? Just reply to this email – the PyreCast support team is always ready to help!"
+         "  P.S. Need immediate help getting started? Check out our help documentation: https://support.pyrecast.com/support/solutions/32000023528. Or, just reply to this email, the PyreCast support team is always ready to help!"
          (text-footer))))
 
 (defmethod welcome-email :html
@@ -225,7 +225,9 @@
        "Thanks," [:br] "The PyreCast Team"]
       [:hr {:style (:separator common-styles)}]
       [:p {:style (:p-top common-styles)}
-       [:strong "P.S."] " Need immediate help getting started? Just reply to this email - the PyreCast support team is always ready to help!"]
+       [:strong "P.S."] " Need immediate help getting started? Check out our "
+       [:a {:href "https://support.pyrecast.com/support/solutions/32000023528" :style (:link common-styles)} "help documentation"]
+       ". Or, just reply to this email, the PyreCast support team is always ready to help!"]
       (fallback-url-note verify-url)])))
 
 ;; ============================================================================
@@ -274,6 +276,58 @@
        "Thanks," [:br] "The PyreCast Team"]
       [:hr {:style (:separator common-styles)}]
       (fallback-url-note reset-url)])))
+
+;; ============================================================================
+;; Invite Email (Admin-created users)
+;; ============================================================================
+
+(defmulti invite-email
+  "Generate invite email for admin-created users.
+   Dispatches on format (:text or :html)."
+  (fn [fmt & _] fmt))
+
+(defmethod invite-email :text
+  [_ base-url email _user-name verification-token org]
+  (let [action-url (str base-url "/reset-password?email=" (url-encode email)
+                        "&verification-token=" (url-encode verification-token))
+        login-url  (str base-url "/login")]
+    (str "Welcome to PyreCast!\n\n"
+         (if org
+           (str "  " org " invited you to join their organization on PyreCast. ")
+           "  You've been invited to join PyreCast. ")
+         "To get started, please finish setting up your profile:\n\n"
+         "  " action-url "\n\n"
+         "  For reference, here's your login information:\n"
+         "  Login Page: " login-url "\n"
+         "  Username: " email "\n\n"
+         "  Thanks,\n"
+         "  The PyreCast Team"
+         (text-footer))))
+
+(defmethod invite-email :html
+  [_ base-url email _user-name verification-token org]
+  (let [action-url (str base-url "/reset-password?email=" (url-encode email)
+                        "&verification-token=" (url-encode verification-token))
+        login-url  (str base-url "/login")]
+    (html-wrapper
+     [:div
+      [:h2 {:style (:h2 common-styles)} "Welcome to PyreCast!"]
+      [:p {:style (:p common-styles)}
+       (if org
+         (str org " invited you to join their organization on PyreCast. ")
+         "You've been invited to join PyreCast. ")
+       "To get started, please finish setting up your profile by clicking this link:"]
+      (html-button "Set Up Your Profile" action-url)
+      [:p {:style (:p-top common-styles)} "For reference, here's your login information:"]
+      [:div {:style (:info-box common-styles)}
+       [:p {:style (:info-p common-styles)}
+        [:strong "Login Page: "]
+        [:a {:href login-url :style (:link common-styles)} login-url]]
+       [:p {:style (:info-p common-styles)}
+        [:strong "Username: "] email]]
+      [:p {:style (:thanks common-styles)} "Thanks," [:br] "The PyreCast Team"]
+      [:hr {:style (:separator common-styles)}]
+      (fallback-url-note action-url)])))
 
 ;; ============================================================================
 ;; Two-Factor Authentication Email
@@ -420,6 +474,7 @@
     (case email-type
       :welcome              (welcome-email fmt test-base-url test-email test-name test-token)
       :password-reset       (password-reset-email fmt test-base-url test-email test-name test-token)
+      :invite               (invite-email fmt test-base-url test-email test-name test-token "Acme Inc")
       :two-fa               (two-fa-email fmt test-email test-name test-code test-expiry)
       :match-drop-completed (match-drop-email fmt test-base-url test-email test-name test-job-id test-display-name :completed)
       :match-drop-failed    (match-drop-email fmt test-base-url test-email test-name test-job-id test-display-name :failed)

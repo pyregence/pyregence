@@ -1,10 +1,14 @@
 (ns pyregence.authentication
-  (:require [pyregence.email     :as email]
-            [pyregence.totp      :as totp]
-            [pyregence.utils     :refer [nil-on-error]]
-            [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.response :refer [data-response]]))
+  (:require [pyregence.email            :as email]
+            [pyregence.totp             :as totp]
+            [pyregence.utils            :refer [nil-on-error]]
+            [triangulum.config          :refer [get-config]]
+            [triangulum.database        :refer [call-sql sql-primitive insert-rows!]]
+            [triangulum.type-conversion :as tc]
+            [triangulum.response        :refer [data-response]])
+  (:import  [java.util Base64]
+            [java.security SecureRandom]
+            [java.text SimpleDateFormat]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -44,6 +48,13 @@
   "Saves user settings to the database."
   [user-id settings]
   (call-sql "update_user_settings" user-id (pr-str settings)))
+
+(defn- generate-password
+  ([] (generate-password 32))         ;; 32 bytes → 43-char Base64 password
+  ([n-bytes]
+   (let [bytes (byte-array n-bytes)
+         _ (.nextBytes (SecureRandom.) bytes)]
+     (.encodeToString (Base64/getEncoder) bytes))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Authentication & Session Management
@@ -629,13 +640,21 @@
       (data-response "User settings were not able to be updated." {:status 403}))))
 
 (defn update-user-name
-  "Allows a super admin to update the name of a user by their email."
+  "Allows an organization admin to update the name of a user by their email."
   [_ email new-name]
   (if-let [user-id-to-update (sql-primitive (call-sql "get_user_id_by_email" email))]
     (do (call-sql "update_user_name" user-id-to-update new-name)
         (data-response (str "User's name successfully updated to " new-name)))
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
+
+(defn update-own-user-name
+  "Allows a logged-in user to update their own user name."
+  [session new-name]
+  (if-let [user-id (:user-id session)]
+    (do (call-sql "update_user_name" user-id new-name)
+        (data-response (str "User's name successfully updated to " new-name)))
+    (data-response "" {:status 403})))
 
 ;;TODO ideally this would be handled by the database but we should at the very least have a cljc file
 ;;for the fe and be to share.
@@ -737,6 +756,30 @@
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
 
+(defn add-org-users [{:keys [user-role organization-id]} org-id users]
+  ;; Prevent none SA&AM from changing other orgs.
+  (when (or (#{"super_admin" "account_manager"} user-role)
+            (= organization-id org-id))
+    (->>
+     users
+     (map (fn [{:keys [email role]}]
+            {:email                 email
+             :user_role             (tc/str->pg role "user_role")
+             :org_membership_status (tc/str->pg (if org-id "accepted" "none") "org_membership_status")
+             :organization_rid      org-id
+             :name                  ""
+             :password              (generate-password)
+             :email_verified        false
+             :match_drop_access     false
+             :settings              "{:timezone :utc}"}))
+     (insert-rows! "users"))
+    ;; TODO ideally `send-invite-email!` wouldn't need to make an additional db call to get the user name
+    ;; as we already know it's blank.
+    ;; TODO `send-invite-email` probably doesn't need to return a data response.
+    (let [organization-name (sql-primitive (call-sql "get_organization_name" org-id))]
+      (doseq [{:keys [email]} users]
+        (email/send-invite-email! email {:organization-name organization-name})))))
+
 (defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that
    they belong to and are an admin or a member of."
@@ -773,6 +816,12 @@
                  :membership-status org_membership_status}))
         (data-response))))
 
+(defn get-orgs-with-system-assets
+  [{:keys [user-id]}]
+  (->> user-id
+       (call-sql "get_orgs_with_system_assets")
+       data-response))
+
 (defn get-all-users
   "Returns a vector of all users in the DB."
   [_]
@@ -790,6 +839,14 @@
                 :org-membership-status org_membership_status
                 :organization-name     organization_name}))
        (data-response)))
+
+(defn get-password-set-date
+  [{:keys [user-id]}]
+  (let [row (sql-primitive (call-sql "get_password_set_date" user-id))
+        format-date (fn [sql-time]
+                      (.format (SimpleDateFormat. "yyyy-MM-dd")
+                               sql-time))]
+    (data-response (when row (format-date row)))))
 
 (defn get-psps-organizations
   "Returns the list of all organizations that have PSPS layers (currently denoted

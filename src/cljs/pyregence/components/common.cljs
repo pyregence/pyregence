@@ -3,6 +3,7 @@
   (:require
    [clojure.core.async           :refer [<! go timeout]]
    [herb.core                    :refer [<class]]
+   [pyregence.state              :as !]
    [pyregence.styles             :as $]
    [pyregence.utils.dom-utils    :as u-dom]
    [pyregence.utils.string-utils :as u-str]
@@ -101,7 +102,7 @@
   {:background-color ($/color-picker :font-color)
    :border           (str "1.5px solid " ($/color-picker :bg-color))
    :border-radius    "6px"
-   :color            ($/color-picker :bg-color)
+   :color            ($/color-picker :black)
    :left             tip-x
    :max-width        (str (if (#{:top :bottom} arrow-position) 20 30) "rem")
    :opacity          (if show? 1.0 0.0)
@@ -225,7 +226,8 @@
   ([title button-text fields on-click]
    (simple-form title button-text fields on-click nil))
   ([title button-text fields on-click footer]
-   [:form {:style     {:height "fit-content" :min-width "25rem"}
+   [:form {:style     {:height "fit-content"
+                       :width  (if @!/mobile? "20rem" "25rem")}
            :action    "#"
            :on-submit #(do (.preventDefault %) (.stopPropagation %) (on-click %))}
     [:div {:style ($/action-box)}

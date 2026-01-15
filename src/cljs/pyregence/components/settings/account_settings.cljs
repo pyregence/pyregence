@@ -2,6 +2,7 @@
   (:require
    [cljs.reader                           :as reader]
    [clojure.core.async                    :refer [<! go]]
+   [clojure.edn                           :as edn]
    [clojure.string                        :as str]
    [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.settings.buttons :as buttons]
@@ -20,6 +21,8 @@
                                  :loading  true   ;; Loading state
                                  :settings nil    ;; User settings
                                  :user     nil}))
+
+(defonce password-set-date (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
@@ -149,16 +152,32 @@
     [input-labeled {:value     (:user-name m)
                     :label     "Full Name"
                     :on-change (:on-change-update-user-name m)}]]
-   [buttons/ghost {:text     "Save Changes"
-                   :on-click (:on-click-save-user-name m)}]])
+   [buttons/ghost {:text       "Save Changes"
+                   :disabled?  (:account-details-save-disabled? m)
+                   :on-click   (:on-click-save-user-name m)}]])
+
+(defn show-password-set-date
+  []
+  (r/create-class
+   {:component-did-mount
+    #(go
+       (reset! password-set-date
+               (if-let [date
+                        (edn/read-string
+                         (:body (<! (u-async/call-clj-async! "get-password-set-date"))))]
+                 date
+                 "Never")))
+    :reagent-render
+    (fn []
+      [text-labeled {:label "Last Updated"
+                     :text  @password-set-date}])}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn main
-  [{:keys [password-set-date
-           email-address
+  [{:keys [email-address
            role-type] :as user-info}]
   [:div {:style main-styles}
    [card {:title "MY ACCOUNT DETAILS"
@@ -182,6 +201,11 @@
                           :width           "100%"
                           :gap             "10px"}}
             [:p {:style {:margin "0px"}}
-             [buttons/ghost {:text "Send Reset Link"}]]
-            [text-labeled {:label "Last Updated"
-                           :text  password-set-date}]]]}]])
+             [buttons/ghost {:text     "Send Reset Link"
+                             :on-click (fn []
+                                         (go
+                                           (if (:success (<! (u-async/call-clj-async! "send-email" email-address :reset)))
+                                             (toast-message! (str "Reset Link sent to " email-address "."))
+                                             ;;TODO consider pulling support email from config. See PYR1-1319.
+                                             (toast-message! "Something went wrong when sending the Reset Link. Please contact support@pyrecast.com or try again later."))))}]]
+            [show-password-set-date]]]}]])

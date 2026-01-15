@@ -75,7 +75,7 @@
 ;; Map Information
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- get-style
+(defn get-style
   "Returns the Mapbox style object."
   []
   (when @the-map
@@ -210,7 +210,7 @@
   [layers]
   (sort-by #(get-layer-metadata % "z-index") layers))
 
-(defn- update-style!
+(defn update-style!
   "Updates the Mapbox Style object. Takes in the current Mapbox Style object
    and optionally updates the `sources` and `layers` keys."
   [style & {:keys [sources layers new-sources new-layers]}]
@@ -445,9 +445,6 @@
   [f]
   (add-event! "zoomend" #(f (get (get-zoom-info) 0))))
 
-;; TODO: Implement
-(defn- add-layer-load-fail! [f])
-
 (defn add-map-move!
   "Calls `f` on 'move' event."
   [f]
@@ -494,13 +491,6 @@
   "Returns layer with visibility set to `visible?`."
   [layer visible?]
   (assoc-in layer ["layout" "visibility"] (if visible? "visible" "none")))
-
-(defn- is-layer-visible?
-  "Based on a layer's id, returns whether or not that layer is visible."
-  [layer-id]
-  (let [layers (get (get-style) "layers")]
-    (when-let [idx (get-layer-idx-by-id layer-id layers)]
-      (= (get-in layers [idx "layout" "visibility"]) "visible"))))
 
 (defn set-visible-by-title!
   "Sets a layer's visibility."
@@ -564,17 +554,12 @@
    :data       (c/wfs-layer-url layer-name geoserver-key)
    :generateId true})
 
-(defn- zoom-interp
-  "Interpolates a value (vmin to vmax) based on zoom value (from zmin to zmax)."
-  [vmin vmax zmin zmax]
-  ["interpolate" ["linear"] ["zoom"] zmin vmin zmax vmax])
-
-(defn- on-hover [on off]
+(defn on-hover [on off]
   ["case" ["boolean" ["feature-state" "hover"] false]
    on
    off])
 
-(defn- on-selected [selected hovered off]
+(defn on-selected [selected hovered off]
   ["case"
    ["boolean" ["feature-state" "selected"] false] selected
    ["boolean" ["feature-state" "hover"] false] hovered
@@ -723,32 +708,14 @@
                          #(set-visible % false))
        layers))
 
-(defn swap-active-layer!
-  "Swaps the active layer. Used to scan through time-series WMS layers."
-  [geo-layer geoserver-key opacity css-style & [layer-time]]
-  {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
-  (let [style  (get-style)
-        layers (hide-forecast-layers (get style "layers"))
-        [new-sources new-layers] (build-wms geo-layer
-                                            geo-layer
-                                            geoserver-key
-                                            opacity
-                                            true
-                                            :style css-style
-                                            :layer-time layer-time)]
-    (update-style! style
-                   :layers      layers
-                   :new-sources new-sources
-                   :new-layers  new-layers)))
-
 (defn reset-active-layer!
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
-  [geo-layer style-fn geoserver-key opacity css-style & [layer-time]]
+  [geo-layer style-fn geoserver-key opacity style & [layer-time]]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (go
-    (let [style                    (get-style)
-          layers                   (hide-forecast-layers (get style "layers"))
+    (let [map-style                (get-style)
+          layers                   (hide-forecast-layers (get map-style "layers"))
           [new-sources new-layers] (if style-fn
                                      (<! (build-wfs fire-active geo-layer geoserver-key opacity))
                                      (build-wms geo-layer
@@ -756,9 +723,9 @@
                                                 geoserver-key
                                                 opacity
                                                 true
-                                                :style css-style
+                                                :style style
                                                 :layer-time layer-time))]
-      (update-style! style
+      (update-style! map-style
                      :layers      layers
                      :new-sources new-sources
                      :new-layers  new-layers))))
@@ -773,6 +740,272 @@
         (update-style! (get-style)
                        :new-sources new-source
                        :new-layers  new-layer)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Animation Layer Management
+;;
+;; Uses opacity swapping instead of visibility to prevent GPU tile unload.
+;; Layers stay visible at opacity 0, tiles stay in GPU so no flashing.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private hidden 0.0)
+(def ^:private instant-transition {:delay 0 :duration 0})
+(def ^:private animation-marker "_anim_")
+
+(defonce ^:private ^{:doc "Set of created layer IDs"}
+  layers
+  (atom #{}))
+
+(defonce ^:private ^{:doc "Currently visible layer ID"}
+  visible-layer
+  (atom nil))
+
+(defonce ^:private ^{:doc "Set of layer IDs that were successfully created"}
+  created-layers
+  (atom #{}))
+
+(defonce ^:private ^{:doc "Swap generation counter - invalidates stale retry callbacks"}
+  swap-generation
+  (atom 0))
+
+(defonce ^:private ^{:doc "True once WMS forecast layers have been hidden for animation"}
+  wms-hidden?
+  (atom false))
+
+(defonce ^:private ^{:doc "Interval ID for buffer polling"}
+  buffer-poll-id
+  (atom nil))
+
+(defn- layer-id [layer-name layer-time]
+  (str layer-name animation-marker (or layer-time "none")))
+
+(defn- get-frame-layer-id [idx]
+  (let [param-layers @!/param-layers
+        single-layer? (= 1 (count param-layers))]
+    (if single-layer?
+      (let [{:keys [layer times]} (first param-layers)
+            layer-time (get times idx)]
+        (when layer-time
+          (layer-id layer layer-time)))
+      (let [{:keys [layer]} (get param-layers idx)]
+        (when layer
+          (layer-id layer nil))))))
+
+(defn start-buffer-polling! []
+  (when @buffer-poll-id
+    (js/clearInterval @buffer-poll-id))
+  (reset! buffer-poll-id
+          (js/setInterval
+           (fn []
+             (when (and @the-map @!/animate?)
+               (doseq [idx (range @!/total-frames)]
+                 (let [lid (get-frame-layer-id idx)]
+                   (when (and lid
+                              (js-invoke @the-map "getLayer" lid)
+                              (= "visible" (js-invoke @the-map "getLayoutProperty" lid "visibility"))
+                              (js-invoke @the-map "isSourceLoaded" lid)
+                              (not (!/frame-ready? idx)))
+                     (!/mark-frame-ready! idx))))))
+           100)))
+
+(defn stop-buffer-polling! []
+  (when @buffer-poll-id
+    (js/clearInterval @buffer-poll-id)
+    (reset! buffer-poll-id nil)))
+
+(def ^:private visibility-window-size
+  "Frames to keep visible ahead of playhead for preloading."
+  12)
+
+(defn update-visibility-window! [current-idx]
+  (when @the-map
+    (let [total @!/total-frames
+          visible-indices (when (pos? total)
+                            (set (map #(mod % total)
+                                      (range current-idx (+ current-idx visibility-window-size)))))]
+      (when visible-indices
+        (doseq [idx (range total)]
+          (let [lid (get-frame-layer-id idx)]
+            (when (and lid (js-invoke @the-map "getLayer" lid))
+              (let [should-be-visible? (contains? visible-indices idx)
+                    visibility (if should-be-visible? "visible" "none")]
+                (js-invoke @the-map "setLayoutProperty" lid "visibility" visibility)))))))))
+
+(defn- ensure-layer! [layer-name geoserver-key style layer-time]
+  (let [id (layer-id layer-name layer-time)]
+    (if (@layers id)
+      (do
+        (swap! created-layers conj id)
+        true)
+      (let [tiles-url (c/wms-layer-url layer-name geoserver-key style layer-time)]
+        (try
+          (js-invoke @the-map "addSource" id
+                     (clj->js {:tiles    [tiles-url]
+                               :tileSize 256
+                               :type     "raster"}))
+          (js-invoke @the-map "addLayer"
+                     (clj->js {:id       id
+                               :layout   {:visibility "none"}
+                               :paint    {:raster-fade-duration        0
+                                          :raster-opacity              hidden
+                                          :raster-opacity-transition   instant-transition}
+                               :source   id
+                               :type     "raster"}))
+          (swap! layers conj id)
+          (swap! created-layers conj id)
+          true
+          (catch js/Error e
+            (js/console.warn "Failed to create animation layer:" id (.-message e))
+            (try
+              (when (js-invoke @the-map "getLayer" id)
+                (js-invoke @the-map "removeLayer" id))
+              (when (js-invoke @the-map "getSource" id)
+                (js-invoke @the-map "removeSource" id))
+              (catch js/Error cleanup-error
+                (js/console.warn "Failed to cleanup:" id (.-message cleanup-error))))
+            false))))))
+
+(defn- hide-forecast-layers!
+  "Hides regular forecast layers to prevent overlap with animation."
+  []
+  (let [map-style (get-style)
+        map-layers (get map-style "layers")]
+    (doseq [layer map-layers
+            :let [layer-id (get layer "id")
+                  layer-type (get-layer-metadata layer "type")]
+            :when (and layer-type
+                       (get-layer-type-metadata-property layer-type :forecast-layer?)
+                       (not (str/includes? layer-id animation-marker)))]
+      (when (js-invoke @the-map "getLayer" layer-id)
+        (js-invoke @the-map "setLayoutProperty" layer-id "visibility" "none")))))
+
+(defn restore-forecast-layers! []
+  (let [map-style (get-style)
+        map-layers (get map-style "layers")]
+    (doseq [layer map-layers
+            :let [layer-id (get layer "id")
+                  is-animation-layer? (str/includes? layer-id animation-marker)]]
+      (when (and is-animation-layer?
+                 (js-invoke @the-map "getLayer" layer-id))
+        (js-invoke @the-map "setLayoutProperty" layer-id "visibility" "none")))))
+
+(defn swap-animation-layer! [layer-name geoserver-key opacity style layer-time frame-idx & [on-complete]]
+  (let [new-layer-id      (layer-id layer-name layer-time)
+        current-gen       (swap! swap-generation inc)
+        stale?            #(not= current-gen @swap-generation)
+        source-ready?     #(and (js-invoke @the-map "getLayer" new-layer-id)
+                                (js-invoke @the-map "isSourceLoaded" new-layer-id))
+        render-wait-count (atom 0)
+
+        hide-wms!         (fn hide-wms! [n]
+                            (when-not (stale?)
+                              (if (>= n 3)
+                                (when-not @wms-hidden?
+                                  (hide-forecast-layers!)
+                                  (reset! wms-hidden? true))
+                                (js/setTimeout #(hide-wms! (inc n)) 50))))
+
+        do-swap!          (fn []
+                            (when-not (stale?)
+                              (when (js-invoke @the-map "getLayer" new-layer-id)
+                                (js-invoke @the-map "setPaintProperty" new-layer-id "raster-opacity" opacity)
+                                (doseq [lid @created-layers
+                                        :when (and (not= lid new-layer-id)
+                                                   (js-invoke @the-map "getLayer" lid))]
+                                  (js-invoke @the-map "setPaintProperty" lid "raster-opacity" hidden))
+                                (reset! visible-layer new-layer-id)
+                                (update-visibility-window! frame-idx)
+                                (when-not @wms-hidden? (hide-wms! 0))
+                                (reset! !/swapping? false)
+                                (!/mark-frame-ready! frame-idx)
+                                (when on-complete (on-complete)))))
+
+        wait-for-render!  (fn wait-for-render! []
+                            (when-not (stale?)
+                              (let [loaded?   (source-ready?)
+                                    threshold (if @wms-hidden? 3 5)]
+                                (cond
+                                  (and loaded? (>= @render-wait-count threshold))
+                                  (do-swap!)
+
+                                  loaded?
+                                  (do (swap! render-wait-count inc)
+                                      (js/setTimeout wait-for-render! 50))
+
+                                  :else
+                                  (do (reset! render-wait-count 0)
+                                      (js/setTimeout wait-for-render! 50))))))
+
+        wait-for-layer!   (fn wait-for-layer! [attempts delay]
+                            (when-not (stale?)
+                              (cond
+                                (source-ready?) (wait-for-render!)
+                                (pos? attempts) (js/setTimeout #(wait-for-layer! (dec attempts) (int (* delay 1.5))) delay)
+                                :else           (wait-for-render!))))]
+
+    (when-not @!/animate?
+      (reset! !/swapping? true))
+    (when-not (contains? @created-layers new-layer-id)
+      (ensure-layer! layer-name geoserver-key style layer-time))
+    (let [prev-layer @visible-layer]
+      (when (and prev-layer (js-invoke @the-map "getLayer" prev-layer))
+        (js-invoke @the-map "setLayoutProperty" prev-layer "visibility" "visible")))
+    (when (js-invoke @the-map "getLayer" new-layer-id)
+      (js-invoke @the-map "setLayoutProperty" new-layer-id "visibility" "visible"))
+
+    (if @!/animate?
+      (js/setTimeout wait-for-render! 100)
+      (wait-for-layer! 15 50))))
+
+(defn cleanup-animation-layers! []
+  (try
+    (doseq [layer-id @layers]
+      (try
+        (when (js-invoke @the-map "getLayer" layer-id)
+          (js-invoke @the-map "removeLayer" layer-id))
+        (when (js-invoke @the-map "getSource" layer-id)
+          (js-invoke @the-map "removeSource" layer-id))
+        (catch js/Error e
+          (js/console.warn "Failed to remove animation layer:" layer-id (.-message e)))))
+    (restore-forecast-layers!)
+    (finally
+      (reset! layers #{})
+      (reset! visible-layer nil)
+      (reset! created-layers #{})
+      (swap! swap-generation inc)
+      (reset! wms-hidden? false)
+      (!/reset-buffer-state!))))
+
+(defn create-animation-layers!
+  "Creates all animation layers. Returns {:total :succeeded :failed}."
+  [geoserver-key style]
+  (let [param-layers @!/param-layers
+        single-layer? (= 1 (count param-layers))
+        frame-data (if single-layer?
+                     (let [{:keys [layer times]} (first param-layers)]
+                       (when (seq times)
+                         (map (fn [t] {:layer-name layer :layer-time t}) times)))
+                     (when (seq param-layers)
+                       (map (fn [p] {:layer-name (:layer p) :layer-time nil}) param-layers)))]
+    (if (seq frame-data)
+      (let [results (mapv (fn [{:keys [layer-name layer-time]}]
+                            (ensure-layer! layer-name geoserver-key style layer-time))
+                          frame-data)
+            succeeded (count (filter true? results))
+            failed (count (filter false? results))
+            total (count results)]
+        (when (pos? failed)
+          (js/console.warn "Failed to create" failed "of" total "animation layers"))
+        (reset! !/total-frames total)
+        {:total total :succeeded succeeded :failed failed})
+      {:total 0 :succeeded 0 :failed 0})))
+
+(defn reset-animation! []
+  (cleanup-animation-layers!))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Camera Layer
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn create-camera-layer!
   "Adds wildfire camera layer to the map."
@@ -832,7 +1065,7 @@
                                 :fill-opacity       (on-hover 1 0.4)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
-(defn- mvt-source [layer-name geoserver-key]
+(defn mvt-source [layer-name geoserver-key]
   {:type  "vector"
    :tiles [(c/mvt-layer-url layer-name geoserver-key)]})
 

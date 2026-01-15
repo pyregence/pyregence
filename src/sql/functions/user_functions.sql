@@ -150,7 +150,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    user_role             user_role,
    org_membership_status org_membership_status,
    organization_rid      integer
- ) AS $$
+   ) AS $$
 
     SELECT user_uid, name, email, match_drop_access, user_role, org_membership_status, organization_rid
     FROM users
@@ -181,7 +181,7 @@ CREATE OR REPLACE FUNCTION set_user_password(
     _password text,
     _token    text
 )
-RETURNS TABLE (
+ RETURNS TABLE (
     user_id               integer,
     user_email            text,
     user_name             text,
@@ -189,28 +189,25 @@ RETURNS TABLE (
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer
-) AS $$
+ ) AS $$
 
     UPDATE users
     SET password = crypt(_password, gen_salt('bf')),
         email_verified = TRUE,
         verification_token = NULL,
-        token_expiration = NULL
+        token_expiration = NULL,
+        password_set_date = NOW()
     WHERE email = lower_trim(_email)
         AND verification_token = _token
         AND verification_token IS NOT NULL
-        AND (token_expiration IS NULL OR token_expiration > NOW());
-
-    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
-    FROM users
-    WHERE email = lower_trim(_email)
-      AND email_verified = TRUE;
+        AND (token_expiration IS NULL OR token_expiration > NOW())
+    RETURNING user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
 
 $$ LANGUAGE SQL;
 
 -- Sets email_verified to true, if the verification token is valid
 CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
-RETURNS TABLE (
+ RETURNS TABLE (
     user_id               integer,
     user_email            text,
     user_name             text,
@@ -218,7 +215,7 @@ RETURNS TABLE (
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer
-) AS $$
+ ) AS $$
 
     UPDATE users
     SET email_verified = TRUE,
@@ -227,12 +224,8 @@ RETURNS TABLE (
     WHERE email = lower_trim(_email)
         AND verification_token = _token
         AND verification_token IS NOT NULL
-        AND (token_expiration IS NULL OR token_expiration > NOW());
-
-    SELECT user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
-    FROM users
-    WHERE email = lower_trim(_email)
-      AND email_verified = TRUE;
+        AND (token_expiration IS NULL OR token_expiration > NOW())
+    RETURNING user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
 
 $$ LANGUAGE SQL;
 
@@ -387,3 +380,11 @@ RETURNS TABLE (
     LEFT JOIN organizations o
         ON u.organization_rid = o.organization_uid;
 $$ LANGUAGE SQL;
+
+  -- Returns the date the password was last reset.
+CREATE OR REPLACE FUNCTION get_password_set_date(_user_id integer)
+RETURNS timestamptz AS $$
+    SELECT password_set_date
+    FROM users
+    WHERE user_uid = _user_id;
+$$ LANGUAGE SQL

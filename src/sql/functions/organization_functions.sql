@@ -4,6 +4,15 @@
 --------------------------------------------------------------------------------
 ---  Organizations
 --------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION get_organization_name(_org_id integer)
+RETURNS text
+AS $$
+  SELECT org_name
+  FROM organizations o
+  WHERE o.organization_uid = _org_id;
+
+$$ LANGUAGE SQL;
+
 CREATE OR REPLACE FUNCTION get_all_organizations()
  RETURNS TABLE (
   org_id                integer,
@@ -106,6 +115,34 @@ CREATE OR REPLACE FUNCTION update_org_membership_status(
     SET org_membership_status = _status_text::org_membership_status
     WHERE user_uid = _user_id;
 $$ LANGUAGE SQL;
+
+-- Gets all orgs that a user has access to that have system-assets enabled.
+CREATE OR REPLACE FUNCTION get_orgs_with_system_assets(_user_uid int)
+RETURNS TABLE (org_unique_id text, org_name text)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM users
+    WHERE user_role IN ('super_admin', 'account_manager')
+      AND user_uid = _user_uid
+  ) THEN
+    RETURN QUERY
+    SELECT o.org_unique_id, o.org_name
+    FROM organizations o
+    WHERE system_assets = TRUE;
+  ELSE
+    RETURN QUERY
+    SELECT o.org_unique_id, o.org_name
+    FROM organizations o
+    JOIN users u
+    ON o.organization_uid = u.organization_rid
+      WHERE u.user_uid = _user_uid
+      AND system_assets = TRUE;
+  END IF;
+END;
+$$;
 
 --------------------------------------------------------------------------------
 ---  Organization Memberss

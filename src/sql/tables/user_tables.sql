@@ -36,7 +36,8 @@ CREATE TABLE users (
     last_login_date       TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     user_role             user_role NOT NULL DEFAULT 'member',
     org_membership_status org_membership_status NOT NULL DEFAULT 'none',
-    organization_rid      integer references organizations(organization_uid)
+    organization_rid      integer references organizations(organization_uid),
+    password_set_date     TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
 
 ALTER TABLE users
