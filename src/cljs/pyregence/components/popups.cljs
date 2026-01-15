@@ -29,26 +29,19 @@
 
 (defn- $popup-container [expanded?]
   (merge
-    {:display "flex"
+    {:display        "flex"
      :flex-direction "column"
-     :width (if expanded? "420px" "220px")}
+     :width          (if expanded? "500px" "200px")}
     (when expanded?
-      {:max-height "60vh"
-       :overflow "auto"})))
-
-(defn- $expandable-popup-header [expanded?]
-  (merge
-    ($popup-header)
-    (when expanded?
-      {:white-space "normal"
-       :overflow "visible"
-       :text-overflow "unset"
-       :width "auto"})))
+      {:max-height  "75vh"
+       :white-space "normal"
+       :width       "auto"
+       :overflow    "auto"})))
 
 (defn- $info-section []
-  {:margin-top "10px"
+  {:margin-top  "10px"
    :padding-top "10px"
-   :border-top "1px solid rgba(0,0,0,0.12)"})
+   :border-top  "1px solid rgba(0,0,0,0.12)"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fire Component
@@ -133,7 +126,7 @@
   (r/with-let [info (r/atom nil)]
     (let [expanded? (some? @info)]
       [:div {:class (<class $popup-container expanded?)}
-       [:h6 {:style ($expandable-popup-header expanded?)} prod-type]
+       [:h6 {:style ($popup-header)} prod-type]
        (if expanded?
          [:div {:class (<class $info-section)}
           [:div (properties->rows @info)]]
