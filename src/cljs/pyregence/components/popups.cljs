@@ -2,9 +2,11 @@
  (:require [clojure.core.async           :refer [<! go]]
            [clojure.string               :as cstr]
            [herb.core                    :refer [<class]]
+           [pyregence.state              :as !]
            [pyregence.styles             :as $]
            [pyregence.utils.async-utils  :as u-async]
            [pyregence.utils.misc-utils   :as u-misc]
+           [pyregence.utils.time-utils   :as u-time]
            [reagent.core                 :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -79,14 +81,17 @@
    "certainty"
    "urgency"
    "event"
-   "instruction"])
+   "instruction"
+   "error"])
 
 (defn- format-values
   "Formats red-flag description"
-  [desc]
-  (-> desc
-      (cstr/replace "..." ": ")
-      (cstr/trim)))
+  [k value]
+  (if (contains? #{"effective" "onset" "expires" "ends"} k)
+   (u-time/date-string->iso-string value @!/show-utc?)
+   (-> value
+       (cstr/replace "..." ": ")
+       (cstr/trim))))
 
 (defn- properties->rows
   "Create popup rows from json object"
@@ -95,8 +100,8 @@
     (for [k     red-flag-keys
           :let  [value (get json k)]
           :when (some? value)]
-      ^{:key k}
-      [fire-property (u-misc/camel->text k) (format-values value)])))
+     ^{:key k}
+      [fire-property (u-misc/camel->text k) (format-values k value)])))
 
 (defn- get-red-flag-data
   "GET the red-flag URL and returns the parsed JSON on a channel"
@@ -118,11 +123,11 @@
 (defn red-flag-popup
   "Expandable popup for red-flag warning layer"
   [url prod-type onset ends]
-  (r/with-let [info (r/atom nil)]
-    (let [expanded? (some? @info)]
+  (r/with-let [info      (r/atom nil)
+               expanded? (r/atom nil)]
       [:div {:class (<class $popup-container expanded?)}
        [:h6 {:style ($popup-header)} prod-type]
-       (if expanded?
+       (if @expanded?
         [:div
          [:hr]
          [:div (properties->rows @info)]]
@@ -132,13 +137,17 @@
        
        (when (seq url)
           [red-flag-link
-           {:expanded? expanded?
+           {:expanded? @expanded?
             :on-click (fn [_]
-                        (if expanded?
-                          (reset! info nil)
+                        (if @expanded?
+                          (do
+                            (reset! info nil)
+                            (reset! expanded? nil))
                           (go
                             (let [json (<! (get-red-flag-data url))]
-                              (reset! info (u-misc/try-js-aget json "properties"))))))}])])))
+                              (reset! expanded? true)
+                              (reset! info (or (u-misc/try-js-aget json "properties")
+                                               #js{:error "Error when fetching extra information"}))))))}])]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
