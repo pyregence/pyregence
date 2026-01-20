@@ -31,17 +31,12 @@
   (merge
     {:display        "flex"
      :flex-direction "column"
-     :width          (if expanded? "500px" "200px")}
+     :width          "200px"}
     (when expanded?
       {:max-height  "75vh"
        :white-space "normal"
        :width       "auto"
        :overflow    "auto"})))
-
-(defn- $info-section []
-  {:margin-top  "10px"
-   :padding-top "10px"
-   :border-top  "1px solid rgba(0,0,0,0.12)"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fire Component
@@ -128,13 +123,14 @@
       [:div {:class (<class $popup-container expanded?)}
        [:h6 {:style ($popup-header)} prod-type]
        (if expanded?
-         [:div {:class (<class $info-section)}
-          [:div (properties->rows @info)]]
-         [:div
-          [fire-property "Onset" (if (= onset "null") "N/A" onset)]
-          [fire-property "Ends"  (if (= ends  "null") "N/A" ends)]])
-
-        (when (seq url)
+        [:div
+         [:hr]
+         [:div (properties->rows @info)]]
+        [:div
+         [fire-property "Onset" (if (= onset "null") "N/A" onset)]
+         [fire-property "Ends"  (if (= ends  "null") "N/A" ends)]])
+       
+       (when (seq url)
           [red-flag-link
            {:expanded? expanded?
             :on-click (fn [_]
