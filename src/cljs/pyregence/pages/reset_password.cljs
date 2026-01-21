@@ -100,5 +100,5 @@
                                           :placeholder "New Password"
                                           :on-change   #(reset! re-password (-> % .-target .-value))
                                           :value       @re-password}]
-                    [buttons/primary {:text     "RESET PASSWORD"
+                    [buttons/primary {:text     "Reset Password"
                                       :on-click reset-password!}]]}]]]))
