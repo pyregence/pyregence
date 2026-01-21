@@ -330,12 +330,15 @@
    be either HTML string a hiccup style vector."
   [popup-type [lng lat] body {:keys [classname width] :or {width "200px" classname ""}}]
   (clear-popup!)
-  (let [popup (Popup. #js {:className classname :maxWidth width :type popup-type})]
+  (let [el    (js/document.createElement "div")
+        popup (Popup. #js {:className classname
+                           :maxWidth  width
+                           :type      popup-type})]
     (doto popup
       (js-invoke "setLngLat" #js [lng lat])
-      (js-invoke "setHTML" "<div id='mb-popup'></div>")
+      (js-invoke "setDOMContent" el)
       (js-invoke "addTo" @the-map))
-    (render body (dom/getElement "mb-popup"))
+    (render body el)
     (reset! the-popup popup)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

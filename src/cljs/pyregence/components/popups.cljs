@@ -1,6 +1,13 @@
 (ns pyregence.components.popups
-  (:require [herb.core        :refer [<class]]
-            [pyregence.styles :as $]))
+ (:require [clojure.core.async           :refer [<! go]]
+           [clojure.string               :as cstr]
+           [herb.core                    :refer [<class]]
+           [pyregence.state              :as !]
+           [pyregence.styles             :as $]
+           [pyregence.utils.async-utils  :as u-async]
+           [pyregence.utils.misc-utils   :as u-misc]
+           [pyregence.utils.time-utils   :as u-time]
+           [reagent.core                 :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -21,6 +28,17 @@
    :text-overflow "ellipsis"
    :white-space   "nowrap"
    :width         "180px"})
+
+(defn- $popup-container [expanded?]
+  (merge
+    {:display        "flex"
+     :flex-direction "column"
+     :width          "200px"}
+    (when expanded?
+      {:max-height  "75vh"
+       :white-space "normal"
+       :width       "auto"
+       :overflow    "auto"})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fire Component
@@ -50,22 +68,86 @@
 ;; Red-Flag Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- red-flag-link [url]
+(def ^:private red-flag-keys
+  ["description"
+   "effective"
+   "onset"
+   "expires"
+   "ends"
+   "status"
+   "messageType"
+   "category"
+   "severity"
+   "certainty"
+   "urgency"
+   "event"
+   "instruction"
+   "error"])
+
+(defn- format-values
+  "Formats red-flag description"
+  [k value]
+  (if (contains? #{"effective" "onset" "expires" "ends"} k)
+   (u-time/date-string->iso-string value @!/show-utc?)
+   (-> value
+       (cstr/replace "..." ": ")
+       (cstr/trim))))
+
+(defn- properties->rows
+  "Create popup rows from json object"
+  [props]
+  (let [json (js->clj props)]
+    (for [k     red-flag-keys
+          :let  [value (get json k)]
+          :when (some? value)]
+     ^{:key k}
+      [fire-property (u-misc/camel->text k) (format-values k value)])))
+
+(defn- get-red-flag-data
+  "GET the red-flag URL and returns the parsed JSON on a channel"
+  [url]
+  (u-async/fetch-and-process
+    url
+    {:method "get"}
+    (fn [response]
+      (.json response))))
+
+(defn- red-flag-link
+  "Button component for fetching red-flag information"
+  [{:keys [expanded? on-click]}]
   [:div {:style {:text-align "right" :width "100%"}}
-   [:button {:class    (<class $popup-btn)
-             :on-click #(js/window.open url)}
-    "Click for More Info"]])
+   [:button {:class (<class $popup-btn)
+             :on-click on-click}
+    (if expanded? "Show Less Info" "Show More Info")]])
 
 (defn red-flag-popup
-  "Popup body for red-flag warning layer."
+  "Expandable popup for red-flag warning layer"
   [url prod-type onset ends]
-  [:div {:style {:display "flex" :flex-direction "column"}}
-   [:h6 {:style ($popup-header)}
-    prod-type]
-   [:div
-    [fire-property "Onset" (if (= onset "null") "N/A" onset)]
-    [fire-property "Ends" (if (= ends "null") "N/A" ends)]
-    (when (not= url "null") [red-flag-link url])]])
+  (r/with-let [info      (r/atom nil)
+               expanded? (r/atom nil)]
+      [:div {:class (<class $popup-container expanded?)}
+       [:h6 {:style ($popup-header)} prod-type]
+       (if @expanded?
+        [:div
+         [:hr]
+         [:div (properties->rows @info)]]
+        [:div
+         [fire-property "Onset" (if (= onset "null") "N/A" onset)]
+         [fire-property "Ends"  (if (= ends  "null") "N/A" ends)]])
+       
+       (when (seq url)
+          [red-flag-link
+           {:expanded? @expanded?
+            :on-click (fn [_]
+                        (if @expanded?
+                          (do
+                            (reset! info nil)
+                            (reset! expanded? nil))
+                          (go
+                            (let [json (<! (get-red-flag-data url))]
+                              (reset! expanded? true)
+                              (reset! info (or (u-misc/try-js-aget json "properties")
+                                               #js{:error "Error when fetching extra information"}))))))}])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fire History Component
