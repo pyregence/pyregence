@@ -89,56 +89,39 @@
       (fn [_]
         ;; TODO consider making a page component to share styles with account settings.
         ;; At the very least the styles on the page div should probably be shared to avoid drift.
-        [:div
-         {:style {:height         "100vh"
-                  :margin-bottom  "40px"
-                  :display        "flex"
-                  :flex-direction "column"
-                  :font-family    "Roboto"
-                  :padding-bottom "60px"
-                  :background     ($/color-picker :lighter-gray)
-                  :place-items    "center"}}
-         [nav-bar {:mobile?            @!/mobile?
-                   :on-forecast-select (fn [forecast]
-                                         (u-browser/jump-to-url!
-                                          (str "/?forecast=" (name forecast))))}]
-         [:div {:style {:display         "flex"
-                        :justify-content "center"
-                        :align-content   "center"
-                        :height          "fit-content"
-                        :margin          "100px"
-                        :width           "fit-content"}}
-          (let [color         ($/color-picker :primary-main-orange)
-                email-cmpt    (fn [] [utils/input-labeled {:label        "Email"
+        [utils/card-page
+         (fn []
+           (let [color         ($/color-picker :primary-main-orange)
+                 email-cmpt    (fn [] [utils/input-labeled {:label        "Email"
                                                            :placeholder "Enter Email Address"
                                                            :on-change   #(reset! email (-> % .-target .-value))
                                                            :value       @email}])
-                register-cmpt (fn [] [:p "Don't have an account? "
+                 register-cmpt (fn [] [:p "Don't have an account? "
                                       [:a {:href  "/register"
                                            :style {:color color}}
                                        [:u "Register Here."]]])]
-            (if-not @forgot?
-              [utils/card {:title "LOGIN"
-                           :children
-                           [:<>
-                            [email-cmpt]
-                            [utils/input-labeled {:label       "Password"
-                                                  :type        "password"
-                                                  :placeholder "Enter Password"
-                                                  :on-change   #(reset! password (-> % .-target .-value))
-                                                  :value       @password}]
-                            [:a {:href     "#"
-                                 :on-click #(reset! forgot? true)
-                                 :style    {:color     color
-                                            :underline true}}
-                             [:u "Forgot Password?"]]
-                            [buttons/primary {:text     "Login"
-                                              :on-click log-in!}]
-                            [register-cmpt]]}]
-              [utils/card {:title "Request New Password"
-                           :children
-                           [:<>
-                            [email-cmpt]
-                            [buttons/primary {:text     "Submit"
-                                              :on-click request-password!}]
-                            [register-cmpt]]}]))]])})))
+             (if-not @forgot?
+               [utils/card {:title "LOGIN"
+                            :children
+                            [:<>
+                             [email-cmpt]
+                             [utils/input-labeled {:label       "Password"
+                                                   :type        "password"
+                                                   :placeholder "Enter Password"
+                                                   :on-change   #(reset! password (-> % .-target .-value))
+                                                   :value       @password}]
+                             [:a {:href     "#"
+                                  :on-click #(reset! forgot? true)
+                                  :style    {:color     color
+                                             :underline true}}
+                              [:u "Forgot Password?"]]
+                             [buttons/primary {:text     "Login"
+                                               :on-click log-in!}]
+                             [register-cmpt]]}]
+               [utils/card {:title "Request New Password"
+                            :children
+                            [:<>
+                             [email-cmpt]
+                             [buttons/primary {:text     "Submit"
+                                               :on-click request-password!}]
+                             [register-cmpt]]}])))])})))

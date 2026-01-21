@@ -71,42 +71,40 @@
   "The root component for the /verify-2fa page.
    Displays the 2FA verification form."
   [params]
-  (reset! email (or (:email params) ""))
-  (reset! method (or (:method params) "email"))
-  ;; Redirect if no email
-  (when (empty? @email)
-    (u-browser/jump-to-url! "/login"))
-  (fn [_]
-    [:div
-     {:style {:height         "100vh"
-              :margin-bottom  "40px"
-              :display        "flex"
-              :flex-direction "column"
-              :font-family    "Roboto"
-              :padding-bottom "60px"
-              :background     ($/color-picker :lighter-gray)
-              :place-items    "center"}}
-     [nav-bar {:mobile?            @!/mobile?
-               :on-forecast-select (fn [forecast]
-                                     (u-browser/jump-to-url!
-                                      (str "/?forecast=" (name forecast))))}]
-     [:div {:style {:display         "flex"
-                    :justify-content "center"
-                    :align-content   "center"
-                    :height          "fit-content"
-                    :margin          "100px"
-                    :width           "fit-content"}}
-      [utils/card
-       {:title "Two Factor Authentication"
-        :children
-        [:<>
-         [utils/input-labeled {:label     "Verification Code"
-                               :value     @verification-code
-                               :on-change #(reset! verification-code (-> % .-target .-value))}]
-         [buttons/primary {:text     "Verify"
-                           :on-click verify-2fa!}]
-         [prompt {:auth-method @method :user-email @email}
-          #(go
-             (if (:success (<! (u-async/call-clj-async! "send-email" @email :2fa)))
-               (toast-message! "A new verification code has been sent to your email.")
-               (toast-message! "Failed to send verification code. Please try again.")))]]}]]]))
+  (let [update-fn (atom nil)]
+    (r/create-class
+     {:component-did-mount
+      (fn [_]
+        (reset! update-fn (fn [& _]
+                            (-> js/window (.scrollTo 0 0))
+                            (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))))
+        (-> js/window (.addEventListener "touchend" update-fn))
+        (-> js/window (.addEventListener "resize"   update-fn))
+        (@update-fn)
+        (reset! email (or (:email params) ""))
+        (reset! method (or (:method params) "email"))
+        (when (empty? @email)
+          (u-browser/jump-to-url! "/login")))
+
+      :component-will-unmount
+      (fn [_]
+        (.removeEventListener js/window "touchend" @update-fn)
+        (.removeEventListener js/window "resize" @update-fn))
+      :reagent-render
+      (fn [_]
+        [utils/card-page
+         (fn []
+           [utils/card
+            {:title "Two Factor Authentication"
+             :children
+             [:<>
+              [utils/input-labeled {:label     "Verification Code"
+                                    :value     @verification-code
+                                    :on-change #(reset! verification-code (-> % .-target .-value))}]
+              [buttons/primary {:text     "Verify"
+                                :on-click verify-2fa!}]
+              [prompt {:auth-method @method :user-email @email}
+               #(go
+                  (if (:success (<! (u-async/call-clj-async! "send-email" @email :2fa)))
+                    (toast-message! "A new verification code has been sent to your email.")
+                    (toast-message! "Failed to send verification code. Please try again.")))]]}])])})))

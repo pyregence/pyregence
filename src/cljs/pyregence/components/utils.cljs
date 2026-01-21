@@ -2,8 +2,11 @@
   (:require
    [clojure.string                 :as str]
    [herb.core                      :refer [<class]]
+   [pyregence.components.nav-bar   :refer [nav-bar]]
    [pyregence.components.svg-icons :as svg]
-   [pyregence.styles               :as $]))
+   [pyregence.state                :as !]
+   [pyregence.styles               :as $]
+   [pyregence.utils.browser-utils  :as u-browser]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -105,20 +108,22 @@
 ;; TODO taking children cmpts here is strange,
 ;; i think to share this `card` it should just share the styles instead.
 (defn card
-  [{:keys [title children]}]
+  [{:keys [title children height]}]
   [:settings-body-card
-   {:style {:display        "flex"
-            :max-width      "1000px"
-            :min-width      "300px"
-            :width          "100%"
-            :padding        "32px"
-            :flex-direction "column"
-            :align-items    "flex-start"
-            :gap            "16px"
-            :align-self     "stretch"
-            :border-radius  "4px"
-            :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
-            :background     ($/color-picker :white)}}
+   {:style
+    {:display        "flex"
+     :max-width      "1000px"
+     :min-width      "300px"
+     :width          "100%"
+     :height         "100%"
+     :padding        "32px"
+     :flex-direction "column"
+     :align-items    "flex-start"
+     :gap            "16px"
+     :align-self     "stretch"
+     :border-radius  "4px"
+     :border         (str "1px solid " ($/color-picker :neutral-soft-gray))
+     :background     ($/color-picker :white)}}
    [:p {:style {:color          ($/color-picker :neutral-black)
                 :font-size      "14px"
                 :font-style     "normal"
@@ -149,6 +154,32 @@
                           :width        "100%"
                           :outline      "none"}
             :on-change on-change}]])
+
+(defn card-page
+  [card]
+  [:div
+   {:style {:height         "100vh"
+            :display        "flex"
+            :flex-direction "column"
+            :font-family    "Roboto"
+            :background     ($/color-picker :lighter-gray)
+            :place-items    "center"}}
+   [nav-bar {:mobile?            @!/mobile?
+             :on-forecast-select (fn [forecast]
+                                   (u-browser/jump-to-url!
+                                    (str "/?forecast=" (name forecast))))}]
+   [:div {:style
+          (merge
+           {:display         "flex"
+            :justify-content "center"
+            :align-content   "center"}
+           (if @!/mobile?
+             {:height "100%"
+              :width  "100%"}
+             {:margin "100px"
+              :width  "fit-content"
+              :height "fit-content"}))}
+    [card]]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; display functions
