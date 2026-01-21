@@ -149,7 +149,6 @@
                               (reset! info (or (u-misc/try-js-aget json "properties")
                                                #js{:error "Error when fetching extra information"}))))))}])]))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fire History Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
