@@ -61,44 +61,42 @@
   "The root component for the /reset-password page.
    Displays the reset password form."
   [params]
-  (reset! email              (:email params ""))
-  (reset! verification-token (:verification-token params ""))
-  (fn [_]
-    [:div
-     {:style {:height         "100vh"
-              :margin-bottom  "40px"
-              :display        "flex"
-              :flex-direction "column"
-              :font-family    "Roboto"
-              :padding-bottom "60px"
-              :background     ($/color-picker :lighter-gray)
-              :place-items    "center"}}
-     [nav-bar/nav-bar {:mobile?            @!/mobile?
-                       :on-forecast-select (fn [forecast]
-                                             (u-browser/jump-to-url!
-                                              (str "/?forecast=" (name forecast))))}]
-     [:div {:style {:display         "flex"
-                    :justify-content "center"
-                    :align-content   "center"
-                    :height          "fit-content"
-                    :margin          "100px"
-                    :width           "fit-content"}}
-      [utils/card {:title "Request New Password"
-                   :children
-                   [:<>
-                    [utils/input-labeled {:label       "Email"
-                                          :placeholder "Enter Email Address"
-                                          :on-change   #(reset! email (-> % .-target .-value))
-                                          :value       @email}]
-                    [utils/input-labeled {:label       "New Password"
-                                          :type        "password"
-                                          :placeholder "New Password"
-                                          :on-change   #(reset! password (-> % .-target .-value))
-                                          :value       @password}]
-                    [utils/input-labeled {:label       "Re-enter New Password"
-                                          :type        "password"
-                                          :placeholder "New Password"
-                                          :on-change   #(reset! re-password (-> % .-target .-value))
-                                          :value       @re-password}]
-                    [buttons/primary {:text     "Reset Password"
-                                      :on-click reset-password!}]]}]]]))
+  (let [update-fn (atom nil)]
+    (r/create-class
+     {:component-did-mount
+      (fn [_]
+        (reset! update-fn (fn [& _]
+                            (-> js/window (.scrollTo 0 0))
+                            (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))))
+        (-> js/window (.addEventListener "touchend" update-fn))
+        (-> js/window (.addEventListener "resize"   update-fn))
+        (@update-fn)
+        (reset! email              (:email params ""))
+        (reset! verification-token (:verification-token params "")))
+      :component-will-unmount
+      (fn [_]
+        (.removeEventListener js/window "touchend" @update-fn)
+        (.removeEventListener js/window "resize" @update-fn))
+      :reagent-render
+      (fn [_]
+        [utils/card-page
+         (fn []
+           [utils/card {:title "Request New Password"
+                        :children
+                        [:<>
+                         [utils/input-labeled {:label       "Email"
+                                               :placeholder "Enter Email Address"
+                                               :on-change   #(reset! email (-> % .-target .-value))
+                                               :value       @email}]
+                         [utils/input-labeled {:label       "New Password"
+                                               :type        "password"
+                                               :placeholder "New Password"
+                                               :on-change   #(reset! password (-> % .-target .-value))
+                                               :value       @password}]
+                         [utils/input-labeled {:label       "Re-enter New Password"
+                                               :type        "password"
+                                               :placeholder "New Password"
+                                               :on-change   #(reset! re-password (-> % .-target .-value))
+                                               :value       @re-password}]
+                         [buttons/primary {:text     "Reset Password"
+                                           :on-click reset-password!}]]}])])})))
