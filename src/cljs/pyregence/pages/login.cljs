@@ -132,7 +132,7 @@
                                  :style    {:color     color
                                             :underline true}}
                              [:u "Forgot Password?"]]
-                            [buttons/primary {:text     "login"
+                            [buttons/primary {:text     "Login"
                                               :on-click log-in!}]
                             [register-cmpt]]}]
               [utils/card {:title "Request New Password"
