@@ -1,12 +1,17 @@
 (ns pyregence.pages.reset-password
-  (:require [clojure.core.async             :refer [go <! timeout]]
-            [pyregence.components.common    :refer [simple-form]]
-            [pyregence.components.messaging :refer [toast-message!]]
-            [pyregence.styles               :as $]
-            [pyregence.utils.async-utils    :as u-async]
-            [pyregence.utils.browser-utils  :as u-browser]
-            [pyregence.utils.data-utils     :as u-data]
-            [reagent.core                   :as r]))
+  (:require
+   [clojure.core.async             :refer [<! go timeout]]
+   [clojure.string                 :as str]
+   [pyregence.components.buttons   :as buttons]
+   [pyregence.components.messaging :refer [toast-message!]]
+   [pyregence.components.nav-bar   :as nav-bar]
+   [pyregence.components.utils     :as utils]
+   [pyregence.state                :as !]
+   [pyregence.styles               :as $]
+   [pyregence.utils.async-utils    :as u-async]
+   [pyregence.utils.browser-utils  :as u-browser]
+   [pyregence.utils.data-utils     :as u-data]
+   [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -56,16 +61,42 @@
   "The root component for the /reset-password page.
    Displays the reset password form."
   [params]
-  (reset! email              (:email params ""))
-  (reset! verification-token (:verification-token params ""))
-  (fn [_]
-    [:<>
-     [:div {:style ($/combine ($/disabled-group @pending?)
-                              {:display "flex" :justify-content "center" :margin "5rem"})}
-      [simple-form
-       "Reset Password"
-       "Reset Password"
-       [["Email"                 email       "email"    "email"]
-        ["New Password"          password    "password" "new-password"]
-        ["Re-enter New Password" re-password "password" "confirm-password"]]
-       reset-password!]]]))
+  (let [update-fn (atom nil)]
+    (r/create-class
+     {:component-did-mount
+      (fn [_]
+        (reset! update-fn (fn [& _]
+                            (-> js/window (.scrollTo 0 0))
+                            (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))))
+        (-> js/window (.addEventListener "touchend" update-fn))
+        (-> js/window (.addEventListener "resize"   update-fn))
+        (@update-fn)
+        (reset! email              (:email params ""))
+        (reset! verification-token (:verification-token params "")))
+      :component-will-unmount
+      (fn [_]
+        (.removeEventListener js/window "touchend" @update-fn)
+        (.removeEventListener js/window "resize" @update-fn))
+      :reagent-render
+      (fn [_]
+        [utils/card-page
+         (fn []
+           [utils/card {:title "Request New Password"
+                        :children
+                        [:<>
+                         [utils/input-labeled {:label       "Email"
+                                               :placeholder "Enter Email Address"
+                                               :on-change   #(reset! email (-> % .-target .-value))
+                                               :value       @email}]
+                         [utils/input-labeled {:label       "New Password"
+                                               :type        "password"
+                                               :placeholder "New Password"
+                                               :on-change   #(reset! password (-> % .-target .-value))
+                                               :value       @password}]
+                         [utils/input-labeled {:label       "Re-enter New Password"
+                                               :type        "password"
+                                               :placeholder "New Password"
+                                               :on-change   #(reset! re-password (-> % .-target .-value))
+                                               :value       @re-password}]
+                         [buttons/primary {:text     "Reset Password"
+                                           :on-click reset-password!}]]}])])})))

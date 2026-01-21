@@ -1,14 +1,15 @@
 (ns pyregence.components.settings.users-table
   (:require
    ["ag-grid-community"                    :refer [AllCommunityModule
-                                                   ModuleRegistry themeQuartz]]
+                                                   themeQuartz
+                                                   ModuleRegistry]]
    ["ag-grid-react"                        :refer [AgGridReact]]
    [clojure.core.async                     :as async :refer [<! go]]
    [goog.object                            :as goog]
+   [pyregence.components.buttons           :as buttons]
    [pyregence.components.settings.add-user :as add-user]
-   [pyregence.components.settings.buttons  :as buttons]
-   [pyregence.components.settings.utils    :refer [db->display search-cmpt]]
    [pyregence.components.svg-icons         :as svg]
+   [pyregence.components.utils             :refer [db->display search-cmpt]]
    [pyregence.styles                       :as $]
    [pyregence.utils.async-utils            :as u-async]
    [reagent.core                           :as r]))

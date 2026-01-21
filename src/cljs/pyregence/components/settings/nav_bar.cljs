@@ -1,15 +1,15 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.core.async                  :refer [<! go]]
-   [clojure.string                      :as str]
-   [clojure.walk                        :as walk]
-   [herb.core                           :refer [<class]]
-   [pyregence.components.svg-icons      :as svg]
-   [pyregence.components.settings.utils :refer [search-cmpt]]
-   [pyregence.styles                    :as $]
-   [pyregence.utils.async-utils         :as u-async]
-   [pyregence.utils.browser-utils       :as u-browser]
-   [reagent.core                        :as r]))
+   [clojure.core.async             :refer [<! go]]
+   [clojure.string                 :as str]
+   [clojure.walk                   :as walk]
+   [herb.core                      :refer [<class]]
+   [pyregence.components.svg-icons :as svg]
+   [pyregence.components.utils     :refer [search-cmpt]]
+   [pyregence.styles               :as $]
+   [pyregence.utils.async-utils    :as u-async]
+   [pyregence.utils.browser-utils  :as u-browser]
+   [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles

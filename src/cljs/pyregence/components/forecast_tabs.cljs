@@ -13,7 +13,7 @@
                   :hover-text "Gridded weather forecasts from several US operational weather models including key parameters that affect wildfire behavior."}
    :fire-risk    {:opt-label  "Risk"
                   :hover-text "5-day forecast of fire consequence maps. Every day over 500 million hypothetical fires are ignited across California to evaluate potential fire risk.\n"}
-   :active-fire  {:opt-label  "Active Fire"
+   :active-fire  {:opt-label  "Active Fires"
                   :hover-text "14-day forecasts of active fires with burning areas established from satellite-based heat detection."}})
    ; TODO we need a mechanism to selectively show the PSPS tab when on the /account-settings page
    ; :psps-zonal   {:opt-label  "PSPS"
