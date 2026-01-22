@@ -59,7 +59,8 @@
 (defn- export-button-on-click-fn [grid-api file-name]
   (when-let [api @grid-api]
     (api-call api "exportDataAsCsv"
-              #js {:fileName (str (today-str) "_" file-name)
+              #js {:fileName     (str (today-str) "_" file-name)
+                   :onlySelected (some? (seq (get-selected-rows api)))
                    :processCellCallback
                    (fn [params]
                      (aget params "value"))})))
