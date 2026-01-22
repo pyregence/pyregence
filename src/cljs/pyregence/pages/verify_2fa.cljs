@@ -95,7 +95,7 @@
         [utils/card-page
          (fn []
            [utils/card
-            {:title "Two Factor Authentication"
+            {:title "Two-Factor Authentication"
              :children
              [:<>
               [utils/input-labeled {:label     "Verification Code"
