@@ -27,6 +27,7 @@
                                         :organization-id       (:organization_rid user-data)
                                         :org-membership-status (:org_membership_status user-data)
                                         :subscription-tier     (:subscription_tier user-data)
+                                        ;; TODO we might not need max seats
                                         :max-seats             (:max_seats user-data)}
                                        (get-config :app :client-keys))})))
 
