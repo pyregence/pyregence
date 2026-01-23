@@ -140,7 +140,6 @@ $$ LANGUAGE SQL;
 --------------------------------------------------------------------------------
 -- Login functions
 --------------------------------------------------------------------------------
--- TODO add subscription tier and max seats
 -- Returns user info user name and password match
 CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
  RETURNS TABLE (
@@ -150,11 +149,25 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    match_drop_access     boolean,
    user_role             user_role,
    org_membership_status org_membership_status,
-   organization_rid      integer
+   organization_rid      integer,
+   subscription_tier     subscription_tier,
+   max_seats             integer
    ) AS $$
 
-    SELECT user_uid, name, email, match_drop_access, user_role, org_membership_status, organization_rid
-    FROM users
+    SELECT
+      u.user_uid              AS user_id,
+      u.name                  AS user_name,
+      u.email                 AS user_email,
+      u.match_drop_access     AS match_drop_access,
+      u.user_role             AS user_role,
+      u.org_membership_status AS org_membership_status,
+      u.organization_rid      AS organization_rid,
+      -- TODO remove defaults?
+      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+      COALESCE(o.max_seats, 1) AS max_seats
+    FROM users u
+    LEFT JOIN organizations o
+      ON o.organization_uid = u.organization_rid
     WHERE email = lower_trim(_email)
         AND password = crypt(_password, password)
         AND email_verified = TRUE
@@ -176,7 +189,6 @@ CREATE OR REPLACE FUNCTION set_verification_token(
 
 $$ LANGUAGE SQL;
 
--- TODO add subscription_tier and max_seats
 -- Sets the password for a user, if the verification token is valid
 CREATE OR REPLACE FUNCTION set_user_password(
     _email    text,
@@ -190,9 +202,11 @@ CREATE OR REPLACE FUNCTION set_user_password(
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
-    organization_rid      integer
- ) AS $$
-
+    organization_rid      integer,
+    subscription_tier     subscription_tier,
+    max_seats             integer
+) AS $$
+  WITH updated AS (
     UPDATE users
     SET password = crypt(_password, gen_salt('bf')),
         email_verified = TRUE,
@@ -204,10 +218,22 @@ CREATE OR REPLACE FUNCTION set_user_password(
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW())
     RETURNING user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
-
+  )
+  SELECT
+    u.user_uid            AS user_id,
+    u.email               AS user_email,
+    u.name                AS user_name,
+    u.match_drop_access   AS match_drop_access,
+    u.user_role           AS user_role,
+    u.org_membership_status,
+    u.organization_rid,
+    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+    COALESCE(o.max_seats, 1) AS max_seats
+  FROM updated u
+  LEFT JOIN organizations o
+    ON o.organization_uid = u.organization_rid;
 $$ LANGUAGE SQL;
 
--- TODO add subscription_tier and max_seats
 -- Sets email_verified to true, if the verification token is valid
 CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
  RETURNS TABLE (
@@ -217,9 +243,11 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
-    organization_rid      integer
- ) AS $$
-
+    organization_rid      integer,
+    subscription_tier     subscription_tier,
+    max_seats             integer
+) AS $$
+  WITH updated AS (
     UPDATE users
     SET email_verified = TRUE,
         verification_token = NULL,
@@ -229,21 +257,36 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
         AND verification_token IS NOT NULL
         AND (token_expiration IS NULL OR token_expiration > NOW())
     RETURNING user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
-
+  )
+  SELECT
+    u.user_uid            AS user_id,
+    u.email               AS user_email,
+    u.name                AS user_name,
+    u.match_drop_access   AS match_drop_access,
+    u.user_role           AS user_role,
+    u.org_membership_status,
+    u.organization_rid,
+    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+    COALESCE(o.max_seats, 1) AS max_seats
+  FROM updated u
+  LEFT JOIN organizations o
+    ON o.organization_uid = u.organization_rid;
 $$ LANGUAGE SQL;
 
--- TODO add subscription_tier and max_seats
 -- Verifies a 2FA token without changing verified status
 CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
  RETURNS TABLE (
     user_id               integer,
     user_email            text,
+    user_name             text,
     match_drop_access     boolean,
     user_role             user_role,
     org_membership_status org_membership_status,
-    organization_rid      integer
- ) AS $$
-
+    organization_rid      integer,
+    subscription_tier     subscription_tier,
+    max_seats             integer
+) AS $$
+  WITH updated AS (
     UPDATE users
     SET verification_token = NULL,
         token_expiration = NULL
@@ -252,8 +295,21 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
         AND verification_token IS NOT NULL
         AND token_expiration > NOW()
         AND email_verified = TRUE
-    RETURNING user_uid, email, match_drop_access, user_role, org_membership_status, organization_rid;
-
+    RETURNING user_uid, email, name, match_drop_access, user_role, org_membership_status, organization_rid
+  )
+  SELECT
+    u.user_uid            AS user_id,
+    u.email               AS user_email,
+    u.name                AS user_name,
+    u.match_drop_access   AS match_drop_access,
+    u.user_role           AS user_role,
+    u.org_membership_status,
+    u.organization_rid,
+    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+    COALESCE(o.max_seats, 1) AS max_seats
+  FROM updated u
+  LEFT JOIN organizations o
+    ON o.organization_uid = u.organization_rid;
 $$ LANGUAGE SQL;
 
 --------------------------------------------------------------------------------
