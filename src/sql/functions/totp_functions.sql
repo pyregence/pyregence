@@ -58,6 +58,7 @@ CREATE OR REPLACE FUNCTION get_totp_setup(_user_id integer)
 
 $$ LANGUAGE SQL;
 
+-- TODO add subscription tier and max seats
 -- Get user with TOTP secret for authenticated session creation
 CREATE OR REPLACE FUNCTION get_user_with_totp(_user_id integer)
  RETURNS TABLE (

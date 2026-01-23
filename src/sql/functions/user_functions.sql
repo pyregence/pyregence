@@ -140,6 +140,7 @@ $$ LANGUAGE SQL;
 --------------------------------------------------------------------------------
 -- Login functions
 --------------------------------------------------------------------------------
+-- TODO add subscription tier and max seats
 -- Returns user info user name and password match
 CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
  RETURNS TABLE (
@@ -175,6 +176,7 @@ CREATE OR REPLACE FUNCTION set_verification_token(
 
 $$ LANGUAGE SQL;
 
+-- TODO add subscription_tier and max_seats
 -- Sets the password for a user, if the verification token is valid
 CREATE OR REPLACE FUNCTION set_user_password(
     _email    text,
@@ -205,6 +207,7 @@ CREATE OR REPLACE FUNCTION set_user_password(
 
 $$ LANGUAGE SQL;
 
+-- TODO add subscription_tier and max_seats
 -- Sets email_verified to true, if the verification token is valid
 CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
  RETURNS TABLE (
@@ -229,6 +232,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
 
 $$ LANGUAGE SQL;
 
+-- TODO add subscription_tier and max_seats
 -- Verifies a 2FA token without changing verified status
 CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
  RETURNS TABLE (
