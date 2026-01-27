@@ -111,7 +111,7 @@
     (fn []
       (let [{:keys [loading settings error]} @security-state
             two-factor (:two-factor settings)]
-        [card {:title "MANAGE TWO FACTOR AUTHENTICATION (2FA)"
+        [card {:title "MANAGE TWO-FACTOR AUTHENTICATION (2FA)"
                :children
                (cond
                  loading

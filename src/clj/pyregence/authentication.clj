@@ -480,7 +480,7 @@
           (call-sql "cleanup_totp_data" user-id)
           (let [settings (dissoc (get-user-settings user-id) :two-factor)]
             (save-user-settings! user-id settings))
-          (data-response {:message "Two-factor authentication has been disabled"})))
+          (data-response {:message "Two-Factor authentication has been disabled"})))
       (data-response "TOTP is not enabled for this account" {:status 400}))))
 
 ^:rct/test
