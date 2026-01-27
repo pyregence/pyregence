@@ -94,12 +94,12 @@
    [:div {:style {:height "100%" :width "100%"}}
     [:> AgGridReact
      {:onGridReady                (fn [params]
-                                    (reset! grid-api (aget params "api")))
+                                    (reset! grid-api (goog/get params "api")))
       :onFirstDataRendered        (fn [params]
-                                    (let [api (.-api params)]
+                                    (let [api (goog/get params "api")]
                                       (api-call api "autoSizeAllColumns")
                                       (doseq [col (api-call api "getAllDisplayedColumns")]
-                                        (.setFlex col 1))))
+                                        (js-invoke col "setFlex" 1))))
       :rowSelection               #js {:mode "multiRow"}
       :domLayout                  "autoHeight"
       :onRowSelected              #(reset! users-selected? (seq (get-selected-rows @grid-api)))
