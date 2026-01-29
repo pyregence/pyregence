@@ -57,7 +57,7 @@
                              :z-index       107
                              :filter-set    #{"fire-detections" "us-transmission-lines"}
                              :geoserver-key :shasta}
-   :current-year-perimeters {:opt-label     "2025 fire perimeters"
+   :current-year-perimeters {:opt-label     "2026 fire perimeters"
                              :z-index       103
                              :filter-set    #{"fire-detections" "current-year-perimeters"}
                              :geoserver-key :shasta}
