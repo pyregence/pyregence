@@ -367,7 +367,7 @@ To check for vulerabilities in this project, use ~clojure -M:clj-watson scan -p 
 
 ** License and Distribution
 
-Copyright © 2020-2025 Spatial Informatics Group, LLC.
+Copyright © 2020-2026 Spatial Informatics Group, LLC.
 
 Pyregence is distributed by Spatial Informatics Group, LLC. under the
 terms of the Eclipse Public License version 2.0 (EPLv2). See
