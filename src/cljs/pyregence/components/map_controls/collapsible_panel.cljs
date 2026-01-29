@@ -201,7 +201,7 @@
           " - Microsoft building footprints."
           [:br]
           [:br]
-          [:strong "2025 fire perimeters"]
+          [:strong "2026 fire perimeters"]
           " - Current season fires to date."
           [:br]
           [:br]
