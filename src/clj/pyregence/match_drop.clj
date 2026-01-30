@@ -493,7 +493,6 @@
           (doseq [[_ step status result match-job-id] (sort-by first transitions)]
             (update-match-job! (cond-> {:match-job-id   match-job-id
                                         :message        (case status
- ;; BUG
                                                           "pending" (str "Step " step " STARTED")
                                                           "failure" (str "Step " step " FAILED. Result: " result)
                                                           "success" (str "Step " step " DONE. Result: " result))}
