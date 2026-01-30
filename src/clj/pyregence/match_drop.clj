@@ -459,14 +459,14 @@
    `step` is the step name in the match-drop network in sig3"
   [state job-state match-job-id]
   (mapcat (fn build-vector-of-transitions [[step {:strs [order pending success failure]}]]
-            (let [current-step-status (get-in job-state [step "job-status"])]
+            (let [{:strs [result job-status]} (get-in job-state ["steps" step])]
               (cond-> []
-                (and (false? pending) (= current-step-status "pending"))
+                (and (false? pending) (= job-status "pending"))
                 (concat [[order step "pending" {}  match-job-id]])
-                (and (false? failure) (= current-step-status "failure"))
-                (concat [[order step "failure" (get-in job-state [step "result"]) match-job-id]])
-                (and (false? success) (= current-step-status "success"))
-                (concat [[order step "success" (get-in job-state [step "result"])  match-job-id]]))))
+                (and (false? failure) (= job-status "failure"))
+                (concat [[order step "failure" result match-job-id]])
+                (and (false? success) (= job-status "success"))
+                (concat [[order step "success" result match-job-id]]))))
           @state))
 
 ;; https://mikerowecode.com/2013/02/clojure-polling-function.html
