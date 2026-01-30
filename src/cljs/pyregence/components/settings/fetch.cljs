@@ -7,7 +7,9 @@
 
 (defn get-users! [user-role]
   (go
-    (let [route (if (= user-role "super_admin") "get-all-users" "get-org-member-users")
+    (let [route (if (#{"super_admin" "account_manager"} user-role)
+                  "get-all-users"
+                  "get-org-member-users")
           resp-chan              (u-async/call-clj-async! route)
           {:keys [body success]} (<! resp-chan)
           users                  (edn/read-string body)]
@@ -16,7 +18,7 @@
 (defn get-orgs!
   [user-role]
   (go
-    (let [api-route (if (= user-role "super_admin")
+    (let [api-route (if (#{"super_admin" "account_manager"} user-role)
                       "get-all-organizations"
                       "get-current-user-organization")
           response  (<! (u-async/call-clj-async! api-route))]
