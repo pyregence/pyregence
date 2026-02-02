@@ -172,7 +172,7 @@
            columns
            ;;TODO if we get multiple show buttons then we should re-organize.
            show-export-to-csv?
-           on-click-remove-users!]}]
+           on-click-delete-users!]}]
   ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
@@ -212,7 +212,9 @@
                                    :on-click  (fn []
                                                 (reset! checked nil)
                                                 (update-dd :status))}]
-         (when on-click-remove-users! [buttons/remove-cmpt {:text "Delete User"}])]
+         (when on-click-delete-users!
+           [buttons/remove-cmpt {:text     "Delete User"
+                                 :on-click (on-click-delete-users! get-selected-emails)}])]
         [:div {:style {:display        "flex"
                        :flex-direction "column"
                        :gap            "10px"}}

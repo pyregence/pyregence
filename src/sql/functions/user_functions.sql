@@ -337,6 +337,21 @@ END;
 
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION delete_users(_user_email text, _users_to_be_removed text[])
+RETURNS boolean
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF EXISTS(SELECT 1 FROM users WHERE _user_email = email AND user_role = 'super_admin' FOR SHARE)
+  THEN
+    DELETE FROM users where email = ANY(_users_to_be_removed);
+    RETURN true;
+  ELSE
+    RETURN false;
+  END IF;
+END;
+$$;
+
 -- TODO ideally this would check if the requesting_user has permissions to do this.
 -- TODO consider using a different identifier then email.
 CREATE OR REPLACE FUNCTION update_users_status_by_email(_requesting_user_id integer, _status text, _users_to_be_updated text[])

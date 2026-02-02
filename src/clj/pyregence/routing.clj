@@ -84,6 +84,9 @@
    [:post "/clj/add-new-user"]                   {:handler (clj-handler authentication/add-new-user)
                                                   :auth-type :token
                                                   :auth-action :block}
+   [:post "/clj/delete-users"]                   {:handler     (clj-handler authentication/delete-users)
+                                                  :auth-type   {:token :super-admin}
+                                                  :auth-action :block}
    [:post "/clj/get-current-user-settings"]      {:handler (clj-handler authentication/get-current-user-settings)
                                                   :auth-type :member
                                                   :auth-action :block}
