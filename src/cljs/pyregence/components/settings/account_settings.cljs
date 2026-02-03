@@ -3,9 +3,9 @@
    [cljs.reader                           :as reader]
    [clojure.core.async                    :refer [<! go]]
    [clojure.edn                           :as edn]
-   [clojure.string                        :as str]
-   [pyregence.components.messaging        :refer [toast-message!]]
    [pyregence.components.buttons          :as buttons]
+   [pyregence.components.messaging        :refer [toast-message!]]
+   [pyregence.components.settings.roles   :as roles]
    [pyregence.components.utils            :refer [card font-styles
                                                   input-labeled main-styles
                                                   text-labeled]]
@@ -27,12 +27,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- role-type->label
-  [role-type]
-  (->> (str/split (str role-type) #"_")
-       (map str/capitalize)
-       (str/join " ")))
 
 (defn- fetch-user-settings! []
   (go
@@ -186,7 +180,7 @@
            [text-labeled {:label "Email Address"
                           :text  email-address}]
            [text-labeled {:label    "Role Type"
-                          :text     (role-type->label role-type)}]
+                          :text     (roles/type->label role-type)}]
            [user-full-name user-info]]}]
    [security-card]
    [card {:title "RESET MY PASSWORD"

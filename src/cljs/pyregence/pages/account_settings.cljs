@@ -7,11 +7,11 @@
    [pyregence.components.messaging                      :refer [toast-message!]]
    [pyregence.components.settings.account-settings      :as as]
    [pyregence.components.settings.email                 :as email]
-   [pyregence.components.settings.fetch                 :refer [get-orgs!
+   [pyregence.components.settings.fetch                 :refer [delete-users!
+                                                                get-orgs!
                                                                 get-user-name!
                                                                 get-users!
-                                                                update-own-user-name!
-                                                                delete-users!]]
+                                                                update-own-user-name!]]
    [pyregence.components.settings.nav-bar               :as side-nav-bar]
    [pyregence.components.settings.organization-settings :as os]
    [pyregence.components.settings.roles                 :as roles]

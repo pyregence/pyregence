@@ -1,4 +1,6 @@
-(ns pyregence.components.settings.roles)
+(ns pyregence.components.settings.roles
+  (:require
+   [clojure.string :as str]))
 
 ;;TODO maybe the roles should be reversed? (super_admin = 6)
 ;;TODO consider having this replace the roles var above
@@ -25,3 +27,9 @@
 (def organization-roles #{"organization_admin" "organization_member"})
 ;;NOTE this isnt all the non-organization-role-options
 (def none-organization-roles #{"super_admin" "account_manager" "member"})
+
+(defn type->label
+  [role-type]
+  (->> (str/split (str role-type) #"_")
+       (map str/capitalize)
+       (str/join " ")))

@@ -1,18 +1,19 @@
 (ns pyregence.components.settings.users-table
   (:require
-   ["ag-grid-community"                    :refer [AllCommunityModule
+   ["ag-grid-community"                       :refer [AllCommunityModule
                                                    themeQuartz
                                                    ModuleRegistry]]
-   ["ag-grid-react"                        :refer [AgGridReact]]
-   [clojure.core.async                     :as async :refer [<! go]]
-   [goog.object                            :as goog]
-   [pyregence.components.buttons           :as buttons]
-   [pyregence.components.settings.add-user :as add-user]
-   [pyregence.components.svg-icons         :as svg]
-   [pyregence.components.utils             :refer [db->display search-cmpt]]
-   [pyregence.styles                       :as $]
-   [pyregence.utils.async-utils            :as u-async]
-   [reagent.core                           :as r]))
+   ["ag-grid-react"                           :refer [AgGridReact]]
+   [clojure.core.async                        :as async :refer [<! go]]
+   [goog.object                               :as goog]
+   [pyregence.components.buttons              :as buttons]
+   [pyregence.components.settings.add-user    :as add-user]
+   [pyregence.components.settings.delete-user :as delete-user]
+   [pyregence.components.svg-icons            :as svg]
+   [pyregence.components.utils                :refer [db->display search-cmpt]]
+   [pyregence.styles                          :as $]
+   [pyregence.utils.async-utils               :as u-async]
+   [reagent.core                              :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid functionality
@@ -182,6 +183,7 @@
     (let [update-dd           (fn [to] (reset! selected-drop-down (when-not (= @selected-drop-down to) to)))
           get-selected-emails (fn []
                                 (->> @grid-api get-selected-rows (map :email)))
+          get-selected-rows   #(get-selected-rows @grid-api)
           on-click-apply      (on-click-apply-update-users get-selected-emails)
           on-change-search    (fn [e]
                                 (let [s (aget (aget e "target") "value")]
@@ -213,8 +215,9 @@
                                                 (reset! checked nil)
                                                 (update-dd :status))}]
          (when on-click-delete-users!
-           [buttons/remove-cmpt {:text     "Delete User"
-                                 :on-click (on-click-delete-users! get-selected-emails)}])]
+           [delete-user/confirm-dialog
+            {:on-click-delete-users! (on-click-delete-users! get-selected-emails)
+             :get-selected-rows      get-selected-rows}])]
         [:div {:style {:display        "flex"
                        :flex-direction "column"
                        :gap            "10px"}}
