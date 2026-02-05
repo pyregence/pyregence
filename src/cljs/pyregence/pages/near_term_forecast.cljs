@@ -707,17 +707,32 @@
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
-          super-admin?                    (= user-role "super_admin")
+          admin?                          (#{"super_admin" "account_manager"} user-role)
           user-layers-chan                (u-async/call-clj-async! "get-user-layers")
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
           weather-stations-chan           (u-async/call-clj-async! "get-weather-stations")
-          user-orgs-list-chan             (u-async/call-clj-async! (if super-admin?
+          user-orgs-list-chan             (u-async/call-clj-async! (if admin?
                                                                      "get-all-organizations"
                                                                      "get-current-user-organization"))
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
-          active-fire-count               (count fire-names)]
+          active-fire-count               (count fire-names)
+          ;;TODO consider if there is a better place to do this? Probably where it's displayed, like a sane configuration? But what if things need to be loaded before that?
+          ;;Also this doesn't automatically put it in the right place because maps are sorted (its already buggy)
+          options-config (cond-> options-config admin?
+                                     (assoc-in [:active-fire :params :output-type]
+                                               {:opt-label  "Output Type"
+                                                :hover-text "TODO what should this say?"
+                                                  ;;TODO fill in values here for standard and units
+                                                :options    {:standard       {:opt-label       "Standard"
+                                                                              :filter          "hours-since-burned"
+                                                                              :units           ""
+                                                                              :reverse-legend? false}
+                                                             :probabilistic   {:opt-label       "Probabilistic"
+                                                                               :filter          "hours-since-burned"
+                                                                               :units           ""
+                                                                               :reverse-legend? false}}})) ]
       (reset! !/active-fire-count active-fire-count)
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
       (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
