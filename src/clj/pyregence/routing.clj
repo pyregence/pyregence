@@ -125,10 +125,10 @@
                                                      :auth-type #{:organization-admin :token}
                                                      :auth-action :block}
    [:post "/clj/get-all-organizations"]             {:handler (clj-handler authentication/get-all-organizations)
-                                                     :auth-type #{:super-admin :token}
+                                                     :auth-type #{:account-manager :token}
                                                      :auth-action :block}
    [:post "/clj/get-all-users"]                     {:handler (clj-handler authentication/get-all-users)
-                                                     :auth-type #{:super-admin :token}
+                                                     :auth-type #{:account-manager :token}
                                                      :auth-action :block}
    [:post "/clj/get-current-user-organization"]     {:handler (clj-handler authentication/get-current-user-organization)
                                                      :auth-type :token
