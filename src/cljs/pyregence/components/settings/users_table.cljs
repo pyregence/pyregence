@@ -1,18 +1,19 @@
 (ns pyregence.components.settings.users-table
   (:require
-   ["ag-grid-community"                    :refer [AllCommunityModule
+   ["ag-grid-community"                       :refer [AllCommunityModule
                                                    themeQuartz
                                                    ModuleRegistry]]
-   ["ag-grid-react"                        :refer [AgGridReact]]
-   [clojure.core.async                     :as async :refer [<! go]]
-   [goog.object                            :as goog]
-   [pyregence.components.buttons           :as buttons]
-   [pyregence.components.settings.add-user :as add-user]
-   [pyregence.components.svg-icons         :as svg]
-   [pyregence.components.utils             :refer [db->display search-cmpt]]
-   [pyregence.styles                       :as $]
-   [pyregence.utils.async-utils            :as u-async]
-   [reagent.core                           :as r]))
+   ["ag-grid-react"                           :refer [AgGridReact]]
+   [clojure.core.async                        :as async :refer [<! go]]
+   [goog.object                               :as goog]
+   [pyregence.components.buttons              :as buttons]
+   [pyregence.components.settings.add-user    :as add-user]
+   [pyregence.components.settings.delete-user :as delete-user]
+   [pyregence.components.svg-icons            :as svg]
+   [pyregence.components.utils                :refer [db->display search-cmpt]]
+   [pyregence.styles                          :as $]
+   [pyregence.utils.async-utils               :as u-async]
+   [reagent.core                              :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid functionality
@@ -95,11 +96,12 @@
     [:> AgGridReact
      {:onGridReady                (fn [params]
                                     (reset! grid-api (goog/get params "api")))
-      :onFirstDataRendered        (fn [params]
-                                    (let [api (goog/get params "api")]
-                                      (api-call api "autoSizeAllColumns")
-                                      (doseq [col (api-call api "getAllDisplayedColumns")]
-                                        (js-invoke col "setFlex" 1))))
+      :onRowDataUpdated
+      (fn [params]
+        (let [api (goog/get params "api")]
+          (api-call api "autoSizeAllColumns")
+          (doseq [col (api-call api "getAllDisplayedColumns")]
+            (js-invoke col "setFlex" 1))))
       :rowSelection               #js {:mode "multiRow"}
       :domLayout                  "autoHeight"
       :onRowSelected              #(reset! users-selected? (seq (get-selected-rows @grid-api)))
@@ -172,7 +174,7 @@
            columns
            ;;TODO if we get multiple show buttons then we should re-organize.
            show-export-to-csv?
-           on-click-remove-users!]}]
+           on-click-delete-users!]}]
   ;; TODO Right now, the `search` and `selected-drop-down` persist against side nav changes between orgs
   ;; Do we want that?
   (r/with-let [selected-drop-down (r/atom nil)
@@ -182,6 +184,7 @@
     (let [update-dd           (fn [to] (reset! selected-drop-down (when-not (= @selected-drop-down to) to)))
           get-selected-emails (fn []
                                 (->> @grid-api get-selected-rows (map :email)))
+          get-selected-rows   #(get-selected-rows @grid-api)
           on-click-apply      (on-click-apply-update-users get-selected-emails)
           on-change-search    (fn [e]
                                 (let [s (aget (aget e "target") "value")]
@@ -212,7 +215,10 @@
                                    :on-click  (fn []
                                                 (reset! checked nil)
                                                 (update-dd :status))}]
-         (when on-click-remove-users! [buttons/remove-cmpt {:text "Delete User"}])]
+         (when on-click-delete-users!
+           [delete-user/confirm-dialog
+            {:on-click-delete-users! (on-click-delete-users! get-selected-emails)
+             :get-selected-rows      get-selected-rows}])]
         [:div {:style {:display        "flex"
                        :flex-direction "column"
                        :gap            "10px"}}

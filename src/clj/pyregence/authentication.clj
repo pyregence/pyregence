@@ -871,3 +871,11 @@
 (defn update-user-org-membership-status [_ user-id new-status]
   (call-sql "update_org_membership_status" user-id new-status)
   (data-response ""))
+
+(defn delete-users
+  [{:keys [user-email user-role]} users-to-delete]
+  (if-not (= user-role "super_admin")
+    (data-response "forbidden" {:status 403})
+    (do
+      (call-sql "delete_users" user-email (into-array String users-to-delete))
+      (data-response ""))))

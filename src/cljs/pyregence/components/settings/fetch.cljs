@@ -54,3 +54,7 @@
     (:user-name
      (edn/read-string
       (:body (<! (u-async/call-clj-async! "get-user-name-by-email")))))))
+
+(defn delete-users!
+  [users-to-delete]
+  (go (<! (u-async/call-clj-async! "delete-users" users-to-delete))))

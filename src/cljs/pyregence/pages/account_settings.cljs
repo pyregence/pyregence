@@ -7,7 +7,8 @@
    [pyregence.components.messaging                      :refer [toast-message!]]
    [pyregence.components.settings.account-settings      :as as]
    [pyregence.components.settings.email                 :as email]
-   [pyregence.components.settings.fetch                 :refer [get-orgs!
+   [pyregence.components.settings.fetch                 :refer [delete-users!
+                                                                get-orgs!
                                                                 get-user-name!
                                                                 get-users!
                                                                 update-own-user-name!]]
@@ -144,7 +145,21 @@
                          (js/setTimeout (fn [] (go (reset! users (<! (get-users! user-role))))) 3000)
                          (toast-message!
                            ;;TODO make this handle plural case e.g roles and statues.
-                          (str (str/join ", " emails)  " updated " opt-type " to " (opt->display new-user-info) ".")))))))]
+                          (str (str/join ", " emails)  " updated " opt-type " to " (opt->display new-user-info) ".")))))))
+               on-click-delete-users!
+               (fn [get-selected-emails]
+                 (fn []
+                   (let [selected-emails (get-selected-emails)]
+                     (go
+                       (let [{:keys [success]}
+                             (<! (delete-users! selected-emails))]
+                         (if success
+                           (do
+                             (js/setTimeout (fn [] (go (reset! users (<! (get-users! user-role))))) 3000)
+                             (toast-message! (str "Users Deleted: " (str/join ", " selected-emails))))
+                                        ;;TODO it's unclear what would help here...
+                           (toast-message! "Something went wrong!")))))))]
+
            [:div {:style {:display        "flex"
                           :flex-direction "row"
                           :height         "100%"
@@ -320,7 +335,8 @@
                              ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
                              :default-role-option         (first roles)
                              :role-options                roles
-                             :statuses                     ["accepted" "pending" "none"]}])
+                             :statuses                    ["accepted" "pending" "none"]
+                             :on-click-delete-users!      on-click-delete-users!}])
               (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
                 [um/main {:columns                     columns
                           :users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
