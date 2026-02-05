@@ -89,7 +89,7 @@
                                          (and (isa? role-hierarchy user-role :organization-member)
                                               (= org-membership-status "accepted")))
                 :member              (isa? role-hierarchy user-role :member)
-                ;; Subscription Tiers
+                ;; Subscription Tiers (super admins have access to all tiers)
                 :tier3-enterprise      (or super-admin?
                                            (isa? subscription-hierarchy subscription-tier :tier3-enterprise))
                 :tier2-pro             (or super-admin?
