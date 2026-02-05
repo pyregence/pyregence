@@ -34,13 +34,41 @@
       (derive :account-manager     :member)
       (derive :organization-member :member)))
 
+(def subscription-hierarchy
+  (-> (make-hierarchy)
+      (derive :tier3-enterprise :tier2-pro)
+      (derive :tier3-enterprise :tier1-basic-paid)
+      (derive :tier3-enterprise :tier1-free-registered)
+      (derive :tier2-pro        :tier1-basic-paid)
+      (derive :tier2-pro        :tier1-free-registered)
+      (derive :tier1-basic-paid :tier1-free-registered)))
+
+(defn- sql->kw
+  "Turns a SQL string like super_admin into :super-admin  or tier2_pro into :tier2-pro
+   so that we can use the role and subscription hierarchies."
+  [sql-str]
+  (some-> sql-str
+          (str/replace "_" "-")
+          (keyword)))
+
+(defn- session-user-role
+  "Returns the user role from the session, defaults to :member."
+  [session]
+  (or (some-> session :user-role sql->kw)
+      :member))
+
+(defn- session-subscription-tier
+  "Returns the subscription tier from the session, defaults to :tier1-free-registered."
+  [session]
+  (or (some-> session :subscription-tier sql->kw)
+      :tier1-free-registered))
+
+;; TODO add (some? (:user-id session)) check to all routes to ensure user is logged in?
 (defn route-authenticator [{:keys [headers session]} auth-type]
   (let [org-membership-status  (:org-membership-status session nil)
         has-match-drop-access? (:match-drop-access? session)
-        user-role              (some-> session
-                                       (:user-role)
-                                       (str/replace "_" "-")
-                                       (keyword)) ; e.g. turns "super_admin" into :super-admin so that we can use role-hierarchy
+        user-role              (session-user-role session)
+        subscription-tier      (session-subscription-tier session)
         ;; Extract Bearer token from Authorization header
         bearer-token           (some->> (get headers "authorization")
                                         (re-find #"(?i)^Bearer\s+(.+)$")
@@ -51,6 +79,7 @@
               (case auth-type
                 :token               valid-token? ; TODO: generate token per user and validate it cryptographically
                 :match-drop          has-match-drop-access?
+                ;; Roles
                 :super-admin         super-admin?
                 :account-manager     (isa? role-hierarchy user-role :account-manager)
                 :organization-admin  (or super-admin? ; we need this extra check because super-admins don't have an associated org, and thus their org-membership-status is none
@@ -60,6 +89,15 @@
                                          (and (isa? role-hierarchy user-role :organization-member)
                                               (= org-membership-status "accepted")))
                 :member              (isa? role-hierarchy user-role :member)
+                ;; Subscription Tiers (super admins have access to all tiers)
+                :tier3-enterprise      (or super-admin?
+                                           (isa? subscription-hierarchy subscription-tier :tier3-enterprise))
+                :tier2-pro             (or super-admin?
+                                           (isa? subscription-hierarchy subscription-tier :tier2-pro))
+                :tier1-basic-paid      (or super-admin?
+                                           (isa? subscription-hierarchy subscription-tier :tier1-basic-paid))
+                :tier1-free-registered (or super-admin?
+                                           (isa? subscription-hierarchy subscription-tier :tier1-free-registered))
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))
 

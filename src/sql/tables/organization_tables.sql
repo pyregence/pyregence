@@ -1,6 +1,17 @@
 -- NAMESPACE: organization
 
 --------------------------------------------------------------------------------
+-- Enum types
+--------------------------------------------------------------------------------
+
+CREATE TYPE subscription_tier AS ENUM (
+  'tier1_free_registered',
+  'tier1_basic_paid',
+  'tier2_pro',
+  'tier3_enterprise'
+);
+
+--------------------------------------------------------------------------------
 -- Stores information about organizations
 --------------------------------------------------------------------------------
 CREATE TABLE organizations (
@@ -14,7 +25,16 @@ CREATE TABLE organizations (
     archived              boolean DEFAULT FALSE,
     created_date          date DEFAULT NOW(),
     archived_date         date,
-    system_assets         boolean
+    system_assets         boolean,
+    subscription_tier     subscription_tier NOT NULL DEFAULT 'tier1_free_registered',
+    max_seats             integer NOT NULL default 1
+);
+
+ALTER TABLE organizations
+ADD CONSTRAINT org_tier_seat_rules CHECK (
+  (subscription_tier IN ('tier1_free_registered', 'tier1_basic_paid') AND max_seats = 1)
+  OR
+  (subscription_tier IN ('tier2_pro', 'tier3_enterprise') AND max_seats >= 1)
 );
 
 --------------------------------------------------------------------------------
