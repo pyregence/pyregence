@@ -26,12 +26,6 @@
     (.registerModules ModuleRegistry #js [AllCommunityModule])
     true))
 
-(defn- get-selected-rows
-  [grid-api]
-  (js->clj
-   ((goog/get grid-api "getSelectedRows") grid-api)
-   :keywordize-keys true))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -43,6 +37,11 @@
     (if (instance? js/Function f)
       (.apply f api (to-array args))
       (js/console.error "GridApi method not found:" method "on" api))))
+
+;;TODO find out why this can't be inlined, it seems to break the interaction with the onRowSelected.
+(defn- get-selected-rows
+  [grid-api]
+  (js->clj (api-call grid-api "getSelectedRows") :keywordize-keys true))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Table components
