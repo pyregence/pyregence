@@ -83,53 +83,7 @@
       :columnDefs                 (clj->js columns)}]]])
 
 ;;TODO consider decoupling this from roles and moving into buttons
-(defn drop-down
-  [{:keys [options on-click-apply opt->display users-selected? checked]}]
-  (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
-    [:div {:style {:display        "flex"
-                   :width          "100%"
-                   :border         border-styles
-                   :border-radius  "4px"
-                   :flex-direction "column"}}
-     [:div {:style {:display        "flex"
-                    :flex-direction "column"}}
-      (doall
-       (for [opt  options
-             :let [checked? (= @checked opt)]]
-         [:div {:key      opt
-                :on-click #(reset! checked opt)
-                :style    {:display        "flex"
-                           :align-items    "center"
-                           :gap            "12px"
-                           :padding        "14px 12px 14px 14px"
-                           :flex-direction "row"}}
-          [:input {:type     "checkbox"
-                     ;;TODO react complains if i don't have an onChange here.
-                   :onChange #(reset! checked opt)
-                   :checked  checked?
-                   :style
-                   (merge
-                    {:appearance     "none"
-                     :width          "18px"
-                     :height         "18px"
-                     :border-radius  "50%"
-                     :border         "2px solid #555"
-                     :vertical-align "middle"
-                     :position       "relative"}
-                    (if checked?
-                      {:background "#555"
-                       :boxShadow  "inset 0 0 0 4px white"}
-                      {:background "white"
-                       :boxShadow  "none"}))}]
-            ;;TODO shouldn't have to reset the font stuff why is this coming from the body?
-          [:label {:style {:color       "black"
-                           :font-weight "normal"}}
-           (opt->display opt)]]))]
-     [:div {:style {:border-top border-styles
-                    :padding    "10px 12px"}}
-      [buttons/primary {:text      "Apply"
-                        :disabled? (or (not @checked) (not users-selected?))
-                        :on-click  (on-click-apply @checked)}]]]))
+
 
 (defn table-with-buttons
   [{:keys [users
@@ -197,27 +151,26 @@
                                                            :processCellCallback #(aget % "value")}))}])]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database from a sql function.
-         :role   [drop-down {:options         role-options
-                             :checked         checked
-                             :users-selected? @users-selected?
-                             :opt->display    db->display
-                             :on-click-apply  (on-click-apply
-                                               (fn
-                                                 [role users-to-update]
-                                                 (go (<! (u-async/call-clj-async! "update-users-roles" role users-to-update))))
-                                               "Role"
-                                               db->display)}]
+         :role   [buttons/drop-down {:options         role-options
+                                     :disabled?       (or (not @checked) (not users-selected?))
+                                     :checked         checked
+                                     ;;TODO opt->display should be passed in here but we need to move users state to table before it will be easy to re-factor.
+                                     :opt->display    db->display
+                                     :on-click  (on-click-apply
+                                                 (fn [role users]
+                                                   (go (<! (u-async/call-clj-async! "update-users-roles" role users))))
+                                                 "Role"
+                                                 db->display)}]
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
          ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
-         :status [drop-down {:options         statuses
-                             :checked         checked
-                             :users-selected? @users-selected?
-                             :opt->display    db->display
-                             :on-click-apply  (on-click-apply
-                                               (fn
-                                                 [status users-to-update]
-                                                 (go (<! (u-async/call-clj-async! "update-users-status" status users-to-update))))
-                                               "Status"
-                                               db->display)}]
+         :status [buttons/drop-down {:options         statuses
+                                     :disabled?       (or (not @checked) (not users-selected?))
+                                     :checked         checked
+                                     :opt->display    db->display
+                                     :on-click  (on-click-apply
+                                                 (fn [status users]
+                                                   (go (<! (u-async/call-clj-async! "update-users-status" status users))))
+                                                 "Status"
+                                                 db->display)}]
          nil)
        [table grid-api users users-selected? columns]])))
