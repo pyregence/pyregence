@@ -94,8 +94,7 @@
                  :width  "100%"}}
    [:div {:style {:height "100%" :width "100%"}}
     [:> AgGridReact
-     {:onGridReady                (fn [params]
-                                    (reset! grid-api (goog/get params "api")))
+     {:onGridReady                #(reset! grid-api (goog/get % "api"))
       :onRowDataUpdated           #(api-call (goog/get % "api") "autoSizeAllColumns")
       :rowSelection               #js {:mode "multiRow"}
       :domLayout                  "autoHeight"
