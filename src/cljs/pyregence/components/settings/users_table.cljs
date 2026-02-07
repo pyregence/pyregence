@@ -54,8 +54,7 @@
       (js/console.error "GridApi method not found:" method "on" api))))
 
 (defn- today-str []
-  (.toISOString (js/Date.)) ; => "2025-05-27T15:26:09.123Z"
-  (subs (.toISOString (js/Date.)) 0 10)) ; => "2025-05-27"
+  (subs (.toISOString (js/Date.)) 0 10))
 
 (defn- export-button-on-click-fn [grid-api file-name]
   (when-let [api @grid-api]
