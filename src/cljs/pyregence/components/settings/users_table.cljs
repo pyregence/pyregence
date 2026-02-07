@@ -36,15 +36,6 @@
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- update-users-roles
-  [role users-to-update]
-  (go (<! (u-async/call-clj-async! "update-users-roles" role users-to-update))))
-
-(defn- update-users-status
-  [status users-to-update]
-  (go (<! (u-async/call-clj-async! "update-users-status" status users-to-update))))
-
-;;TODO find out why this `api-call` is necessary and use it or remove it.
 (defn api-call
   "A helper function to safely call GridApi methods under advanced compilation."
   [^js api method & args]
@@ -215,7 +206,9 @@
                              :users-selected? @users-selected?
                              :opt->display    db->display
                              :on-click-apply  (on-click-apply
-                                               update-users-roles
+                                               (fn
+                                                 [role users-to-update]
+                                                 (go (<! (u-async/call-clj-async! "update-users-roles" role users-to-update))))
                                                "Role"
                                                db->display)}]
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
@@ -225,7 +218,9 @@
                              :users-selected? @users-selected?
                              :opt->display    db->display
                              :on-click-apply  (on-click-apply
-                                               update-users-status
+                                               (fn
+                                                 [status users-to-update]
+                                                 (go (<! (u-async/call-clj-async! "update-users-status" status users-to-update))))
                                                "Status"
                                                db->display)}]
          nil)
