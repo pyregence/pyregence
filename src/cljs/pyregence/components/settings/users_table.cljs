@@ -47,6 +47,7 @@
 ;; Table components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;TODO figure out why we can't inline this it seems to have an interaction with getselectedrows.
 (defn table
   [grid-api users users-selected? columns]
   [:div {:style {:height "100%"
