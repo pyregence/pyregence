@@ -205,9 +205,9 @@
            [buttons/ghost {:text     "Export"
                            :icon     [svg/export :height "24px" :width "24px"]
                            :on-click (fn [] (api-call @grid-api "exportDataAsCsv"
-                                                     #js {:fileName            (str (subs (.toISOString (js/Date.)) 0 10) "_" "users-taqle")
-                                                          :onlySelected        (some? (seq (get-selected-rows)))
-                                                          :processCellCallback #(aget % "value")}))}])]]
+                                                      #js {:fileName            (str (subs (.toISOString (js/Date.)) 0 10) "_" "users-taqle")
+                                                           :onlySelected        (some? (seq (get-selected-rows)))
+                                                           :processCellCallback #(aget % "value")}))}])]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database from a sql function.
          :role   [drop-down {:options         role-options
