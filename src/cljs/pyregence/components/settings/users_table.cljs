@@ -185,16 +185,13 @@
           get-selected-emails (fn []
                                 (->> @grid-api get-selected-rows (map :email)))
           get-selected-rows   #(get-selected-rows @grid-api)
-          on-click-apply      (on-click-apply-update-users get-selected-emails)
-          on-change-search    (fn [e]
-                                (let [s (aget (aget e "target") "value")]
-                                  (when @grid-api
-                                    (api-call @grid-api "setGridOption" "quickFilterText" s))
-                                  (reset! search s)))]
+          on-click-apply      (on-click-apply-update-users get-selected-emails)]
       [:<>
        [:div
         {:style {:min-width "400px"}}
-        [search-cmpt {:on-change on-change-search
+        [search-cmpt {:on-change #(let [new-search (-> % .-target .-value)]
+                                    (api-call @grid-api "setGridOption" "quickFilterText" new-search)
+                                    (reset! search new-search))
                       :value     @search}]]
        [:div {:style {:display         "flex"
                       :width          "100%"
