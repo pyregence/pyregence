@@ -53,15 +53,6 @@
       (.apply f api (to-array args))
       (js/console.error "GridApi method not found:" method "on" api))))
 
-(defn- export-button-on-click-fn [grid-api file-name]
-  (when-let [api @grid-api]
-    (api-call api "exportDataAsCsv"
-              #js {:fileName     (str (subs (.toISOString (js/Date.)) 0 10) "_" file-name)
-                   :onlySelected (some? (seq (get-selected-rows api)))
-                   :processCellCallback
-                   (fn [params]
-                     (aget params "value"))})))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Table components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -213,7 +204,10 @@
          (when show-export-to-csv?
            [buttons/ghost {:text     "Export"
                            :icon     [svg/export :height "24px" :width "24px"]
-                           :on-click #(export-button-on-click-fn grid-api "users-table")}])]]
+                           :on-click (fn [] (api-call @grid-api "exportDataAsCsv"
+                                                     #js {:fileName            (str (subs (.toISOString (js/Date.)) 0 10) "_" "users-taqle")
+                                                          :onlySelected        (some? (seq (get-selected-rows)))
+                                                          :processCellCallback #(aget % "value")}))}])]]
        (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database from a sql function.
          :role   [drop-down {:options         role-options
@@ -231,8 +225,8 @@
                              :users-selected? @users-selected?
                              :opt->display    db->display
                              :on-click-apply  (on-click-apply
-                                              update-users-status
-                                              "Status"
-                                              db->display)}]
+                                               update-users-status
+                                               "Status"
+                                               db->display)}]
          nil)
        [table grid-api users users-selected? columns]])))
