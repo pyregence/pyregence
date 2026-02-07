@@ -194,10 +194,10 @@
                                     (reset! search new-search))
                       :value     @search}]]
        [:div {:style {:display         "flex"
-                      :width          "100%"
+                      :width           "100%"
                       :flex-direction  "row"
                       :justify-content "space-between"}}
-        [:div {:style {:display "flex"
+        [:div {:style {:display         "flex"
                        :flex-direction  "row"
                        :gap             "16px"
                        :width           "100%"
@@ -229,18 +229,18 @@
          :role   [drop-down {:options         role-options
                              :checked         checked
                              :users-selected? @users-selected?
-                             :opt->display   db->display
-                             :on-click-apply (on-click-apply
-                                              update-users-roles
-                                              "Role"
-                                              db->display)}]
+                             :opt->display    db->display
+                             :on-click-apply  (on-click-apply
+                                               update-users-roles
+                                               "Role"
+                                               db->display)}]
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
          ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
          :status [drop-down {:options         statuses
                              :checked         checked
                              :users-selected? @users-selected?
-                             :opt->display   db->display
-                             :on-click-apply (on-click-apply
+                             :opt->display    db->display
+                             :on-click-apply  (on-click-apply
                                               update-users-status
                                               "Status"
                                               db->display)}]
