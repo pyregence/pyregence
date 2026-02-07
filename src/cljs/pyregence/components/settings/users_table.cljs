@@ -53,13 +53,10 @@
       (.apply f api (to-array args))
       (js/console.error "GridApi method not found:" method "on" api))))
 
-(defn- today-str []
-  (subs (.toISOString (js/Date.)) 0 10))
-
 (defn- export-button-on-click-fn [grid-api file-name]
   (when-let [api @grid-api]
     (api-call api "exportDataAsCsv"
-              #js {:fileName     (str (today-str) "_" file-name)
+              #js {:fileName     (str (subs (.toISOString (js/Date.)) 0 10) "_" file-name)
                    :onlySelected (some? (seq (get-selected-rows api)))
                    :processCellCallback
                    (fn [params]
