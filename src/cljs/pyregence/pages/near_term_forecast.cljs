@@ -729,10 +729,10 @@
                                                                               :filter          "hours-since-burned"
                                                                               :units           ""
                                                                               :reverse-legend? false}
-                                                             :probabilistic   {:opt-label       "Probabilistic"
+                                                             :probabilistic  {:opt-label       "Probabilistic"
                                                                                :filter          "hours-since-burned"
                                                                                :units           ""
-                                                                               :reverse-legend? false}}})) ]
+                                                                               :reverse-legend? false}}}))]
       (reset! !/active-fire-count active-fire-count)
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
       (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
