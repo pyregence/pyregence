@@ -322,7 +322,9 @@
                                 :else               (= 1 (count sorted-options)))
                           #(select-param! % key)
                           selected-param-set]]))
-                    @!/processed-params)
+                    (cond->> @!/processed-params
+                      @!/sort-params
+                      (sort-by @!/sort-params)))
                [opacity-input]]]
              [sa/panel-section]
              [collapsible-panel-section

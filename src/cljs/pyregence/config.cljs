@@ -531,7 +531,9 @@
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "14-day forecasts of active fires with burning areas established from satellite-based heat detection."
+                  :sort-params     (fn [[_ {:keys [order]}]] order)
                   :params          {:fire-name  {:opt-label      "Fire Name"
+                                                 :order 1
                                                  :sort?          true
                                                  :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
                                                  :default-option :active-fires
@@ -542,6 +544,7 @@
                                                                                  :time-slider?         false
                                                                                  :geoserver-key        :shasta}}}
                                     :output     {:opt-label  "Output"
+                                                 :order 2
                                                  :hover-text "Available outputs are fire location, crown fire type (surface fire, passive, or active), flame length (ft), and surface fire spread rate (ft/min). Time can be advanced with the slider centered below."
                                                  :options    {:burned       {:opt-label       "Forecasted fire location"
                                                                              :filter          "hours-since-burned"
@@ -558,6 +561,7 @@
                                                                              :filter    "spread-rate"
                                                                              :units     "ft/min"}}}
                                     :burn-pct   {:opt-label      "Predicted Fire Size"
+                                                 :order 4
                                                  :default-option :50
                                                  :hover-text     "Each fire forecast is an ensemble of 1,000 separate simulations to account for uncertainty in model inputs. This leads to a range of predicted fire sizes, five of which can be selected from the dropdown menu."
                                                  :options        {:90 {:opt-label "Largest (90th percentile)"
@@ -571,6 +575,7 @@
                                                                   :10 {:opt-label "Smallest (10th percentile)"
                                                                        :filter    "10"}}}
                                     :fuel       {:opt-label  "Fuels"
+                                                 :order 5
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
@@ -592,11 +597,13 @@
                                                  :options    {:landfire {:opt-label "LANDFIRE 2.4.0/2.3.0"
                                                                          :filter    "landfire"}}}
                                     :weather    {:opt-label  "Weather Model"
+                                                 :order 6
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "Hybrid"]
                                                               " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."]
                                                  :options    {:hybrid {:opt-label "Hybrid"}}}
                                     :model      {:opt-label  "Model"
+                                                 :order 7
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "ELMFIRE"]
                                                               " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
@@ -631,6 +638,7 @@
                                                                              :opt-label "GridFire"
                                                                              :filter    "gridfire"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
+                                                 :order 8
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :disabled   (fn [selected-set]
                                                                (some (->> selected-set

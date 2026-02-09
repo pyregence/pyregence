@@ -605,6 +605,7 @@
     (gtag "select-forecast" {:forecast-type (str key)})
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
+    (reset! !/sort-params (get-in @!/capabilities [@!/*forecast :sort-params]))
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
     (<! (change-type! true
                       true
@@ -723,6 +724,7 @@
           options-config (cond-> options-config admin?
                                      (assoc-in [:active-fire :params :output-type]
                                                {:opt-label  "Output Type"
+                                                :order 3
                                                 :hover-text "TODO what should this say?"
                                                   ;;TODO fill in values here for standard and units
                                                 :options    {:standard       {:opt-label       "Standard"
