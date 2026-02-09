@@ -10,8 +10,8 @@
    [card {:title    "MEMBER USER-LIST"
           :children [table-with-buttons
                      (assoc m
+                            :statuses                    ["accepted" "pending" "none"]
                             :show-export-to-csv? true
-
                             :columns
                             (let [boolean-renderer
                                   (fn [params]
