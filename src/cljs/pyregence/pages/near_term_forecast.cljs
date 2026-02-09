@@ -719,8 +719,6 @@
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count fire-names)
-          ;;TODO consider if there is a better place to do this? Probably where it's displayed, like a sane configuration? But what if things need to be loaded before that?
-          ;;Also this doesn't automatically put it in the right place because maps are sorted (its already buggy)
           options-config (cond-> options-config admin?
                                      (assoc-in [:active-fire :params :output-type]
                                                {:opt-label  "Output Type"
