@@ -237,3 +237,8 @@
    [button {:text     "Logout" :icon svg/logout
             :on-click #(go (<! (u-async/call-clj-async! "log-out"))
                            (u-browser/jump-to-url! "/"))}]])
+
+(defn get-page-from-selected-log
+  [tabs selected-tab-log]
+  (:id (first ((group-by :selected? tabs)
+               (last selected-tab-log)))))

@@ -49,7 +49,7 @@
   (let [org-id->org       (r/atom nil)
         user-name         (r/atom nil)
         unsaved-user-name (r/atom nil)
-        selected-log      (r/atom ["Admin"])
+        selected-tab-log  (r/atom ["Admin"])
         users-selected?   (r/atom false)]
     (r/create-class
      {:display-name "account-settings"
@@ -81,19 +81,15 @@
                                           (str "/?forecast=" (name forecast))))
                    :user-role          user-role}]
          (let [tabs             (side-nav-bar/tab-data->tabs
-                                  {:selected-log  selected-log
+                                  {:selected-log  selected-tab-log
                                    :organizations (vals @org-id->org)
-                                   :user-role     user-role})
-               selected->tab-id (fn [selected]
-                                  (:id (first ((group-by :selected? tabs) selected))))
-               selected         (-> @selected-log last)
-               selected-page    (selected->tab-id selected)]
+                                   :user-role     user-role})]
            [:div {:style {:display        "flex"
                           :flex-direction "row"
                           :height         "100%"
                           :background     ($/color-picker :lighter-gray)}}
             [side-nav-bar/main tabs]
-            (case selected-page
+            (case (side-nav-bar/get-page-from-selected-log tabs @selected-tab-log)
               #_#_"Account Settings"
                 [as/main {:columns                        columns
                           :password-set-date              password-set-date
@@ -107,8 +103,9 @@
                                                           ;;TODO should this be on success?
                                                             (update-own-user-name! @unsaved-user-name)
                                                             (reset! user-name @unsaved-user-name))}]
-              #_#_"Organization Settings"
-                [os/main
+              "Organization Settings"
+              [:p "hi"]
+                #_[os/main
                  (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
                        selected (if (= user-role "super_admin")
                                   selected
@@ -253,15 +250,14 @@
                   :users-selected?             users-selected?
                   ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
                   :default-role-option         (first roles)
-                  :role-options                roles
-                  :statuses                    ["accepted" "pending" "none"]})]
+                  :role-options                roles})]
               #_[um/main
-               (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
-                 {:columns                     columns
-                  :users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
-                  :users-selected?             users-selected?
-                  :on-click-apply-update-users on-click-apply-update-users
+                 (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
+                   {:columns                     columns
+                    :users                       (filter (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role)) @users)
+                    :users-selected?             users-selected?
+                    :on-click-apply-update-users on-click-apply-update-users
                           ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
-                  :default-role-option         (first roles)
-                  :role-options                roles
-                  :statuses                    ["none"]})])])])})))
+                    :default-role-option         (first roles)
+                    :role-options                roles
+                    :statuses                    ["none"]})])])])})))
