@@ -81,9 +81,9 @@
                                           (str "/?forecast=" (name forecast))))
                    :user-role          user-role}]
          (let [tabs             (side-nav-bar/tab-data->tabs
-                                  {:selected-log  selected-tab-log
-                                   :organizations (vals @org-id->org)
-                                   :user-role     user-role})]
+                                 {:selected-log  selected-tab-log
+                                  :organizations (vals @org-id->org)
+                                  :user-role     user-role})]
            [:div {:style {:display        "flex"
                           :flex-direction "row"
                           :height         "100%"
@@ -105,7 +105,7 @@
                                                             (reset! user-name @unsaved-user-name))}]
               "Organization Settings"
               [:p "hi"]
-                #_[os/main
+              #_[os/main
                  (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
                        selected (if (= user-role "super_admin")
                                   selected
@@ -244,12 +244,7 @@
                     #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)
                     :role-options         roles})]
               "Admin"
-              [admin/main
-               (let [roles (->> user-role roles/role->roles-below)]
-                 {:user-role user-role
-                  ;; TODO Consider renaming `user-role` to something like "default-role" or re-think how this information is passed
-                  :default-role-option         (first roles)
-                  :role-options                roles})]
+              [admin/main {:user-role user-role}]
               #_[um/main
                  (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
                    {:columns                     columns
