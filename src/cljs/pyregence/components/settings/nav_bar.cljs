@@ -1,15 +1,16 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.core.async             :refer [<! go]]
-   [clojure.string                 :as str]
-   [clojure.walk                   :as walk]
-   [herb.core                      :refer [<class]]
-   [pyregence.components.svg-icons :as svg]
-   [pyregence.components.utils     :refer [search-cmpt]]
-   [pyregence.styles               :as $]
-   [pyregence.utils.async-utils    :as u-async]
-   [pyregence.utils.browser-utils  :as u-browser]
-   [reagent.core                   :as r]))
+   [clojure.core.async                       :refer [<! go]]
+   [clojure.string                           :as str]
+   [clojure.walk                             :as walk]
+   [herb.core                                :refer [<class]]
+   [pyregence.components.settings.pages.admin :as admin]
+   [pyregence.components.svg-icons           :as svg]
+   [pyregence.components.utils               :refer [search-cmpt]]
+   [pyregence.styles                         :as $]
+   [pyregence.utils.async-utils              :as u-async]
+   [pyregence.utils.browser-utils            :as u-browser]
+   [reagent.core                             :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -189,7 +190,8 @@
    (when (#{"account_manager" "super_admin"} user-role)
      {:tab  button
       :text "Admin"
-      :icon svg/admin})])
+      :icon svg/admin
+      :page [admin/main {:user-role user-role}]})])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
@@ -219,27 +221,30 @@
        (cons :<>)
        vec))
 
-;;TODO explain how to use this with the main component to form a nav->page relationship or integrate it in somehow
-(defn get-page-from-selected-log
-  [tabs selected-tab-log]
-  (:id (first ((group-by :selected? tabs)
-               (last selected-tab-log)))))
+(defn side-nav-bar-and-page
+  [m]
+  (r/with-let [selected-log  (r/atom ["Admin"])]
+    (let [tab+page (tab-data->tabs (assoc m :selected-log selected-log))]
+      [:nav-bar-and-page {:style {:display        "flex"
+                                  :flex-direction "row"
+                                  :height         "100%"
+                                  :background     ($/color-picker :lighter-gray)}}
 
-(defn main
-  [tabs-data]
-  [:nav-bar-main {:style {:display         "flex"
-                          :height          "100%"
-                          :width           "360px"
-                          :padding         "40px 0"
-                          :flex-direction  "column"
-                          :justify-content "space-between"
-                          :border-right    (str "1px solid " ($/color-picker :neutral-soft-gray))
-                          :background      "#FFF"}}
-   [:div {:style {:display        "flex"
-                  :flex-direction "column"
-                  :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
-                  :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
-    [tabs tabs-data]]
-   [button {:text     "Logout" :icon svg/logout
-            :on-click #(go (<! (u-async/call-clj-async! "log-out"))
-                           (u-browser/jump-to-url! "/"))}]])
+       [:nav-bar-main {:style {:display         "flex"
+                               :height          "100%"
+                               :width           "360px"
+                               :padding         "40px 0"
+                               :flex-direction  "column"
+                               :justify-content "space-between"
+                               :border-right    (str "1px solid " ($/color-picker :neutral-soft-gray))
+                               :background      "#FFF"}}
+        [:div {:style {:display        "flex"
+                       :flex-direction "column"
+                       :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
+                       :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
+         [tabs tab+page]]
+        [button {:text     "Logout" :icon svg/logout
+                 :on-click #(go (<! (u-async/call-clj-async! "log-out"))
+                                (u-browser/jump-to-url! "/"))}]]
+       (:page (first ((group-by :selected? tab+page)
+                      (last @selected-log))))])))
