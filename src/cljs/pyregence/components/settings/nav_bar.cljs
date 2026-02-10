@@ -219,6 +219,12 @@
        (cons :<>)
        vec))
 
+;;TODO explain how to use this with the main component to form a nav->page relationship or integrate it in somehow
+(defn get-page-from-selected-log
+  [tabs selected-tab-log]
+  (:id (first ((group-by :selected? tabs)
+               (last selected-tab-log)))))
+
 (defn main
   [tabs-data]
   [:nav-bar-main {:style {:display         "flex"
@@ -237,8 +243,3 @@
    [button {:text     "Logout" :icon svg/logout
             :on-click #(go (<! (u-async/call-clj-async! "log-out"))
                            (u-browser/jump-to-url! "/"))}]])
-
-(defn get-page-from-selected-log
-  [tabs selected-tab-log]
-  (:id (first ((group-by :selected? tabs)
-               (last selected-tab-log)))))
