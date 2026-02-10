@@ -99,13 +99,13 @@
         grid-api           (r/atom nil)
         search             (r/atom nil)
         checked            (r/atom nil)
-        users              (r/atom nil)]
+        users              (r/atom nil)
+        users-selected?    (r/atom false)]
     (r/create-class
      {:display-name "users-table"
       :component-did-mount #(go (reset! users (<! (get-users! user-role))))
       :reagent-render
       (fn [{:keys [user-role
-                   users-selected?
                    org-id
                    role-options
                    default-role-option
@@ -188,7 +188,7 @@
            (case @selected-drop-down
          ;; TODO ideally these roles should be queried from the database from a sql function.
              :role   [buttons/drop-down {:options         role-options
-                                         :disabled?       (or (not @checked) (not users-selected?))
+                                         :disabled?       (or (not @checked) (not @users-selected?))
                                          :checked         checked
                                      ;;TODO opt->display should be passed in here but we need to move users state to table before it will be easy to re-factor.
                                          :opt->display    db->display
@@ -200,7 +200,7 @@
          ;; TODO check if none is a valid option, noting that it would remove them from the org.
          ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
              :status [buttons/drop-down {:options         statuses
-                                         :disabled?       (or (not @checked) (not users-selected?))
+                                         :disabled?       (or (not @checked) (not @users-selected?))
                                          :checked         checked
                                          :opt->display    db->display
                                          :on-click  (on-click-apply
