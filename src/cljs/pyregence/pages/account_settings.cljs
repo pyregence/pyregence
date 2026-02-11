@@ -182,7 +182,7 @@
               "Organization Settings"
               [os/main
                (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
-                     selected (if (= user-role "super_admin")
+                     selected (if (#{"super_admin" "account_manager"} user-role)
                                 selected
                                 (-> @org-id->org keys first))
                      {:keys [unsaved-org-name
@@ -195,7 +195,7 @@
                              unsaved-org-name-support-message]} (@org-id->org selected)
                      roles (->> user-role roles/role->roles-below (filter roles/organization-roles))
                      selected-orgs-users
-                     (if-not (= user-role "super_admin")
+                     (if-not (#{"super_admin" "account_manager"} user-role)
                        ;;TODO check if this shouldn't happen in the db or server instead.
                        (map #(set/rename-keys % {:full-name :name :membership-status :org-membership-status}) @users)
                        (filter (fn [{:keys [user-role organization-name]}]
