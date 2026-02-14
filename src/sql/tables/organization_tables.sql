@@ -27,14 +27,14 @@ CREATE TABLE organizations (
     archived_date         date,
     system_assets         boolean,
     subscription_tier     subscription_tier NOT NULL DEFAULT 'tier1_free_registered',
-    max_seats             integer NOT NULL default 1
+    is_shell_org          boolean NOT NULL DEFAULT FALSE
 );
 
 ALTER TABLE organizations
-ADD CONSTRAINT org_tier_seat_rules CHECK (
-  (subscription_tier IN ('tier1_free_registered', 'tier1_basic_paid') AND max_seats = 1)
+ADD CONSTRAINT org_shell_matches_tier CHECK (
+  (subscription_tier IN ('tier1_free_registered', 'tier1_basic_paid') AND is_shell_org = TRUE)
   OR
-  (subscription_tier IN ('tier2_pro', 'tier3_enterprise') AND max_seats >= 1)
+  (subscription_tier IN ('tier2_pro', 'tier3_enterprise') AND is_shell_org = FALSE)
 );
 
 --------------------------------------------------------------------------------

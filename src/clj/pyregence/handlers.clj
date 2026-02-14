@@ -74,7 +74,8 @@
                                         (re-find #"(?i)^Bearer\s+(.+)$")
                                         second)
         valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))
-        super-admin?           (isa? role-hierarchy user-role :super-admin)]
+        super-admin?           (isa? role-hierarchy user-role :super-admin)
+        account-manager?       (isa? role-hierarchy user-role :account-manager)]
     (every? (fn [auth-type]
               (case auth-type
                 :token               valid-token? ; TODO: generate token per user and validate it cryptographically
@@ -91,12 +92,16 @@
                 :member              (isa? role-hierarchy user-role :member)
                 ;; Subscription Tiers (super admins have access to all tiers)
                 :tier3-enterprise      (or super-admin?
+                                           account-manager?
                                            (isa? subscription-hierarchy subscription-tier :tier3-enterprise))
                 :tier2-pro             (or super-admin?
+                                           account-manager?
                                            (isa? subscription-hierarchy subscription-tier :tier2-pro))
                 :tier1-basic-paid      (or super-admin?
+                                           account-manager?
                                            (isa? subscription-hierarchy subscription-tier :tier1-basic-paid))
                 :tier1-free-registered (or super-admin?
+                                           account-manager?
                                            (isa? subscription-hierarchy subscription-tier :tier1-free-registered))
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))

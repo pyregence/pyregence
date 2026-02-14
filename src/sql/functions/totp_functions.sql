@@ -70,7 +70,7 @@ CREATE OR REPLACE FUNCTION get_user_with_totp(_user_id integer)
     org_membership_status org_membership_status,
     organization_rid      integer,
     subscription_tier     subscription_tier,
-    max_seats             integer
+    is_shell_org          boolean
 ) AS $$
     SELECT
       u.user_uid          AS user_id,
@@ -82,7 +82,7 @@ CREATE OR REPLACE FUNCTION get_user_with_totp(_user_id integer)
       u.org_membership_status,
       u.organization_rid,
       COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
-      COALESCE(o.max_seats, 1) AS max_seats
+      COALESCE(o.is_shell_org, FALSE) AS is_shell_org
     FROM user_totp t
     JOIN users u
       ON u.user_uid = t.user_id
