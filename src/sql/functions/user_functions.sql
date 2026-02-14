@@ -151,7 +151,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    org_membership_status org_membership_status,
    organization_rid      integer,
    subscription_tier     subscription_tier,
-   max_seats             integer
+   is_shell_org          boolean
    ) AS $$
 
     SELECT
@@ -164,7 +164,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
       u.organization_rid      AS organization_rid,
       -- TODO remove defaults?
       COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
-      COALESCE(o.max_seats, 1) AS max_seats
+      COALESCE(o.is_shell_org, FALSE) AS is_shell_org
     FROM users u
     LEFT JOIN organizations o
       ON o.organization_uid = u.organization_rid
@@ -204,7 +204,7 @@ CREATE OR REPLACE FUNCTION set_user_password(
     org_membership_status org_membership_status,
     organization_rid      integer,
     subscription_tier     subscription_tier,
-    max_seats             integer
+    is_shell_org          boolean
 ) AS $$
   WITH updated AS (
     UPDATE users
@@ -245,7 +245,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
     org_membership_status org_membership_status,
     organization_rid      integer,
     subscription_tier     subscription_tier,
-    max_seats             integer
+    is_shell_org          boolean
 ) AS $$
   WITH updated AS (
     UPDATE users
@@ -284,7 +284,7 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
     org_membership_status org_membership_status,
     organization_rid      integer,
     subscription_tier     subscription_tier,
-    max_seats             integer
+    is_shell_org          boolean
 ) AS $$
   WITH updated AS (
     UPDATE users

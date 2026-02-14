@@ -27,8 +27,7 @@
                                         :organization-id       (:organization_rid user-data)
                                         :org-membership-status (:org_membership_status user-data)
                                         :subscription-tier     (:subscription_tier user-data)
-                                        ;; TODO we might not need max seats
-                                        :max-seats             (:max_seats user-data)}
+                                        :is-shell-org?         (:is_shell_org user-data)}
                                        (get-config :app :client-keys))})))
 
 (defn- parse-user-settings
@@ -738,14 +737,14 @@
   "Returns the list of all organizations in the database."
   [_]
   (->> (call-sql "get_all_organizations")
-       (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials email_domains subscription_tier max_seats auto_add auto_accept archived created_date archived_date]}]
+       (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials email_domains subscription_tier is_shell_org auto_add auto_accept archived created_date archived_date]}]
                {:org-id                org_id
                 :org-name              org_name
                 :org-unique-id         org_unique_id
                 :geoserver-credentials geoserver_credentials
                 :email-domains         email_domains
                 :subscription-tier     subscription_tier
-                :max-seats             max_seats
+                :is-shell-org?         is_shell_org
                 :auto-add?             auto_add
                 :auto-accept?          auto_accept
                 :archived?             archived
