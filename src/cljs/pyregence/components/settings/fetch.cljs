@@ -37,24 +37,6 @@
         (toast-message! (str "The user " new-name " with the email " email  " has been updated."))
         (toast-message! (:body res))))))
 
-(defn update-own-user-name!
-  "Updates the currently logged-in user's own name."
-  [new-name]
-  (go
-    (let [res (<! (u-async/call-clj-async! "update-own-user-name" new-name))]
-      (if (:success res)
-        (toast-message! (str "Your name has been updated to " new-name "."))
-        (toast-message! (:body res))))))
-
-(defn get-user-name!
-  []
-  (go
-    ;; TODO is there a function that just assumes the body succeeds and will pull
-    ;; data from it? If so use that here.
-    (:user-name
-     (edn/read-string
-      (:body (<! (u-async/call-clj-async! "get-user-name-by-email")))))))
-
 (defn delete-users!
   [users-to-delete]
   (go (<! (u-async/call-clj-async! "delete-users" users-to-delete))))

@@ -6,8 +6,7 @@
    [pyregence.components.nav-bar                        :refer [nav-bar]]
    [pyregence.components.settings.pages.admin                 :as admin]
    [pyregence.components.settings.fetch                 :refer [delete-users!
-                                                                get-orgs!
-                                                                get-user-name!]]
+                                                                get-orgs!]]
    [pyregence.components.settings.nav-bar               :refer [side-nav-bar-and-page]]
    [pyregence.components.settings.roles                 :as roles]
    [pyregence.state                                     :as !]
@@ -46,9 +45,7 @@
 (defn root-component
   "The root component of the /account-settings page."
   [{:keys [user-role password-set-date]}]
-  (let [org-id->org       (r/atom nil)
-        user-name         (r/atom nil)
-        unsaved-user-name (r/atom nil)]
+  (let [org-id->org       (r/atom nil)]
     (r/create-class
      {:display-name "account-settings"
       :component-did-mount
@@ -58,8 +55,6 @@
                            (reset! !/mobile? (> 800.0 (.-innerWidth js/window))))]
            (-> js/window (.addEventListener "touchend" update-fn))
            (-> js/window (.addEventListener "resize"   update-fn))
-           (reset! user-name (<! (get-user-name!)))
-           (reset! unsaved-user-name @user-name)
            (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role))))
            (update-fn)))
       :reagent-render
@@ -81,19 +76,7 @@
          [side-nav-bar-and-page
           {:organizations (vals @org-id->org)
            :user-role     user-role}]
-         #_#_"Account Settings"
-           [as/main {:columns                        columns
-                     :password-set-date              password-set-date
-                     :role-type                      user-role
-                     :user-name                      @unsaved-user-name
-                     :email-address                  user-email
-                     :account-details-save-disabled? (= @user-name @unsaved-user-name)
-                     :on-change-update-user-name     (fn [e]
-                                                       (reset! unsaved-user-name (input-value e)))
-                     :on-click-save-user-name        (fn []
-                                                          ;;TODO should this be on success?
-                                                       (update-own-user-name! @unsaved-user-name)
-                                                       (reset! user-name @unsaved-user-name))}]
+
          #_#_"Organization Settings"
          [os/main
             (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org

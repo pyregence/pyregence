@@ -1,4 +1,4 @@
-(ns pyregence.components.settings.account-settings
+(ns pyregence.components.settings.pages.account-settings
   (:require
    [cljs.reader                           :as reader]
    [clojure.core.async                    :refer [<! go]]
@@ -11,6 +11,7 @@
                                                   text-labeled]]
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]
+   [pyregence.utils.dom-utils :refer [input-value]]
    [reagent.core                          :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -134,21 +135,37 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- user-full-name
-  [m]
-  [:div {:style {:display        "flex"
-                 :width          "100%"
-                 :gap            "16px"
-                 :flex-direction "column"}}
-   [:div {:style {:display        "flex"
-                  :flex-direction "row"
-                  :width          "100%"
-                  :gap            "16px"}}
-    [input-labeled {:value     (:user-name m)
-                    :label     "Full Name"
-                    :on-change (:on-change-update-user-name m)}]]
-   [buttons/ghost {:text       "Save Changes"
-                   :disabled?  (:account-details-save-disabled? m)
-                   :on-click   (:on-click-save-user-name m)}]])
+  []
+  (let [user-name         (r/atom nil)
+        unsaved-user-name (r/atom nil)]
+    (go
+      (let [n (:user-name
+               (edn/read-string
+                (:body (<! (u-async/call-clj-async! "get-user-name-by-email")))))]
+        (reset! user-name n)
+        (reset! unsaved-user-name n)))
+    (fn []
+      [:div {:style {:display        "flex"
+                     :width          "100%"
+                     :gap            "16px"
+                     :flex-direction "column"}}
+       [:div {:style {:display        "flex"
+                      :flex-direction "row"
+                      :width          "100%"
+                      :gap            "16px"}}
+        [input-labeled {:value     @unsaved-user-name
+                        :label     "Full Name"
+                        :on-change #(reset! unsaved-user-name (input-value %))}]]
+       [buttons/ghost {:text       "Save Changes"
+                       :disabled?  (= @user-name @unsaved-user-name)
+                       :on-click   #(go
+                                      (let [new-name @unsaved-user-name
+                                            res (<! (u-async/call-clj-async! "update-own-user-name" new-name))]
+                                        (if (:success res)
+                                          (do
+                                            (toast-message! (str "Your name has been updated to " new-name "."))
+                                            (reset! user-name new-name))
+                                          (toast-message! (:body res)))))}]])))
 
 (defn show-password-set-date
   []
@@ -171,8 +188,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn main
-  [{:keys [email-address
-           role-type] :as user-info}]
+  [{:keys [email-address user-role]}]
   [:div {:style main-styles}
    [card {:title "MY ACCOUNT DETAILS"
           :children
@@ -180,8 +196,8 @@
            [text-labeled {:label "Email Address"
                           :text  email-address}]
            [text-labeled {:label    "Role Type"
-                          :text     (roles/type->label role-type)}]
-           [user-full-name user-info]]}]
+                          :text     (roles/type->label user-role)}]
+           [user-full-name]]}]
    [security-card]
    [card {:title "RESET MY PASSWORD"
           :children
@@ -195,11 +211,12 @@
                           :width           "100%"
                           :gap             "10px"}}
             [:p {:style {:margin "0px"}}
-             [buttons/ghost {:text     "Send Reset Link"
-                             :on-click (fn []
-                                         (go
-                                           (if (:success (<! (u-async/call-clj-async! "send-email" email-address :reset)))
-                                             (toast-message! (str "Reset Link sent to " email-address "."))
-                                             ;;TODO consider pulling support email from config. See PYR1-1319.
-                                             (toast-message! "Something went wrong when sending the Reset Link. Please contact support@pyrecast.com or try again later."))))}]]
+             [buttons/ghost
+              {:text     "Send Reset Link"
+               :on-click
+               #(go
+                 (if (:success (<! (u-async/call-clj-async! "send-email" email-address :reset)))
+                   (toast-message! (str "Reset Link sent to " email-address "."))
+                     ;;TODO consider pulling support email from config. See PYR1-1319.
+                   (toast-message! "Something went wrong when sending the Reset Link. Please contact support@pyrecast.com or try again later.")))}]]
             [show-password-set-date]]]}]])

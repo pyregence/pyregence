@@ -1,16 +1,17 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.core.async                       :refer [<! go]]
-   [clojure.string                           :as str]
-   [clojure.walk                             :as walk]
-   [herb.core                                :refer [<class]]
-   [pyregence.components.settings.pages.admin :as admin]
-   [pyregence.components.svg-icons           :as svg]
-   [pyregence.components.utils               :refer [search-cmpt]]
-   [pyregence.styles                         :as $]
-   [pyregence.utils.async-utils              :as u-async]
-   [pyregence.utils.browser-utils            :as u-browser]
-   [reagent.core                             :as r]))
+   [clojure.core.async                                   :refer [<! go]]
+   [clojure.string                                       :as str]
+   [clojure.walk                                         :as walk]
+   [herb.core                                            :refer [<class]]
+   [pyregence.components.settings.pages.admin            :as admin]
+   [pyregence.components.svg-icons                       :as svg]
+   [pyregence.components.utils                           :refer [search-cmpt]]
+   [pyregence.styles                                     :as $]
+   [pyregence.utils.async-utils                          :as u-async]
+   [pyregence.utils.browser-utils                        :as u-browser]
+   [reagent.core                                         :as r]
+   [pyregence.components.settings.pages.account-settings :as account-settings]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -158,11 +159,12 @@
 ;; Authenticated Super Admins and Account Managers can see all categories.
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
-  [{:keys [organizations user-role]}]
+  [{:keys [organizations user-role] :as m}]
   ;; All authenticated Members can see the Account Settings category.
   [{:tab  button
     :text "Account Settings"
-    :icon svg/wheel}
+    :icon svg/wheel
+    :page [account-settings/main m]}
    ;;TODO the user-role should be the same keyword as it is on the backend
    ;; it being a string on the fe is a security risk because it's easy to get wrong.
 
@@ -191,7 +193,7 @@
      {:tab  button
       :text "Admin"
       :icon svg/admin
-      :page [admin/main {:user-role user-role}]})])
+      :page [admin/main m]})])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
@@ -223,7 +225,7 @@
 
 (defn side-nav-bar-and-page
   [m]
-  (r/with-let [selected-log  (r/atom ["Admin"])]
+  (r/with-let [selected-log  (r/atom ["Account Settings"])]
     (let [tab+page (tab-data->tabs (assoc m :selected-log selected-log))]
       [:nav-bar-and-page {:style {:display        "flex"
                                   :flex-direction "row"
