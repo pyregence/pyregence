@@ -94,24 +94,24 @@
            clj->js)}]]])
 
 (defn table-with-buttons
-  [{:keys [user-role]}]
+  [{:keys [user-role users-filter]}]
   (let [selected-drop-down (r/atom nil)
         grid-api           (r/atom nil)
         search             (r/atom nil)
         checked            (r/atom nil)
         users              (r/atom nil)
-        users-selected?    (r/atom false)]
+        users-selected?    (r/atom false)
+        set-users!         #(go (reset! users (filter (or users-filter identity) (<! (get-users! user-role)))))]
     (r/create-class
      {:display-name "users-table"
-      :component-did-mount #(go (reset! users (<! (get-users! user-role))))
+      :component-did-mount set-users!
       :reagent-render
-      (fn [{:keys [user-role
-                   org-id
-                   role-options
-                   default-role-option
-                   statuses
-                   columns
-                   show-export-to-csv?]}]
+      (fn [{:keys [org-id
+                  role-options
+                  default-role-option
+                  statuses
+                  columns
+                  show-export-to-csv?]}]
         (let [update-drop-down    #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
               get-selected-emails #(->> @grid-api get-selected-rows (map :email))
               get-selected-rows   #(get-selected-rows @grid-api)
@@ -126,7 +126,7 @@
                         ;; first, we have the update function return the users, this seems ideal. the second is,
                         ;; we get the success from the update function and we then poll the users.
                         ;; TODO this could use the core async timeout instead.
-                      (js/setTimeout #(go (reset! users (<! (get-users! user-role)))) 3000)
+                      (js/setTimeout set-users! 3000)
                       (toast-message!
                          ;;TODO make this handle plural case e.g roles and statues.
                        (str (str/join ", " emails)  " updated " opt-type " to " (opt->display new-user-info) "."))))))
@@ -140,7 +140,7 @@
                             (<! (delete-users! selected-emails))]
                         (if success
                           (do
-                            (js/setTimeout (fn [] (go (reset! users (<! (get-users! user-role))))) 3000)
+                            (js/setTimeout set-users! 3000)
                             (toast-message! (str "Users Deleted: " (str/join ", " selected-emails))))
                                         ;;TODO it's unclear what would help here...
                           (toast-message! "Something went wrong!")))))))]

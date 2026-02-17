@@ -11,7 +11,8 @@
    [pyregence.utils.async-utils                          :as u-async]
    [pyregence.utils.browser-utils                        :as u-browser]
    [reagent.core                                         :as r]
-   [pyregence.components.settings.pages.account-settings :as account-settings]))
+   [pyregence.components.settings.pages.account-settings :as account-settings]
+   [pyregence.components.settings.unaffilated-members    :as unaffilated-members]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -188,7 +189,8 @@
    (when (#{"account_manager" "super_admin"} user-role)
      {:tab  button
       :text "Unaffilated Members"
-      :icon svg/individual})
+      :icon svg/individual
+      :page [unaffilated-members/main m]})
    (when (#{"account_manager" "super_admin"} user-role)
      {:tab  button
       :text "Admin"
