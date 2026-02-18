@@ -22,6 +22,8 @@
 (defonce re-email       (r/atom ""))
 (defonce password       (r/atom ""))
 (defonce re-password    (r/atom ""))
+(defonce marketplace?   (r/atom false))
+(defonce org-name       (r/atom ""))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -31,7 +33,9 @@
   (go
     (toast-message! "Creating new account. This may take a moment...")
     ;;TODO it's awkward that add-new-user requires a user's name when it's not a unique identifier. Consider alternatives.
-    (if (and (:success (<! (u-async/call-clj-async! "add-new-user" @email "" @password)))
+    (if (and (:success (<! (if @marketplace?
+                             (u-async/call-clj-async! "add-new-user" @email "" @password {:org-name @org-name})
+                             (u-async/call-clj-async! "add-new-user" @email "" @password))))
              (:success (<! (u-async/call-clj-async! "send-email" @email :new-user))))
       (do (toast-message! ["Your account has been created successfully."
                            "Please check your email for a link to complete registration."])
@@ -79,6 +83,10 @@
     (r/create-class
      {:component-did-mount
       (fn [_]
+        (let [url-params (js/URLSearchParams. (.-search js/location))]
+          (when (= "1" (.get url-params "marketplace"))
+            (reset! marketplace? true)
+            (reset! org-name (or (.get url-params "org") ""))))
         (reset! update-fn (fn [& _]
                             (-> js/window (.scrollTo 0 0))
                             (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))))
@@ -96,6 +104,11 @@
            [utils/card {:title "Register"
                         :children
                         [:<>
+                         (when @marketplace?
+                           [utils/input-labeled {:label       "Organization Name"
+                                                 :placeholder "e.g., Acme Corp"
+                                                 :on-change   #(reset! org-name (-> % .-target .-value))
+                                                 :value       @org-name}])
                          [utils/input-labeled {:label       "Email"
                                                :placeholder "Enter Email Address"
                                                :on-change   #(reset! email (-> % .-target .-value))

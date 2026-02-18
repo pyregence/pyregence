@@ -1,33 +1,36 @@
 {:paths   ["src/clj" "src/cljs" "resources" "target" "src/sql"]
- :deps    {clj-http/clj-http                          {:mvn/version "3.10.1"}
-           clj-tagsoup/clj-tagsoup                    {:mvn/version "0.3.0" :exclusions [org.clojure/data.xml org.clojure/clojure]}
-           com.cognitect/transit-clj                  {:mvn/version "1.0.324"}
-           com.cognitect/transit-cljs                 {:mvn/version "0.8.264"}
-           funcool/decimal                            {:mvn/version "1.0.2"}
-           herb/herb                                  {:mvn/version "0.10.0"}
-           hiccup/hiccup                              {:mvn/version "2.0.0-alpha2"}
-           one-time/one-time                          {:mvn/version "0.8.0" :exclusions [com.github.kenglxn.qrgen/javase]}
-           org.clojure/clojure                        {:mvn/version "1.12.0"}
-           org.clojure/clojurescript                  {:mvn/version "1.10.866"}
-           org.clojure/core.async                     {:mvn/version "1.2.603"}
-           org.clojure/data.json                      {:mvn/version "1.0.0"}
-           org.clojure/data.xml                       {:mvn/version "0.0.8"}
-           org.clojure/tools.cli                      {:mvn/version "1.0.194"}
-           org.postgresql/postgresql                  {:mvn/version "42.2.14"}
-           reagent/reagent                            {:mvn/version "1.2.0"}
-           ring/ring                                  {:mvn/version "1.9.4"}
-           ring/ring-headers                          {:mvn/version "0.3.0"}
-           ring/ring-json                             {:mvn/version "0.5.0"}
-           ring/ring-ssl                              {:mvn/version "0.3.0"}
-           seancorfield/next.jdbc                     {:mvn/version "1.1.569"}
-           sig-gis/runway                             {:git/url "https://gitlab.sig-gis.com/sig-gis/runway"
-                                                       :git/sha "a3a2b218e15e9144af5e9064f686d253198f0c85"
-                                                       :git/tag "2024.06.05-a3a2b21"}
-           sig-gis/triangulum                         {:git/url "https://github.com/sig-gis/triangulum"
-                                                       :git/sha "6044e8db232e786854616fafca3b06d9287a8a6a"}
-           io.github.matthewdowney/rich-comment-tests {:git/tag "v1.0.3" :git/sha "a8711e9"}
-           org.clojure/data.csv                       {:mvn/version "1.1.0"}
-           semantic-csv/semantic-csv                  {:mvn/version "0.2.1-alpha1"}}
+ :deps    {buddy/buddy-sign                                 {:mvn/version "3.5.351"}
+           clj-http/clj-http                                {:mvn/version "3.10.1"}
+           clj-tagsoup/clj-tagsoup                          {:mvn/version "0.3.0" :exclusions [org.clojure/data.xml org.clojure/clojure]}
+           com.cognitect/transit-clj                        {:mvn/version "1.0.324"}
+           com.cognitect/transit-cljs                       {:mvn/version "0.8.264"}
+           com.google.auth/google-auth-library-oauth2-http  {:mvn/version "1.19.0"}
+           com.google.guava/guava                           {:mvn/version "32.0.0-jre"}
+           funcool/decimal                                  {:mvn/version "1.0.2"}
+           herb/herb                                        {:mvn/version "0.10.0"}
+           hiccup/hiccup                                    {:mvn/version "2.0.0-alpha2"}
+           io.github.matthewdowney/rich-comment-tests       {:git/tag "v1.0.3" :git/sha "a8711e9"}
+           one-time/one-time                                {:mvn/version "0.8.0" :exclusions [com.github.kenglxn.qrgen/javase]}
+           org.clojure/clojure                              {:mvn/version "1.12.0"}
+           org.clojure/clojurescript                        {:mvn/version "1.10.866"}
+           org.clojure/core.async                           {:mvn/version "1.2.603"}
+           org.clojure/data.csv                             {:mvn/version "1.1.0"}
+           org.clojure/data.json                            {:mvn/version "1.0.0"}
+           org.clojure/data.xml                             {:mvn/version "0.0.8"}
+           org.clojure/tools.cli                            {:mvn/version "1.0.194"}
+           org.postgresql/postgresql                        {:mvn/version "42.2.14"}
+           reagent/reagent                                  {:mvn/version "1.2.0"}
+           ring/ring                                        {:mvn/version "1.9.4"}
+           ring/ring-headers                                {:mvn/version "0.3.0"}
+           ring/ring-json                                   {:mvn/version "0.5.0"}
+           ring/ring-ssl                                    {:mvn/version "0.3.0"}
+           seancorfield/next.jdbc                           {:mvn/version "1.1.569"}
+           semantic-csv/semantic-csv                        {:mvn/version "0.2.1-alpha1"}
+           sig-gis/runway                                   {:git/url "https://gitlab.sig-gis.com/sig-gis/runway"
+                                                             :git/sha "a3a2b218e15e9144af5e9064f686d253198f0c85"
+                                                             :git/tag "2024.06.05-a3a2b21"}
+           sig-gis/triangulum                               {:git/url "https://github.com/sig-gis/triangulum"
+                                                             :git/sha "6044e8db232e786854616fafca3b06d9287a8a6a"}}
  :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
            :build-uberjar    {:exec-fn   pyregence.packaging/build-uberjar!
                               :exec-args {:app-name      pyregence
