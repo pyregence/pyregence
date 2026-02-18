@@ -36,12 +36,13 @@
 
 (def subscription-hierarchy
   (-> (make-hierarchy)
-      (derive :tier3-enterprise :tier2-pro)
-      (derive :tier3-enterprise :tier1-basic-paid)
-      (derive :tier3-enterprise :tier1-free-registered)
-      (derive :tier2-pro        :tier1-basic-paid)
-      (derive :tier2-pro        :tier1-free-registered)
-      (derive :tier1-basic-paid :tier1-free-registered)))
+      (derive :tier3-enterprise      :tier2-pro)
+      (derive :tier3-enterprise      :tier1-basic-paid)
+      (derive :tier3-enterprise      :tier1-free-registered)
+      (derive :tier2-pro             :tier1-basic-paid)
+      (derive :tier2-pro             :tier1-free-registered)
+      (derive :tier1-basic-paid      :tier1-free-registered)
+      (derive :tier1-free-registered :tier0-guest)))
 
 (defn- sql->kw
   "Turns a SQL string like super_admin into :super-admin  or tier2_pro into :tier2-pro
@@ -58,10 +59,15 @@
       :member))
 
 (defn- session-subscription-tier
-  "Returns the subscription tier from the session, defaults to :tier1-free-registered."
+  "Returns the subscription tier from the session, defaults to :tier0-guest for unauthenticated users."
   [session]
   (or (some-> session :subscription-tier sql->kw)
-      :tier1-free-registered))
+      :tier0-guest))
+
+(defn shell-tier?
+  "Returns true if the subscription tier is a single-user (shell) tier, i.e. tier1 or below."
+  [tier]
+  (not (isa? subscription-hierarchy tier :tier2-pro)))
 
 ;; TODO add (some? (:user-id session)) check to all routes to ensure user is logged in?
 (defn route-authenticator [{:keys [headers session]} auth-type]
@@ -74,7 +80,8 @@
                                         (re-find #"(?i)^Bearer\s+(.+)$")
                                         second)
         valid-token?           (= bearer-token (get-config :triangulum.views/client-keys :auth-token))
-        super-admin?           (isa? role-hierarchy user-role :super-admin)]
+        super-admin?           (isa? role-hierarchy user-role :super-admin)
+        account-manager?       (isa? role-hierarchy user-role :account-manager)]
     (every? (fn [auth-type]
               (case auth-type
                 :token               valid-token? ; TODO: generate token per user and validate it cryptographically
@@ -91,12 +98,16 @@
                 :member              (isa? role-hierarchy user-role :member)
                 ;; Subscription Tiers (super admins have access to all tiers)
                 :tier3-enterprise      (or super-admin?
+                                           account-manager?
                                            (isa? subscription-hierarchy subscription-tier :tier3-enterprise))
                 :tier2-pro             (or super-admin?
+                                           account-manager?
                                            (isa? subscription-hierarchy subscription-tier :tier2-pro))
                 :tier1-basic-paid      (or super-admin?
+                                           account-manager?
                                            (isa? subscription-hierarchy subscription-tier :tier1-basic-paid))
                 :tier1-free-registered (or super-admin?
+                                           account-manager?
                                            (isa? subscription-hierarchy subscription-tier :tier1-free-registered))
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))

@@ -150,8 +150,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    user_role             user_role,
    org_membership_status org_membership_status,
    organization_rid      integer,
-   subscription_tier     subscription_tier,
-   max_seats             integer
+   subscription_tier     subscription_tier
    ) AS $$
 
     SELECT
@@ -163,8 +162,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
       u.org_membership_status AS org_membership_status,
       u.organization_rid      AS organization_rid,
       -- TODO remove defaults?
-      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
-      COALESCE(o.max_seats, 1) AS max_seats
+      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier
     FROM users u
     LEFT JOIN organizations o
       ON o.organization_uid = u.organization_rid
@@ -203,8 +201,7 @@ CREATE OR REPLACE FUNCTION set_user_password(
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
-    subscription_tier     subscription_tier,
-    max_seats             integer
+    subscription_tier     subscription_tier
 ) AS $$
   WITH updated AS (
     UPDATE users
@@ -227,8 +224,7 @@ CREATE OR REPLACE FUNCTION set_user_password(
     u.user_role           AS user_role,
     u.org_membership_status,
     u.organization_rid,
-    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
-    COALESCE(o.max_seats, 1) AS max_seats
+    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier
   FROM updated u
   LEFT JOIN organizations o
     ON o.organization_uid = u.organization_rid;
@@ -244,8 +240,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
-    subscription_tier     subscription_tier,
-    max_seats             integer
+    subscription_tier     subscription_tier
 ) AS $$
   WITH updated AS (
     UPDATE users
@@ -266,8 +261,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
     u.user_role           AS user_role,
     u.org_membership_status,
     u.organization_rid,
-    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
-    COALESCE(o.max_seats, 1) AS max_seats
+    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier
   FROM updated u
   LEFT JOIN organizations o
     ON o.organization_uid = u.organization_rid;
@@ -283,8 +277,7 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
-    subscription_tier     subscription_tier,
-    max_seats             integer
+    subscription_tier     subscription_tier
 ) AS $$
   WITH updated AS (
     UPDATE users
@@ -305,8 +298,7 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
     u.user_role           AS user_role,
     u.org_membership_status,
     u.organization_rid,
-    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
-    COALESCE(o.max_seats, 1) AS max_seats
+    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier
   FROM updated u
   LEFT JOIN organizations o
     ON o.organization_uid = u.organization_rid;
