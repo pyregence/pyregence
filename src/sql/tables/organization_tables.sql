@@ -26,15 +26,7 @@ CREATE TABLE organizations (
     created_date          date DEFAULT NOW(),
     archived_date         date,
     system_assets         boolean,
-    subscription_tier     subscription_tier NOT NULL DEFAULT 'tier1_free_registered',
-    is_shell_org          boolean NOT NULL DEFAULT FALSE
-);
-
-ALTER TABLE organizations
-ADD CONSTRAINT org_shell_matches_tier CHECK (
-  (subscription_tier IN ('tier1_free_registered', 'tier1_basic_paid') AND is_shell_org = TRUE)
-  OR
-  (subscription_tier IN ('tier2_pro', 'tier3_enterprise') AND is_shell_org = FALSE)
+    subscription_tier     subscription_tier NOT NULL DEFAULT 'tier1_free_registered'
 );
 
 --------------------------------------------------------------------------------
