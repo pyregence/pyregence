@@ -1,18 +1,17 @@
-(ns pyregence.components.settings.organization-settings
+(ns pyregence.components.settings.pages.organization-settings
   (:require
-   [clojure.core.async :refer [<! go]]
-   [clojure.set :as set]
-   [clojure.string :as str]
+   [clojure.core.async                        :refer [<! go]]
+   [clojure.string                            :as str]
    [pyregence.components.buttons              :as buttons]
-   [pyregence.components.messaging :refer [toast-message!]]
-   [pyregence.components.settings.email :as email]
-   [pyregence.components.settings.roles :as roles]
+   [pyregence.components.messaging            :refer [toast-message!]]
+   [pyregence.components.settings.email       :as email]
+   [pyregence.components.settings.roles       :as roles]
    [pyregence.components.settings.users-table :refer [table-with-buttons]]
    [pyregence.components.utils                :refer [card input-field
                                                       input-labeled
                                                       label-styles main-styles]]
    [pyregence.styles                          :as $]
-   [pyregence.utils.async-utils :as u-async]))
+   [pyregence.utils.async-utils               :as u-async]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components

@@ -1,19 +1,19 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.core.async                                   :refer [<! go]]
-   [clojure.string                                       :as str]
-   [clojure.walk                                         :as walk]
-   [herb.core                                            :refer [<class]]
-   [pyregence.components.settings.pages.admin            :as admin]
-   [pyregence.components.svg-icons                       :as svg]
-   [pyregence.components.utils                           :refer [search-cmpt]]
-   [pyregence.styles                                     :as $]
-   [pyregence.utils.async-utils                          :as u-async]
-   [pyregence.utils.browser-utils                        :as u-browser]
-   [reagent.core                                         :as r]
-   [pyregence.components.settings.pages.account-settings :as account-settings]
-   [pyregence.components.settings.unaffilated-members    :as unaffilated-members]
-   [pyregence.components.settings.organization-settings :as organization-settings]))
+   [clojure.core.async                                        :refer [<! go]]
+   [clojure.string                                            :as str]
+   [clojure.walk                                              :as walk]
+   [herb.core                                                 :refer [<class]]
+   [pyregence.components.svg-icons                            :as svg]
+   [pyregence.components.utils                                :refer [search-cmpt]]
+   [pyregence.styles                                          :as $]
+   [pyregence.utils.async-utils                               :as u-async]
+   [pyregence.utils.browser-utils                             :as u-browser]
+   [reagent.core                                              :as r]
+   [pyregence.components.settings.pages.admin                 :as admin]
+   [pyregence.components.settings.pages.account-settings      :as account-settings]
+   [pyregence.components.settings.pages.unaffilated-memebers  :as unaffilated-members]
+   [pyregence.components.settings.pages.organization-settings :as organization-settings]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
