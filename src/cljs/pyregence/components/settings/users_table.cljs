@@ -5,18 +5,33 @@
                                                       themeQuartz]]
    ["ag-grid-react"                           :refer [AgGridReact]]
    [clojure.core.async                        :as async :refer [<! go]]
+   [clojure.edn                               :as edn]
+   [clojure.set                               :as set]
    [clojure.string                            :as str]
    [goog.object                               :as goog]
    [pyregence.components.buttons              :as buttons]
    [pyregence.components.messaging            :refer [toast-message!]]
    [pyregence.components.settings.add-user    :as add-user]
    [pyregence.components.settings.delete-user :as delete-user]
-   [pyregence.components.settings.fetch       :refer [delete-users! get-users!]]
    [pyregence.components.svg-icons            :as svg]
    [pyregence.components.utils                :refer [db->display search-cmpt]]
    [pyregence.styles                          :as $]
    [pyregence.utils.async-utils               :as u-async]
    [reagent.core                              :as r]))
+
+(defn delete-users!
+  [users-to-delete]
+  (go (<! (u-async/call-clj-async! "delete-users" users-to-delete))))
+
+(defn get-users! [user-role]
+  (go
+    (let [admin? (#{"super_admin" "account_manager"} user-role)
+          route (if admin?
+                  "get-all-users"
+                  "get-org-member-users")
+          resp-chan              (u-async/call-clj-async! route)
+          {:keys [body]} (<! resp-chan)]
+      (map #(set/rename-keys % {:full-name :name :membership-status :org-membership-status}) (edn/read-string body)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid functionality
