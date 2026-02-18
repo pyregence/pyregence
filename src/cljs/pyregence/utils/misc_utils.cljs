@@ -84,7 +84,7 @@
 
 ;;I don't fully understand what were trying to do here..
 (defn on-mount-defaults
-  [_]
+  []
   (let [update-fn (fn [& _]
                     (-> js/window (.scrollTo 0 0))
                     (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))
