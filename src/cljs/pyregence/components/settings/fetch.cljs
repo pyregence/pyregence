@@ -2,8 +2,11 @@
   (:require
    [clojure.core.async             :refer [<! go]]
    [clojure.edn                    :as edn]
+   [clojure.set :as set]
    [pyregence.components.messaging :refer [toast-message!]]
    [pyregence.utils.async-utils    :as u-async]))
+
+
 
 (defn get-users! [user-role]
   (go
@@ -13,7 +16,11 @@
           resp-chan              (u-async/call-clj-async! route)
           {:keys [body success]} (<! resp-chan)
           users                  (edn/read-string body)]
-      (if success users []))))
+      (if success
+        (if-not (#{"super_admin" "account_manager"} user-role)
+          (map #(set/rename-keys % {:full-name :name :membership-status :org-membership-status}) users)
+          users)
+        []))))
 
 (defn get-orgs!
   [user-role]

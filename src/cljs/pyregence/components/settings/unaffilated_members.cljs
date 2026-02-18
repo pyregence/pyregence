@@ -12,7 +12,8 @@
           ;; `member` needs an organization attached.
           :children [table-with-buttons
                      (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
-                       {:users-filter                (fn [{:keys [user-role]}] (#{"member" "none" "super_admin" "account_manager"} user-role))
+                       {:users-filter                (fn [{:keys [user-role]}]
+                                                       (#{"member" "none" "super_admin" "account_manager"} user-role))
                         :default-role-option         (first roles)
                         :role-options                roles
                         :user-role                   user-role

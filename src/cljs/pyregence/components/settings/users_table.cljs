@@ -53,7 +53,7 @@
 
 ;;TODO figure out why we can't inline this it seems to have an interaction with getselectedrows.
 (defn table
-  [grid-api users users-selected? columns]
+  [grid-api users users-selected? users-filter columns]
   [:div {:style {:height "100%"
                  :width  "100%"}}
    [:div {:style {:height "100%" :width "100%"}}
@@ -83,7 +83,7 @@
       :paginationPageSizeSelector #js [25 50 100]
       :defaultColDef              #js {:unSortIcon true :flex 1}
       :enableCellTextSelection    true
-      :rowData                    (clj->js @users)
+      :rowData                    (clj->js (filter users-filter @users))
       :columnDefs
       (->> columns
            (concat
@@ -94,24 +94,26 @@
            clj->js)}]]])
 
 (defn table-with-buttons
-  [{:keys [user-role users-filter]}]
+  [{:keys [user-role]}]
   (let [selected-drop-down (r/atom nil)
         grid-api           (r/atom nil)
         search             (r/atom nil)
         checked            (r/atom nil)
         users              (r/atom nil)
         users-selected?    (r/atom false)
-        set-users!         #(go (reset! users (filter (or users-filter identity) (<! (get-users! user-role)))))]
+        set-users!         #(go (reset! users (<! (get-users! user-role))))]
     (r/create-class
      {:display-name "users-table"
       :component-did-mount set-users!
       :reagent-render
       (fn [{:keys [org-id
-                  role-options
-                  default-role-option
-                  statuses
-                  columns
-                  show-export-to-csv?]}]
+                   role-options
+                   default-role-option
+                   statuses
+                   columns
+                   show-export-to-csv?
+                   users-filter] :or {users-filter identity}}]
+        (println users-filter)
         (let [update-drop-down    #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
               get-selected-emails #(->> @grid-api get-selected-rows (map :email))
               get-selected-rows   #(get-selected-rows @grid-api)
@@ -209,4 +211,4 @@
                                                      "Status"
                                                      db->display)}]
              nil)
-           [table grid-api users users-selected? columns]]))})))
+           [table grid-api users users-selected? users-filter columns]]))})))
