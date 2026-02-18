@@ -123,9 +123,9 @@
 (defn main
   [{:keys [user-role org-id->org selected-log] :as m}]
   (let [;;TODO this selection should probably be resolved earlier on or happen a different way aka not create org-id->org if only one org
-        selected (if (#{"super_admin" "account_manager"} user-role)
-                   (last @selected-log)
-                   (-> @org-id->org keys first))
+        selected                                   (if (#{"super_admin" "account_manager"} user-role)
+                                                     (last @selected-log)
+                                                     (-> @org-id->org keys first))
         {:keys [unsaved-org-name
                 org-id auto-add?
                 org-name
@@ -134,29 +134,29 @@
                 unsaved-auto-accept?
                 unsaved-auto-add?
                 unsaved-org-name-support-message]} (@org-id->org selected)
-        roles (->> user-role roles/role->roles-below (filter roles/organization-roles))
+        roles                                      (->> user-role roles/role->roles-below (filter roles/organization-roles))
         m
         (merge m
-               {:users-filter (fn [{:keys [user-role organization-name]}]
-                                (and
-                                 (= organization-name org-name)
-                                 (#{"organization_admin" "organization_member"} user-role)))
-                :statuses                ["accepted" "pending"]
+               {:users-filter           (fn [{:keys [user-role organization-name]}]
+                                          (and
+                                           (= organization-name org-name)
+                                           (#{"organization_admin" "organization_member"} user-role)))
+                :statuses               ["accepted" "pending"]
                 :save-changes-disabled? (and (= unsaved-org-name org-name)
                                              (= unsaved-auto-accept? auto-accept?)
                                              (= unsaved-auto-add? auto-add?)
                                              (not (some (fn [[_ {:keys [email unsaved-email]}]] (not= email unsaved-email)) og-email->email)))
-                :org-id                      org-id
-                :default-role-option         (first roles)
-                :og-email->email             og-email->email
-                :unsaved-org-name            unsaved-org-name
+                :org-id                 org-id
+                :default-role-option    (first roles)
+                :og-email->email        og-email->email
+                :unsaved-org-name       unsaved-org-name
                 :unsaved-org-name-support-message
                 unsaved-org-name-support-message
-                :on-click-add-email          (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] {:email "" :unsaved-email ""}))
-                :on-delete-email             (fn [og-email]
-                                               (fn [e]
-                                                 (let [new-email (.-value (.-target e))]
-                                                   (swap! org-id->org assoc-in [selected :og-email->email og-email :unsaved-email] new-email))))
+                :on-click-add-email     (fn [] (swap! org-id->org assoc-in [selected :og-email->email (random-uuid)] {:email "" :unsaved-email ""}))
+                :on-delete-email        (fn [og-email]
+                                          (fn [e]
+                                            (let [new-email (.-value (.-target e))]
+                                              (swap! org-id->org assoc-in [selected :og-email->email og-email :unsaved-email] new-email))))
                 :on-change-email-name
                 (fn [og-email]
                   (fn [e]
@@ -245,7 +245,6 @@
                 :on-change-auto-add-user-as-org-member
                 #(swap! org-id->org update-in [selected :unsaved-auto-add?] not)
                 :role-options         roles})]
-    (println @selected-log)
     [:div {:style main-styles}
      [card {:title "ORGANIZATION SETTINGS"
             :children
