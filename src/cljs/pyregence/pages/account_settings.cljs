@@ -1,10 +1,10 @@
 (ns pyregence.pages.account-settings
   (:require
-   [clojure.core.async                                  :refer [go]]
    [pyregence.components.nav-bar                        :refer [nav-bar]]
    [pyregence.components.settings.nav-bar               :refer [side-nav-bar-and-page]]
    [pyregence.state                                     :as !]
    [pyregence.utils.browser-utils                       :as u-browser]
+   [pyregence.utils.misc-utils                          :refer [on-mount-defaults]]
    [reagent.core                                        :as r]))
 
 (defn root-component
@@ -12,14 +12,7 @@
   [m]
   (r/create-class
    {:display-name "account-settings"
-    :component-did-mount
-    #(go
-       (let [update-fn (fn [& _]
-                         (-> js/window (.scrollTo 0 0))
-                         (reset! !/mobile? (> 800.0 (.-innerWidth js/window))))]
-         (-> js/window (.addEventListener "touchend" update-fn))
-         (-> js/window (.addEventListener "resize"   update-fn))
-         (update-fn)))
+    :component-did-mount on-mount-defaults
     :reagent-render
     (fn [{:keys [user-role]}]
       [:div

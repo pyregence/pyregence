@@ -1,6 +1,9 @@
 (ns pyregence.utils.misc-utils
-  (:require [clojure.string :as cstr]
-            [clojure.set :as sets]))
+  (:require
+   [clojure.set :as sets]
+   [clojure.string :as cstr]
+   [pyregence.components.mapbox :as mb]
+   [pyregence.state :as !]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions - Misc Utils
@@ -78,3 +81,14 @@
   (-> string
       (cstr/replace #"[A-Z]" #(str " " %))
       (cstr/capitalize)))
+
+;;I don't fully understand what were trying to do here..
+(defn on-mount-defaults
+  [_]
+  (let [update-fn (fn [& _]
+                    (-> js/window (.scrollTo 0 0))
+                    (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))
+                    (js/setTimeout mb/resize-map! 50))]
+    (-> js/window (.addEventListener "touchend" update-fn))
+    (-> js/window (.addEventListener "resize"   update-fn))
+    (update-fn)))
