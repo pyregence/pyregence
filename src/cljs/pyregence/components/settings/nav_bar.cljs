@@ -4,16 +4,18 @@
    [clojure.string                                            :as str]
    [clojure.walk                                              :as walk]
    [herb.core                                                 :refer [<class]]
+   [pyregence.components.settings.organizations-utils :refer [get-orgs!
+                                                              orgs->org->id]]
+   [pyregence.components.settings.pages.account-settings      :as account-settings]
+   [pyregence.components.settings.pages.admin                 :as admin]
+   [pyregence.components.settings.pages.organization-settings :as organization-settings]
+   [pyregence.components.settings.pages.unaffilated-memebers  :as unaffilated-members]
    [pyregence.components.svg-icons                            :as svg]
    [pyregence.components.utils                                :refer [search-cmpt]]
    [pyregence.styles                                          :as $]
    [pyregence.utils.async-utils                               :as u-async]
    [pyregence.utils.browser-utils                             :as u-browser]
-   [reagent.core                                              :as r]
-   [pyregence.components.settings.pages.admin                 :as admin]
-   [pyregence.components.settings.pages.account-settings      :as account-settings]
-   [pyregence.components.settings.pages.unaffilated-memebers  :as unaffilated-members]
-   [pyregence.components.settings.pages.organization-settings :as organization-settings]))
+   [reagent.core                                              :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -227,30 +229,39 @@
        vec))
 
 (defn side-nav-bar-and-page
-  [m]
-  (r/with-let [selected-log  (r/atom ["Account Settings"])]
-    (let [tab+page (tab-data->tabs (assoc m :selected-log selected-log))]
-      [:nav-bar-and-page {:style {:display        "flex"
-                                  :flex-direction "row"
-                                  :height         "100%"
-                                  :background     ($/color-picker :lighter-gray)}}
-
-       [:nav-bar-main {:style {:display         "flex"
-                               :height          "100%"
-                               :width           "360px"
-                               :padding         "40px 0"
-                               :flex-direction  "column"
-                               :justify-content "space-between"
-                               :border-right    (str "1px solid " ($/color-picker :neutral-soft-gray))
-                               :background      "#FFF"}}
-        [:div {:style {:display        "flex"
-                       :flex-direction "column"
-                       :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
-                       :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
-         [tabs tab+page]]
-        [button {:text     "Logout" :icon svg/logout
-                 :on-click #(go (<! (u-async/call-clj-async! "log-out"))
-                                (u-browser/jump-to-url! "/"))}]]
-       [(:page (first ((group-by :selected? tab+page)
-                       (last @selected-log))))
-        (assoc m :selected-log selected-log)]])))
+  [{:keys [user-role] :as m}]
+  (let [selected-log  (r/atom ["Account Settings"])
+        ;;TODO move org-id->org into two ratoms, one for fetching the
+        ;;organizations from the side nav bar and another for fetching the org, in
+        ;;the organization-settings component info once it's been selected from
+        ;;the side.
+        org-id->org   (r/atom nil)]
+    (go (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role)))))
+    (fn [m]
+      (let [m        (assoc m
+                            :selected-log selected-log
+                            :organizations (vals @org-id->org)
+                            :org-id->org    org-id->org)
+            tab+page (tab-data->tabs m)]
+        [:nav-bar-and-page {:style {:display        "flex"
+                                    :flex-direction "row"
+                                    :height         "100%"
+                                    :background     ($/color-picker :lighter-gray)}}
+         [:nav-bar-main {:style {:display         "flex"
+                                 :height          "100%"
+                                 :width           "360px"
+                                 :padding         "40px 0"
+                                 :flex-direction  "column"
+                                 :justify-content "space-between"
+                                 :border-right    (str "1px solid " ($/color-picker :neutral-soft-gray))
+                                 :background      "#FFF"}}
+          [:div {:style {:display        "flex"
+                         :flex-direction "column"
+                         :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
+                         :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
+           [tabs tab+page]]
+          [button {:text     "Logout" :icon svg/logout
+                   :on-click #(go (<! (u-async/call-clj-async! "log-out"))
+                                  (u-browser/jump-to-url! "/"))}]]
+         [(:page (first ((group-by :selected? tab+page)
+                         (last @selected-log)))) m]]))))
