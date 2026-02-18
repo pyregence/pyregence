@@ -28,16 +28,6 @@
              (edn/read-string))
         {}))))
 
-(defn update-org-user!
-  "Updates user identified by their `email` to have the `new-name`. Then makes a toast."
-  [email new-name]
-  (go
-    (let [res (<! (u-async/call-clj-async! "update-user-name" email new-name))]
-      (if (:success res)
-        ;;TODO toast message probably shouldnt be in this ns
-        (toast-message! (str "The user " new-name " with the email " email  " has been updated."))
-        (toast-message! (:body res))))))
-
 (defn delete-users!
   [users-to-delete]
   (go (<! (u-async/call-clj-async! "delete-users" users-to-delete))))
