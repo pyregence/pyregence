@@ -11,7 +11,7 @@
   "The root component of the /account-settings page."
   [m]
   (r/create-class
-   {:display-name "account-settings"
+   {:display-name        "account-settings"
     :component-did-mount on-mount-defaults
     :reagent-render
     (fn [{:keys [user-role]}]
@@ -21,12 +21,9 @@
                 :display        "flex"
                 :flex-direction "column"
                 :font-family    "Roboto"
-                  ;;NOTE this padding-bottom is to account for the header, there is probably a better way.
                 :padding-bottom "60px"}}
        [nav-bar {:logged-in?         true
                  :mobile?            @!/mobile?
-                 :on-forecast-select (fn [forecast]
-                                       (u-browser/jump-to-url!
-                                        (str "/?forecast=" (name forecast))))
+                 :on-forecast-select #(u-browser/jump-to-url! (str "/?forecast=" (name %)))
                  :user-role          user-role}]
        [side-nav-bar-and-page m]])}))
