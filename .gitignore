@@ -16,6 +16,7 @@
 /config.edn
 announcement.txt
 /resources/runway.pkcs12
+/resources/keys/
 /.clj-kondo
 .lsp/*
 /node_modules/
