@@ -6,21 +6,15 @@
    [pyregence.components.messaging :refer [toast-message!]]
    [pyregence.utils.async-utils    :as u-async]))
 
-
-
 (defn get-users! [user-role]
   (go
-    (let [route (if (#{"super_admin" "account_manager"} user-role)
+    (let [admin? (#{"super_admin" "account_manager"} user-role)
+          route (if admin?
                   "get-all-users"
                   "get-org-member-users")
           resp-chan              (u-async/call-clj-async! route)
-          {:keys [body success]} (<! resp-chan)
-          users                  (edn/read-string body)]
-      (if success
-        (if-not (#{"super_admin" "account_manager"} user-role)
-          (map #(set/rename-keys % {:full-name :name :membership-status :org-membership-status}) users)
-          users)
-        []))))
+          {:keys [body]} (<! resp-chan)]
+      (map #(set/rename-keys % {:full-name :name :membership-status :org-membership-status}) (edn/read-string body)))))
 
 (defn get-orgs!
   [user-role]
