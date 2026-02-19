@@ -83,6 +83,54 @@
   [primary (assoc m :class
                   (<class #($on-hover-darken-orange $ghost-styles)))])
 
+(defn drop-down
+  [{:keys [options on-click opt->display checked disabled?]}]
+  (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
+    [:div {:style {:display        "flex"
+                   :width          "100%"
+                   :border         border-styles
+                   :border-radius  "4px"
+                   :flex-direction "column"}}
+     [:div {:style {:display        "flex"
+                    :flex-direction "column"}}
+      (doall
+       (for [opt  options
+             :let [checked? (= @checked opt)]]
+         [:div {:key      opt
+                :on-click #(reset! checked opt)
+                :style    {:display        "flex"
+                           :align-items    "center"
+                           :gap            "12px"
+                           :padding        "14px 12px 14px 14px"
+                           :flex-direction "row"}}
+          [:input {:type     "checkbox"
+                     ;;TODO find out why react complains without :onChange handler.
+                   :onChange #(reset! checked opt)
+                   :checked  checked?
+                   :style
+                   (merge
+                    {:appearance     "none"
+                     :width          "18px"
+                     :height         "18px"
+                     :border-radius  "50%"
+                     :border         "2px solid #555"
+                     :vertical-align "middle"
+                     :position       "relative"}
+                    (if checked?
+                      {:background "#555"
+                       :boxShadow  "inset 0 0 0 4px white"}
+                      {:background "white"
+                       :boxShadow  "none"}))}]
+          ;;TODO Why do we have to set the font color & weight here?
+          [:label {:style {:color       "black"
+                           :font-weight "normal"}}
+           (opt->display opt)]]))]
+     [:div {:style {:border-top border-styles
+                    :padding    "10px 12px"}}
+      [primary {:text      "Apply"
+                :disabled? disabled?
+                :on-click  (on-click @checked)}]]]))
+
 (defn ghost-drop-down
   [{:keys [text class on-click selected?]
     :or   {class (<class #($on-hover-gray $drop-down-styles))}}]

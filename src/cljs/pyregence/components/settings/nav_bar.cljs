@@ -1,15 +1,20 @@
 (ns pyregence.components.settings.nav-bar
   (:require
-   [clojure.core.async             :refer [<! go]]
-   [clojure.string                 :as str]
-   [clojure.walk                   :as walk]
-   [herb.core                      :refer [<class]]
-   [pyregence.components.svg-icons :as svg]
-   [pyregence.components.utils     :refer [search-cmpt]]
-   [pyregence.styles               :as $]
-   [pyregence.utils.async-utils    :as u-async]
-   [pyregence.utils.browser-utils  :as u-browser]
-   [reagent.core                   :as r]))
+   [clojure.core.async                                        :refer [<! go]]
+   [clojure.string                                            :as str]
+   [clojure.walk                                              :as walk]
+   [herb.core                                                 :refer [<class]]
+   [pyregence.components.settings.organizations-utils         :refer [get-orgs! orgs->org->id]]
+   [pyregence.components.settings.pages.account-settings      :as account-settings]
+   [pyregence.components.settings.pages.admin                 :as admin]
+   [pyregence.components.settings.pages.organization-settings :as organization-settings]
+   [pyregence.components.settings.pages.unaffilated-memebers  :as unaffilated-members]
+   [pyregence.components.svg-icons                            :as svg]
+   [pyregence.components.utils                                :refer [search-cmpt]]
+   [pyregence.styles                                          :as $]
+   [pyregence.utils.async-utils                               :as u-async]
+   [pyregence.utils.browser-utils                             :as u-browser]
+   [reagent.core                                              :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS Styles
@@ -151,45 +156,35 @@
 ;; NOTE Each Tab's `:text` has to be unique because it's used as a component ID.
 ;; NOTE `drop-down`'s only support `button`s as options (not other drop downs).
 
-;; TODO should the conditional checks on user-role use the isa? role-hierarchy?
-
-;; Auth notes from https://sig-gis.atlassian.net/browse/PYR1-1214.
-;; Authenticated Super Admins and Account Managers can see all categories.
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
   [{:keys [organizations user-role]}]
-  ;; All authenticated Members can see the Account Settings category.
-  [{:tab  button
-    :text "Account Settings"
-    :icon svg/wheel}
-   ;;TODO the user-role should be the same keyword as it is on the backend
-   ;; it being a string on the fe is a security risk because it's easy to get wrong.
-
+  [{:text "Account Settings"
+    :tab  button
+    :icon svg/wheel
+    :page account-settings/main}
+   (merge
+    {:text "Organization Settings"
+     :icon svg/group
+     :page organization-settings/main}
+    (case user-role
+      ("account_manager" "super_admin")
+      {:tab     drop-down
+       :options (->> organizations
+                     (map (fn [{:keys [org-id org-name]}]
+                            {:tab button :text org-name :id org-id})))}
+      "organization_admin"
+      {:tab button}))
    (when (#{"account_manager" "super_admin"} user-role)
-     {:tab     drop-down
-      :text    "Organization Settings"
-      :options (->> organizations
-                    (map (fn [{:keys [org-id org-name]}]
-                           {:tab button :text org-name :id org-id})))
-      :icon    svg/group})
-
-   ;; Authenticated Org Admins can see the Account Settings and Organization Settings categories.
-   ;; Org Admins will only see their Organization.
-   ;; Org Admins will not have the expand/collapse feature because they will only have one Organization.
-   (when (#{"organization_admin"} user-role)
-     {:tab  button
-      :text "Organization Settings"
-      :icon svg/group})
-   ;; No Notes in 1214 on unaffiliated members, but the wireframes
-   ;; imply AM and SA https://www.figma.com/design/QitY9QZbsGqFL1OuUZDKsG/Pyrecast?node-id=490-6056&m=dev
+     {:text "Unaffilated Members"
+      :tab  button
+      :icon svg/individual
+      :page unaffilated-members/main})
    (when (#{"account_manager" "super_admin"} user-role)
-     {:tab  button
-      :text "Unaffilated Members"
-      :icon svg/individual})
-   (when (#{"account_manager" "super_admin"} user-role)
-     {:tab  button
-      :text "Admin"
-      :icon svg/admin})])
+     {:text "Admin"
+      :tab  button
+      :icon svg/admin
+      :page admin/main})])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
@@ -219,21 +214,40 @@
        (cons :<>)
        vec))
 
-(defn main
-  [tabs-data]
-  [:nav-bar-main {:style {:display         "flex"
-                          :height          "100%"
-                          :width           "360px"
-                          :padding         "40px 0"
-                          :flex-direction  "column"
-                          :justify-content "space-between"
-                          :border-right    (str "1px solid " ($/color-picker :neutral-soft-gray))
-                          :background      "#FFF"}}
-   [:div {:style {:display        "flex"
-                  :flex-direction "column"
-                  :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
-                  :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
-    [tabs tabs-data]]
-   [button {:text     "Logout" :icon svg/logout
-            :on-click #(go (<! (u-async/call-clj-async! "log-out"))
-                           (u-browser/jump-to-url! "/"))}]])
+(defn side-nav-bar-and-page
+  [{:keys [user-role] :as m}]
+  (let [selected-log  (r/atom ["Account Settings"])
+        ;;TODO move org-id->org into two ratoms, one for fetching the
+        ;;organizations from the side nav bar and another for fetching the org, in
+        ;;the organization-settings component info once it's been selected from
+        ;;the side.
+        org-id->org   (r/atom nil)]
+    (go (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role)))))
+    (fn [m]
+      (let [m        (assoc m
+                            :selected-log selected-log
+                            :organizations (vals @org-id->org)
+                            :org-id->org    org-id->org)
+            tab+page (tab-data->tabs m)]
+        [:nav-bar-and-page {:style {:display        "flex"
+                                    :flex-direction "row"
+                                    :height         "100%"
+                                    :background     ($/color-picker :lighter-gray)}}
+         [:nav-bar-main {:style {:display         "flex"
+                                 :height          "100%"
+                                 :width           "360px"
+                                 :padding         "40px 0"
+                                 :flex-direction  "column"
+                                 :justify-content "space-between"
+                                 :border-right    (str "1px solid " ($/color-picker :neutral-soft-gray))
+                                 :background      "#FFF"}}
+          [:div {:style {:display        "flex"
+                         :flex-direction "column"
+                         :border-top     (str "1px solid " ($/color-picker :neutral-soft-gray))
+                         :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
+           [tabs tab+page]]
+          [button {:text     "Logout" :icon svg/logout
+                   :on-click #(go (<! (u-async/call-clj-async! "log-out"))
+                                  (u-browser/jump-to-url! "/"))}]]
+         [(:page (first ((group-by :selected? tab+page)
+                         (last @selected-log)))) m]]))))
