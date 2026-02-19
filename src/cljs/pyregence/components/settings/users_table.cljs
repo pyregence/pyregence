@@ -202,19 +202,16 @@
                                                                :onlySelected        (some? (seq (get-selected-rows)))
                                                                :processCellCallback #(aget % "value")}))}])]]
            (case @selected-drop-down
-         ;; TODO ideally these roles should be queried from the database from a sql function.
              :role   [buttons/drop-down {:options         role-options
                                          :disabled?       (or (not @checked) (not @users-selected?))
                                          :checked         checked
-                                     ;;TODO opt->display should be passed in here but we need to move users state to table before it will be easy to re-factor.
+                                         ;;TODO opt->display shouldn't be passed in here but we need to move users state to table before it will be easy to re-factor.
                                          :opt->display    db->display
                                          :on-click  (on-click-apply
                                                      (fn [role users]
                                                        (go (<! (u-async/call-clj-async! "update-users-roles" role users))))
                                                      "Role"
                                                      db->display)}]
-         ;; TODO check if none is a valid option, noting that it would remove them from the org.
-         ;; TODO none (as the comment says above implies) doesn't seem to work, look into why.
              :status [buttons/drop-down {:options         statuses
                                          :disabled?       (or (not @checked) (not @users-selected?))
                                          :checked         checked
