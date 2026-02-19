@@ -4,8 +4,7 @@
    [clojure.string                                            :as str]
    [clojure.walk                                              :as walk]
    [herb.core                                                 :refer [<class]]
-   [pyregence.components.settings.organizations-utils :refer [get-orgs!
-                                                              orgs->org->id]]
+   [pyregence.components.settings.organizations-utils         :refer [get-orgs! orgs->org->id]]
    [pyregence.components.settings.pages.account-settings      :as account-settings]
    [pyregence.components.settings.pages.admin                 :as admin]
    [pyregence.components.settings.pages.organization-settings :as organization-settings]
