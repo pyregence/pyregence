@@ -128,7 +128,6 @@
                    columns
                    show-export-to-csv?
                    users-filter] :or {users-filter identity}}]
-        (println users-filter)
         (let [update-drop-down    #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
               get-selected-emails #(->> @grid-api get-selected-rows (map :email))
               get-selected-rows   #(get-selected-rows @grid-api)
