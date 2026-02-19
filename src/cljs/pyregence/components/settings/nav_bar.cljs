@@ -160,31 +160,30 @@
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
   [{:keys [organizations user-role]}]
-  [{:tab  button
-    :text "Account Settings"
+  [{:text "Account Settings"
+    :tab  button
     :icon svg/wheel
     :page account-settings/main}
+   (merge
+    {:text "Organization Settings"
+     :icon svg/group
+     :page organization-settings/main}
+    (case user-role
+      ("account_manager" "super_admin")
+      {:tab drop-down
+       :options (->> organizations
+                     (map (fn [{:keys [org-id org-name]}]
+                            {:tab button :text org-name :id org-id})))}
+      "organization_admin"
+      {:tab  button}))
    (when (#{"account_manager" "super_admin"} user-role)
-     {:tab     drop-down
-      :text    "Organization Settings"
-      :options (->> organizations
-                    (map (fn [{:keys [org-id org-name]}]
-                           {:tab button :text org-name :id org-id})))
-      :icon    svg/group
-      :page organization-settings/main})
-   (when (#{"organization_admin"} user-role)
-     {:tab  button
-      :text "Organization Settings"
-      :icon svg/group
-      :page organization-settings/main})
-   (when (#{"account_manager" "super_admin"} user-role)
-     {:tab  button
-      :text "Unaffilated Members"
+     {:text "Unaffilated Members"
+      :tab  button
       :icon svg/individual
       :page unaffilated-members/main})
    (when (#{"account_manager" "super_admin"} user-role)
-     {:tab  button
-      :text "Admin"
+     {:text "Admin"
+      :tab  button
       :icon svg/admin
       :page admin/main})])
 
