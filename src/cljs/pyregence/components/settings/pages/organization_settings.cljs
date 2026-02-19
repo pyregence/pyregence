@@ -138,6 +138,8 @@
     [:div {:style main-styles}
      [card {:title "ORGANIZATION SETTINGS"
             :children
+              ;;TODO consider moving the org-d->org into the organization-settings component
+              ;; and not passing as much data.
             [organization-settings
              (merge
               m
