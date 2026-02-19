@@ -157,20 +157,13 @@
 ;; NOTE Each Tab's `:text` has to be unique because it's used as a component ID.
 ;; NOTE `drop-down`'s only support `button`s as options (not other drop downs).
 
-;; TODO should the conditional checks on user-role use the isa? role-hierarchy?
-
-;; Auth notes from https://sig-gis.atlassian.net/browse/PYR1-1214.
-;; Authenticated Super Admins and Account Managers can see all categories.
 (defn- tab-data->tab-descriptions
   "Returns a list of tab component descriptions from the provided `tab-data`."
   [{:keys [organizations user-role]}]
-  ;; All authenticated Members can see the Account Settings category.
   [{:tab  button
     :text "Account Settings"
     :icon svg/wheel
     :page account-settings/main}
-   ;;TODO the user-role should be the same keyword as it is on the backend
-   ;; it being a string on the fe is a security risk because it's easy to get wrong.
    (when (#{"account_manager" "super_admin"} user-role)
      {:tab     drop-down
       :text    "Organization Settings"
@@ -179,16 +172,11 @@
                            {:tab button :text org-name :id org-id})))
       :icon    svg/group
       :page organization-settings/main})
-   ;; Authenticated Org Admins can see the Account Settings and Organization Settings categories.
-   ;; Org Admins will only see their Organization.
-   ;; Org Admins will not have the expand/collapse feature because they will only have one Organization.
    (when (#{"organization_admin"} user-role)
      {:tab  button
       :text "Organization Settings"
       :icon svg/group
       :page organization-settings/main})
-   ;; No Notes in 1214 on unaffiliated members, but the wireframes
-   ;; imply AM and SA https://www.figma.com/design/QitY9QZbsGqFL1OuUZDKsG/Pyrecast?node-id=490-6056&m=dev
    (when (#{"account_manager" "super_admin"} user-role)
      {:tab  button
       :text "Unaffilated Members"
