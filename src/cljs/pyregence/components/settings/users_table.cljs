@@ -122,12 +122,12 @@
       :component-did-mount set-users!
       :reagent-render
       (fn [{:keys [org-id
-                   role-options
-                   default-role-option
-                   statuses
-                   columns
-                   show-export-to-csv?
-                   users-filter] :or {users-filter identity}}]
+                  role-options
+                  default-role-option
+                  statuses
+                  columns
+                  show-export-to-csv?
+                  users-filter] :or {users-filter identity}}]
         (let [update-drop-down    #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
               get-selected-emails #(->> @grid-api get-selected-rows (map :email))
               get-selected-rows   #(get-selected-rows @grid-api)
