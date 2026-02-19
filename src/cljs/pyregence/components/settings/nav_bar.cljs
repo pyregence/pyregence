@@ -170,12 +170,12 @@
      :page organization-settings/main}
     (case user-role
       ("account_manager" "super_admin")
-      {:tab drop-down
+      {:tab     drop-down
        :options (->> organizations
                      (map (fn [{:keys [org-id org-name]}]
                             {:tab button :text org-name :id org-id})))}
       "organization_admin"
-      {:tab  button}))
+      {:tab button}))
    (when (#{"account_manager" "super_admin"} user-role)
      {:text "Unaffilated Members"
       :tab  button
