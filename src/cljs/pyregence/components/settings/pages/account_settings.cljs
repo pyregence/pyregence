@@ -188,13 +188,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn main
-  [{:keys [email-address user-role]}]
+  [{:keys [user-email user-role]}]
   [:div {:style main-styles}
    [card {:title "MY ACCOUNT DETAILS"
           :children
           [:<>
            [text-labeled {:label "Email Address"
-                          :text  email-address}]
+                          :text  user-email}]
            [text-labeled {:label    "Role Type"
                           :text     (roles/type->label user-role)}]
            [user-full-name]]}]
@@ -215,8 +215,8 @@
               {:text     "Send Reset Link"
                :on-click
                #(go
-                 (if (:success (<! (u-async/call-clj-async! "send-email" email-address :reset)))
-                   (toast-message! (str "Reset Link sent to " email-address "."))
+                  (if (:success (<! (u-async/call-clj-async! "send-email" user-email :reset)))
+                    (toast-message! (str "Reset Link sent to " user-email "."))
                      ;;TODO consider pulling support email from config. See PYR1-1319.
-                   (toast-message! "Something went wrong when sending the Reset Link. Please contact support@pyrecast.com or try again later.")))}]]
+                    (toast-message! "Something went wrong when sending the Reset Link. Please contact support@pyrecast.com or try again later.")))}]]
             [show-password-set-date]]]}]])
