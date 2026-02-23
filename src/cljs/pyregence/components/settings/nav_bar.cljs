@@ -216,7 +216,7 @@
        vec))
 
 (defn side-nav-bar-and-page
-  [{:keys [user-role] :as m}]
+  [{:keys [user-role]}]
   (let [selected-log  (r/atom ["Account Settings"])
         ;;TODO move org-id->org into two ratoms, one for fetching the
         ;;organizations from the side nav bar and another for fetching the org, in
