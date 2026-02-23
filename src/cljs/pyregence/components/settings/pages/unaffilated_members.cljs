@@ -1,4 +1,4 @@
-(ns pyregence.components.settings.pages.unaffilated-memebers
+(ns pyregence.components.settings.pages.unaffilated-members
   (:require
    [pyregence.components.settings.roles :as roles]
    [pyregence.components.settings.users-table :refer [table-with-buttons]]

@@ -8,7 +8,7 @@
    [pyregence.components.settings.pages.account-settings      :as account-settings]
    [pyregence.components.settings.pages.admin                 :as admin]
    [pyregence.components.settings.pages.organization-settings :as organization-settings]
-   [pyregence.components.settings.pages.unaffilated-memebers  :as unaffilated-members]
+   [pyregence.components.settings.pages.unaffilated-members  :as unaffilated-members]
    [pyregence.components.svg-icons                            :as svg]
    [pyregence.components.utils                                :refer [search-cmpt]]
    [pyregence.styles                                          :as $]
