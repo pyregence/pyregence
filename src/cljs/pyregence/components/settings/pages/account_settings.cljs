@@ -196,8 +196,8 @@
           [:<>
            [text-labeled {:label "Email Address"
                           :text  user-email}]
-           [text-labeled {:label    "Role Type"
-                          :text     (roles/type->label user-role)}]
+           [text-labeled {:label "Role Type"
+                          :text  (roles/type->label user-role)}]
            [user-full-name]]}]
    [security-card]
    [card {:title "RESET MY PASSWORD"
@@ -213,7 +213,7 @@
                           :gap             "10px"}}
             [:p {:style {:margin "0px"}}
              [buttons/ghost
-              {:text     "Send Reset Link"
+              {:text "Send Reset Link"
                :on-click
                #(go
                   (if (:success (<! (u-async/call-clj-async! "send-email" user-email :reset)))
