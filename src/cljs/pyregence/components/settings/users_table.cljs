@@ -198,7 +198,7 @@
                [buttons/ghost {:text     "Export"
                                :icon     [svg/export :height "24px" :width "24px"]
                                :on-click (fn [] (api-call @grid-api "exportDataAsCsv"
-                                                          #js {:fileName            (str (subs (.toISOString (js/Date.)) 0 10) "_" "users-taqle")
+                                                          #js {:fileName            (str (subs (.toISOString (js/Date.)) 0 10) "_" "users-table")
                                                                :onlySelected        (some? (seq (get-selected-rows)))
                                                                :processCellCallback #(aget % "value")}))}])]]
            (case @selected-drop-down
