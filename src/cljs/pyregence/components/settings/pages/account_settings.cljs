@@ -139,11 +139,12 @@
   (let [user-name         (r/atom nil)
         unsaved-user-name (r/atom nil)]
     (go
-      (let [n (:user-name
-               (edn/read-string
-                (:body (<! (u-async/call-clj-async! "get-user-name-by-email")))))]
-        (reset! user-name n)
-        (reset! unsaved-user-name n)))
+      (let [current-name
+            (:user-name
+             (edn/read-string
+              (:body (<! (u-async/call-clj-async! "get-user-name-by-email")))))]
+        (reset! user-name current-name)
+        (reset! unsaved-user-name current-name)))
     (fn []
       [:div {:style {:display        "flex"
                      :width          "100%"
