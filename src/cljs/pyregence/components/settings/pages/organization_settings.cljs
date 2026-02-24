@@ -89,15 +89,15 @@
   [{:keys [user-role
            selected-log
            org-id->org]}]
-  (let [{:keys                                    [unsaved-org-name
-                                                   auto-add?
-                                                   org-id
-                                                   org-name
-                                                   og-email->email
-                                                   auto-accept?
-                                                   unsaved-auto-accept?
-                                                   unsaved-auto-add?
-                                                   unsaved-org-name-support-message] :as org} (get-org user-role selected-log org-id->org)]
+  (let [{:keys [unsaved-org-name
+                auto-add?
+                org-id
+                org-name
+                og-email->email
+                auto-accept?
+                unsaved-auto-accept?
+                unsaved-auto-add?
+                unsaved-org-name-support-message] :as org} (get-org user-role selected-log org-id->org)]
     [:<>
      [input-labeled
       (cond->
