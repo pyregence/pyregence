@@ -75,7 +75,8 @@
     [:> AgGridReact
      {:onGridReady                #(reset! grid-api (goog/get % "api"))
       :onRowDataUpdated           #(api-call @grid-api "autoSizeAllColumns")
-      :rowSelection               #js {:mode "multiRow"}
+      :rowSelection               #js {:mode      "multiRow",
+                                       :selectAll "filtered"}
       :domLayout                  "autoHeight"
       :onRowSelected              #(reset! users-selected? (seq (get-selected-rows @grid-api)))
       :theme                      (.withParams themeQuartz
