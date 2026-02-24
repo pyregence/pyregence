@@ -1,14 +1,20 @@
 (ns pyregence.pages.account-settings
   (:require
+   [pyregence.components.mapbox                         :as mb]
    [pyregence.components.nav-bar                        :refer [nav-bar]]
    [pyregence.components.settings.nav-bar               :refer [side-nav-bar-and-page]]
    [pyregence.state                                     :as !]
-   [pyregence.utils.browser-utils                       :as u-browser]
-   [pyregence.utils.misc-utils                          :refer [on-mount-defaults]]))
+   [pyregence.utils.browser-utils                       :as u-browser]))
 
 (defn root-component
   [_]
-  (on-mount-defaults)
+  #(let [update-fn (fn [& _]
+                    (-> js/window (.scrollTo 0 0))
+                    (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))
+                    (js/setTimeout mb/resize-map! 50))]
+    (-> js/window (.addEventListener "touchend" update-fn))
+    (-> js/window (.addEventListener "resize"   update-fn))
+    (update-fn))
   (fn [{:keys [user-role] :as m}]
     [:div
      {:style {:height         "100vh"
