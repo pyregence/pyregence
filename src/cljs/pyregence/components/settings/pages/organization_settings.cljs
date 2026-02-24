@@ -97,7 +97,9 @@
                 auto-accept?
                 unsaved-auto-accept?
                 unsaved-auto-add?
-                unsaved-org-name-support-message] :as org} (get-org user-role selected-log org-id->org)]
+                unsaved-org-name-support-message]
+         :as   org}
+        (get-org user-role selected-log org-id->org)]
     [:<>
      [input-labeled
       (cond->
