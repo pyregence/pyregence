@@ -63,7 +63,7 @@
                 :margin-bottom "0px"}} text]])
 
 (defn- drop-down
-  [{:keys [selected? options on-click] :as m}]
+  [{:keys [selected? options on-click collapsed?] :as m}]
   (r/with-let [search (r/atom nil)]
     [:nav-drop-down
      {:style
@@ -83,8 +83,8 @@
                   :width           "100%"
                   :padding-right   "16px"}}
       [button (dissoc m :selected? :on-click)]
-      (if selected? [svg/arrow-up] [svg/arrow-down])]
-     (when selected?
+      (if collapsed? [svg/arrow-up] [svg/arrow-down])]
+     (when-not collapsed?
        [:<>
         [:div {:style {:margin "16px"}}
          [search-cmpt {:on-change #(reset! search (.-value (.-target %)))
@@ -100,12 +100,19 @@
 
 (defmulti selected? :tab)
 (defmulti on-click :tab)
+(defmulti collapsed? :tab)
 
 ;; buttons are simple...
 
 (defmethod selected? button
   [{:keys [id selected-log]}]
   (#{id} (last @selected-log)))
+
+;;TODO this is probably a good example of why we shouldn't have used
+;; multimethods and instead just pushed this functionality somewhere else.
+(defmethod collapsed? button
+  [_]
+  true)
 
 (defmethod on-click button
   [{:keys [selected-log id]}]
@@ -133,6 +140,10 @@
   "selected? is true if an option of this drop down was selected last."
   (last-selected-was-a-drop-down-option? @selected-log options))
 
+(defmethod collapsed? drop-down
+  [{:keys [selected-log id]}]
+  (even? ((frequencies @selected-log) id 0)))
+
 (defmethod on-click drop-down
   [{:keys [selected-log options id]}]
   "Logs the id of the drop down, as well as the last selected or default when the drop down
@@ -142,10 +153,9 @@
             (vec (concat
                   sl
                   [id]
-                  (when-not (last-selected-was-a-drop-down-option? sl options)
-                    (let [oids (->option-ids options)]
-                      [(or (some oids (reverse sl))
-                           (get-default-option-id options))])))))))
+                  (let [oids (->option-ids options)]
+                    [(or (some oids (reverse sl))
+                         (get-default-option-id options))]))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tab Configuration
@@ -205,7 +215,10 @@
             (let [{:keys [text id]} tab
                   id                (or id text)
                   tab               (assoc tab :id id :key id :selected-log selected-log)]
-              (assoc tab :selected? (selected? tab) :on-click (on-click tab))))))))
+              (assoc tab
+                     :selected?  (selected? tab)
+                     :on-click   (on-click tab)
+                     :collapsed? (collapsed? tab))))))))
 
 (defn- tabs
   "Returns a list of tab components"
