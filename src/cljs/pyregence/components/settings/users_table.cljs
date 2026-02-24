@@ -145,21 +145,7 @@
                       (js/setTimeout set-users! 3000)
                       (toast-message!
                          ;;TODO make this handle plural case e.g roles and statues.
-                       (str (str/join ", " emails)  " updated " opt-type " to " (opt->display new-user-info) "."))))))
-              on-click-delete-users!
-
-              (fn [get-selected-emails]
-                (fn []
-                  (let [selected-emails (get-selected-emails)]
-                    (go
-                      (let [{:keys [success]}
-                            (<! (delete-users! selected-emails))]
-                        (if success
-                          (do
-                            (js/setTimeout set-users! 3000)
-                            (toast-message! (str "Users Deleted: " (str/join ", " selected-emails))))
-                            ;;TODO it's unclear what would help here...
-                          (toast-message! "Something went wrong!")))))))]
+                       (str (str/join ", " emails)  " updated " opt-type " to " (opt->display new-user-info) "."))))))]
           [:<>
            [:div
             {:style {:min-width "400px"}}
@@ -186,9 +172,19 @@
                                        :on-click  (fn []
                                                     (reset! checked nil)
                                                     (update-drop-down :status))}]
-             (when on-click-delete-users!
+             (when (#{"super_admin" "organization_admin"} user-role)
                [delete-user/confirm-dialog
-                {:on-click-delete-users! (on-click-delete-users! get-selected-emails)
+                {:on-click-delete-users!
+                 #(let [selected-emails (get-selected-emails)]
+                    (go
+                      (let [{:keys [success]}
+                            (<! (delete-users! selected-emails))]
+                        (if success
+                          (do
+                            (js/setTimeout set-users! 3000)
+                            (toast-message! (str "Users Deleted: " (str/join ", " selected-emails))))
+                            ;;TODO it's unclear what would help here...
+                          (toast-message! "Something went wrong!")))))
                  :get-selected-rows      get-selected-rows}])]
             [:div {:style {:display        "flex"
                            :flex-direction "column"
