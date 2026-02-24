@@ -89,15 +89,15 @@
   [{:keys [user-role
            selected-log
            org-id->org]}]
-  (let [{:keys [unsaved-org-name
-                auto-add?
-                org-id
-                org-name
-                og-email->email
-                auto-accept?
-                unsaved-auto-accept?
-                unsaved-auto-add?
-                unsaved-org-name-support-message] :as org} (get-org user-role selected-log org-id->org)]
+  (let [{:keys                                    [unsaved-org-name
+                                                   auto-add?
+                                                   org-id
+                                                   org-name
+                                                   og-email->email
+                                                   auto-accept?
+                                                   unsaved-auto-accept?
+                                                   unsaved-auto-add?
+                                                   unsaved-org-name-support-message] :as org} (get-org user-role selected-log org-id->org)]
     [:<>
      [input-labeled
       (cond->
@@ -129,15 +129,15 @@
                                                    m
                                                    (assoc m id {:email         email
                                                                 :unsaved-email unsaved-email
-                                                                :invalid? (not (email/valid-email-domain? unsaved-email))})))
+                                                                :invalid?      (not (email/valid-email-domain? unsaved-email))})))
                                                {}))
-                       ;;TODO unifiy the ways were collecting support/error messages here.
+                                         ;;TODO unifiy the ways were collecting support/error messages here.
                                          invalid-email-domains?            (->> checked-og-email->email vals (some :invalid?))
                                          organization-name-support-message (when (str/blank? unsaved-org-name) "Name cannot be blank.")]
                                      (swap! org-id->org assoc-in [org-id :og-email->email] checked-og-email->email)
                                      (cond
                                        invalid-email-domains?
-                   ;;TODO find a better when then using a cond with nil
+                                       ;;TODO find a better when then using a cond with nil
                                        nil
                                        organization-name-support-message
                                        (swap! org-id->org assoc-in [org-id :unsaved-org-name-support-message] organization-name-support-message)
@@ -156,15 +156,15 @@
                                                                             unsaved-email-domains
                                                                             unsaved-auto-add?
                                                                             unsaved-auto-accept?))]
-                       ;; TODO if not success case.
+                                           ;; TODO if not success case.
                                            (if success
                                              (let [{:keys [org-name email-domains]} (@org-id->org org-id)]
-                           ;; TODO Below is a good example of how we have the same relationship in our ratoms, as we do in our db, which leads me to believe
-                           ;; we need a client db that can mirror (in query language and reltionship semantics) our backend db.
+                                               ;; TODO Below is a good example of how we have the same relationship in our ratoms, as we do in our db, which leads me to believe
+                                               ;; we need a client db that can mirror (in query language and reltionship semantics) our backend db.
                                                (swap! org-id->org
                                                       (fn [o]
                                                         (-> o
-                                        ;; TODO find a way to save unsaved state better then having to know that you have to come here to always deal with it.
+                                                            ;; TODO find a way to save unsaved state better then having to know that you have to come here to always deal with it.
                                                             (assoc-in [org-id :org-name] unsaved-org-name)
                                                             (assoc-in [org-id :email-domains] unsaved-email-domains)
                                                             (assoc-in [org-id :og-email->email] (reduce-kv (fn [m id {:keys [unsaved-email]}]
@@ -177,10 +177,10 @@
                                                      new-email?       (not= email-domains unsaved-email-domains)
                                                      new-auto-accept? (not= auto-accept? unsaved-auto-accept?)
                                                      new-auto-add?    (not= auto-add?    unsaved-auto-add?)]
-                             ;; TODO instead of three separate toasts maybe it would be better to have one that just said everything?
-                             ;; TODO these messages could probably be improved.
-                             ;; TODO these toasts dont work on the second time, e.g change auto-add save you correctly get a toast, change again, and save and you don't.
-                             ;;      Because, whats supposed to be the original data, e.g auto-add? isn't being updated.
+                                                  ;; TODO instead of three separate toasts maybe it would be better to have one that just said everything?
+                                                  ;; TODO these messages could probably be improved.
+                                                  ;; TODO these toasts dont work on the second time, e.g change auto-add save you correctly get a toast, change again, and save and you don't.
+                                                  ;;      Because, whats supposed to be the original data, e.g auto-add? isn't being updated.
                                                  (when new-name? (toast-message! (str "Updated Organization Name ​ " unsaved-org-name)))
                                                  (when new-email? (toast-message! (str "Updated Email Domains​ " unsaved-email-domains)))
                                                  (when new-auto-accept? (toast-message! (str "Updated Auto Accept​ " (if unsaved-auto-accept? "On" "Off"))))
