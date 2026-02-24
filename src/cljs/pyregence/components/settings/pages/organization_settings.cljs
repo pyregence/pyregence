@@ -125,7 +125,11 @@
                                          (->> og-email->email
                                               (reduce-kv
                                                (fn [m id {:keys [unsaved-email email]}]
-                                                 (assoc m id {:email email :unsaved-email unsaved-email :invalid? (not (email/valid-email-domain? unsaved-email))}))
+                                                 (if-not unsaved-email
+                                                   m
+                                                   (assoc m id {:email         email
+                                                                :unsaved-email unsaved-email
+                                                                :invalid? (not (email/valid-email-domain? unsaved-email))})))
                                                {}))
                        ;;TODO unifiy the ways were collecting support/error messages here.
                                          invalid-email-domains?            (->> checked-og-email->email vals (some :invalid?))
