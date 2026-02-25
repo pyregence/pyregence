@@ -173,19 +173,20 @@
     :tab  button
     :icon svg/wheel
     :page account-settings/main}
-   (merge
-    {:text "Organization Settings"
-     :icon svg/group
-     :page organization-settings/main}
-    (case user-role
-      ("account_manager" "super_admin")
-      {:tab     drop-down
-       :options (->> organizations
-                     (map (fn [{:keys [org-id org-name]}]
-                            {:tab button :text org-name :id org-id})))}
-      "organization_admin"
-      {:tab button}
-      nil))
+   (let [org-tab {:text "Organization Settings"
+                  :icon svg/group
+                  :page organization-settings/main}]
+     (case user-role
+       ("account_manager" "super_admin")
+       (assoc org-tab
+              :tab     drop-down
+              :options (->> organizations
+                            (map (fn [{:keys [org-id org-name]}]
+                                   {:tab button :text org-name :id org-id}))))
+       "organization_admin"
+       (assoc org-tab
+              :tab button)
+       nil))
    (when (#{"account_manager" "super_admin"} user-role)
      {:text "Unaffilated Members"
       :tab  button
