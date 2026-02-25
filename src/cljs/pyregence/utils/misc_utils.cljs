@@ -1,6 +1,7 @@
 (ns pyregence.utils.misc-utils
-  (:require [clojure.string :as cstr]
-            [clojure.set :as sets]))
+  (:require
+   [clojure.set :as sets]
+   [clojure.string :as cstr]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions - Misc Utils
