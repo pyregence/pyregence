@@ -295,7 +295,7 @@
      :model-time           model-time ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
      :wx-start-time        (u/round-down-to-nearest-hour model-time)
      :fire-name            (str md-prefix "-match-drop-" match-job-id)
-     :geoserver-workspace  (str "fire-spread-forecast_" md-prefix "-match-drop-" match-job-id "_" model-time)
+     :geoserver-workspace  (str "match-drop-forecast_" md-prefix "-match-drop-" match-job-id "_" model-time)
      :env                  sig3-env}))
 
 (defn- create-match-job-using-runway!
@@ -313,7 +313,7 @@
         model-time           (u/convert-date-string ignition-time) ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
         wx-start-time        (u/round-down-to-nearest-hour model-time)
         fire-name            (str (get-md-config :md-prefix) "-match-drop-" match-job-id)
-        geoserver-workspace  (str "fire-spread-forecast_" (get-md-config :md-prefix)
+        geoserver-workspace  (str "match-drop-forecast_" (get-md-config :md-prefix)
                                   "-match-drop-" match-job-id "_" model-time)
         dps-request          {:job-id        (str "dps-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "dps" -- this is a temporary work-around
                               :response-host (get-md-config :app-host)

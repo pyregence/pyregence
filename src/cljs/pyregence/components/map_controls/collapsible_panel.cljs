@@ -308,21 +308,22 @@
              [collapsible-panel-section
               "layer-selection"
               [:<>
-               (map (fn [[key {:keys [opt-label hover-text options sort? disabled]}]]
-                      (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                        ^{:key (str (random-uuid))}
-                        [:<>
-                         [panel-dropdown
-                          opt-label
-                          hover-text
-                          (get *params key)
-                          sorted-options
-                          (cond (ifn? disabled)     (disabled *params)
-                                (boolean? disabled) disabled
-                                :else               (= 1 (count sorted-options)))
-                          #(select-param! % key)
-                          selected-param-set]]))
-                    @!/processed-params)
+               (keep (fn [[key {:keys [opt-label hover-text options sort? disabled hidden?]}]]
+                       (when-not hidden?
+                         (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                           ^{:key (str (random-uuid))}
+                           [:<>
+                            [panel-dropdown
+                             opt-label
+                             hover-text
+                             (get *params key)
+                             sorted-options
+                             (cond (ifn? disabled)     (disabled *params)
+                                   (boolean? disabled) disabled
+                                   :else               (= 1 (count sorted-options)))
+                             #(select-param! % key)
+                             selected-param-set]])))
+                     @!/processed-params)
                [opacity-input]]]
              [sa/panel-section]
              [collapsible-panel-section

@@ -585,9 +585,15 @@
   (!/set-state-legend-list! [])
   (reset! !/last-clicked-info nil)
   (let [main-key (first keys)]
+    ;; Mutual exclusivity: when a param with :resets is changed to a non-:none value,
+    ;; reset the specified params to their reset values (e.g. fire-name <-> match-drop-name).
+    (when-let [resets (get-in @!/capabilities [@!/*forecast :params main-key :resets])]
+      (when (not= val :none)
+        (doseq [[reset-key reset-val] resets]
+          (swap! !/*params assoc-in [@!/*forecast reset-key] reset-val))))
     (when (= main-key :model-init)
       (reset! !/*last-start-time val))
-    (when (= main-key :fire-name)
+    (when (#{:fire-name :match-drop-name} main-key)
       (reset! !/*layer-idx 0)
       (swap! !/*params assoc-in (cons @!/*forecast [:burn-pct]) :50)
       (reset! !/animate? false))
@@ -665,7 +671,14 @@
               ;; Add in available active fire names
               (update-in [:active-fire :params :fire-name :options]
                          merge
-                         fire-names)
+                         (:active-fires fire-names))
+              ;; Add in match drop names if the user has any completed match drops
+              (cond->
+                (seq (:match-drops fire-names))
+                (-> (update-in [:active-fire :params :match-drop-name :options]
+                               merge
+                               (:match-drops fire-names))
+                    (assoc-in [:active-fire :params :match-drop-name :hidden?] false)))
               ;; Set the default risk tab ignition pattern option to the logged in user's organization (when applicable)
               ;; Note that we default to using the first organization in the case where a user belongs to more than one org
               (assoc-in [:fire-risk :params :pattern :default-option] (keyword (:org-unique-id (first user-psps-orgs-list))))
@@ -717,7 +730,8 @@
                                                                      "get-current-user-organization"))
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
-          active-fire-count               (count fire-names)]
+          active-fire-count               (+ (count (:active-fires fire-names))
+                                             (count (:match-drops fire-names)))]
       (reset! !/active-fire-count active-fire-count)
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
       (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))

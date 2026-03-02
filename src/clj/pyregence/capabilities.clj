@@ -320,11 +320,11 @@
                     (map str/capitalize (rest parts))))))
 
 (defn get-fire-names
-  "Returns all unique fires from the layers atom parsed into the format
-   needed on the front-end. Takes special care to deal with match drop fires.
-   An example return value can be seen below:
-   {:foo {:opt-label \"foo\", :filter \"foo\", :auto-zoom? true,
-    :bar {:opt-label \"bar\", :filter \"bar\", :auto-zoom? true}}"
+  "Returns all unique fires from the layers atom split into active fires and
+   match drops. Each fire-name option uses :filter-set (instead of :filter) to
+   embed the forecast type. Returns a map of the form:
+   {:active-fires {:fire-name       {:opt-label \"Fire Name\"       :filter-set #{\"fire-spread-forecast\", \"fire-name\"}       :auto-zoom? true :geoserver-key :trinity}    ...}
+    :match-drops  {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\",  \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}}"
   [session]
   (let [{:keys [user-id match-drop-access?]} session
         match-drop-names (when match-drop-access?
@@ -334,32 +334,41 @@
                                                  (:match_job_id row)
                                                  (str (:display_name row)
                                                       " (Match Drop)")))
-                                        {})))]
-    (->> (apply merge (:trinity @layers) (:match-drop @layers))
+                                        {})))
+        md-prefix (get-config :pyregence.match-drop/match-drop :md-prefix)]
+    (->> (concat (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
-                   (= "fire-spread-forecast" forecast)))
+                   (#{"fire-spread-forecast" "match-drop-forecast"} forecast)))
          (map :fire-name)
          (distinct)
-         (mapcat (fn [fire-name]
-                   (let [match-job-id (some-> fire-name
-                                              (str/split #"match-drop-")
-                                              (second)
-                                              (Integer/parseInt))]
-                     ;; We either want to pass a fire name to the front end if the fire in question is
-                     ;; an active fire (nil? match-job-id) or it's a Match Drop that matches our deployment
-                     ;; environment. Since development and production Match Drops can have the same ID,
-                     ;; we have to make sure the fire-name starts with the specific md-prefix specified in config.edn
-                     ;; so that we don't double-count the Match Drops.
-                     (when (or (nil? match-job-id)
-                               (and (contains? match-drop-names match-job-id)
-                                    (str/starts-with? fire-name (get-config :pyregence.match-drop/match-drop :md-prefix))))
-                       [(keyword fire-name)
-                        {:opt-label      (or (get match-drop-names match-job-id)
-                                             (fire-name-capitalization fire-name))
-                         :filter        fire-name
-                         :auto-zoom?    true
-                         :geoserver-key (if match-job-id :match-drop :trinity)}]))))
-         (apply array-map))))
+         (reduce
+          (fn [acc fire-name]
+            (let [match-job-id (some-> fire-name
+                                       (str/split #"match-drop-")
+                                       (second)
+                                       (parse-long))]
+              (cond
+                ;; Active fire (no match-job-id)
+                (nil? match-job-id)
+                (update acc :active-fires assoc (keyword fire-name)
+                        {:opt-label  (fire-name-capitalization fire-name)
+                         :filter-set #{"fire-spread-forecast" fire-name}
+                         :auto-zoom? true
+                         :geoserver-key :trinity})
+
+                ;; Match drop belonging to this user/environment.
+                ;; Since dev and prod match drops can share IDs, we check the md-prefix
+                ;; to ensure we only return match drops from this deployment environment.
+                (and (contains? match-drop-names match-job-id)
+                     (str/starts-with? fire-name md-prefix))
+                (update acc :match-drops assoc (keyword fire-name)
+                        {:opt-label  (get match-drop-names match-job-id)
+                         :filter-set #{"match-drop-forecast" fire-name}
+                         :auto-zoom? true
+                         :geoserver-key :match-drop})
+
+                :else acc)))
+          {:active-fires {} :match-drops {}}))))
 
 (defn get-user-layers [session]
   (data-response (call-sql "get_user_layers_list" (:user-id session))))
