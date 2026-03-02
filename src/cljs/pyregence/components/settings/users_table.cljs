@@ -229,7 +229,10 @@
                            db->display)
                           :get-selected-rows get-selected-rows}
                           org-opt-selected?
-                          (assoc :select-org-msg (str "Pick an Organization to make the following users a " (db->display @checked) " of."))))]
+                          (assoc :select-org-msg (str "Assign Organization for "
+                                                      ({"organization_admin" "Admin"
+                                                        "organization_member" "Member"} @checked)
+                                                      "."))))]
              :status [update-user/drop-down
                       (let [org-opt-selected?
                             (and
@@ -255,6 +258,6 @@
                            db->display)
                           :get-selected-rows get-selected-rows}
                           org-opt-selected?
-                          (assoc :select-org-msg (str "Pick an Organization to make the following users a " (db->display @checked) " of."))))]
+                          (assoc :select-org-msg (str "Assign Organization for " (db->display @checked) "Users."))))]
              nil)
            [table grid-api users users-selected? users-filter columns]]))})))
