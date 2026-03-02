@@ -316,31 +316,3 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION provision_marketplace_new_user(
-    _org_name               text,
-    _org_unique_id          text,
-    _marketplace_account_id text,
-    _marketplace_order_id   text,
-    _subscription_tier      subscription_tier,
-    _email                  text,
-    _name                   text,
-    _password               text,
-    _settings               text,
-    _procurement_account_id text,
-    _google_user_identity   text
-) RETURNS TABLE (org_id integer, user_id integer) AS $$
-DECLARE
-    _org_id integer;
-    _user_id integer;
-BEGIN
-    SELECT create_marketplace_organization(
-        _org_name, _org_unique_id, _marketplace_account_id,
-        _marketplace_order_id, _subscription_tier
-    ) INTO _org_id;
-    SELECT create_marketplace_user(
-        _email, _name, _password, _settings, _org_id,
-        _procurement_account_id, _google_user_identity
-    ) INTO _user_id;
-    RETURN QUERY SELECT _org_id, _user_id;
-END;
-$$ LANGUAGE plpgsql;

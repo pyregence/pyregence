@@ -67,9 +67,7 @@
     (let [now (quot (System/currentTimeMillis) 1000)
           age (- now (or validated-at 0))]
       (if (> age signup-ttl-secs)
-        (do
-          (log/warn "Marketplace signup data expired" {:age age :email user-email})
-          (dissoc session :marketplace-signup))
+        (log/warn "Marketplace signup data expired" {:age age :email user-email})
         (do
           (log/info "Completing marketplace signup after auth"
                     {:marketplace-roles marketplace-roles
@@ -90,11 +88,9 @@
                       (set-status! (:organization-id result) "active")
                       (log/info "Marketplace signup complete" {:org-id (:organization-id result)}))
                     (log/error "Provisioned but Google approval failed"
-                               {:org-id (:organization-id result) :error (:error resp)}))))
-              (dissoc session :marketplace-signup))
+                               {:org-id (:organization-id result) :error (:error resp)})))))
             (catch Exception e
-              (log/error e "Failed to complete marketplace signup" {:user-email user-email})
-              (dissoc session :marketplace-signup))))))))
+              (log/error e "Failed to complete marketplace signup" {:user-email user-email}))))))))
 
 ^:rct/test
 (comment

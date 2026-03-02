@@ -473,32 +473,6 @@ RETURNS TABLE (
     WHERE email = lower_trim(_email);
 $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION create_marketplace_user(
-    _email                  text,
-    _name                   text,
-    _password               text,
-    _settings               text,
-    _org_id                 integer,
-    _procurement_account_id text,
-    _google_user_identity   text
-) RETURNS integer AS $$
-    INSERT INTO users
-        (email, name, password, settings, email_verified, user_role,
-         org_membership_status, organization_rid, procurement_account_id, google_user_identity)
-    VALUES (
-        lower_trim(_email),
-        _name,
-        crypt(_password, gen_salt('bf')),
-        _settings,
-        TRUE,
-        'organization_admin'::user_role,
-        'accepted'::org_membership_status,
-        _org_id,
-        _procurement_account_id,
-        _google_user_identity
-    )
-    RETURNING user_uid;
-$$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION link_user_to_marketplace_org(
     _user_id                integer,

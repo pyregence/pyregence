@@ -1,15 +1,7 @@
 (ns pyregence.marketplace.provisioning
   (:require [clojure.string        :as str]
             [clojure.tools.logging :as log]
-            [pyregence.email       :as email]
-            [triangulum.database   :refer [call-sql sql-primitive]])
-  (:import [java.security SecureRandom]
-           [java.util    Base64 Base64$Encoder]))
-
-(defn- random-password []
-  (let [bytes (byte-array 32)
-        _     (SecureRandom/.nextBytes (SecureRandom.) bytes)]
-    (Base64$Encoder/.encodeToString (Base64/getEncoder) bytes)))
+            [triangulum.database   :refer [call-sql sql-primitive]]))
 
 (def ^:private plan-id->tier
   "Maps GCP Marketplace plan IDs to internal subscription_tier enum values."
@@ -44,7 +36,6 @@
   (email->org-name "joe@co.uk")                  ;=> "Uk"
   (email->org-name "joe@localhost")              ;=> "Localhost"
   (->org-unique-id "accounts/xyz")               ;=> "mp-xyz"
-  (= 44 (count (random-password)))               ;=> true
   (get plan-id->tier "essential-plan")           ;=> "tier1_basic_paid"
   (get plan-id->tier "business-plan")            ;=> "tier2_pro"
   (get plan-id->tier "enterprise-plan")          ;=> "tier3_enterprise"
@@ -57,8 +48,8 @@
 (defn provision!
   "Provisions marketplace org/user via atomic SQL."
   [user-info orders]
-  (let [{:keys [procurement-account-id google-user-identity email org-name plan-id]} user-info
-        tier (get plan-id->tier plan-id default-tier)]
+  (let [{:keys [procurement-account-id google-user-identity email org-name]} user-info
+        tier default-tier]
     (when (str/blank? email)
       (throw (ex-info "Email is required" {:type :invalid-user-info})))
     (when (str/blank? procurement-account-id)
@@ -104,30 +95,8 @@
                  :organization-id        org-id
                  :success                true
                  :user-id                user_id})))
-          (let [org-unique-id (->org-unique-id acct-id)
-                local         (first (str/split email #"@"))
-                uname         (if (str/blank? local) "Marketplace User" local)
-                password      (random-password)
-                settings      (pr-str {:timezone :utc})
-                result        (first (call-sql "provision_marketplace_new_user"
-                                               org-label org-unique-id acct-id order-id
-                                               tier email uname password
-                                               settings procurement-account-id google-user-identity))
-                org-id        (:org_id result)
-                user-id       (:user_id result)]
-            (log/info "Created new marketplace user and org"
-                      {:email email :org-id org-id :user-id user-id})
-            (try
-              (email/send-email! nil email :reset-password)
-              (log/info "Sent welcome email" {:email email})
-              (catch Exception e
-                (log/error e "Failed to send welcome email" {:email email})))
-            {:email                  email
-             :existing?              false
-             :marketplace-account-id acct-id
-             :organization-id        org-id
-             :success                true
-             :user-id                user-id}))
+          (do (log/error "No user found for marketplace provisioning" {:email email})
+              {:error "user_not_found" :success false}))
         (catch Exception e
           (log/error e "Failed to provision marketplace account" {:email email})
           {:error   "provisioning_failed"

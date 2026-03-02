@@ -31,11 +31,20 @@
                                      :headers          {"Authorization" (str "Bearer " token)
                                                         "Content-Type"  "application/json"}
                                      :throw-exceptions false})]
-        (if (#{200 201} (:status response))
+        (cond
+          (#{200 201} (:status response))
           (do
             (log/info "Account approved" {:account-id account-id})
             {:body    (:body response)
              :success true})
+
+          (= 409 (:status response))
+          (do
+            (log/info "Account already approved (409)" {:account-id account-id})
+            {:body    (:body response)
+             :success true})
+
+          :else
           (do
             (log/error "Account approval failed"
                        {:account-id account-id
