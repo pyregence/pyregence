@@ -137,5 +137,4 @@
                                                      :geosync-name      "GeoSync"
                                                      :geosync-host      "sierra.pyregence.org"
                                                      :geosync-port      31340
-                                                     :max-queue-size    5
-                                                     :md-prefix         "<prod | dev | local>"}}
+                                                     :max-queue-size    5}}

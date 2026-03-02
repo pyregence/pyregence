@@ -335,7 +335,7 @@
                                                  (str (:display_name row)
                                                       " (Match Drop)")))
                                         {})))
-        md-prefix (get-config :pyregence.match-drop/match-drop :md-prefix)]
+]
     (->> (concat (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
                    (#{"fire-spread-forecast" "match-drop-forecast"} forecast)))
@@ -356,11 +356,8 @@
                          :auto-zoom? true
                          :geoserver-key :trinity})
 
-                ;; Match drop belonging to this user/environment.
-                ;; Since dev and prod match drops can share IDs, we check the md-prefix
-                ;; to ensure we only return match drops from this deployment environment.
-                (and (contains? match-drop-names match-job-id)
-                     (str/starts-with? fire-name md-prefix))
+                ;; Match drop belonging to this user
+                (contains? match-drop-names match-job-id)
                 (update acc :match-drops assoc (keyword fire-name)
                         {:opt-label  (get match-drop-names match-job-id)
                          :filter-set #{"match-drop-forecast" fire-name}

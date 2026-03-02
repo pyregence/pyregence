@@ -277,7 +277,7 @@
 
 (defn- params->match-drop-args [match-job-id
                                 {:keys [ignition-time lat lon wx-type]}
-                                {:keys [md-prefix sig3-env]}]
+                                {:keys [sig3-env]}]
   (let [model-time (u/convert-date-string ignition-time)] ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
     {:west-buffer          12
      :ignition-time        ignition-time
@@ -294,8 +294,8 @@
      :run-hours            72
      :model-time           model-time ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
      :wx-start-time        (u/round-down-to-nearest-hour model-time)
-     :fire-name            (str md-prefix "-match-drop-" match-job-id)
-     :geoserver-workspace  (str "match-drop-forecast_" md-prefix "-match-drop-" match-job-id "_" model-time)
+     :fire-name            (str "match-drop-" match-job-id)
+     :geoserver-workspace  (str "match-drop-forecast_match-drop-" match-job-id "_" model-time)
      :env                  sig3-env}))
 
 (defn- create-match-job-using-runway!
@@ -312,9 +312,8 @@
         run-hours            72
         model-time           (u/convert-date-string ignition-time) ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
         wx-start-time        (u/round-down-to-nearest-hour model-time)
-        fire-name            (str (get-md-config :md-prefix) "-match-drop-" match-job-id)
-        geoserver-workspace  (str "match-drop-forecast_" (get-md-config :md-prefix)
-                                  "-match-drop-" match-job-id "_" model-time)
+        fire-name            (str "match-drop-" match-job-id)
+        geoserver-workspace  (str "match-drop-forecast_match-drop-" match-job-id "_" model-time)
         dps-request          {:job-id        (str "dps-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "dps" -- this is a temporary work-around
                               :response-host (get-md-config :app-host)
                               :response-port (get-md-config :app-port)
@@ -431,7 +430,7 @@
 (defn- submit-match-drop-job!
   "Requests a match-drop job from kubernetes"
   [params sig3-endpoint match-job-id]
-  (let [match-drop-config                  (get-md-configs [:md-prefix :sig3-env])
+  (let [match-drop-config                  (get-md-configs [:sig3-env])
         match-drop-inputs                  (params->match-drop-args match-job-id params match-drop-config)
         request                            (match-drop-args->body match-drop-inputs)
         api-url                            (format "%s/api/submit-job" sig3-endpoint)
