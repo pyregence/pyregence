@@ -72,7 +72,9 @@
    or switching tabs to get the Match Drop to show up as an option). This is currently
    due to a limitation in state management (we seem to have some duplicated state
    in capabilities and processed-params).
-   get-fire-names now returns {:active-fires {...} :match-drops {...}}."
+   An example return value from get-fire-names can be seen below:
+   {:active-fires {:fire-name       {:opt-label \"Fire Name\"       :filter-set #{\"fire-spread-forecast\", \"fire-name\"}       :auto-zoom? true :geoserver-key :trinity}    ...}
+    :match-drops  {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\",  \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}}"
   []
   (go
     (let [fire-names (->> (u-async/call-clj-async! "get-fire-names")
