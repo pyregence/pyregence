@@ -334,8 +334,7 @@
                                                  (:match_job_id row)
                                                  (str (:display_name row)
                                                       " (Match Drop)")))
-                                        {})))
-]
+                                        {})))]
     (->> (concat (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
                    (#{"fire-spread-forecast" "match-drop-forecast"} forecast)))

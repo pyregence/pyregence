@@ -536,7 +536,7 @@
                                                       :default-option :active-fires
                                                       :resets         {:match-drop-name :none}
                                                       :options        {:none         {:opt-label "\u2014"
-                                                                                     :hidden?   true}
+                                                                                      :hidden?   true}
                                                                        :active-fires {:opt-label            "*All Active Fires"
                                                                                       :style-fn             :default
                                                                                       :exclusive-filter-set #{"fire-detections" "active-fires"}
