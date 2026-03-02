@@ -93,9 +93,9 @@
       [:div {:style {:overflow "hidden"}}
        [confirm-modal
         (merge m
-               {:on-click-close-dialog  #(.close @dialog-elem)
-                :selected-user-info     @selected-rows
-                :on-click (fn [org-name]
+               {:on-click-close-dialog #(.close @dialog-elem)
+                :selected-user-info    @selected-rows
+                :on-click              (fn [org-name]
                             (on-click-update-users @checked org-name)
                             (.close @dialog-elem))})]]]
      [buttons/drop-down
