@@ -262,7 +262,7 @@
 (defn- help-section []
   [:div {:style {:display         "flex"
                  :justify-content "center"}}
-   [:a {:href   "https://pyregence.org/wildfire-forecasting/data-repository/"
+   [:a {:href   "https://www.pyregence.org/data-repositories/"
         :target "_blank"
         :style  {:color       ($/color-picker :font-color)
                  :font-family "Avenir"
