@@ -123,13 +123,13 @@
       :component-did-mount set-users!
       :reagent-render
       (fn [{:keys [org-id
-                  role-options
-                  default-role-option
-                  statuses
-                  columns
-                  show-export-to-csv?
-                  show-drop-down-confirmation?
-                  users-filter] :or {users-filter identity} :as m}]
+                   role-options
+                   default-role-option
+                   statuses
+                   columns
+                   show-export-to-csv?
+                   choose-org?
+                   users-filter] :or {users-filter identity} :as m}]
         (let [org-names   (->> m :organizations (map :org-name))
               update-drop-down    #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
               get-selected-emails #(->> @grid-api get-selected-rows (map :email))
@@ -206,7 +206,7 @@
              ;;TODO this update-user/drop-down is wonky in so many ways.
              :role   [update-user/drop-down
                       (let [org-opt-selected? (and
-                                               show-drop-down-confirmation?
+                                               choose-org?
                                                (#{"super_admin" "account_manager"} user-role)
                                                (#{"organization_admin" "organization_member"} @checked))]
                         (cond->
@@ -214,12 +214,17 @@
                           :organizations   org-names
                           :disabled?       (or (not @checked) (not @users-selected?))
                           :checked         checked
-                                             ;;TODO opt->display shouldn't be passed in here but we need to move users state to table before it will be easy to re-factor.
+                          ;;TODO opt->display shouldn't be passed in here but we need to move users state to table before it will be easy to re-factor.
                           :opt->display    db->display
                           :on-click-update-users
                           (on-click-apply
                            (fn [role org-name users]
-                             (go (<! (u-async/call-clj-async! "update-users-roles" role org-name users))))
+                             (go (<! (u-async/call-clj-async! "update-users-roles"
+                                                              role
+                                                              (if choose-org?
+                                                                org-name
+                                                                (first org-names))
+                                                              users))))
                            "Role"
                            db->display)
                           :get-selected-rows get-selected-rows}
@@ -228,7 +233,7 @@
              :status [update-user/drop-down
                       (let [org-opt-selected?
                             (and
-                             show-drop-down-confirmation?
+                             choose-org?
                              (#{"super_admin" "account_manager"} user-role)
                              (#{"pending" "accepted"} @checked))]
                         (cond->
@@ -240,7 +245,12 @@
                           :on-click-update-users
                           (on-click-apply
                            (fn [status org-name users]
-                             (go (<! (u-async/call-clj-async! "update-users-status" status org-name users))))
+                             (go (<! (u-async/call-clj-async! "update-users-status"
+                                                              status
+                                                              (if choose-org?
+                                                                org-name
+                                                                (first org-names))
+                                                              users))))
                            "Status"
                            db->display)
                           :get-selected-rows get-selected-rows}
