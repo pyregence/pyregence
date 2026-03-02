@@ -16,6 +16,7 @@
                               :default-role-option         (first roles)
                               :statuses                    ["accepted" "pending" "none"]
                               :show-export-to-csv? true
+                              :show-drop-down-confirmation? true
                               :columns
                               (let [boolean-renderer
                                     (fn [params]

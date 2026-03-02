@@ -87,11 +87,14 @@
   [{:keys [options on-click opt->display checked disabled?]}]
   (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
     [:div {:style {:display        "flex"
+                   :height         "100"
                    :width          "100%"
                    :border         border-styles
                    :border-radius  "4px"
                    :flex-direction "column"}}
      [:div {:style {:display        "flex"
+                    :max-height     "250px"
+                    :overflow       "auto"
                     :flex-direction "column"}}
       (doall
        (for [opt  options
@@ -125,11 +128,12 @@
           [:label {:style {:color       "black"
                            :font-weight "normal"}}
            (opt->display opt)]]))]
-     [:div {:style {:border-top border-styles
-                    :padding    "10px 12px"}}
-      [primary {:text      "Apply"
-                :disabled? disabled?
-                :on-click  (on-click @checked)}]]]))
+     (when on-click
+       [:div {:style {:border-top border-styles
+                      :padding    "10px 12px"}}
+        [primary {:text      "Apply"
+                  :disabled? disabled?
+                  :on-click  (on-click @checked)}]])]))
 
 (defn ghost-drop-down
   [{:keys [text class on-click selected?]
