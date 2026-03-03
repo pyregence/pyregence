@@ -1,13 +1,14 @@
 (ns pyregence.capabilities
-  (:require [clj-http.client     :as client]
-            [clojure.edn         :as edn]
-            [clojure.set         :as set]
-            [clojure.string      :as str]
-            [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql]]
-            [triangulum.logging  :refer [log log-str]]
-            [triangulum.response :refer [data-response]]
-            [triangulum.utils    :as u]))
+  (:require
+   [clj-http.client     :as client]
+   [clojure.edn         :as edn]
+   [clojure.set         :as set]
+   [clojure.string      :as str]
+   [triangulum.config   :refer [get-config]]
+   [triangulum.database :refer [call-sql]]
+   [triangulum.logging  :refer [log log-str]]
+   [triangulum.response :refer [data-response]]
+   [triangulum.utils    :as u]))
 
 ;;; State
 
@@ -80,6 +81,35 @@
      :filter-set  #{forecast fire-name model fuel percentile output model-init}
      :model-init  model-init
      :layer-group ""}))
+
+(defn- split-match-drop-layer-name
+  [name-string]
+  (let [[workspace layer]            (str/split name-string #":")
+        [forecast fire-name ts1 ts2] (str/split workspace #"_")
+        ;; Strip the md-N_YYYYMMDD_HHMMSS_ prefix from the layer
+        trimmed-layer                (str/replace layer #"^md-\d+_\d{8}_\d{6}_" "")
+        [model fuel percentile output] (str/split trimmed-layer #"_")
+        model-init                   (str ts1 "_" ts2)]
+    {:workspace   workspace
+     :fire-name   fire-name
+     :forecast    forecast
+     :filter-set  #{forecast fire-name model fuel percentile output model-init}
+     :model-init  model-init
+     :layer-group ""}))
+
+(defn- split-match-drop-isochrones-layer-name
+  [name-string]
+  (let [[workspace layer]                      (str/split name-string #":")
+        [forecast fire-name init-ts1 init-ts2] (str/split workspace #"_")
+        [layer-group _]                        (str/split layer #"_(?=\d{8}_)")
+        init-timestamp                         (str init-ts1 "_" init-ts2)]
+    {:workspace   workspace
+     :layer-group ""
+     :forecast    forecast
+     :fire-name   fire-name
+     :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
+     :model-init  init-timestamp
+     :hour        0}))
 
 (defn- split-isochrones-layer-name
   "Gets information about an active fire isochrones layer based on its name.
@@ -188,11 +218,21 @@
                                               (str/split #","))
                             merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
+                          ;; Match-drop isochrones (must come before match-drop spread)
+                          (and (str/starts-with? full-name "match-drop-forecast")
+                               (str/includes? full-name ":isochrones_"))
+                          (merge-fn (split-match-drop-isochrones-layer-name full-name))
+
+                          ;; Match-drop spread layers
+                          (and (str/starts-with? full-name "match-drop-forecast")
+                               (re-matches #"match-drop-forecast_md-\d+_\d{8}_\d{6}:md-\d+_\d{8}_\d{6}_[a-z|\d|-]+" full-name))
+                          (merge-fn (split-match-drop-layer-name full-name))
+
                           (re-matches #"([a-z|-]+_[a-z0-9|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
-                               (or (get-config :triangulum.views/client-keys :features :match-drop) (not (str/includes? full-name "match-drop"))))
+                               (not (str/includes? full-name "match-drop")))
                           (merge-fn (split-fire-spread-forecast-layer-name full-name))
 
                           (and (str/includes? full-name "isochrones")
@@ -327,14 +367,14 @@
     :match-drops  {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\",  \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}}"
   [session]
   (let [{:keys [user-id match-drop-access?]} session
-        match-drop-names (when match-drop-access?
-                           (->> (call-sql "get_user_match_names" user-id)
-                                (reduce (fn [acc row]
-                                          (assoc acc
-                                                 (:match_job_id row)
-                                                 (str (:display_name row)
-                                                      " (Match Drop)")))
-                                        {})))]
+        match-drop-names                     (when match-drop-access?
+                                               (->> (call-sql "get_user_match_names" user-id)
+                                                    (reduce (fn [acc row]
+                                                              (assoc acc
+                                                                     (:match_job_id row)
+                                                                     (str (:display_name row)
+                                                                          " (Match Drop)")))
+                                                            {})))]
     (->> (concat (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
                    (#{"fire-spread-forecast" "match-drop-forecast"} forecast)))
@@ -343,26 +383,24 @@
          (reduce
           (fn [acc fire-name]
             (let [match-job-id (some-> fire-name
-                                       (str/split #"match-drop-")
+                                       (str/split #"md-")
                                        (second)
                                        (parse-long))]
               (cond
-                ;; Active fire (no match-job-id)
+                 ;; Active fire (no match-job-id)
                 (nil? match-job-id)
                 (update acc :active-fires assoc (keyword fire-name)
-                        {:opt-label  (fire-name-capitalization fire-name)
-                         :filter-set #{"fire-spread-forecast" fire-name}
-                         :auto-zoom? true
+                        {:opt-label     (fire-name-capitalization fire-name)
+                         :filter-set    #{"fire-spread-forecast" fire-name}
+                         :auto-zoom?    true
                          :geoserver-key :trinity})
-
                 ;; Match drop belonging to this user
                 (contains? match-drop-names match-job-id)
                 (update acc :match-drops assoc (keyword fire-name)
-                        {:opt-label  (get match-drop-names match-job-id)
-                         :filter-set #{"match-drop-forecast" fire-name}
-                         :auto-zoom? true
+                        {:opt-label     (get match-drop-names match-job-id)
+                         :filter-set    #{"match-drop-forecast" fire-name}
+                         :auto-zoom?    true
                          :geoserver-key :match-drop})
-
                 :else acc)))
           {:active-fires {} :match-drops {}}))))
 
