@@ -15,18 +15,24 @@ CREATE TYPE subscription_tier AS ENUM (
 -- Stores information about organizations
 --------------------------------------------------------------------------------
 CREATE TABLE organizations (
-    organization_uid      SERIAL PRIMARY KEY,
-    org_name              text NOT NULL,
-    org_unique_id         text NOT NULL UNIQUE,
-    geoserver_credentials text,
-    email_domains         text,
-    auto_add              boolean,
-    auto_accept           boolean,
-    archived              boolean DEFAULT FALSE,
-    created_date          date DEFAULT NOW(),
-    archived_date         date,
-    system_assets         boolean,
-    subscription_tier     subscription_tier NOT NULL DEFAULT 'tier1_free_registered'
+    organization_uid       SERIAL PRIMARY KEY,
+    org_name               text NOT NULL,
+    org_unique_id          text NOT NULL UNIQUE,
+    geoserver_credentials  text,
+    email_domains          text,
+    auto_add               boolean,
+    auto_accept            boolean,
+    archived               boolean DEFAULT FALSE,
+    created_date           date DEFAULT NOW(),
+    archived_date          date,
+    system_assets          boolean,
+    subscription_tier      subscription_tier NOT NULL DEFAULT 'tier1_free_registered',
+    marketplace_account_id text UNIQUE,
+    marketplace_order_id   text,
+    marketplace_status     text DEFAULT 'none'
+        CHECK (marketplace_status IN ('none', 'pending', 'active', 'suspended', 'cancelled')),
+    usage_reporting_id     text,
+    gcp_project_id         text
 );
 
 --------------------------------------------------------------------------------

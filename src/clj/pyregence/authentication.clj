@@ -1,5 +1,6 @@
 (ns pyregence.authentication
   (:require [pyregence.email            :as email]
+            [pyregence.marketplace      :as marketplace]
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error]]
             [triangulum.config          :refer [get-config]]
@@ -54,7 +55,7 @@
   ([] (generate-password 32))         ;; 32 bytes → 43-char Base64 password
   ([n-bytes]
    (let [bytes (byte-array n-bytes)
-         _ (.nextBytes (SecureRandom.) bytes)]
+         _     (.nextBytes (SecureRandom.) bytes)]
      (.encodeToString (Base64/getEncoder) bytes))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -62,21 +63,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- successful-login
-  [{:keys [user_id] :as user}]
-  (call-sql "set_users_last_login_date_to_now" user_id)
-  (create-session-from-user-data user))
+  ([user] (successful-login user nil))
+  ([{:keys [user_id user_email] :as user} request-session]
+   (call-sql "set_users_last_login_date_to_now" user_id)
+   (marketplace/complete-signup! request-session user_id user_email)
+   (create-session-from-user-data user)))
 
 (defn log-in
   "Authenticates user and determines 2FA requirements."
-  [_ email password]
+  [session email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-    (let [user-id (:user_id user)
+    (let [user-id    (:user_id user)
           two-factor (:two-factor (get-user-settings user-id))]
       (case two-factor
         :totp  (data-response {:email email :require-2fa true :method "totp"})
         :email (do (email/send-email! nil email :2fa)
                    (data-response {:email email :require-2fa true :method "email"}))
-        (successful-login user)))
+        (successful-login user session)))
     (data-response "" {:status 403})))
 
 ^:rct/test
@@ -103,16 +106,16 @@
 
 (defn set-user-password
   "Sets a new password for user with valid reset token."
-  [_ email password token]
+  [session email password token]
   (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
-    (create-session-from-user-data user)
+    (successful-login user session)
     (data-response "Invalid or expired reset token" {:status 403})))
 
 (defn verify-user-email
   "Verifies user email with the provided token."
-  [_ email token]
+  [session email token]
   (if-let [user (first (call-sql "verify_user_email" email token))]
-    (create-session-from-user-data user)
+    (successful-login user session)
     (data-response "Invalid or expired verification token" {:status 403})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -121,7 +124,7 @@
 
 (defn verify-2fa
   "Verifies 2FA code for email/TOTP authentication."
-  [_ email code]
+  [session email code]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
     (let [two-factor (:two-factor (get-user-settings user-id))]
       (case two-factor
@@ -129,13 +132,13 @@
         (if-let [{:keys [secret] :as user} (first (call-sql "get_user_with_totp" user-id))]
           (if (or (totp/validate-totp-code secret code)
                   (sql-primitive (call-sql "use_backup_code" user-id code)))
-            (successful-login user)
+            (successful-login user session)
             (data-response "Invalid code" {:status 403}))
           (data-response "TOTP not configured" {:status 403}))
 
         :email
         (if-let [user (first (call-sql "verify_user_2fa" email code))]
-          (successful-login user)
+          (successful-login user session)
           (data-response "Invalid email verification code" {:status 403}))
 
         (data-response "2FA not configured for this account" {:status 403})))
@@ -222,7 +225,7 @@
                           :resuming     true
                           :secret       secret})))
 
-      (let [secret (totp/generate-secret)
+      (let [secret       (totp/generate-secret)
             backup-codes (totp/generate-backup-codes 10)]
         (call-sql "begin_totp_setup" user-id secret (into-array String backup-codes))
         (data-response {:backup-codes (mapv (fn [code] {:code code :used? false}) backup-codes)
@@ -510,7 +513,7 @@
   [{:keys [user-id user-email]} code]
   (if-not user-id
     (data-response "Not authenticated" {:status 401})
-    (let [settings (get-user-settings user-id)
+    (let [settings   (get-user-settings user-id)
           two-factor (:two-factor settings)]
       (cond
         (nil? two-factor)
@@ -565,7 +568,8 @@
                add the user to an organization)
   - `email`, `name`, `password`: User credentials and display name
   - `opts` (optional): A map of options that may include:
-    - `:org-id` — The organization to assign the user to (default: nil)
+    - `:org-id`   — The organization to assign the user to (default: nil)
+    - `:org-name` — Organization name to stash in session for marketplace provisioning
 
   Behavior:
   - A new user is created and persisted to the database.
@@ -592,39 +596,44 @@
     explicitly assign a new user to an organization via `:org-id`.
   - All organization assignments are validated server-side using the session context."
   [session email user-name password & [opts]]
-  (let [{:keys [org-id] :or {org-id nil}} opts
-        {:keys [user-role]} session
-        default-settings (pr-str {:timezone :utc})
+  (let [{:keys [org-id org-name]} opts
+        {:keys [user-role]}       session
+        default-settings          (pr-str {:timezone :utc})
         new-user-id (nil-on-error
                      (sql-primitive (call-sql "add_new_user"
                                               {:log? false}
                                               email
                                               user-name
                                               password
-                                              default-settings)))]
-    (if-not new-user-id
-      (data-response (str "Failed to create the new user with name " user-name " and email " email)
-                     {:status 403})
-      (cond
-        ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
-        ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
-        ;; The new user will have a user_role of organization_member and a user_status of active
-        org-id
-        (if (or (= user-role "super_admin")
-                (= user-role "organization_admin"))
-          (do
-            (call-sql "add_org_user" org-id new-user-id)
-            (data-response "User created and added to organization."))
-          (data-response "User does not have permission to assign users to this organization."
-                         {:status 403}))
+                                              default-settings)))
+        response
+        (if-not new-user-id
+          (data-response (str "Failed to create the new user with name " user-name " and email " email)
+                         {:status 403})
+          (cond
+            ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
+            ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
+            ;; The new user will have a user_role of organization_member and a user_status of active
+            org-id
+            (if (or (= user-role "super_admin")
+                    (= user-role "organization_admin"))
+              (do
+                (call-sql "add_org_user" org-id new-user-id)
+                (data-response "User created and added to organization."))
+              (data-response "User does not have permission to assign users to this organization."
+                             {:status 403}))
 
-        ;; No org-id provided — use email domain-based auto-assignment (depedent on org auto_add settings)
-        :else
-        (let [domain (re-find #"@{1}.+" email)]
-          (if (call-sql "auto_add_org_user" new-user-id domain)
-            (data-response "User created and added to added to an organization by email domain (when auto_add is true for that organization).")
-            (data-response "User created successfully but something went wrong when calling auto_add_org_user."
-                           {:status 403})))))))
+            ;; No org-id provided — use email domain-based auto-assignment (dependent on org auto_add settings)
+            :else
+            (let [domain (re-find #"@{1}.+" email)]
+              (if (call-sql "auto_add_org_user" new-user-id domain)
+                (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
+                (data-response "User created successfully but something went wrong when calling auto_add_org_user."
+                               {:status 403})))))]
+    ;; Stash org-name in session for marketplace provisioning
+    (cond-> response
+      (and new-user-id org-name (seq org-name) (:marketplace-signup session))
+      (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name)))))
 
 (defn get-current-user-settings
   "Returns settings for the current user."
@@ -844,7 +853,7 @@
 
 (defn get-password-set-date
   [{:keys [user-id]}]
-  (let [row (sql-primitive (call-sql "get_password_set_date" user-id))
+  (let [row         (sql-primitive (call-sql "get_password_set_date" user-id))
         format-date (fn [sql-time]
                       (.format (SimpleDateFormat. "yyyy-MM-dd")
                                sql-time))]
