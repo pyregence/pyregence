@@ -334,8 +334,7 @@
                                                     (reduce (fn [acc row]
                                                               (assoc acc
                                                                      (:match_job_id row)
-                                                                     (str (:display_name row)
-                                                                          " (Match Drop)")))
+                                                                     (str (:display_name row))))
                                                             {})))]
     (->> (concat (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
