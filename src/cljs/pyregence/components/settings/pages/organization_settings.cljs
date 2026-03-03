@@ -202,10 +202,14 @@
      [card {:title    "MEMBER USER-LIST"
             :children [table-with-buttons
                        (assoc m
-                              :users-filter        (fn [{:keys [user-role organization-name]}]
-                                                     (and
-                                                      (= organization-name org-name)
-                                                      (#{"organization_admin" "organization_member"} user-role)))
+                              :users-filter
+                              ;;TODO find a better way, this is necessary because these roles need a filter on this page.
+                              (if (#{"super_admin" "account_manager"} user-role)
+                                (fn [{:keys [user-role organization-name]}]
+                                  (and
+                                   (= organization-name org-name)
+                                   (#{"organization_admin" "organization_member"} user-role)))
+                                identity)
                               :role-options        roles
                               :default-role-option (first roles)
                               :statuses            ["accepted" "pending"]
