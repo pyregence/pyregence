@@ -780,6 +780,7 @@
 
    forecast-layer? - Layers corresponding to a forecast. Excludes layers such as fire-cameras and underlays."
   {:fire-spread-forecast  {:forecast-layer? true}
+   :match-drop-forecast   {:forecast-layer? true}
    :fire-active           {:forecast-layer? true}
    :fire-active-labels    {:forecast-layer? true}
    :fire-detections       {:forecast-layer? false}
