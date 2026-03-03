@@ -82,35 +82,6 @@
      :model-init  model-init
      :layer-group ""}))
 
-(defn- split-match-drop-layer-name
-  [name-string]
-  (let [[workspace layer]            (str/split name-string #":")
-        [forecast fire-name ts1 ts2] (str/split workspace #"_")
-        ;; Strip the md-N_YYYYMMDD_HHMMSS_ prefix from the layer
-        trimmed-layer                (str/replace layer #"^md-\d+_\d{8}_\d{6}_" "")
-        [model fuel percentile output] (str/split trimmed-layer #"_")
-        model-init                   (str ts1 "_" ts2)]
-    {:workspace   workspace
-     :fire-name   fire-name
-     :forecast    forecast
-     :filter-set  #{forecast fire-name model fuel percentile output model-init}
-     :model-init  model-init
-     :layer-group ""}))
-
-(defn- split-match-drop-isochrones-layer-name
-  [name-string]
-  (let [[workspace layer]                      (str/split name-string #":")
-        [forecast fire-name init-ts1 init-ts2] (str/split workspace #"_")
-        [layer-group _]                        (str/split layer #"_(?=\d{8}_)")
-        init-timestamp                         (str init-ts1 "_" init-ts2)]
-    {:workspace   workspace
-     :layer-group ""
-     :forecast    forecast
-     :fire-name   fire-name
-     :filter-set  (into #{forecast fire-name init-timestamp} (str/split layer-group #"_"))
-     :model-init  init-timestamp
-     :hour        0}))
-
 (defn- split-isochrones-layer-name
   "Gets information about an active fire isochrones layer based on its name.
    The layer is assumed to be in the format:
@@ -218,16 +189,6 @@
                                               (str/split #","))
                             merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
-                          ;; Match-drop isochrones (must come before match-drop spread)
-                          (and (str/starts-with? full-name "match-drop-forecast")
-                               (str/includes? full-name ":isochrones_"))
-                          (merge-fn (split-match-drop-isochrones-layer-name full-name))
-
-                          ;; Match-drop spread layers
-                          (and (str/starts-with? full-name "match-drop-forecast")
-                               (re-matches #"match-drop-forecast_md-\d+_\d{8}_\d{6}:md-\d+_\d{8}_\d{6}_[a-z|\d|-]+" full-name))
-                          (merge-fn (split-match-drop-layer-name full-name))
-
                           (re-matches #"([a-z|-]+_[a-z0-9|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
