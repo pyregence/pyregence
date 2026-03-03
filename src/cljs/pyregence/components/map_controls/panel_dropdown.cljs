@@ -24,7 +24,7 @@
              :disabled  disabled?
              :on-change #(call-back (u-dom/input-keyword %))}
     (->> options
-         (remove (fn [[_ {:keys [hidden?]}]] hidden?))
+         (remove (fn [[_ {:keys [hidden? opt-label]}]] (or hidden? (empty? opt-label))))
          (map (fn [[key {:keys [opt-label enabled? disabled-for]}]]
                 [:option {:key      key
                           :value    key
