@@ -518,7 +518,6 @@
                                                  :hover-text "Hundreds of millions of fires are ignited across California at various times in the future and their spread is modeled under forecasted weather conditions. Data are refreshed each day at approximately 5 AM PDT."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
    :active-fire  {:opt-label       "Active Fires"
-                  :filter          "fire-spread-forecast"
                   :underlays       (merge common-underlays
                                           near-term-forecast-underlays
                                           {:isochrones {:opt-label        "Modeled perimeter"
@@ -531,16 +530,26 @@
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "14-day forecasts of active fires with burning areas established from satellite-based heat detection."
-                  :params          {:fire-name  {:opt-label      "Fire Name"
-                                                 :sort?          true
-                                                 :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
-                                                 :default-option :active-fires
-                                                 :options        {:active-fires {:opt-label            "*All Active Fires"
-                                                                                 :style-fn             :default
-                                                                                 :exclusive-filter-set #{"fire-detections" "active-fires"}
-                                                                                 :auto-zoom?           true
-                                                                                 :time-slider?         false
-                                                                                 :geoserver-key        :shasta}}}
+                  :params          {:fire-name       {:opt-label      "Fire Name"
+                                                      :sort?          true
+                                                      :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
+                                                      :default-option :active-fires
+                                                      :resets         {:match-drop-name :none}
+                                                      :options        {:none         {:opt-label "\u2014"
+                                                                                      :hidden?   true}
+                                                                       :active-fires {:opt-label            "*All Active Fires"
+                                                                                      :style-fn             :default
+                                                                                      :exclusive-filter-set #{"fire-detections" "active-fires"}
+                                                                                      :auto-zoom?           true
+                                                                                      :time-slider?         false
+                                                                                      :geoserver-key        :shasta}}}
+                                    :match-drop-name {:opt-label      "Match Drop"
+                                                      :sort?          true
+                                                      :hidden?        true
+                                                      :hover-text     "Select a match drop fire to view."
+                                                      :default-option :none
+                                                      :resets         {:fire-name :none}
+                                                      :options        {:none {:opt-label "None"}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "Available outputs are fire location, crown fire type (surface fire, passive, or active), flame length (ft), and surface fire spread rate (ft/min). Time can be advanced with the slider centered below."
                                                  :options    {:burned       {:opt-label       "Forecasted fire location"

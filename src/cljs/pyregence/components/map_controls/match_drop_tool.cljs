@@ -73,16 +73,21 @@
    due to a limitation in state management (we seem to have some duplicated state
    in capabilities and processed-params).
    An example return value from get-fire-names can be seen below:
-   {:foo {:opt-label \"foo\", :filter \"foo\", :auto-zoom? true}
-    :bar {:opt-label \"bar\", :filter \"bar\", :auto-zoom? true}}"
+   {:active-fires {:fire-name       {:opt-label \"Fire Name\"       :filter-set #{\"fire-spread-forecast\", \"fire-name\"}       :auto-zoom? true :geoserver-key :trinity}    ...}
+    :match-drops  {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\",  \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}}"
   []
   (go
     (let [fire-names (->> (u-async/call-clj-async! "get-fire-names")
                           (<!)
                           (:body)
                           (edn/read-string))]
-      (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge fire-names)
-      (swap! !/processed-params update-in [:fire-name :options] merge fire-names))))
+      (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge (:active-fires fire-names))
+      (swap! !/processed-params update-in [:fire-name :options] merge (:active-fires fire-names))
+      (when (seq (:match-drops fire-names))
+        (swap! !/capabilities update-in [:active-fire :params :match-drop-name :options] merge (:match-drops fire-names))
+        (swap! !/capabilities assoc-in [:active-fire :params :match-drop-name :hidden?] false)
+        (swap! !/processed-params update-in [:match-drop-name :options] merge (:match-drops fire-names))
+        (swap! !/processed-params assoc-in [:match-drop-name :hidden?] false)))))
 
 (defn- poll-status
   "Continually polls for updated information about the match drop run every 5 seconds.
