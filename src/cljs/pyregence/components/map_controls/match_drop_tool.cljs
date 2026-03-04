@@ -89,6 +89,15 @@
         (swap! !/processed-params update-in [:match-drop-name :options] merge (:match-drops fire-names))
         (swap! !/processed-params assoc-in [:match-drop-name :hidden?] false)))))
 
+(defn- body-for-match-drop-model [text]
+  {:body
+   [:div {:style {:max-height  "300px"
+                  :overflow-y  "auto"
+                  :white-space "pre-wrap"
+                  :word-wrap   "break-word"
+                  :font-size   ".95rem"}}
+    text]})
+
 (defn- poll-status
   "Continually polls for updated information about the match drop run every 5 seconds.
    Stops polling on finish or error signal."
@@ -123,12 +132,10 @@
           1 (do
               (println message)
               (js/console.error job-log)
-              (set-message-box-content! {:body (str "Error running match-drop-" match-job-id ".\n\n" message)})
+              (set-message-box-content! (body-for-match-drop-model (str "Error running match-drop-" match-job-id ".\n\n" message)))
               (reset! poll? false))
-
-          (set-message-box-content! {:body (if (c/feature-enabled? :sig3-endpoint)
-                                             job-log
-                                             message)})))
+          (let [text (if (c/feature-enabled? :sig3-endpoint) job-log message)]
+            (set-message-box-content! (body-for-match-drop-model text)))))
       (<! (timeout 5000)))))
 
 (defn- initiate-match-drop!

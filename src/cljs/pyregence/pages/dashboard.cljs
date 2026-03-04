@@ -58,10 +58,12 @@
   (set-message-box-content!
    {:title (str "Match Drop #" match-job-id)
     :body  [:div {:style {:max-height "500px"
-                          :overflow-y "scroll"
-                          :overflow-x "auto"
+                          :overflow-y "auto"
                           :width      "75vw"}}
-            [:pre {:style {:line-height 1.0 :margin-bottom 0}}
+            [:pre {:style {:line-height   1.0
+                           :margin-bottom 0
+                           :white-space   "pre-wrap"
+                           :word-wrap     "break-word"}}
              (doall (map-indexed (fn [i line] ^{:key i} line)
                                  (string/split job-log #"\\n")))]]
     :mode  :close}))
