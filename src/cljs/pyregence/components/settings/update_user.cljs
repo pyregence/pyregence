@@ -11,7 +11,7 @@
 
 ;;TODO merge this with the other uses of confirm-modal
 (defn confirm-modal
-  [{:keys [on-click on-click-close-dialog checked organizations select-org-msg]}]
+  [{:keys [on-click on-click-close-dialog checked organizations select-org-msg opt->display]}]
   (let [bc       ($/color-picker :neutral-light-gray)
         org-name (r/atom nil)]
     [:div {:style {:width          "fit-content"
@@ -28,7 +28,7 @@
                :padding-bottom      "20px"
                :font-weight         "bolder"
                :font-size           "1.5rem"}}
-      (or select-org-msg  "Confirm Update User")]
+      (or select-org-msg  (str "Confirm Update Users: " (opt->display @checked) "."))]
      (when select-org-msg
        [buttons/drop-down {:options (sort organizations)
                            :checked org-name
