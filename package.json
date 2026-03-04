@@ -12,7 +12,6 @@
     "webpack-cli": "^5.1.4"
   },
   "overrides": {
-    "vega": "^6.2.0",
-    "serialize-javascript": "^7.0.3"
+    "vega": "^6.2.0"
   }
 }
