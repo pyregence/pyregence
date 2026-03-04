@@ -55,14 +55,16 @@
             [th "User Name"]
             [th "Email Address"]
             [th "User Role"]
+            [th "User Status"]
             [th "Organization Name"]]]
           [:tbody
-           (for [{:keys [name email user-role organization-name]} @selected-rows]
+           (for [{:keys [name email user-role organization-name org-membership-status]} @selected-rows]
              ^{:key name}
              [:tr
               [td name]
               [td email]
               [td (roles/type->label user-role)]
+              [td org-membership-status]
               [td organization-name]])]])]]
      [:div {:style {:display          "flex"
                     :flex-direction   "row"
