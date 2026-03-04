@@ -89,7 +89,7 @@
         (swap! !/processed-params update-in [:match-drop-name :options] merge (:match-drops fire-names))
         (swap! !/processed-params assoc-in [:match-drop-name :hidden?] false)))))
 
-(defn- body-for-match-drop-model [text]
+(defn- body-for-match-drop-modal [text]
   {:body
    [:div {:style {:max-height  "300px"
                   :overflow-y  "auto"
@@ -132,10 +132,10 @@
           1 (do
               (println message)
               (js/console.error job-log)
-              (set-message-box-content! (body-for-match-drop-model (str "Error running match-drop-" match-job-id ".\n\n" message)))
+              (set-message-box-content! (body-for-match-drop-modal (str "Error running match-drop-" match-job-id ".\n\n" message)))
               (reset! poll? false))
           (let [text (if (c/feature-enabled? :sig3-endpoint) job-log message)]
-            (set-message-box-content! (body-for-match-drop-model text)))))
+            (set-message-box-content! (body-for-match-drop-modal text)))))
       (<! (timeout 5000)))))
 
 (defn- initiate-match-drop!
