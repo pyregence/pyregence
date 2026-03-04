@@ -5,6 +5,7 @@
    [clojure.data.json          :as json]
    [clojure.edn                :as edn]
    [clojure.java.shell         :refer [sh]]
+   [clojure.pprint             :as pp]
    [clojure.set                :refer [rename-keys]]
    [clojure.string             :as str]
    [pyregence.capabilities     :refer [layers-exist? remove-workspace!
@@ -452,6 +453,10 @@
                              {:headers {"sig-auth" (get-md-config :sig3-auth)}})]
     (json/read-str (:body response))))
 
+(defn- prettify
+  [edn]
+  (with-out-str (pp/pprint edn)))
+
 (defn calculate-transitions
   "Return a vector of state changes when compared with the current job-state
    `order` is for sorting: control order of events
@@ -466,7 +471,7 @@
                 (and (false? failure) (= job-status "failure"))
                 (concat [[order step "failure" message match-job-id]])
                 (and (false? success) (= job-status "success"))
-                (concat [[order step "success" result match-job-id]]))))
+                (concat [[order step "success" (prettify result) match-job-id]]))))
           @state))
 
 ;; https://mikerowecode.com/2013/02/clojure-polling-function.html
