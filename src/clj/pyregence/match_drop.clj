@@ -494,8 +494,8 @@
             (update-match-job! (cond-> {:match-job-id   match-job-id
                                         :message        (case status
                                                           "pending" (str "Step " step " STARTED")
-                                                          "failure" (str "Step " step " FAILED. Result: " result)
-                                                          "success" (str "Step " step " DONE. Result: " result))}
+                                                          "failure" (str "Step " step " FAILED.\nResult:\n" result)
+                                                          "success" (str "Step " step " DONE.\nResult:\n" result))}
                                  (and (= step "mdrop-elmfire") (= "success" status))
                                  (assoc :elmfire-done? true)
                                  (and (= step "mdrop-gridfire") (= "success" status))
