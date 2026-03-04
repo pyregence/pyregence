@@ -635,7 +635,7 @@
                                                                              :filter    "elmfire"}
                                                               :pyretechnics {:enabled?  #(feature-enabled? :pyretechnics)
                                                                              :opt-label "Pyretechnics (Beta)"
-                                                                             :filter    "pyretechnics"}
+                                                                             :filter    "pyretec"}
                                                               :gridfire     {:enabled?  #(feature-enabled? :gridfire)
                                                                              :opt-label "GridFire"
                                                                              :filter    "gridfire"}}}
