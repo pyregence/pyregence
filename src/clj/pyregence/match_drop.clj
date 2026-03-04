@@ -458,12 +458,13 @@
    `step` is the step name in the match-drop network in sig3"
   [state job-state match-job-id]
   (mapcat (fn build-vector-of-transitions [[step {:strs [order pending success failure]}]]
-            (let [{:strs [result job-status]} (get-in job-state ["steps" step])]
+            (let [{:strs [result job-status]} (get-in job-state ["steps" step])
+                  {:strs [message]}         result] ;; error-msg
               (cond-> []
                 (and (false? pending) (= job-status "pending"))
                 (concat [[order step "pending" {}  match-job-id]])
                 (and (false? failure) (= job-status "failure"))
-                (concat [[order step "failure" result match-job-id]])
+                (concat [[order step "failure" message match-job-id]])
                 (and (false? success) (= job-status "success"))
                 (concat [[order step "success" result match-job-id]]))))
           @state))
