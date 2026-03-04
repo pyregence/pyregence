@@ -334,8 +334,7 @@
                                                     (reduce (fn [acc row]
                                                               (assoc acc
                                                                      (:match_job_id row)
-                                                                     (str (:display_name row)
-                                                                          " (Match Drop)")))
+                                                                     (str (:display_name row))))
                                                             {})))]
     (->> (concat (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
@@ -349,8 +348,8 @@
                                        (second)
                                        (parse-long))]
               (cond
-                 ;; Active fire (no match-job-id)
-                (nil? match-job-id)
+                 ;; Active fire (no match-job-id and not a legacy match drop using the old naming convention)
+                (and (nil? match-job-id) (not (str/includes? fire-name "match-drop")))
                 (update acc :active-fires assoc (keyword fire-name)
                         {:opt-label     (fire-name-capitalization fire-name)
                          :filter-set    #{"fire-spread-forecast" fire-name}
