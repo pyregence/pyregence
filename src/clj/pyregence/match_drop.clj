@@ -5,6 +5,7 @@
    [clojure.data.json          :as json]
    [clojure.edn                :as edn]
    [clojure.java.shell         :refer [sh]]
+   [clojure.pprint             :as pp]
    [clojure.set                :refer [rename-keys]]
    [clojure.string             :as str]
    [pyregence.capabilities     :refer [layers-exist? remove-workspace!
@@ -452,20 +453,25 @@
                              {:headers {"sig-auth" (get-md-config :sig3-auth)}})]
     (json/read-str (:body response))))
 
+(defn- prettify
+  [edn]
+  (with-out-str (pp/pprint edn)))
+
 (defn calculate-transitions
   "Return a vector of state changes when compared with the current job-state
    `order` is for sorting: control order of events
    `step` is the step name in the match-drop network in sig3"
   [state job-state match-job-id]
   (mapcat (fn build-vector-of-transitions [[step {:strs [order pending success failure]}]]
-            (let [{:strs [result job-status]} (get-in job-state ["steps" step])]
+            (let [{:strs [result job-status]} (get-in job-state ["steps" step])
+                  {:strs [message]}         result] ;; error-msg
               (cond-> []
                 (and (false? pending) (= job-status "pending"))
                 (concat [[order step "pending" {}  match-job-id]])
                 (and (false? failure) (= job-status "failure"))
-                (concat [[order step "failure" result match-job-id]])
+                (concat [[order step "failure" message match-job-id]])
                 (and (false? success) (= job-status "success"))
-                (concat [[order step "success" result match-job-id]]))))
+                (concat [[order step "success" (prettify result) match-job-id]]))))
           @state))
 
 ;; https://mikerowecode.com/2013/02/clojure-polling-function.html
@@ -493,8 +499,8 @@
             (update-match-job! (cond-> {:match-job-id   match-job-id
                                         :message        (case status
                                                           "pending" (str "Step " step " STARTED")
-                                                          "failure" (str "Step " step " FAILED. Result: " result)
-                                                          "success" (str "Step " step " DONE. Result: " result))}
+                                                          "failure" (str "Step " step " FAILED.\nResult:\n" result)
+                                                          "success" (str "Step " step " DONE.\nResult:\n" result))}
                                  (and (= step "mdrop-elmfire") (= "success" status))
                                  (assoc :elmfire-done? true)
                                  (and (= step "mdrop-gridfire") (= "success" status))
