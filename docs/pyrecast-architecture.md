@@ -1,5 +1,12 @@
 # Pyrecast Architecture
 
+## Table of Contents
+- [Overview](#pyrecast-architecture)
+- [GCP, Match Drop, and Active Fires](#gcp-match-drop-and-active-fires)
+  - [Active Fires Only](#active-fires-only)
+  - [Match-Drop Only](#match-drop-only)
+  - [Both Active Fires and Match-Drop](#both-active-fires-and-match-drop)
+
 Pyrecast is a complicated web application with multiple moving parts.
 This document aims to explain, at a high level, how the architecture is set up.
 If you're looking for more granular detail, take a look at the Pyrecast back-end document.
@@ -55,3 +62,24 @@ flowchart LR
 
     K[(PostgreSQL DB)]<-->D;
 ```
+
+## GCP, Match Drop, and Active Fires
+
+### Active Fires Only
+1. The `gcloud-sync-from-bucket` [Shepherd timer](https://gitlab.sig-gis.com/sig-gis/pyrecast-gcp-deployment/blob/main/guix/modules/sig-gis/geoserver-timers.scm) runs once per hour and downloads new GIS data to the `/srv/gis` folder.
+2. The `sync-active-fires` Shepherd timer runs once per hour and launches a Bash script which submits one job to the `trinity` GeoSync server on localhost per folder under `/srv/gis/fire_spread_forecast`.
+3. The `trinity` [GeoSync server](https://gitlab.sig-gis.com/sig-gis/pyrecast-gcp-deployment/tree/main/guix/config-files/geoserver-config/production/02-trinity-geoserver/) scans each of the folders under `/srv/gis/fire_spread_forecast` for GIS files, sends REST requests to the local GeoServer application to get a list of currently registered forecasts, and then sends a bunch of REST requests to the GeoServer telling it to register all of the new forecasts under `/srg/gis/fire_spread_forecast` that aren't already in its layer catalog.
+
+### Match-Drop Only
+1. The [kubernetes](https://gitlab.sig-gis.com/sig-gis/sig3/tree/main/resources/match-drop.edn) [GeoSync microservice](https://gitlab.sig-gis.com/sig-gis/pyrecast-scripts/blob/main/src/clj/pyrecast/geosync/geosync.clj) uploads match-drop results to the GeoServer(s) VM's `/srv/gis/match_drop_forecast` folder.
+2. The [kubernetes](https://gitlab.sig-gis.com/sig-gis/sig3/tree/main/resources/match-drop.edn) [GeoSync microservice](https://gitlab.sig-gis.com/sig-gis/pyrecast-scripts/blob/main/src/clj/pyrecast/geosync/geosync.clj) submits one job to the `sierra` GeoSync server on that GeoServer VM.
+3. The `sierra` [GeoSync server](https://gitlab.sig-gis.com/sig-gis/pyrecast-gcp-deployment/tree/main/guix/config-files/geoserver-config/development/03-sierra-geoserver/) scans the folder containing your match-drop forecast under `/srv/gis/match_drop_forecast` for GIS files, sends REST requests to the local GeoServer application to get a list of currently registered forecasts, and then sends a bunch of REST requests to the GeoServer telling it to register the new match-drop forecast.
+
+### Both Active Fires and Match-Drop
+4. After it finishes registering a new forecast, the GeoSync server runs its `:after` action hooks (from its `config.edn` file), which tell it to send an HTTPS request to the `/set-capabilities` route on the PyreCast web server.
+5. The PyreCast server responds to this HTTPS request by sending another HTTPS WMS `GetCapabilities` request to the GeoServer.
+6. The GeoServer responds with a list of the new forecast layers that are now available in its catalog.
+7. The PyreCast server stores this information in memory in a Clojure atom.
+8. When users visit the PyreCast website, their web browser downloads the PyreCast CLJS code, which requests the available layers from the PyreCast server's layers atom and uses this information to fill in the options in the various dropdowns in the website's left-hand sidebar.
+9. Whenever users make a new selection from these dropdowns, their Mapbox JS code sends HTTPS WMS `GetMap` requests to the GeoServer, which then dynamically creates PNG images from the GIS data under its `/srv/gis` folder and returns them to the web browser to be displayed on the map canvas.
+10. These PNG images are also stored in the GeoWebCache folder on the GeoServer VM, so that they can be returned quickly in the future.

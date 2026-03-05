@@ -365,6 +365,11 @@ The current notable actions are [[https://github.com/sig-gis/triangulum?tab=read
 ** Vulerability checking
 To check for vulerabilities in this project, use ~clojure -M:clj-watson scan -p deps-for-clj-watson.edn -s~
 
+** Other Documentation
+
+- [[file:docs/pyrecast-architecture.md][Pyrecast Architecture]]
+- [[file:docs/pyrecast-back-end.md][Pyrecast Back-End]]
+
 ** License and Distribution
 
 Copyright © 2020-2026 Spatial Informatics Group, LLC.
