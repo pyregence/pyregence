@@ -66,14 +66,14 @@ flowchart LR
 ## GCP, Match Drop, and Active Fires
 
 ### Active Fires Only
-1. The `gcloud-sync-from-bucket` Shepherd timer runs once per hour and downloads new GIS data to the `/srv/gis` folder.
+1. The `gcloud-sync-from-bucket` [Shepherd timer](https://gitlab.sig-gis.com/sig-gis/pyrecast-gcp-deployment/blob/main/guix/modules/sig-gis/geoserver-timers.scm) runs once per hour and downloads new GIS data to the `/srv/gis` folder.
 2. The `sync-active-fires` Shepherd timer runs once per hour and launches a Bash script which submits one job to the `trinity` GeoSync server on localhost per folder under `/srv/gis/fire_spread_forecast`.
-3. The `trinity` GeoSync server scans each of the folders under `/srv/gis/fire_spread_forecast` for GIS files, sends REST requests to the local GeoServer application to get a list of currently registered forecasts, and then sends a bunch of REST requests to the GeoServer telling it to register all of the new forecasts under `/srg/gis/fire_spread_forecast` that aren't already in its layer catalog.
+3. The `trinity` [GeoSync server](https://gitlab.sig-gis.com/sig-gis/pyrecast-gcp-deployment/tree/main/guix/config-files/geoserver-config/production/02-trinity-geoserver/) scans each of the folders under `/srv/gis/fire_spread_forecast` for GIS files, sends REST requests to the local GeoServer application to get a list of currently registered forecasts, and then sends a bunch of REST requests to the GeoServer telling it to register all of the new forecasts under `/srg/gis/fire_spread_forecast` that aren't already in its layer catalog.
 
 ### Match-Drop Only
-1. The kubernetes GeoSync microservice uploads match-drop results to the GeoServer(s) VM's `/srv/gis/match_drop_forecast` folder.
-2. The kubernetes GeoSync microservice submits one job to the `sierra` GeoSync server on that GeoServer VM.
-3. The `sierra` GeoSync server scans the folder containing your match-drop forecast under `/srv/gis/match_drop_forecast` for GIS files, sends REST requests to the local GeoServer application to get a list of currently registered forecasts, and then sends a bunch of REST requests to the GeoServer telling it to register the new match-drop forecast.
+1. The [kubernetes](https://gitlab.sig-gis.com/sig-gis/sig3/tree/main/resources/match-drop.edn) [GeoSync microservice](https://gitlab.sig-gis.com/sig-gis/pyrecast-scripts/blob/main/src/clj/pyrecast/geosync/geosync.clj) uploads match-drop results to the GeoServer(s) VM's `/srv/gis/match_drop_forecast` folder.
+2. The [kubernetes](https://gitlab.sig-gis.com/sig-gis/sig3/tree/main/resources/match-drop.edn) [GeoSync microservice](https://gitlab.sig-gis.com/sig-gis/pyrecast-scripts/blob/main/src/clj/pyrecast/geosync/geosync.clj) submits one job to the `sierra` GeoSync server on that GeoServer VM.
+3. The `sierra` [GeoSync server](https://gitlab.sig-gis.com/sig-gis/pyrecast-gcp-deployment/tree/main/guix/config-files/geoserver-config/development/03-sierra-geoserver/) scans the folder containing your match-drop forecast under `/srv/gis/match_drop_forecast` for GIS files, sends REST requests to the local GeoServer application to get a list of currently registered forecasts, and then sends a bunch of REST requests to the GeoServer telling it to register the new match-drop forecast.
 
 ### Both Active Fires and Match-Drop
 4. After it finishes registering a new forecast, the GeoSync server runs its `:after` action hooks (from its `config.edn` file), which tell it to send an HTTPS request to the `/set-capabilities` route on the PyreCast web server.
