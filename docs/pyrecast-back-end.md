@@ -1,5 +1,15 @@
 # Pyrecast Back-End
 
+## Table of Contents
+- [Overview](#overview)
+- [GetCapabilities](#getcapabilities)
+- [The `layers` atom](#the-layers-atom)
+- [GetCapabilities --> the `layers` atom](#getcapabilities----the-layers-atom)
+- [API](#api)
+- [Tying it all together](#tying-it-all-together)
+
+# Overview
+
 This document aims to go into more detail on Pyrecast's back-end.
 In particular, we will focus on how a layer is fed in from the GeoServer instance to the Pyrecast back-end (for eventual use on the front-end).
 If you have not read the [Pyrecast Architecture document](./pyrecast-architecture.md), you should do so before continuing.
