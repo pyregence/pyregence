@@ -259,6 +259,6 @@
                            db->display)
                           :get-selected-rows get-selected-rows}
                           org-opt-selected?
-                          (assoc :select-org-msg (str "Assign Organization for " (db->display @checked) "Users."))))]
+                          (assoc :select-org-msg (str "Assign Organization for " (db->display @checked) " Users."))))]
              nil)
            [table grid-api users users-selected? users-filter columns]]))})))
