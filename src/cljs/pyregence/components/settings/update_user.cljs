@@ -33,7 +33,7 @@
        [buttons/drop-down {:options (sort organizations)
                            :checked org-name
                            :opt->display identity
-                           :disabled? (nil? org-name)}])
+                           :disabled? (nil? @org-name)}])
      [:div {:style {:display        "flex"
                     :flex-direction "column"
                     :gap            "10px"}}
