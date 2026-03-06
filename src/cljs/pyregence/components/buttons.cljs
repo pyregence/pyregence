@@ -87,7 +87,7 @@
   [{:keys [options on-click opt->display checked disabled?]}]
   (let [border-styles (str "1px solid " ($/color-picker :neutral-soft-gray))]
     [:div {:style {:display        "flex"
-                   :height         "100"
+                   :height         "100%"
                    :width          "100%"
                    :border         border-styles
                    :border-radius  "4px"
