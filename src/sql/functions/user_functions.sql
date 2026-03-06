@@ -390,6 +390,19 @@ END;
 
 $$ LANGUAGE plpgsql;
 
+-- TODO ideally this would check if the requesting_user has permissions to do this.
+CREATE OR REPLACE FUNCTION update_users_status_by_email(_requesting_user_id integer, _status text, _org_name text, _users_to_be_updated text[])
+RETURNS void AS $$
+BEGIN
+  UPDATE users
+  SET org_membership_status = _status::org_membership_status,
+      organization_rid      = CASE WHEN _status IN ('pending', 'accepted') THEN (SELECT organization_uid FROM organizations o WHERE o.org_name = _org_name) ELSE NULL END,
+      user_role             = CASE WHEN _status IN ('pending', 'accepted') THEN 'organization_member'::user_role ELSE 'member'::user_role END
+  WHERE email = ANY(_users_to_be_updated);
+END;
+
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION delete_users(_user_email text, _users_to_be_removed text[])
 RETURNS boolean
 LANGUAGE plpgsql
@@ -404,21 +417,6 @@ BEGIN
   END IF;
 END;
 $$;
-
--- TODO ideally this would check if the requesting_user has permissions to do this.
-CREATE OR REPLACE FUNCTION update_users_status_by_email(_requesting_user_id integer, _status text, _org_name text, _users_to_be_updated text[])
-RETURNS void AS $$
-BEGIN
-  UPDATE users
-  SET org_membership_status = _status::org_membership_status,
-      organization_rid      = CASE WHEN _status IN ('pending', 'accepted') THEN (SELECT organization_uid FROM organizations o WHERE o.org_name = _org_name) ELSE NULL END,
-      user_role             = CASE WHEN _status IN ('pending', 'accepted') THEN 'organization_member'::user_role ELSE 'member'::user_role END
-  WHERE email = ANY(_users_to_be_updated);
-END;
-
-$$ LANGUAGE plpgsql;
-
-
 
 -- Sets the given users last login date to now.
 CREATE OR REPLACE FUNCTION set_users_last_login_date_to_now(_user_id integer)
