@@ -307,9 +307,10 @@
       400
       "Match Drop Tool"
       close-fn!
-      (fn [_ _]
-        [:div {:style {:display "flex" :flex-direction "column" :height "inherit"}}
-         [:div {:style {:flex-grow 1 :font-size "0.9rem" :margin "0.5rem 1rem"}}
+      (fn [content-height _]
+        [:div {:style {:display "flex" :flex-direction "column" :height content-height :overflow "hidden"}}
+         [:div {:style {:flex "1 1 0" :min-height 0 :font-size "0.9rem" :padding "0.5rem 1rem" :overflow-y "auto"}}
+
           [:div {:style {:font-size "0.85rem" :margin "0.5rem 0"}}
            match-drop-instructions]
           [:hr {:style {:background "white"}}]
