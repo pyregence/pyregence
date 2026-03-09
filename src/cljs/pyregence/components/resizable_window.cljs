@@ -68,7 +68,7 @@
                     (js/window.removeEventListener "mouseup" handle-up))
 
         handle-down (fn [e]
-                      (.preventDefault e) ;; Prevent text selection
+                      (.preventDefault e)
                       (reset! drag-state {:start-x (.-clientX e)
                                           :start-y (.-clientY e)
                                           :start-w @box-width
@@ -118,5 +118,4 @@
                       :overflow-y "auto"
                       :position   "relative"}}
         (render-content (- @box-height @title-height) @box-width)]
-       ;; Back to the original 7 arguments—no more mess
        [drag-sw-icon p-height p-top box-height box-width init-height init-width]])))

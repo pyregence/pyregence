@@ -75,7 +75,7 @@
    "."])
 
 (defn- not-found
-  [{:keys [name stationIdentifier]}]
+  [{:keys [station-name stationIdentifier]}]
   [:div
    [:div {:style {:display         "flex"
                   :flex-direction  "column"
@@ -83,10 +83,10 @@
                   :width           "100%"
                   :padding-top     "1rem"
                   :padding-left    "1rem"}}
-    [:p "No information for the " name " weather station was found. Please check back later or try another station."]
+    [:p "No information for the " station-name " weather station was found. Please check back later or try another station."]
     [:ul {:style {:padding-inline-start "1rem"}}
      [:li "Station ID: " stationIdentifier]
-     [:li "Station name: " name]]]])
+     [:li "Station name: " station-name]]]])
 
 ;;TODO this could share styles with the `not-found` component
 (defn- info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
@@ -176,6 +176,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn tool [parent-box close-fn!]
   (r/with-let [latest-observation   (r/atom nil)
