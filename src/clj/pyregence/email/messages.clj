@@ -151,22 +151,22 @@
         content-cell-style  {:padding "20px"}
         content-div-style   {:padding "30px 20px"}]
     (html5
-      [:head
-       [:meta {:charset "UTF-8"}]
-       [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]]
-      [:body {:style body-style}
-       [:table {:width "100%" :cellpadding "0" :cellspacing "0"
-                :style outer-table-style}
-        [:tr
-         [:td {:align "center" :style outer-cell-style}
-          [:table {:width "600" :cellpadding "0" :cellspacing "0"
-                   :style content-table-style}
-           [:tr
-            [:td {:style content-cell-style}
-             (html-header)
-             [:div {:style content-div-style}
-              content]
-             (html-footer)]]]]]]])))
+     [:head
+      [:meta {:charset "UTF-8"}]
+      [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]]
+     [:body {:style body-style}
+      [:table {:width "100%" :cellpadding "0" :cellspacing "0"
+               :style outer-table-style}
+       [:tr
+        [:td {:align "center" :style outer-cell-style}
+         [:table {:width "600" :cellpadding "0" :cellspacing "0"
+                  :style content-table-style}
+          [:tr
+           [:td {:style content-cell-style}
+            (html-header)
+            [:div {:style content-div-style}
+             content]
+            (html-footer)]]]]]]])))
 
 (defn- fallback-url-note [url]
   [:p {:style (:p common-styles)}
@@ -383,20 +383,19 @@
   (fn [fmt & _] fmt))
 
 (defmethod match-drop-email :text
-  [_ base-url email user-name job-id display-name status]
+  [_ base-url email user-name match-job-id display-name status]
   (let [greeting    (or user-name email)
-        results-url (str base-url "/match-drop/results/" job-id)]
+        results-url (str base-url "/dashboard")]
     (case status
       :completed (str "Hi " greeting ",\n\n"
                       "  Your Match Drop fire progression run " display-name " completed successfully. "
                       "Use the link below to view your forecasted fire spread in PyreCast.\n\n"
                       "  " results-url "\n\n"
                       "  Fire Name: " display-name "\n"
-                      "  Fire ID: " job-id "\n\n"
+                      "  Fire ID: " match-job-id "\n\n"
                       "  Thanks,\n"
                       "  The PyreCast Team"
                       (text-footer))
-
       :failed    (str "Hi " greeting ",\n\n"
                       "  Your Match Drop simulation encountered an error.\n\n"
                       "  Please try running your simulation again. If the problem persists, "
@@ -404,7 +403,6 @@
                       "  Thanks,\n"
                       "  The PyreCast Team"
                       (text-footer))
-
       ;; Default
       (str "Hi " greeting ",\n\n"
            "  Your Match Drop simulation status has been updated.\n\n"
@@ -413,9 +411,9 @@
            (text-footer)))))
 
 (defmethod match-drop-email :html
-  [_ base-url email user-name job-id display-name status]
+  [_ base-url email user-name match-job-id display-name status]
   (let [greeting    (or user-name email)
-        results-url (str base-url "/match-drop/results/" job-id)
+        results-url (str base-url "/dashboard")
         title       (case status
                       :completed "Match Drop Completed"
                       :failed    "Match Drop Failed"
@@ -441,7 +439,7 @@
           [:p {:style (:info-p common-styles)}
            [:strong "Fire Name: "] display-name]
           [:p {:style (:info-p common-styles)}
-           [:strong "Fire ID: "] job-id]]])
+           [:strong "Fire ID: "] match-job-id]]])
       (when (= status :failed)
         [:p {:style (:p common-styles)}
          "Please try running your simulation again. If the problem persists, "

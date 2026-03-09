@@ -124,7 +124,7 @@
                                             :status        :completed
                                             :fire-name     (-> geoserver-workspace
                                                                (str/split #"_")
-                                                               (second)) ;; NOTE: this assumes a geoserver-workspace in the format of "fire-spread-forecast_prod-match-drop-14_20110426_230000"
+                                                               (second))
                                             :ignition-time ignition-time
                                             :lat           lat
                                             :lon           lon}))

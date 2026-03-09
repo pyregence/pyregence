@@ -83,7 +83,7 @@
         base-url  (get-config :triangulum.email/base-url)
         fmt       (get-email-format email)
         body      (messages/match-drop-email fmt base-url email user-name
-                                             (:job-id match-drop-args)
+                                             (:match-job-id match-drop-args)
                                              (:display-name match-drop-args)
                                              (:status match-drop-args))
         result    (send-mail email nil "PyreCast Support" subject body fmt)]
