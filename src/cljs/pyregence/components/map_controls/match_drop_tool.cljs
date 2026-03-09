@@ -121,6 +121,7 @@
                                            :match-drop
                                            {:match-job-id  match-job-id
                                             :display-name  display-name
+                                            :status        :completed
                                             :fire-name     (-> geoserver-workspace
                                                                (str/split #"_")
                                                                (second)) ;; NOTE: this assumes a geoserver-workspace in the format of "fire-spread-forecast_prod-match-drop-14_20110426_230000"
@@ -133,6 +134,12 @@
               (println message)
               (js/console.error job-log)
               (set-message-box-content! (body-for-match-drop-modal (str "Error running match-drop-" match-job-id ".\n\n" message)))
+              (<! (u-async/call-clj-async! "send-email"
+                                           user-email
+                                           :match-drop
+                                           {:match-job-id match-job-id
+                                            :display-name display-name
+                                            :status       :failed}))
               (reset! poll? false))
           (let [text (if (c/feature-enabled? :sig3-endpoint) job-log message)]
             (set-message-box-content! (body-for-match-drop-modal text)))))
