@@ -91,7 +91,27 @@
 ;;TODO this could share styles with the `not-found` component
 (defn- info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
-   ;;TODO what do we want to do if the observations go beyond the set window size?
+   [:div
+    {:style {:display "flex" :justify-content "flex-end" :gap "1rem" :padding "1rem 1rem 0 1rem"}}
+    (when @!/terrain?
+      [tool-tip-wrapper
+       "Zoom Out to 2D"
+       :top
+       [:button {:class    (<class $/p-themed-button)
+                 :on-click reset-view
+                 :style    {:padding "2px"}}
+        [:div {:style {:height "32px" :width "32px"}}
+         [svg/return]]]])
+
+    [tool-tip-wrapper
+     "Zoom Map to Weather Station"
+     :top
+     [:button {:class    (<class $/p-themed-button)
+               :on-click zoom-weather-station
+               :style    {:padding "2px"}}
+      [:div {:style {:height "32px" :width "32px"}}
+       [svg/binoculars]]]]]
+
    [:p {:style {:font-size     "1.1rem"
                 :font-weight   "bold"
                 :margin-bottom "0.3rem"
@@ -101,16 +121,14 @@
                   :justify-content "flex-start"
                   :width           "100%"
                   :padding-left    "1rem"}}
-    ;;TODO when the user hovers on the observation it would be nice to pop up a longer description that includes a longer label
     [:ul {:style {:padding-inline-start "1rem"}}
      [:li "Station ID: " stationId]
      [:li "Station name: " stationName]
      [:li "Observed at: " (u-time/date-string->iso-string timestamp @!/show-utc?)]
-     (let [CamelCase->title    (fn
-                                 [CamelCase]
+     (let [CamelCase->title    (fn [CamelCase]
                                  (let [[f & r] (-> CamelCase
                                                    name
-                                                   (str/split  #"(?=[A-Z])"))]
+                                                   (str/split #"(?=[A-Z])"))]
                                    (str/join " " (concat [(str/capitalize f)] (mapv str/lower-case r)))))
            unitCode->wmo-label #(-> %
                                     (str/split #":")
@@ -118,19 +136,18 @@
                                     unit-id->labels
                                     (get "skos:altLabel"))
            observation->item   (fn [[observation-key {:keys [unitCode value]}]]
-                                 (let [round-to-1-decimal #(/ (Math/round (* % 10)) 10)
+                                 (let [round-to-1-decimal #(/ (Math.round (* % 10)) 10)
                                        c->f               (fn [c] (+ (* c 1.8) 32))
                                        is-celsius?        (= unitCode "wmoUnit:degC")
                                        observation-param  (-> observation-key
                                                               CamelCase->title
-                                                              (str/replace  #"last(\d+)" "last $1"))
+                                                              (str/replace #"last(\d+)" "last $1"))
                                        numeric-value      (when (number? value)
                                                             (if is-celsius?
                                                               (round-to-1-decimal (c->f value))
                                                               (round-to-1-decimal value)))
                                        units              (or ({"wmoUnit:km_h-1" "km/hr"
-                                                                "wmoUnit:degC"   "\u00B0F"} ; note that this gets changed to Fahrenheit b/c we manually convert c->f above in the numeric-value binding
-                                                               unitCode)
+                                                                "wmoUnit:degC"   "\u00B0F"} unitCode)
                                                               (unitCode->wmo-label unitCode))]
                                    (str observation-param ": " numeric-value units)))]
        (vec
@@ -139,37 +156,7 @@
                    (filter (fn [[_ {:keys [value]}]] value))
                    (map observation->item)
                    sort
-                   (mapv (fn [i] [:li {:key (hash i)} i]))))))]]
-   (when @!/terrain?
-     [tool-tip-wrapper
-      "Zoom Out to 2D"
-      :top
-      [:button {:class    (<class $/p-themed-button)
-                :on-click reset-view
-                :style    {:padding  "2px"}}
-       [:div {:style {:height "32px"
-                      :width  "32px"}}
-        [svg/return]]]
-      (fn [child]
-        [:div {:style {:bottom   "1.25rem"
-                       :position "absolute"
-                       :left     "1rem"}}
-         child])])
-
-   [tool-tip-wrapper
-    "Zoom Map to Weather Station"
-    :top
-    [:button {:class    (<class $/p-themed-button)
-              :on-click zoom-weather-station
-              :style    {:padding  "2px"}}
-     [:div {:style {:height "32px"
-                    :width  "32px"}}
-      [svg/binoculars]]]
-    (fn [child]
-      [:div {:style {:bottom   "1.25rem"
-                     :position "absolute"
-                     :right    "1rem"}}
-       child])]])
+                   (mapv (fn [i] [:li {:key (hash i)} i]))))))]]])
 
 (defn- loading-all-stations []
   [:div {:style {:padding "1.2em"}}
