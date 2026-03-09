@@ -48,7 +48,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- drag-sw-icon [p-height p-width p-top box-height box-width init-height init-width]
+(defn- drag-sw-icon [p-height p-top box-height box-width init-height init-width]
   (let [drag-state (atom {:start-x 0 :start-y 0 :start-w 0 :start-h 0})
         handle-move (fn [e]
                       (let [{:keys [start-x start-y start-w start-h]} @drag-state
@@ -88,7 +88,7 @@
   (let [ref (react/createRef)]
     (r/create-class
      {:component-did-mount
-      (fn [this]
+      (fn [_]
         (reset! title-height
                 (-> (.-current ref)
                     (.getBoundingClientRect)
@@ -111,7 +111,6 @@
                box-width    (r/atom init-width)
                title-height (r/atom 0)]
     (let [p-height (aget parent-rec "height")
-          p-width  (aget parent-rec "width")
           p-top    (aget parent-rec "top")]
       [:div#resizable {:style ($/combine $/tool ($resizable-window @box-height @box-width))}
        [title-div title title-height close-fn!]
@@ -120,4 +119,4 @@
                       :position   "relative"}}
         (render-content (- @box-height @title-height) @box-width)]
        ;; Back to the original 7 arguments—no more mess
-       [drag-sw-icon p-height p-width p-top box-height box-width init-height init-width]])))
+       [drag-sw-icon p-height p-top box-height box-width init-height init-width]])))

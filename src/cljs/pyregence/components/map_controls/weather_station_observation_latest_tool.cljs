@@ -136,7 +136,7 @@
                                     unit-id->labels
                                     (get "skos:altLabel"))
            observation->item   (fn [[observation-key {:keys [unitCode value]}]]
-                                 (let [round-to-1-decimal #(/ (Math.round (* % 10)) 10)
+                                 (let [round-to-1-decimal #(/ (Math/round (* % 10)) 10)
                                        c->f               (fn [c] (+ (* c 1.8) 32))
                                        is-celsius?        (= unitCode "wmoUnit:degC")
                                        observation-param  (-> observation-key
