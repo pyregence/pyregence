@@ -732,8 +732,10 @@
                                                                      "get-all-organizations"
                                                                      "get-current-user-organization"))
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
+          match-drop-access-chan          (u-async/call-clj-async! "get-user-match-drop-access")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count (:active-fires fire-names))]
+      (reset! !/match-drop-access? (:success (<! match-drop-access-chan)))
       (reset! !/active-fire-count active-fire-count)
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
       (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
