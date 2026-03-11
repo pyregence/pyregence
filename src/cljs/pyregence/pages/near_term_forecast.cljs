@@ -604,15 +604,15 @@
 
 (defn select-forecast!
   "The function called whenever you select a new forecast/tab."
-  [key]
+  [selected-forecast]
   (go
     (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
-    (gtag "select-forecast" {:forecast-type (str key)})
-    (reset! !/*forecast key)
+    (gtag "select-forecast" {:forecast-type (str selected-forecast)})
+    (reset! !/*forecast selected-forecast)
     (reset! !/processed-params (get-forecast-opt :params))
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
-    (when (= :active-fire key)
+    (when (= :active-fire selected-forecast)
       (refresh-fire-names!))
     (<! (change-type! true
                       true
