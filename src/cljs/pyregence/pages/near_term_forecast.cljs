@@ -14,7 +14,7 @@
    [pyregence.components.map-controls.collapsible-panel                       :refer [collapsible-panel]]
    [pyregence.components.map-controls.information-tool                        :refer [information-tool]]
    [pyregence.components.map-controls.legend-box                              :refer [legend-box]]
-   [pyregence.components.map-controls.match-drop-tool                         :refer [match-drop-tool]]
+   [pyregence.components.map-controls.match-drop-tool                         :refer [match-drop-tool refresh-fire-names!]]
    [pyregence.components.map-controls.measure-tool                            :refer [measure-tool]]
    [pyregence.components.map-controls.mouse-lng-lat                           :refer [mouse-lng-lat]]
    [pyregence.components.map-controls.scale-bar                               :refer [scale-bar]]
@@ -604,14 +604,17 @@
 
 (defn select-forecast!
   "The function called whenever you select a new forecast/tab."
-  [key]
+  [selected-forecast]
   (go
     (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
-    (gtag "select-forecast" {:forecast-type (str key)})
-    (reset! !/*forecast key)
+    (gtag "select-forecast" {:forecast-type (str selected-forecast)})
+    (reset! !/*forecast selected-forecast)
     (reset! !/processed-params (get-forecast-opt :params))
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
+    (when (and (= :active-fire selected-forecast)
+               @!/match-drop-access?)
+      (refresh-fire-names!))
     (<! (change-type! true
                       true
                       (get-any-level-key :auto-zoom?)
@@ -729,8 +732,10 @@
                                                                      "get-all-organizations"
                                                                      "get-current-user-organization"))
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
+          match-drop-access-chan          (u-async/call-clj-async! "get-user-match-drop-access")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count (:active-fires fire-names))]
+      (reset! !/match-drop-access? (:success (<! match-drop-access-chan)))
       (reset! !/active-fire-count active-fire-count)
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
       (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))

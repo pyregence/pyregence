@@ -9,6 +9,7 @@
                                                     toast-message!]]
             [pyregence.components.map-controls.icon-button :refer [icon-button]]
             [pyregence.components.svg-icons :as svg]
+            [pyregence.state                :as !]
             [pyregence.styles               :as $]
             [pyregence.utils.async-utils    :as u-async]
             [pyregence.utils.time-utils     :as u-time]
@@ -19,8 +20,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce ^:private match-drops (r/atom []))
-(defonce ^:private ^{:doc "Whether or not the currently logged in user has match drop access."}
-  match-drop-access? (r/atom false))
 
 ;; API Requests
 
@@ -49,8 +48,8 @@
   (go
     (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access"))]
       (if (:success response)
-        (reset! match-drop-access? true)
-        (reset! match-drop-access? false)))))
+        (reset! !/match-drop-access? true)
+        (reset! !/match-drop-access? false)))))
 
 ;; Helper
 
@@ -207,7 +206,7 @@
   (set-user-match-drops!)
   (set-match-drop-access!)
   (fn [_]
-    (if-not @match-drop-access?
+    (if-not @!/match-drop-access?
       ;; user doesn't have match drop access
       [no-access]
       ;; user has match-drop access

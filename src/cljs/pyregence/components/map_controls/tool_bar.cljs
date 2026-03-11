@@ -12,15 +12,12 @@
    [pyregence.config                              :as c]
    [pyregence.state                               :as !]
    [pyregence.styles                              :as $]
-   [pyregence.utils.async-utils                   :as u-async]
-   [reagent.core                                  :as r]))
+   [pyregence.utils.async-utils                   :as u-async]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private ^{:doc "Whether or not the currently logged in user has match drop access."}
-  match-drop-access? (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -85,19 +82,11 @@
   (mb/set-visible-by-title! "fire-history-centroid" @!/show-fire-history?)
   (mb/clear-popup! "fire-history"))
 
-(defn- set-match-drop-access! []
-  (go
-    (let [response (<! (u-async/call-clj-async! "get-user-match-drop-access"))]
-      (if (:success response)
-        (reset! match-drop-access? true)
-        (reset! match-drop-access? false)))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn tool-bar [set-show-info! get-any-level-key user-id]
-  (set-match-drop-access!)
   (fn [_]
     [:div#tool-bar {:style ($/combine $/tool $/tool-bar {:top "16px"})}
      (->> [[:info
@@ -111,7 +100,7 @@
             @!/show-info?]
            (when (and (c/feature-enabled? :match-drop) ; enabled in `config.edn`
                       (number? user-id)                ; logged in user
-                      @match-drop-access?              ; user has match drop access
+                      @!/match-drop-access?            ; user has match drop access
                       (not @!/mobile?))                ; screen size isn't mobile
              [:flame
               (str (hs-str @!/show-match-drop?) " match drop tool")
