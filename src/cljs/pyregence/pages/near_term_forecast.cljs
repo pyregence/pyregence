@@ -612,7 +612,8 @@
     (reset! !/*forecast selected-forecast)
     (reset! !/processed-params (get-forecast-opt :params))
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
-    (when (= :active-fire selected-forecast)
+    (when (and (= :active-fire selected-forecast)
+               @!/match-drop-access?)
       (refresh-fire-names!))
     (<! (change-type! true
                       true
