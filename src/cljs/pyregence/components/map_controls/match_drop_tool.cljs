@@ -64,7 +64,7 @@
                     (edn/read-string)))
         (reset! !/md-available-dates nil)))))
 
-(defn- refresh-fire-names!
+(defn refresh-fire-names!
   "Updates the capabilities atom with all unique fires from the back-end
    layers atom, parsed into the proper format. Also updates the processed-params
    atom, which deals with the options available in the collapsible panel (so that

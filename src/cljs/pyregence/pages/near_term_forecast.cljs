@@ -14,7 +14,7 @@
    [pyregence.components.map-controls.collapsible-panel                       :refer [collapsible-panel]]
    [pyregence.components.map-controls.information-tool                        :refer [information-tool]]
    [pyregence.components.map-controls.legend-box                              :refer [legend-box]]
-   [pyregence.components.map-controls.match-drop-tool                         :refer [match-drop-tool]]
+   [pyregence.components.map-controls.match-drop-tool                         :refer [match-drop-tool refresh-fire-names!]]
    [pyregence.components.map-controls.measure-tool                            :refer [measure-tool]]
    [pyregence.components.map-controls.mouse-lng-lat                           :refer [mouse-lng-lat]]
    [pyregence.components.map-controls.scale-bar                               :refer [scale-bar]]
@@ -612,6 +612,8 @@
     (reset! !/*forecast key)
     (reset! !/processed-params (get-forecast-opt :params))
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
+    (when (= :active-fire key)
+      (refresh-fire-names!))
     (<! (change-type! true
                       true
                       (get-any-level-key :auto-zoom?)
