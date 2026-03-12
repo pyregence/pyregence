@@ -90,9 +90,11 @@
                 :super-admin         super-admin?
                 :account-manager     (isa? role-hierarchy user-role :account-manager)
                 :organization-admin  (or super-admin? ; we need this extra check because super-admins don't have an associated org, and thus their org-membership-status is none
+                                         account-manager?
                                          (and (isa? role-hierarchy user-role :organization-admin)
                                               (= org-membership-status "accepted")))
                 :organization-member (or super-admin? ; we need this extra check because super-admins don't have an associated org, and thus their org-membership-status is none
+                                         account-manager?
                                          (and (isa? role-hierarchy user-role :organization-member)
                                               (= org-membership-status "accepted")))
                 :member              (isa? role-hierarchy user-role :member)
