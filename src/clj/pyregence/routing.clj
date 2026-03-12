@@ -108,11 +108,11 @@
                                                      :auth-action :block}
 
    [:post "/clj/update-users-roles"]                 {:handler (clj-handler authentication/update-users-roles)
-                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
 
    [:post "/clj/update-users-status"]                {:handler (clj-handler authentication/update-users-status)
-                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
 
    ;; -- Access Control
@@ -122,11 +122,11 @@
 
    ;; -- Organization Management
    [:post "/clj/add-org-users"]                      {:handler (clj-handler authentication/add-org-users)
-                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
 
    [:post "/clj/add-org-user"]                       {:handler (clj-handler authentication/add-org-user)
-                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
    [:post "/clj/get-all-organizations"]              {:handler (clj-handler authentication/get-all-organizations)
                                                      :auth-type #{:account-manager :token}
@@ -138,25 +138,25 @@
                                                      :auth-type :token
                                                      :auth-action :block}
    [:post "/clj/get-org-member-users"]               {:handler (clj-handler authentication/get-org-member-users)
-                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
    [:post "/clj/get-orgs-with-system-assets"]        {:handler     (clj-handler authentication/get-orgs-with-system-assets)
-                                                     :auth-type   #{:organization-member :token}
+                                                     :auth-type   #{:organization-member :tier2-pro :token}
                                                      :auth-action :block}
    [:post "/clj/get-psps-organizations"]             {:handler (clj-handler authentication/get-psps-organizations)
                                                      :auth-type :token
                                                      :auth-action :block}
    [:post "/clj/remove-org-user"]                    {:handler (clj-handler authentication/remove-org-user)
-                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
    [:post "/clj/update-org-info"]                    {:handler (clj-handler authentication/update-org-info)
-                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
    [:post "/clj/update-org-user-role"]               {:handler (clj-handler authentication/update-org-user-role)
-                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
    [:post "/clj/update-user-org-membership-status"]  {:handler (clj-handler authentication/update-user-org-membership-status)
-                                                     :auth-type #{:organization-admin :token}
+                                                     :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
 
    ;; Cameras API
@@ -186,7 +186,7 @@
                                                      :auth-type :token
                                                      :auth-action :block}
    [:post "/clj/get-user-layers"]                    {:handler (clj-handler capabilities/get-user-layers)
-                                                     :auth-type #{:organization-member :token}
+                                                     :auth-type #{:organization-member :tier2-pro :token}
                                                      :auth-action :block}
    [:get "/clj/remove-workspace"]                    {:handler (clj-handler capabilities/remove-workspace!)
                                                      :auth-type :token

@@ -765,12 +765,13 @@
                     get-current-layer-geoserver-credentials
                     #(select-forecast! @!/*forecast)
                     (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
-      (process-capabilities! fire-names
-                             (edn/read-string (:body (<! user-layers-chan)))
-                             options-config
-                             @!/psps-orgs-list
-                             @!/user-psps-orgs-list
-                             (params->selected-options options-config @!/*forecast params))
+      (let [{:keys [body success]} (<! user-layers-chan)]
+        (process-capabilities! fire-names
+                               (when success (edn/read-string body))
+                               options-config
+                               @!/psps-orgs-list
+                               @!/user-psps-orgs-list
+                               (params->selected-options options-config @!/*forecast params)))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
       (reset! !/the-weather-stations (edn/read-string (:body (<! weather-stations-chan))))
       (when (and (not-empty @!/capabilities)
