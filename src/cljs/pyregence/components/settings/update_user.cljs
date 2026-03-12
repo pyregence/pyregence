@@ -77,7 +77,7 @@
         [buttons/ghost {:text     "Cancel"
                         :on-click on-click-close-dialog}]
         [buttons/primary {:text     "Confirm"
-                          :disabled? (nil? @org-name)
+                          :disabled? (and select-org-msg (nil? @org-name))
                           :on-click #(on-click @org-name)}]]])))
 
 ;; same as confirm-dialog in delete_user.cljs
