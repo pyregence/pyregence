@@ -34,7 +34,6 @@
       (derive :account-manager     :member)
       (derive :organization-admin  :organization-member)
       (derive :organization-admin  :member)
-
       (derive :organization-member :member)))
 
 (def subscription-hierarchy
