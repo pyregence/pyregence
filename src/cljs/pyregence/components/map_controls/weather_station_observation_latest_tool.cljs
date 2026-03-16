@@ -115,7 +115,7 @@
                :style    {:padding "2px"}}
       [:div {:style {:height "32px" :width "32px"}}
        [svg/binoculars]]]]]
-
+   [:hr {:style {:background "white"}}]
    [:p {:style {:font-size     "1.1rem"
                 :font-weight   "bold"
                 :margin-bottom "0.3rem"
