@@ -48,21 +48,36 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- drag-sw-icon [p-height p-width p-top box-height box-width init-height init-width]
-  (r/with-let [drag-started? (r/atom false)]
-    [:<>
-     [:div#drag-icon
-      {:style ($sw-drag)
-       :draggable true
-       :on-drag #(if @drag-started?
-                   (reset! drag-started? false) ; ignore first value, fixes jumpy movement on start
-                   (let [mouse-x (.-clientX %)
-                         mouse-y (.-clientY %)]
-                     (when (< (/ p-width 3) (+ mouse-x 68) (- p-width 50))
-                       (reset! box-width (max init-width (- p-width (+ mouse-x 68)))))
-                     (when (> (/ p-height 1.5) (- mouse-y p-top 12) 50)
-                       (reset! box-height (max init-height (- mouse-y p-top 12))))))
-       :on-drag-start #(reset! drag-started? true)}]
+(defn- drag-sw-icon [p-height p-top box-height box-width init-height init-width]
+  (let [drag-state (atom {:start-x 0 :start-y 0 :start-w 0 :start-h 0})
+        handle-move (fn [e]
+                      (let [{:keys [start-x start-y start-w start-h]} @drag-state
+                            delta-x (- (.-clientX e) start-x)
+                            delta-y (- (.-clientY e) start-y)
+                            new-w   (+ start-w (- delta-x))
+                            new-h   (+ start-h delta-y)
+                            min-w   (/ init-width 2)
+                            min-h   (/ init-height 2)]
+                        (when (>= new-w min-w)
+                          (reset! box-width new-w))
+                        (when (and (>= new-h min-h) (<= new-h (- p-height p-top)))
+                          (reset! box-height new-h))))
+
+        handle-up (fn handle-up []
+                    (js/window.removeEventListener "mousemove" handle-move)
+                    (js/window.removeEventListener "mouseup" handle-up))
+
+        handle-down (fn [e]
+                      (.preventDefault e)
+                      (reset! drag-state {:start-x (.-clientX e)
+                                          :start-y (.-clientY e)
+                                          :start-w @box-width
+                                          :start-h @box-height})
+                      (js/window.addEventListener "mousemove" handle-move)
+                      (js/window.addEventListener "mouseup" handle-up))]
+    [:div#drag-icon
+     {:style ($sw-drag)
+      :on-mouse-down handle-down}
      [:div {:style ($sw-drag-icon)}
       [:span {:style {:border-right (str "1px solid " ($/color-picker :border-color))
                       :display      "flex"
@@ -73,7 +88,7 @@
   (let [ref (react/createRef)]
     (r/create-class
      {:component-did-mount
-      (fn [this]
+      (fn [_]
         (reset! title-height
                 (-> (.-current ref)
                     (.getBoundingClientRect)
@@ -96,11 +111,11 @@
                box-width    (r/atom init-width)
                title-height (r/atom 0)]
     (let [p-height (aget parent-rec "height")
-          p-width  (aget parent-rec "width")
           p-top    (aget parent-rec "top")]
-      (when (> @box-height (/ p-height 1.5)) (reset! box-height (/ p-height 1.5)))
-      (when (> @box-width  (/ p-width  1.5)) (reset! box-width  (/ p-width 1.5)))
       [:div#resizable {:style ($/combine $/tool ($resizable-window @box-height @box-width))}
        [title-div title title-height close-fn!]
-       (render-content (- @box-height @title-height) @box-width)
-       [drag-sw-icon p-height p-width p-top box-height box-width init-height init-width]])))
+       [:div {:style {:height     (- @box-height @title-height)
+                      :overflow-y "auto"
+                      :position   "relative"}}
+        (render-content (- @box-height @title-height) @box-width)]
+       [drag-sw-icon p-height p-top box-height box-width init-height init-width]])))
