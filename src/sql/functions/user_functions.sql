@@ -478,9 +478,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
-
 CREATE OR REPLACE FUNCTION delete_users(_user_email text, _users_to_be_removed text[])
 RETURNS boolean
 LANGUAGE plpgsql
