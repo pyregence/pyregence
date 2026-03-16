@@ -17,7 +17,8 @@
    [pyregence.components.utils                :refer [db->display search-cmpt]]
    [pyregence.styles                          :as $]
    [pyregence.utils.async-utils               :as u-async]
-   [reagent.core                              :as r]))
+   [reagent.core                              :as r]
+   [pyregence.components.settings.update-user :as update-user]))
 
 (defn delete-users!
   [users-to-delete]
@@ -123,32 +124,31 @@
       :component-did-mount set-users!
       :reagent-render
       (fn [{:keys [org-id
-                  role-options
-                  default-role-option
-                  statuses
-                  columns
-                  show-export-to-csv?
-                  users-filter] :or {users-filter identity}}]
-        (let [update-drop-down    #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
+                   role-options
+                   default-role-option
+                   statuses
+                   columns
+                   show-export-to-csv?
+                   choose-org?
+                   users-filter] :or {users-filter identity} :as m}]
+        (let [org-names   (->> m :organizations (map :org-name))
+              update-drop-down    #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
               get-selected-emails #(->> @grid-api get-selected-rows (map :email))
               get-selected-rows   #(get-selected-rows @grid-api)
               on-click-apply
               (fn [update-user-info-by-email opt-type opt->display]
-                (fn [new-user-info]
-                  (fn []
-                    (let [emails (get-selected-emails)]
-                        ;; TODO this needs error handling.
-                      (update-user-info-by-email new-user-info emails)
+                (fn [new-user-info new-org]
+                  (let [emails (get-selected-emails)]
+                    (update-user-info-by-email new-user-info new-org emails)
                         ;; TODO instead of this hacky sleep i think we have two options,
                         ;; first, we have the update function return the users, this seems ideal. the second is,
                         ;; we get the success from the update function and we then poll the users.
                         ;; TODO this could use the core async timeout instead.
-                      (js/setTimeout set-users! 3000)
-                      (toast-message!
+                    (js/setTimeout set-users! 3000)
+                    (toast-message!
                          ;;TODO make this handle plural case e.g roles and statues.
-                       (str (str/join ", " emails)  " updated " opt-type " to " (opt->display new-user-info) "."))))))
+                     (str (str/join ", " emails)  " updated " opt-type " to " (opt->display new-user-info) ".")))))
               on-click-delete-users!
-
               (fn [get-selected-emails]
                 (fn []
                   (let [selected-emails (get-selected-emails)]
@@ -187,7 +187,7 @@
                                        :on-click  (fn []
                                                     (reset! checked nil)
                                                     (update-drop-down :status))}]
-             (when (#{"super_admin"} user-role)
+             (when on-click-delete-users!
                [delete-user/confirm-dialog
                 {:on-click-delete-users! (on-click-delete-users! get-selected-emails)
                  :get-selected-rows      get-selected-rows}])]
@@ -202,25 +202,63 @@
                                                           #js {:fileName            (str (subs (.toISOString (js/Date.)) 0 10) "_" "users-table")
                                                                :onlySelected        (some? (seq (get-selected-rows)))
                                                                :processCellCallback #(aget % "value")}))}])]]
+
            (case @selected-drop-down
-             :role   [buttons/drop-down {:options         role-options
-                                         :disabled?       (or (not @checked) (not @users-selected?))
-                                         :checked         checked
-                                         ;;TODO opt->display shouldn't be passed in here but we need to move users state to table before it will be easy to re-factor.
-                                         :opt->display    db->display
-                                         :on-click  (on-click-apply
-                                                     (fn [role users]
-                                                       (go (<! (u-async/call-clj-async! "update-users-roles" role users))))
-                                                     "Role"
-                                                     db->display)}]
-             :status [buttons/drop-down {:options         statuses
-                                         :disabled?       (or (not @checked) (not @users-selected?))
-                                         :checked         checked
-                                         :opt->display    db->display
-                                         :on-click  (on-click-apply
-                                                     (fn [status users]
-                                                       (go (<! (u-async/call-clj-async! "update-users-status" status users))))
-                                                     "Status"
-                                                     db->display)}]
+             ;;TODO this update-user/drop-down is wonky in so many ways.
+             :role   [update-user/drop-down
+                      (let [org-opt-selected? (and
+                                               choose-org?
+                                               (#{"super_admin" "account_manager"} user-role)
+                                               (#{"organization_admin" "organization_member"} @checked))]
+                        (cond->
+                         {:options         role-options
+                          :organizations   org-names
+                          :disabled?       (or (not @checked) (not @users-selected?))
+                          :checked         checked
+                          ;;TODO opt->display shouldn't be passed in here but we need to move users state to table before it will be easy to re-factor.
+                          :opt->display    db->display
+                          :on-click-update-users
+                          (on-click-apply
+                           (fn [role org-name users]
+                             (go (<! (u-async/call-clj-async! "update-users-roles"
+                                                              role
+                                                              (if choose-org?
+                                                                org-name
+                                                                (first org-names))
+                                                              users))))
+                           "Role"
+                           db->display)
+                          :get-selected-rows get-selected-rows}
+                          org-opt-selected?
+                          (assoc :select-org-msg (str "Assign Organization for "
+                                                      ({"organization_admin" "Admin"
+                                                        "organization_member" "Member"} @checked)
+                                                      "."))))]
+             :status [update-user/drop-down
+                      (let [org-opt-selected?
+                            (and
+                             choose-org?
+                             (#{"super_admin" "account_manager"} user-role)
+                             (#{"pending" "accepted"} @checked))]
+                        (cond->
+                         {:options         statuses
+                          :organizations   org-names
+                          :disabled?       (or (not @checked) (not @users-selected?))
+                          :checked         checked
+                          :opt->display    db->display
+                          :on-click-update-users
+                          (on-click-apply
+                           (fn [status org-name users]
+                             (go (<! (u-async/call-clj-async! "update-users-status"
+                                                              status
+                                                              (if choose-org?
+                                                                org-name
+                                                                (first org-names))
+                                                              users))))
+                           "Status"
+                           db->display)
+                          :get-selected-rows get-selected-rows}
+                          org-opt-selected?
+                          (assoc :select-org-msg (str "Assign Organization for " (db->display @checked) " Users."))))]
              nil)
            [table grid-api users users-selected? users-filter columns]]))})))

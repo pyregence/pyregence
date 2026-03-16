@@ -29,9 +29,11 @@
       (derive :super-admin         :account-manager)
       (derive :super-admin         :organization-member)
       (derive :super-admin         :member)
+      (derive :account-manager     :organization-admin)
+      (derive :account-manager     :organization-member)
+      (derive :account-manager     :member)
       (derive :organization-admin  :organization-member)
       (derive :organization-admin  :member)
-      (derive :account-manager     :member)
       (derive :organization-member :member)))
 
 (def subscription-hierarchy

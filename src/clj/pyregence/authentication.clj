@@ -679,24 +679,19 @@
          "super_admin" 4}]
     (<= (role->n to) (role->n from))))
 
-;; Consider if status=none implies no organization, what is status=none?
 (defn update-users-status
-  [{:keys [user-id]} requested-status users-to-update]
-  ;; TODO consider using user id's instead of emails.
-  (call-sql "update_users_status_by_email" user-id requested-status
+  "Updates users status"
+  [{:keys [user-id]} requested-status requested-org-name users-to-update]
+  (call-sql "update_users_status_by_email" user-id requested-status requested-org-name
             (into-array String users-to-update))
   (data-response "success"))
 
-;;TODO consider the database constraints, or data integrity of some role switches
-;; that this fn doesn't try to handle, such as organization_admin to member or super admin, which would require losing the org
 (defn update-users-roles
   "Updates users roles"
-  [{:keys [user-id user-role]} requested-role users-to-update]
-  ;; TODO consider what happens if this sql call fails.
-  ;; TODO consider using user id's instead of emails.
+  [{:keys [user-id user-role]} requested-role requested-org-name users-to-update]
   (if (can-upgrade-role? user-role requested-role)
     (do
-      (call-sql "update_users_roles_by_email" user-id requested-role
+      (call-sql "update_users_roles_by_email" user-id requested-role requested-org-name
                 (into-array String users-to-update))
       (data-response "success"))
     ;; TODO what should this failure message be.
