@@ -92,6 +92,10 @@
 (defn- info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
    [:div
+    {:style {:display         "flex"
+             :justify-content "space-between"
+             :align-items     "center"
+             :padding         "1rem 1rem 0 1rem"}}
     {:style {:display "flex" :justify-content "flex-end" :gap "1rem" :padding "1rem 1rem 0 1rem"}}
     (when @!/terrain?
       [tool-tip-wrapper
