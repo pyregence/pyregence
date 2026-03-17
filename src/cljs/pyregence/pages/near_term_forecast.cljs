@@ -722,13 +722,14 @@
 (defn- initialize! [{:keys [forecast-type forecast layer-idx lat lng zoom user-role] :as params}]
   (go
     (reset! !/loading? true)
+    (println "ur: " user-role)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
-          super-admin?                    (= user-role "super_admin")
+          admin?                          (#{"super_admin" "account_manager"} user-role)
           user-layers-chan                (u-async/call-clj-async! "get-user-layers")
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
           weather-stations-chan           (u-async/call-clj-async! "get-weather-stations")
-          user-orgs-list-chan             (u-async/call-clj-async! (if super-admin?
+          user-orgs-list-chan             (u-async/call-clj-async! (if admin?
                                                                      "get-all-organizations"
                                                                      "get-current-user-organization"))
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
