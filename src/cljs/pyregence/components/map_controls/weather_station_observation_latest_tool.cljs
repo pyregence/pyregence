@@ -91,33 +91,6 @@
 ;;TODO this could share styles with the `not-found` component
 (defn- info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
-   {:style {:display         "flex"
-            :justify-content "space-between"
-            :align-items     "center"
-            :padding         "1rem 1rem 0 1rem"}}
-   [:div
-    {:style {:display         "flex"
-             :justify-content "flex-end"
-             :gap             "1rem"}}
-    (when @!/terrain?
-      [tool-tip-wrapper
-       "Zoom Out"
-       :top
-       [:button {:class    (<class $/p-themed-button)
-                 :on-click reset-view
-                 :style    {:padding "2px"}}
-        [:div {:style {:height "32px" :width "32px"}}
-         [svg/return]]]])
-
-    [tool-tip-wrapper
-     "Zoom Map to Weather Station"
-     :top
-     [:button {:class    (<class $/p-themed-button)
-               :on-click zoom-weather-station
-               :style    {:padding "2px"}}
-      [:div {:style {:height "32px" :width "32px"}}
-       [svg/binoculars]]]]]
-   [:hr {:style {:background "white"}}]
    [:p {:style {:font-size     "1.1rem"
                 :font-weight   "bold"
                 :margin-bottom "0.3rem"
@@ -162,8 +135,31 @@
                    (filter (fn [[_ {:keys [value]}]] value))
                    (map observation->item)
                    sort
-                   (mapv (fn [i] [:li {:key (hash i)} i]))))))]]])
-
+                   (mapv (fn [i] [:li {:key (hash i)} i]))))))]]
+   [:div {:style {:display         "flex"
+                  :justify-content "flex-end"
+                  :align-items     "center"
+                  :gap             "1rem"
+                  :padding         "1rem 1rem 0 1rem"}}
+      (when @!/terrain?
+        [tool-tip-wrapper
+         "Zoom Out"
+         :top
+         [:button {:class    (<class $/p-themed-button)
+                   :on-click reset-view
+                   :style    {:padding "2px"}}
+          [:div {:style {:height "32px" :width "32px"}}
+           [svg/return]]]])
+   
+      [tool-tip-wrapper
+       "Zoom Map to Weather Station"
+       :top
+       [:button {:class    (<class $/p-themed-button)
+                 :on-click zoom-weather-station
+                 :style    {:padding "2px"}}
+        [:div {:style {:height "32px" :width "32px"}}
+         [svg/binoculars]]]]]])
+   
 (defn- loading-all-stations []
   [:div {:style {:padding "1.2em"}}
    "Grabbing weather stations from the "
