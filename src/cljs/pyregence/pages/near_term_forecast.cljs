@@ -729,7 +729,6 @@
           user-orgs-list-chan             (u-async/call-clj-async! (if admin?
                                                                      "get-all-organizations"
                                                                      "get-current-user-organization"))
-
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count (:active-fires fire-names))]
