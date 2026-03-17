@@ -226,5 +226,5 @@
                                                      :auth-action :block}
 
    ;; Marketplace API
-   [:get "/clj/marketplace-health"]                  {:handler (clj-handler marketplace/health)}
-   [:post "/marketplace-signup"]                     {:handler marketplace/signup}})
+   [:post "/marketplace-signup"]                     {:handler marketplace/signup}
+   [:post "/marketplace-login"]                      {:handler authentication/marketplace-sso-login}})

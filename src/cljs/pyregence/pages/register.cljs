@@ -34,7 +34,7 @@
     (toast-message! "Creating new account. This may take a moment...")
     ;;TODO it's awkward that add-new-user requires a user's name when it's not a unique identifier. Consider alternatives.
     (if (and (:success (<! (if @marketplace?
-                             (u-async/call-clj-async! "add-new-user" @email "" @password {:org-name @org-name})
+                             (u-async/call-clj-async! "add-new-user" @email "" @password @org-name)
                              (u-async/call-clj-async! "add-new-user" @email "" @password))))
              (:success (<! (u-async/call-clj-async! "send-email" @email :new-user))))
       (do (toast-message! ["Your account has been created successfully."

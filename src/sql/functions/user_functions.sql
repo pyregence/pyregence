@@ -150,7 +150,8 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    user_role             user_role,
    org_membership_status org_membership_status,
    organization_rid      integer,
-   subscription_tier     subscription_tier
+   subscription_tier     subscription_tier,
+   marketplace_status    marketplace_status
    ) AS $$
 
     SELECT
@@ -161,8 +162,8 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
       u.user_role             AS user_role,
       u.org_membership_status AS org_membership_status,
       u.organization_rid      AS organization_rid,
-      -- TODO remove defaults?
-      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier
+      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+      COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
     FROM users u
     LEFT JOIN organizations o
       ON o.organization_uid = u.organization_rid
@@ -201,7 +202,8 @@ CREATE OR REPLACE FUNCTION set_user_password(
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
-    subscription_tier     subscription_tier
+    subscription_tier     subscription_tier,
+    marketplace_status    marketplace_status
 ) AS $$
   WITH updated AS (
     UPDATE users
@@ -224,7 +226,8 @@ CREATE OR REPLACE FUNCTION set_user_password(
     u.user_role           AS user_role,
     u.org_membership_status,
     u.organization_rid,
-    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier
+    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+    COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
   FROM updated u
   LEFT JOIN organizations o
     ON o.organization_uid = u.organization_rid;
@@ -240,7 +243,8 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
-    subscription_tier     subscription_tier
+    subscription_tier     subscription_tier,
+    marketplace_status    marketplace_status
 ) AS $$
   WITH updated AS (
     UPDATE users
@@ -261,7 +265,8 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
     u.user_role           AS user_role,
     u.org_membership_status,
     u.organization_rid,
-    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier
+    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+    COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
   FROM updated u
   LEFT JOIN organizations o
     ON o.organization_uid = u.organization_rid;
@@ -277,7 +282,8 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
-    subscription_tier     subscription_tier
+    subscription_tier     subscription_tier,
+    marketplace_status    marketplace_status
 ) AS $$
   WITH updated AS (
     UPDATE users
@@ -298,7 +304,8 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
     u.user_role           AS user_role,
     u.org_membership_status,
     u.organization_rid,
-    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier
+    COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+    COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
   FROM updated u
   LEFT JOIN organizations o
     ON o.organization_uid = u.organization_rid;
@@ -539,7 +546,7 @@ RETURNS timestamptz AS $$
 $$ LANGUAGE SQL;
 
 --------------------------------------------------------------------------------
---- Marketplace Provisioning
+-- Marketplace Provisioning
 --------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_user_with_org_info(_email text)
 RETURNS TABLE (
@@ -550,11 +557,12 @@ RETURNS TABLE (
     procurement_account_id text,
     google_user_identity   text
 ) AS $$
+
     SELECT user_uid, name, email, organization_rid, procurement_account_id, google_user_identity
     FROM users
-    WHERE email = lower_trim(_email);
-$$ LANGUAGE SQL;
+    WHERE email = lower_trim(_email)
 
+$$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION link_user_to_marketplace_org(
     _user_id                integer,
@@ -562,13 +570,15 @@ CREATE OR REPLACE FUNCTION link_user_to_marketplace_org(
     _procurement_account_id text,
     _google_user_identity   text
 ) RETURNS void AS $$
+
     UPDATE users
     SET organization_rid       = _org_id,
         user_role              = 'organization_admin'::user_role,
         org_membership_status  = 'accepted'::org_membership_status,
         procurement_account_id = _procurement_account_id,
         google_user_identity   = _google_user_identity
-    WHERE user_uid = _user_id;
+    WHERE user_uid = _user_id
+
 $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION link_existing_user_to_marketplace(
@@ -576,8 +586,51 @@ CREATE OR REPLACE FUNCTION link_existing_user_to_marketplace(
     _procurement_account_id text,
     _google_user_identity   text
 ) RETURNS void AS $$
+
     UPDATE users
     SET procurement_account_id = _procurement_account_id,
         google_user_identity   = _google_user_identity
-    WHERE user_uid = _user_id;
+    WHERE user_uid = _user_id
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION marketplace_gaia_user_exists(_google_user_identity text)
+RETURNS boolean AS $$
+
+    SELECT EXISTS(
+        SELECT 1 FROM users
+        WHERE google_user_identity = _google_user_identity
+          AND email_verified = TRUE
+    )
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION get_user_by_gaia_identity(_google_user_identity text)
+RETURNS TABLE (
+    user_id               integer,
+    user_name             text,
+    user_email            text,
+    match_drop_access     boolean,
+    user_role             user_role,
+    org_membership_status org_membership_status,
+    organization_rid      integer,
+    subscription_tier     subscription_tier,
+    marketplace_status    marketplace_status
+) AS $$
+
+    SELECT
+      u.user_uid              AS user_id,
+      u.name                  AS user_name,
+      u.email                 AS user_email,
+      u.match_drop_access     AS match_drop_access,
+      u.user_role             AS user_role,
+      u.org_membership_status AS org_membership_status,
+      u.organization_rid      AS organization_rid,
+      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier)  AS subscription_tier,
+      COALESCE(o.marketplace_status, 'none'::marketplace_status)                 AS marketplace_status
+    FROM users u
+    LEFT JOIN organizations o ON o.organization_uid = u.organization_rid
+    WHERE u.google_user_identity = _google_user_identity
+      AND u.email_verified = TRUE
+
 $$ LANGUAGE SQL;

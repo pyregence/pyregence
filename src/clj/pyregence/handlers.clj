@@ -7,6 +7,7 @@
             [ring.util.codec     :refer [url-encode]]
             [ring.util.response  :refer [redirect]]
             [triangulum.config   :refer [get-config]]
+            [triangulum.database :refer [call-sql sql-primitive]]
             [triangulum.handler  :refer [development-app]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.response :refer [data-response]]
@@ -60,10 +61,14 @@
   (or (some-> session :user-role sql->kw)
       :member))
 
-(defn- session-subscription-tier
-  "Returns the subscription tier from the session, defaults to :tier0-guest for unauthenticated users."
+(defn- current-subscription-tier
+  "Current subscription tier from DB, falling back to session, then :tier0-guest."
   [session]
-  (or (some-> session :subscription-tier sql->kw)
+  (or (try
+        (when-let [org-id (:organization-id session)]
+          (sql->kw (sql-primitive (call-sql "get_org_subscription_tier" org-id))))
+        (catch Exception _ nil))
+      (some-> session :subscription-tier sql->kw)
       :tier0-guest))
 
 (defn shell-tier?
@@ -76,7 +81,7 @@
   (let [org-membership-status  (:org-membership-status session nil)
         has-match-drop-access? (:match-drop-access? session)
         user-role              (session-user-role session)
-        subscription-tier      (session-subscription-tier session)
+        subscription-tier      (delay (current-subscription-tier session))
         ;; Extract Bearer token from Authorization header
         bearer-token           (some->> (get headers "authorization")
                                         (re-find #"(?i)^Bearer\s+(.+)$")
@@ -103,16 +108,16 @@
                 ;; Subscription Tiers (super admins have access to all tiers)
                 :tier3-enterprise      (or super-admin?
                                            account-manager?
-                                           (isa? subscription-hierarchy subscription-tier :tier3-enterprise))
+                                           (isa? subscription-hierarchy @subscription-tier :tier3-enterprise))
                 :tier2-pro             (or super-admin?
                                            account-manager?
-                                           (isa? subscription-hierarchy subscription-tier :tier2-pro))
+                                           (isa? subscription-hierarchy @subscription-tier :tier2-pro))
                 :tier1-basic-paid      (or super-admin?
                                            account-manager?
-                                           (isa? subscription-hierarchy subscription-tier :tier1-basic-paid))
+                                           (isa? subscription-hierarchy @subscription-tier :tier1-basic-paid))
                 :tier1-free-registered (or super-admin?
                                            account-manager?
-                                           (isa? subscription-hierarchy subscription-tier :tier1-free-registered))
+                                           (isa? subscription-hierarchy @subscription-tier :tier1-free-registered))
                 true))
             (if (keyword? auth-type) [auth-type] auth-type))))
 
