@@ -219,19 +219,20 @@
                           :opt->display    db->display
                           :on-click-update-users
                           (on-click-apply
-                           (fn [role org-name users]
+                           (fn [role org-name selected-users]
                              (go (<! (u-async/call-clj-async! "update-users-roles"
                                                               role
                                                               (if choose-org?
                                                                 org-name
-                                                                (first org-names))
-                                                              users))))
+                                                                ;; keep users original org
+                                                                (->> @users (some (fn [{:keys [email organization-name]}] (when (= email (first selected-users)) organization-name)))))
+                                                              selected-users))))
                            "Role"
                            db->display)
                           :get-selected-rows get-selected-rows}
                           org-opt-selected?
                           (assoc :select-org-msg (str "Assign Organization for "
-                                                      ({"organization_admin" "Admin"
+                                                      ({"organization_admin"  "Admin"
                                                         "organization_member" "Member"} @checked)
                                                       "."))))]
              :status [update-user/drop-down
@@ -248,13 +249,14 @@
                           :opt->display    db->display
                           :on-click-update-users
                           (on-click-apply
-                           (fn [status org-name users]
+                           (fn [status org-name selected-users]
                              (go (<! (u-async/call-clj-async! "update-users-status"
                                                               status
                                                               (if choose-org?
                                                                 org-name
-                                                                (first org-names))
-                                                              users))))
+                                                                ;;keep users original org
+                                                                (->> @users (some (fn [{:keys [email organization-name]}] (when (= email (first selected-users)) organization-name)))))
+                                                              selected-users))))
                            "Status"
                            db->display)
                           :get-selected-rows get-selected-rows}
