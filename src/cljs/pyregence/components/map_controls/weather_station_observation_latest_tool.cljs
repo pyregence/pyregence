@@ -91,15 +91,17 @@
 ;;TODO this could share styles with the `not-found` component
 (defn- info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
   [:div
+   {:style {:display         "flex"
+            :justify-content "space-between"
+            :align-items     "center"
+            :padding         "1rem 1rem 0 1rem"}}
    [:div
     {:style {:display         "flex"
-             :justify-content "space-between"
-             :align-items     "center"
-             :padding         "1rem 1rem 0 1rem"}}
-    {:style {:display "flex" :justify-content "flex-end" :gap "1rem" :padding "1rem 1rem 0 1rem"}}
+             :justify-content "flex-end"
+             :gap             "1rem"}}
     (when @!/terrain?
       [tool-tip-wrapper
-       "Zoom Out to 2D"
+       "Zoom Out"
        :top
        [:button {:class    (<class $/p-themed-button)
                  :on-click reset-view
