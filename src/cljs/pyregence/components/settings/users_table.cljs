@@ -187,7 +187,7 @@
                                        :on-click  (fn []
                                                     (reset! checked nil)
                                                     (update-drop-down :status))}]
-             (when on-click-delete-users!
+             (when (#{"super_admin"} user-role)
                [delete-user/confirm-dialog
                 {:on-click-delete-users! (on-click-delete-users! get-selected-emails)
                  :get-selected-rows      get-selected-rows}])]
