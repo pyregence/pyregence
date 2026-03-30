@@ -193,12 +193,12 @@
                           (re-matches #"([a-z|-]+_[a-z0-9|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
-                          (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_[a-z|-]+" full-name)
+                          (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}(\d{2}|combined)_[a-z|-]+" full-name)
                                (or (get-config :triangulum.views/client-keys :features :match-drop) (not (str/includes? full-name "match-drop"))))
                           (merge-fn (split-fire-spread-forecast-layer-name full-name))
 
                           (and (str/includes? full-name "isochrones")
-                               (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}\d{2}_isochrones_[a-z|\d|-]*_\d{8}_\d{6}_\d{2}" full-name))
+                               (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}(\d{2}|combined)_isochrones_[a-z|\d|-]*_\d{8}_\d{6}_(\d{2}|combined)" full-name))
                           (merge-fn (split-isochrones-layer-name full-name))
 
                           (or (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)

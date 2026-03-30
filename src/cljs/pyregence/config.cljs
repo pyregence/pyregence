@@ -577,8 +577,10 @@
                                                                        :filter    "50"}
                                                                   :30 {:opt-label "Smaller (30th percentile)"
                                                                        :filter    "30"}
-                                                                  :10 {:opt-label "Smallest (10th percentile)"
-                                                                       :filter    "10"}}}
+                                                                  :10       {:opt-label "Smallest (10th percentile)"
+                                                                             :filter    "10"}
+                                                                  :combined {:opt-label "Combined"
+                                                                             :filter    "combined"}}}
                                     :fuel       {:opt-label  "Fuels"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
