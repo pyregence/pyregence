@@ -735,7 +735,15 @@
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
           match-drop-access-chan          (u-async/call-clj-async! "get-user-match-drop-access")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
-          active-fire-count               (count (:active-fires fire-names))]
+          active-fire-count               (count (:active-fires fire-names))
+          options-config                  (cond-> options-config admin?
+                                                  (assoc-in [:active-fire
+                                                             :params
+                                                             :burn-pct
+                                                             :options
+                                                             :combined]
+                                                            {:opt-label "Combined"
+                                                             :filter    "combined"}))]
       (reset! !/match-drop-access? (:success (<! match-drop-access-chan)))
       (reset! !/active-fire-count active-fire-count)
       (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
