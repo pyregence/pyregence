@@ -58,6 +58,16 @@
         root-cmpt     (or root-cmpt-h root-cmpt-hf not-found/root-component)
         footer?       (some? root-cmpt-hf)]
     (render
+     #_[pyregence.components.popups/fire-popup {:fire-name "Big Fire"
+                                                :contain-per "5"
+                                                :acres "10"
+                                                :show-link? true
+                                                :sources [{:icon pyregence.components.svg-icons/cal-fire
+                                                           :name "WATCH DUTY"
+                                                           :url "TODO"}
+                                                          {:icon pyregence.components.svg-icons/cal-fire
+                                                           :name "CAL FIRE"
+                                                           :url "TODO"}]}]
      [wrap-page {:root-component root-cmpt
                  :params         params
                  :footer?        footer?}]
