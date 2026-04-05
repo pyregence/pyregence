@@ -7,7 +7,8 @@
            [pyregence.utils.async-utils  :as u-async]
            [pyregence.utils.misc-utils   :as u-misc]
            [pyregence.utils.time-utils   :as u-time]
-           [reagent.core                 :as r]))
+           [reagent.core                 :as r]
+           [pyregence.components.svg-icons :as svg]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -15,10 +16,10 @@
 
 (defn- $popup-btn []
   (with-meta
-    {:background    ($/color-picker :yellow)
+    {:background    ($/color-picker :primary-standard-orange)
      :border        "none"
      :border-radius "3px"
-     :color         ($/color-picker :white)
+     :color         ($/color-picker :black)
      :margin-top    "0.5rem"
      :padding       "0.25rem 0.5rem"}
     {:pseudo {:hover {:background-color ($/color-picker :yellow 0.8)}}}))
@@ -48,21 +49,47 @@
   [:div [:strong property ": "] value])
 
 (defn- fire-link [on-click]
-  [:div {:style {:text-align "right" :width "100%"}}
+  [:div {:style {:width "100%"}}
    [:button {:class    (<class $popup-btn)
              :on-click on-click}
-    "Click to View Forecast"]])
+    "View Forecast"]])
 
 (defn fire-popup
   "Popup body for active fires."
-  [fire-name contain-per acres on-click show-link?]
-  [:div {:style {:display "flex" :flex-direction "column"}}
-   [:h6 {:style ($popup-header)}
-    fire-name]
-   [:div
+  [{:keys [fire-name contain-per acres on-click show-link? sources]}]
+  [:div {:style {:display        "flex"
+                 :flex-direction "column"
+                 :gap            "12px"
+                 ;;TODO the parent might be giving padding
+                 :padding        "16px"}}
+   ;;TODO do we need to add the close pop-up?
+   [:h6 {:style ($popup-header)} fire-name]
+   [:div {:style {:display        "flex"
+                  :flex-direction "column"
+                  :gap            "8px"}}
     [fire-property "Percent Contained" (str contain-per "%")]
     [fire-property "Acres Burned" (.toLocaleString acres)]
-    (when show-link? [fire-link on-click])]])
+    [:strong "Source(s):"]
+    [:div {:style {:display        "flex"
+                   :flex-direction "column"
+                   :gap            "5px"}}
+     (for [{:keys [icon name url]} sources]
+       [:div {:style {:display          "flex"
+                      :height           "52px"
+                      :gap              "8px"
+                      :background-color ($/color-picker :neutral-light-gray)
+                      :padding          "8px 12px"
+                      :align-items      "center"
+                      :align-self       "stretch"
+                      :border-radius    "8px"}}
+        [icon]
+        [:p {:style
+           ;; TODO remove this margin-bottom by figuring out why it has
+           ;; a margin-bottom in the first place and likely changing that.
+             {:margin-bottom "0px"}} name]
+        [:a {:href "https://www.google.com" :target "_blank"}
+         [svg/source-link]]])]]
+   (when show-link? [fire-link on-click])])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Red-Flag Component
@@ -134,7 +161,7 @@
         [:div
          [fire-property "Onset" (if (= onset "null") "N/A" onset)]
          [fire-property "Ends"  (if (= ends  "null") "N/A" ends)]])
-       
+
        (when (seq url)
           [red-flag-link
            {:expanded? @expanded?

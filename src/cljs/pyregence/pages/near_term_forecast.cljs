@@ -544,11 +544,18 @@
   (let [properties (-> feature (aget "properties") (js->clj))
         lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
         {:strs [name prettyname containper acres]} properties
-        body       (fire-popup prettyname
-                               containper
-                               acres
-                               #(select-param! (keyword name) :fire-name)
-                               (forecast-exists? name))]
+        body       (fire-popup {:fire-name   prettyname
+                                :contain-per containper
+                                :acres       acres
+                                :on-click    #(select-param! (keyword name) :fire-name)
+                                :show-link?   (forecast-exists? name)
+                                ;;TODO this shouldn't be hardcoded
+                                :sources     [{:icon pyregence.components.svg-icons/cal-fire
+                                               :name "WATCH DUTY"
+                                               :url "TODO"}
+                                              {:icon pyregence.components.svg-icons/cal-fire
+                                               :name "CAL FIRE"
+                                               :url "TODO"}]})]
     (mb/init-popup! "fire" lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 
