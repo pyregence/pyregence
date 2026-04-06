@@ -78,14 +78,19 @@
     (call-sql "set_verification_token" email token expiration)
     (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
 
-(defn- send-match-drop-email! [email subject match-drop-args]
+(defn- send-match-drop-email! [email match-drop-args]
   (let [user-name (sql-primitive (call-sql "get_user_name_by_email" email))
         base-url  (get-config :triangulum.email/base-url)
         fmt       (get-email-format email)
+        status    (:status match-drop-args)
+        subject   (case status
+                    :completed "Match Drop Ready"
+                    :failed    "Match Drop Failed"
+                    "Match Drop Update")
         body      (messages/match-drop-email fmt base-url email user-name
                                              (:match-job-id match-drop-args)
                                              (:display-name match-drop-args)
-                                             (:status match-drop-args))
+                                             status)
         result    (send-mail email nil "PyreCast Support" subject body fmt)]
     (if (= :SUCCESS (:error result))
       (data-response "Match Drop email successfully sent.")
@@ -147,9 +152,7 @@
                                           messages/welcome-email
                                           :support)
     :2fa        (send-2fa-code email) ; For testing without email: (mock-send-2fa-code email)
-    :match-drop (send-match-drop-email! email
-                                        "Match Drop Ready"
-                                        match-drop-args)
+    :match-drop (send-match-drop-email! email match-drop-args)
     :invite     (send-invite-email! email match-drop-args)
     (data-response "Invalid email type. Options are `:reset`, `:new-user`, `:2fa`, `:match-drop`, or `:invite`."
                    {:status 400})))
