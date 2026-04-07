@@ -57,6 +57,7 @@
         root-cmpt-hf  (get uri->root-component-hf uri)
         root-cmpt     (or root-cmpt-h root-cmpt-hf not-found/root-component)
         footer?       (some? root-cmpt-hf)]
+
     (render
      #_[pyregence.components.popups/fire-popup {:fire-name "Big Fire"
                                                 :contain-per "5"
