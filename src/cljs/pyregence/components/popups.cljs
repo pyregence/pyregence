@@ -28,7 +28,9 @@
   {:overflow      "hidden"
    :text-overflow "ellipsis"
    :white-space   "nowrap"
-   :width         "180px"})
+   :width         "180px"
+   :font-size     "18px"
+   :font-weight   "600"})
 
 (defn- $popup-container [expanded?]
   (merge
@@ -44,9 +46,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fire Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;
 (defn- fire-property [property value]
-  [:div [:strong property ": "] value])
+  [:div {:style {:display "flex" :height "14px" :gap "4px"}}
+   [:span
+    [:strong {:style {:color ($/color-picker :neutral-md-gray)}} property ": "]]
+   [:span
+    [:p {:style {:color       "black"
+                 :font-weight "600"}} value]]])
 
 (defn- fire-link [on-click]
   [:div {:style {:width "100%"}}
@@ -59,17 +66,14 @@
   [{:keys [fire-name contain-per acres on-click show-link? sources]}]
   [:div {:style {:display        "flex"
                  :flex-direction "column"
-                 :gap            "12px"
-                 ;;TODO the parent might be giving padding
-                 :padding        "16px"}}
-   ;;TODO do we need to add the close pop-up?
+                 :gap            "12px"}}
    [:h6 {:style ($popup-header)} fire-name]
    [:div {:style {:display        "flex"
                   :flex-direction "column"
                   :gap            "8px"}}
     [fire-property "Percent Contained" (str contain-per "%")]
     [fire-property "Acres Burned" (.toLocaleString acres)]
-    [:strong "Source(s):"]
+    [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
     [:div {:style {:display        "flex"
                    :flex-direction "column"
                    :gap            "5px"}}
@@ -83,10 +87,11 @@
                       :align-self       "stretch"
                       :border-radius    "8px"}}
         [icon]
-        [:p {:style
+        (when name
+          [:p {:style
            ;; TODO remove this margin-bottom by figuring out why it has
            ;; a margin-bottom in the first place and likely changing that.
-             {:margin-bottom "0px"}} name]
+               {:margin-bottom "0px"}} name])
         [:a {:href "https://www.google.com" :target "_blank"}
          [svg/source-link]]])]]
    (when show-link? [fire-link on-click])])
