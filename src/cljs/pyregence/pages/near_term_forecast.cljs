@@ -551,21 +551,23 @@
                                 ;;TODO shouldn't be hardcode
                                 :show-link?  true #_(forecast-exists? name)
                                 ;;TODO this shouldn't be hardcoded
-                                :sources     [{:icon pyregence.components.svg-icons/watch-duty
+                                :sources     [{:icon [pyregence.components.svg-icons/watch-duty]
                                                #_#_:name "WATCH DUTY"
                                                :url "TODO"}
-                                              {:icon pyregence.components.svg-icons/cal-fire
+                                              {:icon [pyregence.components.svg-icons/cal-fire]
                                                :name "CAL FIRE"
                                                :url "TODO"}]}]]
     (mb/init-popup! "fire" lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 
 (comment
-  (init-fire-popup! (clj->js {"properties" {"longitude" 30.69 "latitude" 82.35
-                                            "name" "big fire"
-                                            "prettyname" "Big fire"
+  (init-fire-popup! (clj->js {"properties" {"longitude"   30.69
+                                            "latitude"    82.35
+                                            "name"        "big fire"
+                                            "prettyname"  "Big fire"
                                             "containerpr" "100"
-                                            "acres"       "10"}}) nil)
+                                            "acres"       "10"}})
+                    nil)
 
   ;;
   )
