@@ -133,7 +133,10 @@
                    choose-org?
                    users-filter] :or {users-filter identity} :as m}]
         (let [org-names           (->> m :organizations (map :org-name))
-              tab-selected-org-name   (:org-name (@org-id->org org-id))
+              tab-selected-org-name   (some-> org-id->org
+                                              deref
+                                              (get org-id)
+                                              :org-name)
               update-drop-down    #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
               get-selected-emails #(->> @grid-api get-selected-rows (map :email))
               get-selected-rows   #(get-selected-rows @grid-api)
