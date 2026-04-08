@@ -5,16 +5,17 @@
    [pyregence.components.utils                :refer [card main-styles]]))
 
 (defn main
-  [{:keys [user-role]}]
+  [{:keys [user-role org-id->org]}]
   [:div {:style main-styles}
    [card {:title    "UNAFFILIATED MEMBERS USER-LIST"
           ;; TODO the `update-roles` won't work here because anything higher then
           ;; `member` needs an organization attached.
           :children [table-with-buttons
                      (let [roles (->> user-role roles/role->roles-below (filter roles/none-organization-roles))]
-                       {:users-filter                (fn [{:keys [user-role]}]
-                                                       (#{"member" "none" "super_admin" "account_manager"} user-role))
-                        :default-role-option         (first roles)
-                        :role-options                roles
-                        :user-role                   user-role
-                        :statuses                    ["none"]})]}]])
+                       {:users-filter        (fn [{:keys [user-role]}]
+                                               (#{"member" "none" "super_admin" "account_manager"} user-role))
+                        :default-role-option (first roles)
+                        :role-options        roles
+                        :user-role           user-role
+                        :statuses            ["none"]
+                        :org-id->org         org-id->org})]}]])

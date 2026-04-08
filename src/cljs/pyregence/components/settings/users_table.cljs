@@ -124,6 +124,7 @@
       :component-did-mount set-users!
       :reagent-render
       (fn [{:keys [org-id
+                   org-id->org
                    role-options
                    default-role-option
                    statuses
@@ -131,10 +132,14 @@
                    show-export-to-csv?
                    choose-org?
                    users-filter] :or {users-filter identity} :as m}]
-        (let [org-names   (->> m :organizations (map :org-name))
-              update-drop-down    #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
-              get-selected-emails #(->> @grid-api get-selected-rows (map :email))
-              get-selected-rows   #(get-selected-rows @grid-api)
+        (let [org-names             (->> m :organizations (map :org-name))
+              tab-selected-org-name (some-> org-id->org
+                                            deref
+                                            (get org-id)
+                                            :org-name)
+              update-drop-down      #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
+              get-selected-emails   #(->> @grid-api get-selected-rows (map :email))
+              get-selected-rows     #(get-selected-rows @grid-api)
               on-click-apply
               (fn [update-user-info-by-email opt-type opt->display]
                 (fn [new-user-info new-org]
@@ -219,13 +224,12 @@
                           :opt->display    db->display
                           :on-click-update-users
                           (on-click-apply
-                           (fn [role org-name selected-users]
+                           (fn [role admin-selected-org-name selected-users]
                              (go (<! (u-async/call-clj-async! "update-users-roles"
                                                               role
                                                               (if choose-org?
-                                                                org-name
-                                                                ;; keep users original org
-                                                                (->> @users (some (fn [{:keys [email organization-name]}] (when (= email (first selected-users)) organization-name)))))
+                                                                admin-selected-org-name
+                                                                tab-selected-org-name)
                                                               selected-users))))
                            "Role"
                            db->display)
@@ -249,14 +253,14 @@
                           :opt->display    db->display
                           :on-click-update-users
                           (on-click-apply
-                           (fn [status org-name selected-users]
-                             (go (<! (u-async/call-clj-async! "update-users-status"
-                                                              status
-                                                              (if choose-org?
-                                                                org-name
-                                                                ;;keep users original org
-                                                                (->> @users (some (fn [{:keys [email organization-name]}] (when (= email (first selected-users)) organization-name)))))
-                                                              selected-users))))
+                           (fn [status admin-selected-org-name selected-users]
+                             (go
+                               (<! (u-async/call-clj-async! "update-users-status"
+                                                            status
+                                                            (if choose-org?
+                                                              admin-selected-org-name
+                                                              tab-selected-org-name)
+                                                            selected-users))))
                            "Status"
                            db->display)
                           :get-selected-rows get-selected-rows}
