@@ -471,7 +471,12 @@ BEGIN
                               END,
       user_role             = CASE
                                 WHEN _status IN ('pending', 'accepted')
-                                THEN 'organization_member'::user_role
+                                THEN
+                                  CASE
+                                    WHEN user_role IN ('organization_admin', 'organization_member')
+                                    THEN user_role
+                                    ELSE 'organization_member'::user_role
+                                END
                                 ELSE 'member'::user_role
                               END
   WHERE email = ANY(_users_to_be_updated);
