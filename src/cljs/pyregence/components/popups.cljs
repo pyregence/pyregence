@@ -86,12 +86,14 @@
                       :align-items      "center"
                       :align-self       "stretch"
                       :border-radius    "8px"}}
-        [icon]
+        icon
         (when name
           [:p {:style
            ;; TODO remove this margin-bottom by figuring out why it has
            ;; a margin-bottom in the first place and likely changing that.
-               {:margin-bottom "0px"}} name])
+               {:margin-bottom "0px"
+                :font-weight   "600"
+                :color         ($/color-picker :neutral-black)}} name])
         [:a {:href "https://www.google.com" :target "_blank"}
          [svg/source-link]]])]]
    (when show-link? [fire-link on-click])])
