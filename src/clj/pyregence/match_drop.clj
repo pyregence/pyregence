@@ -463,24 +463,27 @@
   (with-out-str (pp/pprint edn)))
 
 (defn calculate-transitions
-  "Return a vector of state changes when compared with the current job-state
-   `order` is for sorting: control order of events
-   `step` is the step name in the match-drop network in sig3"
+  "Return a vector of state changes when compared with the current job-state.
+   `order` is for sorting: control order of events.
+   `step` is the step name in the match-drop network in sig3.
+   When a step skips the pending phase (e.g. polling interval > step duration),
+   a synthetic pending transition is emitted so STARTED always precedes DONE/FAILED."
   [state job-state match-job-id]
-  (mapcat (fn build-vector-of-transitions [[step {:strs [order pending success failure]}]]
+  (mapcat (fn build-transitions [[step {:strs [order pending success failure]}]]
             (let [{:strs [result job-status]} (get-in job-state ["steps" step])
-                  {:strs [message]}         result] ;; error-msg
-              (cond-> []
-                (and (false? pending) (= job-status "pending"))
-                (concat [[order step "pending" {}  match-job-id]])
-                (and (false? pending) (false? failure) (= job-status "failure"))
-                (concat [[order step "pending" {} match-job-id]])
-                (and (false? failure) (= job-status "failure"))
-                (concat [[order step "failure" message match-job-id]])
-                (and (false? pending) (false? success) (= job-status "success"))
-                (concat [[order step "pending" {} match-job-id]])
-                (and (false? success) (= job-status "success"))
-                (concat [[order step "success" (prettify result) match-job-id]]))))
+                  {:strs [message]}           result
+                  missed-pending?             (and (false? pending) (#{"success" "failure"} job-status))
+                  pending-transition          [order step "pending" {} match-job-id]]
+              (case job-status
+                "pending" (when (false? pending)
+                            [pending-transition])
+                "failure" (cond-> []
+                            missed-pending?    (conj pending-transition)
+                            (false? failure)   (conj [order step "failure" message match-job-id]))
+                "success" (cond-> []
+                            missed-pending?    (conj pending-transition)
+                            (false? success)   (conj [order step "success" (prettify result) match-job-id]))
+                nil)))
           @state))
 
 (defn- poll-with-retries!
