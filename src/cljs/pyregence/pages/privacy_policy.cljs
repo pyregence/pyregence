@@ -6,8 +6,6 @@
   [:div {:style {:align-items    "center"
                  :display        "flex"
                  :flex-direction "column"
-                 :height         "75vh"
-                 :overflow-y     "auto"
                  :margin-top     "2.5rem"
                  :width          "100%"}}
    [:div {:style {:margin "1rem"

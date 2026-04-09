@@ -5,8 +5,6 @@
   [_]
   [:div {:style {:align-items    "center"
                  :display        "flex"
-                 :height         "75vh"
-                 :overflow-y     "auto"
                  :flex-direction "column"
                  :margin-top     "2.5rem"
                  :width          "100%"}}

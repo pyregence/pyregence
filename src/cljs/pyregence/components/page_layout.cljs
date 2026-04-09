@@ -14,7 +14,7 @@
                    :display         "flex"
                    :justify-content "space-between"
                    :min-height      "fit-content"
-                   :flex            "1 1 auto"}}
+                   :flex            "0 0 auto"}}
      [:a {:rel   "home"
           :href  (if pyrecast? "/" "https://pyregence.org")
           :title "Pyregence"
@@ -64,10 +64,12 @@
   (fn [{:keys [root-component params footer?]}]
     [:div {:style {:display        :flex
                    :flex-direction :column
-                   :height         "100%"}}
+                   :height         "100vh"}}
      [header]
      [toast-message]
-     [:div {:style {:height "100vh"}}
+     [:div {:style {:flex       "1 1 0"
+                    :min-height 0
+                    :overflow-y "auto"}}
       [root-component params]]
      (when footer?
        [footer])]))
