@@ -210,7 +210,7 @@
       ;; user doesn't have match drop access
       [no-access]
       ;; user has match-drop access
-      [:div {:style ($/root)}
+      [:div {:style ($/combine ($/root) {:height "100vh"})}
        ;; TODO make this bigger to reflect the long logs we have
        [message-box-modal]
        [:div {:style ($/combine $/flex-col {:padding "2rem"})}
