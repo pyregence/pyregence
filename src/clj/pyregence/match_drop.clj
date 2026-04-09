@@ -490,32 +490,41 @@
                         "mdrop-geosync"      {"pending" false "success" false "failure" false "order" 3}})]
     (future
       (loop []
-        (let [job-state     (poll-job! sig3-endpoint job-id)
-              transitions   (calculate-transitions state job-state match-job-id)
-              job-succeded? (= (get job-state "status") "success")
-              job-failed?   (= (get job-state "status") "failure")
-              job-done?     (or job-succeded? job-failed?)]
-          (doseq [[_ step status result match-job-id] (sort-by first transitions)]
-            (update-match-job! (cond-> {:match-job-id   match-job-id
-                                        :message        (case status
-                                                          "pending" (str "Step " step " STARTED")
-                                                          "failure" (str "Step " step " FAILED.\nResult:\n" result)
-                                                          "success" (str "Step " step " DONE.\nResult:\n" result))}
-                                 (and (= step "mdrop-elmfire") (= "success" status))
-                                 (assoc :elmfire-done? true)
-                                 (and (= step "mdrop-gridfire") (= "success" status))
-                                 (assoc :gridfire-done? true))))
-          (doseq [[_ step status] transitions]
-            (swap! state assoc-in [step status] true))
-          (if job-done?
-            (do (update-match-job! {:match-job-id match-job-id
-                                    :md-status    (if job-succeded? 0 1)})
-                job-state)
-            (do
-              (Thread/sleep (* interval-in-seconds 1000))
-              (if (< (System/currentTimeMillis) end-time)
-                (recur)
-                (println "Timeout while waiting for job" job-id "results. Stopping progress recording.")))))))))
+        (let [continue?
+              (try
+                (let [job-state     (poll-job! sig3-endpoint job-id)
+                      transitions   (calculate-transitions state job-state match-job-id)
+                      job-succeded? (= (get job-state "status") "success")
+                      job-failed?   (= (get job-state "status") "failure")
+                      job-done?     (or job-succeded? job-failed?)]
+                  (doseq [[_ step status result match-job-id] (sort-by first transitions)]
+                    (update-match-job! (cond-> {:match-job-id   match-job-id
+                                                :message        (case status
+                                                                  "pending" (str "Step " step " STARTED")
+                                                                  "failure" (str "Step " step " FAILED.\nResult:\n" result)
+                                                                  "success" (str "Step " step " DONE.\nResult:\n" result))}
+                                         (and (= step "mdrop-elmfire") (= "success" status))
+                                         (assoc :elmfire-done? true)
+                                         (and (= step "mdrop-gridfire") (= "success" status))
+                                         (assoc :gridfire-done? true))))
+                  (doseq [[_ step status] transitions]
+                    (swap! state assoc-in [step status] true))
+                  (if job-done?
+                    (do (update-match-job! {:match-job-id match-job-id
+                                            :md-status    (if job-succeded? 0 1)})
+                        false)
+                    true))
+                (catch Exception e
+                  (log-str "ERROR polling match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e))
+                  true))]
+          (when continue?
+            (Thread/sleep (* interval-in-seconds 1000))
+            (if (< (System/currentTimeMillis) end-time)
+              (recur)
+              (do (log-str "Timeout while waiting for job " job-id " results. Stopping progress recording.")
+                  (update-match-job! {:match-job-id match-job-id
+                                      :md-status    1
+                                      :message      (str "Match Drop #" match-job-id " timed out.")})))))))))
 
 (defn- create-match-job-using-kubernetes!
   [{:keys [user-id display-name] :as params} sig3-endpoint]
