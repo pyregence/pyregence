@@ -659,21 +659,28 @@
   (let [end-time (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))]
     (future
       (loop []
-        (let [job-state     (poll-job! sig3-endpoint job-id)
-              status        (get job-state "status")
-              job-succeded? (= status "success")
-              job-failed?   (= status "failure")
-              job-done?     (or job-succeded? job-failed?)]
-          (if job-done?
-            (if job-succeded?
-              (do (log-str "Deleting Match Job #" match-job-id " from the database.")
-                  (call-sql "delete_match_job" match-job-id))
-              (log-str "ERROR deleting match-drop '" match-job-id "'\n" job-state))
-            (do
-              (Thread/sleep (* interval-in-seconds 1000))
-              (if (< (System/currentTimeMillis) end-time)
-                (recur)
-                (println "Timeout while waiting for job" job-id "results. Aborting.")))))))))
+        (let [continue?
+              (try
+                (let [job-state     (poll-job! sig3-endpoint job-id)
+                      status        (get job-state "status")
+                      job-succeded? (= status "success")
+                      job-failed?   (= status "failure")
+                      job-done?     (or job-succeded? job-failed?)]
+                  (if job-done?
+                    (do (if job-succeded?
+                          (do (log-str "Deleting Match Job #" match-job-id " from the database.")
+                              (call-sql "delete_match_job" match-job-id))
+                          (log-str "ERROR deleting match-drop '" match-job-id "'\n" job-state))
+                        false)
+                    true))
+                (catch Exception e
+                  (log-str "ERROR polling delete match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e))
+                  true))]
+          (when continue?
+            (Thread/sleep (* interval-in-seconds 1000))
+            (if (< (System/currentTimeMillis) end-time)
+              (recur)
+              (log-str "Timeout while waiting for delete job " job-id " results. Aborting."))))))))
 
 (defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
   (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
