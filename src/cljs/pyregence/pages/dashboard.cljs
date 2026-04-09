@@ -56,7 +56,7 @@
 (defn- show-job-log-modal! [match-job-id job-log]
   (set-message-box-content!
    {:title (str "Match Drop #" match-job-id)
-    :body  [:div {:style {:max-height "500px"
+    :body  [:div {:style {:height     "50vh"
                           :overflow-y "auto"
                           :width      "75vw"}}
             [:pre {:style {:line-height   1.0
