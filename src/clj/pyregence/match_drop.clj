@@ -473,8 +473,12 @@
               (cond-> []
                 (and (false? pending) (= job-status "pending"))
                 (concat [[order step "pending" {}  match-job-id]])
+                (and (false? pending) (false? failure) (= job-status "failure"))
+                (concat [[order step "pending" {} match-job-id]])
                 (and (false? failure) (= job-status "failure"))
                 (concat [[order step "failure" message match-job-id]])
+                (and (false? pending) (false? success) (= job-status "success"))
+                (concat [[order step "pending" {} match-job-id]])
                 (and (false? success) (= job-status "success"))
                 (concat [[order step "success" (prettify result) match-job-id]]))))
           @state))

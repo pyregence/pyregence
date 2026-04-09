@@ -59,6 +59,9 @@
                               :main-opts  ["-m" "rebel-readline.main"]}
            :server           {:main-opts  ["-m" "triangulum.server"]}
            :systemd          {:main-opts  ["-m" "triangulum.systemd"]}
+           :test             {:extra-paths ["test"]
+                              :main-opts   ["-e" "(require,'[clojure.test,:refer,[run-tests]],'[pyregence.match-drop-test])"
+                                            "-e" "(let,[{:keys,[fail,error]},(run-tests,'pyregence.match-drop-test)],(System/exit,(if,(zero?,(+,fail,error)),0,1)))"]}
            :rct-test         {:exec-fn    com.mjdowney.rich-comment-tests.test-runner/run-tests-in-file-tree!
                               :exec-args  {:dirs #{"src"}}}
            :clj-watson       {:replace-deps
