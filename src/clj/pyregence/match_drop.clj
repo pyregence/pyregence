@@ -449,9 +449,14 @@
 
 (defn- poll-job!
   [sig3-endpoint job-id]
-  (let [response (client/get (format "%s/api/poll/%s" sig3-endpoint job-id)
-                             {:headers {"sig-auth" (get-md-config :sig3-auth)}})]
-    (json/read-str (:body response))))
+  (let [{:keys [status body]} (client/get (format "%s/api/poll/%s" sig3-endpoint job-id)
+                                          {:headers          {"sig-auth" (get-md-config :sig3-auth)}
+                                           :socket-timeout   30000
+                                           :conn-timeout     30000
+                                           :throw-exceptions false})]
+    (when-not (= 200 status)
+      (throw (ex-info (format "poll-job! returned status %d" status) {:status status :body body})))
+    (json/read-str body)))
 
 (defn- prettify
   [edn]
