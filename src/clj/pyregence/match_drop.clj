@@ -483,16 +483,16 @@
                 (concat [[order step "success" (prettify result) match-job-id]]))))
           @state))
 
+(def ^:private poll-interval-ms  (* 10 1000))
+(def ^:private poll-timeout-ms   (* 36000 1000))
+
 (defn- poll-with-retries!
   "Polls in a future with retry-on-error and timeout. `poll-fn` is called each
    iteration and should return false when polling is complete, true to continue.
    `on-error` is called with the exception. `on-timeout` is called when the
    deadline is exceeded."
-  [poll-fn on-error on-timeout
-   & {:keys [interval-in-seconds timeout-in-seconds]
-      :or   {interval-in-seconds 10
-             timeout-in-seconds  36000}}]
-  (let [end-time (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))]
+  [poll-fn on-error on-timeout]
+  (let [end-time (+ (System/currentTimeMillis) poll-timeout-ms)]
     (future
       (loop []
         (let [continue? (try
@@ -501,19 +501,14 @@
                             (on-error e)
                             true))]
           (when continue?
-            (Thread/sleep (* interval-in-seconds 1000))
+            (Thread/sleep poll-interval-ms)
             (if (< (System/currentTimeMillis) end-time)
               (recur)
               (on-timeout))))))))
 
 ;; https://mikerowecode.com/2013/02/clojure-polling-function.html
 (defn- start-polling-results!
-  [sig3-endpoint
-   job-id
-   match-job-id
-   & {:keys [interval-in-seconds timeout-in-seconds]
-      :or   {interval-in-seconds 10
-             timeout-in-seconds  36000}}]
+  [sig3-endpoint job-id match-job-id]
   (let [state (atom {"mdrop-dps"          {"pending" false "success" false "failure" false "order" 1}
                       "mdrop-gridfire"     {"pending" false "success" false "failure" false "order" 2}
                       "mdrop-elmfire"      {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
@@ -548,9 +543,7 @@
         (log-str "Timeout while waiting for job " job-id " results. Stopping progress recording.")
         (update-match-job! {:match-job-id match-job-id
                             :md-status    1
-                            :message      (str "Match Drop #" match-job-id " timed out.")}))
-      :interval-in-seconds interval-in-seconds
-      :timeout-in-seconds  timeout-in-seconds)))
+                            :message      (str "Match Drop #" match-job-id " timed out.")})))))
 
 (defn- create-match-job-using-kubernetes!
   [{:keys [user-id display-name] :as params} sig3-endpoint]
@@ -669,10 +662,7 @@
 (defn- poll-delete-match-drop-results-then-remove-from-db!
   [{:keys [job-id]}
    sig3-endpoint
-   match-job-id
-   & {:keys [interval-in-seconds timeout-in-seconds]
-      :or   {interval-in-seconds 10
-             timeout-in-seconds  36000}}]
+   match-job-id]
   (poll-with-retries!
     (fn poll-and-delete-when-done []
       (let [job-state     (poll-job! sig3-endpoint job-id)
@@ -688,9 +678,7 @@
               false)
           true)))
     (fn log-delete-poll-error [e] (log-str "ERROR polling delete match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
-    (fn log-delete-timeout [] (log-str "Timeout while waiting for delete job " job-id " results. Aborting."))
-    :interval-in-seconds interval-in-seconds
-    :timeout-in-seconds  timeout-in-seconds))
+    (fn log-delete-timeout [] (log-str "Timeout while waiting for delete job " job-id " results. Aborting."))))
 
 (defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
   (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
