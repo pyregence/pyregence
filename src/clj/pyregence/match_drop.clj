@@ -537,8 +537,8 @@
                                                 :md-status    (if job-succeded? 0 1)})
                             false)
                         true)))
-      :on-error   (fn log-poll-error [e] (log-str "ERROR polling match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
-      :on-timeout (fn mark-timed-out []
+      :on-error   (fn [e] (log-str "ERROR polling match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
+      :on-timeout (fn []
                     (log-str "Timeout while waiting for job " job-id " results. Stopping progress recording.")
                     (update-match-job! {:match-job-id match-job-id
                                         :md-status    1
@@ -676,8 +676,8 @@
                             (log-str "ERROR deleting match-drop '" match-job-id "'\n" job-state))
                           false)
                       true)))
-    :on-error   (fn log-delete-poll-error [e] (log-str "ERROR polling delete match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
-    :on-timeout (fn log-delete-timeout [] (log-str "Timeout while waiting for delete job " job-id " results. Aborting."))}))
+    :on-error   (fn [e] (log-str "ERROR polling delete match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
+    :on-timeout (fn [] (log-str "Timeout while waiting for delete job " job-id " results. Aborting."))}))
 
 (defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
   (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
