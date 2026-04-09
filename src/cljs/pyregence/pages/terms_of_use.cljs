@@ -5,10 +5,12 @@
   [_]
   [:div {:style {:align-items    "center"
                  :display        "flex"
+                 :height         "75vh"
+                 :overflow-y     "auto"
                  :flex-direction "column"
                  :margin-top     "2.5rem"
                  :width          "100%"}}
-   [:div {:style {:margin "1rem" :width  "75%"}}
+   [:div {:style {:margin "1rem" :width "75%"}}
     [:div
      [:h2 "TERMS OF USE"]
      [:p "Last Updated: December 2, 2025"]
