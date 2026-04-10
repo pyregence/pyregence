@@ -449,73 +449,103 @@
 
 (defn- poll-job!
   [sig3-endpoint job-id]
-  (let [response (client/get (format "%s/api/poll/%s" sig3-endpoint job-id)
-                             {:headers {"sig-auth" (get-md-config :sig3-auth)}})]
-    (json/read-str (:body response))))
+  (let [{:keys [status body]} (client/get (format "%s/api/poll/%s" sig3-endpoint job-id)
+                                          {:headers          {"sig-auth" (get-md-config :sig3-auth)}
+                                           :socket-timeout   30000
+                                           :conn-timeout     30000
+                                           :throw-exceptions false})]
+    (when-not (= 200 status)
+      (throw (ex-info (format "poll-job! returned status %d" status) {:status status :body body})))
+    (json/read-str body)))
 
 (defn- prettify
   [edn]
   (with-out-str (pp/pprint edn)))
 
 (defn calculate-transitions
-  "Return a vector of state changes when compared with the current job-state
-   `order` is for sorting: control order of events
-   `step` is the step name in the match-drop network in sig3"
+  "Return a vector of state changes when compared with the current job-state.
+   `order` is for sorting: control order of events.
+   `step` is the step name in the match-drop network in sig3.
+   When a step skips the pending phase (e.g. polling interval > step duration),
+   a synthetic pending transition is emitted so STARTED always precedes DONE/FAILED."
   [state job-state match-job-id]
-  (mapcat (fn build-vector-of-transitions [[step {:strs [order pending success failure]}]]
+  (mapcat (fn build-transitions [[step {:strs [order pending success failure]}]]
             (let [{:strs [result job-status]} (get-in job-state ["steps" step])
-                  {:strs [message]}         result] ;; error-msg
-              (cond-> []
-                (and (false? pending) (= job-status "pending"))
-                (concat [[order step "pending" {}  match-job-id]])
-                (and (false? failure) (= job-status "failure"))
-                (concat [[order step "failure" message match-job-id]])
-                (and (false? success) (= job-status "success"))
-                (concat [[order step "success" (prettify result) match-job-id]]))))
+                  {:strs [message]}           result
+                  missed-pending?             (and (false? pending) (#{"success" "failure"} job-status))
+                  pending-transition          [order step "pending" {} match-job-id]]
+              (case job-status
+                "pending" (when (false? pending)
+                            [pending-transition])
+                "failure" (cond-> []
+                            missed-pending?    (conj pending-transition)
+                            (false? failure)   (conj [order step "failure" message match-job-id]))
+                "success" (cond-> []
+                            missed-pending?    (conj pending-transition)
+                            (false? success)   (conj [order step "success" (prettify result) match-job-id]))
+                nil)))
           @state))
+
+(defn- poll-with-retries!
+  "Polls in a future with retry-on-error and timeout. `poll-fn` is called each
+   iteration and should return false when polling is complete, true to continue.
+   `on-error` is called with the exception. `on-timeout` is called when the
+   deadline is exceeded."
+  [{:keys [poll-fn on-error on-timeout]}]
+  (let [poll-interval-ms (* 10 1000)
+        poll-timeout-ms  (* 36000 1000)
+        end-time         (+ (System/currentTimeMillis) poll-timeout-ms)]
+    (future
+      (loop []
+        (let [continue? (try
+                          (poll-fn)
+                          (catch Exception e
+                            (on-error e)
+                            true))]
+          (when continue?
+            (Thread/sleep poll-interval-ms)
+            (if (< (System/currentTimeMillis) end-time)
+              (recur)
+              (on-timeout))))))))
 
 ;; https://mikerowecode.com/2013/02/clojure-polling-function.html
 (defn- start-polling-results!
-  [sig3-endpoint
-   job-id
-   match-job-id
-   & {:keys [interval-in-seconds timeout-in-seconds]
-      :or   {interval-in-seconds 10
-             timeout-in-seconds  36000}}]
-  (let [end-time (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))
-        state    (atom {"mdrop-dps"          {"pending" false "success" false "failure" false "order" 1}
-                        "mdrop-gridfire"     {"pending" false "success" false "failure" false "order" 2}
-                        "mdrop-elmfire"      {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
-                        "mdrop-pyretechnics" {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
-                        "mdrop-geosync"      {"pending" false "success" false "failure" false "order" 3}})]
-    (future
-      (loop []
-        (let [job-state     (poll-job! sig3-endpoint job-id)
-              transitions   (calculate-transitions state job-state match-job-id)
-              job-succeded? (= (get job-state "status") "success")
-              job-failed?   (= (get job-state "status") "failure")
-              job-done?     (or job-succeded? job-failed?)]
-          (doseq [[_ step status result match-job-id] (sort-by first transitions)]
-            (update-match-job! (cond-> {:match-job-id   match-job-id
-                                        :message        (case status
-                                                          "pending" (str "Step " step " STARTED")
-                                                          "failure" (str "Step " step " FAILED.\nResult:\n" result)
-                                                          "success" (str "Step " step " DONE.\nResult:\n" result))}
-                                 (and (= step "mdrop-elmfire") (= "success" status))
-                                 (assoc :elmfire-done? true)
-                                 (and (= step "mdrop-gridfire") (= "success" status))
-                                 (assoc :gridfire-done? true))))
-          (doseq [[_ step status] transitions]
-            (swap! state assoc-in [step status] true))
-          (if job-done?
-            (do (update-match-job! {:match-job-id match-job-id
-                                    :md-status    (if job-succeded? 0 1)})
-                job-state)
-            (do
-              (Thread/sleep (* interval-in-seconds 1000))
-              (if (< (System/currentTimeMillis) end-time)
-                (recur)
-                (println "Timeout while waiting for job" job-id "results. Stopping progress recording.")))))))))
+  [sig3-endpoint job-id match-job-id]
+  (let [state (atom {"mdrop-dps"          {"pending" false "success" false "failure" false "order" 1}
+                     "mdrop-gridfire"     {"pending" false "success" false "failure" false "order" 2}
+                     "mdrop-elmfire"      {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
+                     "mdrop-pyretechnics" {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
+                     "mdrop-geosync"      {"pending" false "success" false "failure" false "order" 3}})]
+    (poll-with-retries!
+     {:poll-fn    (fn poll-and-record-transitions []
+                    (let [job-state     (poll-job! sig3-endpoint job-id)
+                          transitions   (calculate-transitions state job-state match-job-id)
+                          job-succeded? (= (get job-state "status") "success")
+                          job-failed?   (= (get job-state "status") "failure")
+                          job-done?     (or job-succeded? job-failed?)]
+                      (doseq [[_ step status result match-job-id] (sort-by first transitions)]
+                        (update-match-job! (cond-> {:match-job-id   match-job-id
+                                                    :message        (case status
+                                                                      "pending" (str "Step " step " STARTED")
+                                                                      "failure" (str "Step " step " FAILED.\nResult:\n" result)
+                                                                      "success" (str "Step " step " DONE.\nResult:\n" result))}
+                                             (and (= step "mdrop-elmfire") (= "success" status))
+                                             (assoc :elmfire-done? true)
+                                             (and (= step "mdrop-gridfire") (= "success" status))
+                                             (assoc :gridfire-done? true))))
+                      (doseq [[_ step status] transitions]
+                        (swap! state assoc-in [step status] true))
+                      (if job-done?
+                        (do (update-match-job! {:match-job-id match-job-id
+                                                :md-status    (if job-succeded? 0 1)})
+                            false)
+                        true)))
+      :on-error   (fn [e] (log-str "ERROR polling match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
+      :on-timeout (fn []
+                    (log-str "Timeout while waiting for job " job-id " results. Stopping progress recording.")
+                    (update-match-job! {:match-job-id match-job-id
+                                        :md-status    1
+                                        :message      (str "Match Drop #" match-job-id " timed out.")}))})))
 
 (defn- create-match-job-using-kubernetes!
   [{:keys [user-id display-name] :as params} sig3-endpoint]
@@ -634,28 +664,23 @@
 (defn- poll-delete-match-drop-results-then-remove-from-db!
   [{:keys [job-id]}
    sig3-endpoint
-   match-job-id
-   & {:keys [interval-in-seconds timeout-in-seconds]
-      :or   {interval-in-seconds 10
-             timeout-in-seconds  36000}}]
-  (let [end-time (+ (System/currentTimeMillis) (* timeout-in-seconds 1000))]
-    (future
-      (loop []
-        (let [job-state     (poll-job! sig3-endpoint job-id)
-              status        (get job-state "status")
-              job-succeded? (= status "success")
-              job-failed?   (= status "failure")
-              job-done?     (or job-succeded? job-failed?)]
-          (if job-done?
-            (if job-succeded?
-              (do (log-str "Deleting Match Job #" match-job-id " from the database.")
-                  (call-sql "delete_match_job" match-job-id))
-              (log-str "ERROR deleting match-drop '" match-job-id "'\n" job-state))
-            (do
-              (Thread/sleep (* interval-in-seconds 1000))
-              (if (< (System/currentTimeMillis) end-time)
-                (recur)
-                (println "Timeout while waiting for job" job-id "results. Aborting.")))))))))
+   match-job-id]
+  (poll-with-retries!
+   {:poll-fn    (fn poll-and-delete-when-done []
+                  (let [job-state     (poll-job! sig3-endpoint job-id)
+                        status        (get job-state "status")
+                        job-succeded? (= status "success")
+                        job-failed?   (= status "failure")
+                        job-done?     (or job-succeded? job-failed?)]
+                    (if job-done?
+                      (do (if job-succeded?
+                            (do (log-str "Deleting Match Job #" match-job-id " from the database.")
+                                (call-sql "delete_match_job" match-job-id))
+                            (log-str "ERROR deleting match-drop '" match-job-id "'\n" job-state))
+                          false)
+                      true)))
+    :on-error   (fn [e] (log-str "ERROR polling delete match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
+    :on-timeout (fn [] (log-str "Timeout while waiting for delete job " job-id " results. Aborting."))}))
 
 (defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
   (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
