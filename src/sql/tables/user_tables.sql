@@ -91,3 +91,8 @@ CREATE TABLE user_backup_codes (
 
 -- Index for backup code lookups
 CREATE INDEX idx_backup_codes_user ON user_backup_codes(user_id);
+
+-- Marketplace: one GAIA identity per user, NULLs excluded
+CREATE UNIQUE INDEX idx_users_google_user_identity
+    ON users(google_user_identity)
+    WHERE google_user_identity IS NOT NULL;
