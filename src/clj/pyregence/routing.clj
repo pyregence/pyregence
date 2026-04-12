@@ -112,7 +112,7 @@
                                                      :auth-action :block}
 
    [:post "/clj/update-users-status"]                {:handler (clj-handler authentication/update-users-status)
-                                                     :auth-type #{:organization-admin :tier2-pro :token}
+                                                     :auth-type #{:organization-admin :token}
                                                      :auth-action :block}
 
    ;; -- Access Control
@@ -138,7 +138,7 @@
                                                      :auth-type :token
                                                      :auth-action :block}
    [:post "/clj/get-org-member-users"]               {:handler (clj-handler authentication/get-org-member-users)
-                                                     :auth-type #{:organization-admin :tier2-pro :token}
+                                                     :auth-type #{:organization-admin :token}
                                                      :auth-action :block}
    [:post "/clj/get-orgs-with-system-assets"]        {:handler     (clj-handler authentication/get-orgs-with-system-assets)
                                                      :auth-type   #{:organization-member :tier2-pro :token}

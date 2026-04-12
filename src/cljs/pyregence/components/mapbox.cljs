@@ -139,6 +139,37 @@
 (defn zoom-to-extent!
   "Pans/zooms the map to the provided extents."
   [[minx miny maxx maxy] current-layer & [max-zoom]]
+  (def minx minx)
+  (def miny miny)
+  (def maxx maxx)
+  (def maxy maxy)
+  (def current-layer current-layer)
+  (def max-zoom max-zoom)
+
+  (keys current-layer)
+  ;; => (:workspace
+  ;;     :layer-group
+  ;;     :forecast
+  ;;     :times
+  ;;     :model-init
+  ;;     :layer
+  ;;     :extent
+  ;;     :filter-set
+  ;;     :fire-name)
+
+  (:extent current-layer)
+  ;; => ["-91.08377875536266"
+  ;;     "43.81013213885956"
+  ;;     "-90.3057701382475"
+  ;;     "44.37162836173734"]
+
+  minx
+  ;; => "-91.08377875536266"
+  miny
+  ;; => "43.81013213885956"
+
+
+
   (let [config (-> {:linear  true
                     :padding (if (#{"fire-active" "fire-risk-forecast" "fire-risk-planning" "fire-detections"} (get-layer-type (:layer current-layer)))
                                {:top 150 :bottom 150 :left 150 :right 150}
@@ -584,6 +615,7 @@
       (dotimes [_ 4]
         (<! icon-chan)))))
 
+;;
 (defn- incident-layer [layer-name source-name opacity]
   (go
     (<! (add-fire-icons-to-map!))
@@ -615,15 +647,48 @@
                 :text-halo-width 1.5
                 :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}}))
 
+#_(defn- backround-circle-layer [layer-name source-name opacity]
+  (go
+    (<! (add-fire-icons-to-map!))
+    {:id       layer-name
+     :type     "symbol"
+     :source   source-name
+     :layout   {:icon-allow-overlap true
+                ;;icon-radius?
+                :icon-size          ["interpolate" ["linear"] ["get" "acres"]
+                                     1000   0.5
+                                     10000  0.75
+                                     300000 1.0]
+                :visibility         "visible"}
+     :metadata {:type    (get-layer-type layer-name)
+                :z-index 1999}
+     ;; the paint will change here
+     :paint    {:icon-opacity    opacity
+                :text-color      "#000000"
+                :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
+                :text-halo-width 1.5
+                :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}}))
+
 (defn- build-wfs
   "Returns a new WFS source and layers in the form `[source layers]`.
    `source` must be a valid WFS layer in the geoserver
    `z-index` allows layers to be rendered on-top (positive z-index) or below
    (negative z-index) Mapbox base map layers."
   [id source geoserver-key opacity]
+  (def r [id source geoserver-key opacity])
+  r
+  ;; => ["fire-active"
+  ;;     "fire-detections_active-fires:active-fires_20260409_133400"
+  ;;     :shasta
+  ;;     0.7]
+
+  (println [id source geoserver-key opacity])
+
   (go
     (let [new-source {id (wfs-source source geoserver-key)}
-          new-layers [(<! (incident-layer id id opacity))]]
+          new-layers [(<! (incident-layer id id opacity))
+                      #_(<! (backround-circle-layer id id opacity))
+                      ]]
       [new-source new-layers])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -721,12 +786,23 @@
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
   [geo-layer style-fn geoserver-key opacity style & [layer-time]]
+  (def x [geo-layer style-fn geoserver-key opacity style & [layer-time]])
+  x
+  ;; => ["fire-detections_active-fires:active-fires_20260409_133400"
+  ;;     :default
+  ;;     :shasta
+  ;;     0.7
+  ;;     nil
+  ;;     nil
+  ;;     [nil]]
+
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (go
     (let [map-style                (get-style)
           layers                   (hide-forecast-layers (get map-style "layers"))
           [new-sources new-layers] (if style-fn
                                      (<! (build-wfs fire-active geo-layer geoserver-key opacity))
+                                     ;; add radius of acers burned.
                                      (build-wms geo-layer
                                                 geo-layer
                                                 geoserver-key
@@ -735,6 +811,11 @@
                                                 :style style
                                                 :layer-time layer-time))]
       (update-style! map-style
+                     :layers      layers
+                     :new-sources new-sources
+                     :new-layers  new-layers)
+
+      #_(update-style! map-style
                      :layers      layers
                      :new-sources new-sources
                      :new-layers  new-layers))))
