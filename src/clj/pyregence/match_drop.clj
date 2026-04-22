@@ -276,22 +276,6 @@
 ;; Create Match Job Functions
 ;;==============================================================================
 
-(defn- params->match-drop-args [match-job-id
-                                {:keys [ignition-time lat lon wx-type]}
-                                {:keys [sig3-env]}]
-  (let [model-time (u/convert-date-string ignition-time)] ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
-    {:ignition-time        ignition-time
-     :lat                  lat
-     :lon                  lon
-     :num-ensemble-members 200
-     :fuel-source          "landfire"
-     :fuel-version         "2.4.0"
-     :wx-type              wx-type
-     :wx-start-time        (u/round-down-to-nearest-hour model-time)
-     :fire-name            (str "md-" match-job-id)
-     :geoserver-workspace  (str "match-drop-forecast_md-" match-job-id "_" model-time)
-     :env                  sig3-env}))
-
 (defn- create-match-job-using-runway!
   [{:keys [display-name user-id ignition-time lat lon wx-type] :as params}]
   {:pre [(integer? user-id)]}
@@ -405,28 +389,31 @@
        1000)))
 
 (defn- match-drop-args->body
-  [{:keys [fire-name lon lat wx-start-time ignition-time fuel-source wx-type fuel-version num-ensemble-members geoserver-workspace env]}]
-  {:network   :match-drop
-   :arguments {:env                  env
-               :pyrc_fire_name       fire-name
-               :geoserver-workspace  geoserver-workspace
-               :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
-                                      :pyrc_simspan_center_lat    lat
-                                      :pyrc_simspan_start_epoch_s (utc-date->epoch-s wx-start-time)}
-               :pyrc_ignition        {:pyrc_ignition_lon     lon
-                                      :pyrc_ignition_lat     lat
-                                      :pyrc_ignition_epoch_s (utc-date->epoch-s ignition-time)}
-               :pyrc_inputs          {:pyrc_fuel_source  fuel-source
-                                      :pyrc_wx_type      wx-type
-                                      :pyrc_fuel_version fuel-version}
-               :pyrc_sim_params      {:pyrc_sim_num_ensemble_members num-ensemble-members}}})
+  [match-job-id
+   {:keys [ignition-time lat lon wx-type]}
+   {:keys [sig3-env]}]
+  (let [model-time    (u/convert-date-string ignition-time) ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
+        wx-start-time (u/round-down-to-nearest-hour model-time)]
+    {:network   :match-drop
+     :arguments {:env                  sig3-env
+                 :pyrc_fire_name       (str "md-" match-job-id)
+                 :geoserver-workspace  (str "match-drop-forecast_md-" match-job-id "_" model-time)
+                 :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
+                                        :pyrc_simspan_center_lat    lat
+                                        :pyrc_simspan_start_epoch_s (utc-date->epoch-s wx-start-time)}
+                 :pyrc_ignition        {:pyrc_ignition_lon     lon
+                                        :pyrc_ignition_lat     lat
+                                        :pyrc_ignition_epoch_s (utc-date->epoch-s ignition-time)}
+                 :pyrc_inputs          {:pyrc_fuel_source  "landfire"
+                                        :pyrc_wx_type      wx-type
+                                        :pyrc_fuel_version "2.4.0"}
+                 :pyrc_sim_params      {:pyrc_sim_num_ensemble_members 200}}}))
 
 (defn- submit-match-drop-job!
   "Requests a match-drop job from kubernetes"
   [params sig3-endpoint match-job-id]
   (let [match-drop-config                  (get-md-configs [:sig3-env])
-        match-drop-inputs                  (params->match-drop-args match-job-id params match-drop-config)
-        request                            (match-drop-args->body match-drop-inputs)
+        request                            (match-drop-args->body match-job-id params match-drop-config)
         api-url                            (format "%s/api/submit-job" sig3-endpoint)
         http-request                       {:body         (json/write-str request)
                                             :headers      {"sig-auth" (get-md-config :sig3-auth)}
@@ -435,7 +422,7 @@
         _                                  (println "POST" api-url request)
         {:keys [body status] :as response} (client/post api-url http-request)]
     (if (= 200 status)
-      {:match-drop-inputs match-drop-inputs
+      {:match-drop-inputs (:arguments request)
        :job-id            (:job-id (json/read-str body :key-fn keyword))}
       (throw (ex-info (format "match-drop request failed with status %d" status)
                       {:request http-request :response response})))))
