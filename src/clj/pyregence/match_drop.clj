@@ -393,11 +393,12 @@
    {:keys [ignition-time lat lon wx-type]}
    {:keys [sig3-env]}]
   (let [model-time    (u/convert-date-string ignition-time) ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
-        wx-start-time (u/round-down-to-nearest-hour model-time)]
+        wx-start-time (u/round-down-to-nearest-hour model-time)
+        fire-name     (str "md-" match-job-id)]
     {:network   :match-drop
      :arguments {:env                  sig3-env
-                 :pyrc_fire_name       (str "md-" match-job-id)
-                 :geoserver-workspace  (str "match-drop-forecast_md-" match-job-id "_" model-time)
+                 :pyrc_fire_name       fire-name
+                 :geoserver-workspace  (str "match-drop-forecast_" fire-name "_" model-time)
                  :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
                                         :pyrc_simspan_center_lat    lat
                                         :pyrc_simspan_start_epoch_s (utc-date->epoch-s wx-start-time)}
