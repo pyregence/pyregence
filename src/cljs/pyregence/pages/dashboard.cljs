@@ -106,12 +106,13 @@
                                 updated-at
                                 dps-request
                                 job-log]}]
-  (let [;; WORKAROUND for sig3 requests
-        lon           (or (:lon dps-request)
+  (let [common-args   (get-in dps-request [:script-args :common-args])
+        ;; WORKAROUND for sig3 requests
+        lon           (or (:lon common-args)
                           (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lon]))
-        lat           (or (:lat dps-request)
+        lat           (or (:lat common-args)
                           (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lat]))
-        ignition-time (or (:ignition-time dps-request)
+        ignition-time (or (:ignition-time common-args)
                           (some-> (get-in dps-request [:pyrc_ignition :pyrc_ignition_epoch_s])
                                   (u-time/epoch-s->utc-date)))]
     [:tr
