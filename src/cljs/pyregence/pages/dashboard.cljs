@@ -106,9 +106,14 @@
                                 updated-at
                                 dps-request
                                 job-log]}]
-  (let [{:keys [common-args]} (:script-args dps-request)
-        ;; WORKAROUND for sig3 requests
-        common-args           (or common-args dps-request)]
+  (let [        ;; WORKAROUND for sig3 requests
+        lon           (or (:lon dps-request)
+                          (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lon]))
+        lat           (or (:lat dps-request)
+                          (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lat]))
+        ignition-time (or (:ignition-time dps-request)
+                          (some-> (get-in dps-request [:pyrc_ignition :pyrc_ignition_epoch_s])
+                                  (u-time/epoch-s->utc-date)))]
     [:tr
      [:td match-job-id] ; "Job ID"
      [:td {:width "10%"} (when-not (nil? display-name) display-name)] ; "Fire Name"
@@ -125,15 +130,14 @@
                      :overflow      "auto"}}
        (when-not (nil? message) message)]]
      [:td {:width "10%"} ; "Lon, Lat"
-      (if-let [lon-lat (some->> (select-keys common-args [:lon :lat])
-                                (vals)
+      (if-let [lon-lat (some->> [lon lat]
                                 (map #(-> % (str) (subs 0 6)))
                                 (string/join ", "))]
         lon-lat
         "N/A")]
      [:td ; "Ignition Time (UTC)"
-      (if (some? common-args)
-        (subs (:ignition-time common-args) 0 16)
+      (if (seq ignition-time)
+        (subs ignition-time 0 16)
         "N/A")]
      [:td (fmt-datetime created-at)] ; "Time Started (UTC)"
      [:td (fmt-datetime updated-at)] ; "Last Updated (UTC)"
