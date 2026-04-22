@@ -56,7 +56,7 @@
 (defn- show-job-log-modal! [match-job-id job-log]
   (set-message-box-content!
    {:title (str "Match Drop #" match-job-id)
-    :body  [:div {:style {:max-height "500px"
+    :body  [:div {:style {:height     "50vh"
                           :overflow-y "auto"
                           :width      "75vw"}}
             [:pre {:style {:line-height   1.0
@@ -210,7 +210,7 @@
       ;; user doesn't have match drop access
       [no-access]
       ;; user has match-drop access
-      [:div {:style ($/root)}
+      [:div {:style ($/combine ($/root) {:height "100vh"})}
        ;; TODO make this bigger to reflect the long logs we have
        [message-box-modal]
        [:div {:style ($/combine $/flex-col {:padding "2rem"})}

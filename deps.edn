@@ -59,6 +59,10 @@
                               :main-opts  ["-m" "rebel-readline.main"]}
            :server           {:main-opts  ["-m" "triangulum.server"]}
            :systemd          {:main-opts  ["-m" "triangulum.systemd"]}
+           :test             {:extra-paths ["test"]
+                              :extra-deps  {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
+                              :main-opts   ["-m" "cognitect.test-runner"]
+                              :exec-fn     cognitect.test-runner.api/test}
            :rct-test         {:exec-fn    com.mjdowney.rich-comment-tests.test-runner/run-tests-in-file-tree!
                               :exec-args  {:dirs #{"src"}}}
            :clj-watson       {:replace-deps
