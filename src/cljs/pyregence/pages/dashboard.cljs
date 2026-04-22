@@ -106,7 +106,7 @@
                                 updated-at
                                 dps-request
                                 job-log]}]
-  (let [        ;; WORKAROUND for sig3 requests
+  (let [;; WORKAROUND for sig3 requests
         lon           (or (:lon dps-request)
                           (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lon]))
         lat           (or (:lat dps-request)
