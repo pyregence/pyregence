@@ -292,7 +292,6 @@
      :fuel-version         "2.4.0"
      :wx-type              wx-type
      :ignition-radius      300
-     :run-hours            72
      :model-time           model-time ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
      :wx-start-time        (u/round-down-to-nearest-hour model-time)
      :fire-name            (str "md-" match-job-id)
