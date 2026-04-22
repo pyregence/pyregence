@@ -280,19 +280,13 @@
                                 {:keys [ignition-time lat lon wx-type]}
                                 {:keys [sig3-env]}]
   (let [model-time (u/convert-date-string ignition-time)] ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
-    {:west-buffer          12
-     :ignition-time        ignition-time
-     :east-buffer          12
-     :south-buffer         12
+    {:ignition-time        ignition-time
      :lat                  lat
      :lon                  lon
-     :north-buffer         12
      :num-ensemble-members 200
      :fuel-source          "landfire"
      :fuel-version         "2.4.0"
      :wx-type              wx-type
-     :ignition-radius      300
-     :model-time           model-time ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
      :wx-start-time        (u/round-down-to-nearest-hour model-time)
      :fire-name            (str "md-" match-job-id)
      :geoserver-workspace  (str "match-drop-forecast_md-" match-job-id "_" model-time)
