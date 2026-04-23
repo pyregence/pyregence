@@ -318,7 +318,8 @@ CREATE OR REPLACE FUNCTION get_all_users()
   last_login_date       timestamptz,
   user_role             user_role,
   org_membership_status org_membership_status,
-  organization_name     text
+  organization_name     text,
+  subscription_tier     subscription_tier
  ) AS $$
     SELECT
       u.user_uid,
@@ -330,7 +331,8 @@ CREATE OR REPLACE FUNCTION get_all_users()
       u.last_login_date,
       u.user_role,
       u.org_membership_status,
-      o.org_name
+      o.org_name,
+      o.subscription_tier
     FROM users u
     LEFT JOIN organizations o
       ON u.organization_rid = o.organization_uid

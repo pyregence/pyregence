@@ -1,5 +1,6 @@
 (ns pyregence.authentication
   (:require [pyregence.email            :as email]
+            [pyregence.handlers         :as handlers]
             [pyregence.marketplace      :as marketplace]
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error]]
@@ -20,15 +21,18 @@
    This is the single source of truth for session structure."
   [user-data]
   (when user-data
-    (data-response "" {:session (merge {:match-drop-access?    (:match_drop_access user-data)
-                                        :user-email            (:user_email user-data)
-                                        :user-id               (:user_id user-data)
-                                        :user-name             (:user_name user-data)
-                                        :user-role             (:user_role user-data)
-                                        :organization-id       (:organization_rid user-data)
-                                        :org-membership-status (:org_membership_status user-data)
-                                        :subscription-tier     (:subscription_tier user-data)}
-                                       (get-config :app :client-keys))})))
+    (let [base    {:match-drop-access?    (:match_drop_access user-data)
+                   :user-email            (:user_email user-data)
+                   :user-id               (:user_id user-data)
+                   :user-name             (:user_name user-data)
+                   :user-role             (:user_role user-data)
+                   :organization-id       (:organization_rid user-data)
+                   :org-membership-status (:org_membership_status user-data)
+                   :subscription-tier     (:subscription_tier user-data)}
+          ;; Derive effective Match Drop access from role + tier so tier2+ org
+          ;; members don't need the per-user flag toggled manually.
+          session (assoc base :match-drop-access? (handlers/match-drop-access? base))]
+      (data-response "" {:session (merge session (get-config :app :client-keys))}))))
 
 (defn- parse-user-settings
   "Safely parses user settings from EDN string, returning empty map on error."
@@ -829,16 +833,22 @@
        data-response))
 
 (defn get-all-users
-  "Returns a vector of all users in the DB."
+  "Returns a vector of all users in the DB. `match-drop-access` reflects the
+   effective (derived) access, so admins see the same state the user experiences."
   [_]
   (->> (call-sql "get_all_users")
        (mapv (fn [{:keys [user_uid email name settings match_drop_access email_verified
-                          last_login_date user_role org_membership_status organization_name]}]
+                          last_login_date user_role org_membership_status organization_name
+                          subscription_tier]}]
                {:user-id               user_uid
                 :email                 email
                 :name                  name
                 :settings              settings
-                :match-drop-access     match_drop_access
+                :match-drop-access     (handlers/match-drop-access?
+                                        {:match-drop-access?    match_drop_access
+                                         :user-role             user_role
+                                         :subscription-tier     subscription_tier
+                                         :org-membership-status org_membership_status})
                 :email-verified        email_verified
                 :last-login-date       last_login_date
                 :user-role             user_role
