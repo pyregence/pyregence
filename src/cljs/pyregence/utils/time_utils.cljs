@@ -93,6 +93,17 @@
       (.toISOString)
       (iso-string->local-datetime-string)))
 
+(defn epoch-s->utc-date
+  "Converts epoch seconds into a UTC string of the form 'YYYY-MM-DD HH:MM UTC'."
+  [epoch-s]
+  (let [js-date (js/Date. (* epoch-s 1000))
+        year    (.getUTCFullYear js-date)
+        month   (pad-zero (+ 1 (.getUTCMonth js-date)))
+        day     (pad-zero (.getUTCDate js-date))
+        hours   (pad-zero (.getUTCHours js-date))
+        minutes (pad-zero (.getUTCMinutes js-date))]
+    (str year "-" month "-" day " " hours ":" minutes " UTC")))
+
 (defn ms->hhmmss
   "Converts milliseconds into 'hours:minutes:seconds'."
   [ms]
