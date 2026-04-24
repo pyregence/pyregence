@@ -149,6 +149,14 @@
                (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
                (clj->js config))))
 
+(defn fit-bounds!
+  "Fits the map view to the provided [minx miny maxx maxy] bounding box."
+  [[minx miny maxx maxy] & [{:keys [padding] :or {padding 50}}]]
+  (js-invoke @the-map
+             "fitBounds"
+             (LngLatBounds. (clj->js [[minx miny] [maxx maxy]]))
+             (clj->js {:padding padding :linear true})))
+
 (defn set-center!
   "Centers the map on `center` with a minimum zoom value of `min-zoom`."
   [center min-zoom]
