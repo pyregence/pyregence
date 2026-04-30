@@ -284,7 +284,7 @@
                         (str (get-psps-geoserver-admin-username) ":" (get-psps-geoserver-admin-password)))]
     (if-not (contains? (get-config :triangulum.views/client-keys :geoserver) geoserver-key)
       (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn.")
-      (let [timeout-ms    (* 2.5 60 1000) ; 2.5 minutes
+      (let [timeout-ms    (* 5 60 1000) ; 5 minutes
             future-result (future
                             (try
                               (let [stdout?       (= 0 (count @layers))
