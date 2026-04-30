@@ -112,7 +112,10 @@
                               :triangulum.worker/stop  pyregence.jobs/stop-clean-up-service!}
                              {:triangulum.worker/name  "match-drop-server"
                               :triangulum.worker/start pyregence.jobs/start-match-drop-server!
-                              :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}]
+                              :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}
+                             {:triangulum.worker/name  "marketplace-subscriber"
+                              :triangulum.worker/start pyregence.marketplace.pubsub/start-subscriber!
+                              :triangulum.worker/stop  pyregence.marketplace.pubsub/stop-subscriber!}]
 
  ;;; Pyrecast
  :pyregence.cameras/alert-west-api-key              "<api-key>"
@@ -138,9 +141,11 @@
                                                      :geosync-host      "sierra.pyregence.org"
                                                      :geosync-port      31340
                                                      :max-queue-size    5}
- ;; Marketplace
+ ;; Marketplace (e.g. audience "example.com", partner-id "my-project-123")
  :pyregence.marketplace/config {:enabled              false
-                                :audience             "pyrecast.org"
-                                :partner-id           "pyrecast-448020"
+                                :audience             "<your-app-domain>"
+                                :partner-id           "<partner-id>"
+                                :poll-interval-ms     30000
                                 :procurement-key-path "resources/keys/marketplace-procurement.json"
-                                :product-id           "pyrecast-prod"}}
+                                :pubsub-key-path      "resources/keys/marketplace-pubsub.json"
+                                :subscription-id      "projects/<project-id>/subscriptions/<subscription-name>"}}

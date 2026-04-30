@@ -4,6 +4,7 @@
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error]]
             [triangulum.config          :refer [get-config]]
+            [triangulum.logging         :refer [log-str]]
             [triangulum.database        :refer [call-sql sql-primitive insert-rows!]]
             [triangulum.type-conversion :as tc]
             [triangulum.response        :refer [data-response]])
@@ -27,7 +28,8 @@
                                         :user-role             (:user_role user-data)
                                         :organization-id       (:organization_rid user-data)
                                         :org-membership-status (:org_membership_status user-data)
-                                        :subscription-tier     (:subscription_tier user-data)}
+                                        :subscription-tier     (:subscription_tier user-data)
+                                        :marketplace-status    (:marketplace_status user-data)}
                                        (get-config :app :client-keys))})))
 
 (defn- parse-user-settings
@@ -66,7 +68,7 @@
   ([user] (successful-login user nil))
   ([{:keys [user_id user_email] :as user} request-session]
    (call-sql "set_users_last_login_date_to_now" user_id)
-   (marketplace/complete-signup! request-session user_id user_email)
+   (marketplace/complete-signup! request-session user_email)
    (create-session-from-user-data user)))
 
 (defn log-in
@@ -81,6 +83,31 @@
                    (data-response {:email email :require-2fa true :method "email"}))
         (successful-login user session)))
     (data-response "" {:status 403})))
+
+(defn marketplace-sso-login
+  "Marketplace SSO entry point. Validates JWT, auto-logs in or redirects to 2FA.
+  Falls back to /login on error or unknown user."
+  [request]
+  (try
+    (if-let [{:keys [user session]} (marketplace/sso-login request)]
+      (let [user-id    (:user_id user)
+            two-factor (:two-factor (get-user-settings user-id))]
+        (case two-factor
+          :totp  {:status  302
+                  :headers {"Location" (str "/verify-2fa?email=" (:user_email user) "&method=totp")}
+                  :session session}
+          :email (do (email/send-email! nil (:user_email user) :2fa)
+                     {:status  302
+                      :headers {"Location" (str "/verify-2fa?email=" (:user_email user) "&method=email")}
+                      :session session})
+          (let [resp (successful-login user session)]
+            (assoc resp :status 302 :headers {"Location" "/"}))))
+      {:status  302
+       :headers {"Location" "/login?marketplace=1"}})
+    (catch Exception e
+      (log-str "Marketplace SSO login error: " (.getMessage e))
+      {:status  302
+       :headers {"Location" "/login?marketplace=1"}})))
 
 ^:rct/test
 (comment
@@ -564,12 +591,10 @@
   "Creates a new user account and optionally associates them with an organization.
 
   Arguments:
-  - `session`: The current user's session (used to enforce authorization/ability to
-               add the user to an organization)
-  - `email`, `name`, `password`: User credentials and display name
-  - `opts` (optional): A map of options that may include:
-    - `:org-id`   — The organization to assign the user to (default: nil)
-    - `:org-name` — Organization name to stash in session for marketplace provisioning
+  - `session`: The current user's session (used to enforce authorization)
+  - `email`, `user-name`, `password`: User credentials and display name
+  - `org-name-or-opts` (optional): Either a string org-name for marketplace provisioning,
+    or a map with :org-id / :org-name keys (for admin/REPL use)
 
   Behavior:
   - A new user is created and persisted to the database.
@@ -595,17 +620,24 @@
   - Only users with sufficient privileges (super_admin or organization_admin) may
     explicitly assign a new user to an organization via `:org-id`.
   - All organization assignments are validated server-side using the session context."
-  [session email user-name password & [opts]]
-  (let [{:keys [org-id org-name]} opts
-        {:keys [user-role]}       session
-        default-settings          (pr-str {:timezone :utc})
-        new-user-id (nil-on-error
-                     (sql-primitive (call-sql "add_new_user"
-                                              {:log? false}
-                                              email
-                                              user-name
-                                              password
-                                              default-settings)))
+  [session email user-name password & [org-name-or-opts]]
+  (let [org-name (cond (string? org-name-or-opts)             org-name-or-opts
+                       (map? org-name-or-opts) (or (:org-name org-name-or-opts)
+                                                   (get org-name-or-opts "org-name"))
+                       :else                                  nil)
+        org-id   (when (map? org-name-or-opts)
+                   (or (:org-id org-name-or-opts)
+                       (get org-name-or-opts "org-id")))
+        org-name         (when (and (string? org-name) (seq org-name)) org-name)
+        {:keys [user-role]} session
+        default-settings (pr-str {:timezone :utc})
+        new-user-id      (nil-on-error
+                           (sql-primitive (call-sql "add_new_user"
+                                                    {:log? false}
+                                                    email
+                                                    user-name
+                                                    password
+                                                    default-settings)))
         response
         (if-not new-user-id
           (data-response (str "Failed to create the new user with name " user-name " and email " email)
@@ -632,7 +664,7 @@
                                {:status 403})))))]
     ;; Stash org-name in session for marketplace provisioning
     (cond-> response
-      (and new-user-id org-name (seq org-name) (:marketplace-signup session))
+      (and new-user-id org-name (:marketplace-signup session))
       (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name)))))
 
 (defn get-current-user-settings

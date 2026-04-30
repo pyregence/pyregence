@@ -69,7 +69,8 @@ CREATE OR REPLACE FUNCTION get_user_with_totp(_user_id integer)
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
-    subscription_tier     subscription_tier
+    subscription_tier     subscription_tier,
+    marketplace_status    marketplace_status
 ) AS $$
     SELECT
       u.user_uid          AS user_id,
@@ -80,7 +81,8 @@ CREATE OR REPLACE FUNCTION get_user_with_totp(_user_id integer)
       u.user_role         AS user_role,
       u.org_membership_status,
       u.organization_rid,
-      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier
+      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+      COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
     FROM user_totp t
     JOIN users u
       ON u.user_uid = t.user_id

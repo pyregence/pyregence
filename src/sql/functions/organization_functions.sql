@@ -4,6 +4,15 @@
 --------------------------------------------------------------------------------
 ---  Organizations
 --------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION get_org_subscription_tier(_org_id integer)
+RETURNS subscription_tier AS $$
+
+    SELECT COALESCE(subscription_tier, 'tier1_free_registered')
+    FROM organizations
+    WHERE organization_uid = _org_id
+
+$$ LANGUAGE SQL;
+
 CREATE OR REPLACE FUNCTION get_organization_name(_org_id integer)
 RETURNS text
 AS $$
@@ -239,7 +248,7 @@ CREATE OR REPLACE FUNCTION create_marketplace_organization(
     _org_unique_id          text,
     _marketplace_account_id text,
     _marketplace_order_id   text,
-    _subscription_tier      subscription_tier
+    _subscription_tier_text text
 ) RETURNS integer AS $$
 
     INSERT INTO organizations
@@ -247,19 +256,8 @@ CREATE OR REPLACE FUNCTION create_marketplace_organization(
          marketplace_order_id, subscription_tier, marketplace_status)
     VALUES
         (_org_name, _org_unique_id, _marketplace_account_id,
-         _marketplace_order_id, _subscription_tier, 'pending')
-    RETURNING organization_uid;
-
-$$ LANGUAGE SQL;
-
-CREATE OR REPLACE FUNCTION update_marketplace_status(
-    _org_id  integer,
-    _status  text
-) RETURNS void AS $$
-
-    UPDATE organizations
-    SET marketplace_status = _status
-    WHERE organization_uid = _org_id;
+         _marketplace_order_id, _subscription_tier_text::subscription_tier, 'pending')
+    RETURNING organization_uid
 
 $$ LANGUAGE SQL;
 
@@ -267,13 +265,16 @@ CREATE OR REPLACE FUNCTION link_org_to_marketplace(
     _org_id                 integer,
     _marketplace_account_id text,
     _marketplace_order_id   text
-) RETURNS void AS $$
+) RETURNS boolean AS $$
 
     UPDATE organizations
     SET marketplace_account_id = _marketplace_account_id,
         marketplace_order_id   = _marketplace_order_id,
-        marketplace_status     = 'pending'
-    WHERE organization_uid = _org_id;
+        marketplace_status     = CASE WHEN marketplace_status = 'none' THEN 'pending'
+                                      ELSE marketplace_status END
+    WHERE organization_uid = _org_id
+      AND (marketplace_account_id IS NULL OR marketplace_account_id = _marketplace_account_id)
+    RETURNING true
 
 $$ LANGUAGE SQL;
 
@@ -287,10 +288,16 @@ CREATE OR REPLACE FUNCTION provision_marketplace_existing_user_with_org(
     _marketplace_order_id   text,
     _procurement_account_id text,
     _google_user_identity   text
-) RETURNS void AS $$
+) RETURNS boolean AS $$
+DECLARE
+    _linked boolean;
 BEGIN
-    PERFORM link_org_to_marketplace(_org_id, _marketplace_account_id, _marketplace_order_id);
+    SELECT link_org_to_marketplace(_org_id, _marketplace_account_id, _marketplace_order_id) INTO _linked;
+    IF _linked IS NULL THEN
+        RETURN false;
+    END IF;
     PERFORM link_existing_user_to_marketplace(_user_id, _procurement_account_id, _google_user_identity);
+    RETURN true;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -299,7 +306,7 @@ CREATE OR REPLACE FUNCTION provision_marketplace_existing_user_new_org(
     _org_unique_id          text,
     _marketplace_account_id text,
     _marketplace_order_id   text,
-    _subscription_tier      subscription_tier,
+    _subscription_tier_text text,
     _user_id                integer,
     _procurement_account_id text,
     _google_user_identity   text
@@ -309,9 +316,112 @@ DECLARE
 BEGIN
     SELECT create_marketplace_organization(
         _org_name, _org_unique_id, _marketplace_account_id,
-        _marketplace_order_id, _subscription_tier
+        _marketplace_order_id, _subscription_tier_text
     ) INTO _org_id;
     PERFORM link_user_to_marketplace_org(_user_id, _org_id, _procurement_account_id, _google_user_identity);
+    RETURN _org_id;
+END;
+$$ LANGUAGE plpgsql;
+
+--------------------------------------------------------------------------------
+---  Marketplace Event Handlers
+--------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION activate_marketplace_entitlement(
+    _marketplace_account_id text,
+    _usage_reporting_id     text,
+    _subscription_tier_text text
+) RETURNS integer AS $$
+
+    UPDATE organizations
+    SET marketplace_status = 'active',
+        usage_reporting_id = COALESCE(_usage_reporting_id, usage_reporting_id),
+        subscription_tier  = _subscription_tier_text::subscription_tier,
+        pre_suspend_tier   = NULL,
+        archived           = false,
+        archived_date      = NULL
+    WHERE marketplace_account_id = _marketplace_account_id
+      AND marketplace_status IN ('pending', 'active', 'suspended', 'pending_cancellation')
+    RETURNING organization_uid
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pending_cancel_marketplace_entitlement(
+    _marketplace_account_id text
+) RETURNS integer AS $$
+
+    UPDATE organizations
+    SET marketplace_status = 'pending_cancellation'
+    WHERE marketplace_account_id = _marketplace_account_id
+      AND marketplace_status IN ('active', 'pending_cancellation')
+    RETURNING organization_uid
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION suspend_marketplace_entitlement(
+    _marketplace_account_id text
+) RETURNS integer AS $$
+
+    UPDATE organizations
+    SET pre_suspend_tier   = COALESCE(pre_suspend_tier, subscription_tier),
+        subscription_tier  = 'tier1_free_registered',
+        marketplace_status = 'suspended'
+    WHERE marketplace_account_id = _marketplace_account_id
+      AND marketplace_status IN ('active', 'suspended', 'pending_cancellation')
+    RETURNING organization_uid
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION cancel_marketplace_entitlement(
+    _marketplace_account_id text
+) RETURNS integer AS $$
+
+    UPDATE organizations
+    SET pre_suspend_tier   = COALESCE(pre_suspend_tier, subscription_tier),
+        subscription_tier  = 'tier1_free_registered',
+        marketplace_status = 'cancelled',
+        archived           = true,
+        archived_date      = NOW()
+    WHERE marketplace_account_id = _marketplace_account_id
+      AND marketplace_status IN ('active', 'suspended', 'pending_cancellation', 'cancelled')
+    RETURNING organization_uid
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION update_org_subscription_tier(
+    _marketplace_account_id text,
+    _subscription_tier_text text
+) RETURNS integer AS $$
+
+    UPDATE organizations
+    SET subscription_tier = _subscription_tier_text::subscription_tier
+    WHERE marketplace_account_id = _marketplace_account_id
+      AND marketplace_status = 'active'
+    RETURNING organization_uid
+
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION delete_marketplace_entitlement_data(
+    _marketplace_account_id text
+) RETURNS integer AS $$
+DECLARE
+    _org_id integer;
+BEGIN
+    UPDATE organizations
+    SET marketplace_account_id = NULL,
+        marketplace_order_id   = NULL,
+        usage_reporting_id     = NULL,
+        gcp_project_id         = NULL,
+        pre_suspend_tier       = NULL,
+        subscription_tier      = 'tier1_free_registered',
+        marketplace_status     = 'none'
+    WHERE marketplace_account_id = _marketplace_account_id
+    RETURNING organization_uid INTO _org_id;
+
+    UPDATE users
+    SET procurement_account_id = NULL,
+        google_user_identity   = NULL
+    WHERE procurement_account_id = _marketplace_account_id;
+
     RETURN _org_id;
 END;
 $$ LANGUAGE plpgsql;

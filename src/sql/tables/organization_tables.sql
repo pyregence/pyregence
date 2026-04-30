@@ -11,6 +11,10 @@ CREATE TYPE subscription_tier AS ENUM (
   'tier3_enterprise'
 );
 
+CREATE TYPE marketplace_status AS ENUM (
+  'none', 'pending', 'active', 'pending_cancellation', 'suspended', 'cancelled'
+);
+
 --------------------------------------------------------------------------------
 -- Stores information about organizations
 --------------------------------------------------------------------------------
@@ -29,8 +33,8 @@ CREATE TABLE organizations (
     subscription_tier      subscription_tier NOT NULL DEFAULT 'tier1_free_registered',
     marketplace_account_id text UNIQUE,
     marketplace_order_id   text,
-    marketplace_status     text DEFAULT 'none'
-        CHECK (marketplace_status IN ('none', 'pending', 'active', 'suspended', 'cancelled')),
+    marketplace_status     marketplace_status NOT NULL DEFAULT 'none',
+    pre_suspend_tier       subscription_tier,
     usage_reporting_id     text,
     gcp_project_id         text
 );

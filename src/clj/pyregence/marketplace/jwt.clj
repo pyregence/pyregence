@@ -18,12 +18,15 @@
 
 (def ^:private clock-skew-secs 30)
 
-(defonce ^:private key-cache (atom {:fetched-at 0 :keys nil}))
+(defonce ^:private key-cache (atom {:fetched-at 0 :pubkeys nil}))
+
+(def ^:private fetch-lock (Object.))
 
 (defn- pem->pubkey [pem]
   (let [cf (CertificateFactory/getInstance "X.509")
         bs (String/.getBytes pem)]
-    (Certificate/.getPublicKey (CertificateFactory/.generateCertificate cf (ByteArrayInputStream. bs)))))
+    (-> (CertificateFactory/.generateCertificate cf (ByteArrayInputStream. bs))
+        (Certificate/.getPublicKey))))
 
 (defn- fetch-keys! []
   (log/info "Fetching Google Marketplace public keys")
@@ -35,41 +38,43 @@
                               :throw-exceptions   true})
           certs    (:body response)]
       (into {}
-            (map (fn [[kid pem]]
-                   [(name kid) (pem->pubkey pem)])
-                 certs)))
+            (map (fn [[kid pem]] [(name kid) (pem->pubkey pem)]))
+            certs))
     (catch Exception e
       (log/error e "Failed to fetch Google public keys")
-      (throw (ex-info "Cannot fetch Google public keys" {:cause e :type :key-fetch-failed})))))
+      (throw (ex-info "Cannot fetch Google public keys" {:type :key-fetch-failed} e)))))
+
+(defn- refresh-cache! []
+  (locking fetch-lock
+    (let [{:keys [fetched-at pubkeys]} @key-cache
+          now (System/currentTimeMillis)]
+      (if (and pubkeys (< (- now fetched-at) 5000))
+        pubkeys
+        (let [new-pubkeys (fetch-keys!)]
+          (reset! key-cache {:fetched-at now :pubkeys new-pubkeys})
+          new-pubkeys)))))
 
 (defn- cached-keys! []
-  (let [{:keys [fetched-at keys]} @key-cache
-        now      (System/currentTimeMillis)
-        expired? (> (- now fetched-at) cache-ttl-ms)]
-    (if (or (nil? keys) expired?)
-      (let [new-keys (fetch-keys!)]
-        (reset! key-cache {:fetched-at now :keys new-keys})
-        new-keys)
-      keys)))
+  (let [{:keys [fetched-at pubkeys]} @key-cache]
+    (if (or (nil? pubkeys) (> (- (System/currentTimeMillis) fetched-at) cache-ttl-ms))
+      (refresh-cache!)
+      pubkeys)))
 
 (defn- kid->pubkey [kid]
-  (let [keys (cached-keys!)]
-    (or (get keys kid)
-        (let [_         (log/warn "Key ID not found, refreshing cache" {:kid kid})
-              refreshed (fetch-keys!)]
-          (reset! key-cache {:fetched-at (System/currentTimeMillis) :keys refreshed})
-          (get refreshed kid)))))
+  (or (get (cached-keys!) kid)
+      (do (log/warn "Key ID not found, refreshing cache" {:kid kid})
+          (get (refresh-cache!) kid))))
 
 (defn- token->header [token]
   (let [parts (str/split token #"\.")]
     (when (< (count parts) 3)
       (throw (ex-info "Malformed JWT: expected 3 parts" {:type :invalid-format})))
     (try
-      (let [b64     (first parts)
-            decoder (Base64/getUrlDecoder)]
-        (json/read-str (String. (Base64$Decoder/.decode decoder b64)) :key-fn keyword))
+      (-> (Base64$Decoder/.decode (Base64/getUrlDecoder) (first parts))
+          (String.)
+          (json/read-str :key-fn keyword))
       (catch Exception e
-        (throw (ex-info "Cannot decode JWT header" {:cause (Throwable/.getMessage e) :type :invalid-format}))))))
+        (throw (ex-info "Cannot decode JWT header" {:type :invalid-format} e))))))
 
 (defn- validate-claims [claims]
   (let [audience (get-config :pyregence.marketplace/config :audience)
@@ -77,99 +82,83 @@
         now      (quot (System/currentTimeMillis) 1000)
         errors   (cond-> []
                  (not= iss issuer)
-                 (conj {:expected issuer :field :iss :got iss})
+                 (conj {:error :invalid-issuer :field :iss :expected issuer :got iss})
 
                  (not= aud audience)
-                 (conj {:expected audience :field :aud :got aud})
+                 (conj {:error :invalid-audience :field :aud :expected audience :got aud})
 
                  (str/blank? sub)
-                 (conj {:error "Subject is empty" :field :sub})
+                 (conj {:error :empty-subject :field :sub})
 
                  (nil? exp)
-                 (conj {:error "Expiration missing" :field :exp})
+                 (conj {:error :missing-expiration :field :exp})
 
                  (and exp (<= exp (- now clock-skew-secs)))
-                 (conj {:error "Token expired" :exp exp :field :exp :now now})
+                 (conj {:error :token-expired :field :exp :exp exp :now now})
 
                  (nil? iat)
-                 (conj {:error "Issued-at missing" :field :iat})
+                 (conj {:error :missing-issued-at :field :iat})
 
                  (and iat (> iat (+ now clock-skew-secs)))
-                 (conj {:error "Token issued in the future" :field :iat :iat iat :now now})
+                 (conj {:error :issued-in-future :field :iat :iat iat :now now})
 
                  (and iat exp (> (- exp iat) 300))
-                 (conj {:error "Token validity exceeds 5 minutes" :field :exp}))]
+                 (conj {:error :validity-too-long :field :exp}))]
     (when (seq errors)
       (log/warn "JWT claim validation failed" {:errors errors})
       (throw (ex-info "Invalid JWT claims" {:errors errors :type :invalid-claims})))
     claims))
 
-(defn- check-ntp-drift! []
-  (try
-    (let [remote-ts (-> (http/get "http://worldtimeapi.org/api/timezone/Etc/UTC"
-                                  {:as :json :socket-timeout 2000})
-                        :body :unixtime)
-          drift     (Math/abs (- remote-ts (quot (System/currentTimeMillis) 1000)))]
-      (cond
-        (> drift 30) (log/error "NTP drift >30s, JWT validation may fail" {:drift drift})
-        (> drift 10) (log/warn "NTP drift >10s" {:drift drift})
-        :else        (log/info "NTP sync OK" {:drift drift})))
-    (catch Exception _ (log/warn "NTP check failed"))))
-
-(defonce ^:private ntp-checked (delay (check-ntp-drift!)))
-
-(defn validate [token]
-  @ntp-checked
+(defn validate
+  "Validates a Google Marketplace JWT. Returns claims map or throws ex-info."
+  [token]
   (when (str/blank? token)
     (throw (ex-info "Empty JWT token" {:type :invalid-format})))
 
-  (let [header (token->header token)
-        kid    (:kid header)
-        alg    (:alg header)]
-    (when (not= alg "RS256")
+  (let [{:keys [kid alg]} (token->header token)]
+    (when-not (= alg "RS256")
       (throw (ex-info "Unsupported algorithm" {:alg alg :type :invalid-format})))
     (let [pubkey (kid->pubkey kid)]
       (when-not pubkey
         (throw (ex-info "Unknown key ID" {:kid kid :type :invalid-signature})))
       (try
-        (let [claims (jwt/unsign token pubkey {:alg :rs256})]
-          (validate-claims claims))
+        (validate-claims (jwt/unsign token pubkey {:alg :rs256}))
         (catch clojure.lang.ExceptionInfo e
-          (if (#{:invalid-claims} (:type (ex-data e)))
+          (if (= :invalid-claims (:type (ex-data e)))
             (throw e)
             (throw (ex-info "JWT signature verification failed"
-                            {:cause (Throwable/.getMessage e) :type :invalid-signature}))))
+                            {:type :invalid-signature} e))))
         (catch Exception e
           (throw (ex-info "JWT verification failed"
-                          {:cause (Throwable/.getMessage e) :type :invalid-signature})))))))
+                          {:type :invalid-signature} e)))))))
 
-(defn ->orders [claims]
-  (let [orders (get claims :orders [])]
-    (when (empty? orders)
-      (log/warn "JWT has no orders array - using legacy single-order mode"))
-    (if (seq orders)
-      (mapv (fn [o]
-              (if (string? o)
-                {:order-id o :product-id "pyrecast"}
-                {:order-id   (or (:orderId o) (:order-id o) (str o))
-                 :product-id (or (:productId o) (:product-id o) "pyrecast")}))
-            orders)
-      [{:order-id   (str "legacy-" (:sub claims))
-        :product-id "pyrecast"}])))
+(defn claims->orders
+  "Extracts [{:order-id X}] from JWT claims. Falls back to legacy single-order mode."
+  [claims]
+  (if-let [orders (not-empty (:orders claims))]
+    (mapv (fn [o]
+            {:order-id (if (string? o)
+                         o
+                         (or (:orderId o) (:order-id o) (str o)))})
+          orders)
+    (do (log/warn "JWT has no orders array - using legacy single-order mode")
+        [{:order-id (str "legacy-" (:sub claims))}])))
 
-(defn request->token [request]
-  (or (get-in request [:form-params "x-gcp-marketplace-token"])
-      (get-in request [:params :x-gcp-marketplace-token])
-      (get-in request [:params :token])
-      (get-in request [:body :x-gcp-marketplace-token])))
+(defn request->token
+  "Extracts the x-gcp-marketplace-token from a Ring request, or nil."
+  [request]
+  (let [token (or (get-in request [:form-params "x-gcp-marketplace-token"])
+                  (get-in request [:params :x-gcp-marketplace-token])
+                  (get-in request [:params :token]))]
+    (when-not (str/blank? token) token)))
 
 ^:rct/test
 (comment
-  (try (validate "") (catch Exception e (:type (ex-data e))))                      ;=> :invalid-format
-  (try (validate "x.y") (catch Exception e (:type (ex-data e))))                   ;=> :invalid-format
-  (:order-id (first (->orders {:orders ["ORD-1"] :sub "u1"})))                     ;=> "ORD-1"
-  (:order-id (first (->orders {:orders [{:orderId "ORD-2"}] :sub "u1"})))          ;=> "ORD-2"
-  (:order-id (first (->orders {:sub "u1"})))                                       ;=> "legacy-u1"
-  (request->token {:params {:x-gcp-marketplace-token "tok"}})                      ;=> "tok"
-  (pos? (count (cached-keys!)))                                                    ;=> true
+  (try (validate "") (catch Exception e (:type (ex-data e))))                    ;=> :invalid-format
+  (try (validate "x.y") (catch Exception e (:type (ex-data e))))                 ;=> :invalid-format
+  (:order-id (first (claims->orders {:orders ["ORD-1"] :sub "u1"})))             ;=> "ORD-1"
+  (:order-id (first (claims->orders {:orders [{:orderId "ORD-2"}] :sub "u1"})))  ;=> "ORD-2"
+  (:order-id (first (claims->orders {:sub "u1"})))                               ;=> "legacy-u1"
+  (request->token {:params {:x-gcp-marketplace-token "tok"}})                    ;=> "tok"
+  (pos? (count (cached-keys!)))                                                  ;=> true (requires network)
   )
