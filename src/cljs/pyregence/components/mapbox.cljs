@@ -4,7 +4,6 @@
                                                             Marker Popup]]
    [clojure.core.async                   :refer [<! >! chan go]]
    [clojure.string                       :as str]
-   [goog.dom                             :as dom]
    [goog.object                          :as goog]
    [pyregence.config                     :as c]
    [pyregence.geo-utils                  :as g]
@@ -647,27 +646,19 @@
                 :text-halo-width 1.5
                 :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}}))
 
-#_(defn- backround-circle-layer [layer-name source-name opacity]
-  (go
-    (<! (add-fire-icons-to-map!))
-    {:id       layer-name
-     :type     "symbol"
-     :source   source-name
-     :layout   {:icon-allow-overlap true
-                ;;icon-radius?
-                :icon-size          ["interpolate" ["linear"] ["get" "acres"]
-                                     1000   0.5
-                                     10000  0.75
-                                     300000 1.0]
-                :visibility         "visible"}
-     :metadata {:type    (get-layer-type layer-name)
-                :z-index 1999}
-     ;; the paint will change here
-     :paint    {:icon-opacity    opacity
-                :text-color      "#000000"
-                :text-halo-color (on-hover "#FFFF00" "#FFFFFF")
-                :text-halo-width 1.5
-                :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}}))
+(defn- backround-circle-layer [layer-name source-name]
+  {:id       layer-name
+   :type     "circle"
+   :source   source-name
+   :metadata {:type    (get-layer-type layer-name)
+              :z-index 1999}
+   :paint
+   ;;TODO find out circle-radius acres unit?
+   {:circle-radius  100 #_["get" "acres"]
+    :circle-color   (on-selected "red" "green" "blue")
+    :circle-opacity 0.4}})
+
+;; TODO is where acres burned?
 
 (defn- build-wfs
   "Returns a new WFS source and layers in the form `[source layers]`.
@@ -675,20 +666,10 @@
    `z-index` allows layers to be rendered on-top (positive z-index) or below
    (negative z-index) Mapbox base map layers."
   [id source geoserver-key opacity]
-  (def r [id source geoserver-key opacity])
-  r
-  ;; => ["fire-active"
-  ;;     "fire-detections_active-fires:active-fires_20260409_133400"
-  ;;     :shasta
-  ;;     0.7]
-
-  (println [id source geoserver-key opacity])
-
   (go
     (let [new-source {id (wfs-source source geoserver-key)}
           new-layers [(<! (incident-layer id id opacity))
-                      #_(<! (backround-circle-layer id id opacity))
-                      ]]
+                      (backround-circle-layer (str id "-background") id)]]
       [new-source new-layers])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
