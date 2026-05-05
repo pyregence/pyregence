@@ -654,7 +654,10 @@
               :z-index 1999}
    :paint
    ;;TODO find out circle-radius acres unit?
-   {:circle-radius  100 #_["get" "acres"]
+   {:circle-radius  ["interpolate" ["linear"]  ["to-number" ["get" "acres"]]
+                     1000   10
+                     10000  30
+                     300000 90]
     :circle-color   (on-selected "red" "green" "blue")
     :circle-opacity 0.4}})
 
