@@ -33,11 +33,11 @@
   dev                   (do
                           (run 'install)
                           (run 'functions)
-                          (clojure "-M:default-ssl-opts:figwheel"))
+                          (clojure "-M:figwheel"))
   dev-norepl            (do
                           (run 'install)
                           (run 'functions)
-                          (shell "clojure -M:default-ssl-opts:figwheel-lib -m figwheel.main -b \"compile-dev\""))
+                          (shell "clojure -M:figwheel-lib -m figwheel.main -b \"compile-dev\""))
   install               (shell "npm install")
   check-vulnerabilities (clojure "-M:clj-watson scan -p deps-for-clj-watson.edn -s")
   deploy                (do
