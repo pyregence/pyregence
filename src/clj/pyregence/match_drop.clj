@@ -37,10 +37,9 @@
        (into {})))
 
 (defn- get-runway-server-pretty-names []
-  {"dps"      (get-md-config :dps-name)
-   "elmfire"  (get-md-config :elmfire-name)
-   "gridfire" (get-md-config :gridfire-name)
-   "geosync"  (get-md-config :geosync-name)})
+  {"dps"     (get-md-config :dps-name)
+   "elmfire" (get-md-config :elmfire-name)
+   "geosync" (get-md-config :geosync-name)})
 
 ;;==============================================================================
 ;; Helper Functions
@@ -149,15 +148,12 @@
                     :display_name          :display-name
                     :job_log               :job-log
                     :elmfire_done          :elmfire-done?
-                    :gridfire_done         :gridfire-done?
                     :dps_request           :dps-request
                     :elmfire_request       :elmfire-request
-                    :gridfire_request      :gridfire-request
                     :geosync_request       :geosync-request
                     :geoserver_workspace   :geoserver-workspace})
       (update :dps-request json->clj)
       (update :elmfire-request json->clj)
-      (update :gridfire-request json->clj)
       (update :geosync-request json->clj)))
 
 (defn- get-match-job-from-runway-id
@@ -198,10 +194,8 @@
            display-name
            message
            elmfire-done?
-           gridfire-done?
            dps-request
            elmfire-request
-           gridfire-request
            geosync-request
            geoserver-workspace]}]
   {:pre [(some? match-job-id)]}
@@ -212,10 +206,10 @@
             display-name
             message
             elmfire-done?
-            gridfire-done?
+            nil ; gridfire_done (unused, kept for SQL positional compat)
             (when dps-request (clj->json dps-request))
             (when elmfire-request (clj->json elmfire-request))
-            (when gridfire-request (clj->json gridfire-request))
+            nil ; gridfire_request (unused, kept for SQL positional compat)
             (when geosync-request (clj->json geosync-request))
             geoserver-workspace))
 
@@ -337,19 +331,6 @@
                                                              :num-ensemble-members num-ensemble-members
                                                              :ignition-radius      ignition-radius
                                                              :run-hours            run-hours}}}
-        gridfire-request     {:job-id        (str "gridfire-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "gridfire" -- this is a temporary work-around
-                              :response-host (get-md-config :app-host)
-                              :response-port (get-md-config :app-port)
-                              :async?        true ; FIXME this is not being run asynchronously? perhaps clj->json loses the question mark
-                              :priority?     true
-                              ;; TODO we should eventually get rid of common-args
-                              :script-args   {:common-args   (merge params {:ignition-time ignition-time
-                                                                            :fire-name     fire-name})
-                                              :gridfire-args {:datacube            "TODO" ; NOTE: this will be filled in at a later point once the DPS has finished running
-                                                              :num-ensemble-members num-ensemble-members
-                                                              :run-hours            run-hours
-                                                              :wx-start-time        wx-start-time
-                                                              :initialization-type  "points_within_polygon"}}}
         geosync-request      {:job-id        (str "geosync-" runway-job-id) ; NOTE: see the get-server-based-on-job-id for why we append "geosync" -- this is a temporary work-around
                               :response-host (get-md-config :app-host)
                               :response-port (get-md-config :app-port)
@@ -358,16 +339,13 @@
                               :script-args   {:geosync-args {:action              "add"
                                                              :geoserver-name      "sierra"
                                                              :geoserver-workspace geoserver-workspace
-                                                             :elmfire-deck        "TODO"    ; NOTE: this will be filled in at a later point once ELMFIRE has finished running
-                                                             :gridfire-deck       "TODO"}}} ; NOTE: this will be filled in at a later point once GridFire has finished running
+                                                             :elmfire-deck        "TODO"}}} ; NOTE: this will be filled in at a later point once ELMFIRE has finished running
         match-job            {:display-name        (or display-name (str "Match Drop " match-job-id))
                               :md-status           2
                               :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.")
                               :elmfire-done?       false
-                              :gridfire-done?      false
                               :dps-request         dps-request
                               :elmfire-request     elmfire-request
-                              :gridfire-request    gridfire-request
                               :geosync-request     geosync-request
                               :match-job-id        match-job-id
                               :runway-job-id       runway-job-id
@@ -493,7 +471,6 @@
 (defn- start-polling-results!
   [sig3-endpoint job-id match-job-id]
   (let [state (atom {"mdrop-dps"          {"pending" false "success" false "failure" false "order" 1}
-                     "mdrop-gridfire"     {"pending" false "success" false "failure" false "order" 2}
                      "mdrop-elmfire"      {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
                      "mdrop-pyretechnics" {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
                      "mdrop-geosync"      {"pending" false "success" false "failure" false "order" 3}})]
@@ -511,9 +488,7 @@
                                                                       "failure" (str "Step " step " FAILED.\nResult:\n" result)
                                                                       "success" (str "Step " step " DONE.\nResult:\n" result))}
                                              (and (= step "mdrop-elmfire") (= "success" status))
-                                             (assoc :elmfire-done? true)
-                                             (and (= step "mdrop-gridfire") (= "success" status))
-                                             (assoc :gridfire-done? true))))
+                                             (assoc :elmfire-done? true))))
                       (doseq [[_ step status] transitions]
                         (swap! state assoc-in [step status] true))
                       (if job-done?
@@ -537,10 +512,8 @@
                         :md-status           2
                         :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.")
                         :elmfire-done?       false
-                        :gridfire-done?      false
                         :dps-request         match-drop-inputs
                         :elmfire-request     {}
-                        :gridfire-request    {}
                         :geosync-request     {}
                         :match-job-id        match-job-id
                         :runway-job-id       job-id ;; NOTE: `k8s-job-id` actually
@@ -729,106 +702,57 @@
 ;;==============================================================================
 
 (defn- update-fire-requests!
-  "Updates the ELMFIRE and GridFire requests in the DB to use the datacube
-   returned by the DPS. Returns the updated requests in a map."
-  [match-job-id elmfire-request gridfire-request {:keys [datacube]}]
-  (let [updated-elmfire-request  (assoc-in elmfire-request [:script-args :elmfire-args :datacube] datacube)
-        updated-gridfire-request (assoc-in gridfire-request [:script-args :gridfire-args :datacube] datacube)]
-    (update-match-job! {:match-job-id     match-job-id
-                        :elmfire-request  updated-elmfire-request
-                        :gridfire-request updated-gridfire-request})
-    {:updated-elmfire-request  updated-elmfire-request
-     :updated-gridfire-request updated-gridfire-request}))
+  "Updates the ELMFIRE request in the DB to use the datacube
+   returned by the DPS. Returns the updated request in a map."
+  [match-job-id elmfire-request {:keys [datacube]}]
+  (let [updated-elmfire-request (assoc-in elmfire-request [:script-args :elmfire-args :datacube] datacube)]
+    (update-match-job! {:match-job-id    match-job-id
+                        :elmfire-request updated-elmfire-request})
+    {:updated-elmfire-request updated-elmfire-request}))
 
 (defn- update-geosync-request!
-  "Updates the GeoSync request in the DB to use the output deck paths returned
-   by ELMFIRE and GridFire. Returns the updated request."
-  [match-job-id job-id geosync-request {:keys [elmfire-deck gridfire-deck]}]
-  (if-not (or elmfire-deck gridfire-deck)
+  "Updates the GeoSync request in the DB to use the output deck path returned
+   by ELMFIRE. Returns the updated request."
+  [match-job-id job-id geosync-request {:keys [elmfire-deck]}]
+  (if-not elmfire-deck
     (update-match-drop-on-error! match-job-id
                                  {:job-id  job-id
-                                  :message (str "The GeoSync request was not able to be updated. "
-                                                "Either ELMFIRE or GridFire didn't return the proper path to an ouput deck.")})
-    (let [updated-geosync-request (cond-> geosync-request
-                                    elmfire-deck  (assoc-in [:script-args :geosync-args :elmfire-deck] elmfire-deck)
-                                    gridfire-deck (assoc-in [:script-args :geosync-args :gridfire-deck] gridfire-deck))]
+                                  :message "The GeoSync request was not able to be updated. ELMFIRE didn't return the proper path to an output deck."})
+    (let [updated-geosync-request (assoc-in geosync-request [:script-args :geosync-args :elmfire-deck] elmfire-deck)]
       (update-match-job! {:match-job-id    match-job-id
                           :geosync-request updated-geosync-request})
       updated-geosync-request)))
 
 (defn- handle-steps-after-dps-finishes!
-  "After the DPS job is completed, queue the ELMFIRE and GridFire runs."
-  [match-job-id elmfire-request gridfire-request message]
+  "After the DPS job is completed, queue the ELMFIRE run."
+  [match-job-id elmfire-request message]
   (log-str "The DPS has finished running!")
-  (let [{:keys [updated-elmfire-request
-                updated-gridfire-request]} (update-fire-requests! match-job-id
+  (let [{:keys [updated-elmfire-request]} (update-fire-requests! match-job-id
                                                                   elmfire-request
-                                                                  gridfire-request
                                                                   (edn/read-string message))]
     (log-str "Initiating ELMFIRE run...")
     (send-to-server-wrapper! (get-md-config :elmfire-host)
                              (get-md-config :elmfire-port)
                              match-job-id
-                             updated-elmfire-request)
-    (log-str "Initiating GridFire run...")
-    (send-to-server-wrapper! (get-md-config :gridfire-host)
-                             (get-md-config :gridfire-port)
-                             match-job-id
-                             updated-gridfire-request)))
+                             updated-elmfire-request)))
 
 (defn- handle-steps-after-elmfire-finishes!
-  "After the ELMFIRE job is completed, we need to update the `geosync-request`
-   match job parameter such that the `elmfire-deck` key value pair reflects the
-   message that was returned from the ELMFIRE Runway server. After we do this,
-   we check and see if GridFire has also completed. If it has, we can queue the
-   GeoSync request using the aforementioned updated `geosync-request`.
-   Otherwise, we return and wait for GridFire to finish. Updates the `elmfire-done?`
-   `match-job` parameter to `true` in both cases."
+  "After the ELMFIRE job is completed, update the `geosync-request` match job
+   parameter with the `elmfire-deck` returned from the ELMFIRE Runway server,
+   then queue the GeoSync request."
   [match-job-id job-id geosync-request message]
   (log-str "ELMFIRE has finished running!")
   (update-match-job! {:match-job-id  match-job-id
                       :elmfire-done? true})
-  (let [updated-geosync-request  (update-geosync-request! match-job-id
-                                                          job-id
-                                                          geosync-request
-                                                          (edn/read-string message))
-        {:keys [gridfire-done?]} (get-match-job-from-match-job-id! match-job-id)]
-    (if gridfire-done?
-      (do
-        (log-str "Both ELMFIRE and GridFire have finished running. Initiating GeoSync run...")
-        (send-to-server-wrapper! (get-md-config :geosync-host)
-                                 (get-md-config :geosync-port)
-                                 match-job-id
-                                 updated-geosync-request))
-      (log-str (str "ELMFIRE has finished running, but GridFire has not. "
-                    "Waiting until GridFire finishes running to queue GeoSync.")))))
-
-(defn- handle-steps-after-gridfire-finishes!
-  "After the GridFire job is completed, we need to update the `geosync-request`
-   match job parameter such that the `gridfire-deck` key value pair reflects the
-   message that was returned from the GridFire Runway server. After we do this,
-   we check and see if ELMFIRE has also completed. If it has, we can queue the
-   GeoSync request using the aforementioned updated `geosync-request`.
-   Otherwise, we return and wait for ELFIRE to finish. Updates the `gridfire-done?`
-   `match-job` parameter to `true` in both cases."
-  [match-job-id job-id geosync-request message]
-  (log-str "GridFire has finished running!")
-  (update-match-job! {:match-job-id   match-job-id
-                      :gridfire-done? true})
   (let [updated-geosync-request (update-geosync-request! match-job-id
                                                          job-id
                                                          geosync-request
-                                                         (edn/read-string message))
-        {:keys [elmfire-done?]} (get-match-job-from-match-job-id! match-job-id)]
-    (if elmfire-done?
-      (do
-        (log-str "Both GridFire and ELMFIRE have finished running. Initiating GeoSync run...")
-        (send-to-server-wrapper! (get-md-config :geosync-host)
-                                 (get-md-config :geosync-port)
-                                 match-job-id
-                                 updated-geosync-request))
-      (log-str (str "GridFire has finished running, but ELMFIRE has not. "
-                    "Waiting until ELMFIRE finishes running to queue GeoSync.")))))
+                                                         (edn/read-string message))]
+    (log-str "ELMFIRE has finished running. Initiating GeoSync run...")
+    (send-to-server-wrapper! (get-md-config :geosync-host)
+                             (get-md-config :geosync-port)
+                             match-job-id
+                             updated-geosync-request)))
 
 (defn- handle-steps-after-geosync-finishes!
   "After GeoSync is finished, we have two possiblities: either the match drop
@@ -875,10 +799,10 @@
    Depending on the server of the given Runway job, we need to initiate an appropriate
    next request to continue the Match Drop pipeline. For example, after a successful
    data provisioning server (DPS) Runway job, we need to initiate calls to both
-   the ELMFIRE and GridFire servers. **NOTE** As mentioned in `get-server-based-on-job-id`,
+   the ELMFIRE server. **NOTE** As mentioned in `get-server-based-on-job-id`,
    we are appending the runway job ids with the name of the service that will run.
    Once Runway is extended, this logic can be simplified."
-  [{:keys [match-job-id md-status elmfire-request gridfire-request geosync-request geoserver-workspace]}
+  [{:keys [match-job-id md-status elmfire-request geosync-request geoserver-workspace]}
    {:keys [job-id message]}]
   ;; NOTE: `message` contains our return value from Runway in a map: {:datacube "/some/path/to/datacube.tar"}
   (if-not message
@@ -890,23 +814,20 @@
                                                 (get (get-runway-server-pretty-names) runway-server-that-finished))})
       (condp = runway-server-that-finished
         "dps"
-        (handle-steps-after-dps-finishes! match-job-id elmfire-request gridfire-request message)
+        (handle-steps-after-dps-finishes! match-job-id elmfire-request message)
 
         "elmfire"
         (handle-steps-after-elmfire-finishes! match-job-id job-id geosync-request message)
 
-        "gridfire"
-        (handle-steps-after-gridfire-finishes! match-job-id job-id geosync-request message)
-
         "geosync"
         (handle-steps-after-geosync-finishes! match-job-id job-id md-status geoserver-workspace)
 
-        ;; The runway-server-that-finished wasn't dps, elmfire, gridfire, or geosync
+        ;; The runway-server-that-finished wasn't dps, elmfire, or geosync
         (update-match-drop-on-error! match-job-id
                                      {:job-id  job-id
                                       :message (str "Something went wrong inside of runway-process-complete!"
                                                     " The Runway server that finished running: \"" runway-server-that-finished
-                                                    "\" was not \"dps\", \"elmfire\", \"gridfire\", or \"geosync\".")})))))
+                                                    "\" was not \"dps\", \"elmfire\", or \"geosync\".")})))))
 
 ;;==============================================================================
 ;; Job Queue Progression
@@ -915,7 +836,7 @@
 ;; This separate function allows reload to work in dev mode for easier development
 (defn- process-response-msg
   "This function is what gets called every time the Pyrecast server recieves a
-   message from any one of the Runway servers (e.g. the GridFire Runway server).
+   message from any one of the Runway servers (e.g. the ELMFIRE Runway server).
 
    The `msg` argument gets passed in in JSON format and thus needs to be parsed into `response`.
    An example `response-msg-edn` argument can be seen below (would be nice to use spec going forward):

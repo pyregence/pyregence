@@ -89,7 +89,6 @@
                                                                        :sig3-endpoint    "https://sig3.sig-gis-00.corespeq.com/"
                                                                        :fire-history     true
                                                                        :structures       true
-                                                                       :gridfire         true
                                                                        :pyretechnics     true
                                                                        :image-mosaic-gwc true}
                                      :geoserver                       {:trinity     "https://trinity.pyregence.org/geoserver"
@@ -134,9 +133,6 @@
                                                      :elmfire-name      "ELMFIRE"
                                                      :elmfire-host      "sierra.pyregence.org"
                                                      :elmfire-port      31338
-                                                     :gridfire-name     "GridFire"
-                                                     :gridfire-host     "sierra.pyregence.org"
-                                                     :gridfire-port     31339
                                                      :geosync-name      "GeoSync"
                                                      :geosync-host      "sierra.pyregence.org"
                                                      :geosync-port      31340
