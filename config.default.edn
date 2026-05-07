@@ -109,9 +109,6 @@
                              {:triangulum.worker/name  "clean-up-service"
                               :triangulum.worker/start pyregence.jobs/start-clean-up-service!
                               :triangulum.worker/stop  pyregence.jobs/stop-clean-up-service!}
-                             {:triangulum.worker/name  "match-drop-server"
-                              :triangulum.worker/start pyregence.jobs/start-match-drop-server!
-                              :triangulum.worker/stop  pyregence.jobs/stop-match-drop-server!}
                              {:triangulum.worker/name  "marketplace-subscriber"
                               :triangulum.worker/start pyregence.marketplace.pubsub/start-subscriber!
                               :triangulum.worker/stop  pyregence.marketplace.pubsub/stop-subscriber!}]
@@ -122,21 +119,9 @@
                                                      :geoserver-admin-password "password"}
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
- :pyregence.match-drop/match-drop                   {:sig3-auth         "<AUTH_TOKEN>"
-                                                     :sig3-env          "<dev | prod | stg>"
-                                                     :app-name          "Pyrecast Match Drop Server"
-                                                     :app-host          "localhost"
-                                                     :app-port          31337
-                                                     :dps-name          "Data Provisioning Server"
-                                                     :dps-host          "sierra.pyregence.org"
-                                                     :dps-port          31337
-                                                     :elmfire-name      "ELMFIRE"
-                                                     :elmfire-host      "sierra.pyregence.org"
-                                                     :elmfire-port      31338
-                                                     :geosync-name      "GeoSync"
-                                                     :geosync-host      "sierra.pyregence.org"
-                                                     :geosync-port      31340
-                                                     :max-queue-size    5}
+ :pyregence.match-drop/match-drop                   {:sig3-auth      "<AUTH_TOKEN>"
+                                                     :sig3-env       "<dev | prod | stg>"
+                                                     :max-queue-size 5}
  ;; Marketplace (e.g. audience "example.com", partner-id "my-project-123")
  :pyregence.marketplace/config {:enabled              false
                                 :audience             "<your-app-domain>"
