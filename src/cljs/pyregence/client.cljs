@@ -59,20 +59,9 @@
         root-cmpt     (or root-cmpt-h root-cmpt-hf not-found/root-component)
         footer?       (some? root-cmpt-hf)]
     (render
-     [:div {:style {:padding "20px"}}
-      [pyregence.components.popups/fire-popup {:fire-name "Big Fire"
-                                               :contain-per "5"
-                                               :acres "10"
-                                               :show-link? true
-                                               :sources []
-                                               #_[{:icon [pyregence.components.svg-icons/watch-duty {}]
-                                                   :url "TODO"}
-                                                  {:icon [pyregence.components.svg-icons/cal-fire]
-                                                   :name "CAL FIRE"
-                                                   :url "TODO"}]}]]
-     #_[wrap-page {:root-component root-cmpt
-                   :params         params
-                   :footer?        footer?}]
+     [wrap-page {:root-component root-cmpt
+                 :params         params
+                 :footer?        footer?}]
      (dom/getElement "app"))))
 
 (defn- ^:export init
