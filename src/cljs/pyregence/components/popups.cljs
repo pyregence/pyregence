@@ -75,29 +75,29 @@
     [fire-property "Acres Burned" (.toLocaleString acres)]
     (when (seq sources)
       [:<>
-       [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]]
-      [:div {:style {:display        "flex"
-                     :flex-direction "column"
-                     :gap            "5px"}}
-       (for [{:keys [icon name url]} sources]
-         [:div {:style {:display          "flex"
-                        :height           "52px"
-                        :gap              "8px"
-                        :background-color ($/color-picker :neutral-light-gray)
-                        :padding          "8px 12px"
-                        :align-items      "center"
-                        :align-self       "stretch"
-                        :border-radius    "8px"}}
-          icon
-          (when name
-            [:p {:style
+       [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
+       [:div {:style {:display        "flex"
+                      :flex-direction "column"
+                      :gap            "5px"}}
+        (for [{:keys [icon name url]} sources]
+          [:div {:style {:display          "flex"
+                         :height           "52px"
+                         :gap              "8px"
+                         :background-color ($/color-picker :neutral-light-gray)
+                         :padding          "8px 12px"
+                         :align-items      "center"
+                         :align-self       "stretch"
+                         :border-radius    "8px"}}
+           icon
+           (when name
+             [:p {:style
            ;; TODO remove this margin-bottom by figuring out why it has
            ;; a margin-bottom in the first place and likely changing that.
-                 {:margin-bottom "0px"
-                  :font-weight   "600"
-                  :color         ($/color-picker :neutral-black)}} name])
-          [:a {:href url :target "_blank"}
-           [svg/source-link]]])])]
+                  {:margin-bottom "0px"
+                   :font-weight   "600"
+                   :color         ($/color-picker :neutral-black)}} name])
+           [:a {:href url :target "_blank"}
+            [svg/source-link]]])]])]
    (when show-link? [fire-link on-click])])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
