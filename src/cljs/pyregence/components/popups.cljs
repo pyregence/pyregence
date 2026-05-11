@@ -73,7 +73,7 @@
                   :gap            "8px"}}
     [fire-property "Percent Contained" (str contain-per "%")]
     [fire-property "Acres Burned" (.toLocaleString acres)]
-    [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
+    (when (seq sources) [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"])
     [:div {:style {:display        "flex"
                    :flex-direction "column"
                    :gap            "5px"}}
@@ -94,7 +94,7 @@
                {:margin-bottom "0px"
                 :font-weight   "600"
                 :color         ($/color-picker :neutral-black)}} name])
-        [:a {:href "https://www.google.com" :target "_blank"}
+        [:a {:href url :target "_blank"}
          [svg/source-link]]])]]
    (when show-link? [fire-link on-click])])
 

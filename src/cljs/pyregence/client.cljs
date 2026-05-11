@@ -49,6 +49,7 @@
   {"/help"           help/root-component
    "/privacy-policy" privacy/root-component
    "/terms-of-use"   terms/root-component})
+
 (defn- render-root
   "Renders the root component for the current URI."
   [params]
@@ -59,8 +60,7 @@
         footer?       (some? root-cmpt-hf)]
 
     (render
-     #_[pyregence.components.svg-icons/watch-duty]
-     #_[:div {:style {:padding "20px"}}
+     [:div {:style {:padding "20px"}}
       [pyregence.components.popups/fire-popup {:fire-name "Big Fire"
                                                :contain-per "5"
                                                :acres "10"
@@ -71,7 +71,7 @@
                                                          {:icon [pyregence.components.svg-icons/cal-fire]
                                                           :name "CAL FIRE"
                                                           :url "TODO"}]}]]
-     [wrap-page {:root-component root-cmpt
+     #_[wrap-page {:root-component root-cmpt
                    :params         params
                    :footer?        footer?}]
      (dom/getElement "app"))))
