@@ -1,13 +1,13 @@
 (ns pyregence.components.popups
- (:require [clojure.core.async           :refer [<! go]]
-           [clojure.string               :as cstr]
-           [herb.core                    :refer [<class]]
-           [pyregence.state              :as !]
-           [pyregence.styles             :as $]
-           [pyregence.utils.async-utils  :as u-async]
-           [pyregence.utils.misc-utils   :as u-misc]
-           [pyregence.utils.time-utils   :as u-time]
-           [reagent.core                 :as r]
+ (:require [clojure.core.async             :refer [<! go]]
+           [clojure.string                 :as cstr]
+           [herb.core                      :refer [<class]]
+           [pyregence.state                :as !]
+           [pyregence.styles               :as $]
+           [pyregence.utils.async-utils    :as u-async]
+           [pyregence.utils.misc-utils     :as u-misc]
+           [pyregence.utils.time-utils     :as u-time]
+           [reagent.core                   :as r]
            [pyregence.components.svg-icons :as svg]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
