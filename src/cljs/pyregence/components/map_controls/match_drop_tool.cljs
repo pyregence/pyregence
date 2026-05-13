@@ -149,7 +149,7 @@
   "Initiates the match drop run and initiates polling for updates.
    Note that md-datetime-local is in local time and will be converted back
    to UTC before being passed to the back-end as the ignition-time."
-  [display-name [lon lat] md-datetime-local forecast-weather? user-email]
+  [display-name [lon lat] md-datetime-local forecast-weather? user-email fuel-version]
   (go
     ;; Lat and Lon must be within CONUS
     ;; TODO we should also add a separate check for md-datetime-local being within the available weather dates
@@ -163,7 +163,8 @@
                                                     :ignition-time ignition-time
                                                     :lon           lon
                                                     :lat           lat
-                                                    :wx-type       (if forecast-weather? "forecast" "historical")})]
+                                                    :wx-type       (if forecast-weather? "forecast" "historical")
+                                                    :fuel-version  fuel-version})]
         (set-message-box-content! {:title         "Processing Match Drop"
                                    :body          "Initiating match drop run."
                                    :mode          :custom
@@ -277,7 +278,17 @@
       (reset! md-datetime-local (u-dom/input-value %))
       (reset-local-time-zone! local-time-zone (u-dom/input-value %)))])
 
-(defn- md-buttons [md-datetime-local forecast-weather? display-name lon-lat user-email]
+(defn- fuel-version-select [fuel-version]
+  [:div {:style {:margin "0.5rem 0"}}
+   [:label {:style {:font-size "0.9rem" :font-weight "bold"}} "Fuels Version"]
+   [:select {:style     ($/dropdown)
+             :value     @fuel-version
+             :on-change #(reset! fuel-version (u-dom/input-value %))}
+    (for [[version {:keys [opt-label]}] c/match-drop-fuel-versions]
+      ^{:key version}
+      [:option {:value version} opt-label])]])
+
+(defn- md-buttons [md-datetime-local forecast-weather? display-name lon-lat user-email fuel-version]
   [:div {:style {:display         "flex"
                  :flex-shrink     0
                  :justify-content "space-between"
@@ -289,7 +300,7 @@
              :disabled (or (= [0 0] @lon-lat)
                            (= "" @md-datetime-local)
                            (empty? @!/md-available-dates))
-             :on-click #(initiate-match-drop! @display-name @lon-lat @md-datetime-local @forecast-weather? user-email)}
+             :on-click #(initiate-match-drop! @display-name @lon-lat @md-datetime-local @forecast-weather? user-email @fuel-version)}
     "Submit"]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -305,6 +316,7 @@
                forecast-weather? (r/atom true) ; Whether or not we are using forecast or historical weather data, default to using forecast
                md-datetime-local (r/atom (u-time/get-current-local-datetime-string)) ; Default to the current date/time
                local-time-zone   (r/atom (u-time/get-time-zone (js/Date. @md-datetime-local))) ; Default to the user's current time zone
+               fuel-version      (r/atom "2.4.0")
                click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %)))
                _                 (set-md-available-dates!)]
     [:div#match-drop-tool
@@ -323,6 +335,7 @@
           [:hr {:style {:background "white"}}]
           [labeled-input "Fire Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Ignition Location:" @lon-lat]
+          [fuel-version-select fuel-version]
           [:hr {:style {:background "white"}}]
           (cond
             (nil? @!/md-available-dates)
@@ -339,7 +352,7 @@
              [weather-info forecast-weather?]
              [weather-radio-buttons forecast-weather? md-datetime-local local-time-zone]
              [datetime-local-picker forecast-weather? md-datetime-local local-time-zone]])
-          [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-email]]])]]
+          [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-email fuel-version]]])]]
     (finally
       (mb/remove-markers!)
       (mb/remove-event! click-event))))
