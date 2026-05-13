@@ -72,14 +72,17 @@
                   :flex-direction "column"
                   :gap            "8px"}}
     [fire-property "Percent Contained" (str contain-per "%")]
+    ;;TODO STATUS
     [fire-property "Acres Burned" (.toLocaleString acres)]
     (when (seq sources)
-      [:<>
-       [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
-       [:div {:style {:display        "flex"
-                      :flex-direction "column"
-                      :gap            "5px"}}
-        (for [{:keys [icon name url]} sources]
+      (for [{:keys [icon name url]} sources]
+        [:a {:href url :target "_blank"}
+         [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
+         [:div {:style {:display        "flex"
+                        :flex-direction "column"
+                        :gap            "5px"}}
+        ;;TODO source site and main source site?
+
           [:div {:style {:display          "flex"
                          :height           "52px"
                          :gap              "8px"
@@ -96,8 +99,8 @@
                   {:margin-bottom "0px"
                    :font-weight   "600"
                    :color         ($/color-picker :neutral-black)}} name])
-           [:a {:href url :target "_blank"}
-            [svg/source-link]]])]])]
+
+           [svg/source-link]]]]))]
    (when show-link? [fire-link on-click])])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
