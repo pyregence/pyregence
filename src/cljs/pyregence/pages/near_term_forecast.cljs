@@ -541,18 +541,25 @@
   (contains? (get-in @!/capabilities [:active-fire :params :fire-name :options])
              (keyword fire-name)))
 
+(defn fire-properties->pop-up
+  [{:keys [name source] :as fire-properties}]
+  (assoc fire-properties
+         :icon        ({"calfire"   [pyregence.components.svg-icons/cal-fire]
+                        "watchduty" [pyregence.components.svg-icons/watch-duty {}]} source)
+         :on-click    #(select-param! (keyword name) :fire-name)
+         :show-link?  (forecast-exists? name)))
+
 (defn- init-fire-popup! [feature _]
-  (let [properties (-> feature (aget "properties") (js->clj))
-        lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
-        {:strs [name prettyname containper acres sources]} properties
-        body       [fire-popup {:fire-name   prettyname
-                                :contain-per containper
-                                :acres       acres
-                                :on-click    #(select-param! (keyword name) :fire-name)
-                                :show-link?  (forecast-exists? name)
-                                :sources      sources}]]
+  (let [{:keys [longitude latitude] :as fire-properties}
+        (-> feature (aget "properties") (js->clj :keywordize-keys true))
+        lnglat     [longitude latitude]
+        body       [fire-popup (-> fire-properties fire-properties->pop-up)]]
     (mb/init-popup! "fire" lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
+
+(-> {:longitude 1
+     :latitude 2} (select-keys [:longitude :latitude]) (vals))
+;; => (1 2)
 
 (defn- change-type!
   "Changes the type of data that is being shown on the map."
