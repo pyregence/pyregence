@@ -63,44 +63,40 @@
 
 (defn fire-popup
   "Popup body for active fires."
-  [{:keys [fire-name contain-per acres on-click show-link? sources]}]
+  [{:keys [name containper acres source url icon show-link? on-click]}]
   [:div {:style {:display        "flex"
                  :flex-direction "column"
                  :gap            "12px"}}
-   [:h6 {:style ($popup-header)} fire-name]
+   [:h6 {:style ($popup-header)} name]
    [:div {:style {:display        "flex"
                   :flex-direction "column"
                   :gap            "8px"}}
-    [fire-property "Percent Contained" (str contain-per "%")]
-    ;;TODO STATUS
+    [fire-property "Percent Contained" (str containper "%")]
     [fire-property "Acres Burned" (.toLocaleString acres)]
-    (when (seq sources)
-      (for [{:keys [icon name url]} sources]
-        [:a {:href url :target "_blank"}
-         [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
-         [:div {:style {:display        "flex"
-                        :flex-direction "column"
-                        :gap            "5px"}}
-        ;;TODO source site and main source site?
-
-          [:div {:style {:display          "flex"
-                         :height           "52px"
-                         :gap              "8px"
-                         :background-color ($/color-picker :neutral-light-gray)
-                         :padding          "8px 12px"
-                         :align-items      "center"
-                         :align-self       "stretch"
-                         :border-radius    "8px"}}
-           icon
-           (when name
-             [:p {:style
+    (when source
+      [:a {:href url :target "_blank"}
+       [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
+       [:div {:style {:display        "flex"
+                      :flex-direction "column"
+                      :gap            "5px"}}
+        [:div {:style {:display          "flex"
+                       :height           "52px"
+                       :gap              "8px"
+                       :background-color ($/color-picker :neutral-light-gray)
+                       :padding          "8px 12px"
+                       :align-items      "center"
+                       :align-self       "stretch"
+                       :border-radius    "8px"}}
+         icon
+         (when name
+           [:p {:style
            ;; TODO remove this margin-bottom by figuring out why it has
            ;; a margin-bottom in the first place and likely changing that.
-                  {:margin-bottom "0px"
-                   :font-weight   "600"
-                   :color         ($/color-picker :neutral-black)}} name])
+                {:margin-bottom "0px"
+                 :font-weight   "600"
+                 :color         ($/color-picker :neutral-black)}} name])
 
-           [svg/source-link]]]]))]
+         [svg/source-link]]]])]
    (when show-link? [fire-link on-click])])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
