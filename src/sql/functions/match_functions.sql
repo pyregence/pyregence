@@ -14,10 +14,8 @@ CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
     message             text,
     job_log             text,
     elmfire_done        boolean,
-    gridfire_done       boolean,
     dps_request         text,
     elmfire_request     text,
-    gridfire_request    text,
     geosync_request     text,
     geoserver_workspace text
  ) AS $$
@@ -32,10 +30,8 @@ CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
         message,
         job_log,
         elmfire_done,
-        gridfire_done,
         dps_request::text,
         elmfire_request::text,
-        gridfire_request::text,
         geosync_request::text,
         geoserver_workspace
     FROM match_jobs
@@ -56,10 +52,8 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
     message             text,
     job_log             text,
     elmfire_done        boolean,
-    gridfire_done       boolean,
     dps_request         text,
     elmfire_request     text,
-    gridfire_request    text,
     geosync_request     text,
     geoserver_workspace text
  ) AS $$
@@ -74,10 +68,8 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
         message,
         job_log,
         elmfire_done,
-        gridfire_done,
         dps_request::text,
         elmfire_request::text,
-        gridfire_request::text,
         geosync_request::text,
         geoserver_workspace
     FROM match_jobs
