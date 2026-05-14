@@ -64,6 +64,9 @@
 (defn fire-popup
   "Popup body for active fires."
   [{:keys [name containper acres source url icon show-link? on-click]}]
+  (def url url)
+  url
+
   [:div {:style {:display        "flex"
                  :flex-direction "column"
                  :gap            "12px"}}
@@ -88,12 +91,12 @@
                        :align-self       "stretch"
                        :border-radius    "8px"}}
          icon
-         ;; for calfire were using a p tag, for watchduty we use text. not sure
+         ;; For calfire were using a p tag, for watchduty we use text. not sure
          ;; yet what will happen with other sources so this is a bit of a hax.
          (when (= "calfire" source)
            [:p {:style
-           ;; TODO remove this margin-bottom by figuring out why it has
-           ;; a margin-bottom in the first place and likely changing that.
+                ;; TODO remove this margin-bottom by figuring out why it has
+                ;; a margin-bottom in the first place and likely changing that.
                 {:margin-bottom "0px"
                  :font-weight   "600"
                  :color         ($/color-picker :neutral-black)}} "CAL FIRE"])
