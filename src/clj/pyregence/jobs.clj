@@ -3,9 +3,7 @@
   (:require [clojure.java.io            :as io]
             [clojure.string             :as str]
             [pyregence.capabilities     :refer [set-all-capabilities!]]
-            [pyregence.match-drop       :refer [match-drop-server-msg-handler]]
             [pyregence.weather-stations :refer [periodically-get-observation-stations-in-the-background!]]
-            [runway.simple-sockets      :as runway]
             [triangulum.config          :refer [get-config]]
             [triangulum.logging         :refer [log-str]]))
 
@@ -51,21 +49,6 @@
 (defn stop-clean-up-service! [future-thread]
   (log-str "Stopping temp file removal service")
   (future-cancel future-thread))
-
-;; Match Drop server
-
-(defn start-match-drop-server! []
-  (when (get-config :triangulum.views/client-keys :features :match-drop)
-    (log-str "Starting Match Drop server on port " (get-config :pyregence.match-drop/match-drop :app-port))
-    (runway/start-server! (get-config :pyregence.match-drop/match-drop :app-port)
-                          match-drop-server-msg-handler
-                          (System/getProperty "javax.net.ssl.keyStore")
-                          (System/getProperty "javax.net.ssl.keyStorePassword")
-                          false)))
-
-(defn stop-match-drop-server! [_]
-  (log-str "Stopping Match Drop server on port " (get-config :pyregence.match-drop/match-drop :app-port))
-  (runway/stop-server!))
 
 ;; Weather Stations
 
