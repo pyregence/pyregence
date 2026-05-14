@@ -1,13 +1,14 @@
 (ns pyregence.components.popups
- (:require [clojure.core.async           :refer [<! go]]
-           [clojure.string               :as cstr]
-           [herb.core                    :refer [<class]]
-           [pyregence.state              :as !]
-           [pyregence.styles             :as $]
-           [pyregence.utils.async-utils  :as u-async]
-           [pyregence.utils.misc-utils   :as u-misc]
-           [pyregence.utils.time-utils   :as u-time]
-           [reagent.core                 :as r]))
+ (:require [clojure.core.async             :refer [<! go]]
+           [clojure.string                 :as cstr]
+           [herb.core                      :refer [<class]]
+           [pyregence.state                :as !]
+           [pyregence.styles               :as $]
+           [pyregence.utils.async-utils    :as u-async]
+           [pyregence.utils.misc-utils     :as u-misc]
+           [pyregence.utils.time-utils     :as u-time]
+           [reagent.core                   :as r]
+           [pyregence.components.svg-icons :as svg]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -15,10 +16,10 @@
 
 (defn- $popup-btn []
   (with-meta
-    {:background    ($/color-picker :yellow)
+    {:background    ($/color-picker :primary-standard-orange)
      :border        "none"
      :border-radius "3px"
-     :color         ($/color-picker :white)
+     :color         ($/color-picker :black)
      :margin-top    "0.5rem"
      :padding       "0.25rem 0.5rem"}
     {:pseudo {:hover {:background-color ($/color-picker :yellow 0.8)}}}))
@@ -27,7 +28,9 @@
   {:overflow      "hidden"
    :text-overflow "ellipsis"
    :white-space   "nowrap"
-   :width         "180px"})
+   :width         "180px"
+   :font-size     "18px"
+   :font-weight   "600"})
 
 (defn- $popup-container [expanded?]
   (merge
@@ -45,24 +48,60 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- fire-property [property value]
-  [:div [:strong property ": "] value])
+  [:div {:style {:display "flex" :height "14px" :gap "4px"}}
+   [:span
+    [:strong {:style {:color ($/color-picker :neutral-md-gray)}} property ": "]]
+   [:span
+    [:p {:style {:color       "black"
+                 :font-weight "600"}} value]]])
 
 (defn- fire-link [on-click]
-  [:div {:style {:text-align "right" :width "100%"}}
+  [:div {:style {:width "100%"}}
    [:button {:class    (<class $popup-btn)
              :on-click on-click}
-    "Click to View Forecast"]])
+    "View Forecast"]])
 
 (defn fire-popup
   "Popup body for active fires."
-  [fire-name contain-per acres on-click show-link?]
-  [:div {:style {:display "flex" :flex-direction "column"}}
-   [:h6 {:style ($popup-header)}
-    fire-name]
-   [:div
-    [fire-property "Percent Contained" (str contain-per "%")]
+  [{:keys [name containper acres source url icon show-link? on-click]}]
+  (def url url)
+  url
+
+  [:div {:style {:display        "flex"
+                 :flex-direction "column"
+                 :gap            "12px"}}
+   [:h6 {:style ($popup-header)} name]
+   [:div {:style {:display        "flex"
+                  :flex-direction "column"
+                  :gap            "8px"}}
+    [fire-property "Percent Contained" (str containper "%")]
     [fire-property "Acres Burned" (.toLocaleString acres)]
-    (when show-link? [fire-link on-click])]])
+    (when source
+      [:a {:href url :target "_blank"}
+       [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
+       [:div {:style {:display        "flex"
+                      :flex-direction "column"
+                      :gap            "5px"}}
+        [:div {:style {:display          "flex"
+                       :height           "52px"
+                       :gap              "8px"
+                       :background-color ($/color-picker :neutral-light-gray)
+                       :padding          "8px 12px"
+                       :align-items      "center"
+                       :align-self       "stretch"
+                       :border-radius    "8px"}}
+         icon
+         ;; For calfire were using a p tag, for watchduty we use text. not sure
+         ;; yet what will happen with other sources so this is a bit of a hax.
+         (when (= "calfire" source)
+           [:p {:style
+                ;; TODO remove this margin-bottom by figuring out why it has
+                ;; a margin-bottom in the first place and likely changing that.
+                {:margin-bottom "0px"
+                 :font-weight   "600"
+                 :color         ($/color-picker :neutral-black)}} "CAL FIRE"])
+         [svg/source-link]]]])]
+   (when show-link? [fire-link on-click])])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Red-Flag Component
@@ -134,7 +173,7 @@
         [:div
          [fire-property "Onset" (if (= onset "null") "N/A" onset)]
          [fire-property "Ends"  (if (= ends  "null") "N/A" ends)]])
-       
+
        (when (seq url)
           [red-flag-link
            {:expanded? @expanded?
