@@ -81,7 +81,6 @@
 
 (defn- sql-result->job [result]
   (-> result
-      (dissoc :gridfire_done :gridfire_request)
       (rename-keys {:match_job_id          :match-job-id
                     :runway_job_id         :runway-job-id
                     :user_id               :user-id
