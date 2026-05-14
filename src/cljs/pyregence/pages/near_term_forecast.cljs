@@ -557,10 +557,6 @@
     (mb/init-popup! "fire" lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 
-(-> {:longitude 1
-     :latitude 2} (select-keys [:longitude :latitude]) (vals))
-;; => (1 2)
-
 (defn- change-type!
   "Changes the type of data that is being shown on the map."
   [get-model-times? clear? auto-zoom? max-zoom]

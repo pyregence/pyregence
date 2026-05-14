@@ -88,14 +88,15 @@
                        :align-self       "stretch"
                        :border-radius    "8px"}}
          icon
-         (when name
+         ;; for calfire were using a p tag, for watchduty we use text. not sure
+         ;; yet what will happen with other sources so this is a bit of a hax.
+         (when (= "calfire" source)
            [:p {:style
            ;; TODO remove this margin-bottom by figuring out why it has
            ;; a margin-bottom in the first place and likely changing that.
                 {:margin-bottom "0px"
                  :font-weight   "600"
-                 :color         ($/color-picker :neutral-black)}} name])
-
+                 :color         ($/color-picker :neutral-black)}} "CAL FIRE"])
          [svg/source-link]]]])]
    (when show-link? [fire-link on-click])])
 
