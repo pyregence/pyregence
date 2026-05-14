@@ -7,6 +7,7 @@
             [pyregence.components.map-controls.panel-dropdown :refer [panel-dropdown]]
             [pyregence.components.map-controls.tool-button    :refer [tool-button]]
             [pyregence.components.map-controls.system-assets  :as    sa]
+            [pyregence.components.map-controls.zone-search   :as    zs]
             [pyregence.components.map-controls.utils          :refer [collapsible-panel-section]]
             [pyregence.components.mapbox                      :as mb]
             [pyregence.components.svg-icons                   :as svg]
@@ -326,6 +327,10 @@
                      @!/processed-params)
                [opacity-input]]]
              [sa/panel-section]
+             (when (zs/has-zones-data?)
+               [collapsible-panel-section
+                "zone-search"
+                [zs/zone-search]])
              [collapsible-panel-section
               "optional-layers"
               [optional-layers
