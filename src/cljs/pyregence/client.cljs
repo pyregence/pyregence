@@ -65,8 +65,8 @@
         {:name       "Big Fire"
          :containper "5"
          :acres      "10"
-         :source     "watchduty" ;; or calfire
-         :url        "www.google.com"})]]
+         :source     "watchduty"
+         :url        "https://www.google.com/"})]]
      #_[wrap-page {:root-component root-cmpt
                    :params         params
                    :footer?        footer?}]
