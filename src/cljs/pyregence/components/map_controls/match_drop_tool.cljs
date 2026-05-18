@@ -293,8 +293,8 @@
 
 (defn- fuel-version-select [fuel-version]
   [:div {:style {:margin "0.5rem 0"}}
-   [:label {:style {:font-size "0.9rem" :font-weight "bold"}} "Fuels Version"]
-   [:select {:style     ($/dropdown)
+   [:label {:style {:font-size "0.9rem" :font-weight "bold" :display "block" :margin-bottom "0.25rem"}} "Fuels Version"]
+   [:select {:style     (merge ($/dropdown) {:width "100%"})
              :value     @fuel-version
              :on-change #(reset! fuel-version (u-dom/input-value %))}
     (for [[version {:keys [opt-label]}] c/match-drop-fuel-versions]
