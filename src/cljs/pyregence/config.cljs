@@ -245,7 +245,55 @@
                   :time-slider?    true
                   :always-utc?     true
                   :hover-text      "Gridded weather forecasts from several US operational weather models including key parameters that affect wildfire behavior."
-                  :params          {:band       {:opt-label  "Weather Parameter"
+                  :params          {
+
+                                    ;; Add
+                                    ;; Constant Severe Fire Danger Index
+                                    ;; csfdi
+
+                                    ;; Variable Severe Fire Danger Index
+                                    ;; vsfdi
+
+                                    ;; 1-, 10-, 100-, and 1000-hr fuel moisture
+                                    ;; fm
+
+                                    ;; Live herbaceous fuel moisture
+
+                                    ;; lhfm
+
+                                    ;; Live woody fuel moisture
+
+                                    ;; lwfm
+
+                                    ;; Fuel temperature
+
+                                    ;; ft
+
+                                    ;; Burning index
+
+                                    ;; bi
+
+                                    ;; Energy release component
+
+                                    ;; erc
+
+                                    ;; Spread component
+
+                                    ;; sc
+
+                                    ;; Ignition component
+
+                                    ;; ic
+
+                                    ;; Growing season index
+
+                                    ;; gsi
+
+                                    ;; Keetch-Byram drought index
+
+                                    ;; kbdi
+
+                                    :band       {:opt-label  "Weather Parameter"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Gridded weather forecasts from several US operational weather models having different spatial resolutions and forecast durations. Available quantities include common weather parameters and fire weather indices:"
                                                               [:br]
@@ -316,6 +364,8 @@
                                                                         :filter       "tcdc"
                                                                         :units        "%"
                                                                         :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve}})}
+                                    ;;TODO add two models
+                                    ;; Constant NFDRS and Variable NFDRS and have there disabled-for contain anything not in the Weather Parameter list above
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "NBM"]
