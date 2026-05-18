@@ -35,7 +35,7 @@
 
 (defn- fuel-version->workspace
   [fuel-version]
-  (str "fuels_landfire-" fuel-version))
+  (str "fuels-and-topography_landfire-" fuel-version))
 
 (defn- get-fuel-layer-extent
   [fuel-version]
@@ -479,4 +479,25 @@
         response      (client/get api-url http-request)]
     (data-response (parse-available-wx-dates (:body response)))))
 
+(def ^:private conus-extent [-125.0 25.0 -66.0 50.0])
 
+(defn get-fuel-extent
+  "Returns the geographic bounding box of a LANDFIRE fuel version as GeoJSON."
+  [_ fuel-version]
+  (if-not (valid-md-fuel-versions fuel-version)
+    (data-response {:error (str "Invalid fuel version: " fuel-version)}
+                   {:status 400})
+    (let [extent (get-fuel-layer-extent fuel-version)
+          [minx miny maxx maxy] (if extent
+                                  (map #(Double/parseDouble %) extent)
+                                  conus-extent)]
+      (data-response {:type     "FeatureCollection"
+                      :features [{:type       "Feature"
+                                  :properties {:fuel-version fuel-version}
+                                  :geometry   {:type        "Polygon"
+                                               :coordinates [[[minx miny]
+                                                              [maxx miny]
+                                                              [maxx maxy]
+                                                              [minx maxy]
+                                                              [minx miny]]]}}]}
+                     {:type :json}))))

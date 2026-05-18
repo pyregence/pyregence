@@ -64,6 +64,19 @@
                     (edn/read-string)))
         (reset! !/md-available-dates nil)))))
 
+(def ^:private fuel-boundary-layer-id "fuel-version-boundary")
+
+(defn- draw-fuel-boundary!
+  [fuel-version]
+  (go
+    (when (mb/layer-exists? fuel-boundary-layer-id)
+      (mb/remove-fuel-boundary-layer! fuel-boundary-layer-id))
+    (let [response (<! (u-async/call-clj-async! "get-fuel-extent" fuel-version))]
+      (when (:success response)
+        (let [data (-> response :body js/JSON.parse)]
+          (when (and data (pos? (.-length (.-features data))))
+            (mb/create-fuel-boundary-layer! fuel-boundary-layer-id data)))))))
+
 (defn refresh-fire-names!
   "Updates the capabilities atom with all unique fires from the back-end
    layers atom, parsed into the proper format. Also updates the processed-params
@@ -318,7 +331,12 @@
                local-time-zone   (r/atom (u-time/get-time-zone (js/Date. @md-datetime-local))) ; Default to the user's current time zone
                fuel-version      (r/atom "2.4.0")
                click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %)))
-               _                 (set-md-available-dates!)]
+               _                 (set-md-available-dates!)
+               _                 (draw-fuel-boundary! @fuel-version)
+               _                 (add-watch fuel-version ::fuel-boundary
+                                            (fn [_ _ old-v new-v]
+                                              (when (not= old-v new-v)
+                                                (draw-fuel-boundary! new-v))))]
     [:div#match-drop-tool
      [resizable-window
       parent-box
@@ -355,4 +373,7 @@
           [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-email fuel-version]]])]]
     (finally
       (mb/remove-markers!)
-      (mb/remove-event! click-event))))
+      (mb/remove-event! click-event)
+      (remove-watch fuel-version ::fuel-boundary)
+      (when (mb/layer-exists? fuel-boundary-layer-id)
+        (mb/remove-fuel-boundary-layer! fuel-boundary-layer-id)))))

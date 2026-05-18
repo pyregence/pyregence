@@ -1065,6 +1065,20 @@
                                 :fill-opacity       (on-hover 1 0.4)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
+(defn create-fuel-boundary-layer!
+  [id data]
+  (let [new-source {id {:type "geojson" :data data}}
+        new-layers [{:id       id
+                     :source   id
+                     :type     "line"
+                     :metadata {:type    "fuel-boundary"
+                                :z-index 999}
+                     :paint    {:line-color     "#1E90FF"
+                                :line-width     3.5
+                                :line-dasharray [6 4]
+                                :line-opacity   0.85}}]]
+    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+
 (defn mvt-source [layer-name geoserver-key]
   {:type  "vector"
    :tiles [(c/mvt-layer-url layer-name geoserver-key)]})
@@ -1121,6 +1135,10 @@
         layers          (get cur-style "layers")
         filtered-layers (remove #(= id (get % "id")) layers)]
     (update-style! cur-style :layers filtered-layers)))
+
+(defn remove-fuel-boundary-layer!
+  [id]
+  (remove-layer! id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Creation
