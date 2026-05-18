@@ -245,9 +245,8 @@
                   :time-slider?    true
                   :always-utc?     true
                   :hover-text      "Gridded weather forecasts from several US operational weather models including key parameters that affect wildfire behavior."
-                  :params          {
-
-                                    ;; TODO Add these x means we did already (see below)
+                  :params          {;; TODO Add these x means we did already (see below)
+                                    ;; TODO Constant SFDI is the top/default output for NFDRS.
                                     ;; [x] Constant Severe Fire Danger Index
                                     ;;  csfdi
 
