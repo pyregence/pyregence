@@ -247,9 +247,9 @@
                   :hover-text      "Gridded weather forecasts from several US operational weather models including key parameters that affect wildfire behavior."
                   :params          {
 
-                                    ;; Add
-                                    ;; Constant Severe Fire Danger Index
-                                    ;; csfdi
+                                    ;; TODO Add these x means we did already (see below)
+                                    ;; [x] Constant Severe Fire Danger Index
+                                    ;;  csfdi
 
                                     ;; Variable Severe Fire Danger Index
                                     ;; vsfdi
@@ -313,9 +313,14 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
+                                                              :csfdi   {:opt-label "Constant Sever Fire Danger Index"
+                                                                        :filter    "csfdi"
+                                                                        :units     "%"}
+
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
                                                                         :units     "%"}
+
                                                               :tmpf    {:opt-label "Temperature (\u00B0F)"
                                                                         :filter    "tmpf"
                                                                         :units     "\u00B0F"}
@@ -364,8 +369,7 @@
                                                                         :filter       "tcdc"
                                                                         :units        "%"
                                                                         :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve}})}
-                                    ;;TODO add two models
-                                    ;; Constant NFDRS and Variable NFDRS and have there disabled-for contain anything not in the Weather Parameter list above
+                                    ;;TODO add two new models to tooltip
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "NBM"]
@@ -408,6 +412,15 @@
                                                               [:strong "RTMA"]
                                                               " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
                                                  :options    (array-map
+                                                               ;;TODO this nfdrs-constant key if changed to nbm with that commented out will correctly use the disabled-for, but thats not a solution.
+                                                              :nfdrs-constant {:opt-label    "NFRDS (Constant)"
+                                                                               :filter       "nbm"
+                                                                               :disabled-for
+                                                                               ;; disabled-for key isn't doing it's job see above.
+                                                                               #{:rh :tmpf :ffwi :meq :pign :wd :ws :wg :apcptot :apcp01 :wpd :hdw :smoke :tcdc}}
+                                                              :nfdrs-variable {:opt-label    "NFRDS (Variable)"
+                                                                               :filter       "nfdrs-variable"
+                                                                               :disabled-for #{"TODO"}}
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
                                                                               :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
