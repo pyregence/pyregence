@@ -49,7 +49,6 @@
   {"/help"           help/root-component
    "/privacy-policy" privacy/root-component
    "/terms-of-use"   terms/root-component})
-
 (defn- render-root
   "Renders the root component for the current URI."
   [params]
