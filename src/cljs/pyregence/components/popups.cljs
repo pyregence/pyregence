@@ -170,6 +170,7 @@
         [:div
          [fire-property "Onset" (if (= onset "null") "N/A" onset)]
          [fire-property "Ends"  (if (= ends  "null") "N/A" ends)]])
+
        (when (seq url)
           [red-flag-link
            {:expanded? @expanded?
