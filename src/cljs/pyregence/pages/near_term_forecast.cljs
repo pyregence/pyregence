@@ -544,8 +544,8 @@
 (defn fire-properties->pop-up
   [{:keys [name source] :as fire-properties}]
   (assoc fire-properties
-         :icon        ({"calfire"   [pyregence.components.svg-icons/cal-fire]
-                        "watchduty" [pyregence.components.svg-icons/watch-duty {}]} source)
+         :icon        ({"Cal Fire"   [pyregence.components.svg-icons/cal-fire]
+                        "Watch Duty" [pyregence.components.svg-icons/watch-duty {}]} source)
          :on-click    #(select-param! (keyword name) :fire-name)
          :show-link?  (forecast-exists? name)))
 
@@ -556,6 +556,28 @@
         body       [fire-popup (-> fire-properties fire-properties->pop-up)]]
     (mb/init-popup! "fire" lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
+
+(comment
+  ;; test the two sources we have first Cal Fire then Watch Duty
+  (init-fire-popup! (clj->js {:longitude 0
+                              :latitude 0
+                              :properties {:name "big-fire"
+                                           :pettyname "Big Fire"
+                                           :source "Cal Fire"
+                                           :containper "10"
+                                           :acres "10"
+                                           ;; Cal Fire doesn't have a url to test...
+                                           :url        "https://share.watchduty.org/i/97192"}}))
+
+  (init-fire-popup! (clj->js {:longitude 0
+                              :latitude 0
+                              :properties {:name "big-fire"
+                                           :pettyname "Big Fire"
+                                           :source "Watch Duty"
+                                           :containper "10"
+                                           :acres "10"
+                                           ;; Cal Fire doesn't have a url to test...
+                                           :url        "https://share.watchduty.org/i/97192"}})))
 
 (defn- change-type!
   "Changes the type of data that is being shown on the map."
@@ -602,6 +624,8 @@
                                      (ffirst))]
             :when first-enabled]
       (swap! !/*params assoc-in [@!/*forecast param-key] first-enabled))))
+
+
 
 (defn- select-param!
   "The function called whenever an input dropdown is changed on the collapsible panel.
