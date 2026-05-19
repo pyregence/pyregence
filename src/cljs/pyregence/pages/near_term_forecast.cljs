@@ -625,8 +625,6 @@
             :when first-enabled]
       (swap! !/*params assoc-in [@!/*forecast param-key] first-enabled))))
 
-
-
 (defn- select-param!
   "The function called whenever an input dropdown is changed on the collapsible panel.
    Resets the proper state atoms with the new, selected inputs from the UI."
