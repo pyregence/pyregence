@@ -603,8 +603,6 @@
     (when auto-zoom?
       (mb/zoom-to-extent! (get-current-layer-extent) (current-layer) max-zoom))))
 
-
-
 (defn- select-param!
   "The function called whenever an input dropdown is changed on the collapsible panel.
    Resets the proper state atoms with the new, selected inputs from the UI."
