@@ -64,9 +64,6 @@
 (defn fire-popup
   "Popup body for active fires."
   [{:keys [name containper acres source url icon show-link? on-click]}]
-  (def url url)
-  url
-
   [:div {:style {:display        "flex"
                  :flex-direction "column"
                  :gap            "12px"}}
