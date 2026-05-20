@@ -175,6 +175,8 @@ California cameras. This atom is used to create the camera layer in mapbox.cljs.
   active-fire-count (r/atom 0))
 (defonce ^{:doc "Whether or not the currently logged in user has match drop access."}
   match-drop-access? (r/atom false))
+(defonce ^{:doc "True when the map cursor is within the selected fuel version's geographic boundary. Nil when no boundary is loaded."}
+  cursor-within-fuel-bounds? (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; config.edn State

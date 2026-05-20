@@ -66,6 +66,13 @@
 
 (def ^:private fuel-boundary-layer-id "fuel-version-boundary")
 
+(defonce ^:private fuel-extent-bbox (atom nil))
+
+(defn- point-within-fuel-extent? [[lng lat]]
+  (when-let [[minx miny maxx maxy] @fuel-extent-bbox]
+    (and (<= minx lng maxx)
+         (<= miny lat maxy))))
+
 (defn- draw-fuel-boundary!
   [fuel-version]
   (go
@@ -74,8 +81,14 @@
     (let [response (<! (u-async/call-clj-async! "get-fuel-extent" fuel-version))]
       (when (:success response)
         (let [data (-> response :body js/JSON.parse)]
-          (when (and data (pos? (.-length (.-features data))))
-            (mb/create-fuel-boundary-layer! fuel-boundary-layer-id data)))))))
+          (if (and data (pos? (.-length (.-features data))))
+            (let [coords (-> data .-features (aget 0) .-geometry .-coordinates (aget 0))
+                  lngs   (map #(aget % 0) coords)
+                  lats   (map #(aget % 1) coords)]
+              (reset! fuel-extent-bbox [(apply min lngs) (apply min lats)
+                                        (apply max lngs) (apply max lats)])
+              (mb/create-fuel-boundary-layer! fuel-boundary-layer-id data))
+            (reset! fuel-extent-bbox nil)))))))
 
 (defn refresh-fire-names!
   "Updates the capabilities atom with all unique fires from the back-end
@@ -331,6 +344,9 @@
                local-time-zone   (r/atom (u-time/get-time-zone (js/Date. @md-datetime-local))) ; Default to the user's current time zone
                fuel-version      (r/atom "2.4.0")
                click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %)))
+               move-event        (mb/add-mouse-move-xy!
+                                  #(reset! !/cursor-within-fuel-bounds?
+                                           (point-within-fuel-extent? %)))
                _                 (set-md-available-dates!)
                _                 (draw-fuel-boundary! @fuel-version)
                _                 (add-watch fuel-version ::fuel-boundary
@@ -374,6 +390,9 @@
     (finally
       (mb/remove-markers!)
       (mb/remove-event! click-event)
+      (mb/remove-event! move-event)
+      (reset! fuel-extent-bbox nil)
+      (reset! !/cursor-within-fuel-bounds? nil)
       (remove-watch fuel-version ::fuel-boundary)
       (when (mb/layer-exists? fuel-boundary-layer-id)
         (mb/remove-fuel-boundary-layer! fuel-boundary-layer-id)))))
