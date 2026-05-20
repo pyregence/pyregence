@@ -378,12 +378,14 @@
   (-> e (aget "lngLat") .toArray (js->clj)))
 
 (defn enqueue-marker-on-click!
-  "Tracks a queue of visible markers on the map."
-  [callback & [queue-options?]]
+  "Tracks a queue of visible markers on the map.
+   Optionally accepts a `coord-fn` that transforms `[lng lat]` before placing the marker."
+  [callback & [{:keys [coord-fn] :as queue-options}]]
   (add-event! "click" (fn [e]
-                        (let [lnglat     (event->lnglat e)
+                        (let [lnglat     (cond-> (event->lnglat e)
+                                           coord-fn coord-fn)
                               new-marker (add-marker-to-map! lnglat)]
-                          (enqueue-marker {:lnglat lnglat :marker new-marker} queue-options?)
+                          (enqueue-marker {:lnglat lnglat :marker new-marker} queue-options)
                           ;; apply callback to a vector of lng-lat coordinates
                           (callback (mapv #(% :lnglat) @markers))))))
 

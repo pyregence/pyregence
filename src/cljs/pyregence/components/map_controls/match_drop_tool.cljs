@@ -73,6 +73,12 @@
     (and (<= minx lng maxx)
          (<= miny lat maxy))))
 
+(defn- clamp-to-fuel-extent [[lng lat]]
+  (if-let [[minx miny maxx maxy] @fuel-extent-bbox]
+    [(max minx (min maxx lng))
+     (max miny (min maxy lat))]
+    [lng lat]))
+
 (defn- draw-fuel-boundary!
   [fuel-version]
   (go
@@ -343,7 +349,8 @@
                md-datetime-local (r/atom (u-time/get-current-local-datetime-string)) ; Default to the current date/time
                local-time-zone   (r/atom (u-time/get-time-zone (js/Date. @md-datetime-local))) ; Default to the user's current time zone
                fuel-version      (r/atom "2.4.0")
-               click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %)))
+               click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %))
+                                                                    {:coord-fn clamp-to-fuel-extent})
                move-event        (mb/add-mouse-move-xy!
                                   #(reset! !/cursor-within-fuel-bounds?
                                            (point-within-fuel-extent? %)))
