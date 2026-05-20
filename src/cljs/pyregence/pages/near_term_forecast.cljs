@@ -37,7 +37,8 @@
    [pyregence.utils.number-utils                                              :as u-num]
    [pyregence.utils.time-utils                                                :as u-time]
    [react                                                                     :as react]
-   [reagent.core                                                              :as r]))
+   [reagent.core                                                              :as r]
+   [reagent.dom.server                                                        :as rs]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec
@@ -886,13 +887,17 @@
 
 (defn- map-layer []
   (r/with-let [mouse-down?        (r/atom false)
+               red-cross-cursor   (let [svg-str (-> (svg/red-cross)
+                                                    (rs/render-to-string)
+                                                    (str/replace "\"" "'"))]
+                                    (str "url(\"data:image/svg+xml;utf8," svg-str "\") 9 9, not-allowed"))
                cursor-fn          #(cond
                                      @mouse-down?
                                      "grabbing"
 
                                      @!/show-match-drop?
                                      (if (false? @!/cursor-within-fuel-bounds?)
-                                       svg/red-cross-cursor
+                                       red-cross-cursor
                                        "crosshair")
 
                                      (or @!/show-info?
