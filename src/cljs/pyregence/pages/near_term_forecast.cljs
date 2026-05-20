@@ -886,17 +886,13 @@
 
 (defn- map-layer []
   (r/with-let [mouse-down?        (r/atom false)
-               red-cross-cursor   (str "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='19' height='19'%3E"
-                                       "%3Cline x1='3' y1='3' x2='16' y2='16' stroke='red' stroke-width='1.5'/%3E"
-                                       "%3Cline x1='16' y1='3' x2='3' y2='16' stroke='red' stroke-width='1.5'/%3E"
-                                       "%3C/svg%3E\") 9 9, not-allowed")
                cursor-fn          #(cond
                                      @mouse-down?
                                      "grabbing"
 
                                      @!/show-match-drop?
                                      (if (false? @!/cursor-within-fuel-bounds?)
-                                       red-cross-cursor
+                                       svg/red-cross-cursor
                                        "crosshair")
 
                                      (or @!/show-info?
