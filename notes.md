@@ -52,7 +52,17 @@ Add `"2.5.0"` to the valid set. Keep `default-fuel-version` as `"2.4.0"`:
 
 No change needed — the atom already defaults to `"2.4.0"`, which we're keeping. **Skip this file.**
 
+### 5. pyrecast-scripts updat
+
+Align /home/danielhabib/sig/pyrecast-scripts/src/clj/pyrecast/dps/dps.clj:185:11 with the dockerimage change
+
+### 6. commit pyrecast-scripts
+
+### 7. update sig3 deps.edp dep with the latest pyrecast-scripts change (just commited in 6.)
+
 ## Verification
+
+(I'm going to do it, now you, claude).
 
 1. Build the Docker image — confirm the `sed` patch applies cleanly (no error in build log).
 2. In pyregence on branch `PYR1-1474-allow-users-to-select-fuels-layer-for-match-drop-runs`, verify the match-drop tool dropdown shows LANDFIRE 2.5.0 through 1.0.5 and defaults to 2.5.0.
