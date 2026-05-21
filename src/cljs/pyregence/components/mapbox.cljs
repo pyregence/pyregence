@@ -1067,10 +1067,32 @@
                                 :fill-opacity       (on-hover 1 0.4)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
+(defn- invert-geojson
+  [data]
+  (let [coords     (-> data .-features (aget 0) .-geometry .-coordinates (aget 0))
+        hole-ring  (.slice coords)
+        _          (.reverse hole-ring)
+        world-ring #js [#js [-180 -90] #js [180 -90] #js [180 90] #js [-180 90] #js [-180 -90]]]
+    #js {:type     "FeatureCollection"
+         :features #js [#js {:type       "Feature"
+                             :geometry   #js {:type        "Polygon"
+                                              :coordinates #js [world-ring hole-ring]}
+                             :properties #js {}}]}))
+
 (defn create-fuel-boundary-layer!
   [id data]
-  (let [new-source {id {:type "geojson" :data data}}
-        new-layers [{:id       id
+  (let [mask-id    (str id "-mask")
+        mask-data  (invert-geojson data)
+        new-source {id      {:type "geojson" :data data}
+                    mask-id {:type "geojson" :data mask-data}}
+        new-layers [{:id       mask-id
+                     :source   mask-id
+                     :type     "fill"
+                     :metadata {:type    "fuel-boundary"
+                                :z-index 998}
+                     :paint    {:fill-color   "#000000"
+                                :fill-opacity 0.35}}
+                    {:id       id
                      :source   id
                      :type     "line"
                      :metadata {:type    "fuel-boundary"
@@ -1140,6 +1162,7 @@
 
 (defn remove-fuel-boundary-layer!
   [id]
+  (remove-layer! (str id "-mask"))
   (remove-layer! id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

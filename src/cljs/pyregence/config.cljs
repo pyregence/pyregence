@@ -27,6 +27,7 @@
 (def match-drop-fuel-versions
   (array-map
    "2.4.0" {:opt-label "LANDFIRE 2.4.0"}
+   "2.5.0" {:opt-label "LANDFIRE 2.5.0"}
    "2.3.0" {:opt-label "LANDFIRE 2.3.0"}
    "2.2.0" {:opt-label "LANDFIRE 2.2.0"}
    "2.1.0" {:opt-label "LANDFIRE 2.1.0"}
