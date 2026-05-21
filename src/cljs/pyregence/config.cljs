@@ -24,16 +24,14 @@
 ;; Match Drop Fuel Versions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def match-drop-fuel-versions
-  (array-map
-   "2.4.0" {:opt-label "LANDFIRE 2.4.0"}
-   "2.5.0" {:opt-label "LANDFIRE 2.5.0"}
-   "2.3.0" {:opt-label "LANDFIRE 2.3.0"}
-   "2.2.0" {:opt-label "LANDFIRE 2.2.0"}
-   "2.1.0" {:opt-label "LANDFIRE 2.1.0"}
-   "1.4.0" {:opt-label "LANDFIRE 1.4.0"}
-   "1.3.0" {:opt-label "LANDFIRE 1.3.0"}
-   "1.0.5" {:opt-label "LANDFIRE 1.0.5"}))
+(def default-fuel-version "2.5.0")
+
+(defn match-drop-fuel-versions
+  ([] (match-drop-fuel-versions ["2.5.0" "2.4.0" "2.3.0" "2.2.0" "2.1.0" "1.4.0" "1.3.0" "1.0.5"]))
+  ([versions]
+   (into (array-map)
+         (map (fn [v] [v {:opt-label (str "LANDFIRE " v)}]))
+         versions)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WG3 Forecast

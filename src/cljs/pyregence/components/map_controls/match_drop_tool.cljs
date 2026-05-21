@@ -316,7 +316,7 @@
    [:select {:style     (merge ($/dropdown) {:width "100%"})
              :value     @fuel-version
              :on-change #(reset! fuel-version (u-dom/input-value %))}
-    (for [[version {:keys [opt-label]}] c/match-drop-fuel-versions]
+    (for [[version {:keys [opt-label]}] (c/match-drop-fuel-versions)]
       ^{:key version}
       [:option {:value version} opt-label])]])
 
@@ -348,7 +348,7 @@
                forecast-weather? (r/atom true) ; Whether or not we are using forecast or historical weather data, default to using forecast
                md-datetime-local (r/atom (u-time/get-current-local-datetime-string)) ; Default to the current date/time
                local-time-zone   (r/atom (u-time/get-time-zone (js/Date. @md-datetime-local))) ; Default to the user's current time zone
-               fuel-version      (r/atom "2.4.0")
+               fuel-version      (r/atom c/default-fuel-version)
                click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %))
                                                                     {:coord-fn clamp-to-fuel-extent})
                move-event        (mb/add-mouse-move-xy!
