@@ -1069,7 +1069,7 @@
 
 (defn- invert-geojson
   [data]
-  (let [coords     (-> data .-features (aget 0) .-geometry .-coordinates (aget 0))
+  (let [coords     (-> data (aget "features") (aget 0) (aget "geometry") (aget "coordinates") (aget 0))
         hole-ring  (.slice coords)
         _          (.reverse hole-ring)
         world-ring #js [#js [-180 -90] #js [180 -90] #js [180 90] #js [-180 90] #js [-180 -90]]]

@@ -86,14 +86,15 @@
       (mb/remove-fuel-boundary-layer! fuel-boundary-layer-id))
     (let [response (<! (u-async/call-clj-async! "get-fuel-extent" fuel-version))]
       (when (:success response)
-        (let [data (-> response :body js/JSON.parse)]
-          (if (and data (pos? (.-length (.-features data))))
-            (let [coords (-> data .-features (aget 0) .-geometry .-coordinates (aget 0))
-                  lngs   (map #(aget % 0) coords)
-                  lats   (map #(aget % 1) coords)]
+        (let [js-data  (-> response :body js/JSON.parse)
+              data     (js->clj js-data :keywordize-keys true)]
+          (if (and data (seq (:features data)))
+            (let [coords (-> data :features first :geometry :coordinates first)
+                  lngs   (map first coords)
+                  lats   (map second coords)]
               (reset! fuel-extent-bbox [(apply min lngs) (apply min lats)
                                         (apply max lngs) (apply max lats)])
-              (mb/create-fuel-boundary-layer! fuel-boundary-layer-id data))
+              (mb/create-fuel-boundary-layer! fuel-boundary-layer-id js-data))
             (reset! fuel-extent-bbox nil)))))))
 
 (defn refresh-fire-names!
