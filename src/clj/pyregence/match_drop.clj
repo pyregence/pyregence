@@ -33,6 +33,15 @@
 
 (def default-fuel-version "2.5.0")
 
+(def ^:private conus-bounds
+  {:minx -125.0 :miny 25.0 :maxx -66.0 :maxy 50.0})
+
+(defn- intersect-with-conus [minx miny maxx maxy]
+  [(max minx (:minx conus-bounds))
+   (max miny (:miny conus-bounds))
+   (min maxx (:maxx conus-bounds))
+   (min maxy (:maxy conus-bounds))])
+
 (defn- fuel-version->workspace
   [fuel-version]
   (str "fuels-and-topography_landfire-" fuel-version))
@@ -48,10 +57,10 @@
 (defn- point-within-extent?
   [lon lat [minx miny maxx maxy]]
   (when (and minx miny maxx maxy)
-    (let [minx (Double/parseDouble minx)
-          miny (Double/parseDouble miny)
-          maxx (Double/parseDouble maxx)
-          maxy (Double/parseDouble maxy)]
+    (let [[minx miny maxx maxy] (intersect-with-conus (Double/parseDouble minx)
+                                                      (Double/parseDouble miny)
+                                                      (Double/parseDouble maxx)
+                                                      (Double/parseDouble maxy))]
       (and (<= minx lon maxx)
            (<= miny lat maxy)))))
 
@@ -486,7 +495,10 @@
     (data-response {:error (str "Invalid fuel version: " fuel-version)}
                    {:status 400})
     (if-let [extent (get-fuel-layer-extent fuel-version)]
-      (let [[minx miny maxx maxy] (map #(Double/parseDouble %) extent)]
+      (let [[minx miny maxx maxy] (intersect-with-conus (Double/parseDouble (nth extent 0))
+                                                        (Double/parseDouble (nth extent 1))
+                                                        (Double/parseDouble (nth extent 2))
+                                                        (Double/parseDouble (nth extent 3)))]
         (data-response {:type     "FeatureCollection"
                         :features [{:type       "Feature"
                                     :properties {:fuel-version fuel-version}
