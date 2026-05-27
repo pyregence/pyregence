@@ -607,6 +607,7 @@
 (defn- add-fire-icons-to-map! []
   (go
     (let [icon-chan (chan 4)]
+      ;;TODO this is where we would would reference the new icons from figma once they are uploaded.
       (add-icon! icon-chan "fire-icon-0"   "./images/Active_Fire_0.png")
       (add-icon! icon-chan "fire-icon-50"  "./images/Active_Fire_50.png")
       (add-icon! icon-chan "fire-icon-90"  "./images/Active_Fire_90.png")
@@ -617,6 +618,7 @@
 ;;
 (defn- incident-layer [layer-name source-name opacity]
   (go
+    ;;DOES adding the fire-icons does need to be bundled into this indent layer which just returns a hashmap
     (<! (add-fire-icons-to-map!))
     {:id       layer-name
      :type     "symbol"
@@ -663,8 +665,6 @@
      90 "grey" ;;TODO replace grey with actual red hex color
      ]
     :circle-opacity 0.4}})
-
-;; TODO is where acres burned?
 
 (defn- build-wfs
   "Returns a new WFS source and layers in the form `[source layers]`.
@@ -773,21 +773,13 @@
   "Resets the active layer source (e.g. from WMS to WFS). To reset to WFS layer,
    `style-fn` must not be nil."
   [geo-layer style-fn geoserver-key opacity style & [layer-time]]
-  (def x [geo-layer style-fn geoserver-key opacity style & [layer-time]])
-  x
-  ;; => ["fire-detections_active-fires:active-fires_20260409_133400"
-  ;;     :default
-  ;;     :shasta
-  ;;     0.7
-  ;;     nil
-  ;;     nil
-  ;;     [nil]]
-
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
   (go
     (let [map-style                (get-style)
           layers                   (hide-forecast-layers (get map-style "layers"))
+
           [new-sources new-layers] (if style-fn
+          ;;TODO its possible the conditional on the forcast could go here. if forecast build-wfs fire-active-with-these-colors else those-colors
                                      (<! (build-wfs fire-active geo-layer geoserver-key opacity))
                                      ;; add radius of acers burned.
                                      (build-wms geo-layer
@@ -803,9 +795,9 @@
                      :new-layers  new-layers)
 
       #_(update-style! map-style
-                     :layers      layers
-                     :new-sources new-sources
-                     :new-layers  new-layers))))
+                       :layers      layers
+                       :new-sources new-sources
+                       :new-layers  new-layers))))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map. This is currently only used to add optional layers to the map."
