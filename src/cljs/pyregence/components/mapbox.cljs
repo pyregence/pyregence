@@ -623,10 +623,9 @@
      :source   source-name
      :layout   {:icon-allow-overlap true
                 :icon-image         ["step" ["get" "containper"]
-                                     "fire-icon-0"
-                                     50  "fire-icon-50"
-                                     90  "fire-icon-90"
-                                     100 "fire-icon-100"]
+                                     "fire-icon-0"       ;; 0=old-red TODO replace with new red icon from figma
+                                     90  "fire-icon-100" ;; 100=old-grey TODO replace with new grey icon from figma
+                                     ]
                 :icon-size          ["interpolate" ["linear"] ["get" "acres"]
                                      1000   0.5
                                      10000  0.75
@@ -653,12 +652,16 @@
    :metadata {:type    (get-layer-type layer-name)
               :z-index 1999}
    :paint
-   ;;TODO find out circle-radius acres unit?
-   {:circle-radius  ["interpolate" ["linear"]  ["to-number" ["get" "acres"]]
-                     1000   10
-                     10000  30
-                     300000 90]
-    :circle-color   (on-selected "red" "green" "blue")
+   {:circle-radius
+    ["interpolate" ["linear"]  ["to-number" ["get" "acres"]]
+     1000   10
+     10000  30
+     300000 70]
+    :circle-color
+    ["interpolate" ["linear"]  ["to-number" ["get" "containper"]]
+     0 "red"   ;;TODO replace red with actual red hex color
+     90 "grey" ;;TODO replace grey with actual red hex color
+     ]
     :circle-opacity 0.4}})
 
 ;; TODO is where acres burned?
