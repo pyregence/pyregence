@@ -4,6 +4,7 @@
                                                             Marker Popup]]
    [clojure.core.async                   :refer [<! >! chan go]]
    [clojure.string                       :as str]
+   [goog.dom                             :as dom]
    [goog.object                          :as goog]
    [pyregence.config                     :as c]
    [pyregence.geo-utils                  :as g]
@@ -138,37 +139,6 @@
 (defn zoom-to-extent!
   "Pans/zooms the map to the provided extents."
   [[minx miny maxx maxy] current-layer & [max-zoom]]
-  (def minx minx)
-  (def miny miny)
-  (def maxx maxx)
-  (def maxy maxy)
-  (def current-layer current-layer)
-  (def max-zoom max-zoom)
-
-  (keys current-layer)
-  ;; => (:workspace
-  ;;     :layer-group
-  ;;     :forecast
-  ;;     :times
-  ;;     :model-init
-  ;;     :layer
-  ;;     :extent
-  ;;     :filter-set
-  ;;     :fire-name)
-
-  (:extent current-layer)
-  ;; => ["-91.08377875536266"
-  ;;     "43.81013213885956"
-  ;;     "-90.3057701382475"
-  ;;     "44.37162836173734"]
-
-  minx
-  ;; => "-91.08377875536266"
-  miny
-  ;; => "43.81013213885956"
-
-
-
   (let [config (-> {:linear  true
                     :padding (if (#{"fire-active" "fire-risk-forecast" "fire-risk-planning" "fire-detections"} (get-layer-type (:layer current-layer)))
                                {:top 150 :bottom 150 :left 150 :right 150}
@@ -779,7 +749,7 @@
           layers                   (hide-forecast-layers (get map-style "layers"))
 
           [new-sources new-layers] (if style-fn
-          ;;TODO its possible the conditional on the forcast could go here. if forecast build-wfs fire-active-with-these-colors else those-colors
+                                     ;;TODO its possible the conditional on the forcast could go here. if forecast build-wfs fire-active-with-these-colors else those-colors
                                      (<! (build-wfs fire-active geo-layer geoserver-key opacity))
                                      ;; add radius of acers burned.
                                      (build-wms geo-layer
@@ -792,12 +762,7 @@
       (update-style! map-style
                      :layers      layers
                      :new-sources new-sources
-                     :new-layers  new-layers)
-
-      #_(update-style! map-style
-                       :layers      layers
-                       :new-sources new-sources
-                       :new-layers  new-layers))))
+                     :new-layers  new-layers))))
 
 (defn create-wms-layer!
   "Adds WMS layer to the map. This is currently only used to add optional layers to the map."
