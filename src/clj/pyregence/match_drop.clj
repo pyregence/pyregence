@@ -34,13 +34,13 @@
 (def default-fuel-version "2.5.0")
 
 (def ^:private conus-bounds
-  {:minx -125.0 :miny 25.0 :maxx -66.0 :maxy 50.0})
+  {:min-x -125.0 :min-y 25.0 :max-x -66.0 :max-y 50.0})
 
-(defn- intersect-with-conus [minx miny maxx maxy]
-  [(max minx (:minx conus-bounds))
-   (max miny (:miny conus-bounds))
-   (min maxx (:maxx conus-bounds))
-   (min maxy (:maxy conus-bounds))])
+(defn- intersect-with-conus [min-x min-y max-x max-y]
+  [(max min-x (:min-x conus-bounds))
+   (max min-y (:min-y conus-bounds))
+   (min max-x (:max-x conus-bounds))
+   (min max-y (:max-y conus-bounds))])
 
 (defn- fuel-version->workspace
   [fuel-version]
@@ -55,14 +55,14 @@
          (:extent))))
 
 (defn- point-within-extent?
-  [lon lat [minx miny maxx maxy]]
-  (when (and minx miny maxx maxy)
-    (let [[minx miny maxx maxy] (intersect-with-conus (Double/parseDouble minx)
-                                                      (Double/parseDouble miny)
-                                                      (Double/parseDouble maxx)
-                                                      (Double/parseDouble maxy))]
-      (and (<= minx lon maxx)
-           (<= miny lat maxy)))))
+  [lon lat [min-x min-y max-x max-y]]
+  (when (and min-x min-y max-x max-y)
+    (let [[min-x min-y max-x max-y] (intersect-with-conus (Double/parseDouble min-x)
+                                                          (Double/parseDouble min-y)
+                                                          (Double/parseDouble max-x)
+                                                          (Double/parseDouble max-y))]
+      (and (<= min-x lon max-x)
+           (<= min-y lat max-y)))))
 
 ;;==============================================================================
 ;; Helper Functions
@@ -495,19 +495,19 @@
     (data-response {:error (str "Invalid fuel version: " fuel-version)}
                    {:status 400})
     (if-let [extent (get-fuel-layer-extent fuel-version)]
-      (let [[minx miny maxx maxy] (intersect-with-conus (Double/parseDouble (nth extent 0))
-                                                        (Double/parseDouble (nth extent 1))
-                                                        (Double/parseDouble (nth extent 2))
-                                                        (Double/parseDouble (nth extent 3)))]
+      (let [[min-x min-y max-x max-y] (intersect-with-conus (Double/parseDouble (nth extent 0))
+                                                            (Double/parseDouble (nth extent 1))
+                                                            (Double/parseDouble (nth extent 2))
+                                                            (Double/parseDouble (nth extent 3)))]
         (data-response {:type     "FeatureCollection"
                         :features [{:type       "Feature"
                                     :properties {:fuel-version fuel-version}
                                     :geometry   {:type        "Polygon"
-                                                 :coordinates [[[minx miny]
-                                                                [maxx miny]
-                                                                [maxx maxy]
-                                                                [minx maxy]
-                                                                [minx miny]]]}}]}
+                                                 :coordinates [[[min-x min-y]
+                                                                [max-x min-y]
+                                                                [max-x max-y]
+                                                                [min-x max-y]
+                                                                [min-x min-y]]]}}]}
                        {:type :json}))
       (do (println "WARN: No extent found for fuel version" fuel-version
                    "- :shasta layers may not be loaded")
