@@ -588,7 +588,6 @@
 ;;
 (defn- incident-layer [layer-name source-name opacity]
   (go
-    ;;DOES adding the fire-icons does need to be bundled into this indent layer which just returns a hashmap
     (<! (add-fire-icons-to-map!))
     {:id       layer-name
      :type     "symbol"
