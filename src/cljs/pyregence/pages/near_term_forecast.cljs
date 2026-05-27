@@ -577,6 +577,27 @@
     (when auto-zoom?
       (mb/zoom-to-extent! (get-current-layer-extent) (current-layer) max-zoom))))
 
+(defn- auto-switch-disabled-params!
+  "When a param changes, other params' selected options may become disabled.
+   Detects this and switches them to the first non-disabled option."
+  []
+  (let [params          (get-forecast-opt :params)
+        current-vals    (get @!/*params @!/*forecast)
+        selected-set    (->> current-vals (vals) (filter keyword?) (set))]
+    (doseq [[param-key {:keys [options]}] params
+            :let [selected-option (get current-vals param-key)
+                  {:keys [disabled-for]} (get options selected-option)]
+            :when (and (set? disabled-for)
+                       (seq (set/intersection disabled-for selected-set)))
+            :let [first-enabled (->> options
+                                     (remove (fn [[_ {:keys [disabled-for hidden?]}]]
+                                               (or hidden?
+                                                   (and (set? disabled-for)
+                                                        (seq (set/intersection disabled-for selected-set))))))
+                                     (ffirst))]
+            :when first-enabled]
+      (swap! !/*params assoc-in [@!/*forecast param-key] first-enabled))))
+
 (defn- select-param!
   "The function called whenever an input dropdown is changed on the collapsible panel.
    Resets the proper state atoms with the new, selected inputs from the UI."
@@ -597,6 +618,7 @@
       (reset! !/*layer-idx 0)
       (swap! !/*params assoc-in (cons @!/*forecast [:burn-pct]) :50)
       (reset! !/animate? false))
+    (auto-switch-disabled-params!)
     (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
                   (get-current-layer-key :clear-point?)
                   (get-current-option-key main-key val :auto-zoom?)
