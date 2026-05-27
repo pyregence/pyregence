@@ -751,7 +751,6 @@
           [new-sources new-layers] (if style-fn
                                      ;;TODO its possible the conditional on the forcast could go here. if forecast build-wfs fire-active-with-these-colors else those-colors
                                      (<! (build-wfs fire-active geo-layer geoserver-key opacity))
-                                     ;; add radius of acers burned.
                                      (build-wms geo-layer
                                                 geo-layer
                                                 geoserver-key
