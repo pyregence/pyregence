@@ -262,6 +262,13 @@
           res       (g/resolution zoom lat)]
       [x y (+ x res) (+ y res)])))
 
+(defn move-marker!
+  "Moves the current marker (if any) to new `[lng lat]` coordinates and updates the markers atom."
+  [[lng lat]]
+  (when-let [{:keys [marker]} (first @markers)]
+    (js-invoke marker "setLngLat" #js [lng lat])
+    (swap! markers assoc-in [0 :lnglat] [lng lat])))
+
 (defn- add-marker-to-map!
   "Adds a marker at the lon-lat coordinates of the click event."
   [[lng lat]]

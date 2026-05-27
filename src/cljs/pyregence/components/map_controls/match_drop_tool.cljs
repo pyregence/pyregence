@@ -360,7 +360,14 @@
                _                 (add-watch fuel-version ::fuel-boundary
                                             (fn [_ _ old-v new-v]
                                               (when (not= old-v new-v)
-                                                (draw-fuel-boundary! new-v))))]
+                                                (draw-fuel-boundary! new-v))))
+               _                 (add-watch fuel-extent-bbox ::clamp-point
+                                            (fn [_ _ _ new-bbox]
+                                              (when (and new-bbox (not= [0 0] @lon-lat))
+                                                (when-not (point-within-fuel-extent? @lon-lat)
+                                                  (let [clamped (clamp-to-fuel-extent @lon-lat)]
+                                                    (reset! lon-lat clamped)
+                                                    (mb/move-marker! clamped))))))]
     [:div#match-drop-tool
      [resizable-window
       parent-box
@@ -402,5 +409,6 @@
       (reset! fuel-extent-bbox nil)
       (reset! !/cursor-within-fuel-bounds? nil)
       (remove-watch fuel-version ::fuel-boundary)
+      (remove-watch fuel-extent-bbox ::clamp-point)
       (when (mb/layer-exists? fuel-boundary-layer-id)
         (mb/remove-fuel-boundary-layer! fuel-boundary-layer-id)))))
