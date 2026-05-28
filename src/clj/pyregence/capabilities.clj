@@ -194,11 +194,16 @@
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}(\d{2}|combined)_[a-z|-]+" full-name)
-                               (or (get-config :triangulum.views/client-keys :features :match-drop) (not (str/includes? full-name "match-drop"))))
+                               (or (get-config :triangulum.views/client-keys :features :match-drop)
+                                   (not (str/includes? full-name "match-drop")))
+                               (or (get-config :triangulum.views/client-keys :features :pyretechnics)
+                                   (not (str/includes? full-name ":pyretec"))))
                           (merge-fn (split-fire-spread-forecast-layer-name full-name))
 
                           (and (str/includes? full-name "isochrones")
-                               (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}(\d{2}|combined)_isochrones_[a-z|\d|-]*_\d{8}_\d{6}_(\d{2}|combined)" full-name))
+                               (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}(\d{2}|combined)_isochrones_[a-z|\d|-]*_\d{8}_\d{6}_(\d{2}|combined)" full-name)
+                               (or (get-config :triangulum.views/client-keys :features :pyretechnics)
+                                   (not (str/includes? full-name ":pyretec"))))
 
                           (merge-fn (split-isochrones-layer-name full-name))
 
