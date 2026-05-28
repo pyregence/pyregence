@@ -1,6 +1,7 @@
 (ns pyregence.capabilities
   (:require
    [clj-http.client     :as client]
+   [clojure.data.json   :as json]
    [clojure.edn         :as edn]
    [clojure.set         :as set]
    [clojure.string      :as str]
@@ -313,11 +314,38 @@
           (log-str (quot timeout-ms 1000) " seconds timeout occurred while loading capabilities for "
                    (get-config :triangulum.views/client-keys :geoserver geoserver-key)))))))
 
+(defn- list-workspaces
+  "Lists workspace names from a GeoServer instance via the REST API."
+  [geoserver-url basic-auth]
+  (let [url      (-> geoserver-url
+                     (u/end-with "/")
+                     (str "rest/workspaces.json"))
+        response (client/get url (cond-> {:as :text}
+                                   basic-auth (assoc :basic-auth basic-auth)))]
+    (->> (json/read-str (:body response) :key-fn keyword)
+         :workspaces
+         :workspace
+         (mapv :name))))
+
 (defn set-all-capabilities!
-  "Calls set-capabilities! on all GeoServer URLs provided in config.edn."
+  "Calls set-capabilities! on all GeoServer URLs provided in config.edn.
+   For GeoServers that require authentication, loads capabilities per workspace
+   to avoid timeout on large GetCapabilities responses."
   [_]
   (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
-    (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))
+    (if (private-layer-geoservers geoserver-key)
+      (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
+            basic-auth    (str (get-psps-geoserver-admin-username) ":" (get-psps-geoserver-admin-password))]
+        (try
+          (let [workspaces (list-workspaces geoserver-url basic-auth)]
+            (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
+            (doseq [ws workspaces]
+              (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
+                                      "workspace-name" ws})))
+          (catch Exception e
+            (log-str "Failed to list workspaces for " geoserver-url ", falling back to full GetCapabilities.\n" (ex-message e))
+            (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))))
+      (set-capabilities! nil {"geoserver-key" (name geoserver-key)})))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " (get-site-url) ".")))
 
