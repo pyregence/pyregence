@@ -219,6 +219,9 @@
    [:post "/clj/initiate-md"]                        {:handler (clj-handler match-drop/initiate-md!)
                                                      :auth-type #{:match-drop :token}
                                                      :auth-action :block}
+   [:post "/clj/get-fuel-extent"]                    {:handler (clj-handler match-drop/get-fuel-extent)
+                                                     :auth-type #{:match-drop :token}
+                                                     :auth-action :block}
 
    ;; Red Flag API
    [:post "/clj/get-red-flag-layer"]                 {:handler (clj-handler red-flag/get-red-flag-layer)

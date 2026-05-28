@@ -5,7 +5,7 @@
    [clojure.pprint             :as pp]
    [clojure.set                :refer [rename-keys]]
    [clojure.string             :as str]
-   [pyregence.capabilities     :refer [layers-exist?]]
+   [pyregence.capabilities     :refer [layers layers-exist?]]
    [pyregence.utils            :as u]
    [triangulum.config          :refer [get-config]]
    [triangulum.database        :refer [call-sql sql-primitive]]
@@ -27,6 +27,42 @@
   (->> (for [k ks]
          [k (get-md-config k)])
        (into {})))
+
+(def valid-md-fuel-versions
+  #{"2.5.0" "2.4.0" "2.3.0" "2.2.0" "2.1.0" "1.4.0" "1.3.0" "1.0.5"})
+
+(def default-fuel-version "2.5.0")
+
+(def ^:private conus-bounds
+  {:min-x -125.0 :min-y 25.0 :max-x -66.0 :max-y 50.0})
+
+(defn- intersect-with-conus [min-x min-y max-x max-y]
+  [(max min-x (:min-x conus-bounds))
+   (max min-y (:min-y conus-bounds))
+   (min max-x (:max-x conus-bounds))
+   (min max-y (:max-y conus-bounds))])
+
+(defn- fuel-version->workspace
+  [fuel-version]
+  (str "fuels-and-topography_landfire-" fuel-version))
+
+(defn- get-fuel-layer-extent
+  [fuel-version]
+  (let [workspace (fuel-version->workspace fuel-version)]
+    (->> (:shasta @layers)
+         (filter #(= workspace (:workspace %)))
+         (first)
+         (:extent))))
+
+(defn- point-within-extent?
+  [lon lat [min-x min-y max-x max-y]]
+  (when (and min-x min-y max-x max-y)
+    (let [[min-x min-y max-x max-y] (intersect-with-conus (Double/parseDouble min-x)
+                                                          (Double/parseDouble min-y)
+                                                          (Double/parseDouble max-x)
+                                                          (Double/parseDouble max-y))]
+      (and (<= min-x lon max-x)
+           (<= min-y lat max-y)))))
 
 ;;==============================================================================
 ;; Helper Functions
@@ -156,7 +192,7 @@
 
 (defn- match-drop-args->body
   [match-job-id
-   {:keys [ignition-time lat lon wx-type]}
+   {:keys [ignition-time lat lon wx-type fuel-version]}
    {:keys [sig3-env]}]
   (let [model-time    (u/convert-date-string ignition-time) ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
         wx-start-time (u/round-down-to-nearest-hour model-time)
@@ -173,7 +209,7 @@
                                         :pyrc_ignition_epoch_s (utc-date->epoch-s ignition-time)}
                  :pyrc_inputs          {:pyrc_fuel_source  "landfire"
                                         :pyrc_wx_type      wx-type
-                                        :pyrc_fuel_version "2.4.0"}
+                                        :pyrc_fuel_version (or fuel-version default-fuel-version)}
                  :pyrc_sim_params      {:pyrc_sim_num_ensemble_members 200}}}))
 
 (defn- submit-match-drop-job!
@@ -322,7 +358,10 @@
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
   [session match-drop-job-params]
-  (let [{:keys [user-id match-drop-access?]} session]
+  (let [{:keys [user-id match-drop-access?]} session
+        {:keys [fuel-version lat lon]}       match-drop-job-params
+        fuel-version                         (or fuel-version default-fuel-version)
+        match-drop-job-params                (assoc match-drop-job-params :fuel-version fuel-version)]
     (if-not match-drop-access?
       (data-response "You do not have access to the Match Drop tool."
                      {:status 403})
@@ -330,6 +369,13 @@
        (cond
          (not (get-config :triangulum.views/client-keys :features :match-drop))
          {:error "Match drop is currently disabled. Please contact your system administrator to enable it."}
+
+         (not (valid-md-fuel-versions fuel-version))
+         {:error (str "Invalid fuel version: " fuel-version ". Valid versions are: " (str/join ", " (sort valid-md-fuel-versions)))}
+
+         (let [extent (get-fuel-layer-extent fuel-version)]
+           (and extent (not (point-within-extent? lon lat extent))))
+         {:error (str "The ignition point is outside the geographic boundary of LANDFIRE " fuel-version ". Please select a different fuel version or location.")}
 
          (pos? (count-running-user-match-jobs user-id))
          {:error "Match drop is already running. Please wait until it has completed."}
@@ -442,4 +488,28 @@
         response      (client/get api-url http-request)]
     (data-response (parse-available-wx-dates (:body response)))))
 
-
+(defn get-fuel-extent
+  "Returns the geographic bounding box of a LANDFIRE fuel version as GeoJSON."
+  [_ fuel-version]
+  (if-not (valid-md-fuel-versions fuel-version)
+    (data-response {:error (str "Invalid fuel version: " fuel-version)}
+                   {:status 400})
+    (if-let [extent (get-fuel-layer-extent fuel-version)]
+      (let [[min-x min-y max-x max-y] (intersect-with-conus (Double/parseDouble (nth extent 0))
+                                                            (Double/parseDouble (nth extent 1))
+                                                            (Double/parseDouble (nth extent 2))
+                                                            (Double/parseDouble (nth extent 3)))]
+        (data-response {:type     "FeatureCollection"
+                        :features [{:type       "Feature"
+                                    :properties {:fuel-version fuel-version}
+                                    :geometry   {:type        "Polygon"
+                                                 :coordinates [[[min-x min-y]
+                                                                [max-x min-y]
+                                                                [max-x max-y]
+                                                                [min-x max-y]
+                                                                [min-x min-y]]]}}]}
+                       {:type :json}))
+      (do (println "WARN: No extent found for fuel version" fuel-version
+                   "- :shasta layers may not be loaded")
+          (data-response {:type "FeatureCollection" :features []}
+                         {:type :json})))))
