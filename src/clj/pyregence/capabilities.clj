@@ -339,9 +339,11 @@
         (try
           (let [workspaces (list-workspaces geoserver-url basic-auth)]
             (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
-            (doseq [ws workspaces]
-              (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
-                                      "workspace-name" ws})))
+            (->> workspaces
+                 (pmap (fn [ws]
+                         (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
+                                                 "workspace-name" ws})))
+                 (doall)))
           (catch Exception e
             (log-str "Failed to list workspaces for " geoserver-url ", falling back to full GetCapabilities.\n" (ex-message e))
             (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))))
