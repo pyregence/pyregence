@@ -64,6 +64,39 @@
                     (edn/read-string)))
         (reset! !/md-available-dates nil)))))
 
+(def ^:private fuel-boundary-layer-id "fuel-version-boundary")
+
+(defonce ^:private fuel-extent-bbox (atom nil))
+
+(defn- point-within-fuel-extent? [[lng lat]]
+  (when-let [[minx miny maxx maxy] @fuel-extent-bbox]
+    (and (<= minx lng maxx)
+         (<= miny lat maxy))))
+
+(defn- clamp-to-fuel-extent [[lng lat]]
+  (if-let [[minx miny maxx maxy] @fuel-extent-bbox]
+    [(max minx (min maxx lng))
+     (max miny (min maxy lat))]
+    [lng lat]))
+
+(defn- draw-fuel-boundary!
+  [fuel-version]
+  (go
+    (when (mb/layer-exists? fuel-boundary-layer-id)
+      (mb/remove-fuel-boundary-layer! fuel-boundary-layer-id))
+    (let [response (<! (u-async/call-clj-async! "get-fuel-extent" fuel-version))]
+      (when (:success response)
+        (let [js-data  (-> response :body js/JSON.parse)
+              data     (js->clj js-data :keywordize-keys true)]
+          (if (and data (seq (:features data)))
+            (let [coords (-> data :features first :geometry :coordinates first)
+                  lngs   (map first coords)
+                  lats   (map second coords)]
+              (reset! fuel-extent-bbox [(apply min lngs) (apply min lats)
+                                        (apply max lngs) (apply max lats)])
+              (mb/create-fuel-boundary-layer! fuel-boundary-layer-id js-data))
+            (reset! fuel-extent-bbox nil)))))))
+
 (defn refresh-fire-names!
   "Updates the capabilities atom with all unique fires from the back-end
    layers atom, parsed into the proper format. Also updates the processed-params
@@ -149,7 +182,7 @@
   "Initiates the match drop run and initiates polling for updates.
    Note that md-datetime-local is in local time and will be converted back
    to UTC before being passed to the back-end as the ignition-time."
-  [display-name [lon lat] md-datetime-local forecast-weather? user-email]
+  [display-name [lon lat] md-datetime-local forecast-weather? user-email fuel-version]
   (go
     ;; Lat and Lon must be within CONUS
     ;; TODO we should also add a separate check for md-datetime-local being within the available weather dates
@@ -163,7 +196,8 @@
                                                     :ignition-time ignition-time
                                                     :lon           lon
                                                     :lat           lat
-                                                    :wx-type       (if forecast-weather? "forecast" "historical")})]
+                                                    :wx-type       (if forecast-weather? "forecast" "historical")
+                                                    :fuel-version  fuel-version})]
         (set-message-box-content! {:title         "Processing Match Drop"
                                    :body          "Initiating match drop run."
                                    :mode          :custom
@@ -277,7 +311,17 @@
       (reset! md-datetime-local (u-dom/input-value %))
       (reset-local-time-zone! local-time-zone (u-dom/input-value %)))])
 
-(defn- md-buttons [md-datetime-local forecast-weather? display-name lon-lat user-email]
+(defn- fuel-version-select [fuel-version]
+  [:div {:style {:margin "0.5rem 0"}}
+   [:label {:style {:font-size "0.9rem" :font-weight "bold" :display "block" :margin-bottom "0.25rem"}} "Fuels Version"]
+   [:select {:style     (merge ($/dropdown) {:width "100%"})
+             :value     @fuel-version
+             :on-change #(reset! fuel-version (u-dom/input-value %))}
+    (for [[version {:keys [opt-label]}] (c/match-drop-fuel-versions)]
+      ^{:key version}
+      [:option {:value version} opt-label])]])
+
+(defn- md-buttons [md-datetime-local forecast-weather? display-name lon-lat user-email fuel-version]
   [:div {:style {:display         "flex"
                  :flex-shrink     0
                  :justify-content "space-between"
@@ -289,7 +333,7 @@
              :disabled (or (= [0 0] @lon-lat)
                            (= "" @md-datetime-local)
                            (empty? @!/md-available-dates))
-             :on-click #(initiate-match-drop! @display-name @lon-lat @md-datetime-local @forecast-weather? user-email)}
+             :on-click #(initiate-match-drop! @display-name @lon-lat @md-datetime-local @forecast-weather? user-email @fuel-version)}
     "Submit"]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -305,8 +349,25 @@
                forecast-weather? (r/atom true) ; Whether or not we are using forecast or historical weather data, default to using forecast
                md-datetime-local (r/atom (u-time/get-current-local-datetime-string)) ; Default to the current date/time
                local-time-zone   (r/atom (u-time/get-time-zone (js/Date. @md-datetime-local))) ; Default to the user's current time zone
-               click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %)))
-               _                 (set-md-available-dates!)]
+               fuel-version      (r/atom c/default-fuel-version)
+               click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %))
+                                                                    {:coord-fn clamp-to-fuel-extent})
+               move-event        (mb/add-mouse-move-xy!
+                                  #(reset! !/cursor-within-fuel-bounds?
+                                           (point-within-fuel-extent? %)))
+               _                 (set-md-available-dates!)
+               _                 (draw-fuel-boundary! @fuel-version)
+               _                 (add-watch fuel-version ::fuel-boundary
+                                            (fn [_ _ old-v new-v]
+                                              (when (not= old-v new-v)
+                                                (draw-fuel-boundary! new-v))))
+               _                 (add-watch fuel-extent-bbox ::clamp-point
+                                            (fn [_ _ _ new-bbox]
+                                              (when (and new-bbox (not= [0 0] @lon-lat))
+                                                (when-not (point-within-fuel-extent? @lon-lat)
+                                                  (let [clamped (clamp-to-fuel-extent @lon-lat)]
+                                                    (reset! lon-lat clamped)
+                                                    (mb/move-marker! clamped))))))]
     [:div#match-drop-tool
      [resizable-window
       parent-box
@@ -323,6 +384,7 @@
           [:hr {:style {:background "white"}}]
           [labeled-input "Fire Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Ignition Location:" @lon-lat]
+          [fuel-version-select fuel-version]
           [:hr {:style {:background "white"}}]
           (cond
             (nil? @!/md-available-dates)
@@ -339,7 +401,14 @@
              [weather-info forecast-weather?]
              [weather-radio-buttons forecast-weather? md-datetime-local local-time-zone]
              [datetime-local-picker forecast-weather? md-datetime-local local-time-zone]])
-          [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-email]]])]]
+          [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-email fuel-version]]])]]
     (finally
       (mb/remove-markers!)
-      (mb/remove-event! click-event))))
+      (mb/remove-event! click-event)
+      (mb/remove-event! move-event)
+      (reset! fuel-extent-bbox nil)
+      (reset! !/cursor-within-fuel-bounds? nil)
+      (remove-watch fuel-version ::fuel-boundary)
+      (remove-watch fuel-extent-bbox ::clamp-point)
+      (when (mb/layer-exists? fuel-boundary-layer-id)
+        (mb/remove-fuel-boundary-layer! fuel-boundary-layer-id)))))

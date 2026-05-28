@@ -262,6 +262,13 @@
           res       (g/resolution zoom lat)]
       [x y (+ x res) (+ y res)])))
 
+(defn move-marker!
+  "Moves the current marker (if any) to new `[lng lat]` coordinates and updates the markers atom."
+  [[lng lat]]
+  (when-let [{:keys [marker]} (first @markers)]
+    (js-invoke marker "setLngLat" #js [lng lat])
+    (swap! markers assoc-in [0 :lnglat] [lng lat])))
+
 (defn- add-marker-to-map!
   "Adds a marker at the lon-lat coordinates of the click event."
   [[lng lat]]
@@ -378,12 +385,14 @@
   (-> e (aget "lngLat") .toArray (js->clj)))
 
 (defn enqueue-marker-on-click!
-  "Tracks a queue of visible markers on the map."
-  [callback & [queue-options?]]
+  "Tracks a queue of visible markers on the map.
+   Optionally accepts a `coord-fn` that transforms `[lng lat]` before placing the marker."
+  [callback & [{:keys [coord-fn] :as queue-options}]]
   (add-event! "click" (fn [e]
-                        (let [lnglat     (event->lnglat e)
+                        (let [lnglat     (cond-> (event->lnglat e)
+                                           coord-fn coord-fn)
                               new-marker (add-marker-to-map! lnglat)]
-                          (enqueue-marker {:lnglat lnglat :marker new-marker} queue-options?)
+                          (enqueue-marker {:lnglat lnglat :marker new-marker} queue-options)
                           ;; apply callback to a vector of lng-lat coordinates
                           (callback (mapv #(% :lnglat) @markers))))))
 
@@ -1065,6 +1074,42 @@
                                 :fill-opacity       (on-hover 1 0.4)}}]]
     (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
 
+(defn- invert-geojson
+  [data]
+  (let [coords     (-> data (aget "features") (aget 0) (aget "geometry") (aget "coordinates") (aget 0))
+        hole-ring  (.slice coords)
+        _          (.reverse hole-ring)
+        world-ring #js [#js [-180 -90] #js [180 -90] #js [180 90] #js [-180 90] #js [-180 -90]]]
+    #js {:type     "FeatureCollection"
+         :features #js [#js {:type       "Feature"
+                             :geometry   #js {:type        "Polygon"
+                                              :coordinates #js [world-ring hole-ring]}
+                             :properties #js {}}]}))
+
+(defn create-fuel-boundary-layer!
+  [id data]
+  (let [mask-id    (str id "-mask")
+        mask-data  (invert-geojson data)
+        new-source {id      {:type "geojson" :data data}
+                    mask-id {:type "geojson" :data mask-data}}
+        new-layers [{:id       mask-id
+                     :source   mask-id
+                     :type     "fill"
+                     :metadata {:type    "fuel-boundary"
+                                :z-index 998}
+                     :paint    {:fill-color   "#000000"
+                                :fill-opacity 0.35}}
+                    {:id       id
+                     :source   id
+                     :type     "line"
+                     :metadata {:type    "fuel-boundary"
+                                :z-index 999}
+                     :paint    {:line-color     "#1E90FF"
+                                :line-width     3.5
+                                :line-dasharray [6 4]
+                                :line-opacity   0.85}}]]
+    (update-style! (get-style) :new-sources new-source :new-layers new-layers)))
+
 (defn mvt-source [layer-name geoserver-key]
   {:type  "vector"
    :tiles [(c/mvt-layer-url layer-name geoserver-key)]})
@@ -1121,6 +1166,11 @@
         layers          (get cur-style "layers")
         filtered-layers (remove #(= id (get % "id")) layers)]
     (update-style! cur-style :layers filtered-layers)))
+
+(defn remove-fuel-boundary-layer!
+  [id]
+  (remove-layer! (str id "-mask"))
+  (remove-layer! id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Creation

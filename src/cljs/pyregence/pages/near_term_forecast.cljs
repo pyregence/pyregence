@@ -37,7 +37,8 @@
    [pyregence.utils.number-utils                                              :as u-num]
    [pyregence.utils.time-utils                                                :as u-time]
    [react                                                                     :as react]
-   [reagent.core                                                              :as r]))
+   [reagent.core                                                              :as r]
+   [reagent.dom.server                                                        :as rs]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Spec
@@ -885,13 +886,26 @@
    [svg/pin]])
 
 (defn- map-layer []
-  (r/with-let [mouse-down? (r/atom false)
-               cursor-fn   #(cond
-                              @mouse-down?               "grabbing"
-                              (or @!/show-info?
-                                  @!/show-match-drop?
-                                  @!/show-measure-tool?) "crosshair"
-                              :else                      "grab")]
+  (r/with-let [mouse-down?        (r/atom false)
+               red-cross-cursor   (let [svg-str (-> (svg/red-cross)
+                                                    (rs/render-to-string)
+                                                    (str/replace "\"" "'"))]
+                                    (str "url(\"data:image/svg+xml;utf8," svg-str "\") 9 9, not-allowed"))
+               cursor-fn          #(cond
+                                     @mouse-down?
+                                     "grabbing"
+
+                                     @!/show-match-drop?
+                                     (if (false? @!/cursor-within-fuel-bounds?)
+                                       red-cross-cursor
+                                       "crosshair")
+
+                                     (or @!/show-info?
+                                         @!/show-measure-tool?)
+                                     "crosshair"
+
+                                     :else
+                                     "grab")]
     [:div#map {:class (<class $p-mb-cursor)
                :style {:cursor (cursor-fn) :height "100%" :position "absolute" :width "100%"}
                :on-mouse-down #(reset! mouse-down? true)
