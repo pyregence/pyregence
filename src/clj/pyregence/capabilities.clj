@@ -296,7 +296,9 @@
                               (let [stdout?       (= 0 (count @layers))
                                     geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
                                     new-layers    (process-layers! geoserver-url workspace-name basic-auth)
-                                    message       (str (count new-layers) " layers from " geoserver-url " added to " (get-site-url) ".")]
+                                    message       (str "Added " (count new-layers) " layers from " geoserver-url
+                                                       (when workspace-name (str " (workspace=" workspace-name ")"))
+                                                       " to " (get-site-url) ".")]
                                 (if workspace-name
                                   (do
                                     (remove-workspace! nil {"geoserver-key"  (name geoserver-key)
