@@ -67,7 +67,7 @@
   [:div {:style {:display        "flex"
                  :flex-direction "column"
                  :gap            "12px"}}
-   [:h6 {:style ($popup-header)} name]
+   [:h6 {:style (assoc ($popup-header) :color ($/color-picker :neutral-dark-gray))} prettyname]
    [:div {:style {:display        "flex"
                   :flex-direction "column"
                   :gap            "8px"}}
