@@ -47,6 +47,9 @@
 ;; Fire Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- red-flag [property value]
+  [:div [:strong property ": "] value])
+
 (defn- fire-property [property value]
   [:div {:style {:display "flex" :height "14px" :gap "4px"}}
    [:span
@@ -168,8 +171,8 @@
          [:hr]
          [:div (properties->rows @info)]]
         [:div
-         [fire-property "Onset" (if (= onset "null") "N/A" onset)]
-         [fire-property "Ends"  (if (= ends  "null") "N/A" ends)]])
+         [red-flag "Onset" (if (= onset "null") "N/A" onset)]
+         [red-flag "Ends"  (if (= ends  "null") "N/A" ends)]])
        (when (seq url)
           [red-flag-link
            {:expanded? @expanded?
