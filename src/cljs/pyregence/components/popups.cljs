@@ -141,7 +141,7 @@
           :let  [value (get json k)]
           :when (some? value)]
      ^{:key k}
-      [fire-property (u-misc/camel->text k) (format-values k value)])))
+      [red-flag (u-misc/camel->text k) (format-values k value)])))
 
 (defn- get-red-flag-data
   "GET the red-flag URL and returns the parsed JSON on a channel"
