@@ -544,8 +544,8 @@
 (defn fire-properties->pop-up
   [{:keys [name source] :as fire-properties}]
   (assoc fire-properties
-         :icon        ({"Cal Fire"   [pyregence.components.svg-icons/cal-fire]
-                        "Watch Duty" [pyregence.components.svg-icons/watch-duty {}]} source)
+         :icon        ({"Cal Fire"   [svg/cal-fire]
+                        "Watch Duty" [svg/watch-duty {}]} source)
          :on-click    #(select-param! (keyword name) :fire-name)
          :show-link?  (forecast-exists? name)))
 
