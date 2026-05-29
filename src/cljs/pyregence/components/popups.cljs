@@ -77,30 +77,31 @@
     [fire-property "Percent Contained" (str containper "%")]
     [fire-property "Acres Burned" (.toLocaleString acres)]
     (when source
-      [:a {:href url :target "_blank"}
+      [:div {:style {:display "flex" :gap "8px" :flex-direction "column"}}
        [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
-       [:div {:style {:display        "flex"
-                      :flex-direction "column"
-                      :gap            "5px"}}
-        [:div {:style {:display          "flex"
-                       :height           "52px"
-                       :gap              "8px"
-                       :background-color ($/color-picker :neutral-light-gray)
-                       :padding          "8px 12px"
-                       :align-items      "center"
-                       :align-self       "stretch"
-                       :border-radius    "8px"}}
-         icon
-         ;; For calfire were using a p tag, for watchduty we use text. not sure
-         ;; yet what will happen with other sources so this is a bit of a hax.
-         (when (= "Cal Fire" source)
-           [:p {:style
-                ;; TODO remove this margin-bottom by figuring out why it has
-                ;; a margin-bottom in the first place and likely changing that.
-                {:margin-bottom "0px"
-                 :font-weight   "600"
-                 :color         ($/color-picker :neutral-black)}} "CAL FIRE"])
-         [svg/source-link]]]])]
+       [:a {:href url :target "_blank"}
+        [:div {:style {:display        "flex"
+                       :flex-direction "column"
+                       :gap            "5px"}}
+         [:div {:style {:display          "flex"
+                        :height           "52px"
+                        :gap              "8px"
+                        :background-color ($/color-picker :neutral-light-gray)
+                        :padding          "8px 12px"
+                        :align-items      "center"
+                        :align-self       "stretch"
+                        :border-radius    "8px"}}
+          icon
+          ;; For calfire were using a p tag, for watchduty we use text. not sure
+          ;; yet what will happen with other sources so this is a bit of a hack.
+          (when (= "Cal Fire" source)
+            [:p {:style
+                 ;; TODO remove this margin-bottom by figuring out why it has
+                 ;; a margin-bottom in the first place and likely changing that.
+                 {:margin-bottom "0px"
+                  :font-weight   "600"
+                  :color         ($/color-picker :neutral-black)}} "CAL FIRE"])
+          [svg/source-link]]]]])]
    (when show-link? [fire-link on-click])])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
