@@ -541,15 +541,19 @@
   (contains? (get-in @!/capabilities [:active-fire :params :fire-name :options])
              (keyword fire-name)))
 
+(defn fire-properties->pop-up
+  [{:keys [name source] :as fire-properties}]
+  (assoc fire-properties
+         :icon        ({"Cal Fire"   [svg/cal-fire]
+                        "Watch Duty" [svg/watch-duty {}]} source)
+         :on-click    #(select-param! (keyword name) :fire-name)
+         :show-link?  (forecast-exists? name)))
+
 (defn- init-fire-popup! [feature _]
-  (let [properties (-> feature (aget "properties") (js->clj))
-        lnglat     (-> properties (select-keys ["longitude" "latitude"]) (vals))
-        {:strs [name prettyname containper acres]} properties
-        body       (fire-popup prettyname
-                               containper
-                               acres
-                               #(select-param! (keyword name) :fire-name)
-                               (forecast-exists? name))]
+  (let [{:keys [longitude latitude] :as fire-properties}
+        (-> feature (aget "properties") (js->clj :keywordize-keys true))
+        lnglat     [longitude latitude]
+        body       [fire-popup (-> fire-properties fire-properties->pop-up)]]
     (mb/init-popup! "fire" lnglat body {:width "200px"})
     (mb/set-center! lnglat 0)))
 
