@@ -1,10 +1,10 @@
 -- Add the listed (existing) users to the "Pyregence Consortium" organization
--- as organization admins.
+-- as regular organization members.
 UPDATE users
 SET organization_rid      = (SELECT organization_uid
                              FROM organizations
                              WHERE org_unique_id = 'pyregence-consortium'),
-    user_role             = 'organization_admin',
+    user_role             = 'organization_member',
     org_membership_status = 'accepted'
 WHERE email IN (
     'sromsos@sig-gis.com',
