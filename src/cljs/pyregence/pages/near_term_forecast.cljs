@@ -364,8 +364,7 @@
 
    Note that super_admins can resolve credentials from *all* orgs."
   []
-  (if (and (= @!/*forecast :active-fire)
-           (not= :none (get-in @!/*params [:active-fire :wui-fire-name])))
+  (if (c/wui-fire-selected?)
     ;; WUI active fires are served from the private :psps GeoServer; authenticate with
     ;; the psps GeoServer admin credentials (only populated for pyregence-consortium members).
     @!/psps-geoserver-credentials
