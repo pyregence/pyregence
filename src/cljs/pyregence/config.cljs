@@ -358,6 +358,24 @@
                                                               [:strong "RTMA"]
                                                               " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
                                                  :options    (array-map
+                                                               ;;TODO add weather params
+;; erc:   energy release component (ERC, Btu/sq ft)
+;; ercperc:  ERC percentile
+;; bi:  burning index (BI, ft * 10)
+;; biperc:  BI percentile
+;; sc: spread component (ft/min)
+;; scperc: SC percentile
+;; ic: ignition component (%)
+;; sfdiperc: SFDI percentile
+;; sfdicat: SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)
+;; lh:  Live herbaceous fuel moisture (% or fraction)
+;; lw:  Live woody fuel moisture (% or fraction)
+;; m1: 1-hour fuel moisture (% or fraction)
+;; m10:  10-hour fuel moisture (% or fraction)
+;; m100:  100-hour fuel moisture (% or fraction)
+;; m1000: 1000-hour fuel moisture (% or fraction)
+;; kbdiI: Keetch Byram Drought Index (0-800)
+
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
                                                                               :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}

@@ -371,7 +371,9 @@
                           :active-fire  :only-underlays
                           :psps-zonal   [:psps-zonal :utility]
                           nil)]
-      (let [;; TODO in the future we shouldn't force the layer_path key to be the same as org-unique-id from the DB, we should encode the org-id in the layer_config itself
+      (let [
+            ;; TODO actually follow through with this comment below, though i think will have to make it per user-role because of 604.
+            ;; TODO in the future we shouldn't force the layer_path key to be the same as org-unique-id from the DB, we should encode the org-id in the layer_config itself
             raw-org-id      (if (= keypath :only-underlays)
                               keypath
                               (name (get-in @!/*params keypath)))
