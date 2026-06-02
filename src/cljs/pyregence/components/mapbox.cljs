@@ -745,9 +745,7 @@
   (go
     (let [map-style                (get-style)
           layers                   (hide-forecast-layers (get map-style "layers"))
-
           [new-sources new-layers] (if style-fn
-                                     ;;TODO its possible the conditional on the forcast could go here. if forecast build-wfs fire-active-with-these-colors else those-colors
                                      (<! (build-wfs fire-active geo-layer geoserver-key opacity))
                                      (build-wms geo-layer
                                                 geo-layer
