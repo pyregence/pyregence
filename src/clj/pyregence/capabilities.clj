@@ -367,9 +367,9 @@
   "Returns all unique fires from the layers atom split into active fires and
    match drops. Each fire-name option uses :filter-set (instead of :filter) to
    embed the forecast type. Returns a map of the form:
-   {:active-fires     {:fire-name       {:opt-label \"Fire Name\"       :filter-set #{\"fire-spread-forecast\",     \"fire-name\"}       :auto-zoom? true :geoserver-key :trinity}    ...}
-    :match-drops      {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\",      \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}
-    :wui-active-fires {:wui-fire-name   {:opt-label \"WUI Fire Name\"   :filter-set #{\"wui-fire-spread-forecast\", \"wui-fire-name\"}   :auto-zoom? true :geoserver-key :psps}       ...}}"
+   {:active-fires     {:fire-name       {:opt-label \"Fire Name\"       :filter-set #{\"fire-spread-forecast\", \"fire-name\"}      :auto-zoom? true :geoserver-key :trinity}    ...}
+    :match-drops      {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\", \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}
+    :wui-active-fires {:wui-fire-name   {:opt-label \"WUI Fire Name\"   :filter-set #{\"fire-spread-forecast\", \"wui-fire-name\"}  :auto-zoom? true :geoserver-key :psps}       ...}}"
   [session]
   (let [{:keys [user-id match-drop-access?]} session
         match-drop-names                     (when match-drop-access?
@@ -388,38 +388,38 @@
                                                     (reduce (fn [acc fire-name]
                                                               (assoc acc (keyword fire-name)
                                                                      {:opt-label     (fire-name-capitalization fire-name)
-                                                                      :filter-set    #{"wui-fire-spread-forecast" fire-name}
+                                                                      :filter-set    #{"fire-spread-forecast" fire-name}
                                                                       :auto-zoom?    true
                                                                       :geoserver-key :psps}))
                                                             {})))]
     (-> (->> (concat (:trinity @layers) (:match-drop @layers))
-         (filter (fn [{:keys [forecast]}]
-                   (#{"fire-spread-forecast" "match-drop-forecast"} forecast)))
-         (map :fire-name)
-         (distinct)
-         (reduce
-          (fn [acc fire-name]
-            (let [match-job-id (some-> fire-name
-                                       (str/split #"md-")
-                                       (second)
-                                       (parse-long))]
-              (cond
-                 ;; Active fire (no match-job-id and not a legacy match drop using the old naming convention)
-                (and (nil? match-job-id) (not (str/includes? fire-name "match-drop")))
-                (update acc :active-fires assoc (keyword fire-name)
-                        {:opt-label     (fire-name-capitalization fire-name)
-                         :filter-set    #{"fire-spread-forecast" fire-name}
-                         :auto-zoom?    true
-                         :geoserver-key :trinity})
-                ;; Match drop belonging to this user
-                (contains? match-drop-names match-job-id)
-                (update acc :match-drops assoc (keyword fire-name)
-                        {:opt-label     (get match-drop-names match-job-id)
-                         :filter-set    #{"match-drop-forecast" fire-name}
-                         :auto-zoom?    true
-                         :geoserver-key :match-drop})
-                :else acc)))
-          {:active-fires {} :match-drops {}}))
+             (filter (fn [{:keys [forecast]}]
+                       (#{"fire-spread-forecast" "match-drop-forecast"} forecast)))
+             (map :fire-name)
+             (distinct)
+             (reduce
+              (fn [acc fire-name]
+                (let [match-job-id (some-> fire-name
+                                           (str/split #"md-")
+                                           (second)
+                                           (parse-long))]
+                  (cond
+                     ;; Active fire (no match-job-id and not a legacy match drop using the old naming convention)
+                    (and (nil? match-job-id) (not (str/includes? fire-name "match-drop")))
+                    (update acc :active-fires assoc (keyword fire-name)
+                            {:opt-label     (fire-name-capitalization fire-name)
+                             :filter-set    #{"fire-spread-forecast" fire-name}
+                             :auto-zoom?    true
+                             :geoserver-key :trinity})
+                    ;; Match drop belonging to this user
+                    (contains? match-drop-names match-job-id)
+                    (update acc :match-drops assoc (keyword fire-name)
+                            {:opt-label     (get match-drop-names match-job-id)
+                             :filter-set    #{"match-drop-forecast" fire-name}
+                             :auto-zoom?    true
+                             :geoserver-key :match-drop})
+                    :else acc)))
+              {:active-fires {} :match-drops {}}))
         (assoc :wui-active-fires (or wui-active-fires {})))))
 
 (defn get-user-layers [session]
