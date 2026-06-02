@@ -339,7 +339,9 @@
       (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
             basic-auth    (str (get-psps-geoserver-admin-username) ":" (get-psps-geoserver-admin-password))]
         (try
-          (let [workspaces (list-workspaces geoserver-url basic-auth)]
+          (let [workspaces (cond->> (list-workspaces geoserver-url basic-auth)
+                             ;; For :psps, only load the WUI active-fire workspaces (testing).
+                             (= geoserver-key :psps) (filter #(str/starts-with? % "fire-spread")))]
             (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
             (->> workspaces
                  (pmap (fn [ws]
