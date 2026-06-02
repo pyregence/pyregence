@@ -435,7 +435,7 @@
         ;; WUI active fires live in the private :psps GeoServer and are gated behind the :wui feature flag
         wui-active-fires                     (when (get-config :triangulum.views/client-keys :features :wui)
                                                (->> (:psps @layers)
-                                                    (filter #(= "wui-fire-spread-forecast" (:forecast %)))
+                                                    (filter #(= "fire-spread-forecast" (:forecast %)))
                                                     (map :fire-name)
                                                     (distinct)
                                                     (reduce (fn [acc fire-name]
