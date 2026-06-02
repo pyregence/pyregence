@@ -120,7 +120,15 @@
         (swap! !/capabilities update-in [:active-fire :params :match-drop-name :options] merge (:match-drops fire-names))
         (swap! !/capabilities assoc-in [:active-fire :params :match-drop-name :hidden?] false)
         (swap! !/processed-params update-in [:match-drop-name :options] merge (:match-drops fire-names))
-        (swap! !/processed-params assoc-in [:match-drop-name :hidden?] false)))))
+        (swap! !/processed-params assoc-in [:match-drop-name :hidden?] false))
+      ;; WUI active fires (PSPS-org users only, gated behind the :wui feature flag)
+      (when (and (c/feature-enabled? :wui)
+                 (seq @!/user-psps-orgs-list)
+                 (seq (:wui-active-fires fire-names)))
+        (swap! !/capabilities update-in [:active-fire :params :wui-fire-name :options] merge (:wui-active-fires fire-names))
+        (swap! !/capabilities assoc-in [:active-fire :params :wui-fire-name :hidden?] false)
+        (swap! !/processed-params update-in [:wui-fire-name :options] merge (:wui-active-fires fire-names))
+        (swap! !/processed-params assoc-in [:wui-fire-name :hidden?] false)))))
 
 (defn- body-for-match-drop-modal [text]
   {:body

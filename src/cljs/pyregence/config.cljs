@@ -543,11 +543,15 @@
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "14-day forecasts of active fires with burning areas established from satellite-based heat detection."
-                  :params          {:fire-name       {:opt-label      "Fire Name"
+                  ;; NOTE: array-map is used to preserve insertion order. With 9+ entries a
+                  ;; map literal becomes an unordered hash-map, which would scramble the
+                  ;; collapsible-panel render order of these params.
+                  :params          (array-map
+                                    :fire-name       {:opt-label      "Fire Name"
                                                       :sort?          true
                                                       :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
                                                       :default-option :active-fires
-                                                      :resets         {:match-drop-name :none}
+                                                      :resets         {:match-drop-name :none :wui-fire-name :none}
                                                       :options        {:none         {:opt-label "\u2014"
                                                                                       :hidden?   true}
                                                                        :active-fires {:opt-label            "*All Active Fires"
@@ -561,7 +565,14 @@
                                                       :hidden?        true
                                                       :hover-text     "Select a match drop fire to view."
                                                       :default-option :none
-                                                      :resets         {:fire-name :none}
+                                                      :resets         {:fire-name :none :wui-fire-name :none}
+                                                      :options        {:none {:opt-label "None"}}}
+                                    :wui-fire-name   {:opt-label      "WUI Fire"
+                                                      :sort?          true
+                                                      :hidden?        true
+                                                      :hover-text     "Select a WUI active fire to view."
+                                                      :default-option :none
+                                                      :resets         {:fire-name :none :match-drop-name :none}
                                                       :options        {:none {:opt-label "None"}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "Available outputs are fire location, crown fire type (surface fire, passive, or active), flame length (ft), and surface fire spread rate (ft/min). Time can be advanced with the slider centered below."
@@ -653,7 +664,7 @@
                                                                           (filter keyword?)
                                                                           (set))
                                                                      #{:active-fires}))
-                                                 :options    {:loading {:opt-label "Loading..."}}}}}
+                                                 :options    {:loading {:opt-label "Loading..."}}})}
    :psps-zonal   {:opt-label       "PSPS"
                   :filter          "psps-zonal"
                   :geoserver-key   :psps
