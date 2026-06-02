@@ -537,7 +537,6 @@
 
 (declare select-param!) ;; FIXME: Look at ways to decouple callbacks
 
-;;NOTE this is the code that determines if a forecast exists for a fire
 (defn- forecast-exists? [fire-name]
   (contains? (get-in @!/capabilities [:active-fire :params :fire-name :options])
              (keyword fire-name)))
