@@ -14,6 +14,16 @@
   [feature-name]
   (get @!/feature-flags feature-name))
 
+(def wui-org-unique-id
+  "The `org-unique-id` of the organization that owns WUI active fires. Only members of
+   this org may view the WUI Fire select."
+  "pyregence-consortium")
+
+(defn user-in-wui-org?
+  "Returns true if the given list of user organizations includes the WUI org."
+  [user-orgs-list]
+  (boolean (some #(= wui-org-unique-id (:org-unique-id %)) user-orgs-list)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
