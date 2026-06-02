@@ -584,7 +584,7 @@
       (dotimes [_ 4]
         (<! icon-chan)))))
 
-;;
+
 (defn- incident-layer [layer-name source-name opacity]
   (go
     (<! (add-fire-icons-to-map!))
