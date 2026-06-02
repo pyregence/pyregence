@@ -31,20 +31,3 @@ select * from organization_layers limit 1;
 {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps,
 :disabled-for #{:hdw :apcptot :apcp01 :vpd :smoke :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}
 #+end_src clojure
-
-* problem statement
-
-currently the relationship between existing model data such as "Euro" (on front end)/ecmwf (in bucket) is between the organization (see postgres columns above) as where for this ticket, it has to be between
-the user's role e.g
-
-Essential: tier1-basic-paid
-Business: tier2-pro
-Enterprise: tier3-enterprise
-
-what we have
-
-org_rid | layer_path
-
-what we need with current pipeline
-
-user_id | layer_path
