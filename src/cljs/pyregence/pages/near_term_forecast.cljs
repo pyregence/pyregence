@@ -364,12 +364,12 @@
 
    Note that super_admins can resolve credentials from *all* orgs."
   []
-  (when (seq @!/user-psps-orgs-list)
-    (if (and (= @!/*forecast :active-fire)
-             (not= :none (get-in @!/*params [:active-fire :wui-fire-name])))
-      ;; WUI active fires are served from the private :psps GeoServer; authenticate
-      ;; with the user's first PSPS org credentials.
-      (:geoserver-credentials (first @!/user-psps-orgs-list))
+  (if (and (= @!/*forecast :active-fire)
+           (not= :none (get-in @!/*params [:active-fire :wui-fire-name])))
+    ;; WUI active fires are served from the private :psps GeoServer; authenticate with
+    ;; the psps GeoServer admin credentials (only populated for pyregence-consortium members).
+    @!/psps-geoserver-credentials
+    (when (seq @!/user-psps-orgs-list)
       (when-some [keypath (case @!/*forecast
                             :fuels        :only-underlays
                             :fire-weather [:fire-weather :model]
@@ -646,7 +646,7 @@
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
     (when (and (= :active-fire selected-forecast)
                (or @!/match-drop-access?
-                   (and (c/feature-enabled? :wui) (seq @!/user-psps-orgs-list))))
+                   (and (c/feature-enabled? :wui) (c/user-in-wui-org? @!/user-orgs-list))))
       (refresh-fire-names!))
     (<! (change-type! true
                       true
@@ -715,10 +715,10 @@
                                merge
                                (:match-drops fire-names))
                     (assoc-in [:active-fire :params :match-drop-name :hidden?] false)))
-              ;; Add in WUI active fire names (PSPS-org users only, gated behind the :wui feature flag)
+              ;; Add in WUI active fire names (pyregence-consortium members only, gated behind the :wui feature flag)
               (cond->
                 (and (c/feature-enabled? :wui)
-                     (seq user-psps-orgs-list)
+                     (c/user-in-wui-org? @!/user-orgs-list)
                      (seq (:wui-active-fires fire-names)))
                 (-> (update-in [:active-fire :params :wui-fire-name :options]
                                merge
@@ -774,6 +774,7 @@
                                                                      "get-all-organizations"
                                                                      "get-current-user-organization"))
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
+          psps-creds-chan                 (u-async/call-clj-async! "get-psps-geoserver-credentials")
           match-drop-access-chan          (u-async/call-clj-async! "get-user-match-drop-access")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count (:active-fires fire-names))
@@ -792,6 +793,7 @@
       (reset! !/user-psps-orgs-list (filter (fn [org]
                                               (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
                                             @!/user-orgs-list))
+      (reset! !/psps-geoserver-credentials (edn/read-string (:body (<! psps-creds-chan))))
       (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast
               (cond

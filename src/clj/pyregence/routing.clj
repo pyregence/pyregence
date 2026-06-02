@@ -146,6 +146,9 @@
    [:post "/clj/get-psps-organizations"]             {:handler (clj-handler authentication/get-psps-organizations)
                                                      :auth-type :token
                                                      :auth-action :block}
+   [:post "/clj/get-psps-geoserver-credentials"]     {:handler (clj-handler authentication/get-psps-geoserver-credentials)
+                                                     :auth-type :token
+                                                     :auth-action :block}
    [:post "/clj/remove-org-user"]                    {:handler (clj-handler authentication/remove-org-user)
                                                      :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
