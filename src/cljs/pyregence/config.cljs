@@ -24,6 +24,14 @@
   [user-orgs-list]
   (boolean (some #(= wui-org-unique-id (:org-unique-id %)) user-orgs-list)))
 
+(defn wui-fire-selected?
+  "True when the user has selected a specific WUI active fire. WUI fires are served
+   from the private :psps GeoServer and are keyed off :wui-fire-name (rather than
+   :fire-name like regular active fires on :trinity)."
+  []
+  (and (= @!/*forecast :active-fire)
+       (not= :none (get-in @!/*params [:active-fire :wui-fire-name]))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
