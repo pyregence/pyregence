@@ -266,7 +266,7 @@
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                                ;;TODO add weather params as options (i think...)
 ;; <key/filter>: <opt-label>  (<unit>)
-;; erc:   energy release component (ERC, Btu/sq ft)
+;; [x] erc:   energy release component (ERC, Btu/sq ft)
 ;; ercperc:  ERC percentile
 ;; bi:  burning index (BI, ft * 10)
 ;; biperc:  BI percentile
@@ -284,6 +284,9 @@
 ;; kbdiI: Keetch Byram Drought Index (0-800)
 
                                                  :options    (array-map
+                                                               :erc    {:opt-label "Energy Release Component"
+                                                                        :filter "erc"
+                                                                        :units "(ERC, Btu/sq ft)"}
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
                                                                         :units     "%"}
