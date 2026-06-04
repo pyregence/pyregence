@@ -245,25 +245,6 @@
                   :time-slider?    true
                   :always-utc?     true
                   :hover-text      "Gridded weather forecasts from several US operational weather models including key parameters that affect wildfire behavior."
-                                                               ;;TODO add weather params
-;; <key/filter>: <opt-label>  (<unit>)
-;; erc:   energy release component (ERC, Btu/sq ft)
-;; ercperc:  ERC percentile
-;; bi:  burning index (BI, ft * 10)
-;; biperc:  BI percentile
-;; sc: spread component (ft/min)
-;; scperc: SC percentile
-;; ic: ignition component (%)
-;; sfdiperc: SFDI percentile
-;; sfdicat: SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)
-;; lh:  Live herbaceous fuel moisture (% or fraction)
-;; lw:  Live woody fuel moisture (% or fraction)
-;; m1: 1-hour fuel moisture (% or fraction)
-;; m10:  10-hour fuel moisture (% or fraction)
-;; m100:  100-hour fuel moisture (% or fraction)
-;; m1000: 1000-hour fuel moisture (% or fraction)
-;; kbdiI: Keetch Byram Drought Index (0-800)
-
                   :params          {:band       {:opt-label  "Weather Parameter"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Gridded weather forecasts from several US operational weather models having different spatial resolutions and forecast durations. Available quantities include common weather parameters and fire weather indices:"
@@ -283,6 +264,25 @@
                                                               [:br]
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
+                                                               ;;TODO add weather params as options (i think...)
+;; <key/filter>: <opt-label>  (<unit>)
+;; erc:   energy release component (ERC, Btu/sq ft)
+;; ercperc:  ERC percentile
+;; bi:  burning index (BI, ft * 10)
+;; biperc:  BI percentile
+;; sc: spread component (ft/min)
+;; scperc: SC percentile
+;; ic: ignition component (%)
+;; sfdiperc: SFDI percentile
+;; sfdicat: SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)
+;; lh:  Live herbaceous fuel moisture (% or fraction)
+;; lw:  Live woody fuel moisture (% or fraction)
+;; m1: 1-hour fuel moisture (% or fraction)
+;; m10:  10-hour fuel moisture (% or fraction)
+;; m100:  100-hour fuel moisture (% or fraction)
+;; m1000: 1000-hour fuel moisture (% or fraction)
+;; kbdiI: Keetch Byram Drought Index (0-800)
+
                                                  :options    (array-map
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
