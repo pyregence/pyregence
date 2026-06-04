@@ -9,7 +9,9 @@ select * from organization_layers limit 1;
 |---------------+------------------+------------------------------------------------+----------------------------------------------------------------------------------------------------------------------|
 |            24 |                3 | [:fire-weather :params :model :options :ecmwf] | {:opt-label "Euro", :filter "ecmwf", :geoserver-key :psps, :disabled-for #{:hdw :apcptot :apcp01 :vpd :smoke :tcdc}} |
 
-* TODO 1 insert this data
+* TODO 1 insert this data into db for all organizations that have ...
+
+ ... subscription_tier  at TODO (what does ticket say the tier limit is)
 
 #+begin_src clojure
 [:fire-weather :params :model :options :nfdrs-constant]
