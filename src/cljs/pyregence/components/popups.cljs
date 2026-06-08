@@ -66,7 +66,7 @@
 
 (defn fire-popup
   "Popup body for active fires."
-  [{:keys [prettyname containper acres source url icon show-link? on-click]}]
+  [{:keys [prettyname containper acres source backlink icon show-link? on-click]}]
   [:div {:style {:display        "flex"
                  :flex-direction "column"
                  :gap            "12px"}}
@@ -79,7 +79,7 @@
     (when source
       [:div {:style {:display "flex" :gap "8px" :flex-direction "column"}}
        [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
-       [:a {:href url :target "_blank"}
+       [:a {:href backlink :target "_blank"}
         [:div {:style {:display        "flex"
                        :flex-direction "column"
                        :gap            "5px"}}
