@@ -625,8 +625,8 @@
      300000 70]
     :circle-color
     ["interpolate" ["linear"]  ["to-number" ["get" "containper"]]
-     0 "red"   ;;TODO replace red with actual red hex color
-     90 "grey" ;;TODO replace grey with actual red hex color
+     0  "red"
+     90 "grey"
      ]
     :circle-opacity 0.4}})
 
