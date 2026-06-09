@@ -11,7 +11,7 @@ select * from organization_layers limit 1;
 
 * TODO Write A psql trigger that inserts the nfdrs rows if the organizations.subscription_tier changes
 
-TODO what subscription tier gets these? see ticket
+if organization.subscription_tier is basic or higher then insert nfdrs rows for org into organization_layers.layer_path and layer_config
 
 #+begin_src clojure
 [:fire-weather :params :model :options :nfdrs-constant]
