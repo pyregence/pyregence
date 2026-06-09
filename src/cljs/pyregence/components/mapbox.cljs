@@ -576,12 +576,10 @@
 
 (defn- add-fire-icons-to-map! []
   (go
-    (let [icon-chan (chan 4)]
-      (add-icon! icon-chan "fire-icon-0"   "./images/Active_Fire_0.png")
-      (add-icon! icon-chan "fire-icon-50"  "./images/Active_Fire_50.png")
-      (add-icon! icon-chan "fire-icon-90"  "./images/Active_Fire_90.png")
-      (add-icon! icon-chan "fire-icon-100" "./images/Active_Fire_100.png")
-      (dotimes [_ 4]
+    (let [icon-chan (chan 2)]
+      (add-icon! icon-chan "active-or-extended-attack"   "./images/active_fire/active-or-extended-attack.png")
+      (add-icon! icon-chan "contained-or-declining" "./images/active_fire/contained-or-declining.png")
+      (dotimes [_ 2]
         (<! icon-chan)))))
 
 (defn- incident-layer [layer-name source-name opacity]
@@ -592,9 +590,8 @@
      :source   source-name
      :layout   {:icon-allow-overlap true
                 :icon-image         ["step" ["get" "containper"]
-                                     "fire-icon-0"       ;; 0=old-red TODO replace with new red icon from figma
-                                     90  "fire-icon-100" ;; 100=old-grey TODO replace with new grey icon from figma
-                                     ]
+                                     "active-or-extended-attack"
+                                     90  "contained-or-declining"]
                 :icon-size          ["interpolate" ["linear"] ["get" "acres"]
                                      1000   0.5
                                      10000  0.75
