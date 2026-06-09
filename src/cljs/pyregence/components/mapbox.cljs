@@ -576,12 +576,10 @@
 
 (defn- add-fire-icons-to-map! []
   (go
-    (let [icon-chan (chan 4)]
-      (add-icon! icon-chan "fire-icon-0"   "./images/Active_Fire_0.png")
-      (add-icon! icon-chan "fire-icon-50"  "./images/Active_Fire_50.png")
-      (add-icon! icon-chan "fire-icon-90"  "./images/Active_Fire_90.png")
-      (add-icon! icon-chan "fire-icon-100" "./images/Active_Fire_100.png")
-      (dotimes [_ 4]
+    (let [icon-chan (chan 2)]
+      (add-icon! icon-chan "active-or-extended-attack"   "./images/active_fire/active-or-extended-attack.png")
+      (add-icon! icon-chan "contained-or-declining" "./images/active_fire/contained-or-declining.png")
+      (dotimes [_ 2]
         (<! icon-chan)))))
 
 (defn- incident-layer [layer-name source-name opacity]
@@ -592,10 +590,8 @@
      :source   source-name
      :layout   {:icon-allow-overlap true
                 :icon-image         ["step" ["get" "containper"]
-                                     "fire-icon-0"
-                                     50  "fire-icon-50"
-                                     90  "fire-icon-90"
-                                     100 "fire-icon-100"]
+                                     "active-or-extended-attack"
+                                     90  "contained-or-declining"]
                 :icon-size          ["interpolate" ["linear"] ["get" "acres"]
                                      1000   0.5
                                      10000  0.75
@@ -615,6 +611,25 @@
                 :text-halo-width 1.5
                 :text-opacity    ["step" ["zoom"] (on-hover opacity 0.0) 6 opacity 22 opacity]}}))
 
+(defn- backround-circle-layer [layer-name source-name]
+  {:id       layer-name
+   :type     "circle"
+   :source   source-name
+   :metadata {:type    (get-layer-type layer-name)
+              :z-index 1999}
+   :paint
+   {:circle-radius
+    ["interpolate" ["linear"]  ["to-number" ["get" "acres"]]
+     1000   10
+     10000  30
+     300000 70]
+    :circle-color
+    ["interpolate" ["linear"]  ["to-number" ["get" "containper"]]
+     0  "red"
+     90 "grey"
+     ]
+    :circle-opacity 0.4}})
+
 (defn- build-wfs
   "Returns a new WFS source and layers in the form `[source layers]`.
    `source` must be a valid WFS layer in the geoserver
@@ -623,7 +638,8 @@
   [id source geoserver-key opacity]
   (go
     (let [new-source {id (wfs-source source geoserver-key)}
-          new-layers [(<! (incident-layer id id opacity))]]
+          new-layers [(<! (incident-layer id id opacity))
+                      (backround-circle-layer (str id "-background") id)]]
       [new-source new-layers])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
