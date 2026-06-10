@@ -356,23 +356,33 @@
    REST API (using the credentials configured for that GeoServer in
    `::geoserver-credentials`) and set-capabilities! is then called once per
    workspace, avoiding timeouts on large GetCapabilities responses. If listing
-   the workspaces fails even after retries, that GeoServer is skipped."
+   the workspaces fails even after retries, that GeoServer is skipped. A
+   GeoServer with no configured credentials cannot have its workspaces listed
+   (the REST API requires auth), so it falls back to a single full
+   GetCapabilities call (logged loudly, since that reintroduces timeout risk)."
   [_]
   (->> (keys (get-config :triangulum.views/client-keys :geoserver))
        (pmap
         (fn [geoserver-key]
           (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
                 basic-auth    (get-geoserver-basic-auth geoserver-key)]
-            (try
-              (let [workspaces (with-retries 3 2000 #(list-workspaces geoserver-url basic-auth))]
-                (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
-                (->> workspaces
-                     (pmap (fn [ws]
-                             (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
-                                                     "workspace-name" ws})))
-                     (doall)))
-              (catch Exception e
-                (log-str "Failed to list workspaces for " geoserver-url ", skipping.\n" (ex-message e)))))))
+            (if-not basic-auth
+              (do
+                (log (str "WARNING: No credentials configured for GeoServer " geoserver-key " (" geoserver-url "). "
+                          "Falling back to a single full GetCapabilities call, which risks timing out on large responses. "
+                          "Add an entry under :pyregence.capabilities/geoserver-credentials to load it per workspace.")
+                     :force-stdout? true)
+                (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))
+              (try
+                (let [workspaces (with-retries 3 2000 #(list-workspaces geoserver-url basic-auth))]
+                  (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
+                  (->> workspaces
+                       (pmap (fn [ws]
+                               (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
+                                                       "workspace-name" ws})))
+                       (doall)))
+                (catch Exception e
+                  (log-str "Failed to list workspaces for " geoserver-url ", skipping.\n" (ex-message e))))))))
        (dorun))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " (get-site-url) ".")))
