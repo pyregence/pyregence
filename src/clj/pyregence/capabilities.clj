@@ -282,6 +282,30 @@
 (defn get-all-layers [_]
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
+(comment
+  (set-capabilities! {} {"geoserver-key" "psps"})
+  (set-capabilities! {} {"geoserver-key" "psps" "workspace-name" "fire-spread-forecast_ca-avenida_20260602_225100"}))
+
+(defn- with-retries
+  "Calls `f`, returning its result. If `f` throws, waits an increasing amount of
+   time (`base-delay-ms` * retry number) before trying again, up to `max-retries`
+   additional attempts. Re-throws the last exception if every retry is exhausted."
+  [max-retries base-delay-ms f]
+  (loop [retry 0]
+    (let [outcome (try
+                    [::ok (f)]
+                    (catch Exception e
+                      [::error e]))]
+      (if (= ::ok (first outcome))
+        (second outcome)
+        (if (>= retry max-retries)
+          (throw (second outcome))
+          (let [delay-ms (* base-delay-ms (inc retry))]
+            (log-str "Capabilities load attempt failed: " (ex-message (second outcome))
+                     ". Retrying (" (inc retry) " of " max-retries ") in " delay-ms " ms.")
+            (Thread/sleep delay-ms)
+            (recur (inc retry))))))))
+
 (defn set-capabilities!
   "Populates the layers atom with all of the layers that are returned
    from a call to GetCapabilities on a specific GeoServer. Passing in a
@@ -299,7 +323,7 @@
                             (try
                               (let [stdout?       (= 0 (count @layers))
                                     geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
-                                    new-layers    (process-layers! geoserver-url workspace-name basic-auth)
+                                    new-layers    (with-retries 3 2000 #(process-layers! geoserver-url workspace-name basic-auth))
                                     message       (str "Added " (count new-layers) " layers from " geoserver-url
                                                        (when workspace-name (str " (workspace=" workspace-name ")"))
                                                        " to " (get-site-url) ".")]
@@ -335,27 +359,28 @@
 
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn.
-   For GeoServers that require authentication, loads capabilities per workspace
-   to avoid timeout on large GetCapabilities responses."
+   Loads capabilities per workspace (listing the workspaces via the REST API
+   first) to avoid timeouts on large GetCapabilities responses. If listing the
+   workspaces fails (even after retries), logs and skips that GeoServer rather
+   than issuing a single full GetCapabilities call, which would reintroduce the
+   timeout risk the per-workspace loading is meant to avoid."
   [_]
   (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
-    (if (private-layer-geoservers geoserver-key)
-      (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
-            basic-auth    (str (get-psps-geoserver-admin-username) ":" (get-psps-geoserver-admin-password))]
-        (try
-          (let [workspaces (cond->> (list-workspaces geoserver-url basic-auth)
-                             ;; For :psps, only load the WUI active-fire workspaces (testing).
-                             (= geoserver-key :psps) (filter #(str/starts-with? % "fire-spread")))]
-            (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
-            (->> workspaces
-                 (pmap (fn [ws]
-                         (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
-                                                 "workspace-name" ws})))
-                 (doall)))
-          (catch Exception e
-            (log-str "Failed to list workspaces for " geoserver-url ", falling back to full GetCapabilities.\n" (ex-message e))
-            (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))))
-      (set-capabilities! nil {"geoserver-key" (name geoserver-key)})))
+    (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
+          basic-auth    (when (private-layer-geoservers geoserver-key)
+                          (str (get-psps-geoserver-admin-username) ":" (get-psps-geoserver-admin-password)))]
+      (try
+        (let [workspaces (cond->> (with-retries 3 2000 #(list-workspaces geoserver-url basic-auth))
+                           ;; For :psps, only load the WUI active-fire workspaces (testing).
+                           (= geoserver-key :psps) (filter #(str/starts-with? % "fire-spread")))]
+          (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
+          (->> workspaces
+               (pmap (fn [ws]
+                       (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
+                                               "workspace-name" ws})))
+               (doall)))
+        (catch Exception e
+          (log-str "Failed to list workspaces for " geoserver-url ", skipping.\n" (ex-message e))))))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " (get-site-url) ".")))
 
