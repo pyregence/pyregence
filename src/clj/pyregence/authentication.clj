@@ -632,12 +632,12 @@
         {:keys [user-role]} session
         default-settings (pr-str {:timezone :utc})
         new-user-id      (nil-on-error
-                           (sql-primitive (call-sql "add_new_user"
-                                                    {:log? false}
-                                                    email
-                                                    user-name
-                                                    password
-                                                    default-settings)))
+                          (sql-primitive (call-sql "add_new_user"
+                                                   {:log? false}
+                                                   email
+                                                   user-name
+                                                   password
+                                                   default-settings)))
         response
         (if-not new-user-id
           (data-response (str "Failed to create the new user with name " user-name " and email " email)
@@ -893,20 +893,6 @@
   (->> (call-sql "get_psps_organizations")
        (mapv #(:org_unique_id %))
        (data-response)))
-
-(defn get-psps-geoserver-credentials
-  "Returns the PSPS GeoServer admin credentials (\"username:password\") for users who
-   belong to the pyregence-consortium org (owner of WUI active fires). nil otherwise.
-   These are used to authenticate WUI active-fire tile requests against the private
-   `:psps` GeoServer."
-  [{:keys [user-id user-role] :as _session}]
-  (data-response
-   (when (and user-id
-              (or (= user-role "super_admin")
-                  (some #(= "pyregence-consortium" (:org_unique_id %))
-                        (call-sql "get_user_organization" user-id))))
-     (str (get-config :pyregence.capabilities/geoserver-credentials :psps :username) ":"
-          (get-config :pyregence.capabilities/geoserver-credentials :psps :password)))))
 
 (defn remove-org-user [_ org-user-id]
   (call-sql "remove_org_user" org-user-id)
