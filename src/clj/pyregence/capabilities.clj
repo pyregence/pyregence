@@ -278,10 +278,6 @@
 (defn get-all-layers [_]
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
-(comment
-  (set-capabilities! {} {"geoserver-key" "psps"})
-  (set-capabilities! {} {"geoserver-key" "psps" "workspace-name" "fire-spread-forecast_ca-avenida_20260602_225100"}))
-
 (defn- with-retries
   "Calls `f`, returning its result. If `f` throws, waits an increasing amount of
    time (`base-delay-ms` * retry number) before trying again, up to `max-retries`
