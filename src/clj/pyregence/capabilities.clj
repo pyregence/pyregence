@@ -366,23 +366,26 @@
    risk. Public servers expose only WMS (their REST API requires auth), so they
    are loaded directly with a single full GetCapabilities call."
   [_]
-  (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
-    (if-not (private-layer-geoservers geoserver-key)
-      (set-capabilities! nil {"geoserver-key" (name geoserver-key)})
-      (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
-            basic-auth    (str (get-psps-geoserver-admin-username) ":" (get-psps-geoserver-admin-password))]
-        (try
-          (let [workspaces (cond->> (with-retries 3 2000 #(list-workspaces geoserver-url basic-auth))
-                             ;; For :psps, only load the WUI active-fire workspaces (testing).
-                             (= geoserver-key :psps) (filter #(str/starts-with? % "fire-spread")))]
-            (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
-            (->> workspaces
-                 (pmap (fn [ws]
-                         (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
-                                                 "workspace-name" ws})))
-                 (doall)))
-          (catch Exception e
-            (log-str "Failed to list workspaces for " geoserver-url ", skipping (no safe full-GetCapabilities fallback).\n" (ex-message e)))))))
+  (->> (keys (get-config :triangulum.views/client-keys :geoserver))
+       (pmap
+        (fn [geoserver-key]
+          (if-not (private-layer-geoservers geoserver-key)
+            (set-capabilities! nil {"geoserver-key" (name geoserver-key)})
+            (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
+                  basic-auth    (str (get-psps-geoserver-admin-username) ":" (get-psps-geoserver-admin-password))]
+              (try
+                (let [workspaces (cond->> (with-retries 3 2000 #(list-workspaces geoserver-url basic-auth))
+                                   ;; For :psps, only load the WUI active-fire workspaces (testing).
+                                   (= geoserver-key :psps) (filter #(str/starts-with? % "fire-spread")))]
+                  (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
+                  (->> workspaces
+                       (pmap (fn [ws]
+                               (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
+                                                       "workspace-name" ws})))
+                       (doall)))
+                (catch Exception e
+                  (log-str "Failed to list workspaces for " geoserver-url ", skipping (no safe full-GetCapabilities fallback).\n" (ex-message e))))))))
+       (dorun))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " (get-site-url) ".")))
 
