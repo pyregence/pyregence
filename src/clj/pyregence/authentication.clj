@@ -905,8 +905,8 @@
               (or (= user-role "super_admin")
                   (some #(= "pyregence-consortium" (:org_unique_id %))
                         (call-sql "get_user_organization" user-id))))
-     (str (get-config :pyregence.capabilities/psps :geoserver-admin-username) ":"
-          (get-config :pyregence.capabilities/psps :geoserver-admin-password)))))
+     (str (get-config :pyregence.capabilities/geoserver-credentials :psps :username) ":"
+          (get-config :pyregence.capabilities/geoserver-credentials :psps :password)))))
 
 (defn remove-org-user [_ org-user-id]
   (call-sql "remove_org_user" org-user-id)
