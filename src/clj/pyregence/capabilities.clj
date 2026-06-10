@@ -350,39 +350,51 @@
          :workspace
          (mapv :name))))
 
+(defn- load-geoserver-fully!
+  "Loads all of a GeoServer's layers via a single full GetCapabilities call.
+   Used when no credentials are configured, since workspaces can't be listed
+   without REST auth. Warns loudly because this risks timing out on large
+   GetCapabilities responses."
+  [geoserver-key geoserver-url]
+  (log (str "WARNING: No credentials configured for GeoServer " geoserver-key " (" geoserver-url "). "
+            "Falling back to a single full GetCapabilities call, which risks timing out on large responses. "
+            "Add an entry under :pyregence.capabilities/geoserver-credentials to load it per workspace.")
+       :force-stdout? true)
+  (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))
+
+(defn- load-geoserver-by-workspace!
+  "Lists the GeoServer's workspaces over the REST API (retrying transient
+   failures) and calls set-capabilities! once per workspace, avoiding timeouts
+   on large GetCapabilities responses. Skips the GeoServer if listing fails even
+   after retries."
+  [geoserver-key geoserver-url basic-auth]
+  (try
+    (let [workspaces (with-retries 3 2000 #(list-workspaces geoserver-url basic-auth))]
+      (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
+      (->> workspaces
+           (pmap (fn [ws]
+                   (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
+                                           "workspace-name" ws})))
+           (doall)))
+    (catch Exception e
+      (log-str "Failed to list workspaces for " geoserver-url ", skipping.\n" (ex-message e)))))
+
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn.
-   Each GeoServer is loaded per workspace: its workspaces are listed via the
-   REST API (using the credentials configured for that GeoServer in
-   `::geoserver-credentials`) and set-capabilities! is then called once per
-   workspace, avoiding timeouts on large GetCapabilities responses. If listing
-   the workspaces fails even after retries, that GeoServer is skipped. A
+   Each GeoServer is loaded per workspace (see `load-geoserver-by-workspace!`)
+   using the credentials configured for it in `::geoserver-credentials`. A
    GeoServer with no configured credentials cannot have its workspaces listed
    (the REST API requires auth), so it falls back to a single full
-   GetCapabilities call (logged loudly, since that reintroduces timeout risk)."
+   GetCapabilities call (see `load-geoserver-fully!`)."
   [_]
   (->> (keys (get-config :triangulum.views/client-keys :geoserver))
        (pmap
         (fn [geoserver-key]
           (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
                 basic-auth    (get-geoserver-basic-auth geoserver-key)]
-            (if-not basic-auth
-              (do
-                (log (str "WARNING: No credentials configured for GeoServer " geoserver-key " (" geoserver-url "). "
-                          "Falling back to a single full GetCapabilities call, which risks timing out on large responses. "
-                          "Add an entry under :pyregence.capabilities/geoserver-credentials to load it per workspace.")
-                     :force-stdout? true)
-                (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))
-              (try
-                (let [workspaces (with-retries 3 2000 #(list-workspaces geoserver-url basic-auth))]
-                  (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
-                  (->> workspaces
-                       (pmap (fn [ws]
-                               (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
-                                                       "workspace-name" ws})))
-                       (doall)))
-                (catch Exception e
-                  (log-str "Failed to list workspaces for " geoserver-url ", skipping.\n" (ex-message e))))))))
+            (if basic-auth
+              (load-geoserver-by-workspace! geoserver-key geoserver-url basic-auth)
+              (load-geoserver-fully! geoserver-key geoserver-url)))))
        (dorun))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " (get-site-url) ".")))
