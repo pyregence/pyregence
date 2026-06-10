@@ -20,8 +20,9 @@
 
 (defn- get-geoserver-basic-auth
   "Returns a \"username:password\" basic-auth string for the given `geoserver-key`
-   from the `::geoserver-credentials` config map, or nil when no credentials are
-   configured for it (in which case GeoServer is queried anonymously)."
+   from the `::geoserver-credentials` config map, or nil when the GeoServer has no
+   entry in that map (in which case GeoServer is queried anonymously). Note that a
+   present-but-blank username/password is still sent as-is, not treated as nil."
   [geoserver-key]
   (let [{:keys [username password]} (get-config ::geoserver-credentials geoserver-key)]
     (when (and username password)
