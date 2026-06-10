@@ -361,9 +361,11 @@
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn.
    Loads capabilities per workspace (listing the workspaces via the REST API
    first) to avoid timeouts on large GetCapabilities responses. If listing the
-   workspaces fails (even after retries), logs and skips that GeoServer rather
-   than issuing a single full GetCapabilities call, which would reintroduce the
-   timeout risk the per-workspace loading is meant to avoid."
+   workspaces fails (even after retries), behavior depends on the GeoServer:
+   private servers are skipped (a full GetCapabilities would reintroduce the
+   timeout risk per-workspace loading avoids), while public servers fall back to
+   a single full GetCapabilities call, since their REST API requires auth and
+   cannot be enumerated by workspace."
   [_]
   (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
     (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
@@ -380,7 +382,11 @@
                                                "workspace-name" ws})))
                (doall)))
         (catch Exception e
-          (log-str "Failed to list workspaces for " geoserver-url ", skipping.\n" (ex-message e))))))
+          (if (private-layer-geoservers geoserver-key)
+            (log-str "Failed to list workspaces for " geoserver-url ", skipping (no safe full-GetCapabilities fallback).\n" (ex-message e))
+            (do
+              (log-str "Failed to list workspaces for " geoserver-url ", falling back to full GetCapabilities.\n" (ex-message e))
+              (set-capabilities! nil {"geoserver-key" (name geoserver-key)})))))))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " (get-site-url) ".")))
 
