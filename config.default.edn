@@ -122,7 +122,7 @@
  :pyregence.capabilities/geoserver-credentials      {:trinity     {:username "<username>" :password "<password>"}
                                                      :shasta      {:username "<username>" :password "<password>"}
                                                      :match-drop  {:username "<username>" :password "<password>"}
-                                                     :psps        {:username "admin"      :password "password"}
+                                                     :psps        {:username "<username>" :password "<password>"}
                                                      :pyreclimate {:username "<username>" :password "<password>"}}
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
