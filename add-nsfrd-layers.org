@@ -1,29 +1,4 @@
-* example of data we need to insert
-
-#+begin_src sql :engine postgresql :dbhost localhost :dbport 5432 :database pyregence :dbuser pyregence :dbpassword pyregence
-select * from organization_layers limit 1;
-#+end_src
-
-#+RESULTS:
-| org_layer_uid | organization_rid | layer_path                                     | layer_config                                                                                                         |
-|---------------+------------------+------------------------------------------------+----------------------------------------------------------------------------------------------------------------------|
-|            24 |                3 | [:fire-weather :params :model :options :ecmwf] | {:opt-label "Euro", :filter "ecmwf", :geoserver-key :psps, :disabled-for #{:hdw :apcptot :apcp01 :vpd :smoke :tcdc}} |
-
-* TODO Write A psql trigger that inserts the nfdrs rows if the organizations.subscription_tier changes
-
-if organization.subscription_tier is basic or higher then insert nfdrs rows for org into organization_layers.layer_path and layer_config
-
-#+begin_src clojure
-[:fire-weather :params :model :options :nfdrs-constant]
-{:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps,
-:disabled-for #{:hdw :apcptot :apcp01 :vpd :smoke :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}
-
-{:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps,
-:disabled-for #{:hdw :apcptot :apcp01 :vpd :smoke :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}
-#+end_src clojure
-
-
-* TODO 2 update config.cljs with new params
+* TODO 1 update config.cljs with new params
 
 ;; <key/filter>: <opt-label>  (<unit>)
 ;; erc:   energy release component (ERC, Btu/sq ft)
