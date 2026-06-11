@@ -699,9 +699,10 @@
                                 {}
                                 user-psps-orgs-list))
               (cond->
-               ;; TODO this should be explicitly basic or higher instead of a set
+                  ;; TODO this should be explicitly basic or higher instead of a set
+                  ;; TODO this (:subscription-tier params) wasn't tested because need new copy of prod db with data locally.
                (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"}
-                 (:subscription-tier params))
+                (:subscription-tier params))
                 (as-> m
                       (reduce
                        (fn [m [k v]]
@@ -709,6 +710,7 @@
                        m
                        [[[:fire-weather :params :model :options :nfdrs-constant]
                          {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps,
+                          ;;TODO disabled-for isn't actually disabling find out why????
                           :disabled-for #{:hdw :apcptot :apcp01 :vpd :smoke :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]
                         [[:fire-weather :params :model :options :nfdrs-variable]
                          {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps,
