@@ -264,29 +264,50 @@
                                                               [:br]
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
-                                                               ;;TODO add weather params as options (i think...)
-;; <key/filter>: <opt-label>  (<unit>)
-;; [x] erc:   energy release component (ERC, Btu/sq ft)
-;; ercperc:  ERC percentile
-;; bi:  burning index (BI, ft * 10)
-;; biperc:  BI percentile
-;; sc: spread component (ft/min)
-;; scperc: SC percentile
-;; ic: ignition component (%)
-;; sfdiperc: SFDI percentile
-;; sfdicat: SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)
-;; lh:  Live herbaceous fuel moisture (% or fraction)
-;; lw:  Live woody fuel moisture (% or fraction)
-;; m1: 1-hour fuel moisture (% or fraction)
-;; m10:  10-hour fuel moisture (% or fraction)
-;; m100:  100-hour fuel moisture (% or fraction)
-;; m1000: 1000-hour fuel moisture (% or fraction)
-;; kbdiI: Keetch Byram Drought Index (0-800)
-
                                                  :options    (array-map
-                                                               :erc    {:opt-label "Energy Release Component"
-                                                                        :filter "erc"
-                                                                        :units "(ERC, Btu/sq ft)"}
+                                                               ;;TODO check filters
+                                                              :erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
+                                                                       :filter "erc"
+                                                                       :units "(ERC, Btu/sq ft)"}
+                                                              :ercperc {:opt-label "ERC percentile"
+                                                                        :filter "ercperc"}
+                                                              :bi {:opt-label "burning index (BI, ft * 10)"
+                                                                   :filter "bi"
+                                                                   :units "(BI, ft * 10)"}
+                                                              :biperc {:opt-label  "BI percentile"
+                                                                       :filter "biperc"}
+                                                              :sc      {:opt-label "spread component (ft/min)"
+                                                                        :filter "sc"
+                                                                        :units "(ft/min)"}
+                                                              :scperc  {:opt-label  "SC percentile"
+                                                                        :filter     "scperc"}
+                                                              :ic    {:opt-label "SC percentile"
+                                                                      :filter "ic"}
+                                                              :sfdiperc {:opt-label "SFDI percentile"
+                                                                         :filter "sfdiperc"}
+                                                              :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
+                                                                         :filter "sfdicat"}
+                                                              :lh {:opt-label "Live herbaceous fuel moisture (% or fraction)"
+                                                                   :filter "lh"
+                                                                   :units "(% or fraction)"}
+                                                              :lw {:opt-label "Live woody fuel moisture (% or fraction)"
+                                                                   :filter "lw"
+                                                                   :units "(% or fraction)"}
+                                                              :m1  {:opt-label "1-hour fuel moisture (% or fraction)"
+                                                                    :filter "m1"
+                                                                    :units "(% or fraction)"}
+                                                              :m10 {:opt-label "10-hour fuel moisture (% or fraction)"
+                                                                    :filter "m10"
+                                                                    :units "(% or fraction)"}
+                                                              :m100 {:opt-label "100-hour fuel moisture (% or fraction)"
+                                                                     :filter "m100"
+                                                                     :units "(% or fraction)"}
+                                                              :m1000 {:opt-label "1000-hour fuel moisture (% or fraction)"
+                                                                      :filter "m1000"
+                                                                      :units "(% or fraction)"}
+                                                              :kbdiI​ {:opt-label "Keetch Byram Drought Index (0-800)"
+                                                                       :filter "kbdiI"
+                                                                       :units "Index (0-800)"}
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
                                                                         :units     "%"}
@@ -706,7 +727,7 @@
                                                               [:div {:style {:margin-top 10}}
                                                                [:hr]
                                                                [:strong "Note"]
-                                                               ": The impacted structrures, fire area, fire volume, and power line ignition rate quantities are only available with the ELMFIRE model."]]
+                                                               "​ The impacted structrures, fire area, fire volume, and power line ignition rate quantities are only available with the ELMFIRE model."]]
                                                  :options    (array-map
                                                               :str   {:opt-label    "Impacted structures"
                                                                       :units        "Structures"
