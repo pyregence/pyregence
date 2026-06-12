@@ -280,25 +280,35 @@
 (defn get-all-layers [_]
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
+(def ^:private retry-delays-ms
+  "Wait periods (in ms) between capabilities load retries before giving up:
+   1s, 5s, 10s, 30s, 1min, then 2min (~3.8min of waits total, keeping the whole
+   sequence under ~5min)."
+  [1000 5000 10000 30000 60000 120000])
+
 (defn- with-retries
-  "Calls `f`, returning its result. If `f` throws, waits an increasing amount of
-   time (`base-delay-ms` * retry number) before trying again, up to `max-retries`
-   additional attempts. Re-throws the last exception if every retry is exhausted."
-  [max-retries base-delay-ms f]
-  (loop [retry 0]
-    (let [outcome (try
-                    [::ok (f)]
-                    (catch Exception e
-                      [::error e]))]
-      (if (= ::ok (first outcome))
-        (second outcome)
-        (if (>= retry max-retries)
-          (throw (second outcome))
-          (let [delay-ms (* base-delay-ms (inc retry))]
-            (log-str "Capabilities load attempt failed: " (ex-message (second outcome))
-                     ". Retrying (" (inc retry) " of " max-retries ") in " delay-ms " ms.")
-            (Thread/sleep delay-ms)
-            (recur (inc retry))))))))
+  "Calls `f`, returning its result. If `f` throws, waits for the next period in
+   `delays-ms` before trying again. Once every delay is exhausted, logs that it
+   is giving up and re-throws the last exception."
+  [delays-ms f]
+  (let [total (count delays-ms)]
+    (loop [delays delays-ms]
+      (let [outcome (try
+                      [::ok (f)]
+                      (catch Exception e
+                        [::error e]))]
+        (if (= ::ok (first outcome))
+          (second outcome)
+          (if-let [delay-ms (first delays)]
+            (let [attempt (inc (- total (count delays)))]
+              (log-str "Capabilities load attempt failed: " (ex-message (second outcome))
+                       ". Retrying (" attempt " of " total ") in " delay-ms " ms.")
+              (Thread/sleep delay-ms)
+              (recur (rest delays)))
+            (do
+              (log-str "Capabilities load failed after " total " retries. Giving up: "
+                       (ex-message (second outcome)))
+              (throw (second outcome)))))))))
 
 (defn set-capabilities!
   "Populates the layers atom with all of the layers that are returned
@@ -311,12 +321,11 @@
         basic-auth    (get-geoserver-basic-auth geoserver-key)]
     (if-not (contains? (get-config :triangulum.views/client-keys :geoserver) geoserver-key)
       (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn.")
-      (let [timeout-ms    (* 5 60 1000) ; 5 minutes
-            future-result (future
+      (let [future-result (future
                             (try
                               (let [stdout?       (= 0 (count @layers))
                                     geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
-                                    new-layers    (with-retries 3 2000 #(process-layers! geoserver-url workspace-name basic-auth))
+                                    new-layers    (with-retries retry-delays-ms #(process-layers! geoserver-url workspace-name basic-auth))
                                     message       (str "Added " (count new-layers) " layers from " geoserver-url
                                                        (when workspace-name (str " (workspace=" workspace-name ")"))
                                                        " to " (get-site-url) ".")]
@@ -332,10 +341,7 @@
                                 (log-str "Failed to load capabilities for "
                                          (get-config :triangulum.views/client-keys :geoserver geoserver-key)
                                          "\n" (ex-message e)))))]
-        (if-let [result (deref future-result timeout-ms nil)]
-          result
-          (log-str (quot timeout-ms 1000) " seconds timeout occurred while loading capabilities for "
-                   (get-config :triangulum.views/client-keys :geoserver geoserver-key)))))))
+        @future-result))))
 
 (defn- list-workspaces
   "Lists workspace names from a GeoServer instance via the REST API."
@@ -369,7 +375,7 @@
    after retries."
   [geoserver-key geoserver-url basic-auth]
   (try
-    (let [workspaces (with-retries 3 2000 #(list-workspaces geoserver-url basic-auth))]
+    (let [workspaces (with-retries retry-delays-ms #(list-workspaces geoserver-url basic-auth))]
       (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
       (->> workspaces
            (pmap (fn [ws]
