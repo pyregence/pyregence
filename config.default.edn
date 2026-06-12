@@ -115,8 +115,14 @@
 
  ;;; Pyrecast
  :pyregence.cameras/alert-west-api-key              "<api-key>"
- :pyregence.capabilities/psps                       {:geoserver-admin-username "admin"
-                                                     :geoserver-admin-password "password"}
+ ;; Credentials used to list workspaces (REST API) and query GetCapabilities per
+ ;; GeoServer. Omit a GeoServer's entry entirely to query it anonymously (a
+ ;; present-but-blank username/password is still sent as-is). Keys must match the
+ ;; keys under :geoserver above.
+ :pyregence.capabilities/geoserver-credentials      {:trinity     {:username "<username>" :password "<password>"}
+                                                     :shasta      {:username "<username>" :password "<password>"}
+                                                     :match-drop  {:username "<username>" :password "<password>"}
+                                                     :psps        {:username "<username>" :password "<password>"}}
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
  :pyregence.match-drop/match-drop                   {:sig3-auth      "<AUTH_TOKEN>"
