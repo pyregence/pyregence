@@ -661,7 +661,7 @@
       (into (sorted-map-by cmp) opts))))
 
 ;;; Capabilities
-(defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list params & [selected-options]]
+(defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list params user-role & [selected-options]]
   (reset! !/capabilities
           ;; Add in all layers from the organiation_layers DB table
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
