@@ -171,7 +171,8 @@
                               (when workspace-name
                                 (str "&NAMESPACE=" workspace-name))))
         xml-response (-> base-url
-                         (client/get (when basic-auth {:basic-auth basic-auth}))
+                         (client/get (cond-> {:connection-timeout 10000 :socket-timeout 60000}
+                                       basic-auth (assoc :basic-auth basic-auth)))
                          (:body))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
@@ -349,7 +350,7 @@
   (let [url      (-> geoserver-url
                      (u/end-with "/")
                      (str "rest/workspaces.json"))
-        response (client/get url (cond-> {:as :text}
+        response (client/get url (cond-> {:as :text :connection-timeout 10000 :socket-timeout 60000}
                                    basic-auth (assoc :basic-auth basic-auth)))]
     (->> (json/read-str (:body response) :key-fn keyword)
          :workspaces
