@@ -18,13 +18,15 @@
 (defn- get-site-url []
   (get-config :triangulum.email/base-url))
 
-(defn- get-psps-geoserver-admin-username []
-  (get-config ::psps :geoserver-admin-username))
-
-(defn- get-psps-geoserver-admin-password []
-  (get-config ::psps :geoserver-admin-password))
-
-(def private-layer-geoservers #{:psps})
+(defn- get-geoserver-basic-auth
+  "Returns a \"username:password\" basic-auth string for the given `geoserver-key`
+   from the `::geoserver-credentials` config map, or nil when the GeoServer has no
+   entry in that map (in which case GeoServer is queried anonymously). Note that a
+   present-but-blank username/password is still sent as-is, not treated as nil."
+  [geoserver-key]
+  (let [{:keys [username password]} (get-config ::geoserver-credentials geoserver-key)]
+    (when (and username password)
+      (str username ":" password))))
 
 ;;; Helper Functions
 
@@ -169,7 +171,8 @@
                               (when workspace-name
                                 (str "&NAMESPACE=" workspace-name))))
         xml-response (-> base-url
-                         (client/get (when basic-auth {:basic-auth basic-auth}))
+                         (client/get (cond-> {:connection-timeout 10000 :socket-timeout 60000}
+                                       basic-auth (assoc :basic-auth basic-auth)))
                          (:body))]
     (as-> xml-response xml
       (str/replace xml "\n" "")
@@ -278,6 +281,36 @@
 (defn get-all-layers [_]
   (data-response (mapcat #(map :filter-set (val %)) @layers)))
 
+(def ^:private retry-delays-ms
+  "Wait periods (in ms) between capabilities load retries before giving up:
+   1s, 5s, 10s, 30s, 1min, then 2min (~3.8min of waits total, keeping the whole
+   sequence under ~5min)."
+  [1000 5000 10000 30000 60000 120000])
+
+(defn- with-retries
+  "Calls `f`, returning its result. If `f` throws, waits for the next period in
+   `delays-ms` before trying again. Once every delay is exhausted, logs that it
+   is giving up and re-throws the last exception."
+  [delays-ms f]
+  (let [total (count delays-ms)]
+    (loop [delays delays-ms]
+      (let [outcome (try
+                      [::ok (f)]
+                      (catch Exception e
+                        [::error e]))]
+        (if (= ::ok (first outcome))
+          (second outcome)
+          (if-let [delay-ms (first delays)]
+            (let [attempt (inc (- total (count delays)))]
+              (log-str "Capabilities load attempt failed: " (ex-message (second outcome))
+                       ". Retrying (" attempt " of " total ") in " delay-ms " ms.")
+              (Thread/sleep delay-ms)
+              (recur (rest delays)))
+            (do
+              (log-str "Capabilities load failed after " total " retries. Giving up: "
+                       (ex-message (second outcome)))
+              (throw (second outcome)))))))))
+
 (defn set-capabilities!
   "Populates the layers atom with all of the layers that are returned
    from a call to GetCapabilities on a specific GeoServer. Passing in a
@@ -286,16 +319,14 @@
    on just that workspace by passing it into `process-layers!`."
   [_ {:strs [geoserver-key workspace-name]}]
   (let [geoserver-key (keyword geoserver-key)
-        basic-auth    (when (private-layer-geoservers geoserver-key)
-                        (str (get-psps-geoserver-admin-username) ":" (get-psps-geoserver-admin-password)))]
+        basic-auth    (get-geoserver-basic-auth geoserver-key)]
     (if-not (contains? (get-config :triangulum.views/client-keys :geoserver) geoserver-key)
       (log-str "Failed to load capabilities. The GeoServer URL passed in was not found in config.edn.")
-      (let [timeout-ms    (* 5 60 1000) ; 5 minutes
-            future-result (future
+      (let [future-result (future
                             (try
                               (let [stdout?       (= 0 (count @layers))
                                     geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
-                                    new-layers    (process-layers! geoserver-url workspace-name basic-auth)
+                                    new-layers    (with-retries retry-delays-ms #(process-layers! geoserver-url workspace-name basic-auth))
                                     message       (str "Added " (count new-layers) " layers from " geoserver-url
                                                        (when workspace-name (str " (workspace=" workspace-name ")"))
                                                        " to " (get-site-url) ".")]
@@ -311,10 +342,7 @@
                                 (log-str "Failed to load capabilities for "
                                          (get-config :triangulum.views/client-keys :geoserver geoserver-key)
                                          "\n" (ex-message e)))))]
-        (if-let [result (deref future-result timeout-ms nil)]
-          result
-          (log-str (quot timeout-ms 1000) " seconds timeout occurred while loading capabilities for "
-                   (get-config :triangulum.views/client-keys :geoserver geoserver-key)))))))
+        @future-result))))
 
 (defn- list-workspaces
   "Lists workspace names from a GeoServer instance via the REST API."
@@ -322,34 +350,59 @@
   (let [url      (-> geoserver-url
                      (u/end-with "/")
                      (str "rest/workspaces.json"))
-        response (client/get url (cond-> {:as :text}
+        response (client/get url (cond-> {:as :text :connection-timeout 10000 :socket-timeout 60000}
                                    basic-auth (assoc :basic-auth basic-auth)))]
     (->> (json/read-str (:body response) :key-fn keyword)
          :workspaces
          :workspace
          (mapv :name))))
 
+(defn- load-geoserver-fully!
+  "Loads all of a GeoServer's layers via a single full GetCapabilities call.
+   Used when no credentials are configured, since workspaces can't be listed
+   without REST auth. Warns loudly because this risks timing out on large
+   GetCapabilities responses."
+  [geoserver-key geoserver-url]
+  (log (str "WARNING: No credentials configured for GeoServer " geoserver-key " (" geoserver-url "). "
+            "Falling back to a single full GetCapabilities call, which risks timing out on large responses. "
+            "Add an entry under :pyregence.capabilities/geoserver-credentials to load it per workspace.")
+       :force-stdout? true)
+  (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))
+
+(defn- load-geoserver-by-workspace!
+  "Lists the GeoServer's workspaces over the REST API (retrying transient
+   failures) and calls set-capabilities! once per workspace, avoiding timeouts
+   on large GetCapabilities responses. Skips the GeoServer if listing fails even
+   after retries."
+  [geoserver-key geoserver-url basic-auth]
+  (try
+    (let [workspaces (with-retries retry-delays-ms #(list-workspaces geoserver-url basic-auth))]
+      (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
+      (->> workspaces
+           (pmap (fn [ws]
+                   (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
+                                           "workspace-name" ws})))
+           (doall)))
+    (catch Exception e
+      (log-str "Failed to list workspaces for " geoserver-url ", skipping.\n" (ex-message e)))))
+
 (defn set-all-capabilities!
   "Calls set-capabilities! on all GeoServer URLs provided in config.edn.
-   For GeoServers that require authentication, loads capabilities per workspace
-   to avoid timeout on large GetCapabilities responses."
+   Each GeoServer is loaded per workspace (see `load-geoserver-by-workspace!`)
+   using the credentials configured for it in `::geoserver-credentials`. A
+   GeoServer with no configured credentials cannot have its workspaces listed
+   (the REST API requires auth), so it falls back to a single full
+   GetCapabilities call (see `load-geoserver-fully!`)."
   [_]
-  (doseq [geoserver-key (keys (get-config :triangulum.views/client-keys :geoserver))]
-    (if (private-layer-geoservers geoserver-key)
-      (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
-            basic-auth    (str (get-psps-geoserver-admin-username) ":" (get-psps-geoserver-admin-password))]
-        (try
-          (let [workspaces (list-workspaces geoserver-url basic-auth)]
-            (log-str "Loading " (count workspaces) " workspaces from " geoserver-url)
-            (->> workspaces
-                 (pmap (fn [ws]
-                         (set-capabilities! nil {"geoserver-key"  (name geoserver-key)
-                                                 "workspace-name" ws})))
-                 (doall)))
-          (catch Exception e
-            (log-str "Failed to list workspaces for " geoserver-url ", falling back to full GetCapabilities.\n" (ex-message e))
-            (set-capabilities! nil {"geoserver-key" (name geoserver-key)}))))
-      (set-capabilities! nil {"geoserver-key" (name geoserver-key)})))
+  (->> (keys (get-config :triangulum.views/client-keys :geoserver))
+       (pmap
+        (fn [geoserver-key]
+          (let [geoserver-url (get-config :triangulum.views/client-keys :geoserver geoserver-key)
+                basic-auth    (get-geoserver-basic-auth geoserver-key)]
+            (if basic-auth
+              (load-geoserver-by-workspace! geoserver-key geoserver-url basic-auth)
+              (load-geoserver-fully! geoserver-key geoserver-url)))))
+       (dorun))
   (data-response (str (reduce + (map count (vals @layers)))
                       " total layers added to " (get-site-url) ".")))
 
