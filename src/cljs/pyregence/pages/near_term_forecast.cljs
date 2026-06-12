@@ -699,10 +699,13 @@
                                 {}
                                 user-psps-orgs-list))
               (cond->
+                  ;; TODO test organization subscription
                   ;; TODO this should be explicitly basic or higher instead of a set
                   ;; TODO this (:subscription-tier params) wasn't tested because need new copy of prod db with data locally.
-               (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"}
-                (:subscription-tier params))
+               (or
+                (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"}
+                 (:subscription-tier params))
+                (#{"super_admin"} user-role))
                 (as-> m
                       (reduce
                        (fn [m [k v]]
