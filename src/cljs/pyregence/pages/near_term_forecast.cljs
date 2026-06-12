@@ -711,10 +711,12 @@
                        [[[:fire-weather :params :model :options :nfdrs-constant]
                          {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps,
                           ;;TODO disabled-for isn't actually disabling find out why????
-                          :disabled-for #{:hdw :apcptot :apcp01 :vpd :smoke :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]
+                          :disabled-for #{:hdw :apcptot :apcp01 :vpd :smoke
+                                          :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]
                         [[:fire-weather :params :model :options :nfdrs-variable]
                          {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps,
-                          :disabled-for #{:hdw :apcptot :apcp01 :vpd :smoke :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]])))))
+                          :disabled-for #{:hdw :apcptot :apcp01 :vpd
+                                          :smoke :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]])))))
 
 ;; Sort the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
