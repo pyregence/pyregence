@@ -798,6 +798,7 @@
                                @!/psps-orgs-list
                                @!/user-psps-orgs-list
                                params
+                               user-role
                                (params->selected-options options-config @!/*forecast params)))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
       (reset! !/the-weather-stations (edn/read-string (:body (<! weather-stations-chan))))
