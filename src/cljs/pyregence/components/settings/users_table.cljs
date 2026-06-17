@@ -31,8 +31,12 @@
                   "get-all-users"
                   "get-org-member-users")
           resp-chan              (u-async/call-clj-async! route)
-          {:keys [body]} (<! resp-chan)]
-      (map #(set/rename-keys % {:full-name :name :membership-status :org-membership-status}) (edn/read-string body)))))
+          {:keys [body success]} (<! resp-chan)]
+      (if success
+        (map #(set/rename-keys % {:full-name :name :membership-status :org-membership-status}) (edn/read-string body))
+        (do
+          (toast-message! (str "Unable to load users: " body))
+          [])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid functionality
@@ -234,11 +238,11 @@
                            "Role"
                            db->display)
                           :get-selected-rows get-selected-rows}
-                          org-opt-selected?
-                          (assoc :select-org-msg (str "Assign Organization for "
-                                                      ({"organization_admin"  "Admin"
-                                                        "organization_member" "Member"} @checked)
-                                                      "."))))]
+                         org-opt-selected?
+                         (assoc :select-org-msg (str "Assign Organization for "
+                                                     ({"organization_admin"  "Admin"
+                                                       "organization_member" "Member"} @checked)
+                                                     "."))))]
              :status [update-user/drop-down
                       (let [org-opt-selected?
                             (and
@@ -264,7 +268,7 @@
                            "Status"
                            db->display)
                           :get-selected-rows get-selected-rows}
-                          org-opt-selected?
-                          (assoc :select-org-msg (str "Assign Organization for " (db->display @checked) " Users."))))]
+                         org-opt-selected?
+                         (assoc :select-org-msg (str "Assign Organization for " (db->display @checked) " Users."))))]
              nil)
            [table grid-api users users-selected? users-filter columns]]))})))
