@@ -686,7 +686,7 @@
       (into (sorted-map-by cmp) opts))))
 
 ;;; Capabilities
-(defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list & [selected-options]]
+(defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list {:keys [subscription-tier]} user-role & [selected-options]]
   (reset! !/capabilities
           ;; Add in all layers from the organiation_layers DB table
           (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
@@ -722,8 +722,26 @@
                                          {:opt-label  org-name
                                           :filter     org-unique-id}))
                                 {}
-                                user-psps-orgs-list))))
-  ;; Sort the Risk tab "Ignition Pattern" options alphabetically by :opt-label
+                                user-psps-orgs-list))
+              (cond->
+               (or
+                (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
+                (#{"super_admin"} user-role))
+                (as-> m
+                      (reduce
+                       (fn [m [k v]]
+                         (assoc-in m k v))
+                       m
+                       [[[:fire-weather :params :model :options :nfdrs-constant]
+                         {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps,
+                          :disabled-for  #{:hdw :apcptot :apcp01 :vpd :smoke
+                                           :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]
+                        [[:fire-weather :params :model :options :nfdrs-variable]
+                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps,
+                          :disabled-for #{:hdw :apcptot :apcp01 :vpd
+                                          :smoke :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]])))))
+
+  ;; TODO Consider sorting the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
   ;; Sort the PSPS tab "Utility Company" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:psps-zonal :params :utility :options] sort-by-opt-label)
@@ -806,6 +824,8 @@
                                options-config
                                @!/psps-orgs-list
                                @!/user-psps-orgs-list
+                               params
+                               user-role
                                (params->selected-options options-config @!/*forecast params)))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
       (reset! !/the-weather-stations (edn/read-string (:body (<! weather-stations-chan))))
