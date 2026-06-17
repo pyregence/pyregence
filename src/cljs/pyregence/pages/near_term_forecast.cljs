@@ -686,12 +686,13 @@
       (into (sorted-map-by cmp) opts))))
 
 ;;; Capabilities
-(defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list & [selected-options]]
-  (reset! !/capabilities
+(defn- process-capabilities! [fire-names user-layers options-config psps-orgs-list user-psps-orgs-list {:keys [subscription-tier]} user-role & [selected-options]]
+  (let [nfdrs-selected? (#{:nfdrs-constant :nfdrs-variable} (get-in @!/*params [:fire-weather :model]))]
+    (reset! !/capabilities
           ;; Add in all layers from the organiation_layers DB table
-          (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
-                        (let [layer-path   (edn/read-string layer_path)
-                              layer-config (edn/read-string layer_config)]
+            (-> (reduce (fn [acc {:keys [layer_path layer_config]}]
+                          (let [layer-path   (edn/read-string layer_path)
+                                layer-config (edn/read-string layer_config)]
                           (if (and (s/valid? ::layer-path   layer-path)
                                    (s/valid? ::layer-config layer-config))
                             (assoc-in acc layer-path layer-config)
@@ -704,7 +705,7 @@
                          (:active-fires fire-names))
               ;; Add in match drop names if the user has any completed match drops
               (cond->
-                (seq (:match-drops fire-names))
+                  (seq (:match-drops fire-names))
                 (-> (update-in [:active-fire :params :match-drop-name :options]
                                merge
                                (:match-drops fire-names))
@@ -719,11 +720,76 @@
                         (reduce (fn [acc {:keys [org-unique-id org-name]}]
                                   (assoc acc
                                          (keyword org-unique-id)
-                                         {:opt-label  org-name
-                                          :filter     org-unique-id}))
+                                         {:opt-label org-name
+                                          :filter    org-unique-id}))
                                 {}
-                                user-psps-orgs-list))))
-  ;; Sort the Risk tab "Ignition Pattern" options alphabetically by :opt-label
+                                user-psps-orgs-list))
+
+              (cond->
+                   (or
+                    (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
+                    (#{"super_admin"} user-role)
+                    true)
+                (as-> m
+                    (if nfdrs-selected?
+                      (reduce
+                       (fn [m [k v]]
+                         (assoc-in m k v))
+                       m
+                       [[[:fire-weather :params :band :options]
+                         {:erc     {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
+                                     :filter    "erc"
+                                     :units     "(ERC, Btu/sq ft)"}
+                          :ercperc  {:opt-label "ERC percentile"
+                                     :filter    "ercperc"}
+                          :bi       {:opt-label "burning index (BI, ft * 10)"
+                                     :filter    "bi"
+                                     :units     "(BI, ft * 10)"}
+                          :biperc   {:opt-label "BI percentile"
+                                     :filter    "biperc"}
+                          :sc       {:opt-label "spread component (ft/min)"
+                                     :filter    "sc"
+                                     :units     "(ft/min)"}
+                          :scperc   {:opt-label "SC percentile"
+                                     :filter    "scperc"}
+                          :ic       {:opt-label "Ignition Component (%)"
+                                     :filter    "ic"}
+                          :sfdiperc {:opt-label "SFDI percentile (%)"
+                                     :filter    "sfdiperc"}
+                          :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
+                                     :filter    "sfdicat"}
+                          :lh       {:opt-label "Live herbaceous fuel moisture (% or fraction)"
+                                     :filter    "lh"
+                                     :units     "(% or fraction)"}
+                          :lw       {:opt-label "Live woody fuel moisture (% or fraction)"
+                                     :filter    "lw"
+                                     :units     "(% or fraction)"}
+                          :m1       {:opt-label "1-hour fuel moisture (% or fraction)"
+                                     :filter    "m1"
+                                     :units     "(% or fraction)"}
+                          :m10      {:opt-label "10-hour fuel moisture (% or fraction)"
+                                     :filter    "m10"
+                                     :units     "(% or fraction)"}
+                          :m100     {:opt-label "100-hour fuel moisture (% or fraction)"
+                                     :filter    "m100"
+                                     :units     "(% or fraction)"}
+                          :m1000    {:opt-label "1000-hour fuel moisture (% or fraction)"
+                                     :filter    "m1000"
+                                     :units     "(% or fraction)"}
+                          :kbdiI​    {:opt-label "Keetch Byram Drought Index (0-800)"
+                                     :filter    "kbdiI"
+                                     :units     "Index (0-800)"}}]])
+                      (reduce
+                       (fn [m [k v]]
+                         (assoc-in m k v))
+                       m
+                       [[[:fire-weather :params :model :options :nfdrs-constant]
+                         {:opt-label    "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps,
+                          :disabled-for #{}}]
+                        [[:fire-weather :params :model :options :nfdrs-variable]
+                         {:opt-label    "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps,
+                          :disabled-for #{}}]])))))))
+  ;; TODO Consider sorting the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
   ;; Sort the PSPS tab "Utility Company" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:psps-zonal :params :utility :options] sort-by-opt-label)
@@ -806,6 +872,8 @@
                                options-config
                                @!/psps-orgs-list
                                @!/user-psps-orgs-list
+                               params
+                               user-role
                                (params->selected-options options-config @!/*forecast params)))
       (reset! !/the-cameras (edn/read-string (:body (<! fire-cameras-chan))))
       (reset! !/the-weather-stations (edn/read-string (:body (<! weather-stations-chan))))

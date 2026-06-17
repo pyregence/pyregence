@@ -326,10 +326,6 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
-                                                              :csfdi   {:opt-label "Constant Sever Fire Danger Index"
-                                                                        :filter    "csfdi"
-                                                                        :units     "%"}
-
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
                                                                         :units     "%"}
@@ -436,30 +432,32 @@
                                                                                :disabled-for #{"TODO"}}
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
-                                                                              :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd
+                                                                                              :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :hrrr          {:opt-label "HRRR"
+                                                                              :disabled-for #{:erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}
                                                                               :filter    "hrrr"}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
-                                                                              :disabled-for #{:apcptot :smoke :tcdc}}
+                                                                              :disabled-for #{:apcptot :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :gfs0p125      {:opt-label    "GFS 0.125\u00B0"
                                                                               :filter       "gfs0p125"
-                                                                              :disabled-for #{:apcptot :smoke :tcdc}}
+                                                                              :disabled-for #{:apcptot :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
-                                                                              :disabled-for #{:smoke :tcdc}}
+                                                                              :disabled-for #{:smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :nam-awip12    {:opt-label    "NAM 12 km"
                                                                               :filter       "nam-awip12"
-                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
+                                                                              :disabled-for #{:apcp01 :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :nam-conusnest {:opt-label    "NAM 3 km"
                                                                               :filter       "nam-conusnest"
-                                                                              :disabled-for #{:smoke}}
+                                                                              :disabled-for #{:smoke :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :cansac-wrf    {:opt-label    "CANSAC WRF"
                                                                               :filter       "cansac-wrf"
-                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
+                                                                              :disabled-for #{:apcp01 :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
-                                                                              :disabled-for #{:apcptot :apcp01 :smoke}})}
+                                                                              :disabled-for #{:apcptot :apcp01 :smoke :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
