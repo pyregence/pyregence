@@ -739,7 +739,6 @@
                                           :filter     org-unique-id}))
                                 {}
                                 user-psps-orgs-list))
-              ;;TODO consider moving this closer to the component.
               (cond->
                (or
                 (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
@@ -750,11 +749,15 @@
                          (assoc-in m k v))
                        m
                        [[[:fire-weather :params :model :options :nfdrs-constant]
-                         {:opt-label "NFDRS Constant" :filter "nfdrs-constant" :geoserver-key :psps}]
+                         {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps,
+                          :disabled-for  #{:hdw :apcptot :apcp01 :vpd :smoke
+                                           :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]
                         [[:fire-weather :params :model :options :nfdrs-variable]
-                         {:opt-label "NFDRS Variable" :filter "nfdrs-variable" :geoserver-key :psps}]])))))
+                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps,
+                          :disabled-for #{:hdw :apcptot :apcp01 :vpd
+                                          :smoke :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]])))))
 
-;; Sort the Risk tab "Ignition Pattern" options alphabetically by :opt-label
+  ;; TODO Consider sorting the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
   ;; Sort the PSPS tab "Utility Company" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:psps-zonal :params :utility :options] sort-by-opt-label)

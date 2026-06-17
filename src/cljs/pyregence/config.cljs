@@ -278,6 +278,49 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
+                                                               ;;TODO check filters
+                                                              :erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
+                                                                       :filter "erc"
+                                                                       :units "(ERC, Btu/sq ft)"}
+                                                              :ercperc {:opt-label "ERC percentile"
+                                                                        :filter "ercperc"}
+                                                              :bi {:opt-label "burning index (BI, ft * 10)"
+                                                                   :filter "bi"
+                                                                   :units "(BI, ft * 10)"}
+                                                              :biperc {:opt-label  "BI percentile"
+                                                                       :filter "biperc"}
+                                                              :sc      {:opt-label "spread component (ft/min)"
+                                                                        :filter "sc"
+                                                                        :units "(ft/min)"}
+                                                              :scperc  {:opt-label  "SC percentile"
+                                                                        :filter     "scperc"}
+                                                              :ic    {:opt-label "SC percentile"
+                                                                      :filter "ic"}
+                                                              :sfdiperc {:opt-label "SFDI percentile"
+                                                                         :filter "sfdiperc"}
+                                                              :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
+                                                                         :filter "sfdicat"}
+                                                              :lh {:opt-label "Live herbaceous fuel moisture (% or fraction)"
+                                                                   :filter "lh"
+                                                                   :units "(% or fraction)"}
+                                                              :lw {:opt-label "Live woody fuel moisture (% or fraction)"
+                                                                   :filter "lw"
+                                                                   :units "(% or fraction)"}
+                                                              :m1  {:opt-label "1-hour fuel moisture (% or fraction)"
+                                                                    :filter "m1"
+                                                                    :units "(% or fraction)"}
+                                                              :m10 {:opt-label "10-hour fuel moisture (% or fraction)"
+                                                                    :filter "m10"
+                                                                    :units "(% or fraction)"}
+                                                              :m100 {:opt-label "100-hour fuel moisture (% or fraction)"
+                                                                     :filter "m100"
+                                                                     :units "(% or fraction)"}
+                                                              :m1000 {:opt-label "1000-hour fuel moisture (% or fraction)"
+                                                                      :filter "m1000"
+                                                                      :units "(% or fraction)"}
+                                                              :kbdiI​ {:opt-label "Keetch Byram Drought Index (0-800)"
+                                                                       :filter "kbdiI"
+                                                                       :units "Index (0-800)"}
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
                                                                         :units     "%"}
@@ -373,30 +416,32 @@
                                                  :options    (array-map
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
-                                                                              :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd
+                                                                                              :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :hrrr          {:opt-label "HRRR"
+                                                                              :disabled-for #{:erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}
                                                                               :filter    "hrrr"}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
-                                                                              :disabled-for #{:apcptot :smoke :tcdc}}
+                                                                              :disabled-for #{:apcptot :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :gfs0p125      {:opt-label    "GFS 0.125\u00B0"
                                                                               :filter       "gfs0p125"
-                                                                              :disabled-for #{:apcptot :smoke :tcdc}}
+                                                                              :disabled-for #{:apcptot :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
-                                                                              :disabled-for #{:smoke :tcdc}}
+                                                                              :disabled-for #{:smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :nam-awip12    {:opt-label    "NAM 12 km"
                                                                               :filter       "nam-awip12"
-                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
+                                                                              :disabled-for #{:apcp01 :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :nam-conusnest {:opt-label    "NAM 3 km"
                                                                               :filter       "nam-conusnest"
-                                                                              :disabled-for #{:smoke}}
+                                                                              :disabled-for #{:smoke :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :cansac-wrf    {:opt-label    "CANSAC WRF"
                                                                               :filter       "cansac-wrf"
-                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
+                                                                              :disabled-for #{:apcp01 :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}}
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
-                                                                              :disabled-for #{:apcptot :apcp01 :smoke}})}
+                                                                              :disabled-for #{:apcptot :apcp01 :smoke :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1:m10 :m100 :m1000 :kbdiI}})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
