@@ -331,7 +331,6 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
-                                                               ;;TODO check filters
                                                               :erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
                                                                        :filter "erc"
                                                                        :units "(ERC, Btu/sq ft)"}
