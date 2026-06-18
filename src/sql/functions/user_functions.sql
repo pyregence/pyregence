@@ -545,6 +545,22 @@ RETURNS timestamptz AS $$
     WHERE user_uid = _user_id;
 $$ LANGUAGE SQL;
 
+-- PYR1-1513: mark all of a user's sessions invalidated as of _ts (epoch ms).
+-- _ts is text and cast to bigint so callers can avoid integer-arg overflow.
+CREATE OR REPLACE FUNCTION set_user_session_invalidated_at(_user_id integer, _ts text)
+RETURNS void AS $$
+    UPDATE users
+    SET session_invalidated_at = _ts::bigint
+    WHERE user_uid = _user_id;
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION get_user_session_invalidated_at(_user_id integer)
+RETURNS bigint AS $$
+    SELECT session_invalidated_at
+    FROM users
+    WHERE user_uid = _user_id;
+$$ LANGUAGE SQL;
+
 --------------------------------------------------------------------------------
 -- Marketplace Provisioning
 --------------------------------------------------------------------------------

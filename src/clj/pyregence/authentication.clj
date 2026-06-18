@@ -21,16 +21,19 @@
    This is the single source of truth for session structure."
   [user-data]
   (when user-data
-    (data-response "" {:session (merge {:match-drop-access?    (:match_drop_access user-data)
-                                        :user-email            (:user_email user-data)
-                                        :user-id               (:user_id user-data)
-                                        :user-name             (:user_name user-data)
-                                        :user-role             (:user_role user-data)
-                                        :organization-id       (:organization_rid user-data)
-                                        :org-membership-status (:org_membership_status user-data)
-                                        :subscription-tier     (:subscription_tier user-data)
-                                        :marketplace-status    (:marketplace_status user-data)}
-                                       (get-config :app :client-keys))})))
+    (let [now (System/currentTimeMillis)]
+      (data-response "" {:session (merge {:match-drop-access?    (:match_drop_access user-data)
+                                          :user-email            (:user_email user-data)
+                                          :user-id               (:user_id user-data)
+                                          :user-name             (:user_name user-data)
+                                          :user-role             (:user_role user-data)
+                                          :organization-id       (:organization_rid user-data)
+                                          :org-membership-status (:org_membership_status user-data)
+                                          :subscription-tier     (:subscription_tier user-data)
+                                          :marketplace-status    (:marketplace_status user-data)
+                                          :created-at            now   ; PYR1-1515 timeout markers
+                                          :last-active           now}
+                                         (get-config :app :client-keys))}))))
 
 (defn- parse-user-settings
   "Safely parses user settings from EDN string, returning empty map on error."
@@ -69,6 +72,8 @@
   ([{:keys [user_id user_email] :as user} request-session]
    (call-sql "set_users_last_login_date_to_now" user_id)
    (marketplace/complete-signup! request-session user_email)
+   ;; PYR1-1519: a new login invalidates the user's prior sessions (single active session)
+   (call-sql "set_user_session_invalidated_at" user_id (str (System/currentTimeMillis)))
    (create-session-from-user-data user)))
 
 (defn log-in
@@ -129,7 +134,15 @@
   (log-in nil "email-2fa@pyr.dev" "email2fa"))
   ;=>> {:status 200 :body string?}
 
-(defn log-out [_] (data-response "" {:session nil}))
+(defn log-out
+  "Logs the user out: invalidates all of their sessions server-side (PYR1-1513),
+   clears the session cookie, and asks the browser to drop client-side state (PYR1-1514)."
+  [{:keys [user-id]}]
+  (when user-id
+    ;; string, not long: avoids triangulum call-sql's Long->int overflow (SQL casts ::bigint)
+    (call-sql "set_user_session_invalidated_at" user-id (str (System/currentTimeMillis))))
+  (-> (data-response "" {:session nil})
+      (assoc-in [:headers "Clear-Site-Data"] "\"cache\", \"cookies\", \"storage\"")))
 
 (defn set-user-password
   "Sets a new password for user with valid reset token."

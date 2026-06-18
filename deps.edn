@@ -45,6 +45,9 @@
            :compile-cljs     {:main-opts  ["-m" "pyregence.compile-cljs" "compile-prod.cljs.edn"]}
            :config           {:main-opts  ["-m" "triangulum.config"]}
            :https            {:main-opts  ["-m" "triangulum.https"]}
+           ;; Dev-only: build against the local, editable triangulum checkout (../triangulum)
+           ;; instead of the pinned git dep. Opt-in, e.g. `clojure -M:local-triangulum:server`.
+           :local-triangulum {:override-deps {sig-gis/triangulum {:local/root "../triangulum"}}}
            :figwheel-lib     {:extra-deps {com.bhauman/figwheel-main       {:mvn/version "0.2.13"}}}
            :figwheel         {:extra-deps {com.bhauman/figwheel-main       {:mvn/version "0.2.13"}
                                            com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}}

@@ -126,6 +126,10 @@
                                                      :psps        {:username "<username>" :password "<password>"}}
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
+ ;; PYR1-1515 server-enforced session timeouts, minutes (AC: idle < 30, absolute < 8 h).
+ ;; 15 per NIST 800-63B AAL3 / PCI DSS 8.2.8; 420 = 7 h. Match the access-control policy.
+ :pyregence.auth/idle-timeout-min     15
+ :pyregence.auth/absolute-timeout-min 420
  :pyregence.match-drop/match-drop                   {:sig3-auth      "<AUTH_TOKEN>"
                                                      :sig3-env       "<dev | prod | stg>"
                                                      :max-queue-size 5}
