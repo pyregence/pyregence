@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: DeLaGuardo/clojure-lint-action@master
+    - uses: actions/checkout@v4
+    - uses: DeLaGuardo/setup-clj-kondo@master
       with:
-        clj-kondo-args: --lint src --fail-level error
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        version: '2026.05.25'
+    - run: clj-kondo --lint src --fail-level error
