@@ -11,6 +11,7 @@
 /.key
 /logs
 /target
+/deps-for-clj-watson.edn
 
 # Configuration files
 /config.edn
