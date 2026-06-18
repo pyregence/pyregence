@@ -39,7 +39,8 @@ CREATE TABLE users (
     organization_rid       integer references organizations(organization_uid),
     password_set_date      TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     procurement_account_id text,
-    google_user_identity   text
+    google_user_identity   text,
+    session_invalidated_at bigint NOT NULL DEFAULT 0
 );
 
 ALTER TABLE users

@@ -127,7 +127,7 @@
                                                      :auth-type #{:account-manager :token}
                                                      :auth-action :block}
    [:post "/clj/get-current-user-organization"]      {:handler (clj-handler authentication/get-current-user-organization)
-                                                     :auth-type :token
+                                                     :auth-type #{:member :token}
                                                      :auth-action :block}
    [:post "/clj/get-org-member-users"]               {:handler (clj-handler authentication/get-org-member-users)
                                                      :auth-type #{:organization-admin :tier2-pro :token}
