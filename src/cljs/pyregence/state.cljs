@@ -103,9 +103,6 @@ the user is not an Admin or Member of their organization."}
   psps-orgs-list (r/atom []))
 (defonce ^{:doc "Stores a list of all PSPS organizations that a user belongs to."}
   user-psps-orgs-list (r/atom []))
-(defonce ^{:doc "PSPS GeoServer admin credentials (\"username:password\") used to
-authenticate WUI active-fire tile requests. Only populated for pyregence-consortium members."}
-  psps-geoserver-credentials (r/atom nil))
 (defonce ^{:doc "A boolean that enables time-step animation for the Time Slider when true."}
   animate? (r/atom false))
 (defonce ^{:doc "True when animation layers exist in Mapbox."}

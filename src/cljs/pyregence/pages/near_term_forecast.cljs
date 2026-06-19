@@ -364,11 +364,12 @@
 
    Note that super_admins can resolve credentials from *all* orgs."
   []
-  (if (c/wui-fire-selected?)
-    ;; WUI active fires are served from the private :psps GeoServer; authenticate with
-    ;; the psps GeoServer admin credentials (only populated for pyregence-consortium members).
-    @!/psps-geoserver-credentials
-    (when (seq @!/user-psps-orgs-list)
+  (when (seq @!/user-psps-orgs-list)
+    (if (c/wui-fire-selected?)
+      ;; WUI active fires are private to the pyregence-consortium org, which is just a
+      ;; regular PSPS org: authenticate with its own GeoServer credentials.
+      (some #(when (= c/wui-org-unique-id (:org-unique-id %)) (:geoserver-credentials %))
+            @!/user-psps-orgs-list)
       (when-some [keypath (case @!/*forecast
                             :fuels        :only-underlays
                             :fire-weather [:fire-weather :model]
@@ -773,7 +774,6 @@
                                                                      "get-all-organizations"
                                                                      "get-current-user-organization"))
           psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
-          psps-creds-chan                 (u-async/call-clj-async! "get-psps-geoserver-credentials")
           match-drop-access-chan          (u-async/call-clj-async! "get-user-match-drop-access")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count (:active-fires fire-names))
@@ -792,7 +792,6 @@
       (reset! !/user-psps-orgs-list (filter (fn [org]
                                               (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
                                             @!/user-orgs-list))
-      (reset! !/psps-geoserver-credentials (edn/read-string (:body (<! psps-creds-chan))))
       (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast
               (cond
