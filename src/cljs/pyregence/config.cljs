@@ -346,9 +346,9 @@
                                                                         :units "(ft/min)"}
                                                               :scperc  {:opt-label  "SC percentile"
                                                                         :filter     "scperc"}
-                                                              :ic    {:opt-label "SC percentile"
+                                                              :ic    {:opt-label "Ignition Component (%)"
                                                                       :filter "ic"}
-                                                              :sfdiperc {:opt-label "SFDI percentile"
+                                                              :sfdiperc {:opt-label "SFDI percentile (%)"
                                                                          :filter "sfdiperc"}
                                                               :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
                                                                          :filter "sfdicat"}
