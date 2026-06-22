@@ -1,5 +1,6 @@
 (ns pyregence.authentication
-  (:require [pyregence.email            :as email]
+  (:require [clojure.set                :as set]
+            [pyregence.email            :as email]
             [pyregence.marketplace      :as marketplace]
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error]]
@@ -31,6 +32,51 @@
                                         :subscription-tier     (:subscription_tier user-data)
                                         :marketplace-status    (:marketplace_status user-data)}
                                        (get-config :app :client-keys))})))
+
+(def client-safe-session-keys
+  "Per-user session keys that are safe to embed in the page source for the
+   browser. Every key produced by `create-session-from-user-data` must be
+   classified here or in `internal-session-keys`; the invariant is enforced
+   by the rich-comment test below."
+  #{:match-drop-access?
+    :user-email
+    :user-name
+    :user-role
+    :org-membership-status
+    :subscription-tier
+    :marketplace-status})
+
+(def internal-session-keys
+  "Per-user session keys needed server-side (auth/SQL) that must never reach
+   the client, e.g. predictable sequential identifiers (see PYR1-1512).
+   `pyregence.handlers/render-page` strips these before the session is
+   embedded in the page source."
+  #{:user-id :organization-id})
+
+^:rct/test
+(comment
+  ;; Every per-user session key must be classified as either client-safe or
+  ;; internal (stripped before reaching the browser). A new, unclassified key
+  ;; makes this set non-empty and fails the test, forcing a conscious decision
+  ;; instead of a silent leak.
+  (let [session-keys (-> (create-session-from-user-data
+                          {:user_email            "x@example.com"
+                           :user_id               1
+                           :user_name             "x"
+                           :user_role             "member"
+                           :organization_rid      1
+                           :org_membership_status "none"
+                           :match_drop_access     false
+                           :subscription_tier     "tier1_free_registered"
+                           :marketplace_status    "none"})
+                         :session
+                         keys
+                         set)
+        client-keys  (set (keys (get-config :app :client-keys)))
+        per-user     (set/difference session-keys client-keys)]
+    (set/difference per-user client-safe-session-keys internal-session-keys))
+  ;=> #{}
+  )
 
 (defn- parse-user-settings
   "Safely parses user settings from EDN string, returning empty map on error."

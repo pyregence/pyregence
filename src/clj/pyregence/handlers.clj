@@ -1,30 +1,25 @@
 (ns pyregence.handlers
-  (:require [cider.nrepl         :refer [cider-nrepl-handler]]
-            [clojure.data.json   :as    json]
-            [clojure.repl        :refer [demunge]]
-            [clojure.string      :as    str]
-            [nrepl.server        :as    nrepl-server]
-            [ring.util.codec     :refer [url-encode]]
-            [ring.util.response  :refer [redirect]]
-            [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.handler  :refer [development-app]]
-            [triangulum.logging  :refer [log-str set-log-path!]]
-            [triangulum.response :refer [data-response]]
-            [triangulum.views    :as    triangulum-views]
-            [triangulum.worker   :refer [start-workers!]]))
-
-(def ^:private internal-session-keys
-  "Session keys needed server-side for auth/SQL but which must never be
-   serialized into the page source, as they are predictable sequential
-   identifiers (see PYR1-1512)."
-  [:user-id :organization-id])
+  (:require [cider.nrepl              :refer [cider-nrepl-handler]]
+            [clojure.data.json        :as    json]
+            [clojure.repl             :refer [demunge]]
+            [clojure.string           :as    str]
+            [nrepl.server             :as    nrepl-server]
+            [pyregence.authentication :refer [internal-session-keys]]
+            [ring.util.codec          :refer [url-encode]]
+            [ring.util.response       :refer [redirect]]
+            [triangulum.config        :refer [get-config]]
+            [triangulum.database      :refer [call-sql sql-primitive]]
+            [triangulum.handler       :refer [development-app]]
+            [triangulum.logging       :refer [log-str set-log-path!]]
+            [triangulum.response      :refer [data-response]]
+            [triangulum.views         :as    triangulum-views]
+            [triangulum.worker        :refer [start-workers!]]))
 
 (defn render-page
-  "Wraps `triangulum.views/render-page`, stripping internal sequential
-   identifiers from the session before it is embedded in the page source.
-   The persisted session cookie is unaffected (the render response sets no
-   `:session`), so server-side handlers still see these keys."
+  "Wraps `triangulum.views/render-page`, stripping `internal-session-keys`
+   from the session before it is embedded in the page source. The persisted
+   session cookie is unaffected (the render response sets no `:session`), so
+   server-side handlers still see these keys."
   [uri]
   (let [page (triangulum-views/render-page uri)]
     (fn [request]
