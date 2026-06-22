@@ -16,6 +16,7 @@
             [pyregence.utils.async-utils                      :as u-async]
             [pyregence.utils.data-utils                       :as u-data]
             [pyregence.utils.dom-utils                        :as u-dom]
+            [pyregence.wui                                    :as wui]
             [reagent.core                                     :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,7 +48,7 @@
    is selected the underlay lives on the private `:psps` GeoServer and is keyed off
    `:wui-fire-name`; otherwise the underlay is returned unchanged."
   [{:keys [dependent-inputs] :as underlay}]
-  (if (and (c/wui-fire-selected?)
+  (if (and (wui/wui-fire-selected?)
            (some #{:fire-name} dependent-inputs))
     (assoc underlay
            :geoserver-key    :psps

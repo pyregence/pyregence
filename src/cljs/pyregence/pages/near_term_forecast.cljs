@@ -36,6 +36,7 @@
    [pyregence.utils.misc-utils                                                :as u-misc]
    [pyregence.utils.number-utils                                              :as u-num]
    [pyregence.utils.time-utils                                                :as u-time]
+   [pyregence.wui                                                             :as wui]
    [react                                                                     :as react]
    [reagent.core                                                              :as r]
    [reagent.dom.server                                                        :as rs]))
@@ -646,7 +647,7 @@
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
     (when (and (= :active-fire selected-forecast)
                (or @!/match-drop-access?
-                   (and (c/feature-enabled? :wui) (c/user-in-wui-org? @!/user-orgs-list))))
+                   (and (c/feature-enabled? :wui) (wui/user-in-wui-org? @!/user-orgs-list))))
       (refresh-fire-names!))
     (<! (change-type! true
                       true
@@ -717,7 +718,7 @@
                     (assoc-in [:active-fire :params :match-drop-name :hidden?] false)))
               ;; Add in WUI active fire names (pyregence-consortium members only, gated behind the :wui feature flag)
               (cond->
-                (c/show-wui-fires? @!/user-orgs-list (:wui-active-fires fire-names))
+                (wui/show-wui-fires? @!/user-orgs-list (:wui-active-fires fire-names))
                 (-> (update-in [:active-fire :params :wui-fire-name :options]
                                merge
                                (:wui-active-fires fire-names))
