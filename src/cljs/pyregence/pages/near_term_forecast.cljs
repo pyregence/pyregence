@@ -733,11 +733,11 @@
                          (assoc-in m k v))
                        m
                        [[[:fire-weather :params :model :options :nfdrs-constant]
-                         {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps,
+                         {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps, :group "NFDRS",
                           :disabled-for  #{:hdw :apcptot :apcp01 :vpd :smoke
                                            :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]
                         [[:fire-weather :params :model :options :nfdrs-variable]
-                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps,
+                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps, :group "NFDRS",
                           :disabled-for #{:hdw :apcptot :apcp01 :vpd
                                           :smoke :tcdc  :rh :tmpf :ffwi :meq :pign :wd :ws :wg}}]])))))
 

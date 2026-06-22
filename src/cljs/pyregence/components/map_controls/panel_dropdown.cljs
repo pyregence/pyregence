@@ -8,6 +8,13 @@
 ;; Root component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- dropdown-option [selected-param-set [key {:keys [opt-label enabled? disabled-for]}]]
+  [:option {:key      key
+            :value    key
+            :disabled (or (and (set? disabled-for) (some selected-param-set disabled-for))
+                          (and (fn? enabled?) (not (enabled?))))}
+   opt-label])
+
 (defn panel-dropdown [title tool-tip-text val options disabled? call-back & [selected-param-set]]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
    [:div {:style {:display "flex" :justify-content "space-between"}}
@@ -25,9 +32,10 @@
              :on-change #(call-back (u-dom/input-keyword %))}
     (->> options
          (remove (fn [[_ {:keys [hidden? opt-label]}]] (or hidden? (empty? opt-label))))
-         (map (fn [[key {:keys [opt-label enabled? disabled-for]}]]
-                [:option {:key      key
-                          :value    key
-                          :disabled (or (and (set? disabled-for) (some selected-param-set disabled-for))
-                                        (and (fn? enabled?) (not (enabled?))))}
-                 opt-label])))]])
+         ;; Wrap consecutive options sharing a :group in an <optgroup>; ungrouped options stay loose.
+         (partition-by (comp :group second))
+         (mapcat (fn [run]
+                   (if-let [group (-> run first second :group)]
+                     [(into [:optgroup {:key group :label group}]
+                            (map (partial dropdown-option selected-param-set) run))]
+                     (map (partial dropdown-option selected-param-set) run)))))]])

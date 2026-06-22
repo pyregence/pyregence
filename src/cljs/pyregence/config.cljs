@@ -284,65 +284,6 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
-                                                              ;; SFDI category is the default/top output when an NFDRS model is selected
-                                                              :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
-                                                                         :filter "sfdicat"
-                                                                         :disabled-for non-nfdrs-weather-models}
-                                                              :erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
-                                                                       :filter "erc"
-                                                                       :units "(ERC, Btu/sq ft)"
-                                                                       :disabled-for non-nfdrs-weather-models}
-                                                              :ercperc {:opt-label "ERC percentile"
-                                                                        :filter "ercperc"
-                                                                        :disabled-for non-nfdrs-weather-models}
-                                                              :bi {:opt-label "burning index (BI, ft * 10)"
-                                                                   :filter "bi"
-                                                                   :units "(BI, ft * 10)"
-                                                                   :disabled-for non-nfdrs-weather-models}
-                                                              :biperc {:opt-label  "BI percentile"
-                                                                       :filter "biperc"
-                                                                       :disabled-for non-nfdrs-weather-models}
-                                                              :sc      {:opt-label "spread component (ft/min)"
-                                                                        :filter "sc"
-                                                                        :units "(ft/min)"
-                                                                        :disabled-for non-nfdrs-weather-models}
-                                                              :scperc  {:opt-label  "SC percentile"
-                                                                        :filter     "scperc"
-                                                                        :disabled-for non-nfdrs-weather-models}
-                                                              :ic    {:opt-label "Ignition Component (%)"
-                                                                      :filter "ic"
-                                                                      :disabled-for non-nfdrs-weather-models}
-                                                              :sfdiperc {:opt-label "SFDI percentile (%)"
-                                                                         :filter "sfdiperc"
-                                                                         :disabled-for non-nfdrs-weather-models}
-                                                              :lh {:opt-label "Live herbaceous fuel moisture (% or fraction)"
-                                                                   :filter "lh"
-                                                                   :units "(% or fraction)"
-                                                                   :disabled-for non-nfdrs-weather-models}
-                                                              :lw {:opt-label "Live woody fuel moisture (% or fraction)"
-                                                                   :filter "lw"
-                                                                   :units "(% or fraction)"
-                                                                   :disabled-for non-nfdrs-weather-models}
-                                                              :m1  {:opt-label "1-hour fuel moisture (% or fraction)"
-                                                                    :filter "m1"
-                                                                    :units "(% or fraction)"
-                                                                    :disabled-for non-nfdrs-weather-models}
-                                                              :m10 {:opt-label "10-hour fuel moisture (% or fraction)"
-                                                                    :filter "m10"
-                                                                    :units "(% or fraction)"
-                                                                    :disabled-for non-nfdrs-weather-models}
-                                                              :m100 {:opt-label "100-hour fuel moisture (% or fraction)"
-                                                                     :filter "m100"
-                                                                     :units "(% or fraction)"
-                                                                     :disabled-for non-nfdrs-weather-models}
-                                                              :m1000 {:opt-label "1000-hour fuel moisture (% or fraction)"
-                                                                      :filter "m1000"
-                                                                      :units "(% or fraction)"
-                                                                      :disabled-for non-nfdrs-weather-models}
-                                                              :kbdiI {:opt-label "Keetch Byram Drought Index (0-800)"
-                                                                      :filter "kbdiI"
-                                                                      :units "Index (0-800)"
-                                                                      :disabled-for non-nfdrs-weather-models}
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
                                                                         :units     "%"
@@ -401,7 +342,83 @@
                                                               :tcdc    {:opt-label    "Total cloud cover (%)"
                                                                         :filter       "tcdc"
                                                                         :units        "%"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable}})}
+                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable}}
+                                                              ;; NFDRS params: only selectable with an NFDRS model, grouped apart in the dropdown.
+                                                              ;; SFDI category leads so auto-switch makes it the default when NFDRS is selected.
+                                                              :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
+                                                                         :filter "sfdicat"
+                                                                         :group "NFDRS"
+                                                                         :disabled-for non-nfdrs-weather-models}
+                                                              :erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
+                                                                       :filter "erc"
+                                                                       :units "(ERC, Btu/sq ft)"
+                                                                       :group "NFDRS"
+                                                                       :disabled-for non-nfdrs-weather-models}
+                                                              :ercperc {:opt-label "ERC percentile"
+                                                                        :filter "ercperc"
+                                                                        :group "NFDRS"
+                                                                        :disabled-for non-nfdrs-weather-models}
+                                                              :bi {:opt-label "burning index (BI, ft * 10)"
+                                                                   :filter "bi"
+                                                                   :units "(BI, ft * 10)"
+                                                                   :group "NFDRS"
+                                                                   :disabled-for non-nfdrs-weather-models}
+                                                              :biperc {:opt-label  "BI percentile"
+                                                                       :filter "biperc"
+                                                                       :group "NFDRS"
+                                                                       :disabled-for non-nfdrs-weather-models}
+                                                              :sc      {:opt-label "spread component (ft/min)"
+                                                                        :filter "sc"
+                                                                        :units "(ft/min)"
+                                                                        :group "NFDRS"
+                                                                        :disabled-for non-nfdrs-weather-models}
+                                                              :scperc  {:opt-label  "SC percentile"
+                                                                        :filter     "scperc"
+                                                                        :group "NFDRS"
+                                                                        :disabled-for non-nfdrs-weather-models}
+                                                              :ic    {:opt-label "Ignition Component (%)"
+                                                                      :filter "ic"
+                                                                      :group "NFDRS"
+                                                                      :disabled-for non-nfdrs-weather-models}
+                                                              :sfdiperc {:opt-label "SFDI percentile (%)"
+                                                                         :filter "sfdiperc"
+                                                                         :group "NFDRS"
+                                                                         :disabled-for non-nfdrs-weather-models}
+                                                              :lh {:opt-label "Live herbaceous fuel moisture (% or fraction)"
+                                                                   :filter "lh"
+                                                                   :units "(% or fraction)"
+                                                                   :group "NFDRS"
+                                                                   :disabled-for non-nfdrs-weather-models}
+                                                              :lw {:opt-label "Live woody fuel moisture (% or fraction)"
+                                                                   :filter "lw"
+                                                                   :units "(% or fraction)"
+                                                                   :group "NFDRS"
+                                                                   :disabled-for non-nfdrs-weather-models}
+                                                              :m1  {:opt-label "1-hour fuel moisture (% or fraction)"
+                                                                    :filter "m1"
+                                                                    :units "(% or fraction)"
+                                                                    :group "NFDRS"
+                                                                    :disabled-for non-nfdrs-weather-models}
+                                                              :m10 {:opt-label "10-hour fuel moisture (% or fraction)"
+                                                                    :filter "m10"
+                                                                    :units "(% or fraction)"
+                                                                    :group "NFDRS"
+                                                                    :disabled-for non-nfdrs-weather-models}
+                                                              :m100 {:opt-label "100-hour fuel moisture (% or fraction)"
+                                                                     :filter "m100"
+                                                                     :units "(% or fraction)"
+                                                                     :group "NFDRS"
+                                                                     :disabled-for non-nfdrs-weather-models}
+                                                              :m1000 {:opt-label "1000-hour fuel moisture (% or fraction)"
+                                                                      :filter "m1000"
+                                                                      :units "(% or fraction)"
+                                                                      :group "NFDRS"
+                                                                      :disabled-for non-nfdrs-weather-models}
+                                                              :kbdiI {:opt-label "Keetch Byram Drought Index (0-800)"
+                                                                      :filter "kbdiI"
+                                                                      :units "Index (0-800)"
+                                                                      :group "NFDRS"
+                                                                      :disabled-for non-nfdrs-weather-models})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "NBM"]
