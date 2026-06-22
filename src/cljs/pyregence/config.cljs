@@ -263,7 +263,8 @@
                   :time-slider?    true
                   :always-utc?     true
                   :hover-text      "Gridded weather forecasts from several US operational weather models including key parameters that affect wildfire behavior."
-                  :params          {:band       {:opt-label  "Weather Parameter"
+                  :params          {:band       {:opt-label      "Weather Parameter"
+                                                 :default-option :rh
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Gridded weather forecasts from several US operational weather models having different spatial resolutions and forecast durations. Available quantities include common weather parameters and fire weather indices:"
                                                               [:br]
@@ -283,6 +284,10 @@
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
+                                                              ;; SFDI category is the default/top output when an NFDRS model is selected
+                                                              :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
+                                                                         :filter "sfdicat"
+                                                                         :disabled-for non-nfdrs-weather-models}
                                                               :erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
                                                                        :filter "erc"
                                                                        :units "(ERC, Btu/sq ft)"
@@ -309,9 +314,6 @@
                                                                       :disabled-for non-nfdrs-weather-models}
                                                               :sfdiperc {:opt-label "SFDI percentile (%)"
                                                                          :filter "sfdiperc"
-                                                                         :disabled-for non-nfdrs-weather-models}
-                                                              :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
-                                                                         :filter "sfdicat"
                                                                          :disabled-for non-nfdrs-weather-models}
                                                               :lh {:opt-label "Live herbaceous fuel moisture (% or fraction)"
                                                                    :filter "lh"
