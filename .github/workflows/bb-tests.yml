@@ -51,6 +51,7 @@ jobs:
                                  clojure.edn/read-string
                                  (assoc :triangulum.build-db/admin-pass "postgres"
                                         :triangulum.server/mode         "dev"
+                                        :triangulum.email/host          "smtp.ci.local"
                                         :triangulum.email/pass          "ci"
                                         :triangulum.views/gtag-id       "G-CI"))))'
     - name: Build database with dev data
