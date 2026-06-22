@@ -366,11 +366,11 @@
    Note that super_admins can resolve credentials from *all* orgs."
   []
   (when (seq @!/user-psps-orgs-list)
-    (if (c/wui-fire-selected?)
+    (if (wui/wui-fire-selected?)
       ;; WUI active fires are private to the pyregence-consortium org, which is just a
       ;; regular PSPS org: authenticate with its own GeoServer credentials.
-      (some #(when (= c/wui-org-unique-id (:org-unique-id %)) (:geoserver-credentials %))
-            @!/user-psps-orgs-list)
+      (-> (into {} (map (juxt :org-unique-id identity)) @!/user-psps-orgs-list)
+          (get-in [wui/wui-org-unique-id :geoserver-credentials]))
       (when-some [keypath (case @!/*forecast
                             :fuels        :only-underlays
                             :fire-weather [:fire-weather :model]
