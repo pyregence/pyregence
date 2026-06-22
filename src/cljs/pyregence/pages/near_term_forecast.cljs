@@ -717,9 +717,7 @@
                     (assoc-in [:active-fire :params :match-drop-name :hidden?] false)))
               ;; Add in WUI active fire names (pyregence-consortium members only, gated behind the :wui feature flag)
               (cond->
-                (and (c/feature-enabled? :wui)
-                     (c/user-in-wui-org? @!/user-orgs-list)
-                     (seq (:wui-active-fires fire-names)))
+                (c/show-wui-fires? @!/user-orgs-list (:wui-active-fires fire-names))
                 (-> (update-in [:active-fire :params :wui-fire-name :options]
                                merge
                                (:wui-active-fires fire-names))

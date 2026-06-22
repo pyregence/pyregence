@@ -32,6 +32,15 @@
   (and (= @!/*forecast :active-fire)
        (not= :none (get-in @!/*params [:active-fire :wui-fire-name]))))
 
+(defn show-wui-fires?
+  "True when WUI active fires should be surfaced into the active-fire params: the
+   :wui feature flag is on, the user belongs to the WUI org, and there is at least
+   one WUI fire available."
+  [user-orgs-list wui-active-fires]
+  (and (feature-enabled? :wui)
+       (user-in-wui-org? user-orgs-list)
+       (seq wui-active-fires)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
