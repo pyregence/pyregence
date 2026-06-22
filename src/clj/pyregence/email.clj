@@ -5,6 +5,7 @@
             [triangulum.config        :refer [get-config]]
             [triangulum.database      :refer [call-sql sql-primitive]]
             [triangulum.email         :refer [send-mail]]
+            [triangulum.logging       :refer [log-str]]
             [triangulum.response      :refer [data-response]]))
 
 ;; Helper to get security email config
@@ -44,22 +45,54 @@
   []
   (format "%06d" (rand-int 1000000)))
 
+(def ^:private generic-reset-response
+  "If that email address is registered with PyreCast, we will send you an email to reset your password.")
+
+(defn- dispatch-off-thread
+  "Runs `thunk` off-thread, logging failures."
+  [thunk]
+  (future
+    (try (thunk)
+         (catch Exception e (log-str "Background task failed: " (.getMessage e))))))
+
 (defn- send-verification-email!
-  "Send verification email with a token.
-   config-type can be :security (for password resets) or :support (for new users)."
+  "Send a verification email with a token. config-type is :security (password reset) or :support (new user).
+   The :security path responds identically and sends off-thread, so it can't enumerate accounts."
   [email subject message-fn config-type]
-  (let [user-name          (sql-primitive (call-sql "get_user_name_by_email" email))
-        verification-token (str (UUID/randomUUID))
-        base-url           (get-config :triangulum.email/base-url)
-        fmt                (get-email-format email)
-        body               (message-fn fmt base-url email user-name verification-token)
-        ;; Use security config only for :security type, otherwise use default
-        email-config       (when (= config-type :security)
-                             (get-security-email-config))
-        from-name          (if (= config-type :security) "PyreCast Security" "PyreCast Support")
-        result             (send-mail email nil from-name subject body fmt email-config)]
-    (call-sql "set_verification_token" email verification-token nil)
-    (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
+  (let [security? (= config-type :security)
+        user-name (sql-primitive (call-sql "get_user_name_by_email" email))
+        send!     (fn []
+                    (let [verification-token (str (UUID/randomUUID))
+                          base-url           (get-config :triangulum.email/base-url)
+                          fmt                (get-email-format email)
+                          body               (message-fn fmt base-url email user-name verification-token)
+                          ;; nil for non-security, so send-mail uses its default config
+                          email-config       (when security? (get-security-email-config))
+                          from-name          (if security? "PyreCast Security" "PyreCast Support")
+                          result             (send-mail email nil from-name subject body fmt email-config)]
+                      (call-sql "set_verification_token" email verification-token nil)
+                      result))]
+    (if security?
+      (do (when user-name (dispatch-off-thread send!))
+          (data-response generic-reset-response {:status 200}))
+      (data-response email {:status (when-not (= :SUCCESS (:error (send!))) 400)}))))
+
+^:rct/test
+(comment
+  ;; same 200 + generic body whether or not the account exists.
+  (let [reset-resp (fn [user-name]
+                     (with-redefs [dispatch-off-thread (fn [thunk] (thunk)) ; run the send inline
+                                   call-sql            (fn [_ & _] [{:get_user_name_by_email user-name}])
+                                   get-email-format    (fn [_] :text)
+                                   send-mail           (fn [& _] {:error :SUCCESS})]
+                       (select-keys (send-verification-email! "probe@x" "Reset"
+                                                              messages/password-reset-email :security)
+                                    [:status :body])))]
+    (= (reset-resp "Existing User")
+       (reset-resp nil)
+       {:status 200 :body (pr-str generic-reset-response)}))
+  ;=> true
+  )
 
 (defn send-2fa-code
   "Sends a time-limited 2FA code to the user's email"

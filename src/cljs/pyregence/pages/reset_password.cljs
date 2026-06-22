@@ -38,10 +38,7 @@
                             "Your password must be at least 8 characters long.")
 
                           (when (not= @password @re-password)
-                            "Password fields do not match.")
-
-                          (when-not (:success (<! (u-async/call-clj-async! "user-email-taken" @email -1)))
-                            (str "The email '" @email "' does not exist."))])]
+                            "Password fields do not match.")])] ; token is validated server-side
 
       (if (pos? (count errors))
         (do (toast-message! errors)
@@ -50,7 +47,7 @@
           (do (toast-message! "Your password has been reset successfully.")
               (<! (timeout 2000))
               (u-browser/jump-to-url! "/forecast"))
-          (do (toast-message! (str "Error reseting password for " @email "."))
+          (do (toast-message! "Error resetting password.")
               (reset! pending? false)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
