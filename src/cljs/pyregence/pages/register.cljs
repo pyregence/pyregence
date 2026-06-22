@@ -46,29 +46,24 @@
                        "Please contact support@pyrecast.com for help."]))))
 
 (defn- register! []
-  (go
-    (reset! pending? true)
-    (let [email-chan (u-async/call-clj-async! "user-email-taken" @email)
-          errors     (remove nil?
-                             ;;TODO consider adding an email validation.
-                             [(when (u-data/missing-data? @email @re-email @password @re-password)
-                                "You must fill in all required information to continue.")
+  (reset! pending? true)
+  (let [errors (remove nil?
+                 ;;TODO consider adding an email validation.
+                 [(when (u-data/missing-data? @email @re-email @password @re-password)
+                    "You must fill in all required information to continue.")
 
-                              (when-not (= @email @re-email)
-                                "The emails you have entered do not match.")
+                  (when-not (= @email @re-email)
+                    "The emails you have entered do not match.")
 
-                              (when (< (count @password) 8)
-                                "Your password must be at least 8 characters long.")
+                  (when (< (count @password) 8)
+                    "Your password must be at least 8 characters long.")
 
-                              (when-not (= @password @re-password)
-                                "The passwords you have entered do not match.")
-
-                              (when (:success (<! email-chan))
-                                (str "A user with the email '" @email "' has already been created."))])]
-      (if (pos? (count errors))
-        (do (toast-message! errors)
-            (reset! pending? false))
-        (add-user!)))))
+                  (when-not (= @password @re-password)
+                    "The passwords you have entered do not match.")])]
+    (if (pos? (count errors))
+      (do (toast-message! errors)
+          (reset! pending? false))
+      (add-user!))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
