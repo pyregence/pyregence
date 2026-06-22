@@ -11,8 +11,24 @@
             [triangulum.handler  :refer [development-app]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.response :refer [data-response]]
-            [triangulum.views    :refer [render-page]]
+            [triangulum.views    :as    triangulum-views]
             [triangulum.worker   :refer [start-workers!]]))
+
+(def ^:private internal-session-keys
+  "Session keys needed server-side for auth/SQL but which must never be
+   serialized into the page source, as they are predictable sequential
+   identifiers (see PYR1-1512)."
+  [:user-id :organization-id])
+
+(defn render-page
+  "Wraps `triangulum.views/render-page`, stripping internal sequential
+   identifiers from the session before it is embedded in the page source.
+   The persisted session cookie is unaffected (the render response sets no
+   `:session`), so server-side handlers still see these keys."
+  [uri]
+  (let [page (triangulum-views/render-page uri)]
+    (fn [request]
+      (page (apply update request :session dissoc internal-session-keys)))))
 
 (def not-found-handler (comp #(assoc % :status 404) (render-page "/not-found")))
 

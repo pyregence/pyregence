@@ -3,12 +3,11 @@
             [pyregence.cameras          :as cameras]
             [pyregence.capabilities     :as capabilities]
             [pyregence.email            :as email]
-            [pyregence.handlers         :refer [clj-handler]]
+            [pyregence.handlers         :refer [clj-handler render-page]]
             [pyregence.marketplace      :as marketplace]
             [pyregence.match-drop       :as match-drop]
             [pyregence.red-flag         :as red-flag]
-            [pyregence.weather-stations :as weather-stations]
-            [triangulum.views           :refer [render-page]]))
+            [pyregence.weather-stations :as weather-stations]))
 
 (def routes
   {;; Page Routes
