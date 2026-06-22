@@ -115,6 +115,10 @@
   (log-in nil "invalid@example.com" "wrongpass")
   ;=>> {:status 403}
 
+  ;; TEMP: deliberately failing assertion to verify CI fails the build
+  (+ 1 1)
+  ;=> 3
+
   ;; Test valid login without 2FA
   (do
     (save-user-settings! 2 {})
