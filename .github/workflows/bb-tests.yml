@@ -1,0 +1,60 @@
+name: babashka tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  bb-test:
+
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '21'
+    - uses: DeLaGuardo/setup-clojure@13.4
+      with:
+        cli: latest
+        bb: latest
+    - name: Cache clojure dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.m2/repository
+          ~/.gitlibs
+          ~/.deps.clj
+        key: cljdeps-${{ hashFiles('deps.edn', 'bb.edn') }}
+        restore-keys: cljdeps-
+    - name: Install psql client
+      run: sudo apt-get update && sudo apt-get install -y postgresql-client
+    - name: Create config from default
+      run: |
+        bb -e '(spit "config.edn"
+                     (pr-str (-> (slurp "config.default.edn")
+                                 clojure.edn/read-string
+                                 (assoc :triangulum.build-db/admin-pass "postgres"
+                                        :triangulum.server/mode         "dev"
+                                        :triangulum.email/host          "smtp.ci.local"
+                                        :triangulum.email/pass          "ci"
+                                        :triangulum.views/gtag-id       "G-CI"))))'
+    - name: Build database with dev data
+      run: clojure -M:build-db build-all --dev-data --admin-pass postgres
+    - name: Run tests
+      run: bb test

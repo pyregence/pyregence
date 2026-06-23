@@ -124,10 +124,15 @@
   ;; Test login with TOTP 2FA
   (log-in nil "totp-2fa@pyr.dev" "totp2fa")
   ;=>> {:status 200 :body string?}
+  )
 
+;; Integration test: sends a real 2FA code via SMTP, so it is intentionally
+;; left out of the automated rct suite (no ^:rct/test metadata). Run manually.
+(comment
   ;; Test login with email 2FA
-  (log-in nil "email-2fa@pyr.dev" "email2fa"))
+  (log-in nil "email-2fa@pyr.dev" "email2fa")
   ;=>> {:status 200 :body string?}
+  )
 
 (defn log-out [_] (data-response "" {:session nil}))
 
