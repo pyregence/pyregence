@@ -36,6 +36,7 @@
    [pyregence.utils.misc-utils                                                :as u-misc]
    [pyregence.utils.number-utils                                              :as u-num]
    [pyregence.utils.time-utils                                                :as u-time]
+   [pyregence.wui                                                             :as wui]
    [react                                                                     :as react]
    [reagent.core                                                              :as r]
    [reagent.dom.server                                                        :as rs]))
@@ -365,13 +366,18 @@
    Note that super_admins can resolve credentials from *all* orgs."
   []
   (when (seq @!/user-psps-orgs-list)
-    (when-some [keypath (case @!/*forecast
-                          :fuels        :only-underlays
-                          :fire-weather [:fire-weather :model]
-                          :fire-risk    [:fire-risk :pattern]
-                          :active-fire  :only-underlays
-                          :psps-zonal   [:psps-zonal :utility]
-                          nil)]
+    (if (wui/wui-fire-selected?)
+      ;; WUI active fires are private to the pyregence-consortium org, which is just a
+      ;; regular PSPS org: authenticate with its own GeoServer credentials.
+      (-> (into {} (map (juxt :org-unique-id identity)) @!/user-psps-orgs-list)
+          (get-in [wui/wui-org-unique-id :geoserver-credentials]))
+      (when-some [keypath (case @!/*forecast
+                            :fuels        :only-underlays
+                            :fire-weather [:fire-weather :model]
+                            :fire-risk    [:fire-risk :pattern]
+                            :active-fire  :only-underlays
+                            :psps-zonal   [:psps-zonal :utility]
+                            nil)]
       (let [;; TODO in the future we shouldn't force the layer_path key to be the same as org-unique-id from the DB, we should encode the org-id in the layer_config itself
             raw-org-id      (if (= keypath :only-underlays)
                               keypath
@@ -395,7 +401,7 @@
                                                     (and (seq @!/most-recent-optional-layer) ; We're dealing with an optional layer that's associated with a utility company
                                                          ((:filter-set @!/most-recent-optional-layer) (:org-unique-id %))))
                                                @!/user-psps-orgs-list)))]
-        (:geoserver-credentials matching-psps-org)))))
+        (:geoserver-credentials matching-psps-org))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn- get-legend!
@@ -619,7 +625,7 @@
           (swap! !/*params assoc-in [@!/*forecast reset-key] reset-val))))
     (when (= main-key :model-init)
       (reset! !/*last-start-time val))
-    (when (#{:fire-name :match-drop-name} main-key)
+    (when (#{:fire-name :match-drop-name :wui-fire-name} main-key)
       (reset! !/*layer-idx 0)
       (swap! !/*params assoc-in (cons @!/*forecast [:burn-pct]) :50)
       (reset! !/animate? false))
@@ -640,7 +646,8 @@
     (reset! !/processed-params (get-forecast-opt :params))
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
     (when (and (= :active-fire selected-forecast)
-               @!/match-drop-access?)
+               (or @!/match-drop-access?
+                   (and (c/feature-enabled? :wui) (wui/user-in-wui-org? @!/user-orgs-list))))
       (refresh-fire-names!))
     (<! (change-type! true
                       true
@@ -709,6 +716,13 @@
                                merge
                                (:match-drops fire-names))
                     (assoc-in [:active-fire :params :match-drop-name :hidden?] false)))
+              ;; Add in WUI active fire names (pyregence-consortium members only, gated behind the :wui feature flag)
+              (cond->
+                (wui/show-wui-fires? @!/user-orgs-list (:wui-active-fires fire-names))
+                (-> (update-in [:active-fire :params :wui-fire-name :options]
+                               merge
+                               (:wui-active-fires fire-names))
+                    (assoc-in [:active-fire :params :wui-fire-name :hidden?] false)))
               ;; Set the default risk tab ignition pattern option to the logged in user's organization (when applicable)
               ;; Note that we default to using the first organization in the case where a user belongs to more than one org
               (assoc-in [:fire-risk :params :pattern :default-option] (keyword (:org-unique-id (first user-psps-orgs-list))))

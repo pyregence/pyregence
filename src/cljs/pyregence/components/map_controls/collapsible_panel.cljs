@@ -16,6 +16,7 @@
             [pyregence.utils.async-utils                      :as u-async]
             [pyregence.utils.data-utils                       :as u-data]
             [pyregence.utils.dom-utils                        :as u-dom]
+            [pyregence.wui                                    :as wui]
             [reagent.core                                     :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -40,6 +41,19 @@
     (map name %)
     (set %)
     (set/union init-filter-set %)))
+
+(defn- effective-underlay
+  "Resolves a fire-specific underlay (one keyed off `:fire-name`, i.e. the isochrones
+   \"Modeled perimeter\" layer) for the currently selected fire. When a WUI active fire
+   is selected the underlay lives on the private `:psps` GeoServer and is keyed off
+   `:wui-fire-name`; otherwise the underlay is returned unchanged."
+  [{:keys [dependent-inputs] :as underlay}]
+  (if (and (wui/wui-fire-selected?)
+           (some #{:fire-name} dependent-inputs))
+    (assoc underlay
+           :geoserver-key    :psps
+           :dependent-inputs (replace {:fire-name :wui-fire-name} dependent-inputs))
+    underlay))
 
 (defn- toggle-underlay!
   "Toggles an underlay on the map based on the value of `show?`"
@@ -122,7 +136,7 @@
                    :visibility   (if (and @!/show-panel? @!/mobile?) "visible" "hidden")}}
     [tool-button :close #(reset! !/show-panel? false)]]])
 
-(defn- optional-layer [{:keys [id opt-label filter-set z-index geoserver-key dependent-inputs disabled-for geoserver-key]
+(defn- optional-layer [{:keys [id opt-label filter-set disabled-for]
                         :as optional-layer-map}]
   (r/with-let [show?               (r/atom false)
                watcher-id          (keyword (str "watch-" opt-label))
@@ -132,7 +146,7 @@
                                                   (let [old-param-map    (@!/*forecast old-params)
                                                         new-param-map    (@!/*forecast new-params)
                                                         changed-keys     (u-data/get-changed-keys old-param-map new-param-map)
-                                                        underlay         (get-in @!/capabilities [@!/*forecast :underlays id])
+                                                        underlay         (effective-underlay (get-in @!/capabilities [@!/*forecast :underlays id]))
                                                         update-underlay? (seq (set/intersection changed-keys (set (:dependent-inputs underlay))))]
                                                     (when update-underlay?
                                                       (when (filter-set "isochrones")
@@ -165,12 +179,13 @@
                                (do
                                  (remove-params-watch)
                                  (reset! !/most-recent-optional-layer {})))
-                             (toggle-underlay! filter-set
-                                               dependent-inputs
-                                               geoserver-key
-                                               z-index
-                                               id
-                                               @show?))}]
+                             (let [underlay (effective-underlay optional-layer-map)]
+                               (toggle-underlay! (:filter-set underlay)
+                                                 (:dependent-inputs underlay)
+                                                 (:geoserver-key underlay)
+                                                 (:z-index underlay)
+                                                 id
+                                                 @show?)))}]
       [:label {:for id} opt-label]]]
     (finally
       (remove-watch !/*params watcher-id))))
