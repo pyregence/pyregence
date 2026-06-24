@@ -747,7 +747,6 @@
                       (reduce
                        (fn [m [k v]]
                          (assoc-in m k v))
-
                        m
                        [[[:fire-weather :params :model :options :nfdrs-constant]
                          {:opt-label "NFDRS Constant" :filter "nfdrs-constant" :geoserver-key :psps}]
