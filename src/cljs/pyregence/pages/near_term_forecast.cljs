@@ -687,10 +687,13 @@
 
 (defn- sort-by-opt-label [opts]
   (when opts
-    (doseq [[k v] opts]
-      (when (nil? (:opt-label v))
-        (js/console.warn "sort-by-opt-label nil :opt-label →" (pr-str k) (pr-str v))))
     (let [cmp (fn [a b]
+                (when (nil? (opts a))
+                  (js/console.warn "sort-by-opt-label lookup of absent key:" (pr-str a)
+                                   "— present keys:" (pr-str (keys opts))))
+                (when (nil? (opts b))
+                  (js/console.warn "sort-by-opt-label lookup of absent key:" (pr-str b)
+                                   "— present keys:" (pr-str (keys opts))))
                 (compare (str/lower-case (or (:opt-label (opts a)) ""))
                          (str/lower-case (or (:opt-label (opts b)) ""))))]
       (into (sorted-map-by cmp) opts))))
