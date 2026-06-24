@@ -747,60 +747,12 @@
                       (reduce
                        (fn [m [k v]]
                          (assoc-in m k v))
-                       m
-                       (cond->
-                        [[[:fire-weather :params :model :options :nfdrs-constant]
-                          {:opt-label "NFDRS Constant" :filter "nfdrs-constant" :geoserver-key :psps}]
-                         [[:fire-weather :params :model :options :nfdrs-variable]
-                          {:opt-label "NFDRS Variable" :filter "nfdrs-variable" :geoserver-key :psps}]]
-                         (#{:nfdrs-variable :nfdrs-constant} (-> @!/*params :fire-weather :model))
-                         (conj
-  ;;                         (-> @!/capabilities :fire-weather :params :band :options keys)
-  ;; ;; => (:rh :tmpf :ffwi :meq :pign :wd :ws :wg :apcptot :apcp01 :vpd :hdw :smoke :tcdc)
 
-                          [[:fire-weather :params :band :options]
-                           {:erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
-                                     :filter "erc"
-                                     :units "(ERC, Btu/sq ft)"}
-                            :ercperc {:opt-label "ERC percentile"
-                                      :filter "ercperc"}
-                            :bi {:opt-label "burning index (BI, ft * 10)"
-                                 :filter "bi"
-                                 :units "(BI, ft * 10)"}
-                            :biperc {:opt-label  "BI percentile"
-                                     :filter "biperc"}
-                            :sc      {:opt-label "spread component (ft/min)"
-                                      :filter "sc"
-                                      :units "(ft/min)"}
-                            :scperc  {:opt-label  "SC percentile"
-                                      :filter     "scperc"}
-                            :ic    {:opt-label "Ignition Component (%)"
-                                    :filter "ic"}
-                            :sfdiperc {:opt-label "SFDI percentile (%)"
-                                       :filter "sfdiperc"}
-                            :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
-                                       :filter "sfdicat"}
-                            :lh {:opt-label "Live herbaceous fuel moisture (% or fraction)"
-                                 :filter "lh"
-                                 :units "(% or fraction)"}
-                            :lw {:opt-label "Live woody fuel moisture (% or fraction)"
-                                 :filter "lw"
-                                 :units "(% or fraction)"}
-                            :m1  {:opt-label "1-hour fuel moisture (% or fraction)"
-                                  :filter "m1"
-                                  :units "(% or fraction)"}
-                            :m10 {:opt-label "10-hour fuel moisture (% or fraction)"
-                                  :filter "m10"
-                                  :units "(% or fraction)"}
-                            :m100 {:opt-label "100-hour fuel moisture (% or fraction)"
-                                   :filter "m100"
-                                   :units "(% or fraction)"}
-                            :m1000 {:opt-label "1000-hour fuel moisture (% or fraction)"
-                                    :filter "m1000"
-                                    :units "(% or fraction)"}
-                            :kbdiI​ {:opt-label "Keetch Byram Drought Index (0-800)"
-                                     :filter "kbdiI"
-                                     :units "Index (0-800)"}}])))))))
+                       m
+                       [[[:fire-weather :params :model :options :nfdrs-constant]
+                         {:opt-label "NFDRS Constant" :filter "nfdrs-constant" :geoserver-key :psps}]
+                        [[:fire-weather :params :model :options :nfdrs-variable]
+                         {:opt-label "NFDRS Variable" :filter "nfdrs-variable" :geoserver-key :psps}]])))))
 
 ;; Sort the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
