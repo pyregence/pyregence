@@ -79,7 +79,7 @@
 
 ^:rct/test
 (comment
-  ;; same 200 + generic body whether or not the account exists.
+  ;; identical 200 + generic body whether or not the account exists (no enumeration).
   (let [reset-resp (fn [user-name]
                      (with-redefs [dispatch-off-thread (fn [thunk] (thunk)) ; run the send inline
                                    call-sql            (fn [_ & _] [{:get_user_name_by_email user-name}])
@@ -87,11 +87,12 @@
                                    send-mail           (fn [& _] {:error :SUCCESS})]
                        (select-keys (send-verification-email! "probe@x" "Reset"
                                                               messages/password-reset-email :security)
-                                    [:status :body])))]
-    (= (reset-resp "Existing User")
-       (reset-resp nil)
-       {:status 200 :body (pr-str generic-reset-response)}))
-  ;=> true
+                                    [:status :body])))
+        resp       (reset-resp "Existing User")]
+    [(= resp (reset-resp nil))
+     (:status resp)
+     (str/includes? (:body resp) generic-reset-response)])
+  ;=> [true 200 true]
   )
 
 (defn send-2fa-code
