@@ -687,9 +687,11 @@
 
 (defn- sort-by-opt-label [opts]
   (when opts
+    ;; sorted-map-by re-runs cmp on later get/contains? for absent keys, so
+    ;; guard the :opt-label lookup against nil to avoid (str/lower-case nil).
     (let [cmp (fn [a b]
-                (compare (str/lower-case (:opt-label (opts a)))
-                         (str/lower-case (:opt-label (opts b)))))]
+                (compare (str/lower-case (or (:opt-label (opts a)) ""))
+                         (str/lower-case (or (:opt-label (opts b)) ""))))]
       (into (sorted-map-by cmp) opts))))
 
 ;;; Capabilities
