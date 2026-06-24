@@ -687,13 +687,11 @@
 
 (defn- sort-by-opt-label [opts]
   (when opts
+    ;; NOTE: a sorted-map-by re-runs `cmp` on every later get/contains?/assoc,
+    ;; including for keys not present in `opts` (e.g. a :default-option that has
+    ;; no matching option). Guard the :opt-label lookup so such absent-key
+    ;; lookups sort as "" instead of throwing on (str/lower-case nil).
     (let [cmp (fn [a b]
-                (when (nil? (opts a))
-                  (js/console.warn "sort-by-opt-label lookup of absent key:" (pr-str a)
-                                   "— present keys:" (pr-str (keys opts))))
-                (when (nil? (opts b))
-                  (js/console.warn "sort-by-opt-label lookup of absent key:" (pr-str b)
-                                   "— present keys:" (pr-str (keys opts))))
                 (compare (str/lower-case (or (:opt-label (opts a)) ""))
                          (str/lower-case (or (:opt-label (opts b)) ""))))]
       (into (sorted-map-by cmp) opts))))
