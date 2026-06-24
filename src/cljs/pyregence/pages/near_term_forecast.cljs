@@ -687,9 +687,12 @@
 
 (defn- sort-by-opt-label [opts]
   (when opts
+    (doseq [[k v] opts]
+      (when (nil? (:opt-label v))
+        (js/console.warn "sort-by-opt-label nil :opt-label →" (pr-str k) (pr-str v))))
     (let [cmp (fn [a b]
-                (compare (str/lower-case (:opt-label (opts a)))
-                         (str/lower-case (:opt-label (opts b)))))]
+                (compare (str/lower-case (or (:opt-label (opts a)) ""))
+                         (str/lower-case (or (:opt-label (opts b)) ""))))]
       (into (sorted-map-by cmp) opts))))
 
 ;;; Capabilities
