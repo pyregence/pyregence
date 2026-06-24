@@ -739,6 +739,7 @@
                                           :filter     org-unique-id}))
                                 {}
                                 user-psps-orgs-list))
+              ;;TODO consider moving this closer to the component.
               (cond->
                (or
                 (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
