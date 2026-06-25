@@ -156,7 +156,7 @@ CREATE OR REPLACE FUNCTION get_user_match_names(_user_email text)
     SELECT match_job_uid, display_name
     FROM match_jobs
     WHERE md_status = 0
-        AND user_rid = (SELECT user_id from users where email = _user_email)
+        AND user_rid = (SELECT user_uid from users where email = _user_email)
 
 $$ LANGUAGE SQL;
 
