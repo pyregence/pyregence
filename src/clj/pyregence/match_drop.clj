@@ -119,7 +119,6 @@
   (-> result
       (rename-keys {:match_job_id          :match-job-id
                     :runway_job_id         :runway-job-id
-                    :user_id               :user-id
                     :created_at            :created-at
                     :updated_at            :updated-at
                     :md_status             :md-status
