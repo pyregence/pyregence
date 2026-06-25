@@ -116,7 +116,7 @@
         (if-let [user (and (not (str/blank? google-user-identity))
                            (first (call-sql "get_user_by_gaia_identity" google-user-identity)))]
           (do (log/info "Marketplace SSO login"
-                        {:gaia google-user-identity :user-id (:user_id user)})
+                        {:gaia google-user-identity :user-email (:user_email user)})
               {:user    user
                :session (:session request)})
           (do (log/info "Marketplace SSO: user not found, redirecting to login"
