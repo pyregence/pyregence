@@ -88,8 +88,8 @@
 
 (defn- get-user-settings
   "Retrieves and parses user settings."
-  [user-id]
-  (-> (call-sql "get_user_settings" user-id)
+  [user-email]
+  (-> (call-sql "get_user_settings_by_email" user-email)
       first
       :settings
       parse-user-settings))
@@ -121,8 +121,8 @@
   "Authenticates user and determines 2FA requirements."
   [session email password]
   (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-    (let [user-id    (:user_id user)
-          two-factor (:two-factor (get-user-settings user-id))]
+    (let [user-email (:user_email user)
+          two-factor (:two-factor (get-user-settings user-email))]
       (case two-factor
         :totp  (data-response {:email email :require-2fa true :method "totp"})
         :email (do (email/send-email! nil email :2fa)
@@ -136,8 +136,8 @@
   [request]
   (try
     (if-let [{:keys [user session]} (marketplace/sso-login request)]
-      (let [user-id    (:user_id user)
-            two-factor (:two-factor (get-user-settings user-id))]
+      (let [user-email (:user_email user)
+            two-factor (:two-factor (get-user-settings user-email))]
         (case two-factor
           :totp  {:status  302
                   :headers {"Location" (str "/verify-2fa?email=" (:user_email user) "&method=totp")}
@@ -199,7 +199,7 @@
   "Verifies 2FA code for email/TOTP authentication."
   [session email code]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
-    (let [two-factor (:two-factor (get-user-settings user-id))]
+    (let [two-factor (:two-factor (get-user-settings email))]
       (case two-factor
         :totp
         (if-let [{:keys [secret] :as user} (first (call-sql "get_user_with_totp" user-id))]
@@ -349,7 +349,7 @@
 
 (defn complete-totp-setup
   "Completes TOTP setup by validating the provided code against the unverified setup."
-  [{:keys [user-id]} code]
+  [{:keys [user-id user-email]} code]
   (cond
     (nil? user-id)
     (data-response "Not authenticated" {:status 401})
@@ -367,7 +367,7 @@
         (do
           (call-sql "mark_totp_verified" user-id)
           (save-user-settings! user-id
-                               (assoc (get-user-settings user-id) :two-factor :totp))
+                               (assoc (get-user-settings user-email) :two-factor :totp))
           (data-response {:message "TOTP setup completed successfully"})))
       (data-response "No TOTP setup in progress" {:status 400}))))
 
@@ -496,7 +496,7 @@
     (data-response "Verification code required" {:status 400})
 
     :else
-    (let [settings (get-user-settings user-id)]
+    (let [settings (get-user-settings user-email)]
       (cond
         (= :email (:two-factor settings))
         (data-response "Email 2FA is already enabled" {:status 400})
@@ -537,7 +537,7 @@
 
 (defn- remove-totp
   "Removes TOTP authentication for the current user. Requires current TOTP code for security."
-  [{:keys [user-id]} code]
+  [{:keys [user-id user-email]} code]
   (cond
     (nil? user-id)
     (data-response "Not authenticated" {:status 401})
@@ -555,7 +555,7 @@
         :else
         (do
           (call-sql "cleanup_totp_data" user-id)
-          (let [settings (dissoc (get-user-settings user-id) :two-factor)]
+          (let [settings (dissoc (get-user-settings user-email) :two-factor)]
             (save-user-settings! user-id settings))
           (data-response {:message "Two-Factor authentication has been disabled"})))
       (data-response "TOTP is not enabled for this account" {:status 400}))))
@@ -586,14 +586,16 @@
   [{:keys [user-id user-email]} code]
   (if-not user-id
     (data-response "Not authenticated" {:status 401})
-    (let [settings   (get-user-settings user-id)
+    (let [settings (get-user-settings user-email)
           two-factor (:two-factor settings)]
       (cond
         (nil? two-factor)
         (data-response "2FA is not enabled" {:status 400})
 
         (= two-factor :totp)
-        (remove-totp {:user-id user-id} code)
+        (remove-totp {:user-id user-id
+                      :user-email user-email}
+                     code)
 
         (= two-factor :email)
         (if (first (call-sql "verify_user_2fa" user-email code))
@@ -715,8 +717,8 @@
 
 (defn get-current-user-settings
   "Returns settings for the current user."
-  [{:keys [user-id user-email]}]
-  (if-let [user-info (first (call-sql "get_user_settings" user-id))]
+  [{:keys [user-email]}]
+  (if-let [user-info (first (call-sql "get_user_settings_by_email" user-email))]
     (data-response (assoc user-info :email user-email))
     (data-response "User not found" {:status 403})))
 
