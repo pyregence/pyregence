@@ -29,7 +29,7 @@
 
 (defn redirect-handler [{:keys [session query-string uri] :as _request}]
   (let [full-url (url-encode (str uri (when query-string (str "?" query-string))))]
-    (if (:user-id session)
+    (if (:user-email session)
       (redirect (str "/?flash_message=You do not have permission to access "
                      full-url))
       (redirect (str "/login?flash_message=You must login to see "
