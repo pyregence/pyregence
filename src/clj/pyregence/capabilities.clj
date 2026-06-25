@@ -419,14 +419,14 @@
    {:active-fires {:fire-name       {:opt-label \"Fire Name\"       :filter-set #{\"fire-spread-forecast\", \"fire-name\"}       :auto-zoom? true :geoserver-key :trinity}    ...}
     :match-drops  {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\",  \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}}"
   [session]
-  (let [{:keys [user-id match-drop-access?]} session
-        match-drop-names                     (when match-drop-access?
-                                               (->> (call-sql "get_user_match_names" user-id)
-                                                    (reduce (fn [acc row]
-                                                              (assoc acc
-                                                                     (:match_job_id row)
-                                                                     (str (:display_name row))))
-                                                            {})))]
+  (let [{:keys [user-email match-drop-access?]} session
+        match-drop-names                        (when match-drop-access?
+                                                  (->> (call-sql "get_user_match_names" user-email)
+                                                       (reduce (fn [acc row]
+                                                                 (assoc acc
+                                                                        (:match_job_id row)
+                                                                        (str (:display_name row))))
+                                                               {})))]
     (->> (concat (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
                    (#{"fire-spread-forecast" "match-drop-forecast"} forecast)))
