@@ -89,9 +89,7 @@
 (defn- get-user-settings
   "Retrieves and parses user settings."
   [user-email]
-  (-> (call-sql "get_user_settings_by_email" user-email)
-      first
-      :settings
+  (-> (sql-primitive (call-sql "get_user_settings_by_email" user-email))
       parse-user-settings))
 
 (defn- save-user-settings!
@@ -170,10 +168,15 @@
   ;; Test login with TOTP 2FA
   (log-in nil "totp-2fa@pyr.dev" "totp2fa")
   ;=>> {:status 200 :body string?}
+  )
 
+;; Integration test: sends a real 2FA code via SMTP, so it is intentionally
+;; left out of the automated rct suite (no ^:rct/test metadata). Run manually.
+(comment
   ;; Test login with email 2FA
-  (log-in nil "email-2fa@pyr.dev" "email2fa"))
+  (log-in nil "email-2fa@pyr.dev" "email2fa")
   ;=>> {:status 200 :body string?}
+  )
 
 (defn log-out [_] (data-response "" {:session nil}))
 
@@ -718,8 +721,8 @@
 (defn get-current-user-settings
   "Returns settings for the current user."
   [{:keys [user-email]}]
-  (if-let [user-info (first (call-sql "get_user_settings_by_email" user-email))]
-    (data-response (assoc user-info :email user-email))
+  (if-let [row (first (call-sql "get_user_settings_by_email" user-email))]
+    (data-response {:settings (-> row vals first) :email user-email})
     (data-response "User not found" {:status 403})))
 
 ;; TODO hook into UI
