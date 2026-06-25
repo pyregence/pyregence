@@ -97,9 +97,6 @@
    [:post "/clj/get-user-name-by-email"]             {:handler (clj-handler authentication/get-current-user-name-by-email)
                                                      :auth-type   :member
                                                      :auth-action :block}
-   [:post "/clj/user-email-taken"]                   {:handler (clj-handler authentication/user-email-taken)
-                                                     :auth-type :token
-                                                     :auth-action :block}
    [:post "/clj/update-own-user-name"]               {:handler (clj-handler authentication/update-own-user-name)
                                                      :auth-type #{:member :token}
                                                      :auth-action :block}

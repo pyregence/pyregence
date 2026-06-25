@@ -734,14 +734,6 @@
     ;; TODO what should this failure message be.
     (data-response "" {:status 400})))
 
-(defn user-email-taken
-  ([_ email]
-   (user-email-taken nil email -1))
-  ([_ email user-id-to-ignore]
-   (if (sql-primitive (call-sql "user_email_taken" email user-id-to-ignore))
-     (data-response "User email is taken")
-     (data-response "User email is not taken" {:status 403}))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Access Control
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

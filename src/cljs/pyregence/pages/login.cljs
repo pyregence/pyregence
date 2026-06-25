@@ -17,7 +17,6 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce pending? (r/atom false))
 (defonce forgot?  (r/atom false))
 (defonce email    (r/atom ""))
 (defonce password (r/atom ""))
@@ -47,21 +46,12 @@
 
 (defn- request-password! []
   (go
-    (reset! pending? true)
     (toast-message! "Submitting request. This may take a moment...")
-    (cond
-      (not (:success (<! (u-async/call-clj-async! "user-email-taken" @email))))
-      (toast-message! (str "There is no user with the email '" @email "'"))
-
-      (:success (<! (u-async/call-clj-async! "send-email" @email :reset)))
-      (do (toast-message! "Please check your email for a password reset link.")
-          (<! (timeout 4000))
-          (u-browser/jump-to-url! "/forecast"))
-
-      :else
-      (toast-message! ["An error occurred."
-                       "Please try again shortly or contact support@pyrecast.com for help."]))
-    (reset! pending? false)))
+    ;; same toast for any email (no enumeration)
+    (<! (u-async/call-clj-async! "send-email" @email :reset))
+    (toast-message! "If that email address is registered with PyreCast, we will send you an email to reset your password.")
+    (<! (timeout 4000))
+    (u-browser/jump-to-url! "/forecast")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components

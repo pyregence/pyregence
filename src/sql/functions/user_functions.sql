@@ -71,17 +71,6 @@ RETURNS text AS $$
 
 $$ LANGUAGE SQL;
 
--- Returns true if user information is taken, excludes user_id
-CREATE OR REPLACE FUNCTION user_email_taken(_email text, _user_id_to_ignore integer)
- RETURNS boolean AS $$
-
-    SELECT count(1) > 0
-    FROM users
-    WHERE user_uid != _user_id_to_ignore
-        AND email = lower_trim(_email)
-
-$$ LANGUAGE SQL;
-
 --------------------------------------------------------------------------------
 -- User Creation functions
 --------------------------------------------------------------------------------
