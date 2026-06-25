@@ -457,7 +457,7 @@
           {:active-fires {} :match-drops {}}))))
 
 (defn get-user-layers [session]
-  (data-response (call-sql "get_user_layers_list" (:user-id session))))
+  (data-response (call-sql "get_user_layers_list" (:user-email session))))
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
 (defn get-layers
