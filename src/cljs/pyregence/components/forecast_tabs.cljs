@@ -3,7 +3,6 @@
    [clojure.set                 :as set]
    [herb.core                   :refer [<class]]
    [pyregence.components.common :refer [tool-tip-wrapper]]
-   [pyregence.components.mapbox :as mb]
    [pyregence.styles             :as $]))
 
 ;; This is needed so that we can show the tabs on the src/cljs/pyregence/pages/account_settings.cljs page
@@ -56,8 +55,6 @@
                 :top
                 [:label {:style    ($forecast-label (= current-forecast forecast-key) mobile?)
                          :class    (<class $/p-add-hover)
-                         :on-click (fn []
-                                     (when-not (= forecast-key :active-fire) (mb/remove-layer! "fire-active-background"))
-                                     (on-forecast-select forecast-key))}
+                         :on-click #(on-forecast-select forecast-key)}
                  opt-label]]))
            tabs))]))
