@@ -446,32 +446,30 @@
                                                  :options    (array-map
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
-                                                                              :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd
-                                                                                              :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1 :m10 :m100 :m1000 :kbdiI}}
+                                                                              :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
                                                               :hrrr          {:opt-label "HRRR"
-                                                                              :disabled-for #{:erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1 :m10 :m100 :m1000 :kbdiI}
                                                                               :filter    "hrrr"}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
-                                                                              :disabled-for #{:apcptot :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1 :m10 :m100 :m1000 :kbdiI}}
+                                                                              :disabled-for #{:apcptot :smoke :tcdc}}
                                                               :gfs0p125      {:opt-label    "GFS 0.125\u00B0"
                                                                               :filter       "gfs0p125"
-                                                                              :disabled-for #{:apcptot :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1 :m10 :m100 :m1000 :kbdiI}}
+                                                                              :disabled-for #{:apcptot :smoke :tcdc}}
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
-                                                                              :disabled-for #{:smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1 :m10 :m100 :m1000 :kbdiI}}
+                                                                              :disabled-for #{:smoke :tcdc}}
                                                               :nam-awip12    {:opt-label    "NAM 12 km"
                                                                               :filter       "nam-awip12"
-                                                                              :disabled-for #{:apcp01 :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1 :m10 :m100 :m1000 :kbdiI}}
+                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
                                                               :nam-conusnest {:opt-label    "NAM 3 km"
                                                                               :filter       "nam-conusnest"
-                                                                              :disabled-for #{:smoke :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1 :m10 :m100 :m1000 :kbdiI}}
+                                                                              :disabled-for #{:smoke}}
                                                               :cansac-wrf    {:opt-label    "CANSAC WRF"
                                                                               :filter       "cansac-wrf"
-                                                                              :disabled-for #{:apcp01 :smoke :tcdc :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1 :m10 :m100 :m1000 :kbdiI}}
+                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
-                                                                              :disabled-for #{:apcptot :apcp01 :smoke :erc :ercperc :bi :biperc :sc :scperc :ic :sfdiperc :sfdicat :lh :lw :m1 :m10 :m100 :m1000 :kbdiI}})}
+                                                                              :disabled-for #{:apcptot :apcp01 :smoke}})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
