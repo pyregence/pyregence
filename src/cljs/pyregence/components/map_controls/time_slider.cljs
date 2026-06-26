@@ -13,16 +13,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- $time-slider []
-  {:align-items   "center"
-   :border-radius "5px 5px 0 0"
-   :bottom        "0"
-   :display       "flex"
-   :left          "0"
-   :margin-left   "auto"
-   :margin-right  "auto"
-   :padding       ".5rem"
-   :right         "0"
-   :width         (if @!/mobile? "20rem" "min-content")})
+  (cond->
+   {:align-items   "center"
+    :border-radius "5px 5px 0 0"
+    :bottom        "0"
+    :display       "flex"
+    :left          "0"
+    :margin-left   "auto"
+    :margin-right  "auto"
+    :padding       ".5rem"
+    :right         "0"
+    :width         (if @!/mobile? "20rem" "min-content")}
+    @!/mobile?
+    (merge {:justify-content "center"
+            :flex-flow "wrap"})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root Component
@@ -100,10 +104,9 @@
                                    (if @!/animate? (stop-animation!) (start-animation!)))]
 
     [:div#time-slider {:style ($/combine $/tool $time-slider)}
-     (when-not @!/mobile?
-       [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
-        [radio "UTC"   @!/show-utc? true  select-time-zone! true]
-        [radio "Local" @!/show-utc? false select-time-zone! true]])
+     [:div {:style ($/combine $/flex-col {:align-items "flex-start"})}
+      [radio "UTC"   @!/show-utc? true  select-time-zone! true]
+      [radio "Local" @!/show-utc? false select-time-zone! true]]
 
      [:div {:style ($/flex-col)}
       [:input {:type      "range"
@@ -129,13 +132,12 @@
       [tool-tip-wrapper "Next layer" :bottom
        [tool-button :next-button #(cycle-layer! 1)]]]
 
-     (when-not @!/mobile?
-       [:select {:value     (or @*speed 1)
-                 :style     ($/combine $/dropdown {:padding "0 0.5rem" :width "5rem"})
-                 :on-change #(reset! *speed (u-dom/input-int-value %))}
-        (map-indexed (fn [idx {:keys [opt-label]}]
-                       [:option {:key idx :value idx} opt-label])
-                     c/speeds)])]
+     [:select {:value     (or @*speed 1)
+               :style     ($/combine $/dropdown {:padding "0 0.5rem" :width "5rem"})
+               :on-change #(reset! *speed (u-dom/input-int-value %))}
+      (map-indexed (fn [idx {:keys [opt-label]}]
+                     [:option {:key idx :value idx} opt-label])
+                   c/speeds)]]
 
     (finally
       (mb/stop-buffer-polling!)
