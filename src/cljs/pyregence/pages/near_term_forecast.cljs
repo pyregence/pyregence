@@ -389,7 +389,7 @@
                               (subs raw-org-id 0 (- (count raw-org-id) (count "-planning")))
                               raw-org-id)
             matching-psps-org (cond
-                                (= selected-org-id "ecmwf") ; "ecmwf" is the Euro weather forecast which all utility companies have access to
+                                (#{"ecmwf" "nfdrs-constant" "nfdrs-variable"} selected-org-id) ; the Euro (ecmwf) and NFDRS weather layers aren't utility-specific - all PSPS companies have access, so any PSPS org's credentials work
                                 (first @!/user-psps-orgs-list)
 
                                 (= selected-org-id :only-underlays) ; The fuels and active fire tabs don't have any utility-specific layers, so only underlays are an option here
