@@ -3,7 +3,6 @@
    [clojure.set                 :as set]
    [herb.core                   :refer [<class]]
    [pyregence.components.common :refer [tool-tip-wrapper]]
-   [pyregence.components.mapbox :as mb]
    [pyregence.styles             :as $]))
 
 ;; This is needed so that we can show the tabs on the src/cljs/pyregence/pages/account_settings.cljs page
