@@ -242,7 +242,7 @@
       (when model-times (process-model-times! model-times))
       (reset! !/param-layers layers)
       (swap! !/*layer-idx #(max 0 (min % (- (count (or (:times (first @!/param-layers)) @!/param-layers)) 1))))
-      (when-not (= (:type current-layer) "active-fires") (mb/remove-layer! "fire-active-background"))
+      (when-not (= (:type (current-layer)) "active-fires") (mb/remove-layer! "fire-active-background"))
       (cond
         (and
          (= :active-fire @!/*forecast)
