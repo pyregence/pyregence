@@ -46,10 +46,8 @@
 
 (defn- request-password! []
   (go
-    (toast-message! "Submitting request. This may take a moment...")
-    ;; same toast for any email (no enumeration)
-    (<! (u-async/call-clj-async! "send-email" @email :reset))
     (toast-message! "If that email address is registered with PyreCast, we will send you an email to reset your password.")
+    (<! (u-async/call-clj-async! "send-email" @email :reset))
     (<! (timeout 4000))
     (u-browser/jump-to-url! "/forecast")))
 
