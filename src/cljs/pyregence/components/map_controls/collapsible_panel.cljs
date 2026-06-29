@@ -339,7 +339,7 @@
                              #(select-param! % key)
                              selected-param-set]])))
                      (cond-> @!/processed-params
-                       (#{:nfdrs-variable :nfdrs-constant} (-> @!/*params :fire-weather :model))
+                       (c/nfdrs?)
                        (assoc-in [:band :options]
                                  c/nfdrs-weather-params)))
                [opacity-input]]]

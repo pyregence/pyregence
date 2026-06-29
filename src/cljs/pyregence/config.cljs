@@ -9,10 +9,7 @@
 ;; NFDRS Weather Params
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO consider moving this state because its only here because
-;; when you select the nfdrs weather  param it seems to use the key (e.g erc) to look up
-;; up the :filter in the config and not from the html dropdown.
-(def  nfdrs-weather-params
+(def nfdrs-weather-params
   {:erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
             :filter "erc"
             :units "(ERC, Btu/sq ft)"}
@@ -55,6 +52,10 @@
    :kbdiI​ {:opt-label "Keetch Byram Drought Index (0-800)"
             :filter "kbdiI"
             :units "Index (0-800)"}})
+
+(defn nfdrs?
+  []
+  (#{:nfdrs-variable :nfdrs-constant} (-> @!/*params :fire-weather :model)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
@@ -330,7 +331,7 @@
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options
                                                  (merge
-                                                   nfdrs-weather-params
+                                                  (when (nfdrs?) nfdrs-weather-params)
                                                   (array-map
                                                    :rh      {:opt-label "Relative humidity (%)"
                                                              :filter    "rh"
