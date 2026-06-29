@@ -73,13 +73,14 @@
 
 ;;TODO figure out why we can't inline this it seems to have an interaction with getselectedrows.
 (defn table
-  [grid-api users users-selected? users-filter columns]
+  [grid-api users users-selected? users-filter columns on-cell-value-changed]
   [:div {:style {:height "100%"
                  :width  "100%"}}
    [:div {:style {:height "100%" :width "100%"}}
     [:> AgGridReact
      {:onGridReady                #(reset! grid-api (goog/get % "api"))
       :onRowDataUpdated           #(api-call @grid-api "autoSizeAllColumns")
+      :onCellValueChanged         (or on-cell-value-changed (constantly nil))
       :rowSelection               #js {:mode      "multiRow"
                                        :selectAll "filtered"}
       :domLayout                  "autoHeight"
@@ -135,6 +136,7 @@
                    columns
                    show-export-to-csv?
                    choose-org?
+                   on-cell-value-changed
                    users-filter] :or {users-filter identity} :as m}]
         (let [org-names             (->> m :organizations (map :org-name))
               tab-selected-org-name (some-> org-id->org
@@ -271,4 +273,4 @@
                          org-opt-selected?
                          (assoc :select-org-msg (str "Assign Organization for " (db->display @checked) " Users."))))]
              nil)
-           [table grid-api users users-selected? users-filter columns]]))})))
+           [table grid-api users users-selected? users-filter columns on-cell-value-changed]]))})))

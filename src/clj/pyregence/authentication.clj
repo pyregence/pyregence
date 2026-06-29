@@ -761,6 +761,15 @@
       (data-response (str "Match drop access updated to " match-drop-access?))
       (data-response "Match drop access was not able to be updated." {:status 403}))))
 
+(defn update-user-match-drop-access
+  "Allows an admin to grant or revoke Match Drop access for a user by their email."
+  [_ email match-drop-access?]
+  (if-let [user-id-to-update (sql-primitive (call-sql "get_user_id_by_email" email))]
+    (do (call-sql "update_user_match_drop_access" user-id-to-update match-drop-access?)
+        (data-response (str "Match Drop access for " email " updated to " match-drop-access?)))
+    (data-response (str "There is no user with the email " email)
+                   {:status 403})))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Organization Management
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
