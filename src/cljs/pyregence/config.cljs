@@ -9,53 +9,8 @@
 ;; NFDRS Weather Params
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def nfdrs-weather-params
-  {:erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
-            :filter "erc"
-            :units "(ERC, Btu/sq ft)"}
-   :ercperc {:opt-label "ERC percentile"
-             :filter "ercperc"}
-   :bi {:opt-label "burning index (BI, ft * 10)"
-        :filter "bi"
-        :units "(BI, ft * 10)"}
-   :biperc {:opt-label  "BI percentile"
-            :filter "biperc"}
-   :sc      {:opt-label "spread component (ft/min)"
-             :filter "sc"
-             :units "(ft/min)"}
-   :scperc  {:opt-label  "SC percentile"
-             :filter     "scperc"}
-   :ic    {:opt-label "Ignition Component (%)"
-           :filter "ic"}
-   :sfdiperc {:opt-label "SFDI percentile (%)"
-              :filter "sfdiperc"}
-   :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
-              :filter "sfdicat"}
-   :lh {:opt-label "Live herbaceous fuel moisture (% or fraction)"
-        :filter "lh"
-        :units "(% or fraction)"}
-   :lw {:opt-label "Live woody fuel moisture (% or fraction)"
-        :filter "lw"
-        :units "(% or fraction)"}
-   :m1  {:opt-label "1-hour fuel moisture (% or fraction)"
-         :filter "m1"
-         :units "(% or fraction)"}
-   :m10 {:opt-label "10-hour fuel moisture (% or fraction)"
-         :filter "m10"
-         :units "(% or fraction)"}
-   :m100 {:opt-label "100-hour fuel moisture (% or fraction)"
-          :filter "m100"
-          :units "(% or fraction)"}
-   :m1000 {:opt-label "1000-hour fuel moisture (% or fraction)"
-           :filter "m1000"
-           :units "(% or fraction)"}
-   :kbdiI​ {:opt-label "Keetch Byram Drought Index (0-800)"
-            :filter "kbdiI"
-            :units "Index (0-800)"}})
-
-(defn nfdrs?
-  []
-  (#{:nfdrs-variable :nfdrs-constant} (-> @!/*params :fire-weather :model)))
+(def not-nfdrs-models
+  #{:hybrid :nbm :hrrr :gs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
@@ -329,58 +284,122 @@
                                                               [:br]
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
-                                                 :options    (array-map
-                                                              :rh      {:opt-label "Relative humidity (%)"
-                                                                        :filter    "rh"
-                                                                        :units     "%"}
-                                                              :tmpf    {:opt-label "Temperature (\u00B0F)"
-                                                                        :filter    "tmpf"
-                                                                        :units     "\u00B0F"}
-                                                              :ffwi    {:opt-label "Fosberg Fire Weather Index"
-                                                                        :filter    "ffwi"
-                                                                        :units     ""}
-                                                              :meq     {:opt-label "Fine dead fuel moisture (%)"
-                                                                        :filter    "meq"
-                                                                        :units     "%"}
-                                                              :pign    {:opt-label "Firebrand ignition probability (%)"
-                                                                        :filter    "pign"
-                                                                        :units     "%"}
-                                                              :wd      {:opt-label       "Wind direction (\u00B0)"
-                                                                        :filter          "wd"
-                                                                        :units           "\u00B0"
-                                                                        :reverse-legend? false}
-                                                              :ws      {:opt-label "Sustained wind speed (mph)"
-                                                                        :filter    "ws"
-                                                                        :units     "mph"}
-                                                              :wg      {:opt-label "Wind gust (mph)"
-                                                                        :filter    "wg"
-                                                                        :units     "mph"}
-                                                              :apcptot {:opt-label       "Accumulated precipitation (in)"
-                                                                        :filter          "apcptot"
-                                                                        :units           "inches"
-                                                                        :disabled-for    #{:gfs0p125 :hybrid :rtma-ru :ecmwf :nve}
-                                                                        :reverse-legend? false}
-                                                              :apcp01  {:opt-label       "1-hour precipitation (in)"
-                                                                        :filter          "apcp01"
-                                                                        :units           "inches"
-                                                                        :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru :ecmwf :nve}
-                                                                        :reverse-legend? false}
-                                                              :vpd     {:opt-label    "Vapor pressure deficit (hPa)"
-                                                                        :filter       "vpd"
-                                                                        :units        "hPa"
-                                                                        :disabled-for #{:nbm :ecmwf :nve}}
-                                                              :hdw     {:opt-label    "Hot-Dry-Windy Index (hPa*m/s)"
-                                                                        :filter       "hdw"
-                                                                        :units        "hPa*m/s"
-                                                                        :disabled-for #{:nbm :ecmwf}}
-                                                              :smoke   {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
-                                                                        :filter       "smoke"
-                                                                        :units        "\u00b5g/m\u00b3"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve}}
-                                                              :tcdc    {:opt-label    "Total cloud cover (%)"
-                                                                        :filter       "tcdc"
-                                                                        :units        "%"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve}})}
+                                                 :options
+                                                 (array-map
+                                                  :rh      {:opt-label "Relative humidity (%)"
+                                                            :filter    "rh"
+                                                            :units     "%"}
+                                                  :tmpf    {:opt-label "Temperature (\u00B0F)"
+                                                            :filter    "tmpf"
+                                                            :units     "\u00B0F"}
+                                                  :ffwi    {:opt-label "Fosberg Fire Weather Index"
+                                                            :filter    "ffwi"
+                                                            :units     ""}
+                                                  :meq     {:opt-label "Fine dead fuel moisture (%)"
+                                                            :filter    "meq"
+                                                            :units     "%"}
+                                                  :pign    {:opt-label "Firebrand ignition probability (%)"
+                                                            :filter    "pign"
+                                                            :units     "%"}
+                                                  :wd      {:opt-label       "Wind direction (\u00B0)"
+                                                            :filter          "wd"
+                                                            :units           "\u00B0"
+                                                            :reverse-legend? false}
+                                                  :ws      {:opt-label "Sustained wind speed (mph)"
+                                                            :filter    "ws"
+                                                            :units     "mph"}
+                                                  :wg      {:opt-label "Wind gust (mph)"
+                                                            :filter    "wg"
+                                                            :units     "mph"}
+                                                  :apcptot {:opt-label       "Accumulated precipitation (in)"
+                                                            :filter          "apcptot"
+                                                            :units           "inches"
+                                                            :disabled-for    #{:gfs0p125 :hybrid :rtma-ru :ecmwf :nve}
+                                                            :reverse-legend? false}
+                                                  :apcp01  {:opt-label       "1-hour precipitation (in)"
+                                                            :filter          "apcp01"
+                                                            :units           "inches"
+                                                            :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru :ecmwf :nve}
+                                                            :reverse-legend? false}
+                                                  :vpd     {:opt-label    "Vapor pressure deficit (hPa)"
+                                                            :filter       "vpd"
+                                                            :units        "hPa"
+                                                            :disabled-for #{:nbm :ecmwf :nve}}
+                                                  :hdw     {:opt-label    "Hot-Dry-Windy Index (hPa*m/s)"
+                                                            :filter       "hdw"
+                                                            :units        "hPa*m/s"
+                                                            :disabled-for #{:nbm :ecmwf}}
+                                                  :smoke   {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
+                                                            :filter       "smoke"
+                                                            :units        "\u00b5g/m\u00b3"
+                                                            :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve}}
+                                                  :tcdc    {:opt-label    "Total cloud cover (%)"
+                                                            :filter       "tcdc"
+                                                            :units        "%"
+                                                            :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve}}
+                                                  :erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
+                                                           :filter "erc"
+                                                           :units "(ERC, Btu/sq ft)"
+                                                           :disabled-for not-nfdrs-models}
+                                                  :ercperc {:opt-label "ERC percentile"
+                                                            :filter "ercperc"
+                                                            :disabled-for not-nfdrs-models}
+                                                  :bi {:opt-label "burning index (BI, ft * 10)"
+                                                       :filter "bi"
+                                                       :units "(BI, ft * 10)"
+                                                       :disabled-for not-nfdrs-models}
+                                                  :biperc {:opt-label  "BI percentile"
+                                                           :filter "biperc"
+                                                           :disabled-for not-nfdrs-models}
+                                                  :sc      {:opt-label "spread component (ft/min)"
+                                                            :filter "sc"
+                                                            :units "(ft/min)"
+                                                            :disabled-for not-nfdrs-models}
+                                                  :scperc  {:opt-label  "SC percentile"
+                                                            :filter     "scperc"
+                                                            :disabled-for not-nfdrs-models}
+                                                  :ic    {:opt-label "Ignition Component (%)"
+                                                          :filter "ic"
+                                                          :disabled-for not-nfdrs-models}
+                                                  :sfdiperc {:opt-label "SFDI percentile (%)"
+                                                             :filter "sfdiperc"
+                                                             :disabled-for not-nfdrs-models}
+
+                                                  :sfdicat  {:opt-label "SFDI category (1=low, 2=moderate, 3=high, 4=very high, 5=severe)"
+                                                             :filter "sfdicat"
+                                                             :disabled-for not-nfdrs-models}
+                                                  :lh {:opt-label "Live herbaceous fuel moisture (% or fraction)"
+                                                       :filter "lh"
+                                                       :units "(% or fraction)"
+                                                       :disabled-for not-nfdrs-models}
+                                                  :lw {:opt-label "Live woody fuel moisture (% or fraction)"
+                                                       :filter "lw"
+                                                       :units "(% or fraction)"
+                                                       :disabled-for not-nfdrs-models}
+                                                  :m1  {:opt-label "1-hour fuel moisture (% or fraction)"
+                                                        :filter "m1"
+                                                        :units "(% or fraction)"
+                                                        :disabled-for not-nfdrs-models}
+                                                  :m10 {:opt-label "10-hour fuel moisture (% or fraction)"
+                                                        :filter "m10"
+                                                        :units "(% or fraction)"
+                                                        :disabled-for not-nfdrs-models}
+                                                  :m100 {:opt-label "100-hour fuel moisture (% or fraction)"
+                                                         :filter "m100"
+                                                         :units "(% or fraction)"
+                                                         :disabled-for not-nfdrs-models}
+                                                  :m1000 {:opt-label "1000-hour fuel moisture (% or fraction)"
+                                                          :filter "m1000"
+                                                          :units "(% or fraction)"
+                                                          :disabled-for not-nfdrs-models}
+
+                                                  ;; TODO kbdiI seems to cause an issue, find out why.
+                                                   ;; :kbdiI ​ {:opt-label "Keetch Byram Drought Index (0-800)"
+                                                   ;;           :filter "kbdiI"
+                                                   ;;           :units "Index (0-800)"
+                                                   ;;           #_#_:disabled-for not-nfdrs-models}
+
+                                                  )}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "NBM"]
@@ -425,7 +444,7 @@
                                                  :options    (array-map
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
-                                                                              :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd :rtma-ru}}
                                                               :hrrr          {:opt-label "HRRR"
                                                                               :filter    "hrrr"}
                                                               :hybrid        {:opt-label    "Hybrid"

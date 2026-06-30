@@ -338,10 +338,7 @@
                                    :else               (= 1 (count sorted-options)))
                              #(select-param! % key)
                              selected-param-set]])))
-                     (cond-> @!/processed-params
-                       (c/nfdrs?)
-                       (assoc-in [:band :options]
-                                 c/nfdrs-weather-params)))
+                     @!/processed-params)
                [opacity-input]]]
              [sa/panel-section]
              [collapsible-panel-section
