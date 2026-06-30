@@ -10,7 +10,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def nfdrs-weather-params
-  {:erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
+  (array-map
+   :erc    {:opt-label "Energy Release Component (ERC, Btu/sq ft)"
             :filter "erc"
             :units "(ERC, Btu/sq ft)"}
    :ercperc {:opt-label "ERC percentile"
@@ -49,9 +50,9 @@
    :m1000 {:opt-label "1000-hour fuel moisture (% or fraction)"
            :filter "m1000"
            :units "(% or fraction)"}
-   :kbdiI​ {:opt-label "Keetch Byram Drought Index (0-800)"
-            :filter "kbdiI"
-            :units "Index (0-800)"}})
+   :kbdiI {:opt-label "Keetch Byram Drought Index (0-800)"
+           :filter "kbdiI"
+           :units "Index (0-800)"}))
 
 (defn nfdrs?
   []

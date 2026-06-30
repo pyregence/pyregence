@@ -610,6 +610,22 @@
             :when first-enabled]
       (swap! !/*params assoc-in [@!/*forecast param-key] first-enabled))))
 
+(defn- sync-band-options!
+  "The weather parameter (:band) options depend on the selected model: NFDRS
+   models expose the NFDRS params, everything else uses the standard ones. Write
+   the right set into processed-params so get-layers! can resolve the selected
+   :filter (the rendered dropdown and the get-layers request read the same atom)."
+  []
+  (when (:band @!/processed-params)
+    (let [options (if (c/nfdrs?)
+                    c/nfdrs-weather-params
+                    (get-in (get-forecast-opt :params) [:band :options]))]
+      (swap! !/processed-params assoc-in [:band :options] options)
+      ;; If the previously-selected weather param isn't valid for this model,
+      ;; fall back to the first available one so a valid :filter is still sent.
+      (when-not (contains? options (get-in @!/*params [@!/*forecast :band]))
+        (swap! !/*params assoc-in [@!/*forecast :band] (ffirst options))))))
+
 (defn- select-param!
   "The function called whenever an input dropdown is changed on the collapsible panel.
    Resets the proper state atoms with the new, selected inputs from the UI."
@@ -630,6 +646,8 @@
       (reset! !/*layer-idx 0)
       (swap! !/*params assoc-in (cons @!/*forecast [:burn-pct]) :50)
       (reset! !/animate? false))
+    (when (= main-key :model)
+      (sync-band-options!))
     (auto-switch-disabled-params!)
     (change-type! (not (#{:burn-pct :model-init} main-key)) ;; TODO: Make this a config
                   (get-current-layer-key :clear-point?)
@@ -645,6 +663,7 @@
     (gtag "select-forecast" {:forecast-type (str selected-forecast)})
     (reset! !/*forecast selected-forecast)
     (reset! !/processed-params (get-forecast-opt :params))
+    (sync-band-options!)
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
     (when (and (= :active-fire selected-forecast)
                (or @!/match-drop-access?

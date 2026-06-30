@@ -311,11 +311,11 @@
       (let [selected-param-set (->> *params (vals) (filter keyword?) (set))]
         [:div#collapsible-panel {:style ($collapsible-panel @!/show-panel?)}
          [collapsible-panel-header]
-         [:div {:style {:display "flex"
-                        :flex-direction "column"
+         [:div {:style {:display         "flex"
+                        :flex-direction  "column"
                         :justify-content "space-between"
-                        :overflow-y "auto"
-                        :height "100%"}}
+                        :overflow-y      "auto"
+                        :height          "100%"}}
           [:<>
            [collapsible-panel-toggle]
            [:div#collapsible-panel-body {:class (<class $collapsible-panel-body)}
@@ -338,10 +338,7 @@
                                    :else               (= 1 (count sorted-options)))
                              #(select-param! % key)
                              selected-param-set]])))
-                     (cond-> @!/processed-params
-                       (c/nfdrs?)
-                       (assoc-in [:band :options]
-                                 c/nfdrs-weather-params)))
+                     @!/processed-params)
                [opacity-input]]]
              [sa/panel-section]
              [collapsible-panel-section
