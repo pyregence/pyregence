@@ -1116,3 +1116,6 @@
           [control-layer user-id user-email])
         [map-layer]
         [pop-up]]])}))
+
+
+(-> @!/*params)

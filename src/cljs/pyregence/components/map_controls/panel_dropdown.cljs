@@ -8,7 +8,14 @@
 ;; Root component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+(def dd (atom []))
+
+(def args (atom []))
+;;
+;; val is the 3rd thing
 (defn panel-dropdown [title tool-tip-text val options disabled? call-back & [selected-param-set]]
+  (swap! dd conj [title tool-tip-text val options disabled? call-back & [selected-param-set]])
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
    [:div {:style {:display "flex" :justify-content "space-between"}}
     [:label title]
@@ -22,7 +29,11 @@
    [:select {:style     ($/dropdown)
              :value     (or val :none)
              :disabled  disabled?
-             :on-change #(call-back (u-dom/input-keyword %))}
+             :on-change (fn [v]
+                          (swap! args conj {:v v :val val :call-back call-back})
+                          (def call-back call-back)
+                          (def v v)
+                          (call-back (u-dom/input-keyword v)))}
     (->> options
          (remove (fn [[_ {:keys [hidden? opt-label]}]] (or hidden? (empty? opt-label))))
          (map (fn [[key {:keys [opt-label enabled? disabled-for]}]]
@@ -31,3 +42,12 @@
                           :disabled (or (and (set? disabled-for) (some selected-param-set disabled-for))
                                         (and (fn? enabled?) (not (enabled?))))}
                  opt-label])))]])
+
+(comment
+  @args
+  ;; => [{:v #object[SyntheticEvent [object Object]],
+  ;;      :val :scperc,
+  ;;      :call-back #object[Function]}]
+
+
+  )

@@ -301,6 +301,7 @@
 ;; Root component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def foo (atom []))
 (defn collapsible-panel [*params select-param! underlays]
   (let [*base-map        (r/atom c/base-map-default)
         select-base-map! (fn [id]
@@ -325,19 +326,27 @@
               [:<>
                (keep (fn [[key {:keys [opt-label hover-text options sort? disabled hidden?]}]]
                        (when-not hidden?
-                         (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
-                           ^{:key (str (random-uuid))}
-                           [:<>
-                            [panel-dropdown
-                             opt-label
-                             hover-text
-                             (get *params key)
-                             sorted-options
-                             (cond (ifn? disabled)     (disabled *params)
-                                   (boolean? disabled) disabled
-                                   :else               (= 1 (count sorted-options)))
-                             #(select-param! % key)
-                             selected-param-set]])))
+                         (do
+                           (def key key)
+                           (def *params *params)
+                           *params
+                           ;; => {:band :m1000, :model :nfdrs-variable, :model-init :loading}
+                           (swap! foo conj {:key key :*params *params})
+                           (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
+                             ^{:key (str (random-uuid))}
+                             [:<>
+                              [panel-dropdown
+                               opt-label
+                               hover-text
+                               ;;TODO this is the val that isnt getting passed the right thing.
+                               ;;TODO what is key, what is *params
+                               (get *params key)
+                               sorted-options
+                               (cond (ifn? disabled)     (disabled *params)
+                                     (boolean? disabled) disabled
+                                     :else               (= 1 (count sorted-options)))
+                               #(select-param! % key)
+                               selected-param-set]]))))
                      (cond-> @!/processed-params
                        (c/nfdrs?)
                        (assoc-in [:band :options]
@@ -361,3 +370,24 @@
            [collapsible-panel-section
             "help"
             [help-section]]]]]))))
+
+(comment
+
+   @foo
+   ;; => [{:key :band,
+   ;;      :*params {:band :m1000, :model :nfdrs-variable, :model-init :loading}}
+   ;;     {:key :model,
+   ;;      :*params {:band :m1000, :model :nfdrs-variable, :model-init :loading}}
+   ;;     {:key :model-init,
+   ;;      :*params {:band :m1000, :model :nfdrs-variable, :model-init :loading}}]
+
+   (let [{:keys [key *params]} (first @foo)]
+     (get *params key))
+   ;; => :m1000
+   ;;TODO how is the above :m1000 but then over in the panel_dropdown we get the :val set to :scperc
+
+
+
+
+  ;;
+  )
