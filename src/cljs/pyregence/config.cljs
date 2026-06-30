@@ -97,7 +97,7 @@
                         :geoserver-key :shasta}})
 
 ;; TODO add in an API route to dynamically grab this from the org_unique_id column in the organizations table
-(def all-utility-companies #{:anza :beartooth :bighorn :butte :canadian-valley
+(def all-utility-companies #{:anza :atco :beartooth :bighorn :butte :canadian-valley
                              :capital :clp :columbia-basin :consumers :cotton :cowlitz
                              :dso :flathead :garkane :grand-valley :highline
                              :holy-cross :la-plata :lea-county :liberty :lincoln
