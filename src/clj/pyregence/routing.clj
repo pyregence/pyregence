@@ -116,6 +116,9 @@
    [:post "/clj/get-user-match-drop-access"]         {:handler (clj-handler authentication/get-user-match-drop-access)
                                                      :auth-type #{:member :token}
                                                      :auth-action :block}
+   [:post "/clj/update-user-match-drop-access"]      {:handler (clj-handler authentication/update-user-match-drop-access)
+                                                     :auth-type #{:account-manager :token}
+                                                     :auth-action :block}
 
    ;; -- Organization Management
    [:post "/clj/add-org-users"]                      {:handler (clj-handler authentication/add-org-users)
