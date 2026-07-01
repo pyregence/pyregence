@@ -608,8 +608,7 @@
 
   (let [email   "email-2fa@pyr.dev"
         user-id (sql-primitive (call-sql "get_user_id_by_email" email))
-        _ (require '[pyregence.email :as email-ns])
-        output (with-out-str (email-ns/mock-send-2fa-code email))
+        output (with-out-str (email/mock-send-2fa-code email))
         code (second (re-find #"2FA CODE for .* : (\d+)" output))]
     (save-user-settings! user-id {:two-factor :email})
     (disable-2fa {:user-email email} code)))
