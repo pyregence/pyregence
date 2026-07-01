@@ -1,5 +1,5 @@
 -- NAMESPACE: match
--- REQUIRES: clear
+-- REQUIRES: clear, user
 
 -- Retrieve the match job based on the match_job_uid
 CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
