@@ -688,10 +688,12 @@
 
 (defn update-user-name
   "Allows an organization admin to update the name of a user by their email."
-  [_ email new-name]
+  [{:keys [user-id]} email new-name]
   (if-let [user-id-to-update (sql-primitive (call-sql "get_user_id_by_email" email))]
-    (do (call-sql "update_user_name" user-id-to-update new-name)
-        (data-response (str "User's name successfully updated to " new-name)))
+    (if (sql-primitive (call-sql "can_admin_user" user-id user-id-to-update))
+      (do (call-sql "update_user_name" user-id-to-update new-name)
+          (data-response (str "User's name successfully updated to " new-name)))
+      (data-response "You are not authorized to manage this user." {:status 403}))
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
 
@@ -792,13 +794,15 @@
                 :archived-date         archived_date}))
        (data-response)))
 
-(defn add-org-user [_ org-id email]
-  (if-let [user-id-to-add (sql-primitive (call-sql "get_user_id_by_email" email))]
-    (do
-      (call-sql "add_org_user" org-id user-id-to-add)
-      (data-response ""))
-    (data-response (str "There is no user with the email " email)
-                   {:status 403})))
+(defn add-org-user [{:keys [user-id]} org-id email]
+  (if-not (sql-primitive (call-sql "can_admin_org" user-id org-id))
+    (data-response "You are not authorized to manage this organization." {:status 403})
+    (if-let [user-id-to-add (sql-primitive (call-sql "get_user_id_by_email" email))]
+      (do
+        (call-sql "add_org_user" org-id user-id-to-add)
+        (data-response ""))
+      (data-response (str "There is no user with the email " email)
+                     {:status 403}))))
 
 (defn add-org-users [{:keys [user-role organization-id]} org-id users]
   ;; Prevent none SA&AM from changing other orgs.
@@ -900,21 +904,29 @@
        (mapv #(:org_unique_id %))
        (data-response)))
 
-(defn remove-org-user [_ org-user-id]
-  (call-sql "remove_org_user" org-user-id)
-  (data-response ""))
+(defn remove-org-user [{:keys [user-id]} org-user-id]
+  (if (sql-primitive (call-sql "can_admin_user" user-id org-user-id))
+    (do (call-sql "remove_org_user" org-user-id)
+        (data-response ""))
+    (data-response "You are not authorized to manage this user." {:status 403})))
 
-(defn update-org-info [_ org-id org-name email-domains auto-add? auto-accept?]
-  (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
-  (data-response ""))
+(defn update-org-info [{:keys [user-id]} org-id org-name email-domains auto-add? auto-accept?]
+  (if (sql-primitive (call-sql "can_admin_org" user-id org-id))
+    (do (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
+        (data-response ""))
+    (data-response "You are not authorized to manage this organization." {:status 403})))
 
-(defn update-org-user-role [_ user-id new-role]
-  (call-sql "update_org_user_role" user-id new-role)
-  (data-response ""))
+(defn update-org-user-role [{:keys [user-id]} target-user-id new-role]
+  (if (sql-primitive (call-sql "can_admin_user" user-id target-user-id))
+    (do (call-sql "update_org_user_role" target-user-id new-role)
+        (data-response ""))
+    (data-response "You are not authorized to manage this user." {:status 403})))
 
-(defn update-user-org-membership-status [_ user-id new-status]
-  (call-sql "update_org_membership_status" user-id new-status)
-  (data-response ""))
+(defn update-user-org-membership-status [{:keys [user-id]} target-user-id new-status]
+  (if (sql-primitive (call-sql "can_admin_user" user-id target-user-id))
+    (do (call-sql "update_org_membership_status" target-user-id new-status)
+        (data-response ""))
+    (data-response "You are not authorized to manage this user." {:status 403})))
 
 (defn delete-users
   [{:keys [user-email user-role]} users-to-delete]
@@ -923,3 +935,48 @@
     (do
       (call-sql "delete_users" user-email (into-array String users-to-delete))
       (data-response ""))))
+
+^:rct/test
+(comment
+  ;; --- IDOR guards (PYR1-1512) ---
+  ;; Seed data: user 1 (admin@pyr.dev) is organization_admin of org 1;
+  ;; user 2 (user@pyr.dev) is a member of org 1; user 3 (account_manager@pyr.dev)
+  ;; is an account_manager with no org; user 12 is an admin/member of org 2.
+
+  ;; can_admin_org: org admin may manage their own org, not another; AM manages any
+  (sql-primitive (call-sql "can_admin_org" 1 1))
+  ;=> true
+  (sql-primitive (call-sql "can_admin_org" 1 2))
+  ;=> false
+  (sql-primitive (call-sql "can_admin_org" 3 2))
+  ;=> true
+
+  ;; can_admin_user: org admin may manage a user in their org, not one in another
+  (sql-primitive (call-sql "can_admin_user" 1 2))
+  ;=> true
+  (sql-primitive (call-sql "can_admin_user" 1 12))
+  ;=> false
+
+  ;; Handlers deny an org admin acting outside their org (no mutation occurs)
+  (update-org-info {:user-id 1} 2 "Hacked" "@hack.com" false false)
+  ;=>> {:status 403}
+
+  (add-org-user {:user-id 1} 2 "user@pyr.dev")
+  ;=>> {:status 403}
+
+  (remove-org-user {:user-id 1} 12)
+  ;=>> {:status 403}
+
+  (update-org-user-role {:user-id 1} 12 "organization_admin")
+  ;=>> {:status 403}
+
+  (update-user-org-membership-status {:user-id 1} 12 "accepted")
+  ;=>> {:status 403}
+
+  (update-user-name {:user-id 1} "kiarapichler@deleteme.com" "Hacked")
+  ;=>> {:status 403}
+
+  ;; An account_manager (user 3) is allowed to manage any org
+  (sql-primitive (call-sql "can_admin_user" 3 12))
+  ;=> true
+  )

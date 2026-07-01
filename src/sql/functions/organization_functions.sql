@@ -2,6 +2,35 @@
 -- REQUIRES: user
 
 --------------------------------------------------------------------------------
+---  Authorization predicates
+--------------------------------------------------------------------------------
+-- True when the requesting user may administer the given organization.
+-- super_admins and account_managers may administer any org; an
+-- organization_admin may administer only their own org. Used to prevent IDOR:
+-- org-scoped mutations must gate on this so an admin of one org cannot act on
+-- another org by passing its id.
+CREATE OR REPLACE FUNCTION can_admin_org(_requesting_user_id integer, _org_id integer)
+RETURNS boolean AS $$
+    SELECT EXISTS (
+      SELECT 1
+      FROM users
+      WHERE user_uid = _requesting_user_id
+        AND (user_role IN ('super_admin', 'account_manager')
+             OR (user_role = 'organization_admin'
+                 AND organization_rid = _org_id))
+    )
+$$ LANGUAGE SQL;
+
+-- True when the requesting user may administer the given target user, i.e. they
+-- can administer the target user's organization. Users with no organization can
+-- only be administered by super_admins/account_managers.
+CREATE OR REPLACE FUNCTION can_admin_user(_requesting_user_id integer, _target_user_id integer)
+RETURNS boolean AS $$
+    SELECT can_admin_org(_requesting_user_id,
+                         (SELECT organization_rid FROM users WHERE user_uid = _target_user_id))
+$$ LANGUAGE SQL;
+
+--------------------------------------------------------------------------------
 ---  Organizations
 --------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_org_subscription_tier(_org_id integer)

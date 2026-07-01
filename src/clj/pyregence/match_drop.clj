@@ -462,16 +462,23 @@
 
 (defn delete-match-drop!
   "Deletes the specified match drop from the DB and removes it from the GeoServer
-   via the 'remove' action passed to the GeoSync Microservice"
-  [_ match-job-id]
-  (let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
-    (delete-match-drop-using-kubernetes! sig3-endpoint match-job-id)))
+   via the 'remove' action passed to the GeoSync Microservice.
+   Only the match drop's owner may delete it."
+  [{:keys [user-id]} match-job-id]
+  (let [job (get-match-job-from-match-job-id! match-job-id)]
+    (if (and job (= user-id (:user-id job)))
+      (let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
+        (delete-match-drop-using-kubernetes! sig3-endpoint match-job-id))
+      (data-response "You are not authorized to delete this match drop." {:status 403}))))
 
 (defn get-md-status
-  "Returns the current status of the given match drop run."
-  [_ match-job-id]
-  (data-response (-> (get-match-job-from-match-job-id! match-job-id)
-                     (select-keys [:display-name :geoserver-workspace :message :md-status :job-log]))))
+  "Returns the current status of the given match drop run.
+   Only the match drop's owner may view it."
+  [{:keys [user-id]} match-job-id]
+  (let [job (get-match-job-from-match-job-id! match-job-id)]
+    (if (and job (= user-id (:user-id job)))
+      (data-response (select-keys job [:display-name :geoserver-workspace :message :md-status :job-log]))
+      (data-response "You are not authorized to view this match drop." {:status 403}))))
 
 (defn get-md-available-dates
   "Gets the available dates for Match Drops in UTC.
@@ -513,3 +520,15 @@
                    "- :shasta layers may not be loaded")
           (data-response {:type "FeatureCollection" :features []}
                          {:type :json})))))
+
+^:rct/test
+(comment
+  ;; --- Match drop ownership guard (PYR1-1512) ---
+  ;; A match drop the session user does not own (here a non-existent job) must
+  ;; not be viewable or deletable; both return 403 without revealing existence.
+  (get-md-status {:user-id 1} 999999999)
+  ;=>> {:status 403}
+
+  (delete-match-drop! {:user-id 1} 999999999)
+  ;=>> {:status 403}
+  )
