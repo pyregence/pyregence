@@ -4,7 +4,7 @@
    [clojure.string                                            :as str]
    [clojure.walk                                              :as walk]
    [herb.core                                                 :refer [<class]]
-   [pyregence.components.settings.organizations-utils         :refer [get-orgs! orgs->org->id]]
+   [pyregence.components.settings.organizations-utils         :refer [get-orgs! orgs->org-unique-id->org]]
    [pyregence.components.settings.pages.account-settings      :as account-settings]
    [pyregence.components.settings.pages.admin                 :as admin]
    [pyregence.components.settings.pages.organization-settings :as organization-settings]
@@ -232,17 +232,17 @@
 (defn side-nav-bar-and-page
   [{:keys [user-role]}]
   (let [selected-log  (r/atom ["Account Settings"])
-        ;;TODO move org-id->org into two ratoms, one for fetching the
+        ;;TODO move org-unique-id->org into two ratoms, one for fetching the
         ;;organizations from the side nav bar and another for fetching the org, in
         ;;the organization-settings component info once it's been selected from
         ;;the side.
-        org-id->org   (r/atom nil)]
-    (go (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role)))))
+        org-unique-id->org   (r/atom nil)]
+    (go (reset! org-unique-id->org (orgs->org-unique-id->org (<! (get-orgs! user-role)))))
     (fn [m]
       (let [m        (assoc m
                             :selected-log selected-log
-                            :organizations (vals @org-id->org)
-                            :org-id->org    org-id->org)
+                            :organizations (vals @org-unique-id->org)
+                            :org-unique-id->org    org-unique-id->org)
             tab+page (tab-data->tabs m)]
         [:nav-bar-and-page {:style {:display        "flex"
                                     :flex-direction "row"

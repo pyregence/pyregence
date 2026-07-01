@@ -5,7 +5,7 @@
    [pyregence.components.utils                :refer [card main-styles]]))
 
 (defn main
-  [{:keys [user-role org-id->org]}]
+  [{:keys [user-role org-unique-id->org]}]
   [:div {:style main-styles}
    [card {:title    "UNAFFILIATED MEMBERS USER-LIST"
           ;; TODO the `update-roles` won't work here because anything higher then
@@ -18,4 +18,4 @@
                         :role-options        roles
                         :user-role           user-role
                         :statuses            ["none"]
-                        :org-id->org         org-id->org})]}]])
+                        :org-unique-id->org         org-unique-id->org})]}]])

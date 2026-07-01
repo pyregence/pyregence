@@ -19,8 +19,8 @@
   (boolean (re-matches email-regex email)))
 
 (defn- add-new-users!
-  [org-id users]
-  (go (<! (u-async/call-clj-async! "add-org-users" org-id users))))
+  [org-unique-id users]
+  (go (<! (u-async/call-clj-async! "add-org-users" org-unique-id users))))
 
 (defn enter-email-address
   [{:keys [email on-change invalid-email?]}]
@@ -109,7 +109,7 @@
                         :on-click-role on-click-role}]]])
 
 (defn invite-modal
-  [{:keys [on-click-close-dialog default-role-option org-id role-options]}]
+  [{:keys [on-click-close-dialog default-role-option org-unique-id role-options]}]
   (let [default-user  {:email "" :role default-role-option}
         default-state {1 default-user}]
     (r/with-let [id->user    (r/atom default-state)
@@ -199,7 +199,7 @@
                                              (toast-message! "One or more email addresses are invalid.")
                                              (go
                                                (let [resp (<! (add-new-users!
-                                                               org-id
+                                                               org-unique-id
                                                                (->> id->user* vals (map #(dissoc % :invalid-email?)))))]
                                                  (if (:success resp)
                                                    (do
@@ -208,7 +208,7 @@
                                                      (on-click-close-dialog))
                                                    (toast-message! "Something went wrong when adding the new user(s).")))))))}]]]))))
 
-(defn add-user-dialog [{:keys [org-id role-options default-role-option]}]
+(defn add-user-dialog [{:keys [org-unique-id role-options default-role-option]}]
   (r/with-let [dialog-elem (atom nil)]
     ;;TODO find why does this need no wrap when the other buttons don't?
     [:div {:style {:white-space "nowrap"}}
@@ -221,7 +221,7 @@
       [:div {:style {:overflow "hidden"}}
        [invite-modal {:on-click-close-dialog #(.close @dialog-elem)
                       :default-role-option     default-role-option
-                      :org-id                org-id
+                      :org-unique-id                org-unique-id
                       :role-options          role-options}]]]
      [buttons/add {:text     "Add A New User"
                    :on-click #(.showModal @dialog-elem)}]]))

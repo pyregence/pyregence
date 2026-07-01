@@ -17,13 +17,13 @@
              (edn/read-string))
         {}))))
 
-(defn orgs->org->id
-  ;; NOTE keyed by org-unique-id: the numeric org id is no longer sent to the
-  ;; browser (PYR1-1512), so org-unique-id is the org identifier client-side.
+(defn orgs->org-unique-id->org
+  ;; Keyed by org-unique-id: the numeric org id is no longer sent to the browser
+  ;; (PYR1-1512), so org-unique-id is the org identifier client-side.
   [orgs]
   (reduce
-   (fn [org-id->org {:keys [org-unique-id org-name email-domains auto-accept? auto-add?] :as org}]
-     (assoc org-id->org org-unique-id
+   (fn [org-unique-id->org {:keys [org-unique-id org-name email-domains auto-accept? auto-add?] :as org}]
+     (assoc org-unique-id->org org-unique-id
             (assoc org
                    :unsaved-auto-accept? auto-accept?
                    :unsaved-auto-add?    auto-add?
