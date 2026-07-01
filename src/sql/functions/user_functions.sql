@@ -71,8 +71,8 @@ CREATE OR REPLACE FUNCTION get_organization_id_by_unique_id(_org_unique_id text)
 
 $$ LANGUAGE SQL;
 
--- Returns the organization_rid for a given user email
-CREATE OR REPLACE FUNCTION get_user_organization_rid(_email text)
+-- Returns the organization id for a given user email
+CREATE OR REPLACE FUNCTION get_user_organization_id_by_email(_email text)
  RETURNS integer AS $$
 
     SELECT organization_rid

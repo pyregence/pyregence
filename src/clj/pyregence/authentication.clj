@@ -45,7 +45,7 @@
   (-> (sql-primitive (call-sql "get_user_settings_by_email" user-email))
       parse-user-settings))
 
-(defn- user-email->id
+(defn- user-email->user-id
   "Resolves the internal sequential user-id for a session's user-email.
    The session deliberately no longer carries the user-id (it must never reach
    the browser, see PYR1-1512), so server-side handlers that still need it for
@@ -54,17 +54,16 @@
   (sql-primitive (call-sql "get_user_id_by_email" user-email)))
 
 (defn- user-email->org-id
-  "Resolves the internal sequential organization-id (organization_rid) for a
-   session's user-email. Like [[user-email->id]], the numeric org id is kept out
-   of the session/browser, so org-scoped handlers resolve it here when needed."
+  "Resolves the internal sequential organization-id for a session's user-email.
+   Like [[user-email->user-id]], the numeric org id is kept out of the
+   session/browser, so org-scoped handlers resolve it here when needed."
   [user-email]
-  (sql-primitive (call-sql "get_user_organization_rid" user-email)))
+  (sql-primitive (call-sql "get_user_organization_id_by_email" user-email)))
 
-(defn- org-unique-id->id
-  "Resolves the internal sequential organization-id (organization_uid) for a
-   client-supplied org-unique-id. The numeric org id is never sent to the
-   browser (PYR1-1512); org-scoped endpoints receive the org-unique-id and
-   resolve it here."
+(defn- org-unique-id->org-id
+  "Resolves the internal sequential organization-id for a client-supplied
+   org-unique-id. The numeric org id is never sent to the browser (PYR1-1512);
+   org-scoped endpoints receive the org-unique-id and resolve it here."
   [org-unique-id]
   (sql-primitive (call-sql "get_organization_id_by_unique_id" org-unique-id)))
 
@@ -259,7 +258,7 @@
   "Initiates TOTP setup for the authenticated user.
    Returns QR URI, secret, and backup codes for authenticator app setup."
   [{:keys [user-email]}]
-  (let [user-id (user-email->id user-email)]
+  (let [user-id (user-email->user-id user-email)]
     (cond
       (nil? user-id)
       (data-response "Not authenticated" {:status 401})
@@ -330,7 +329,7 @@
 (defn complete-totp-setup
   "Completes TOTP setup by validating the provided code against the unverified setup."
   [{:keys [user-email]} code]
-  (let [user-id (user-email->id user-email)]
+  (let [user-id (user-email->user-id user-email)]
     (cond
       (nil? user-id)
       (data-response "Not authenticated" {:status 401})
@@ -385,7 +384,7 @@
 (defn get-backup-codes
   "Returns the backup codes for the current user if TOTP is enabled."
   [{:keys [user-email]}]
-  (let [user-id (user-email->id user-email)]
+  (let [user-id (user-email->user-id user-email)]
     (cond
       (nil? user-id)
       (data-response "Not authenticated" {:status 401})
@@ -419,7 +418,7 @@
 (defn regenerate-backup-codes
   "Regenerates backup codes for the current user. Requires current TOTP code or backup code for security."
   [{:keys [user-email]} code]
-  (let [user-id (user-email->id user-email)]
+  (let [user-id (user-email->user-id user-email)]
     (cond
       (nil? user-id)
       (data-response "Not authenticated" {:status 401})
@@ -471,7 +470,7 @@
 (defn enable-email-2fa
   "Enables email-based 2FA after verifying the provided code."
   [{:keys [user-email]} code]
-  (let [user-id (user-email->id user-email)]
+  (let [user-id (user-email->user-id user-email)]
     (cond
       (not user-id)
       (data-response "Not authenticated" {:status 401})
@@ -522,7 +521,7 @@
 (defn- remove-totp
   "Removes TOTP authentication for the current user. Requires current TOTP code for security."
   [{:keys [user-email]} code]
-  (let [user-id (user-email->id user-email)]
+  (let [user-id (user-email->user-id user-email)]
     (cond
       (nil? user-id)
       (data-response "Not authenticated" {:status 401})
@@ -569,7 +568,7 @@
 (defn disable-2fa
   "Disables any 2FA method for the current user after verification."
   [{:keys [user-email]} code]
-  (let [user-id (user-email->id user-email)]
+  (let [user-id (user-email->user-id user-email)]
     (if-not user-id
       (data-response "Not authenticated" {:status 401})
       (let [settings   (get-user-settings user-email)
@@ -709,7 +708,7 @@
 
 ;; TODO hook into UI
 (defn update-current-user-settings [session new-settings]
-  (let [user-id (user-email->id (:user-email session))]
+  (let [user-id (user-email->user-id (:user-email session))]
     (if (call-sql "update_user_settings" user-id new-settings)
       (data-response "User settings successfully updated.")
       (data-response "User settings were not able to be updated." {:status 403}))))
@@ -726,7 +725,7 @@
 (defn update-own-user-name
   "Allows a logged-in user to update their own user name."
   [session new-name]
-  (if-let [user-id (user-email->id (:user-email session))]
+  (if-let [user-id (user-email->user-id (:user-email session))]
     (do (call-sql "update_user_name" user-id new-name)
         (data-response (str "User's name successfully updated to " new-name)))
     (data-response "" {:status 403})))
@@ -747,7 +746,7 @@
 (defn update-users-status
   "Updates users status"
   [{:keys [user-email]} requested-status requested-org-name users-to-update]
-  (call-sql "update_users_status_by_email" (user-email->id user-email) requested-status requested-org-name
+  (call-sql "update_users_status_by_email" (user-email->user-id user-email) requested-status requested-org-name
             (into-array String users-to-update))
   (data-response "success"))
 
@@ -756,7 +755,7 @@
   [{:keys [user-email user-role]} requested-role requested-org-name users-to-update]
   (if (can-upgrade-role? user-role requested-role)
     (do
-      (call-sql "update_users_roles_by_email" (user-email->id user-email) requested-role requested-org-name
+      (call-sql "update_users_roles_by_email" (user-email->user-id user-email) requested-role requested-org-name
                 (into-array String users-to-update))
       (data-response "success"))
     ;; TODO what should this failure message be.
@@ -784,7 +783,7 @@
 
 ;; TODO hook into UI
 (defn update-current-user-match-drop-access [session match-drop-access?]
-  (let [user-id (user-email->id (:user-email session))]
+  (let [user-id (user-email->user-id (:user-email session))]
     (if (call-sql "update_user_match_drop_access" user-id match-drop-access?)
       (data-response (str "Match drop access updated to " match-drop-access?))
       (data-response "Match drop access was not able to be updated." {:status 403}))))
@@ -828,7 +827,7 @@
                    {:status 403})))
 
 (defn add-org-users [{:keys [user-role user-email]} org-unique-id users]
-  (let [org-id (org-unique-id->id org-unique-id)]
+  (let [org-id (org-unique-id->org-id org-unique-id)]
     ;; Prevent none SA&AM from changing other orgs.
     (when (or (#{"super_admin" "account_manager"} user-role)
               (= (user-email->org-id user-email) org-id))
@@ -856,7 +855,7 @@
   "Given the current user by session, returns the list of organizations that
    they belong to and are an admin or a member of."
   [session]
-  (if-let [user-id (user-email->id (:user-email session))]
+  (if-let [user-id (user-email->user-id (:user-email session))]
     (->> (call-sql "get_user_organization" user-id)
          (mapv (fn [{:keys [org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept]}]
                  {:org-name              org_name
@@ -888,7 +887,7 @@
 
 (defn get-orgs-with-system-assets
   [{:keys [user-email]}]
-  (->> (user-email->id user-email)
+  (->> (user-email->user-id user-email)
        (call-sql "get_orgs_with_system_assets")
        data-response))
 
@@ -911,7 +910,7 @@
 
 (defn get-password-set-date
   [{:keys [user-email]}]
-  (let [row         (sql-primitive (call-sql "get_password_set_date" (user-email->id user-email)))
+  (let [row         (sql-primitive (call-sql "get_password_set_date" (user-email->user-id user-email)))
         format-date (fn [sql-time]
                       (.format (SimpleDateFormat. "yyyy-MM-dd")
                                sql-time))]
@@ -930,7 +929,7 @@
   (data-response ""))
 
 (defn update-org-info [_ org-unique-id org-name email-domains auto-add? auto-accept?]
-  (call-sql "update_org_info" (org-unique-id->id org-unique-id) org-name email-domains auto-add? auto-accept?)
+  (call-sql "update_org_info" (org-unique-id->org-id org-unique-id) org-name email-domains auto-add? auto-accept?)
   (data-response ""))
 
 (defn update-org-user-role [_ user-id new-role]
