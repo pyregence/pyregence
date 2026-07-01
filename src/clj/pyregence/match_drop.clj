@@ -118,6 +118,7 @@
 (defn- sql-result->job [result]
   (-> result
       (rename-keys {:match_job_id          :match-job-id
+                    :match_job_uuid        :match-job-unique-id
                     :runway_job_id         :runway-job-id
                     :user_id               :user-id
                     :created_at            :created-at
@@ -135,10 +136,28 @@
       (update :geosync-request json->clj)))
 
 (defn- get-match-job-from-match-job-id!
-  "Returns a specific entry in the match_jobs table based on its match-job-id."
+  "Returns a specific entry in the match_jobs table based on its (internal) match-job-id."
   [match-job-id]
   (when (integer? match-job-id)
     (some-> (call-sql "get_match_job" match-job-id)
+            (first)
+            (sql-result->job))))
+
+(defn- ->uuid
+  "Coerces a client-supplied value to a UUID, returning nil for anything that
+   isn't a valid uuid (so callers can respond 403 rather than 500)."
+  [x]
+  (cond
+    (uuid? x)    x
+    (string? x)  (try (java.util.UUID/fromString x) (catch Exception _ nil))
+    :else        nil))
+
+(defn- get-match-job-from-uuid!
+  "Returns a specific entry in the match_jobs table based on its public
+   match-job-unique-id (uuid)."
+  [match-job-unique-id]
+  (when-let [uuid (->uuid match-job-unique-id)]
+    (some-> (call-sql "get_match_job_by_uuid" uuid)
             (first)
             (sql-result->job))))
 
@@ -343,7 +362,8 @@
                         :runway-job-id       job-id ;; NOTE: `k8s-job-id` actually
                         :geoserver-workspace geoserver-workspace})
     (start-polling-results! sig3-endpoint job-id match-job-id)
-    {:match-job-id match-job-id}))
+    ;; Return the unpredictable public id; the browser never sees the sequential PK.
+    {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}))
 
 (defn- create-match-job!
   [{:keys [user-id] :as params}]
@@ -394,7 +414,8 @@
       (data-response "You do not have access to the Match Drop tool."
                      {:status 403})
       (->> (call-sql "get_user_match_jobs" user-id)
-           (mapv sql-result->job)
+           ;; Expose the unpredictable public id, never the sequential PK.
+           (mapv #(-> % sql-result->job (dissoc :match-job-id)))
            (data-response)))))
 
 (defn- submit-match-drop-removal-job!
@@ -464,18 +485,18 @@
   "Deletes the specified match drop from the DB and removes it from the GeoServer
    via the 'remove' action passed to the GeoSync Microservice.
    Only the match drop's owner may delete it."
-  [{:keys [user-id]} match-job-id]
-  (let [job (get-match-job-from-match-job-id! match-job-id)]
+  [{:keys [user-id]} match-job-unique-id]
+  (let [job (get-match-job-from-uuid! match-job-unique-id)]
     (if (and job (= user-id (:user-id job)))
       (let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
-        (delete-match-drop-using-kubernetes! sig3-endpoint match-job-id))
+        (delete-match-drop-using-kubernetes! sig3-endpoint (:match-job-id job)))
       (data-response "You are not authorized to delete this match drop." {:status 403}))))
 
 (defn get-md-status
   "Returns the current status of the given match drop run.
    Only the match drop's owner may view it."
-  [{:keys [user-id]} match-job-id]
-  (let [job (get-match-job-from-match-job-id! match-job-id)]
+  [{:keys [user-id]} match-job-unique-id]
+  (let [job (get-match-job-from-uuid! match-job-unique-id)]
     (if (and job (= user-id (:user-id job)))
       (data-response (select-keys job [:display-name :geoserver-workspace :message :md-status :job-log]))
       (data-response "You are not authorized to view this match drop." {:status 403}))))
@@ -524,11 +545,15 @@
 ^:rct/test
 (comment
   ;; --- Match drop ownership guard (PYR1-1512) ---
-  ;; A match drop the session user does not own (here a non-existent job) must
+  ;; A match drop the session user does not own (here a non-existent uuid) must
   ;; not be viewable or deletable; both return 403 without revealing existence.
-  (get-md-status {:user-id 1} 999999999)
+  (get-md-status {:user-id 1} "00000000-0000-0000-0000-000000000000")
   ;=>> {:status 403}
 
-  (delete-match-drop! {:user-id 1} 999999999)
+  (delete-match-drop! {:user-id 1} "00000000-0000-0000-0000-000000000000")
+  ;=>> {:status 403}
+
+  ;; A malformed (non-uuid) id is rejected the same way -- no 500.
+  (get-md-status {:user-id 1} "not-a-uuid")
   ;=>> {:status 403}
   )
