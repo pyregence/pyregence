@@ -100,10 +100,6 @@
    [:post "/clj/update-own-user-name"]               {:handler (clj-handler authentication/update-own-user-name)
                                                      :auth-type #{:member :token}
                                                      :auth-action :block}
-   [:post "/clj/update-user-name"]                   {:handler (clj-handler authentication/update-user-name)
-                                                     :auth-type #{:organization-admin :token}
-                                                     :auth-action :block}
-
    [:post "/clj/update-users-roles"]                 {:handler (clj-handler authentication/update-users-roles)
                                                      :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
@@ -125,9 +121,6 @@
                                                      :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
 
-   [:post "/clj/add-org-user"]                       {:handler (clj-handler authentication/add-org-user)
-                                                     :auth-type #{:organization-admin :tier2-pro :token}
-                                                     :auth-action :block}
    [:post "/clj/get-all-organizations"]              {:handler (clj-handler authentication/get-all-organizations)
                                                      :auth-type #{:account-manager :token}
                                                      :auth-action :block}
@@ -146,16 +139,7 @@
    [:post "/clj/get-psps-organizations"]             {:handler (clj-handler authentication/get-psps-organizations)
                                                      :auth-type :token
                                                      :auth-action :block}
-   [:post "/clj/remove-org-user"]                    {:handler (clj-handler authentication/remove-org-user)
-                                                     :auth-type #{:organization-admin :tier2-pro :token}
-                                                     :auth-action :block}
    [:post "/clj/update-org-info"]                    {:handler (clj-handler authentication/update-org-info)
-                                                     :auth-type #{:organization-admin :tier2-pro :token}
-                                                     :auth-action :block}
-   [:post "/clj/update-org-user-role"]               {:handler (clj-handler authentication/update-org-user-role)
-                                                     :auth-type #{:organization-admin :tier2-pro :token}
-                                                     :auth-action :block}
-   [:post "/clj/update-user-org-membership-status"]  {:handler (clj-handler authentication/update-user-org-membership-status)
                                                      :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
 

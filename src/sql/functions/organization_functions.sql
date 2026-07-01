@@ -21,15 +21,6 @@ RETURNS boolean AS $$
     )
 $$ LANGUAGE SQL;
 
--- True when the requesting user may administer the given target user, i.e. they
--- can administer the target user's organization. Users with no organization can
--- only be administered by super_admins/account_managers.
-CREATE OR REPLACE FUNCTION can_admin_user(_requesting_user_id integer, _target_user_id integer)
-RETURNS boolean AS $$
-    SELECT can_admin_org(_requesting_user_id,
-                         (SELECT organization_rid FROM users WHERE user_uid = _target_user_id))
-$$ LANGUAGE SQL;
-
 --------------------------------------------------------------------------------
 ---  Organizations
 --------------------------------------------------------------------------------
@@ -145,17 +136,6 @@ CREATE OR REPLACE FUNCTION update_org_info(
 
 $$ LANGUAGE SQL;
 
--- Allows switching between 'pending' and 'accepted' (and 'none' for users with no org).
--- DB constraints in user_tables.sql will enforce invalid combos.
-CREATE OR REPLACE FUNCTION update_org_membership_status(
-    _user_id     integer,
-    _status_text text
-) RETURNS void AS $$
-    UPDATE users
-    SET org_membership_status = _status_text::org_membership_status
-    WHERE user_uid = _user_id;
-$$ LANGUAGE SQL;
-
 -- Gets all orgs that a user has access to that have system-assets enabled.
 CREATE OR REPLACE FUNCTION get_orgs_with_system_assets(_user_uid int)
 RETURNS TABLE (org_unique_id text, org_name text)
@@ -204,26 +184,6 @@ CREATE OR REPLACE FUNCTION get_org_member_users(_org_id integer)
         org_membership_status
     FROM users
     WHERE organization_rid = _org_id
-
-$$ LANGUAGE SQL;
-
-CREATE OR REPLACE FUNCTION remove_org_user(_user_id integer)
-RETURNS void AS $$
-    UPDATE users
-    SET organization_rid = NULL,
-        user_role = 'member',
-        org_membership_status = 'none'
-    WHERE user_uid = _user_id;
-$$ LANGUAGE SQL;
-
-CREATE OR REPLACE FUNCTION update_org_user_role(
-    _user_id        integer,
-    _user_role_text text
-) RETURNS void AS $$
-
-    UPDATE users
-    SET user_role = _user_role_text::user_role
-    WHERE user_uid = _user_id;
 
 $$ LANGUAGE SQL;
 
