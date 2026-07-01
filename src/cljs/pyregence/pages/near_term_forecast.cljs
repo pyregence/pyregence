@@ -1083,7 +1083,7 @@
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
   [{:keys [user-role user-email] :as params}]
-  (let [logged-in? (some? user-email)]
+  (let [logged-in? (seq user-email)]
    (r/create-class
    {:component-did-mount
     (fn [_]
