@@ -147,7 +147,7 @@ CREATE OR REPLACE FUNCTION update_match_job(
 $$ LANGUAGE SQL;
 
 -- Retrieve the display names for user's completed match drops
-CREATE OR REPLACE FUNCTION get_user_match_names(_user_rid integer)
+CREATE OR REPLACE FUNCTION get_user_match_names(_user_email text)
  RETURNS TABLE (
     match_job_id    integer,
     display_name    varchar
@@ -156,7 +156,7 @@ CREATE OR REPLACE FUNCTION get_user_match_names(_user_rid integer)
     SELECT match_job_uid, display_name
     FROM match_jobs
     WHERE md_status = 0
-        AND user_rid = _user_rid
+        AND user_rid = (SELECT user_uid FROM users WHERE email = lower_trim(_user_email))
 
 $$ LANGUAGE SQL;
 

@@ -7,7 +7,6 @@
             [ring.util.codec     :refer [url-encode]]
             [ring.util.response  :refer [redirect]]
             [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql sql-primitive]]
             [triangulum.handler  :refer [development-app]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.response :refer [data-response]]
@@ -18,7 +17,7 @@
 
 (defn redirect-handler [{:keys [session query-string uri] :as _request}]
   (let [full-url (url-encode (str uri (when query-string (str "?" query-string))))]
-    (if (:user-id session)
+    (if (:user-email session)
       (redirect (str "/?flash_message=You do not have permission to access "
                      full-url))
       (redirect (str "/login?flash_message=You must login to see "
@@ -62,13 +61,12 @@
       :member))
 
 (defn- current-subscription-tier
-  "Current subscription tier from DB, falling back to session, then :tier0-guest."
+  "Current subscription tier from the session, defaulting to :tier0-guest.
+   Set at login from the user's organization; the numeric organization-id is no
+   longer kept in the session (PYR1-1512), so we read the tier the session
+   already carries instead of re-querying by org id."
   [session]
-  (or (try
-        (when-let [org-id (:organization-id session)]
-          (sql->kw (sql-primitive (call-sql "get_org_subscription_tier" org-id))))
-        (catch Exception _ nil))
-      (some-> session :subscription-tier sql->kw)
+  (or (some-> session :subscription-tier sql->kw)
       :tier0-guest))
 
 (defn shell-tier?
@@ -76,7 +74,7 @@
   [tier]
   (not (isa? subscription-hierarchy tier :tier2-pro)))
 
-;; TODO add (some? (:user-id session)) check to all routes to ensure user is logged in?
+;; TODO add (some? (:user-email session)) check to all routes to ensure user is logged in?
 (defn route-authenticator [{:keys [headers session]} auth-type]
   (let [org-membership-status  (:org-membership-status session nil)
         has-match-drop-access? (:match-drop-access? session)

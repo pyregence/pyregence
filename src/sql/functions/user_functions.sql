@@ -61,6 +61,16 @@ CREATE OR REPLACE FUNCTION get_user_id_by_email(_email text)
 
 $$ LANGUAGE SQL;
 
+-- Returns the organization_rid for a given user email
+CREATE OR REPLACE FUNCTION get_user_organization_rid(_email text)
+ RETURNS integer AS $$
+
+    SELECT organization_rid
+    FROM users
+    WHERE email = lower_trim(_email)
+
+$$ LANGUAGE SQL;
+
 -- Returns user's name for a given email
 CREATE OR REPLACE FUNCTION get_user_name_by_email(_email text)
 RETURNS text AS $$
@@ -139,6 +149,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
    user_role             user_role,
    org_membership_status org_membership_status,
    organization_rid      integer,
+   org_unique_id         text,
    subscription_tier     subscription_tier,
    marketplace_status    marketplace_status
    ) AS $$
@@ -151,6 +162,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
       u.user_role             AS user_role,
       u.org_membership_status AS org_membership_status,
       u.organization_rid      AS organization_rid,
+      o.org_unique_id         AS org_unique_id,
       COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
       COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
     FROM users u
@@ -191,6 +203,7 @@ CREATE OR REPLACE FUNCTION set_user_password(
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
+    org_unique_id         text,
     subscription_tier     subscription_tier,
     marketplace_status    marketplace_status
 ) AS $$
@@ -215,6 +228,7 @@ CREATE OR REPLACE FUNCTION set_user_password(
     u.user_role           AS user_role,
     u.org_membership_status,
     u.organization_rid,
+    o.org_unique_id       AS org_unique_id,
     COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
     COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
   FROM updated u
@@ -232,6 +246,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
+    org_unique_id         text,
     subscription_tier     subscription_tier,
     marketplace_status    marketplace_status
 ) AS $$
@@ -254,6 +269,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
     u.user_role           AS user_role,
     u.org_membership_status,
     u.organization_rid,
+    o.org_unique_id       AS org_unique_id,
     COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
     COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
   FROM updated u
@@ -271,6 +287,7 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
+    org_unique_id         text,
     subscription_tier     subscription_tier,
     marketplace_status    marketplace_status
 ) AS $$
@@ -293,6 +310,7 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
     u.user_role           AS user_role,
     u.org_membership_status,
     u.organization_rid,
+    o.org_unique_id       AS org_unique_id,
     COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
     COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
   FROM updated u
@@ -603,6 +621,7 @@ RETURNS TABLE (
     user_role             user_role,
     org_membership_status org_membership_status,
     organization_rid      integer,
+    org_unique_id         text,
     subscription_tier     subscription_tier,
     marketplace_status    marketplace_status
 ) AS $$
@@ -615,6 +634,7 @@ RETURNS TABLE (
       u.user_role             AS user_role,
       u.org_membership_status AS org_membership_status,
       u.organization_rid      AS organization_rid,
+      o.org_unique_id         AS org_unique_id,
       COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier)  AS subscription_tier,
       COALESCE(o.marketplace_status, 'none'::marketplace_status)                 AS marketplace_status
     FROM users u

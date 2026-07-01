@@ -201,7 +201,7 @@ $$ LANGUAGE SQL;
 --------------------------------------------------------------------------------
 ---  Organization Layers
 --------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION get_user_layers_list(_user_id integer)
+CREATE OR REPLACE FUNCTION get_user_layers_list(_user_email text)
  RETURNS TABLE (
     org_layer_id integer,
     layer_path   text,
@@ -213,7 +213,7 @@ CREATE OR REPLACE FUNCTION get_user_layers_list(_user_id integer)
         ol.layer_config
     FROM users u
     CROSS JOIN organization_layers ol
-    WHERE u.user_uid = _user_id
+    WHERE u.email = lower_trim(_user_email)
       AND (
             -- super_admin sees ALL organization_layers
             u.user_role = 'super_admin'

@@ -425,9 +425,9 @@
     :match-drops      {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\", \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}
     :wui-active-fires {:wui-fire-name   {:opt-label \"WUI Fire Name\"   :filter-set #{\"fire-spread-forecast\", \"wui-fire-name\"}  :auto-zoom? true :geoserver-key :psps}       ...}}"
   [session]
-  (let [{:keys [user-id match-drop-access?]} session
+  (let [{:keys [user-email match-drop-access?]} session
         match-drop-names                     (when match-drop-access?
-                                               (->> (call-sql "get_user_match_names" user-id)
+                                               (->> (call-sql "get_user_match_names" user-email)
                                                     (reduce (fn [acc row]
                                                               (assoc acc
                                                                      (:match_job_id row)
@@ -477,7 +477,7 @@
         (assoc :wui-active-fires (or wui-active-fires {})))))
 
 (defn get-user-layers [session]
-  (data-response (call-sql "get_user_layers_list" (:user-id session))))
+  (data-response (call-sql "get_user_layers_list" (:user-email session))))
 
 ;; TODO update remote_api handler so individual params dont need edn/read-string
 (defn get-layers

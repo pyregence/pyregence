@@ -86,7 +86,7 @@
 ;; Root component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn tool-bar [set-show-info! get-any-level-key user-id]
+(defn tool-bar [set-show-info! get-any-level-key logged-in?]
   (fn [_]
     [:div#tool-bar {:style ($/combine $/tool $/tool-bar {:top "16px"})}
      (->> [[:info
@@ -99,7 +99,7 @@
                  (gtag-tool-clicked @!/show-info? "point-information"))
             @!/show-info?]
            (when (and (c/feature-enabled? :match-drop) ; enabled in `config.edn`
-                      (number? user-id)                ; logged in user
+                      logged-in?                       ; logged in user
                       @!/match-drop-access?            ; user has match drop access
                       (not @!/mobile?))                ; screen size isn't mobile
              [:flame
@@ -121,7 +121,7 @@
                    (reset! !/show-weather-station? false)
                    (gtag-tool-clicked @!/show-camera? "camera"))
               @!/show-camera?])
-           (when (number? user-id)
+           (when logged-in?
             [:weather-station
              "Show weather stations"
              #(do

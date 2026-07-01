@@ -119,7 +119,6 @@
   (-> result
       (rename-keys {:match_job_id          :match-job-id
                     :runway_job_id         :runway-job-id
-                    :user_id               :user-id
                     :created_at            :created-at
                     :updated_at            :updated-at
                     :md_status             :md-status
@@ -358,7 +357,8 @@
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
   [session match-drop-job-params]
-  (let [{:keys [user-id match-drop-access?]} session
+  (let [{:keys [user-email match-drop-access?]} session
+        user-id                              (sql-primitive (call-sql "get_user_id_by_email" user-email))
         {:keys [fuel-version lat lon]}       match-drop-job-params
         fuel-version                         (or fuel-version default-fuel-version)
         match-drop-job-params                (assoc match-drop-job-params :fuel-version fuel-version)]
@@ -389,7 +389,8 @@
 (defn get-match-drops
   "Returns the user's match drops."
   [session]
-  (let [{:keys [user-id match-drop-access?]} session]
+  (let [{:keys [user-email match-drop-access?]} session
+        user-id                              (sql-primitive (call-sql "get_user_id_by_email" user-email))]
     (if-not match-drop-access?
       (data-response "You do not have access to the Match Drop tool."
                      {:status 403})
