@@ -5,6 +5,7 @@
 CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
  RETURNS TABLE (
     match_job_id        integer,
+    match_job_uuid      uuid,
     runway_job_id       text,
     user_id             integer,
     created_at          timestamp,
@@ -21,6 +22,7 @@ CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
  ) AS $$
 
     SELECT match_job_uid,
+        match_job_uuid,
         runway_job_uid,
         user_rid,
         created_at,
@@ -39,10 +41,11 @@ CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
 
 $$ LANGUAGE SQL;
 
--- Retrieve all match drop jobs associated with user_rid
-CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
+-- Retrieve the match job based on its unpredictable public identifier
+CREATE OR REPLACE FUNCTION get_match_job_by_uuid(_match_job_uuid uuid)
  RETURNS TABLE (
     match_job_id        integer,
+    match_job_uuid      uuid,
     runway_job_id       text,
     user_id             integer,
     created_at          timestamp,
@@ -59,6 +62,47 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
  ) AS $$
 
     SELECT match_job_uid,
+        match_job_uuid,
+        runway_job_uid,
+        user_rid,
+        created_at,
+        updated_at,
+        md_status,
+        display_name,
+        message,
+        job_log,
+        elmfire_done,
+        dps_request::text,
+        elmfire_request::text,
+        geosync_request::text,
+        geoserver_workspace
+    FROM match_jobs
+    WHERE match_job_uuid = _match_job_uuid
+
+$$ LANGUAGE SQL;
+
+-- Retrieve all match drop jobs associated with user_rid
+CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
+ RETURNS TABLE (
+    match_job_id        integer,
+    match_job_uuid      uuid,
+    runway_job_id       text,
+    user_id             integer,
+    created_at          timestamp,
+    updated_at          timestamp,
+    md_status           integer,
+    display_name        varchar,
+    message             text,
+    job_log             text,
+    elmfire_done        boolean,
+    dps_request         text,
+    elmfire_request     text,
+    geosync_request     text,
+    geoserver_workspace text
+ ) AS $$
+
+    SELECT match_job_uid,
+        match_job_uuid,
         runway_job_uid,
         user_rid,
         created_at,
