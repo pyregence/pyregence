@@ -118,7 +118,7 @@
                           (some-> (get-in dps-request [:pyrc_ignition :pyrc_ignition_epoch_s])
                                   (u-time/epoch-s->utc-date)))]
     [:tr
-     [:td match-job-unique-id] ; "Job ID"
+     [:td (str match-job-unique-id)] ; "Job ID"
      [:td {:width "10%"} (when-not (nil? display-name) display-name)] ; "Fire Name"
      [:td ; "Match Drop Status"
       (case md-status
