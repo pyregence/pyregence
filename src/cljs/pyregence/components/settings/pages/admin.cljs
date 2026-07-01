@@ -47,8 +47,7 @@
                                                          :justify-content "center"
                                                          :color           (if v "green" "red")}}
                                           (if v "✓" "✗")])))]
-                                [{:field "user-id"               :headerName "User ID"               :filter false :width 110}
-                                 {:field "organization-name"     :headerName "Org Name"              :filter "agTextColumnFilter"}
+                                [{:field "organization-name"     :headerName "Org Name"              :filter "agTextColumnFilter"}
                                  {:field "match-drop-access"     :headerName "Match Drop?"           :filter false :width 150
                                   :editable     true
                                   :cellRenderer "agCheckboxCellRenderer"}

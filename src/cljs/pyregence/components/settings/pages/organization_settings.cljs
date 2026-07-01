@@ -91,13 +91,13 @@
            org-id->org]}]
   (let [{:keys [unsaved-org-name
                 auto-add?
-                org-id
                 org-name
                 og-email->email
                 auto-accept?
                 unsaved-auto-accept?
                 unsaved-auto-add?
                 unsaved-org-name-support-message]
+         org-id :org-unique-id
          :as   org}
         (get-org user-role selected-log org-id->org)]
     [:<>
@@ -194,7 +194,7 @@
 
 (defn main
   [{:keys [user-role org-id->org selected-log] :as m}]
-  (let [{:keys [org-name org-id]} (get-org user-role selected-log org-id->org)
+  (let [{:keys [org-name] org-id :org-unique-id} (get-org user-role selected-log org-id->org)
         roles                                      (->> user-role roles/role->roles-below (filter roles/organization-roles))]
     [:div {:style main-styles}
      [card {:title    "ORGANIZATION SETTINGS"

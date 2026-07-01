@@ -60,6 +60,14 @@
   [user-email]
   (sql-primitive (call-sql "get_user_organization_rid" user-email)))
 
+(defn- org-unique-id->id
+  "Resolves the internal sequential organization-id (organization_uid) for a
+   client-supplied org-unique-id. The numeric org id is never sent to the
+   browser (PYR1-1512); org-scoped endpoints receive the org-unique-id and
+   resolve it here."
+  [org-unique-id]
+  (sql-primitive (call-sql "get_organization_id_by_unique_id" org-unique-id)))
+
 (defn- save-user-settings!
   "Saves user settings to the database."
   [user-id settings]
@@ -798,9 +806,8 @@
   "Returns the list of all organizations in the database."
   [_]
   (->> (call-sql "get_all_organizations")
-       (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials email_domains subscription_tier auto_add auto_accept archived created_date archived_date]}]
-               {:org-id                org_id
-                :org-name              org_name
+       (mapv (fn [{:keys [org_name org_unique_id geoserver_credentials email_domains subscription_tier auto_add auto_accept archived created_date archived_date]}]
+               {:org-name              org_name
                 :org-unique-id         org_unique_id
                 :geoserver-credentials geoserver_credentials
                 :email-domains         email_domains
@@ -820,29 +827,30 @@
     (data-response (str "There is no user with the email " email)
                    {:status 403})))
 
-(defn add-org-users [{:keys [user-role user-email]} org-id users]
-  ;; Prevent none SA&AM from changing other orgs.
-  (when (or (#{"super_admin" "account_manager"} user-role)
-            (= (user-email->org-id user-email) org-id))
-    (->>
-     users
-     (map (fn [{:keys [email role]}]
-            {:email                 email
-             :user_role             (tc/str->pg role "user_role")
-             :org_membership_status (tc/str->pg (if org-id "accepted" "none") "org_membership_status")
-             :organization_rid      org-id
-             :name                  ""
-             :password              (generate-password)
-             :email_verified        false
-             :match_drop_access     false
-             :settings              "{:timezone :utc}"}))
-     (insert-rows! "users"))
-    ;; TODO ideally `send-invite-email!` wouldn't need to make an additional db call to get the user name
-    ;; as we already know it's blank.
-    ;; TODO `send-invite-email` probably doesn't need to return a data response.
-    (let [organization-name (sql-primitive (call-sql "get_organization_name" org-id))]
-      (doseq [{:keys [email]} users]
-        (email/send-invite-email! email {:organization-name organization-name})))))
+(defn add-org-users [{:keys [user-role user-email]} org-unique-id users]
+  (let [org-id (org-unique-id->id org-unique-id)]
+    ;; Prevent none SA&AM from changing other orgs.
+    (when (or (#{"super_admin" "account_manager"} user-role)
+              (= (user-email->org-id user-email) org-id))
+      (->>
+       users
+       (map (fn [{:keys [email role]}]
+              {:email                 email
+               :user_role             (tc/str->pg role "user_role")
+               :org_membership_status (tc/str->pg (if org-id "accepted" "none") "org_membership_status")
+               :organization_rid      org-id
+               :name                  ""
+               :password              (generate-password)
+               :email_verified        false
+               :match_drop_access     false
+               :settings              "{:timezone :utc}"}))
+       (insert-rows! "users"))
+      ;; TODO ideally `send-invite-email!` wouldn't need to make an additional db call to get the user name
+      ;; as we already know it's blank.
+      ;; TODO `send-invite-email` probably doesn't need to return a data response.
+      (let [organization-name (sql-primitive (call-sql "get_organization_name" org-id))]
+        (doseq [{:keys [email]} users]
+          (email/send-invite-email! email {:organization-name organization-name}))))))
 
 (defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that
@@ -850,9 +858,8 @@
   [session]
   (if-let [user-id (user-email->id (:user-email session))]
     (->> (call-sql "get_user_organization" user-id)
-         (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept]}]
-                 {:org-id                org_id
-                  :org-name              org_name
+         (mapv (fn [{:keys [org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept]}]
+                 {:org-name              org_name
                   :org-unique-id         org_unique_id
                   :geoserver-credentials geoserver_credentials
                   :role                  user_role
@@ -872,9 +879,8 @@
    (get-org-member-users session nil))
   ([{:keys [user-email user-role]} org-id]
    (->> (call-sql "get_org_member_users" (if (= user-role "super_admin") org-id (user-email->org-id user-email)))
-        (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
-                {:user-id           user_id
-                 :full-name         full_name
+        (mapv (fn [{:keys [full_name email user_role org_membership_status]}]
+                {:full-name         full_name
                  :email             email
                  :user-role         user_role
                  :membership-status org_membership_status}))
@@ -890,10 +896,9 @@
   "Returns a vector of all users in the DB."
   [_]
   (->> (call-sql "get_all_users")
-       (mapv (fn [{:keys [user_uid email name settings match_drop_access email_verified
+       (mapv (fn [{:keys [email name settings match_drop_access email_verified
                           last_login_date user_role org_membership_status organization_name]}]
-               {:user-id               user_uid
-                :email                 email
+               {:email                 email
                 :name                  name
                 :settings              settings
                 :match-drop-access     match_drop_access
@@ -924,8 +929,8 @@
   (call-sql "remove_org_user" org-user-id)
   (data-response ""))
 
-(defn update-org-info [_ org-id org-name email-domains auto-add? auto-accept?]
-  (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
+(defn update-org-info [_ org-unique-id org-name email-domains auto-add? auto-accept?]
+  (call-sql "update_org_info" (org-unique-id->id org-unique-id) org-name email-domains auto-add? auto-accept?)
   (data-response ""))
 
 (defn update-org-user-role [_ user-id new-role]

@@ -181,8 +181,8 @@
        (assoc org-tab
               :tab     drop-down
               :options (->> organizations
-                            (map (fn [{:keys [org-id org-name]}]
-                                   {:tab button :text org-name :id org-id}))))
+                            (map (fn [{:keys [org-unique-id org-name]}]
+                                   {:tab button :text org-name :id org-unique-id}))))
        "organization_admin"
        (assoc org-tab
               :tab button)
