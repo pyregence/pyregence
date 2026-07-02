@@ -60,6 +60,46 @@
          _     (.nextBytes (SecureRandom.) bytes)]
      (.encodeToString (Base64/getEncoder) bytes))))
 
+(defn valid-password?
+  "Passwords must be between 12 and 128 chars and contain at least 1 upper case letter and number."
+  [password]
+  (and
+   ;; between 12 and 128
+   (<= 12 (count password) 128)
+   ;; digit
+   (boolean (re-find #"\d" password))
+   ;; upper case
+   (boolean (re-find #"[A-Z]" password))))
+
+^:rct/test
+(comment
+  ;; Must have 12 characters
+  (valid-password? "Helloworld1")
+  ;; => false at 11
+
+  (valid-password? "Helloworld12")
+  ;; => true at 12
+
+  (valid-password? (clojure.string/join "" (repeat 11 "Helloworld12")))
+  ;; => false over 128
+
+  (valid-password? (clojure.string/join "" (repeat 10 "Helloworld12")))
+  ;; => true less then 128
+
+;; Must have one upper case
+  (valid-password? "helloworld12")
+  ;; => false with no upper case
+
+  (valid-password? "Helloworld12")
+  ;; => true with one
+
+  (valid-password? "Helloworldaa")
+  ;; => false with no number
+
+  (valid-password? "Helloworld12")
+  ;; => true with at least one number
+  )
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Authentication & Session Management
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -591,46 +631,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; User Management
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn valid-password?
-  "Passwords must be between 12 and 128 chars and contain at least 1 upper case letter and number."
-  [password]
-  (and
-   ;; between 12 and 128
-   (<= 12 (count password) 128)
-   ;; digit
-   (boolean (re-find #"\d" password))
-   ;; upper case
-   (boolean (re-find #"[A-Z]" password))))
-
-^:rct/test
-(comment
-  ;; Must have 12 characters
-  (valid-password? "Helloworld1")
-  ;; => false at 11
-
-  (valid-password? "Helloworld12")
-  ;; => true at 12
-
-  (valid-password? (clojure.string/join "" (repeat 11 "Helloworld12")))
-  ;; => false over 128
-
-  (valid-password? (clojure.string/join "" (repeat 10 "Helloworld12")))
-  ;; => true less then 128
-
-;; Must have one upper case
-  (valid-password? "helloworld12")
-  ;; => false with no upper case
-
-  (valid-password? "Helloworld12")
-  ;; => true with one
-
-  (valid-password? "Helloworldaa")
-  ;; => false with no number
-
-  (valid-password? "Helloworld12")
-  ;; => true with at least one number
-  )
 
 (defn add-new-user
   "Creates a new user account and optionally associates them with an organization.
