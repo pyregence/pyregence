@@ -20,6 +20,7 @@ CREATE TYPE marketplace_status AS ENUM (
 --------------------------------------------------------------------------------
 CREATE TABLE organizations (
     organization_uid       SERIAL PRIMARY KEY,
+    organization_uuid      uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(), -- unpredictable public id; the integer PK stays internal
     org_name               text NOT NULL,
     org_unique_id          text NOT NULL UNIQUE,
     geoserver_credentials  text,
