@@ -389,7 +389,7 @@
                               (subs raw-org-id 0 (- (count raw-org-id) (count "-planning")))
                               raw-org-id)
             matching-psps-org (cond
-                                (= selected-org-id "ecmwf") ; "ecmwf" is the Euro weather forecast which all utility companies have access to
+                                (#{"ecmwf" "nfdrs-constant" "nfdrs-variable"} selected-org-id) ; the Euro (ecmwf) and NFDRS weather layers aren't utility-specific - all PSPS companies have access, so any PSPS org's credentials work
                                 (first @!/user-psps-orgs-list)
 
                                 (= selected-org-id :only-underlays) ; The fuels and active fire tabs don't have any utility-specific layers, so only underlays are an option here
@@ -740,7 +740,6 @@
                                           :filter     org-unique-id}))
                                 {}
                                 user-psps-orgs-list))
-              ;;TODO consider moving this closer to the component.
               (cond->
                (or
                 (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
@@ -751,11 +750,13 @@
                          (assoc-in m k v))
                        m
                        [[[:fire-weather :params :model :options :nfdrs-constant]
-                         {:opt-label "NFDRS Constant" :filter "nfdrs-constant" :geoserver-key :psps}]
+                         {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps,
+                          :disabled-for #{}}]
                         [[:fire-weather :params :model :options :nfdrs-variable]
-                         {:opt-label "NFDRS Variable" :filter "nfdrs-variable" :geoserver-key :psps}]])))))
+                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps,
+                          :disabled-for #{}}]])))))
 
-;; Sort the Risk tab "Ignition Pattern" options alphabetically by :opt-label
+  ;; TODO Consider sorting the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
   ;; Sort the PSPS tab "Utility Company" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:psps-zonal :params :utility :options] sort-by-opt-label)
