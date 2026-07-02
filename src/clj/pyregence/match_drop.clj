@@ -353,7 +353,12 @@
                         :runway-job-id       job-id ;; NOTE: `k8s-job-id` actually
                         :geoserver-workspace geoserver-workspace})
     (start-polling-results! sig3-endpoint job-id match-job-id)
-    ;; Return the unpredictable public id; the browser never sees the sequential PK.
+    ;; Return the unpredictable public id as the browser's handle for this job.
+    ;; NOTE: the sequential PK is still indirectly exposed through
+    ;; geoserver-workspace (named "match-drop-forecast_md-<pk>_..."), which
+    ;; get-md-status/get-match-drops return. That leak is owner-scoped and only
+    ;; reveals system job volume -- accepted as low severity (PYR1-1512); a full
+    ;; fix means renaming the sig3/GeoServer workspace, out of scope here.
     {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}))
 
 (defn- create-match-job!
@@ -405,8 +410,9 @@
       (data-response "You do not have access to the Match Drop tool."
                      {:status 403})
       (->> (call-sql "get_user_match_jobs" user-id)
-           ;; get_user_match_jobs no longer selects the sequential PK, so the
-           ;; browser only ever sees the unpredictable match-job-unique-id.
+           ;; get_user_match_jobs no longer selects the sequential PK column.
+           ;; (It is still indirectly present in geoserver-workspace; see the
+           ;; note in create-match-job-using-kubernetes!.)
            (mapv sql-result->job)
            (data-response)))))
 
