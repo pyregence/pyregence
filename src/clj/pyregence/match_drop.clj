@@ -143,20 +143,11 @@
             (first)
             (sql-result->job))))
 
-(defn- ->uuid
-  "Coerces a client-supplied value to a UUID, returning nil for anything that
-   isn't a valid uuid (so callers can respond 403 rather than 500)."
-  [x]
-  (cond
-    (uuid? x)    x
-    (string? x)  (try (java.util.UUID/fromString x) (catch Exception _ nil))
-    :else        nil))
-
 (defn- get-match-job-from-uuid!
   "Returns a specific entry in the match_jobs table based on its public
    match-job-unique-id (uuid)."
   [match-job-unique-id]
-  (when-let [uuid (->uuid match-job-unique-id)]
+  (when-let [uuid (u/->uuid match-job-unique-id)]
     (some-> (call-sql "get_match_job_by_uuid" uuid)
             (first)
             (sql-result->job))))
