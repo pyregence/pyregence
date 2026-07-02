@@ -671,6 +671,7 @@
     explicitly assign a new user to an organization via `:org-id`.
   - All organization assignments are validated server-side using the session context."
   [session email user-name password & [org-name-or-opts]]
+  ;;TODO this needs to pass the reason for the 403 to the front end that is {:status 403 :error {:invalid-password "blah blah blah"}}
   (if-not (valid-password? password)
     (data-response (str "Invalid Password:'" password "'. Passwords must be between 12 and 128 chars and contain at least 1 upper case letter and number. ")
                    {:status 403})
