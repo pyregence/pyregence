@@ -15,6 +15,16 @@
   (let [_ (gensym)]
     `(try ~@body (catch Exception ~_ nil))))
 
+(defn ->uuid
+  "Coerces a client-supplied value to a `java.util.UUID`, returning `nil` for
+   anything that isn't a valid uuid (so callers can reject bad input rather than
+   throw)."
+  [x]
+  (cond
+    (uuid? x)   x
+    (string? x) (nil-on-error (java.util.UUID/fromString x))
+    :else       nil))
+
 (defn convert-date-string
   "Converts a date str in the format of '2022-12-01 18:00 UTC' to '20221201_180000'."
   [date-str]
