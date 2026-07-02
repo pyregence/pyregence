@@ -25,6 +25,7 @@ CREATE TYPE org_membership_status AS ENUM (
 --------------------------------------------------------------------------------
 CREATE TABLE users (
     user_uid               SERIAL PRIMARY KEY,
+    user_uuid              uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(), -- unpredictable public id; the integer PK stays internal
     email                  text NOT NULL UNIQUE,
     name                   text NOT NULL,
     password               varchar(72) NOT NULL,

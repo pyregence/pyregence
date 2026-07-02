@@ -892,9 +892,9 @@
   "Returns a vector of all users in the DB."
   [_]
   (->> (call-sql "get_all_users")
-       (mapv (fn [{:keys [user_uid email name settings match_drop_access email_verified
+       (mapv (fn [{:keys [user_uuid email name settings match_drop_access email_verified
                           last_login_date user_role org_membership_status organization_name]}]
-               {:user-id               user_uid
+               {:user-id               user_uuid
                 :email                 email
                 :name                  name
                 :settings              settings
@@ -922,11 +922,21 @@
        (mapv #(:org_unique_id %))
        (data-response)))
 
-(defn remove-org-user [{:keys [user-id]} org-user-id]
-  (if (sql-primitive (call-sql "can_admin_user" user-id org-user-id))
-    (do (call-sql "remove_org_user" org-user-id)
-        (data-response ""))
-    (data-response "You are not authorized to manage this user." {:status 403})))
+(defn- user-uuid->id
+  "Resolves a user's browser-facing public uuid to its internal integer PK, or nil
+   for a malformed or unknown uuid (so callers can respond 403 without revealing
+   existence). The sequential PK is never exposed to the browser (PYR1-1512
+   enumeration hardening)."
+  [user-uuid]
+  (when-let [uuid (->uuid user-uuid)]
+    (sql-primitive (call-sql "get_user_id_by_uuid" uuid))))
+
+(defn remove-org-user [{:keys [user-id]} target-user-uuid]
+  (let [target-user-id (user-uuid->id target-user-uuid)]
+    (if (and target-user-id (sql-primitive (call-sql "can_admin_user" user-id target-user-id)))
+      (do (call-sql "remove_org_user" target-user-id)
+          (data-response ""))
+      (data-response "You are not authorized to manage this user." {:status 403}))))
 
 (defn update-org-info [{:keys [user-id]} org-uuid org-name email-domains auto-add? auto-accept?]
   (let [org-id (org-uuid->id org-uuid)]
@@ -935,17 +945,19 @@
           (data-response ""))
       (data-response "You are not authorized to manage this organization." {:status 403}))))
 
-(defn update-org-user-role [{:keys [user-id]} target-user-id new-role]
-  (if (sql-primitive (call-sql "can_admin_user" user-id target-user-id))
-    (do (call-sql "update_org_user_role" target-user-id new-role)
-        (data-response ""))
-    (data-response "You are not authorized to manage this user." {:status 403})))
+(defn update-org-user-role [{:keys [user-id]} target-user-uuid new-role]
+  (let [target-user-id (user-uuid->id target-user-uuid)]
+    (if (and target-user-id (sql-primitive (call-sql "can_admin_user" user-id target-user-id)))
+      (do (call-sql "update_org_user_role" target-user-id new-role)
+          (data-response ""))
+      (data-response "You are not authorized to manage this user." {:status 403}))))
 
-(defn update-user-org-membership-status [{:keys [user-id]} target-user-id new-status]
-  (if (sql-primitive (call-sql "can_admin_user" user-id target-user-id))
-    (do (call-sql "update_org_membership_status" target-user-id new-status)
-        (data-response ""))
-    (data-response "You are not authorized to manage this user." {:status 403})))
+(defn update-user-org-membership-status [{:keys [user-id]} target-user-uuid new-status]
+  (let [target-user-id (user-uuid->id target-user-uuid)]
+    (if (and target-user-id (sql-primitive (call-sql "can_admin_user" user-id target-user-id)))
+      (do (call-sql "update_org_membership_status" target-user-id new-status)
+          (data-response ""))
+      (data-response "You are not authorized to manage this user." {:status 403}))))
 
 (defn delete-users
   [{:keys [user-email user-role]} users-to-delete]
@@ -988,15 +1000,22 @@
   (add-org-user {:user-id 1} "00000000-0000-0000-0000-000000000000" "user@pyr.dev")
   ;=>> {:status 403}
 
-  (remove-org-user {:user-id 1} 12)
+  ;; User handlers take the user's public uuid, never the sequential PK. An unknown
+  ;; user (here a non-existent uuid) yields a uniform 403 without revealing existence,
+  ;; and a malformed (non-uuid) id is rejected the same way -- no 500 and no mutation.
+  (remove-org-user {:user-id 1} "00000000-0000-0000-0000-000000000000")
   ;=>> {:status 403}
 
-  (update-org-user-role {:user-id 1} 12 "organization_admin")
+  (update-org-user-role {:user-id 1} "00000000-0000-0000-0000-000000000000" "organization_admin")
   ;=>> {:status 403}
 
-  (update-user-org-membership-status {:user-id 1} 12 "accepted")
+  (update-org-user-role {:user-id 1} "not-a-uuid" "organization_admin")
   ;=>> {:status 403}
 
+  (update-user-org-membership-status {:user-id 1} "00000000-0000-0000-0000-000000000000" "accepted")
+  ;=>> {:status 403}
+
+  ;; update-user-name is keyed on email, not the user id; a foreign user is still denied.
   (update-user-name {:user-id 1} "kiarapichler@deleteme.com" "Hacked")
   ;=>> {:status 403}
 

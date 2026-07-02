@@ -203,15 +203,17 @@ $$;
 --------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_org_member_users(_org_id integer)
  RETURNS TABLE (
-    user_id               integer,
+    user_id               uuid,
     full_name             text,
     email                 text,
     user_role             user_role,
     org_membership_status org_membership_status
  ) AS $$
 
+    -- Browser-facing: return the unpredictable user_uuid as user_id, never the
+    -- sequential user_uid PK (PYR1-1512 enumeration hardening).
     SELECT
-        user_uid,
+        user_uuid,
         name AS full_name,
         email,
         user_role,
