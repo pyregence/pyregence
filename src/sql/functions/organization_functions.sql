@@ -192,12 +192,12 @@ $$ LANGUAGE SQL;
 --------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_user_layers_list(_user_id integer)
  RETURNS TABLE (
-    org_layer_id integer,
     layer_path   text,
     layer_config text
  ) AS $$
+    -- Only layer_path/layer_config are consumed by the browser; the sequential
+    -- org_layer_uid PK is intentionally not exposed (PYR1-1512 enumeration hardening).
     SELECT
-        ol.org_layer_uid AS org_layer_id,
         ol.layer_path,
         ol.layer_config
     FROM users u
