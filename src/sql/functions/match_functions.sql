@@ -81,10 +81,12 @@ CREATE OR REPLACE FUNCTION get_match_job_by_uuid(_match_job_uuid uuid)
 
 $$ LANGUAGE SQL;
 
--- Retrieve all match drop jobs associated with user_rid
+-- Retrieve all match drop jobs associated with user_rid.
+-- Exposes match_job_uuid (the unpredictable public id) but never the sequential
+-- match_job_uid PK, since this list is sent straight to the browser and nothing
+-- resolves a job by its PK from here (PYR1-1512 enumeration hardening).
 CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
  RETURNS TABLE (
-    match_job_id        integer,
     match_job_uuid      uuid,
     runway_job_id       text,
     user_id             integer,
@@ -101,8 +103,7 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
     geoserver_workspace text
  ) AS $$
 
-    SELECT match_job_uid,
-        match_job_uuid,
+    SELECT match_job_uuid,
         runway_job_uid,
         user_rid,
         created_at,

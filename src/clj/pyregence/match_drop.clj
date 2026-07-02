@@ -405,8 +405,9 @@
       (data-response "You do not have access to the Match Drop tool."
                      {:status 403})
       (->> (call-sql "get_user_match_jobs" user-id)
-           ;; Expose the unpredictable public id, never the sequential PK.
-           (mapv #(-> % sql-result->job (dissoc :match-job-id)))
+           ;; get_user_match_jobs no longer selects the sequential PK, so the
+           ;; browser only ever sees the unpredictable match-job-unique-id.
+           (mapv sql-result->job)
            (data-response)))))
 
 (defn- submit-match-drop-removal-job!
