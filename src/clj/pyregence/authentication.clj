@@ -592,6 +592,17 @@
 ;;; User Management
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;TODO maybe this should be a regex?
+;;TODO maybe this should be a spec so it can say whats wrong with the password?
+;;TODO maybe this should be a cljc so it can be shared
+(defn valid-password?
+  [password]
+  (and
+   (boolean (re-find #"[A-Z]" password))
+   (boolean (re-find #"\d" password))
+   (>= 128 (count password))
+   (<= 12 (count password))))
+
 (defn add-new-user
   "Creates a new user account and optionally associates them with an organization.
 
