@@ -666,51 +666,54 @@
     explicitly assign a new user to an organization via `:org-id`.
   - All organization assignments are validated server-side using the session context."
   [session email user-name password & [org-name-or-opts]]
-  (let [org-name (cond (string? org-name-or-opts)             org-name-or-opts
-                       (map? org-name-or-opts) (or (:org-name org-name-or-opts)
-                                                   (get org-name-or-opts "org-name"))
-                       :else                                  nil)
-        org-id   (when (map? org-name-or-opts)
-                   (or (:org-id org-name-or-opts)
-                       (get org-name-or-opts "org-id")))
-        org-name         (when (and (string? org-name) (seq org-name)) org-name)
-        {:keys [user-role]} session
-        default-settings (pr-str {:timezone :utc})
-        new-user-id      (nil-on-error
-                          (sql-primitive (call-sql "add_new_user"
-                                                   {:log? false}
-                                                   email
-                                                   user-name
-                                                   password
-                                                   default-settings)))
-        response
-        (if-not new-user-id
-          (data-response (str "Failed to create the new user with name " user-name " and email " email)
-                         {:status 403})
-          (cond
+  (if-not (valid-password? password)
+    (data-response (str "Invalid Password:'" password "'. Passwords must be between 12 and 128 chars and contain at least 1 upper case letter and number. ")
+                   {:status 403})
+    (let [org-name (cond (string? org-name-or-opts)             org-name-or-opts
+                         (map? org-name-or-opts) (or (:org-name org-name-or-opts)
+                                                     (get org-name-or-opts "org-name"))
+                         :else                                  nil)
+          org-id   (when (map? org-name-or-opts)
+                     (or (:org-id org-name-or-opts)
+                         (get org-name-or-opts "org-id")))
+          org-name         (when (and (string? org-name) (seq org-name)) org-name)
+          {:keys [user-role]} session
+          default-settings (pr-str {:timezone :utc})
+          new-user-id      (nil-on-error
+                            (sql-primitive (call-sql "add_new_user"
+                                                     {:log? false}
+                                                     email
+                                                     user-name
+                                                     password
+                                                     default-settings)))
+          response
+          (if-not new-user-id
+            (data-response (str "Failed to create the new user with name " user-name " and email " email)
+                           {:status 403})
+            (cond
             ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
             ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
             ;; The new user will have a user_role of organization_member and a user_status of active
-            org-id
-            (if (or (= user-role "super_admin")
-                    (= user-role "organization_admin"))
-              (do
-                (call-sql "add_org_user" org-id new-user-id)
-                (data-response "User created and added to organization."))
-              (data-response "User does not have permission to assign users to this organization."
-                             {:status 403}))
+              org-id
+              (if (or (= user-role "super_admin")
+                      (= user-role "organization_admin"))
+                (do
+                  (call-sql "add_org_user" org-id new-user-id)
+                  (data-response "User created and added to organization."))
+                (data-response "User does not have permission to assign users to this organization."
+                               {:status 403}))
 
             ;; No org-id provided — use email domain-based auto-assignment (dependent on org auto_add settings)
-            :else
-            (let [domain (re-find #"@{1}.+" email)]
-              (if (call-sql "auto_add_org_user" new-user-id domain)
-                (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
-                (data-response "User created successfully but something went wrong when calling auto_add_org_user."
-                               {:status 403})))))]
+              :else
+              (let [domain (re-find #"@{1}.+" email)]
+                (if (call-sql "auto_add_org_user" new-user-id domain)
+                  (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
+                  (data-response "User created successfully but something went wrong when calling auto_add_org_user."
+                                 {:status 403})))))]
     ;; Stash org-name in session for marketplace provisioning
-    (cond-> response
-      (and new-user-id org-name (:marketplace-signup session))
-      (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name)))))
+      (cond-> response
+        (and new-user-id org-name (:marketplace-signup session))
+        (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name))))))
 
 (defn get-current-user-settings
   "Returns settings for the current user."
