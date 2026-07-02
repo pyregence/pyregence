@@ -1,5 +1,6 @@
 (ns pyregence.config
-  (:require [clojure.string               :as str]
+  (:require [clojure.set                  :as set]
+            [clojure.string               :as str]
             [pyregence.state              :as !]
             [pyregence.utils.misc-utils   :as u-misc]
             [pyregence.utils.number-utils :as u-num]
@@ -506,11 +507,11 @@
                                                               :crown-fire-area {:opt-label    "Crown fire area"
                                                                                 :filter-set   #{"fire-risk-forecast" "crown-fire-area"}
                                                                                 :units        "Acres"
-                                                                                :disabled-for (conj all-utility-companies all-utility-companies-planning :tlines)}
+                                                                                :disabled-for (set/union all-utility-companies all-utility-companies-planning #{:tlines})}
                                                               :plignrate       {:opt-label    "Power line ignition rate"
                                                                                 :filter-set   #{"fire-risk-forecast" "plignrate"}
                                                                                 :units        "Ignitions/line-mi/hr"
-                                                                                :disabled-for (conj all-utility-companies all-utility-companies-planning :all :tlines)}
+                                                                                :disabled-for (set/union all-utility-companies all-utility-companies-planning #{:all :tlines})}
                                                               :area-p          {:opt-label    "Fire area percentile"
                                                                                 :filter-set   #{"fire-risk-planning" "area-p"}
                                                                                 :units        "%"
