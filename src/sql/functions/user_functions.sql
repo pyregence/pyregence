@@ -303,9 +303,11 @@ $$ LANGUAGE SQL;
 --------------------------------------------------------------------------------
 -- Misc functions
 --------------------------------------------------------------------------------
+-- Browser-facing: exposes the unpredictable user_uuid as the user handle, never
+-- the sequential user_uid PK (PYR1-1512 enumeration hardening).
 CREATE OR REPLACE FUNCTION get_all_users()
  RETURNS TABLE (
-  user_uid              integer,
+  user_uuid             uuid,
   email                 text,
   name                  text,
   settings              text,
@@ -317,7 +319,7 @@ CREATE OR REPLACE FUNCTION get_all_users()
   organization_name     text
  ) AS $$
     SELECT
-      u.user_uid,
+      u.user_uuid,
       u.email,
       u.name,
       u.settings,
@@ -331,6 +333,16 @@ CREATE OR REPLACE FUNCTION get_all_users()
     LEFT JOIN organizations o
       ON u.organization_rid = o.organization_uid
 
+$$ LANGUAGE SQL;
+
+-- Resolves a user's unpredictable public uuid to its internal integer PK, for
+-- inbound handlers that receive the browser-facing user handle. Returns NULL for an
+-- unknown uuid so callers can respond 403 without revealing existence.
+CREATE OR REPLACE FUNCTION get_user_id_by_uuid(_user_uuid uuid)
+RETURNS integer AS $$
+    SELECT user_uid
+    FROM users
+    WHERE user_uuid = _user_uuid;
 $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION get_user_settings(_user_id integer)
