@@ -183,8 +183,6 @@
 (defn set-user-password
   "Sets a new password for user with valid reset token."
   [session email password token]
-  ;;TODO should this be a cond? (so we dont nest ifs)
-  ;;TODO should this share more logic with add-new-user when it comes to passwords?
   (if-not (valid-password? password)
     (data-response (password->invalid-password-msg password) {:status 400})
     (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
