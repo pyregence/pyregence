@@ -863,11 +863,9 @@
                          (assoc-in m k v))
                        m
                        [[[:fire-weather :params :model :options :nfdrs-constant]
-                         {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps,
-                          :disabled-for #{}}]
+                         {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps}]
                         [[:fire-weather :params :model :options :nfdrs-variable]
-                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps,
-                          :disabled-for #{}}]])))))
+                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps}]])))))
 
   ;; TODO Consider sorting the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
