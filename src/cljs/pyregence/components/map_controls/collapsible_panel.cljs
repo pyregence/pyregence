@@ -339,7 +339,9 @@
                              #(select-param! % key)
                              selected-param-set]])))
                      (cond-> @!/processed-params
-                       (c/nfdrs?)
+                       ;; `:band` only exists on the Weather tab; gate on it so we don't
+                       ;; assoc-in a phantom header-less :band dropdown onto other tabs.
+                       (and (= @!/*forecast :fire-weather) (c/nfdrs?))
                        (assoc-in [:band :options]
                                  c/nfdrs-weather-params)))
                [opacity-input]]]
