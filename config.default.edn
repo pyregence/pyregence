@@ -47,6 +47,9 @@
  :triangulum.handler/bad-tokens            #{".php"}
  :triangulum.handler/private-request-keys  #{:auth-token :password :re-password}
  :triangulum.handler/private-response-keys #{}
+ ;; Secure needs HTTPS; on plain-HTTP local dev set :secure false or the browser drops the cookie.
+ :triangulum.handler/session-cookie-attrs  {:secure true :same-site :lax}
+ :triangulum.handler/hsts?                 true
 
  ;; views (app)
  :triangulum.views/title            {:en "Wildfire Forecasts"}
