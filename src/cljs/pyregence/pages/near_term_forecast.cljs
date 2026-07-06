@@ -361,30 +361,40 @@
 
 (def ^:private forecast->credential-keypath
   "For each forecast type, the path into `@!/*params` holding the selected layer's
-   org-unique-id. `:only-underlays` flags tabs with no utility-specific layers. A
-   forecast absent from this map doesn't require GeoServer credentials."
+   org/model id (a utility `org-unique-id`, or a shared-weather model like `ecmwf`).
+   `:only-underlays` flags tabs with no utility-specific layers. A forecast absent
+   from this map doesn't require GeoServer credentials."
   {:fuels        :only-underlays
    :fire-weather [:fire-weather :model]
    :fire-risk    [:fire-risk :pattern]
    :active-fire  :only-underlays
    :psps-zonal   [:psps-zonal :utility]})
 
-(defn- selected-layer-org-id
-  "The org-unique-id of the currently selected non-WUI layer, or `:only-underlays`
-   for tabs without utility-specific layers. Strips the `-planning` suffix used by
-   utility fire-risk-planning keys. Returns nil when the current forecast needs no
-   GeoServer credentials.
+(defn- selected-layer-cred-match
+  "Describes how to resolve GeoServer credentials for the currently selected non-WUI
+   layer, as a map:
+
+     {:match :any}             shared weather layers -- any PSPS org's creds work
+     {:match :underlay}        tabs exposing only underlays -- match via the optional layer
+     {:match :org, :org-id id} a utility-specific layer -- match that org (or its underlay)
+
+   Returns nil when the current forecast needs no GeoServer credentials. Strips the
+   `-planning` suffix used by utility fire-risk-planning keys.
 
    TODO we shouldn't force the layer_path key to equal org-unique-id from the DB; we
    should encode the org-id in the layer_config itself."
   []
   (when-some [keypath (forecast->credential-keypath @!/*forecast)]
     (if (= keypath :only-underlays)
-      :only-underlays
-      (let [raw-org-id (name (get-in @!/*params keypath))]
-        (if (str/ends-with? raw-org-id "-planning")
-          (subs raw-org-id 0 (- (count raw-org-id) (count "-planning")))
-          raw-org-id)))))
+      {:match :underlay}
+      ;; nil when the param isn't populated yet (e.g. tiles requested before
+      ;; process-capabilities! sets @!/*params) -> resolves to no credentials.
+      (when-some [layer-id (some-> (get-in @!/*params keypath)
+                                   name
+                                   (str/replace #"-planning$" ""))]
+        (if (shared-weather-layer-ids layer-id)
+          {:match :any}
+          {:match :org :org-id layer-id})))))
 
 (defn- get-current-layer-geoserver-credentials
   "Returns the GeoServer credentials a PSPS user should send for the currently
@@ -400,33 +410,28 @@
    Euro/NFDRS weather layers are shared across every PSPS company."
   []
   (when (seq @!/user-psps-orgs-list)
-    (let [optional-layer         @!/most-recent-optional-layer
-          optional-layer-serves? (fn [org-unique-id]
-                                   (boolean (and (seq optional-layer)
-                                                 ((:filter-set optional-layer) org-unique-id))))
-          selected-org-id        (when-not (wui/wui-fire-selected?)
-                                   (selected-layer-org-id))
+    (let [orgs                    @!/user-psps-orgs-list
+          optional-layer          @!/most-recent-optional-layer
+          optional-layer-serves-org? (fn [org-unique-id]
+                                       (boolean (and (seq optional-layer)
+                                                     ((:filter-set optional-layer) org-unique-id))))
           matching-org
-          (cond
+          (if (wui/wui-fire-selected?)
             ;; WUI active fires are private to the pyregence-consortium org (itself a
-            ;; regular PSPS org): authenticate with its own credentials.
-            (wui/wui-fire-selected?)
-            (first (filter #(= wui/wui-org-unique-id (:org-unique-id %)) @!/user-psps-orgs-list))
-
-            ;; Shared weather layers aren't utility-specific, so any org's creds work.
-            (shared-weather-layer-ids selected-org-id)
-            (first @!/user-psps-orgs-list)
-
-            ;; Fuels/active-fire tabs expose only underlays; match via the optional layer.
-            (= selected-org-id :only-underlays)
-            (first (filter #(optional-layer-serves? (:org-unique-id %)) @!/user-psps-orgs-list))
-
-            ;; Utility-specific layer: match the org directly, or via its optional layer.
-            ;; Only one org can match since each `:org-unique-id` is unique.
-            selected-org-id
-            (first (filter #(or (= selected-org-id (:org-unique-id %))
-                                (optional-layer-serves? (:org-unique-id %)))
-                           @!/user-psps-orgs-list)))]
+            ;; regular PSPS org): authenticate with its own credentials only.
+            (first (filter #(= wui/wui-org-unique-id (:org-unique-id %)) orgs))
+            (let [{:keys [match org-id]} (selected-layer-cred-match)]
+              (case match
+                ;; Shared weather layers aren't utility-specific, so any org's creds work.
+                :any      (first orgs)
+                ;; Underlay-only tabs (fuels/active-fire): match via the optional layer.
+                :underlay (first (filter #(optional-layer-serves-org? (:org-unique-id %)) orgs))
+                ;; Utility-specific layer: match the org directly, or via its optional
+                ;; layer. Only one org can match since each `:org-unique-id` is unique.
+                :org      (first (filter #(or (= org-id (:org-unique-id %))
+                                              (optional-layer-serves-org? (:org-unique-id %)))
+                                         orgs))
+                nil)))]
       (:geoserver-credentials matching-org))))
 
 (comment
@@ -446,21 +451,26 @@
   (forecast->credential-keypath :fuels)        ;=> :only-underlays
   (forecast->credential-keypath :not-a-tab)    ;=> nil  ; unlisted -> needs no creds
 
-  ;; --- selected-layer-org-id (reads @!/*forecast + @!/*params) ------------------
+  ;; --- selected-layer-cred-match (reads @!/*forecast + @!/*params) --------------
 
-  ;; A utility layer id passes through unchanged.
+  ;; A utility layer id -> match that org.
   (do (reset! !/*forecast :fire-risk)
       (reset! !/*params   {:fire-risk {:pattern :pge}})
-      (selected-layer-org-id))                 ;=> "pge"
+      (selected-layer-cred-match))             ;=> {:match :org, :org-id "pge"}
 
   ;; The "-planning" suffix is normalized away ("pge-planning" -> "pge").
   (do (reset! !/*forecast :fire-risk)
       (reset! !/*params   {:fire-risk {:pattern :pge-planning}})
-      (selected-layer-org-id))                 ;=> "pge"
+      (selected-layer-cred-match))             ;=> {:match :org, :org-id "pge"}
 
-  ;; Tabs without utility-specific layers resolve to the :only-underlays sentinel.
+  ;; A shared (non-utility) weather layer -> any org's creds work.
+  (do (reset! !/*forecast :fire-weather)
+      (reset! !/*params   {:fire-weather {:model :ecmwf}})
+      (selected-layer-cred-match))             ;=> {:match :any}
+
+  ;; Tabs without utility-specific layers -> match via the optional layer.
   (do (reset! !/*forecast :fuels)
-      (selected-layer-org-id))                 ;=> :only-underlays
+      (selected-layer-cred-match))             ;=> {:match :underlay}
 
   ;; --- get-current-layer-geoserver-credentials (end-to-end) ---------------------
 

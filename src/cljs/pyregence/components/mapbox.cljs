@@ -1214,8 +1214,11 @@
                           :transformRequest (fn [url resource-type]
                                               (when (and (str/starts-with? url (:psps @!/geoserver-urls))
                                                          (= resource-type "Tile"))
-                                                #js {:url     url
-                                                     :headers #js {:authorization (str "Basic " (js/window.btoa (get-current-layer-geoserver-credentials)))}}))
+                                                (if-let [credentials (get-current-layer-geoserver-credentials)]
+                                                  #js {:url     url
+                                                       :headers #js {:authorization (str "Basic " (js/window.btoa credentials))}}
+                                                  ;; No credentials resolved -> don't send a bogus auth header.
+                                                  #js {:url url})))
                           :transition       {:duration 500 :delay 0}}
                          (when-not (:zoom opts)
                            {:bounds c/california-extent})
