@@ -472,6 +472,12 @@
   (do (reset! !/*forecast :fuels)
       (selected-layer-cred-match))             ;=> {:match :underlay}
 
+  ;; Param not populated yet (e.g. tiles requested before process-capabilities!
+  ;; sets @!/*params) -> nil, so no creds resolve instead of throwing on (name nil).
+  (do (reset! !/*forecast :fire-weather)
+      (reset! !/*params   {})
+      (selected-layer-cred-match))             ;=> nil
+
   ;; --- get-current-layer-geoserver-credentials (end-to-end) ---------------------
 
   (def sample-orgs [{:org-unique-id "pge" :geoserver-credentials "pge-creds"}
@@ -499,6 +505,15 @@
     (reset! !/most-recent-optional-layer {})
     (reset! !/*forecast :fire-risk)
     (reset! !/*params   {:fire-risk {:pattern :some-other-utility}})
+    (get-current-layer-geoserver-credentials)) ;=> nil
+
+  ;; Selected layer's param not populated yet -> nil credentials (no NPE); the
+  ;; caller (mapbox transformRequest) then sends the tile with no auth header.
+  (with-redefs [wui/wui-fire-selected? (constantly false)]
+    (reset! !/user-psps-orgs-list sample-orgs)
+    (reset! !/most-recent-optional-layer {})
+    (reset! !/*forecast :fire-weather)
+    (reset! !/*params   {})
     (get-current-layer-geoserver-credentials)) ;=> nil
   )
 
