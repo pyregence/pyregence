@@ -50,7 +50,7 @@
    :m1000 {:opt-label "1000-hour fuel moisture (% or fraction)"
            :filter "m1000"
            :units "(% or fraction)"}
-   :kbdiI​ {:opt-label "Keetch Byram Drought Index (0-800)"
+   :kbdiI {:opt-label "Keetch Byram Drought Index (0-800)"
             :filter "kbdiI"
             :units "Index (0-800)"}})
 
