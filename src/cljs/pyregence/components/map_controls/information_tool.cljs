@@ -106,15 +106,16 @@
       convert]
      [information-div units info-height convert mobile?]]))
 
-(defn- fbfm40-info []
-  [:div {:style {:margin "0.125rem 0.75rem"}}
-   [:p {:style {:margin-bottom "0.125rem"
-                :text-align    "center"}}
-    [:strong "Fuel Type: "]
-    (get-in c/fbfm40-lookup [@!/last-clicked-info :fuel-type])]
-   [:p {:style {:margin-bottom "0"}}
-    [:strong "Description: "]
-    (get-in c/fbfm40-lookup [@!/last-clicked-info :description])]])
+(defn- point-info [model]
+  (when model
+    [:div {:style {:margin "0.125rem 0.75rem"}}
+    [:p {:style {:margin-bottom "0.125rem"
+                 :text-align    "center"}}
+     [:strong "Fuel Type: "]
+     (get-in model [@!/last-clicked-info :fuel-type])]
+    [:p {:style {:margin-bottom "0"}}
+     [:strong "Description: "]
+     (get-in model [@!/last-clicked-info :description])]]))
 
 (defn- single-point-info [box-height _ units convert no-convert]
   (let [legend-map  (u-data/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) @!/legend-list)
@@ -133,9 +134,12 @@
                          (vals)
                          (into #{}))
         add-units   #(u-str/end-with % (u-num/clean-units units))
-        fbfm40?     (contains? *inputs :fbfm40)
+        point-info-model (condp contains? *inputs
+                           :fbfm40 c/fbfm40-lookup
+                           :fbp    c/fbp-lookup
+                           :else   nil)
         display-val (cond
-                      fbfm40? ; for all fbfm40 layers we just need a simple lookup
+                      point-info-model ; for all fbfm40 layers we just need a simple lookup
                       (get-in legend-map [@!/last-clicked-info "label"])
 
                       (and (fn? convert) (empty? (set/intersection no-convert *inputs))) ; convert the value
@@ -158,8 +162,7 @@
                      :margin-right     "0.5rem"
                      :width            "1.5rem"}}]
       [:h4 display-val]]
-     (when fbfm40?
-       [fbfm40-info])]))
+     [point-info point-info-model]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component

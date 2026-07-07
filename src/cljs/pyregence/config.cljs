@@ -159,7 +159,18 @@
                                                             :fbfm40 {:opt-label       "Fire Behavior Fuel Model 40"
                                                                      :filter          "fbfm40"
                                                                      :units           ""
-                                                                     :reverse-legend? false}
+                                                                     :reverse-legend? false
+                                                                     :disabled-for    #{:cffdrs-2024}}
+                                                            :fbp    {:opt-label       "Fire Behaviour Prediction System"
+                                                                     :filter          "fbp"
+                                                                     :units           ""
+                                                                     :reverse-legend? false
+                                                                     :disabled-for    #{:cecs :cfo :ca-fuelscapes-2022 :ca-fuelscapes-2021
+                                                                                         :fire-factor-2022 :fire-factor-2023 :fire-factor-2024
+                                                                                         :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0
+                                                                                         :landfire-2.0.0 :landfire-2.1.0 :landfire-2.2.0
+                                                                                         :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0
+                                                                                         :landfire-2.5.0-2.4.0}}
                                                             :asp    {:opt-label       "Aspect"
                                                                      :filter          "asp"
                                                                      :units           ""
@@ -181,28 +192,28 @@
                                                                      :filter          "cc"
                                                                      :units           "%"
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs}}
+                                                                     :disabled-for    #{:cecs :cffdrs-2024}}
                                                             :ch     {:opt-label       "Canopy Height (m)"
                                                                      :filter          "ch"
                                                                      :units           "m"
                                                                      :no-convert      #{:cfo}
                                                                      :convert         #(u-num/to-precision 1 (/ % 10))
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs}}
+                                                                     :disabled-for    #{:cecs :cffdrs-2024}}
                                                             :cbh    {:opt-label       "Canopy Base Height (m)"
                                                                      :filter          "cbh"
                                                                      :units           "m"
                                                                      :no-convert      #{:cfo}
                                                                      :convert         #(u-num/to-precision 1 (/ % 10))
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs}}
+                                                                     :disabled-for    #{:cecs :cffdrs-2024}}
                                                             :cbd    {:opt-label       "Crown Bulk Density (kg/m\u00b3)"
                                                                      :filter          "cbd"
                                                                      :units           "kg/m\u00b3"
                                                                      :convert         #(u-num/to-precision 2 (/ % 100))
                                                                      :no-convert      #{:cfo}
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs}})}
+                                                                     :disabled-for    #{:cecs :cffdrs-2024}})}
                                   :model      {:opt-label  "Source"
                                                :hover-text [:p {:style {:margin-bottom "0"}}
                                                             [:strong "LANDFIRE"]
@@ -212,7 +223,7 @@
                                                              "LANDFIRE"]
                                                             " at 30 m resolution. For more detailed version descriptions, please visit "
                                                             [:a {:href   "https://landfire.gov/version_download.php"
-                                                                 :target "_blank"}
+                                                                 :target "_blank}"
                                                              "this link"]
                                                             " and click the \"LF Version Descriptions\" button."
                                                             [:br]
@@ -250,8 +261,15 @@
                                                             [:a {:href   "https://california-ecosystem-climate.solutions/"
                                                                  :target "_blank"}
                                                              "California Ecosystem Climate Solutions"]
-                                                            ", Wang et al. (2021)."]
+                                                            ", Wang et al. (2021)."
+                                                            [:br]
+                                                            [:br]
+                                                            [:strong "CFFDRS 2024"]
+                                                            " - Canadian Forest Fire Danger Rating System. Details coming soon."]
                                                :options    (array-map
+                                                            :cffdrs-2024          {:opt-label    "CFFDRS 2024"
+                                                                                   :filter       "cffdrs-2024"
+                                                                                   :disabled-for #{:fbfm40 :cc :ch :cbh :cbd}}
                                                             :landfire-2.5.0       {:opt-label    "LANDFIRE 2.5.0 (2025 capable)"
                                                                                    :filter       "landfire-2.5.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
@@ -1091,6 +1109,448 @@
                     204   {:label       "SB4"
                            :fuel-type   "Slash-Blowdown"
                            :description "Blowdown is total, fuelbed not compacted, foliage still attached. Spread rate very high; flame length very high."}})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fire Behaviour Prediction (FBP) System fuel type lookup table
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(comment
+  "fbp-lookup is keyed by the integer raster values in fbp.tif, per the
+   LF2025_CFFDRS.csv attribute table crosswalk. Two gaps remain, flagged inline
+   with TODO descriptions: value 12 (D-2, standalone) and value 13 (D-1/D-2
+   combined) have no official short description in the source FBP fuels table --
+   fill these in from the CFFDRS FBP System Guide if a more precise Point Info
+   Tool blurb is wanted.")
+
+(def fbp-lookup {-9999 {:label       "Fill-NoData"
+                        :fuel-type   "Fill-NoData"
+                        :description "No data; outside CFFDRS 2024 coverage area."}
+                 1     {:label       "Spruce-Lichen Woodland"
+                        :fuel-type   "C-1"
+                        :description "Open conifer stand of varying heights. Branches reach to the ground. Lichens thickly cover open floor. Open conifer stand of varying heights. Branches reach to the ground. Lichens thickly cover open floor."}
+                 2     {:label       "Boreal Spruce"
+                        :fuel-type   "C-2"
+                        :description "Pure, moderately dense conifer stand. Branches reach to the ground. Lichens cover dead branches. Thick ground layer of organics."}
+                 3     {:label       "Mature Jack or Lodgepole Pine"
+                        :fuel-type   "C-3"
+                        :description "Dense stand of mature conifers. Smaller trees grow beneath thick canopy. Forest floor scattered with debris and carpet of feather moss."}
+                 4     {:label       "Immature Jack or Lodgepole Pine"
+                        :fuel-type   "C-4"
+                        :description "Dense stand of conifers. Lots of standing dead trees and fallen debris. Needle litter covers the ground."}
+                 5     {:label       "Red and White Pine"
+                        :fuel-type   "C-5"
+                        :description "Mature stand of conifers. Some smaller shrubs and trees. Debris is minimal. Ground is a mixture of herbaceous plants and pine litter."}
+                 6     {:label       "Conifer Plantation"
+                        :fuel-type   "C-6"
+                        :description "Mature plantation of conifers. Canopy is dense and closed. Absence of understory vegetation. Thick layer of needle litter."}
+                 7     {:label       "Ponderosa Pine-Douglas-Fir"
+                        :fuel-type   "C-7"
+                        :description "Mixed, nonuniform conifer stand. Space between trees. Forest floor covered thinly in grasses, herbs, a few shrubs and needles."}
+                 11    {:label       "Leafless Aspen"
+                        :fuel-type   "D-1"
+                        :description "Pure, semi-mature deciduous stand pre bud or post leaf fall. No conifers. Medium to tall shrubs. Layer of dry plant material on ground."}
+                 12    {:label       "Green Aspen (with BUI Thresholding)"
+                        :fuel-type   "D-2"
+                        :description "TODO -- no source description available."}
+                 13    {:label       "Aspen"
+                        :fuel-type   "D-1/D-2"
+                        :description "TODO -- combined class (D-1/D-2); no source description available for one or more constituents."}
+                 21    {:label       "Jack or Lodgepole Pine Slash"
+                        :fuel-type   "S-1"
+                        :description "Cleared area with debris from the logging of mature conifers. Leftover tops and branches still have half their foliage."}
+                 22    {:label       "White Spruce-Balsam Slash"
+                        :fuel-type   "S-2"
+                        :description "Debris from the logging of mature conifers visible. Leftover tops and branches have half their foliage. Moss, needles, rotting wood remain."}
+                 23    {:label       "Coastal Cedar-Hemlock-Douglas-Fir Slash"
+                        :fuel-type   "S-3"
+                        :description "Debris from the logging of old mixed forests visible. A lot of branches, bits of trees and leaves and needles remain."}
+                 31    {:label       "Matted Grass"
+                        :fuel-type   "O-1a"
+                        :description "Large, grass covered area. Shrubs and trees in the background. Dried or dead material in grassland."}
+                 32    {:label       "Standing Grass"
+                        :fuel-type   "O-1b"
+                        :description "Large, grass covered area. Shrubs and trees in the background. Dried or dead material in grassland."}
+                 33    {:label       "Grass"
+                        :fuel-type   "O-1a/O-1b"
+                        :description "O-1a: Large, grass covered area. Shrubs and trees in the background. Dried or dead material in grassland. / O-1b: Large, grass covered area. Shrubs and trees in the background. Dried or dead material in grassland."}
+                 40    {:label       "Boreal Mixedwood-Leafless"
+                        :fuel-type   "M-1"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 50    {:label       "Boreal Mixedwood-Green"
+                        :fuel-type   "M-2"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 60    {:label       "Boreal Mixedwood"
+                        :fuel-type   "M-1/M-2"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2: Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 70    {:label       "Dead Balsam Fir Mixedwood-Leafless"
+                        :fuel-type   "M-3"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 80    {:label       "Dead Balsam Fir Mixedwood-Green"
+                        :fuel-type   "M-4"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 90    {:label       "Dead Balsam Fir Mixedwood"
+                        :fuel-type   "M-3/M-4"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4: Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 100   {:label       "Not Available"
+                        :fuel-type   "Non-fuel"
+                        :description "No data available for this pixel."}
+                 101   {:label       "Non-fuel"
+                        :fuel-type   "Non-fuel"
+                        :description "Not enough fuel to propagate wildland fire."}
+                 102   {:label       "Water"
+                        :fuel-type   "Non-fuel"
+                        :description "Open water."}
+                 103   {:label       "Unknown"
+                        :fuel-type   "Non-fuel"
+                        :description "Unknown or unclassified pixel."}
+                 104   {:label       "Unclassified"
+                        :fuel-type   "Non-fuel"
+                        :description "Unknown or unclassified pixel."}
+                 105   {:label       "Vegetated Non-Fuel"
+                        :fuel-type   "Non-fuel"
+                        :description "Vegetated cover with insufficient fuel to propagate wildland fire."}
+                 405   {:label       "Boreal Mixedwood-Leafless (05% Conifer)"
+                        :fuel-type   "M-1 (05 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 410   {:label       "Boreal Mixedwood-Leafless (10% Conifer)"
+                        :fuel-type   "M-1 (10 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 415   {:label       "Boreal Mixedwood-Leafless (15% Conifer)"
+                        :fuel-type   "M-1 (15 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 420   {:label       "Boreal Mixedwood-Leafless (20% Conifer)"
+                        :fuel-type   "M-1 (20 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 425   {:label       "Boreal Mixedwood-Leafless (25% Conifer)"
+                        :fuel-type   "M-1 (25 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 430   {:label       "Boreal Mixedwood-Leafless (30% Conifer)"
+                        :fuel-type   "M-1 (30 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 435   {:label       "Boreal Mixedwood-Leafless (35% Conifer)"
+                        :fuel-type   "M-1 (35 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 440   {:label       "Boreal Mixedwood-Leafless (40% Conifer)"
+                        :fuel-type   "M-1 (40 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 445   {:label       "Boreal Mixedwood-Leafless (45% Conifer)"
+                        :fuel-type   "M-1 (45 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 450   {:label       "Boreal Mixedwood-Leafless (50% Conifer)"
+                        :fuel-type   "M-1 (50 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 455   {:label       "Boreal Mixedwood-Leafless (55% Conifer)"
+                        :fuel-type   "M-1 (55 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 460   {:label       "Boreal Mixedwood-Leafless (60% Conifer)"
+                        :fuel-type   "M-1 (60 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 465   {:label       "Boreal Mixedwood-Leafless (65% Conifer)"
+                        :fuel-type   "M-1 (65 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 470   {:label       "Boreal Mixedwood-Leafless (70% Conifer)"
+                        :fuel-type   "M-1 (70 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 475   {:label       "Boreal Mixedwood-Leafless (75% Conifer)"
+                        :fuel-type   "M-1 (75 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 480   {:label       "Boreal Mixedwood-Leafless (80% Conifer)"
+                        :fuel-type   "M-1 (80 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 485   {:label       "Boreal Mixedwood-Leafless (85% Conifer)"
+                        :fuel-type   "M-1 (85 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 490   {:label       "Boreal Mixedwood-Leafless (90% Conifer)"
+                        :fuel-type   "M-1 (90 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 495   {:label       "Boreal Mixedwood-Leafless (95% Conifer)"
+                        :fuel-type   "M-1 (95 PC)"
+                        :description "Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages."}
+                 505   {:label       "Boreal Mixedwood-Green (05% Conifer)"
+                        :fuel-type   "M-2 (05 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 510   {:label       "Boreal Mixedwood-Green (10% Conifer)"
+                        :fuel-type   "M-2 (10 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 515   {:label       "Boreal Mixedwood-Green (15% Conifer)"
+                        :fuel-type   "M-2 (15 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 520   {:label       "Boreal Mixedwood-Green (20% Conifer)"
+                        :fuel-type   "M-2 (20 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 525   {:label       "Boreal Mixedwood-Green (25% Conifer)"
+                        :fuel-type   "M-2 (25 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 530   {:label       "Boreal Mixedwood-Green (30% Conifer)"
+                        :fuel-type   "M-2 (30 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 535   {:label       "Boreal Mixedwood-Green (35% Conifer)"
+                        :fuel-type   "M-2 (35 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 540   {:label       "Boreal Mixedwood-Green (40% Conifer)"
+                        :fuel-type   "M-2 (40 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 545   {:label       "Boreal Mixedwood-Green (45% Conifer)"
+                        :fuel-type   "M-2 (45 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 550   {:label       "Boreal Mixedwood-Green (50% Conifer)"
+                        :fuel-type   "M-2 (50 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 555   {:label       "Boreal Mixedwood-Green (55% Conifer)"
+                        :fuel-type   "M-2 (55 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 560   {:label       "Boreal Mixedwood-Green (60% Conifer)"
+                        :fuel-type   "M-2 (60 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 565   {:label       "Boreal Mixedwood-Green (65% Conifer)"
+                        :fuel-type   "M-2 (65 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 570   {:label       "Boreal Mixedwood-Green (70% Conifer)"
+                        :fuel-type   "M-2 (70 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 575   {:label       "Boreal Mixedwood-Green (75% Conifer)"
+                        :fuel-type   "M-2 (75 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 580   {:label       "Boreal Mixedwood-Green (80% Conifer)"
+                        :fuel-type   "M-2 (80 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 585   {:label       "Boreal Mixedwood-Green (85% Conifer)"
+                        :fuel-type   "M-2 (85 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 590   {:label       "Boreal Mixedwood-Green (90% Conifer)"
+                        :fuel-type   "M-2 (90 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 595   {:label       "Boreal Mixedwood-Green (95% Conifer)"
+                        :fuel-type   "M-2 (95 PC)"
+                        :description "Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 605   {:label       "Boreal Mixedwood (05% Conifer)"
+                        :fuel-type   "M-1/M-2 (05 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (05 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 610   {:label       "Boreal Mixedwood (10% Conifer)"
+                        :fuel-type   "M-1/M-2 (10 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (10 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 615   {:label       "Boreal Mixedwood (15% Conifer)"
+                        :fuel-type   "M-1/M-2 (15 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (15 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 620   {:label       "Boreal Mixedwood (20% Conifer)"
+                        :fuel-type   "M-1/M-2 (20 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (20 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 625   {:label       "Boreal Mixedwood (25% Conifer)"
+                        :fuel-type   "M-1/M-2 (25 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (25 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 630   {:label       "Boreal Mixedwood (30% Conifer)"
+                        :fuel-type   "M-1/M-2 (30 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (30 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 635   {:label       "Boreal Mixedwood (35% Conifer)"
+                        :fuel-type   "M-1/M-2 (35 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (35 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 640   {:label       "Boreal Mixedwood (40% Conifer)"
+                        :fuel-type   "M-1/M-2 (40 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (40 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 645   {:label       "Boreal Mixedwood (45% Conifer)"
+                        :fuel-type   "M-1/M-2 (45 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (45 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 650   {:label       "Boreal Mixedwood (50% Conifer)"
+                        :fuel-type   "M-1/M-2 (50 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (50 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 655   {:label       "Boreal Mixedwood (55% Conifer)"
+                        :fuel-type   "M-1/M-2 (55 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (55 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 660   {:label       "Boreal Mixedwood (60% Conifer)"
+                        :fuel-type   "M-1/M-2 (60 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (60 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 665   {:label       "Boreal Mixedwood (65% Conifer)"
+                        :fuel-type   "M-1/M-2 (65 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (65 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 670   {:label       "Boreal Mixedwood (70% Conifer)"
+                        :fuel-type   "M-1/M-2 (70 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (70 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 675   {:label       "Boreal Mixedwood (75% Conifer)"
+                        :fuel-type   "M-1/M-2 (75 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (75 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 680   {:label       "Boreal Mixedwood (80% Conifer)"
+                        :fuel-type   "M-1/M-2 (80 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (80 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 685   {:label       "Boreal Mixedwood (85% Conifer)"
+                        :fuel-type   "M-1/M-2 (85 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (85 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 690   {:label       "Boreal Mixedwood (90% Conifer)"
+                        :fuel-type   "M-1/M-2 (90 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (90 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 695   {:label       "Boreal Mixedwood (95% Conifer)"
+                        :fuel-type   "M-1/M-2 (95 PC)"
+                        :description "M-1: Mixed stand of conifers and leafless deciduous trees. Wide range to structural variability and development stages. / M-2 (95 PC): Mixed stand of conifers and deciduous trees of varying heights and sizes. Trees are leafed out. Forest floor is impossible to differentiate."}
+                 705   {:label       "Dead Balsam Fir Mixedwood-Leafless (05% Dead Fir)"
+                        :fuel-type   "M-3 (05 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 710   {:label       "Dead Balsam Fir Mixedwood-Leafless (10% Dead Fir)"
+                        :fuel-type   "M-3 (10 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 715   {:label       "Dead Balsam Fir Mixedwood-Leafless (15% Dead Fir)"
+                        :fuel-type   "M-3 (15 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 720   {:label       "Dead Balsam Fir Mixedwood-Leafless (20% Dead Fir)"
+                        :fuel-type   "M-3 (20 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 725   {:label       "Dead Balsam Fir Mixedwood-Leafless (25% Dead Fir)"
+                        :fuel-type   "M-3 (25 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 730   {:label       "Dead Balsam Fir Mixedwood-Leafless (30% Dead Fir)"
+                        :fuel-type   "M-3 (30 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 735   {:label       "Dead Balsam Fir Mixedwood-Leafless (35% Dead Fir)"
+                        :fuel-type   "M-3 (35 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 740   {:label       "Dead Balsam Fir Mixedwood-Leafless (40% Dead Fir)"
+                        :fuel-type   "M-3 (40 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 745   {:label       "Dead Balsam Fir Mixedwood-Leafless (45% Dead Fir)"
+                        :fuel-type   "M-3 (45 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 750   {:label       "Dead Balsam Fir Mixedwood-Leafless (50% Dead Fir)"
+                        :fuel-type   "M-3 (50 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 755   {:label       "Dead Balsam Fir Mixedwood-Leafless (55% Dead Fir)"
+                        :fuel-type   "M-3 (55 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 760   {:label       "Dead Balsam Fir Mixedwood-Leafless (60% Dead Fir)"
+                        :fuel-type   "M-3 (60 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 765   {:label       "Dead Balsam Fir Mixedwood-Leafless (65% Dead Fir)"
+                        :fuel-type   "M-3 (65 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 770   {:label       "Dead Balsam Fir Mixedwood-Leafless (70% Dead Fir)"
+                        :fuel-type   "M-3 (70 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 775   {:label       "Dead Balsam Fir Mixedwood-Leafless (75% Dead Fir)"
+                        :fuel-type   "M-3 (75 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 780   {:label       "Dead Balsam Fir Mixedwood-Leafless (80% Dead Fir)"
+                        :fuel-type   "M-3 (80 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 785   {:label       "Dead Balsam Fir Mixedwood-Leafless (85% Dead Fir)"
+                        :fuel-type   "M-3 (85 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 790   {:label       "Dead Balsam Fir Mixedwood-Leafless (90% Dead Fir)"
+                        :fuel-type   "M-3 (90 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 795   {:label       "Dead Balsam Fir Mixedwood-Leafless (95% Dead Fir)"
+                        :fuel-type   "M-3 (95 PDF)"
+                        :description "Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 805   {:label       "Dead Balsam Fir Mixedwood-Green (05% Dead Fir)"
+                        :fuel-type   "M-4 (05 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 810   {:label       "Dead Balsam Fir Mixedwood-Green (10% Dead Fir)"
+                        :fuel-type   "M-4 (10 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 815   {:label       "Dead Balsam Fir Mixedwood-Green (15% Dead Fir)"
+                        :fuel-type   "M-4 (15 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 820   {:label       "Dead Balsam Fir Mixedwood-Green (20% Dead Fir)"
+                        :fuel-type   "M-4 (20 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 825   {:label       "Dead Balsam Fir Mixedwood-Green (25% Dead Fir)"
+                        :fuel-type   "M-4 (25 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 830   {:label       "Dead Balsam Fir Mixedwood-Green (30% Dead Fir)"
+                        :fuel-type   "M-4 (30 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 835   {:label       "Dead Balsam Fir Mixedwood-Green (35% Dead Fir)"
+                        :fuel-type   "M-4 (35 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 840   {:label       "Dead Balsam Fir Mixedwood-Green (40% Dead Fir)"
+                        :fuel-type   "M-4 (40 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 845   {:label       "Dead Balsam Fir Mixedwood-Green (45% Dead Fir)"
+                        :fuel-type   "M-4 (45 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 850   {:label       "Dead Balsam Fir Mixedwood-Green (50% Dead Fir)"
+                        :fuel-type   "M-4 (50 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 855   {:label       "Dead Balsam Fir Mixedwood-Green (55% Dead Fir)"
+                        :fuel-type   "M-4 (55 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 860   {:label       "Dead Balsam Fir Mixedwood-Green (60% Dead Fir)"
+                        :fuel-type   "M-4 (60 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 865   {:label       "Dead Balsam Fir Mixedwood-Green (65% Dead Fir)"
+                        :fuel-type   "M-4 (65 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 870   {:label       "Dead Balsam Fir Mixedwood-Green (70% Dead Fir)"
+                        :fuel-type   "M-4 (70 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 875   {:label       "Dead Balsam Fir Mixedwood-Green (75% Dead Fir)"
+                        :fuel-type   "M-4 (75 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 880   {:label       "Dead Balsam Fir Mixedwood-Green (80% Dead Fir)"
+                        :fuel-type   "M-4 (80 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 885   {:label       "Dead Balsam Fir Mixedwood-Green (85% Dead Fir)"
+                        :fuel-type   "M-4 (85 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 890   {:label       "Dead Balsam Fir Mixedwood-Green (90% Dead Fir)"
+                        :fuel-type   "M-4 (90 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 895   {:label       "Dead Balsam Fir Mixedwood-Green (95% Dead Fir)"
+                        :fuel-type   "M-4 (95 PDF)"
+                        :description "Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 905   {:label       "Dead Balsam Fir Mixedwood (05% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (05 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (05 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 910   {:label       "Dead Balsam Fir Mixedwood (10% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (10 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (10 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 915   {:label       "Dead Balsam Fir Mixedwood (15% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (15 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (15 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 920   {:label       "Dead Balsam Fir Mixedwood (20% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (20 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (20 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 925   {:label       "Dead Balsam Fir Mixedwood (25% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (25 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (25 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 930   {:label       "Dead Balsam Fir Mixedwood (30% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (30 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (30 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 935   {:label       "Dead Balsam Fir Mixedwood (35% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (35 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (35 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 940   {:label       "Dead Balsam Fir Mixedwood (40% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (40 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (40 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 945   {:label       "Dead Balsam Fir Mixedwood (45% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (45 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (45 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 950   {:label       "Dead Balsam Fir Mixedwood (50% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (50 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (50 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 955   {:label       "Dead Balsam Fir Mixedwood (55% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (55 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (55 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 960   {:label       "Dead Balsam Fir Mixedwood (60% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (60 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (60 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 965   {:label       "Dead Balsam Fir Mixedwood (65% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (65 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (65 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 970   {:label       "Dead Balsam Fir Mixedwood (70% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (70 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (70 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 975   {:label       "Dead Balsam Fir Mixedwood (75% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (75 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (75 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 980   {:label       "Dead Balsam Fir Mixedwood (80% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (80 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (80 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 985   {:label       "Dead Balsam Fir Mixedwood (85% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (85 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (85 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 990   {:label       "Dead Balsam Fir Mixedwood (90% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (90 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (90 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}
+                 995   {:label       "Dead Balsam Fir Mixedwood (95% Dead Fir)"
+                        :fuel-type   "M-3/M-4 (95 PDF)"
+                        :description "M-3: Defoliated, mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor. / M-4 (95 PDF): Mixedwood stand. Significant top breakage, windthrow, draped lichen and other woody material. Mosses, needles and leaves on forest floor."}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WFS/WMS Configuration
