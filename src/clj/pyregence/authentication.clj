@@ -64,6 +64,8 @@
   "Passwords must be between 12 and 64 chars and contain at least 1 upper case letter and number."
   [password]
   (and
+   ;; check if it's a strong
+   (string? password)
    ;; between 12 and 64
    (<= 12 (count password) 64)
    ;; digit
