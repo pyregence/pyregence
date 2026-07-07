@@ -61,11 +61,11 @@
      (.encodeToString (Base64/getEncoder) bytes))))
 
 (defn valid-password?
-  "Passwords must be between 12 and 128 chars and contain at least 1 upper case letter and number."
+  "Passwords must be between 12 and 64 chars and contain at least 1 upper case letter and number."
   [password]
   (and
-   ;; between 12 and 128
-   (<= 12 (count password) 128)
+   ;; between 12 and 64
+   (<= 12 (count password) 64)
    ;; digit
    (boolean (re-find #"\d" password))
    ;; upper case
@@ -80,11 +80,11 @@
   (valid-password? "Helloworld12")
   ;; => true at 12
 
-  (valid-password? (clojure.string/join "" (repeat 11 "Helloworld12")))
-  ;; => false over 128
+  (valid-password? (clojure.string/join "" (repeat 6 "Helloworld12")))
+  ;; => false over 64
 
-  (valid-password? (clojure.string/join "" (repeat 10 "Helloworld12")))
-  ;; => true less then 128
+  (valid-password? (clojure.string/join "" (repeat 5 "Helloworld12")))
+  ;; => true less then 64
 
 ;; Must have one upper case
   (valid-password? "helloworld12")
@@ -102,7 +102,7 @@
 
 (defn password->invalid-password-msg
   [password]
-  (str "Invalid Password:'" password "'. Passwords must be between 12 and 128 chars and contain at least 1 upper case letter and number. "))
+  (str "Invalid Password:'" password "'. Passwords must be between 12 and 64 chars and contain at least 1 upper case letter and number. "))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Authentication & Session Management
