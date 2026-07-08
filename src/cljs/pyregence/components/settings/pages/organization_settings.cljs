@@ -82,8 +82,8 @@
 (defn get-org
   [user-role selected-log org-uuid->org]
   (@org-uuid->org (if (#{"super_admin" "account_manager"} user-role)
-                  (last @selected-log)
-                  (-> @org-uuid->org keys first))))
+                    (last @selected-log)
+                    (-> @org-uuid->org keys first))))
 
 (defn- organization-settings
   [{:keys [user-role
@@ -170,9 +170,9 @@
                                                             (assoc-in [org-uuid :org-name] unsaved-org-name)
                                                             (assoc-in [org-uuid :email-domains] unsaved-email-domains)
                                                             (assoc-in [org-uuid :og-email->email] (reduce-kv (fn [m id {:keys [unsaved-email]}]
-                                                                                                             (assoc m id {:email unsaved-email :unsaved-email unsaved-email}))
-                                                                                                           {}
-                                                                                                           og-email->email))
+                                                                                                               (assoc m id {:email unsaved-email :unsaved-email unsaved-email}))
+                                                                                                             {}
+                                                                                                             og-email->email))
                                                             (assoc-in [org-uuid :auto-accept?] unsaved-auto-accept?)
                                                             (assoc-in [org-uuid :auto-add?] unsaved-auto-add?))))
                                                (let [new-name?        (not= org-name unsaved-org-name)
@@ -195,7 +195,7 @@
 (defn main
   [{:keys [user-role org-uuid->org selected-log] :as m}]
   (let [{:keys [org-name org-uuid]} (get-org user-role selected-log org-uuid->org)
-        roles                                      (->> user-role roles/role->roles-below (filter roles/organization-roles))]
+        roles                       (->> user-role roles/role->roles-below (filter roles/organization-roles))]
     [:div {:style main-styles}
      [card {:title    "ORGANIZATION SETTINGS"
             :children [organization-settings m]}]
@@ -212,5 +212,6 @@
                                 identity)
                               :role-options        roles
                               :default-role-option (first roles)
+
                               :statuses            ["accepted" "pending"]
-                              :org-uuid              org-uuid)]}]]))
+                              :org-uuid            org-uuid)]}]]))
