@@ -11,8 +11,22 @@
             [triangulum.handler  :refer [development-app]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.response :refer [data-response]]
-            [triangulum.views    :refer [render-page]]
+            [triangulum.views    :as    views]
             [triangulum.worker   :refer [start-workers!]]))
+
+(defn render-page
+  "Wraps triangulum's render-page so the sequential :organization-id PK is
+   stripped from the session before it is serialized into the page. The internal
+   org id must never reach the browser (PYR1-1512 enumeration hardening) -- the
+   client addresses organizations by their public uuid instead, and never reads
+   :organization-id. The stored server-side session is unaffected: GET page
+   renders do not set a :session key on the response, so wrap-session leaves the
+   persisted session -- and its :organization-id, which server-side org-scoped
+   authorization relies on -- intact."
+  [uri]
+  (let [handler (views/render-page uri)]
+    (fn [request]
+      (handler (update request :session dissoc :organization-id)))))
 
 (def not-found-handler (comp #(assoc % :status 404) (render-page "/not-found")))
 
