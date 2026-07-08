@@ -223,7 +223,7 @@
                                                              "LANDFIRE"]
                                                             " at 30 m resolution. For more detailed version descriptions, please visit "
                                                             [:a {:href   "https://landfire.gov/version_download.php"
-                                                                 :target "_blank}"
+                                                                 :target "_blank"}
                                                              "this link"]
                                                             " and click the \"LF Version Descriptions\" button."
                                                             [:br]
