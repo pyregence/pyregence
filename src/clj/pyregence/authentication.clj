@@ -852,9 +852,10 @@
    (->> (call-sql "get_org_member_users" (if (= user-role "super_admin")
                                            (org-uuid->id org-uuid)
                                            organization-id))
-        (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
-                {:user-id           user_id
-                 :full-name         full_name
+        ;; Intentionally omit the sequential user PK: it is never used by the
+        ;; caller and must not reach the browser (PYR1-1512 enumeration hardening).
+        (mapv (fn [{:keys [full_name email user_role org_membership_status]}]
+                {:full-name         full_name
                  :email             email
                  :user-role         user_role
                  :membership-status org_membership_status}))
