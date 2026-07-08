@@ -339,9 +339,15 @@
                              #(select-param! % key)
                              selected-param-set]])))
                      (cond-> @!/processed-params
-                       (c/nfdrs?)
-                       (assoc-in [:band :options]
-                                 c/nfdrs-weather-params)))
+                       ;; On the Weather tab, show only the Weather Parameters compatible with the
+                       ;; selected model: the NFDRS params when an NFDRS model is selected, the
+                       ;; standard params otherwise. (`:band` only exists on the Weather tab, so the
+                       ;; tab guard also keeps us from assoc-ing a phantom :band onto other tabs.)
+                       (and (= @!/*forecast :fire-weather) (c/nfdrs?))
+                       (assoc-in [:band :options] c/nfdrs-weather-params)
+
+                       (and (= @!/*forecast :fire-weather) (not (c/nfdrs?)))
+                       (update-in [:band :options] #(apply dissoc % (keys c/nfdrs-weather-params)))))
                [opacity-input]]]
              [sa/panel-section]
              [collapsible-panel-section
