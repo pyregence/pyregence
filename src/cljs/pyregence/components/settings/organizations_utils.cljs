@@ -17,11 +17,11 @@
              (edn/read-string))
         {}))))
 
-(defn orgs->org->id
+(defn orgs->org->uuid
   [orgs]
   (reduce
-   (fn [org-id->org {:keys [org-id org-name email-domains auto-accept? auto-add?] :as org}]
-     (assoc org-id->org org-id
+   (fn [org-uuid->org {:keys [org-uuid org-name email-domains auto-accept? auto-add?] :as org}]
+     (assoc org-uuid->org org-uuid
             (assoc org
                    :unsaved-auto-accept? auto-accept?
                    :unsaved-auto-add?    auto-add?

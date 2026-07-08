@@ -46,7 +46,7 @@ $$ LANGUAGE SQL;
 -- never the sequential organization_uid PK (PYR1-1512 enumeration hardening).
 CREATE OR REPLACE FUNCTION get_all_organizations()
  RETURNS TABLE (
-  org_id                uuid,
+  org_uuid              uuid,
   org_name              text,
   org_unique_id         text,
   geoserver_credentials text,
@@ -60,7 +60,7 @@ CREATE OR REPLACE FUNCTION get_all_organizations()
  ) AS $$
 
   SELECT
-    o.organization_uuid              AS org_id,
+    o.organization_uuid              AS org_uuid,
     o.org_name                       AS org_name,
     o.org_unique_id                  AS org_unique_id,
     o.geoserver_credentials::text    AS geoserver_credentials,
@@ -92,7 +92,7 @@ $$ LANGUAGE SQL;
 -- to overhaul the front end code that calls this.
 CREATE OR REPLACE FUNCTION get_user_organization(_user_id integer)
  RETURNS TABLE (
-    org_id                uuid,
+    org_uuid              uuid,
     org_name              text,
     org_unique_id         text,
     geoserver_credentials text,
@@ -102,7 +102,7 @@ CREATE OR REPLACE FUNCTION get_user_organization(_user_id integer)
     auto_accept           boolean
  ) AS $$
 
-    -- Browser-facing: return the unpredictable organization_uuid as org_id, never
+    -- Browser-facing: return the unpredictable organization_uuid as org_uuid, never
     -- the sequential organization_uid PK (PYR1-1512 enumeration hardening).
     SELECT
         o.organization_uuid,

@@ -4,7 +4,7 @@
    [clojure.string                                            :as str]
    [clojure.walk                                              :as walk]
    [herb.core                                                 :refer [<class]]
-   [pyregence.components.settings.organizations-utils         :refer [get-orgs! orgs->org->id]]
+   [pyregence.components.settings.organizations-utils         :refer [get-orgs! orgs->org->uuid]]
    [pyregence.components.settings.pages.account-settings      :as account-settings]
    [pyregence.components.settings.pages.admin                 :as admin]
    [pyregence.components.settings.pages.organization-settings :as organization-settings]
@@ -181,8 +181,8 @@
        (assoc org-tab
               :tab     drop-down
               :options (->> organizations
-                            (map (fn [{:keys [org-id org-name]}]
-                                   {:tab button :text org-name :id org-id}))))
+                            (map (fn [{:keys [org-uuid org-name]}]
+                                   {:tab button :text org-name :id org-uuid}))))
        "organization_admin"
        (assoc org-tab
               :tab button)
@@ -232,17 +232,17 @@
 (defn side-nav-bar-and-page
   [{:keys [user-role]}]
   (let [selected-log  (r/atom ["Account Settings"])
-        ;;TODO move org-id->org into two ratoms, one for fetching the
+        ;;TODO move org-uuid->org into two ratoms, one for fetching the
         ;;organizations from the side nav bar and another for fetching the org, in
         ;;the organization-settings component info once it's been selected from
         ;;the side.
-        org-id->org   (r/atom nil)]
-    (go (reset! org-id->org (orgs->org->id (<! (get-orgs! user-role)))))
+        org-uuid->org   (r/atom nil)]
+    (go (reset! org-uuid->org (orgs->org->uuid (<! (get-orgs! user-role)))))
     (fn [m]
       (let [m        (assoc m
                             :selected-log selected-log
-                            :organizations (vals @org-id->org)
-                            :org-id->org    org-id->org)
+                            :organizations (vals @org-uuid->org)
+                            :org-uuid->org    org-uuid->org)
             tab+page (tab-data->tabs m)]
         [:nav-bar-and-page {:style {:display        "flex"
                                     :flex-direction "row"

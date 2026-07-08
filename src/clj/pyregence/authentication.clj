@@ -769,8 +769,8 @@
   "Returns the list of all organizations in the database."
   [_]
   (->> (call-sql "get_all_organizations")
-       (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials email_domains subscription_tier auto_add auto_accept archived created_date archived_date]}]
-               {:org-id                org_id
+       (mapv (fn [{:keys [org_uuid org_name org_unique_id geoserver_credentials email_domains subscription_tier auto_add auto_accept archived created_date archived_date]}]
+               {:org-uuid              org_uuid
                 :org-name              org_name
                 :org-unique-id         org_unique_id
                 :geoserver-credentials geoserver_credentials
@@ -826,8 +826,8 @@
   [session]
   (if-let [user-id (:user-id session)]
     (->> (call-sql "get_user_organization" user-id)
-         (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept]}]
-                 {:org-id                org_id
+         (mapv (fn [{:keys [org_uuid org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept]}]
+                 {:org-uuid              org_uuid
                   :org-name              org_name
                   :org-unique-id         org_unique_id
                   :geoserver-credentials geoserver_credentials
@@ -839,7 +839,7 @@
     (data-response "No user is logged in." {:status 403})))
 
 (defn get-org-member-users
-  "Returns a vector of member users for the given org-id, if the user is an
+  "Returns a vector of member users for the given org-uuid, if the user is an
    admin of the given org."
   ([session]
    ;;TODO passing nil here his hacky but its to support admin.cljs which was previously ignoring
