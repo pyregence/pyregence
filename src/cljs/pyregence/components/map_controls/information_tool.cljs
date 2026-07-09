@@ -134,7 +134,7 @@
                          (vals)
                          (into #{}))
         add-units   #(u-str/end-with % (u-num/clean-units units))
-        point-info-model (condp contains? *inputs
+        point-info-model (condp *inputs contains?
                            :fbfm40 c/fbfm40-lookup
                            :fbp    c/fbp-lookup
                            :else   nil)
