@@ -118,35 +118,35 @@
      (get-in model [@!/last-clicked-info :description])]]))
 
 (defn- single-point-info [box-height _ units convert no-convert]
-  (let [legend-map  (u-data/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) @!/legend-list)
-        legend-keys (sort (keys legend-map))
-        color       (or (get-in legend-map [(-> @!/last-clicked-info
+  (let [legend-map       (u-data/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) @!/legend-list)
+        legend-keys      (sort (keys legend-map))
+        color            (or (get-in legend-map [(-> @!/last-clicked-info
                                                 (max (first legend-keys))
                                                 (min (last legend-keys)))
                                             "color"])
-                        (let [[low high] (u-data/find-boundary-values @!/last-clicked-info legend-keys)]
+                             (let [[low high] (u-data/find-boundary-values @!/last-clicked-info legend-keys)]
                           (when (and high low)
                             (u-misc/interp-color (get-in legend-map [low "color"])
                                                  (get-in legend-map [high "color"])
                                                  (/ (- @!/last-clicked-info low) (- high low))))))
-        *inputs     (->> @!/*params
+        *inputs          (->> @!/*params
                          (@!/*forecast)
                          (vals)
                          (into #{}))
-        add-units   #(u-str/end-with % (u-num/clean-units units))
-        point-info-model (condp *inputs contains?
+        add-units        #(u-str/end-with % (u-num/clean-units units))
+        point-info-model (condp #(contains? %2 %1) *inputs
                            :fbfm40 c/fbfm40-lookup
                            :fbp    c/fbp-lookup
-                           :else   nil)
-        display-val (cond
-                      point-info-model ; for all fbfm40 layers we just need a simple lookup
-                      (get-in legend-map [@!/last-clicked-info "label"])
+                           nil)
+        display-val      (cond
+                           point-info-modelg
+                           (get-in legend-map [@!/last-clicked-info "label"])
 
-                      (and (fn? convert) (empty? (set/intersection no-convert *inputs))) ; convert the value
-                      (add-units (convert @!/last-clicked-info))
+                           (and (fn? convert) (empty? (set/intersection no-convert *inputs))) ; convert the value
+                           (add-units (convert @!/last-clicked-info))
 
-                      :else ; otherwise, do not convert
-                      (add-units @!/last-clicked-info))]
+                           :else ; otherwise, do not convert
+                           (add-units @!/last-clicked-info))]
     [:div {:style {:align-items     "center"
                    :display         "flex"
                    :flex-direction  "column"

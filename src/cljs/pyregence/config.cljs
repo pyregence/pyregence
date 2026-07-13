@@ -1127,7 +1127,7 @@
                         :description "No data; outside CFFDRS 2024 coverage area."}
                  1     {:label       "Spruce-Lichen Woodland"
                         :fuel-type   "C-1"
-                        :description "Open conifer stand of varying heights. Branches reach to the ground. Lichens thickly cover open floor. Open conifer stand of varying heights. Branches reach to the ground. Lichens thickly cover open floor."}
+                        :description "Open conifer stand of varying heights. Branches reach to the ground. Lichens thickly cover open floor. Open conifer stand of varying heights. Branches reach to the ground."}
                  2     {:label       "Boreal Spruce"
                         :fuel-type   "C-2"
                         :description "Pure, moderately dense conifer stand. Branches reach to the ground. Lichens cover dead branches. Thick ground layer of organics."}
