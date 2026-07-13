@@ -106,43 +106,47 @@
       convert]
      [information-div units info-height convert mobile?]]))
 
-(defn- fbfm40-info []
-  [:div {:style {:margin "0.125rem 0.75rem"}}
-   [:p {:style {:margin-bottom "0.125rem"
-                :text-align    "center"}}
-    [:strong "Fuel Type: "]
-    (get-in c/fbfm40-lookup [@!/last-clicked-info :fuel-type])]
-   [:p {:style {:margin-bottom "0"}}
-    [:strong "Description: "]
-    (get-in c/fbfm40-lookup [@!/last-clicked-info :description])]])
+(defn- point-info [model]
+  (when model
+    [:div {:style {:margin "0.125rem 0.75rem"}}
+     [:p {:style {:margin-bottom "0.125rem"
+                  :text-align    "center"}}
+      [:strong "Fuel Type: "]
+      (get-in model [@!/last-clicked-info :fuel-type])]
+     [:p {:style {:margin-bottom "0"}}
+      [:strong "Description: "]
+      (get-in model [@!/last-clicked-info :description])]]))
 
 (defn- single-point-info [box-height _ units convert no-convert]
-  (let [legend-map  (u-data/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) @!/legend-list)
-        legend-keys (sort (keys legend-map))
-        color       (or (get-in legend-map [(-> @!/last-clicked-info
-                                                (max (first legend-keys))
-                                                (min (last legend-keys)))
-                                            "color"])
-                        (let [[low high] (u-data/find-boundary-values @!/last-clicked-info legend-keys)]
-                          (when (and high low)
-                            (u-misc/interp-color (get-in legend-map [low "color"])
-                                                 (get-in legend-map [high "color"])
-                                                 (/ (- @!/last-clicked-info low) (- high low))))))
-        *inputs     (->> @!/*params
-                         (@!/*forecast)
-                         (vals)
-                         (into #{}))
-        add-units   #(u-str/end-with % (u-num/clean-units units))
-        fbfm40?     (contains? *inputs :fbfm40)
-        display-val (cond
-                      fbfm40? ; for all fbfm40 layers we just need a simple lookup
-                      (get-in legend-map [@!/last-clicked-info "label"])
+  (let [legend-map       (u-data/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) @!/legend-list)
+        legend-keys      (sort (keys legend-map))
+        color            (or (get-in legend-map [(-> @!/last-clicked-info
+                                                     (max (first legend-keys))
+                                                     (min (last legend-keys)))
+                                                 "color"])
+                             (let [[low high] (u-data/find-boundary-values @!/last-clicked-info legend-keys)]
+                               (when (and high low)
+                                 (u-misc/interp-color (get-in legend-map [low "color"])
+                                                      (get-in legend-map [high "color"])
+                                                      (/ (- @!/last-clicked-info low) (- high low))))))
+        *inputs          (->> @!/*params
+                              (@!/*forecast)
+                              (vals)
+                              (into #{}))
+        add-units        #(u-str/end-with % (u-num/clean-units units))
+        point-info-model (condp #(contains? %2 %1) *inputs
+                           :fbfm40 c/fbfm40-lookup
+                           :fbp    c/fbp-lookup
+                           nil)
+        display-val      (cond
+                           point-info-model
+                           (get-in legend-map [@!/last-clicked-info "label"])
 
-                      (and (fn? convert) (empty? (set/intersection no-convert *inputs))) ; convert the value
-                      (add-units (convert @!/last-clicked-info))
+                           (and (fn? convert) (empty? (set/intersection no-convert *inputs))) ; convert the value
+                           (add-units (convert @!/last-clicked-info))
 
-                      :else ; otherwise, do not convert
-                      (add-units @!/last-clicked-info))]
+                           :else ; otherwise, do not convert
+                           (add-units @!/last-clicked-info))]
     [:div {:style {:align-items     "center"
                    :display         "flex"
                    :flex-direction  "column"
@@ -158,8 +162,7 @@
                      :margin-right     "0.5rem"
                      :width            "1.5rem"}}]
       [:h4 display-val]]
-     (when fbfm40?
-       [fbfm40-info])]))
+     [point-info point-info-model]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root component
