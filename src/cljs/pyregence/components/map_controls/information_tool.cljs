@@ -139,7 +139,7 @@
                            :fbp    c/fbp-lookup
                            nil)
         display-val      (cond
-                           point-info-modelg
+                           point-info-model
                            (get-in legend-map [@!/last-clicked-info "label"])
 
                            (and (fn? convert) (empty? (set/intersection no-convert *inputs))) ; convert the value
