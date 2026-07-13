@@ -109,30 +109,30 @@
 (defn- point-info [model]
   (when model
     [:div {:style {:margin "0.125rem 0.75rem"}}
-    [:p {:style {:margin-bottom "0.125rem"
-                 :text-align    "center"}}
-     [:strong "Fuel Type: "]
-     (get-in model [@!/last-clicked-info :fuel-type])]
-    [:p {:style {:margin-bottom "0"}}
-     [:strong "Description: "]
-     (get-in model [@!/last-clicked-info :description])]]))
+     [:p {:style {:margin-bottom "0.125rem"
+                  :text-align    "center"}}
+      [:strong "Fuel Type: "]
+      (get-in model [@!/last-clicked-info :fuel-type])]
+     [:p {:style {:margin-bottom "0"}}
+      [:strong "Description: "]
+      (get-in model [@!/last-clicked-info :description])]]))
 
 (defn- single-point-info [box-height _ units convert no-convert]
   (let [legend-map       (u-data/mapm (fn [li] [(js/parseFloat (get li "quantity")) li]) @!/legend-list)
         legend-keys      (sort (keys legend-map))
         color            (or (get-in legend-map [(-> @!/last-clicked-info
-                                                (max (first legend-keys))
-                                                (min (last legend-keys)))
-                                            "color"])
+                                                     (max (first legend-keys))
+                                                     (min (last legend-keys)))
+                                                 "color"])
                              (let [[low high] (u-data/find-boundary-values @!/last-clicked-info legend-keys)]
-                          (when (and high low)
-                            (u-misc/interp-color (get-in legend-map [low "color"])
-                                                 (get-in legend-map [high "color"])
-                                                 (/ (- @!/last-clicked-info low) (- high low))))))
+                               (when (and high low)
+                                 (u-misc/interp-color (get-in legend-map [low "color"])
+                                                      (get-in legend-map [high "color"])
+                                                      (/ (- @!/last-clicked-info low) (- high low))))))
         *inputs          (->> @!/*params
-                         (@!/*forecast)
-                         (vals)
-                         (into #{}))
+                              (@!/*forecast)
+                              (vals)
+                              (into #{}))
         add-units        #(u-str/end-with % (u-num/clean-units units))
         point-info-model (condp #(contains? %2 %1) *inputs
                            :fbfm40 c/fbfm40-lookup
