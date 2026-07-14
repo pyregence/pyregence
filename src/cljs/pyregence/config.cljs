@@ -219,7 +219,11 @@
                                                                      :no-convert      #{:cfo}
                                                                      :reverse-legend? true
                                                                      :disabled-for    #{:cecs :cffdrs-2024}})}
-                                  :model      {:opt-label  "Source"
+                                  :model      {:opt-label      "Source"
+                                               ;; cffdrs-2024 is first in :options (so it renders at the top),
+                                               ;; but it is incompatible with the default :fbfm40 layer. Pin the
+                                               ;; default source to LANDFIRE 2.5.0 so the Fuels tab opens compatible.
+                                               :default-option :landfire-2.5.0
                                                :hover-text [:p {:style {:margin-bottom "0"}}
                                                             [:strong "LANDFIRE"]
                                                             " –  Stock data provided by "
