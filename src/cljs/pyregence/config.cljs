@@ -276,9 +276,8 @@
                                                             [:strong "CFFDRS 2024"]
                                                             " - Canadian Forest Fire Danger Rating System. Details coming soon."]
                                                :options    (array-map
-                                                            :cffdrs-2024          {:opt-label    "CFFDRS 2024"
-                                                                                   :filter       "cffdrs-2024"
-                                                                                   :disabled-for #{:fbfm40 :cc :ch :cbh :cbd}}
+                                                            :cffdrs-2024          {:opt-label "CFFDRS 2024"
+                                                                                   :filter    "cffdrs-2024"}
                                                             :landfire-2.5.0       {:opt-label    "LANDFIRE 2.5.0 (2025 capable)"
                                                                                    :filter       "landfire-2.5.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
