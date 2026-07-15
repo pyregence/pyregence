@@ -119,7 +119,7 @@
   (-> result
       (rename-keys {:match_job_id          :match-job-id
                     :match_job_uuid        :match-job-unique-id
-                    :runway_job_id         :runway-job-id
+                    :sig3_job_id           :sig3-job-id
                     :user_id               :user-id
                     :created_at            :created-at
                     :updated_at            :updated-at
@@ -165,7 +165,7 @@
   "Updates any of the properties of a match job based on a match-job-id (required).
    Any keys that are not provided will not be updated in the DB."
   [{:keys [match-job-id
-           runway-job-id
+           sig3-job-id
            md-status
            display-name
            message
@@ -177,7 +177,7 @@
   {:pre [(some? match-job-id)]}
   (call-sql "update_match_job"
             match-job-id
-            runway-job-id
+            sig3-job-id
             md-status
             display-name
             message
@@ -350,7 +350,7 @@
                         :elmfire-request     {}
                         :geosync-request     {}
                         :match-job-id        match-job-id
-                        :runway-job-id       job-id ;; NOTE: `k8s-job-id` actually
+                        :sig3-job-id         job-id
                         :geoserver-workspace geoserver-workspace})
     (start-polling-results! sig3-endpoint job-id match-job-id)
     ;; Return the unpredictable public id as the browser's handle for this job.
