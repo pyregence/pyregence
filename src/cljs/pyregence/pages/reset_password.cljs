@@ -1,17 +1,18 @@
 (ns pyregence.pages.reset-password
   (:require
-   [clojure.core.async             :refer [<! go timeout]]
-   [clojure.string                 :as str]
-   [pyregence.components.buttons   :as buttons]
-   [pyregence.components.messaging :refer [toast-message!]]
-   [pyregence.components.nav-bar   :as nav-bar]
-   [pyregence.components.utils     :as utils]
-   [pyregence.state                :as !]
-   [pyregence.styles               :as $]
-   [pyregence.utils.async-utils    :as u-async]
-   [pyregence.utils.browser-utils  :as u-browser]
-   [pyregence.utils.data-utils     :as u-data]
-   [reagent.core                   :as r]))
+   [clojure.core.async                        :refer [<! go timeout]]
+   [clojure.string                            :as str]
+   [pyregence.components.buttons              :as buttons]
+   [pyregence.components.messaging            :refer [toast-message!]]
+   [pyregence.components.nav-bar              :as nav-bar]
+   [pyregence.components.utils                :as utils]
+   [pyregence.components.password.validations :as password->validations]
+   [pyregence.state                           :as !]
+   [pyregence.styles                          :as $]
+   [pyregence.utils.async-utils               :as u-async]
+   [pyregence.utils.browser-utils             :as u-browser]
+   [pyregence.utils.data-utils                :as u-data]
+   [reagent.core                              :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -38,7 +39,10 @@
                             "Your password must be at least 8 characters long.")
 
                           (when (not= @password @re-password)
-                            "Password fields do not match.")])] ; token is validated server-side
+                            "Password fields do not match.")
+
+                          (password->validations/->toast! @password)
+                          ])] ; token is validated server-side
 
       (if (pos? (count errors))
         (do (toast-message! errors)
@@ -90,6 +94,7 @@
                                                :placeholder "New Password"
                                                :on-change   #(reset! password (-> % .-target .-value))
                                                :value       @password}]
+                         [password->validations/->cmpt! @password]
                          [utils/input-labeled {:label       "Re-enter New Password"
                                                :type        "password"
                                                :placeholder "New Password"
