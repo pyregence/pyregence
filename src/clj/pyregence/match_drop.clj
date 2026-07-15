@@ -344,7 +344,7 @@
         {:keys [geoserver-workspace]}      match-drop-inputs]
     (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
                         :md-status           2
-                        :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.")
+                        :message             "Match Drop initiated from Pyrecast."
                         :elmfire-done?       false
                         :dps-request         match-drop-inputs
                         :elmfire-request     {}
