@@ -7,3 +7,6 @@ ALTER TABLE match_jobs
     ADD COLUMN IF NOT EXISTS match_job_uuid uuid NOT NULL DEFAULT gen_random_uuid();
 
 CREATE UNIQUE INDEX IF NOT EXISTS match_jobs_match_job_uuid_key ON match_jobs (match_job_uuid);
+
+ALTER TABLE match_jobs
+    RENAME COLUMN runway_job_uid TO sig3_job_uid;
