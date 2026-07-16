@@ -56,5 +56,7 @@ jobs:
                                         :triangulum.views/gtag-id       "G-CI"))))'
     - name: Build database with dev data
       run: clojure -M:build-db build-all --dev-data --admin-pass postgres
-    - name: Run tests
+    - name: Run rich-comment tests
       run: bb test
+    - name: Run Clojure tests
+      run: bb test-clj
