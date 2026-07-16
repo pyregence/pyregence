@@ -3,7 +3,7 @@
    [clojure.string                 :as str]
    [pyregence.components.svg-icons :as svg]))
 
-(defn- f
+(defn- data
   [password]
   [{:validation/text   "One number."
     :validation/valid? (boolean (re-find #"\d" password))}
@@ -18,7 +18,7 @@
 
 (defn ->toast
   [password]
-  (let [validations (f password)]
+  (let [validations (data password)]
     (when-not (every? :validation/valid? validations)
       (str "Your password must have "
            (str/lower-case
@@ -33,7 +33,7 @@
     [:div {:style {:padding "20px" :color "black"}}
      [:h6 "Your password must have:"]
      [:<>
-      (for  [{:validation/keys [text valid?]} (f password)]
+      (for  [{:validation/keys [text valid?]} (data password)]
         ^{:key text}
         [:div {:style {:display         "grid"
                        :justify-content "start"
