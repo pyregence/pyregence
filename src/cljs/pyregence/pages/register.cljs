@@ -63,7 +63,7 @@
                         (when-not (= @password @re-password)
                           "The passwords you have entered do not match.")
 
-                        (password->validations/->toast! @password)])]
+                        (password->validations/->toast @password)])]
     (if (pos? (count errors))
       (do (toast-message! errors)
           (reset! pending? false))
@@ -121,7 +121,7 @@
                                                :placeholder "Enter Password"
                                                :on-change   #(reset! password (-> % .-target .-value))
                                                :value       @password}]
-                         [password->validations/->cmpt! @password]
+                         [password->validations/->cmpt @password]
                          [utils/input-labeled {:label       "Confirm Password"
                                                :type        "password"
                                                :placeholder "Confirm Password"

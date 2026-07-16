@@ -16,7 +16,7 @@
    {:validation/text   "At most 64 characters."
     :validation/valid? (<= (count password) 64)}])
 
-(defn ->toast!
+(defn ->toast
   [password]
   (let [validations (f password)]
     (when-not (every? :validation/valid? validations)
@@ -27,7 +27,7 @@
                (when (false? valid?) text))
              validations))))))
 
-(defn ->cmpt!
+(defn ->cmpt
   [password]
   (when-not (str/blank? password)
     [:div {:style {:padding "20px" :color "black"}}

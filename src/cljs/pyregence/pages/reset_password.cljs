@@ -41,7 +41,7 @@
                           (when (not= @password @re-password)
                             "Password fields do not match.")
 
-                          (password->validations/->toast! @password)
+                          (password->validations/->toast @password)
                           ])] ; token is validated server-side
 
       (if (pos? (count errors))
@@ -94,7 +94,7 @@
                                                :placeholder "New Password"
                                                :on-change   #(reset! password (-> % .-target .-value))
                                                :value       @password}]
-                         [password->validations/->cmpt! @password]
+                         [password->validations/->cmpt @password]
                          [utils/input-labeled {:label       "Re-enter New Password"
                                                :type        "password"
                                                :placeholder "New Password"
