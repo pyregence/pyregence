@@ -5,7 +5,8 @@
 CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
  RETURNS TABLE (
     match_job_id        integer,
-    runway_job_id       text,
+    match_job_uuid      uuid,
+    sig3_job_id         text,
     user_id             integer,
     created_at          timestamp,
     updated_at          timestamp,
@@ -21,7 +22,8 @@ CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
  ) AS $$
 
     SELECT match_job_uid,
-        runway_job_uid,
+        match_job_uuid,
+        sig3_job_uid,
         user_rid,
         created_at,
         updated_at,
@@ -39,11 +41,12 @@ CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
 
 $$ LANGUAGE SQL;
 
--- Retrieve all match drop jobs associated with user_rid
-CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
+-- Retrieve the match job based on its unpredictable public identifier
+CREATE OR REPLACE FUNCTION get_match_job_by_uuid(_match_job_uuid uuid)
  RETURNS TABLE (
     match_job_id        integer,
-    runway_job_id       text,
+    match_job_uuid      uuid,
+    sig3_job_id         text,
     user_id             integer,
     created_at          timestamp,
     updated_at          timestamp,
@@ -59,7 +62,49 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
  ) AS $$
 
     SELECT match_job_uid,
-        runway_job_uid,
+        match_job_uuid,
+        sig3_job_uid,
+        user_rid,
+        created_at,
+        updated_at,
+        md_status,
+        display_name,
+        message,
+        job_log,
+        elmfire_done,
+        dps_request::text,
+        elmfire_request::text,
+        geosync_request::text,
+        geoserver_workspace
+    FROM match_jobs
+    WHERE match_job_uuid = _match_job_uuid
+
+$$ LANGUAGE SQL;
+
+-- Retrieve all match drop jobs associated with user_rid.
+-- Exposes match_job_uuid (the unpredictable public id) but never the sequential
+-- match_job_uid PK, since this list is sent straight to the browser and nothing
+-- resolves a job by its PK from here (PYR1-1512 enumeration hardening).
+CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
+ RETURNS TABLE (
+    match_job_uuid      uuid,
+    sig3_job_id         text,
+    user_id             integer,
+    created_at          timestamp,
+    updated_at          timestamp,
+    md_status           integer,
+    display_name        varchar,
+    message             text,
+    job_log             text,
+    elmfire_done        boolean,
+    dps_request         text,
+    elmfire_request     text,
+    geosync_request     text,
+    geoserver_workspace text
+ ) AS $$
+
+    SELECT match_job_uuid,
+        sig3_job_uid,
         user_rid,
         created_at,
         updated_at,
@@ -115,7 +160,7 @@ $$ LANGUAGE SQL;
 -- Update job message
 CREATE OR REPLACE FUNCTION update_match_job(
     _match_job_id        integer,
-    _runway_job_id       text,
+    _sig3_job_id         text,
     _md_status           integer,
     _display_name        varchar,
     _message             text,
@@ -129,7 +174,7 @@ CREATE OR REPLACE FUNCTION update_match_job(
  ) RETURNS void AS $$
 
     UPDATE match_jobs
-    SET runway_job_uid = coalesce(_runway_job_id, runway_job_uid),
+    SET sig3_job_uid = coalesce(_sig3_job_id, sig3_job_uid),
         md_status = coalesce(_md_status, md_status),
         display_name = coalesce(_display_name, display_name),
         message = coalesce(_message, message),

@@ -6,7 +6,8 @@
 --------------------------------------------------------------------------------
 CREATE TABLE match_jobs (
     match_job_uid       SERIAL PRIMARY KEY,
-    runway_job_uid      text,
+    match_job_uuid      uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(), -- unpredictable public id; the integer PK stays internal
+    sig3_job_uid        text,
     user_rid            integer NOT NULL REFERENCES users (user_uid) ON DELETE CASCADE ON UPDATE CASCADE,
     created_at          timestamp DEFAULT now(),
     updated_at          timestamp DEFAULT now(),

@@ -118,7 +118,8 @@
 (defn- sql-result->job [result]
   (-> result
       (rename-keys {:match_job_id          :match-job-id
-                    :runway_job_id         :runway-job-id
+                    :match_job_uuid        :match-job-unique-id
+                    :sig3_job_id           :sig3-job-id
                     :user_id               :user-id
                     :created_at            :created-at
                     :updated_at            :updated-at
@@ -135,10 +136,19 @@
       (update :geosync-request json->clj)))
 
 (defn- get-match-job-from-match-job-id!
-  "Returns a specific entry in the match_jobs table based on its match-job-id."
+  "Returns a specific entry in the match_jobs table based on its (internal) match-job-id."
   [match-job-id]
   (when (integer? match-job-id)
     (some-> (call-sql "get_match_job" match-job-id)
+            (first)
+            (sql-result->job))))
+
+(defn- get-match-job-from-uuid!
+  "Returns a specific entry in the match_jobs table based on its public
+   match-job-unique-id (uuid)."
+  [match-job-unique-id]
+  (when-let [uuid (u/->uuid match-job-unique-id)]
+    (some-> (call-sql "get_match_job_by_uuid" uuid)
             (first)
             (sql-result->job))))
 
@@ -155,7 +165,7 @@
   "Updates any of the properties of a match job based on a match-job-id (required).
    Any keys that are not provided will not be updated in the DB."
   [{:keys [match-job-id
-           runway-job-id
+           sig3-job-id
            md-status
            display-name
            message
@@ -167,7 +177,7 @@
   {:pre [(some? match-job-id)]}
   (call-sql "update_match_job"
             match-job-id
-            runway-job-id
+            sig3-job-id
             md-status
             display-name
             message
@@ -334,16 +344,22 @@
         {:keys [geoserver-workspace]}      match-drop-inputs]
     (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
                         :md-status           2
-                        :message             (str "Match Drop #" match-job-id " initiated from Pyrecast.")
+                        :message             "Match Drop initiated from Pyrecast."
                         :elmfire-done?       false
                         :dps-request         match-drop-inputs
                         :elmfire-request     {}
                         :geosync-request     {}
                         :match-job-id        match-job-id
-                        :runway-job-id       job-id ;; NOTE: `k8s-job-id` actually
+                        :sig3-job-id         job-id
                         :geoserver-workspace geoserver-workspace})
     (start-polling-results! sig3-endpoint job-id match-job-id)
-    {:match-job-id match-job-id}))
+    ;; Return the unpredictable public id as the browser's handle for this job.
+    ;; NOTE: the sequential PK is still indirectly exposed through
+    ;; geoserver-workspace (named "match-drop-forecast_md-<pk>_..."), which
+    ;; get-md-status/get-match-drops return. That leak is owner-scoped and only
+    ;; reveals system job volume -- accepted as low severity (PYR1-1512); a full
+    ;; fix means renaming the sig3/GeoServer workspace, out of scope here.
+    {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}))
 
 (defn- create-match-job!
   [{:keys [user-id] :as params}]
@@ -394,6 +410,9 @@
       (data-response "You do not have access to the Match Drop tool."
                      {:status 403})
       (->> (call-sql "get_user_match_jobs" user-id)
+           ;; get_user_match_jobs no longer selects the sequential PK column.
+           ;; (It is still indirectly present in geoserver-workspace; see the
+           ;; note in create-match-job-using-kubernetes!.)
            (mapv sql-result->job)
            (data-response)))))
 
@@ -464,18 +483,18 @@
   "Deletes the specified match drop from the DB and removes it from the GeoServer
    via the 'remove' action passed to the GeoSync Microservice.
    Only the match drop's owner may delete it."
-  [{:keys [user-id]} match-job-id]
-  (let [job (get-match-job-from-match-job-id! match-job-id)]
+  [{:keys [user-id]} match-job-unique-id]
+  (let [job (get-match-job-from-uuid! match-job-unique-id)]
     (if (and job (= user-id (:user-id job)))
       (let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
-        (delete-match-drop-using-kubernetes! sig3-endpoint match-job-id))
+        (delete-match-drop-using-kubernetes! sig3-endpoint (:match-job-id job)))
       (data-response "You are not authorized to delete this match drop." {:status 403}))))
 
 (defn get-md-status
   "Returns the current status of the given match drop run.
    Only the match drop's owner may view it."
-  [{:keys [user-id]} match-job-id]
-  (let [job (get-match-job-from-match-job-id! match-job-id)]
+  [{:keys [user-id]} match-job-unique-id]
+  (let [job (get-match-job-from-uuid! match-job-unique-id)]
     (if (and job (= user-id (:user-id job)))
       (data-response (select-keys job [:display-name :geoserver-workspace :message :md-status :job-log]))
       (data-response "You are not authorized to view this match drop." {:status 403}))))
@@ -524,11 +543,15 @@
 ^:rct/test
 (comment
   ;; --- Match drop ownership guard (PYR1-1512) ---
-  ;; A match drop the session user does not own (here a non-existent job) must
+  ;; A match drop the session user does not own (here a non-existent uuid) must
   ;; not be viewable or deletable; both return 403 without revealing existence.
-  (get-md-status {:user-id 1} 999999999)
+  (get-md-status {:user-id 1} "00000000-0000-0000-0000-000000000000")
   ;=>> {:status 403}
 
-  (delete-match-drop! {:user-id 1} 999999999)
+  (delete-match-drop! {:user-id 1} "00000000-0000-0000-0000-000000000000")
+  ;=>> {:status 403}
+
+  ;; A malformed (non-uuid) id is rejected the same way -- no 500.
+  (get-md-status {:user-id 1} "not-a-uuid")
   ;=>> {:status 403}
   )

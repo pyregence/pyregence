@@ -143,25 +143,25 @@
 (defn- poll-status
   "Continually polls for updated information about the match drop run every 5 seconds.
    Stops polling on finish or error signal."
-  [match-job-id user-email ignition-time lat lon]
+  [match-job-unique-id user-email ignition-time lat lon]
   (go
     (while @poll?
       (let [{:keys [display-name
                     geoserver-workspace
                     message
                     md-status
-                    job-log]} (-> (u-async/call-clj-async! "get-md-status" match-job-id)
+                    job-log]} (-> (u-async/call-clj-async! "get-md-status" match-job-unique-id)
                                   (<!)
                                   (:body)
                                   (edn/read-string))]
         (case md-status
           0 (do
               (refresh-fire-names!)
-              (set-message-box-content! {:body (str "Finished running match-drop-" match-job-id ".")})
+              (set-message-box-content! {:body (str "Finished running match-drop-" match-job-unique-id ".")})
               (<! (u-async/call-clj-async! "send-email"
                                            user-email
                                            :match-drop
-                                           {:match-job-id  match-job-id
+                                           {:match-job-unique-id  match-job-unique-id
                                             :display-name  display-name
                                             :status        :completed
                                             :fire-name     (-> geoserver-workspace
@@ -175,11 +175,11 @@
           1 (do
               (println message)
               (js/console.error job-log)
-              (set-message-box-content! (body-for-match-drop-modal (str "Error running match-drop-" match-job-id ".\n\n" message)))
+              (set-message-box-content! (body-for-match-drop-modal (str "Error running match-drop-" match-job-unique-id ".\n\n" message)))
               (<! (u-async/call-clj-async! "send-email"
                                            user-email
                                            :match-drop
-                                           {:match-job-id match-job-id
+                                           {:match-job-unique-id match-job-unique-id
                                             :display-name display-name
                                             :status       :failed}))
               (reset! poll? false))
@@ -213,11 +213,11 @@
                                    :custom-button [:button {:class    (<class $/p-form-button)
                                                             :on-click #(js/window.open "/dashboard" "/dashboard")}
                                                    "Dashboard"]})
-        (let [{:keys [error match-job-id]} (edn/read-string (:body (<! match-chan)))]
+        (let [{:keys [error match-job-unique-id]} (edn/read-string (:body (<! match-chan)))]
           (if error
             (set-message-box-content! {:body (str "Error: " error)})
             (do (reset! poll? true)
-                (poll-status match-job-id user-email ignition-time lat lon)))))
+                (poll-status match-job-unique-id user-email ignition-time lat lon)))))
       ;; Lat and Lon are invalid, let user know
       (set-message-box-content! {:title "Lat/Lon Error"
                                  :body  (str "Error: The Latitude of your ignition point must be between 25 and 50\n"

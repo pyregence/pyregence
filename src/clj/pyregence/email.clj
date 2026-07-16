@@ -122,7 +122,7 @@
                     :failed    "Match Drop Failed"
                     "Match Drop Update")
         body      (messages/match-drop-email fmt base-url email user-name
-                                             (:match-job-id match-drop-args)
+                                             (:match-job-unique-id match-drop-args)
                                              (:display-name match-drop-args)
                                              status)
         result    (send-mail email nil "PyreCast Support" subject body fmt)]

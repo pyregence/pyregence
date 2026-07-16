@@ -29,11 +29,13 @@
                              (<!)
                              (:body)
                              (edn/read-string)
-                             (sort-by :match-job-id #(> %1 %2))))))
+                             ;; Newest first. The public id is a uuid (not sortable),
+                             ;; so order by creation time instead of the id.
+                             (sort-by #(.getTime (:created-at %)) >)))))
 
-(defn- delete-match-drop! [match-job-id]
+(defn- delete-match-drop! [match-job-unique-id]
   (go
-    (let [response      (->> match-job-id
+    (let [response      (->> match-job-unique-id
                              (u-async/call-clj-async! "delete-match-drop")
                              (<!))
           response-body (-> response (:body) (edn/read-string))]
@@ -42,7 +44,7 @@
           (toast-message! response-body)
           (set-user-match-drops!)) ; refresh the dashboard
         (toast-message! (str "Something went wrong while deleting Match Drop "
-                             match-job-id ": " response-body))))))
+                             match-job-unique-id ": " response-body))))))
 
 (defn- set-match-drop-access! []
   (go
@@ -53,9 +55,9 @@
 
 ;; Helper
 
-(defn- show-job-log-modal! [match-job-id job-log]
+(defn- show-job-log-modal! [match-job-unique-id job-log]
   (set-message-box-content!
-   {:title (str "Match Drop #" match-job-id)
+   {:title (str "Match Drop #" match-job-unique-id)
     :body  [:div {:style {:height     "50vh"
                           :overflow-y "auto"
                           :width      "75vw"}}
@@ -73,14 +75,14 @@
       (subs 0 16)
       (str ":" (u-time/pad-zero (.getSeconds js-date)))))
 
-(defn- handle-delete-match-drop [match-job-id display-name]
+(defn- handle-delete-match-drop [match-job-unique-id display-name]
   (let [message (str "Are you sure that you want to delete the Match Drop\n"
                      "with name \"%s\" and Job ID \"%s\"?\n"
                      "This action is irreversible.\n\n")]
     (set-message-box-content! {:mode   :confirm
                                :title  "Delete Match Drop"
-                               :body   (format message display-name match-job-id)
-                               :action #(delete-match-drop! match-job-id)})))
+                               :body   (format message display-name match-job-unique-id)
+                               :action #(delete-match-drop! match-job-unique-id)})))
 
 ;; Styles
 
@@ -98,7 +100,7 @@
    [:tr
     (doall (map-indexed (fn [i col] ^{:key i} [:th col]) cols))]])
 
-(defn- match-drop-item [{:keys [match-job-id
+(defn- match-drop-item [{:keys [match-job-unique-id
                                 display-name
                                 md-status
                                 message
@@ -116,7 +118,7 @@
                           (some-> (get-in dps-request [:pyrc_ignition :pyrc_ignition_epoch_s])
                                   (u-time/epoch-s->utc-date)))]
     [:tr
-     [:td match-job-id] ; "Job ID"
+     [:td (str match-job-unique-id)] ; "Job ID"
      [:td {:width "10%"} (when-not (nil? display-name) display-name)] ; "Fire Name"
      [:td ; "Match Drop Status"
       (case md-status
@@ -143,12 +145,12 @@
      [:td (fmt-datetime created-at)] ; "Time Started (UTC)"
      [:td (fmt-datetime updated-at)] ; "Last Updated (UTC)"
      [:td (u-time/ms->hhmmss (- updated-at created-at))] ; "Elapsed Time"
-     [:td [:a {:href "#" :on-click #(show-job-log-modal! match-job-id job-log)} "View Logs"]] ; "Logs"
+     [:td [:a {:href "#" :on-click #(show-job-log-modal! match-job-unique-id job-log)} "View Logs"]] ; "Logs"
      [:td ; "Delete"
       [:div {:style {:display "flex" :justify-content "center"}}
        [icon-button
         :trash
-        #(handle-delete-match-drop match-job-id display-name)
+        #(handle-delete-match-drop match-job-unique-id display-name)
         nil
         :btn-size :circle]]]]))
 
@@ -166,7 +168,7 @@
            "Logs"
            "Delete"]]
    [:tbody
-    (map (fn [{:keys [match-job-id] :as md}] ^{:key match-job-id}
+    (map (fn [{:keys [match-job-unique-id] :as md}] ^{:key match-job-unique-id}
            [match-drop-item md])
          @match-drops)]])
 
