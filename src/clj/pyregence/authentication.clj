@@ -111,9 +111,8 @@
   ;; => true with one lowercase
   )
 
-(defn password->invalid-password-msg
-  [password]
-  (str "Invalid Password:'" password "'. Your password must be between 12 and 64 characters long, contain at least one number (0-9), and use a mix of uppercase and lowercase letters."))
+(def password->invalid-password-msg
+  "Invalid Password. Your password must be between 12 and 64 characters long, contain at least one number (0-9), and use a mix of uppercase and lowercase letters.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Authentication & Session Management
@@ -195,7 +194,7 @@
   "Sets a new password for user with valid reset token."
   [session email password token]
   (if-not (valid-password? password)
-    (data-response (password->invalid-password-msg password) {:status 400})
+    (data-response password->invalid-password-msg  {:status 400})
     (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
       (successful-login user session)
       (data-response "Invalid or expired reset token" {:status 403}))))
@@ -684,7 +683,7 @@
   - All organization assignments are validated server-side using the session context."
   [session email user-name password & [org-name-or-opts]]
   (if-not (valid-password? password)
-    (data-response (password->invalid-password-msg password) {:status 400})
+    (data-response password->invalid-password-msg {:status 400})
     (let [org-name (cond (string? org-name-or-opts)             org-name-or-opts
                          (map? org-name-or-opts) (or (:org-name org-name-or-opts)
                                                      (get org-name-or-opts "org-name"))
