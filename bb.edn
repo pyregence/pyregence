@@ -24,6 +24,7 @@
   dev-data              (clojure "-M:build-db build-all --dev-data")
   functions             (clojure "-M:build-db functions")
   test                  (clojure "-M:rct-test")
+  test-clj              (clojure "-M:test")
   prod                  (do
                           (run 'install)
                           (run 'functions)
