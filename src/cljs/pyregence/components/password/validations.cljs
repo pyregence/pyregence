@@ -11,7 +11,7 @@
     :validation/valid? (boolean (re-find #"[a-z]" password))}
    {:validation/text   "One uppercase."
     :validation/valid? (boolean (re-find #"[A-Z]" password))}
-   {:validation/text   "12 characters."
+   {:validation/text   "At least 12 characters."
     :validation/valid? (<= 12 (count password))}
    {:validation/text   "At most 64 characters."
     :validation/valid? (<= (count password) 64)}])
