@@ -34,6 +34,7 @@
      [:h6 "Your password must have:"]
      [:<>
       (for  [{:validation/keys [text valid?]} (f password)]
+        ^{:key text}
         [:div {:style {:display         "grid"
                        :justify-content "start"
                        :grid-auto-flow  "column"
