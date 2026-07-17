@@ -1,27 +1,27 @@
 (ns ^:figwheel-hooks pyregence.client
-  (:require [clojure.core.async                 :refer [go <!]]
-            [clojure.edn                        :as edn]
-            [goog.dom                           :as dom]
-            [reagent.dom                        :refer [render]]
-            [pyregence.components.page-layout   :refer [wrap-page]]
-            [pyregence.pages.account-settings   :as account-settings]
-            [pyregence.pages.backup-codes       :as backup-codes]
-            [pyregence.pages.dashboard          :as dashboard]
-            [pyregence.pages.disable-2fa        :as disable-2fa]
-            [pyregence.pages.help               :as help]
-            [pyregence.pages.login              :as login]
-            [pyregence.pages.near-term-forecast :as ntf]
-            [pyregence.pages.not-found          :as not-found]
-            [pyregence.pages.privacy-policy     :as privacy]
-            [pyregence.pages.register           :as register]
-            [pyregence.pages.reset-password     :as reset-password]
-            [pyregence.pages.terms-of-use       :as terms]
-            [pyregence.pages.setup-2fa          :as setup-2fa]
-            [pyregence.pages.switch-2fa         :as switch-2fa]
-            [pyregence.pages.verify-2fa         :as verify-2fa]
-            [pyregence.pages.verify-email       :as verify-email]
-            [pyregence.state                    :as !]
-            [pyregence.utils.async-utils        :as u-async]))
+  (:require
+   [clojure.core.async                 :refer [go]]
+   [goog.dom                           :as dom]
+   [pyregence.components.popups :refer [fire-popup]]
+   [pyregence.pages.account-settings   :as account-settings]
+   [pyregence.pages.backup-codes       :as backup-codes]
+   [pyregence.pages.dashboard          :as dashboard]
+   [pyregence.pages.disable-2fa        :as disable-2fa]
+   [pyregence.pages.help               :as help]
+   [pyregence.pages.login              :as login]
+   [pyregence.pages.near-term-forecast :as ntf]
+   [pyregence.pages.not-found          :as not-found]
+   [pyregence.pages.privacy-policy     :as privacy]
+   [pyregence.pages.register           :as register]
+   [pyregence.pages.reset-password     :as reset-password]
+   [pyregence.pages.setup-2fa          :as setup-2fa]
+   [pyregence.pages.switch-2fa         :as switch-2fa]
+   [pyregence.pages.terms-of-use       :as terms]
+   [pyregence.pages.verify-2fa         :as verify-2fa]
+   [pyregence.pages.verify-email       :as verify-email]
+   [pyregence.state                    :as !]
+   [reagent.dom                        :refer [render]]
+   [pyregence.components.svg-icons :as svg]))
 
 (defonce ^:private original-params  (atom {}))
 (defonce ^:private original-session (atom {}))
@@ -58,9 +58,19 @@
         root-cmpt     (or root-cmpt-h root-cmpt-hf not-found/root-component)
         footer?       (some? root-cmpt-hf)]
     (render
-     [wrap-page {:root-component root-cmpt
-                 :params         params
-                 :footer?        footer?}]
+     [:div {:style {:width "400px"
+                    :height "300px"
+                    :padding "10px"}}
+      [fire-popup {:prettyname "River Blue"
+                   :containper 0
+                   :acres 23
+                   :source "Watch Duty"
+                   :icon [svg/watch-duty]
+                   :show-link? true
+                   :on-click nil}]]
+     #_[wrap-page {:root-component root-cmpt
+                   :params         params
+                   :footer?        footer?}]
      (dom/getElement "app"))))
 
 (defn- ^:export init

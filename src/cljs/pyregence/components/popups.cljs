@@ -59,10 +59,17 @@
                  :font-weight "600"}} value]]])
 
 (defn- fire-link [on-click]
-  [:div {:style {:width "100%"}}
+  [:div
+
    [:button {:class    (<class $popup-btn)
+             :style    {:width "100%"
+                        :display "flex"
+                        :padding "10px"
+                        :gap "10px"
+                        :justify-content "center"}
              :on-click on-click}
-    "View Forecast"]])
+    [svg/pyrecast]
+    [:div "View Forecast"]]])
 
 (defn fire-popup
   "Popup body for active fires."
@@ -76,9 +83,12 @@
                   :gap            "8px"}}
     [fire-property "Percent Contained" (str containper "%")]
     [fire-property "Acres Burned" (.toLocaleString acres)]
+    (when show-link? [fire-link on-click])
+    [:div {:style {:height "2px" :width "100%" :background-color "#E1E1E1"}}]
     (when source
-      [:div {:style {:display "flex" :gap "8px" :flex-direction "column"}}
-       [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
+      [:div {:style {:display "flex" :gap "8px" :flex-direction "row" :align-items "center"}}
+       [:strong {:style {:color ($/color-picker :neutral-md-gray)
+                         :margin-top "5px"}} "Initial location source:"]
        [:a {:href backlink :target "_blank"}
         [:div {:style {:display        "flex"
                        :flex-direction "column"
@@ -86,7 +96,7 @@
          [:div {:style {:display          "flex"
                         :height           "52px"
                         :gap              "8px"
-                        :background-color ($/color-picker :neutral-light-gray)
+                        #_#_:background-color ($/color-picker :neutral-light-gray)
                         :padding          "8px 12px"
                         :align-items      "center"
                         :align-self       "stretch"
@@ -101,8 +111,7 @@
                  {:margin-bottom "0px"
                   :font-weight   "600"
                   :color         ($/color-picker :neutral-black)}} "CAL FIRE"])
-          [svg/source-link]]]]])]
-   (when show-link? [fire-link on-click])])
+          [svg/source-link]]]]])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Red-Flag Component
