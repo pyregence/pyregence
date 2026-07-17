@@ -1,17 +1,19 @@
 (ns pyregence.pages.register
   (:require
-   [clojure.core.async             :refer [<! go timeout]]
-   [pyregence.analytics            :refer [gtag]]
-   [pyregence.components.buttons   :as buttons]
-   [pyregence.components.messaging :refer [toast-message!]]
-   [pyregence.components.nav-bar   :refer [nav-bar]]
-   [pyregence.components.utils     :as utils]
-   [pyregence.state                :as !]
-   [pyregence.styles               :as $]
-   [pyregence.utils.async-utils    :as u-async]
-   [pyregence.utils.browser-utils  :as u-browser]
-   [pyregence.utils.data-utils     :as u-data]
-   [reagent.core                   :as r]))
+   [clojure.core.async                        :refer [<! go timeout]]
+   [pyregence.analytics                       :refer [gtag]]
+   [pyregence.components.buttons              :as buttons]
+   [pyregence.components.messaging            :refer [toast-message!]]
+   [pyregence.components.nav-bar              :refer [nav-bar]]
+   [pyregence.components.password.validations :as password->validations]
+   [pyregence.components.utils                :as utils]
+   [pyregence.state                           :as !]
+   [pyregence.styles                          :as $]
+   [pyregence.utils.async-utils               :as u-async]
+   [pyregence.utils.browser-utils             :as u-browser]
+   [pyregence.utils.data-utils                :as u-data]
+   [reagent.core                              :as r]
+   [clojure.string                            :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -49,17 +51,19 @@
   (reset! pending? true)
   (let [errors (remove nil?
                  ;;TODO consider adding an email validation.
-                 [(when (u-data/missing-data? @email @re-email @password @re-password)
-                    "You must fill in all required information to continue.")
+                       [(when (u-data/missing-data? @email @re-email @password @re-password)
+                          "You must fill in all required information to continue.")
 
-                  (when-not (= @email @re-email)
-                    "The emails you have entered do not match.")
+                        (when-not (= @email @re-email)
+                          "The emails you have entered do not match.")
 
-                  (when (< (count @password) 8)
-                    "Your password must be at least 8 characters long.")
+                        (when (< (count @password) 8)
+                          "Your password must be at least 8 characters long.")
 
-                  (when-not (= @password @re-password)
-                    "The passwords you have entered do not match.")])]
+                        (when-not (= @password @re-password)
+                          "The passwords you have entered do not match.")
+
+                        (password->validations/->toast @password)])]
     (if (pos? (count errors))
       (do (toast-message! errors)
           (reset! pending? false))
@@ -117,12 +121,13 @@
                                                :placeholder "Enter Password"
                                                :on-change   #(reset! password (-> % .-target .-value))
                                                :value       @password}]
+                         [password->validations/->cmpt @password]
                          [utils/input-labeled {:label       "Confirm Password"
                                                :type        "password"
                                                :placeholder "Confirm Password"
                                                :on-change   #(reset! re-password (-> % .-target .-value))
                                                :value       @re-password}]
-                         [buttons/primary {:text     "Register"
+                         [buttons/primary {:text      "Register"
                                            :on-click register!}]
                          [:p "Already have an account? "
                           [:a {:href  "/login"
