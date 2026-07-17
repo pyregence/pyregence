@@ -305,7 +305,6 @@ $$ LANGUAGE SQL;
 --------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_all_users()
  RETURNS TABLE (
-  user_uid              integer,
   email                 text,
   name                  text,
   settings              text,
@@ -316,8 +315,10 @@ CREATE OR REPLACE FUNCTION get_all_users()
   org_membership_status org_membership_status,
   organization_name     text
  ) AS $$
+    -- The sequential user_uid PK is intentionally not selected: nothing needs it
+    -- client-side (user actions key off email) and it must not reach the browser
+    -- (PYR1-1512 enumeration hardening).
     SELECT
-      u.user_uid,
       u.email,
       u.name,
       u.settings,

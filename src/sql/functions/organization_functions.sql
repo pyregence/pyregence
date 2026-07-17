@@ -183,15 +183,15 @@ $$;
 --------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_org_member_users(_org_id integer)
  RETURNS TABLE (
-    user_id               integer,
     full_name             text,
     email                 text,
     user_role             user_role,
     org_membership_status org_membership_status
  ) AS $$
-
+    -- The sequential user_uid PK is intentionally not selected: nothing needs it
+    -- client-side (user actions key off email) and it must not reach the browser
+    -- (PYR1-1512 enumeration hardening).
     SELECT
-        user_uid,
         name AS full_name,
         email,
         user_role,

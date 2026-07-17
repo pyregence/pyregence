@@ -910,9 +910,8 @@
    (->> (call-sql "get_org_member_users" (if (= user-role "super_admin")
                                            (org-uuid->id org-uuid)
                                            organization-id))
-        (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
-                {:user-id           user_id
-                 :full-name         full_name
+        (mapv (fn [{:keys [full_name email user_role org_membership_status]}]
+                {:full-name         full_name
                  :email             email
                  :user-role         user_role
                  :membership-status org_membership_status}))
@@ -928,10 +927,9 @@
   "Returns a vector of all users in the DB."
   [_]
   (->> (call-sql "get_all_users")
-       (mapv (fn [{:keys [user_uid email name settings match_drop_access email_verified
+       (mapv (fn [{:keys [email name settings match_drop_access email_verified
                           last_login_date user_role org_membership_status organization_name]}]
-               {:user-id               user_uid
-                :email                 email
+               {:email                 email
                 :name                  name
                 :settings              settings
                 :match-drop-access     match_drop_access
@@ -941,6 +939,27 @@
                 :org-membership-status org_membership_status
                 :organization-name     organization_name}))
        (data-response)))
+
+^:rct/test
+(comment
+  ;; --- No sequential user PK reaches the browser (PYR1-1512) ---
+  ;; Seed data: user 1 (admin@pyr.dev) is organization_admin of org 1;
+  ;; user 2 (user@pyr.dev) is a member of org 1.
+
+  ;; get-all-users returns every user keyed by email and never exposes the
+  ;; sequential user PK.
+  (let [users (-> (get-all-users {}) :body read-string)]
+    [(some #(contains? % :user-id) users)
+     (contains? (set (map :email users)) "admin@pyr.dev")])
+  ;=> [nil true]
+
+  ;; get-org-member-users lists an org's members keyed by email, never the PK.
+  (let [members (-> (get-org-member-users {:organization-id 1 :user-role "organization_admin"})
+                    :body read-string)]
+    [(some #(contains? % :user-id) members)
+     (contains? (set (map :email members)) "user@pyr.dev")])
+  ;=> [nil true]
+  )
 
 (defn get-password-set-date
   [{:keys [user-id]}]

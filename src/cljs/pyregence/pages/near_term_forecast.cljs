@@ -990,7 +990,7 @@
 ;; UI Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- control-layer [user-id user-email]
+(defn- control-layer [logged-in? user-email]
   (let [my-box (r/atom #js {})
         ref    (react/createRef)]
     (r/create-class
@@ -1038,7 +1038,7 @@
          [tool-bar
           set-show-info!
           get-any-level-key
-          user-id]
+          logged-in?]
          [scale-bar (get-any-level-key :time-slider?)]
          (when-not @!/mobile? [mouse-lng-lat])
          [zoom-bar
@@ -1194,7 +1194,7 @@
 
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
-  [{:keys [user-id user-role user-email] :as params}]
+  [{:keys [logged-in? user-role user-email] :as params}]
   (r/create-class
    {:component-did-mount
     (fn [_]
@@ -1216,7 +1216,7 @@
        [nav-bar {:capabilities       @!/capabilities
                  :current-forecast   @!/*forecast
                  :is-admin?          (roles-who-can-see-admin-btn user-role)
-                 :logged-in?         user-id
+                 :logged-in?         logged-in?
                  :mobile?            @!/mobile?
                  :user-orgs-list     @!/user-orgs-list
                  :on-forecast-select select-forecast!
@@ -1225,6 +1225,6 @@
         (when (and @mb/the-map
                    (not-empty @!/capabilities)
                    (not-empty @!/*params))
-          [control-layer user-id user-email])
+          [control-layer logged-in? user-email])
         [map-layer]
         [pop-up]]])}))
