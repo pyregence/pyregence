@@ -305,7 +305,6 @@ $$ LANGUAGE SQL;
 --------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_all_users()
  RETURNS TABLE (
-  user_uid              integer,
   email                 text,
   name                  text,
   settings              text,
@@ -317,7 +316,6 @@ CREATE OR REPLACE FUNCTION get_all_users()
   organization_name     text
  ) AS $$
     SELECT
-      u.user_uid,
       u.email,
       u.name,
       u.settings,

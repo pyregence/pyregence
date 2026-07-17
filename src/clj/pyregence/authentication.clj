@@ -871,10 +871,11 @@
   "Returns a vector of all users in the DB."
   [_]
   (->> (call-sql "get_all_users")
-       (mapv (fn [{:keys [user_uid email name settings match_drop_access email_verified
+       ;; Intentionally omit the sequential user PK: no caller reads it and it must
+       ;; not reach the browser (PYR1-1512 enumeration hardening).
+       (mapv (fn [{:keys [email name settings match_drop_access email_verified
                           last_login_date user_role org_membership_status organization_name]}]
-               {:user-id               user_uid
-                :email                 email
+               {:email                 email
                 :name                  name
                 :settings              settings
                 :match-drop-access     match_drop_access
