@@ -42,9 +42,11 @@ AS $$
 
 $$ LANGUAGE SQL;
 
+-- Browser-facing: exposes the unpredictable organization_uuid as the org handle,
+-- never the sequential organization_uid PK (PYR1-1512 enumeration hardening).
 CREATE OR REPLACE FUNCTION get_all_organizations()
  RETURNS TABLE (
-  org_id                integer,
+  org_uuid              uuid,
   org_name              text,
   org_unique_id         text,
   geoserver_credentials text,
@@ -58,7 +60,7 @@ CREATE OR REPLACE FUNCTION get_all_organizations()
  ) AS $$
 
   SELECT
-    o.organization_uid               AS org_id,
+    o.organization_uuid              AS org_uuid,
     o.org_name                       AS org_name,
     o.org_unique_id                  AS org_unique_id,
     o.geoserver_credentials::text    AS geoserver_credentials,
@@ -74,13 +76,23 @@ CREATE OR REPLACE FUNCTION get_all_organizations()
 
 $$ LANGUAGE SQL;
 
+-- Resolves an organization's unpredictable public uuid to its internal integer PK,
+-- for inbound handlers that receive the browser-facing org handle. Returns NULL for
+-- an unknown uuid so callers can respond 403 without revealing existence.
+CREATE OR REPLACE FUNCTION get_organization_id_by_uuid(_org_uuid uuid)
+RETURNS integer AS $$
+    SELECT organization_uid
+    FROM organizations
+    WHERE organization_uuid = _org_uuid;
+$$ LANGUAGE SQL;
+
 -- Returns the organization for a user if they are an org admin or org member
 -- TODO in the future we should get rid of this b/c the organization a user belongs to
 -- is simply in the u.organization_rid column. this was kept in order to not have
 -- to overhaul the front end code that calls this.
 CREATE OR REPLACE FUNCTION get_user_organization(_user_id integer)
  RETURNS TABLE (
-    org_id                integer,
+    org_uuid              uuid,
     org_name              text,
     org_unique_id         text,
     geoserver_credentials text,
@@ -90,8 +102,10 @@ CREATE OR REPLACE FUNCTION get_user_organization(_user_id integer)
     auto_accept           boolean
  ) AS $$
 
+    -- Browser-facing: return the unpredictable organization_uuid as org_uuid, never
+    -- the sequential organization_uid PK (PYR1-1512 enumeration hardening).
     SELECT
-        o.organization_uid,
+        o.organization_uuid,
         o.org_name,
         o.org_unique_id,
         o.geoserver_credentials,

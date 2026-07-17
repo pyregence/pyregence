@@ -128,8 +128,8 @@
      {:display-name "users-table"
       :component-did-mount set-users!
       :reagent-render
-      (fn [{:keys [org-id
-                   org-id->org
+      (fn [{:keys [org-uuid
+                   org-uuid->org
                    role-options
                    default-role-option
                    statuses
@@ -139,9 +139,9 @@
                    on-cell-value-changed
                    users-filter] :or {users-filter identity} :as m}]
         (let [org-names             (->> m :organizations (map :org-name))
-              tab-selected-org-name (some-> org-id->org
+              tab-selected-org-name (some-> org-uuid->org
                                             deref
-                                            (get org-id)
+                                            (get org-uuid)
                                             :org-name)
               update-drop-down      #(reset! selected-drop-down (when-not (= @selected-drop-down %) %))
               get-selected-emails   #(->> @grid-api get-selected-rows (map :email))
@@ -205,7 +205,7 @@
             [:div {:style {:display        "flex"
                            :flex-direction "column"
                            :gap            "10px"}}
-             [add-user/add-user-dialog {:org-id org-id :role-options role-options :default-role-option default-role-option}]
+             [add-user/add-user-dialog {:org-uuid org-uuid :role-options role-options :default-role-option default-role-option}]
              (when show-export-to-csv?
                [buttons/ghost {:text     "Export"
                                :icon     [svg/export :height "24px" :width "24px"]

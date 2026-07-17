@@ -33,7 +33,7 @@
 
 ;;TODO consider sharing styles with labeled-input cmpt
 (defn- email-domains-cmpt
-  [{:keys [og-email->email org-id->org org-id]}]
+  [{:keys [og-email->email org-uuid->org org-uuid]}]
   [:div {:style {:display        "flex"
                  :flex-direction "column"
                  :width          "100%"}}
@@ -51,7 +51,7 @@
                   :gap            "8px"}}
     (for [[og-email {:keys [unsaved-email invalid?]}] og-email->email
           :when unsaved-email
-          :let [update-org! #(swap! org-id->org assoc-in [org-id :og-email->email og-email :unsaved-email] (.-value (.-target %)))]]
+          :let [update-org! #(swap! org-uuid->org assoc-in [org-uuid :og-email->email og-email :unsaved-email] (.-value (.-target %)))]]
       [:div {:key   og-email
              :style {:display        "flex"
                      :flex-direction "row"
@@ -80,18 +80,18 @@
     text]])
 
 (defn get-org
-  [user-role selected-log org-id->org]
-  (@org-id->org (if (#{"super_admin" "account_manager"} user-role)
-                  (last @selected-log)
-                  (-> @org-id->org keys first))))
+  [user-role selected-log org-uuid->org]
+  (@org-uuid->org (if (#{"super_admin" "account_manager"} user-role)
+                    (last @selected-log)
+                    (-> @org-uuid->org keys first))))
 
 (defn- organization-settings
   [{:keys [user-role
            selected-log
-           org-id->org]}]
+           org-uuid->org]}]
   (let [{:keys [unsaved-org-name
                 auto-add?
-                org-id
+                org-uuid
                 org-name
                 og-email->email
                 auto-accept?
@@ -99,23 +99,23 @@
                 unsaved-auto-add?
                 unsaved-org-name-support-message]
          :as   org}
-        (get-org user-role selected-log org-id->org)]
+        (get-org user-role selected-log org-uuid->org)]
     [:<>
      [input-labeled
       (cond->
        {:label     "Organization Name"
-        :on-change #(swap! org-id->org assoc-in [org-id :unsaved-org-name] (.-value (.-target %)))
+        :on-change #(swap! org-uuid->org assoc-in [org-uuid :unsaved-org-name] (.-value (.-target %)))
         :value     unsaved-org-name}
         unsaved-org-name-support-message
         (assoc :support-message unsaved-org-name-support-message))]
-     [checkbox unsaved-auto-accept? #(swap! org-id->org update-in [org-id :unsaved-auto-accept?] not) "Auto Accept User as Organization Member"]
-     [checkbox unsaved-auto-add? #(swap! org-id->org update-in [org-id :unsaved-auto-add?] not)  "Auto Add User as Organization Member"]
-     [email-domains-cmpt (assoc org :org-id->org org-id->org)]
+     [checkbox unsaved-auto-accept? #(swap! org-uuid->org update-in [org-uuid :unsaved-auto-accept?] not) "Auto Accept User as Organization Member"]
+     [checkbox unsaved-auto-add? #(swap! org-uuid->org update-in [org-uuid :unsaved-auto-add?] not)  "Auto Add User as Organization Member"]
+     [email-domains-cmpt (assoc org :org-uuid->org org-uuid->org)]
      [:div {:style {:display        "flex"
                     :flex-direction "row"
                     :gap            "16px"}}
       [buttons/add {:text     "Add Another Domain"
-                    :on-click #(swap! org-id->org assoc-in [org-id :og-email->email (random-uuid)] {:email "" :unsaved-email ""})}]
+                    :on-click #(swap! org-uuid->org assoc-in [org-uuid :og-email->email (random-uuid)] {:email "" :unsaved-email ""})}]
       [buttons/ghost {:text      "Save Changes"
                       :disabled? (and (= unsaved-org-name org-name)
                                       (= unsaved-auto-accept? auto-accept?)
@@ -136,13 +136,13 @@
                                          ;;TODO unifiy the ways were collecting support/error messages here.
                                          invalid-email-domains?            (->> checked-og-email->email vals (some :invalid?))
                                          organization-name-support-message (when (str/blank? unsaved-org-name) "Name cannot be blank.")]
-                                     (swap! org-id->org assoc-in [org-id :og-email->email] checked-og-email->email)
+                                     (swap! org-uuid->org assoc-in [org-uuid :og-email->email] checked-og-email->email)
                                      (cond
                                        invalid-email-domains?
                                        ;;TODO find a better when then using a cond with nil
                                        nil
                                        organization-name-support-message
-                                       (swap! org-id->org assoc-in [org-id :unsaved-org-name-support-message] organization-name-support-message)
+                                       (swap! org-uuid->org assoc-in [org-uuid :unsaved-org-name-support-message] organization-name-support-message)
                                        :else
                                        (go
                                          (let [unsaved-email-domains (->> checked-og-email->email
@@ -153,28 +153,28 @@
 
                                                {:keys [success]}
                                                (<! (u-async/call-clj-async! "update-org-info"
-                                                                            org-id
+                                                                            org-uuid
                                                                             unsaved-org-name
                                                                             unsaved-email-domains
                                                                             unsaved-auto-add?
                                                                             unsaved-auto-accept?))]
                                            ;; TODO if not success case.
                                            (if success
-                                             (let [{:keys [org-name email-domains]} (@org-id->org org-id)]
+                                             (let [{:keys [org-name email-domains]} (@org-uuid->org org-uuid)]
                                                ;; TODO Below is a good example of how we have the same relationship in our ratoms, as we do in our db, which leads me to believe
                                                ;; we need a client db that can mirror (in query language and reltionship semantics) our backend db.
-                                               (swap! org-id->org
+                                               (swap! org-uuid->org
                                                       (fn [o]
                                                         (-> o
                                                             ;; TODO find a way to save unsaved state better then having to know that you have to come here to always deal with it.
-                                                            (assoc-in [org-id :org-name] unsaved-org-name)
-                                                            (assoc-in [org-id :email-domains] unsaved-email-domains)
-                                                            (assoc-in [org-id :og-email->email] (reduce-kv (fn [m id {:keys [unsaved-email]}]
-                                                                                                             (assoc m id {:email unsaved-email :unsaved-email unsaved-email}))
-                                                                                                           {}
-                                                                                                           og-email->email))
-                                                            (assoc-in [org-id :auto-accept?] unsaved-auto-accept?)
-                                                            (assoc-in [org-id :auto-add?] unsaved-auto-add?))))
+                                                            (assoc-in [org-uuid :org-name] unsaved-org-name)
+                                                            (assoc-in [org-uuid :email-domains] unsaved-email-domains)
+                                                            (assoc-in [org-uuid :og-email->email] (reduce-kv (fn [m id {:keys [unsaved-email]}]
+                                                                                                               (assoc m id {:email unsaved-email :unsaved-email unsaved-email}))
+                                                                                                             {}
+                                                                                                             og-email->email))
+                                                            (assoc-in [org-uuid :auto-accept?] unsaved-auto-accept?)
+                                                            (assoc-in [org-uuid :auto-add?] unsaved-auto-add?))))
                                                (let [new-name?        (not= org-name unsaved-org-name)
                                                      new-email?       (not= email-domains unsaved-email-domains)
                                                      new-auto-accept? (not= auto-accept? unsaved-auto-accept?)
@@ -193,9 +193,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn main
-  [{:keys [user-role org-id->org selected-log] :as m}]
-  (let [{:keys [org-name org-id]} (get-org user-role selected-log org-id->org)
-        roles                                      (->> user-role roles/role->roles-below (filter roles/organization-roles))]
+  [{:keys [user-role org-uuid->org selected-log] :as m}]
+  (let [{:keys [org-name org-uuid]} (get-org user-role selected-log org-uuid->org)
+        roles                       (->> user-role roles/role->roles-below (filter roles/organization-roles))]
     [:div {:style main-styles}
      [card {:title    "ORGANIZATION SETTINGS"
             :children [organization-settings m]}]
@@ -212,5 +212,6 @@
                                 identity)
                               :role-options        roles
                               :default-role-option (first roles)
+
                               :statuses            ["accepted" "pending"]
-                              :org-id              org-id)]}]]))
+                              :org-uuid            org-uuid)]}]]))

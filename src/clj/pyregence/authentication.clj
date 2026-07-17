@@ -2,7 +2,7 @@
   (:require [pyregence.email            :as email]
             [pyregence.marketplace      :as marketplace]
             [pyregence.totp             :as totp]
-            [pyregence.utils            :refer [nil-on-error]]
+            [pyregence.utils            :refer [nil-on-error ->uuid]]
             [triangulum.config          :refer [get-config]]
             [triangulum.logging         :refer [log-str]]
             [triangulum.database        :refer [call-sql sql-primitive insert-rows!]]
@@ -769,8 +769,8 @@
   "Returns the list of all organizations in the database."
   [_]
   (->> (call-sql "get_all_organizations")
-       (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials email_domains subscription_tier auto_add auto_accept archived created_date archived_date]}]
-               {:org-id                org_id
+       (mapv (fn [{:keys [org_uuid org_name org_unique_id geoserver_credentials email_domains subscription_tier auto_add auto_accept archived created_date archived_date]}]
+               {:org-uuid              org_uuid
                 :org-name              org_name
                 :org-unique-id         org_unique_id
                 :geoserver-credentials geoserver_credentials
@@ -783,29 +783,42 @@
                 :archived-date         archived_date}))
        (data-response)))
 
-(defn add-org-users [{:keys [user-role organization-id]} org-id users]
-  ;; Prevent none SA&AM from changing other orgs.
-  (when (or (#{"super_admin" "account_manager"} user-role)
-            (= organization-id org-id))
-    (->>
-     users
-     (map (fn [{:keys [email role]}]
-            {:email                 email
-             :user_role             (tc/str->pg role "user_role")
-             :org_membership_status (tc/str->pg (if org-id "accepted" "none") "org_membership_status")
-             :organization_rid      org-id
-             :name                  ""
-             :password              (generate-password)
-             :email_verified        false
-             :match_drop_access     false
-             :settings              "{:timezone :utc}"}))
-     (insert-rows! "users"))
-    ;; TODO ideally `send-invite-email!` wouldn't need to make an additional db call to get the user name
-    ;; as we already know it's blank.
-    ;; TODO `send-invite-email` probably doesn't need to return a data response.
-    (let [organization-name (sql-primitive (call-sql "get_organization_name" org-id))]
-      (doseq [{:keys [email]} users]
-        (email/send-invite-email! email {:organization-name organization-name})))))
+(defn- org-uuid->id
+  "Resolves an organization's browser-facing public uuid to its internal integer
+   PK, or nil for a malformed or unknown uuid (so callers can respond 403 without
+   revealing existence). The sequential PK is never exposed to the browser
+   (PYR1-1512 enumeration hardening)."
+  [org-uuid]
+  (when-let [uuid (->uuid org-uuid)]
+    (sql-primitive (call-sql "get_organization_id_by_uuid" uuid))))
+
+(defn add-org-users [{:keys [user-role organization-id]} org-uuid users]
+  ;; org-uuid is the org's public handle, or nil to create unaffiliated users. A
+  ;; provided handle must resolve to a real org; an unknown/malformed one is ignored.
+  (let [org-id (some-> org-uuid org-uuid->id)]
+    ;; Prevent none SA&AM from changing other orgs.
+    (when (and (or (nil? org-uuid) org-id)
+               (or (#{"super_admin" "account_manager"} user-role)
+                   (= organization-id org-id)))
+      (->>
+       users
+       (map (fn [{:keys [email role]}]
+              {:email                 email
+               :user_role             (tc/str->pg role "user_role")
+               :org_membership_status (tc/str->pg (if org-id "accepted" "none") "org_membership_status")
+               :organization_rid      org-id
+               :name                  ""
+               :password              (generate-password)
+               :email_verified        false
+               :match_drop_access     false
+               :settings              "{:timezone :utc}"}))
+       (insert-rows! "users"))
+      ;; TODO ideally `send-invite-email!` wouldn't need to make an additional db call to get the user name
+      ;; as we already know it's blank.
+      ;; TODO `send-invite-email` probably doesn't need to return a data response.
+      (let [organization-name (sql-primitive (call-sql "get_organization_name" org-id))]
+        (doseq [{:keys [email]} users]
+          (email/send-invite-email! email {:organization-name organization-name}))))))
 
 (defn get-current-user-organization
   "Given the current user by session, returns the list of organizations that
@@ -813,8 +826,8 @@
   [session]
   (if-let [user-id (:user-id session)]
     (->> (call-sql "get_user_organization" user-id)
-         (mapv (fn [{:keys [org_id org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept]}]
-                 {:org-id                org_id
+         (mapv (fn [{:keys [org_uuid org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept]}]
+                 {:org-uuid              org_uuid
                   :org-name              org_name
                   :org-unique-id         org_unique_id
                   :geoserver-credentials geoserver_credentials
@@ -826,15 +839,19 @@
     (data-response "No user is logged in." {:status 403})))
 
 (defn get-org-member-users
-  "Returns a vector of member users for the given org-id, if the user is an
+  "Returns a vector of member users for the given org-uuid, if the user is an
    admin of the given org."
   ([session]
    ;;TODO passing nil here his hacky but its to support admin.cljs which was previously ignoring
    ;; the session and the new setting page which calls get-org-member-users correct with just the session
    ;; in the end will probably need to different api calls.
    (get-org-member-users session nil))
-  ([{:keys [organization-id user-role]} org-id]
-   (->> (call-sql "get_org_member_users" (if (= user-role "super_admin") org-id organization-id))
+  ([{:keys [organization-id user-role]} org-uuid]
+   ;; super_admins pass a target org's public uuid (resolved to its internal PK);
+   ;; everyone else is scoped to their own session org.
+   (->> (call-sql "get_org_member_users" (if (= user-role "super_admin")
+                                           (org-uuid->id org-uuid)
+                                           organization-id))
         (mapv (fn [{:keys [user_id full_name email user_role org_membership_status]}]
                 {:user-id           user_id
                  :full-name         full_name
@@ -883,11 +900,12 @@
        (mapv #(:org_unique_id %))
        (data-response)))
 
-(defn update-org-info [{:keys [user-id]} org-id org-name email-domains auto-add? auto-accept?]
-  (if (sql-primitive (call-sql "can_admin_org" user-id org-id))
-    (do (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
-        (data-response ""))
-    (data-response "You are not authorized to manage this organization." {:status 403})))
+(defn update-org-info [{:keys [user-id]} org-uuid org-name email-domains auto-add? auto-accept?]
+  (let [org-id (org-uuid->id org-uuid)]
+    (if (and org-id (sql-primitive (call-sql "can_admin_org" user-id org-id)))
+      (do (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
+          (data-response ""))
+      (data-response "You are not authorized to manage this organization." {:status 403}))))
 
 (defn delete-users
   [{:keys [user-email user-role]} users-to-delete]
@@ -912,7 +930,12 @@
   (sql-primitive (call-sql "can_admin_org" 3 2))
   ;=> true
 
-  ;; Handlers deny an org admin acting outside their org (no mutation occurs)
-  (update-org-info {:user-id 1} 2 "Hacked" "@hack.com" false false)
+  ;; Org handlers take the org's public uuid, never the sequential PK. An unknown
+  ;; org (here a non-existent uuid) yields a uniform 403 without revealing existence,
+  ;; and a malformed (non-uuid) id is rejected the same way -- no 500 and no mutation.
+  (update-org-info {:user-id 1} "00000000-0000-0000-0000-000000000000" "Hacked" "@hack.com" false false)
+  ;=>> {:status 403}
+
+  (update-org-info {:user-id 1} "not-a-uuid" "Hacked" "@hack.com" false false)
   ;=>> {:status 403}
   )
