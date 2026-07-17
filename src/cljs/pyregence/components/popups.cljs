@@ -69,7 +69,7 @@
                         :justify-content "center"}
              :on-click on-click}
     [svg/pyrecast]
-    [:div "View Forecast"]]])
+    [:div {:style {:font-size "18px"}} "View Forecast"]]])
 
 (defn fire-popup
   "Popup body for active fires."
@@ -96,8 +96,6 @@
          [:div {:style {:display          "flex"
                         :height           "52px"
                         :gap              "8px"
-                        #_#_:background-color ($/color-picker :neutral-light-gray)
-                        :padding          "8px 12px"
                         :align-items      "center"
                         :align-self       "stretch"
                         :border-radius    "8px"}}
