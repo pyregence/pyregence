@@ -882,6 +882,27 @@
                 :organization-name     organization_name}))
        (data-response)))
 
+^:rct/test
+(comment
+  ;; --- No sequential user PK reaches the browser (PYR1-1512) ---
+  ;; Seed data: user 1 (admin@pyr.dev) is organization_admin of org 1;
+  ;; user 2 (user@pyr.dev) is a member of org 1.
+
+  ;; get-all-users returns every user keyed by email and never exposes the
+  ;; sequential user PK.
+  (let [users (-> (get-all-users {}) :body read-string)]
+    [(some #(contains? % :user-id) users)
+     (contains? (set (map :email users)) "admin@pyr.dev")])
+  ;=> [nil true]
+
+  ;; get-org-member-users lists an org's members keyed by email, never the PK.
+  (let [members (-> (get-org-member-users {:organization-id 1 :user-role "organization_admin"})
+                    :body read-string)]
+    [(some #(contains? % :user-id) members)
+     (contains? (set (map :email members)) "user@pyr.dev")])
+  ;=> [nil true]
+  )
+
 (defn get-password-set-date
   [{:keys [user-id]}]
   (let [row         (sql-primitive (call-sql "get_password_set_date" user-id))
