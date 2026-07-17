@@ -852,8 +852,6 @@
    (->> (call-sql "get_org_member_users" (if (= user-role "super_admin")
                                            (org-uuid->id org-uuid)
                                            organization-id))
-        ;; Intentionally omit the sequential user PK: it is never used by the
-        ;; caller and must not reach the browser (PYR1-1512 enumeration hardening).
         (mapv (fn [{:keys [full_name email user_role org_membership_status]}]
                 {:full-name         full_name
                  :email             email
@@ -871,8 +869,6 @@
   "Returns a vector of all users in the DB."
   [_]
   (->> (call-sql "get_all_users")
-       ;; Intentionally omit the sequential user PK: no caller reads it and it must
-       ;; not reach the browser (PYR1-1512 enumeration hardening).
        (mapv (fn [{:keys [email name settings match_drop_access email_verified
                           last_login_date user_role org_membership_status organization_name]}]
                {:email                 email
