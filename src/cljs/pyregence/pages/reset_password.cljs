@@ -35,8 +35,6 @@
                          [(when (u-data/missing-data? @email @password @re-password)
                             "Please fill in all the information.")
 
-                          (when (< (count @password) 8)
-                            "Your password must be at least 8 characters long.")
 
                           (when (not= @password @re-password)
                             "Password fields do not match.")
