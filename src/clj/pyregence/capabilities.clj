@@ -5,6 +5,7 @@
    [clojure.edn         :as edn]
    [clojure.set         :as set]
    [clojure.string      :as str]
+   [pyregence.session   :as session]
    [triangulum.config   :refer [get-config]]
    [triangulum.database :refer [call-sql]]
    [triangulum.logging  :refer [log log-str]]
@@ -425,7 +426,8 @@
     :match-drops      {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\", \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}
     :wui-active-fires {:wui-fire-name   {:opt-label \"WUI Fire Name\"   :filter-set #{\"fire-spread-forecast\", \"wui-fire-name\"}  :auto-zoom? true :geoserver-key :psps}       ...}}"
   [session]
-  (let [{:keys [user-id match-drop-access?]} session
+  ;; The map is public, so this can't be liveness-gated at the route.
+  (let [{:keys [user-id match-drop-access?]} (when (session/live? session) session)
         match-drop-names                     (when match-drop-access?
                                                (->> (call-sql "get_user_match_names" user-id)
                                                     (reduce (fn [acc row]
@@ -475,6 +477,27 @@
                     :else acc)))
               {:active-fires {} :match-drops {}}))
         (assoc :wui-active-fires (or wui-active-fires {})))))
+
+^:rct/test
+(comment
+  ;; `cutoff` is the user's invalidation stamp, 0 = never logged out.
+  (let [now          (System/currentTimeMillis)
+        reads-names? (fn [session cutoff]
+                       (let [calls (atom [])
+                             saved @layers]
+                         (with-redefs [call-sql   (fn [& args] (swap! calls conj (first args)) [{:get_user_session_invalidated_at cutoff}])
+                                       get-config (fn [& _] nil)]
+                           (reset! layers {})
+                           (get-fire-names session)
+                           (reset! layers saved)
+                           (boolean (some #{"get_user_match_names"} @calls)))))
+        live         {:user-id 1 :match-drop-access? true :created-at (- now 1000) :last-active now}]
+    ;; timed out, logged out, then live
+    [(reads-names? (assoc live :last-active (- now 1000000000)) 0)
+     (reads-names? live now)
+     (reads-names? live 0)])
+  ;=> [false false true]
+  )
 
 (defn get-user-layers [session]
   (data-response (call-sql "get_user_layers_list" (:user-id session))))

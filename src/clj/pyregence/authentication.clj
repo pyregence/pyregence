@@ -2,6 +2,7 @@
   (:require [clojure.string             :as str]
             [pyregence.email            :as email]
             [pyregence.marketplace      :as marketplace]
+            [pyregence.session          :as session]
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error ->uuid]]
             [triangulum.config          :refer [get-config]]
@@ -764,7 +765,8 @@
                      (or (:org-id org-name-or-opts)
                          (get org-name-or-opts "org-id")))
           org-name         (when (and (string? org-name) (seq org-name)) org-name)
-          {:keys [user-role]} session
+          ;; Public signup too, so this can't be liveness-gated at the route.
+          user-role        (when (session/live? session) (:user-role session))
           default-settings (pr-str {:timezone :utc})
           new-user-id      (nil-on-error
                             (sql-primitive (call-sql "add_new_user"
@@ -804,6 +806,29 @@
       (cond-> response
         (and new-user-id org-name (:marketplace-signup session))
         (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name))))))
+
+^:rct/test
+(comment
+  ;; `cutoff` is the user's invalidation stamp, 0 = never logged out.
+  (let [now          (System/currentTimeMillis)
+        assigns-org? (fn [session cutoff opts]
+                       (let [calls (atom [])]
+                         (with-redefs [call-sql (fn [& args]
+                                                  (swap! calls conj (first args))
+                                                  (case (first args)
+                                                    "add_new_user"                    [{:add_new_user 42}]
+                                                    "get_user_session_invalidated_at" [{:get_user_session_invalidated_at cutoff}]
+                                                    nil))]
+                           (add-new-user session "a@b.com" "A" "Abcdefgh1234" opts)
+                           (boolean (some #{"add_org_user"} @calls)))))
+        admin        {:user-id 1 :user-role "super_admin" :created-at (- now 1000) :last-active now}]
+    ;; timed-out admin, logged-out admin, live admin, then anonymous signup
+    [(assigns-org? (assoc admin :last-active (- now 1000000000)) 0 {:org-id 3})
+     (assigns-org? admin now {:org-id 3})
+     (assigns-org? admin 0 {:org-id 3})
+     (assigns-org? {} 0 {})])
+  ;=> [false false true false]
+  )
 
 (defn get-current-user-settings
   "Returns settings for the current user."
