@@ -80,21 +80,19 @@
    [:h6 {:style (assoc ($popup-header) :color ($/color-picker :neutral-dark-gray))} prettyname]
    [:div {:style {:display        "flex"
                   :flex-direction "column"
-                  :gap            "8px"}}
+                  :gap            "16px"}}
     [fire-property "Percent Contained" (str containper "%")]
     [fire-property "Acres Burned" (.toLocaleString acres)]
     (when show-link? [fire-link on-click])
     [:div {:style {:height "2px" :width "100%" :background-color "#E1E1E1"}}]
     (when source
-      [:div {:style {:display "flex" :gap "8px" :flex-direction "row" :align-items "center"}}
-       [:strong {:style {:color ($/color-picker :neutral-md-gray)
-                         :margin-top "5px"}} "Initial location source:"]
+      [:div {:style {:display "flex" :gap "14px" :flex-direction "row" :align-items "center"}}
+       [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Initial location source:"]
        [:a {:href backlink :target "_blank"}
         [:div {:style {:display        "flex"
                        :flex-direction "column"
                        :gap            "5px"}}
          [:div {:style {:display          "flex"
-                        :height           "52px"
                         :gap              "8px"
                         :align-items      "center"
                         :align-self       "stretch"
