@@ -59,10 +59,15 @@
                  :font-weight "600"}} value]]])
 
 (defn- fire-link [on-click]
-  [:div {:style {:width "100%"}}
-   [:button {:class    (<class $popup-btn)
-             :on-click on-click}
-    "View Forecast"]])
+  [:button {:class    (<class $popup-btn)
+            :style    {:width "100%"
+                       :display "flex"
+                       :padding "10px"
+                       :gap "10px"
+                       :justify-content "center"}
+            :on-click on-click}
+   [svg/pyrecast]
+   [:div {:style {:font-size "18px"}} "View Forecast"]])
 
 (defn fire-popup
   "Popup body for active fires."
@@ -73,36 +78,35 @@
    [:h6 {:style (assoc ($popup-header) :color ($/color-picker :neutral-dark-gray))} prettyname]
    [:div {:style {:display        "flex"
                   :flex-direction "column"
-                  :gap            "8px"}}
+                  :gap            "16px"}}
     [fire-property "Percent Contained" (str containper "%")]
     [fire-property "Acres Burned" (.toLocaleString acres)]
+    (when show-link? [fire-link on-click])
     (when source
-      [:div {:style {:display "flex" :gap "8px" :flex-direction "column"}}
-       [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Source(s):"]
-       [:a {:href backlink :target "_blank"}
-        [:div {:style {:display        "flex"
-                       :flex-direction "column"
-                       :gap            "5px"}}
-         [:div {:style {:display          "flex"
-                        :height           "52px"
-                        :gap              "8px"
-                        :background-color ($/color-picker :neutral-light-gray)
-                        :padding          "8px 12px"
-                        :align-items      "center"
-                        :align-self       "stretch"
-                        :border-radius    "8px"}}
-          icon
+      [:<>
+       [:div {:style {:height "2px" :width "100%" :background-color ($/color-picker :neutral-soft-gray)}}]
+       [:div {:style {:display "flex" :gap "14px" :flex-direction "row" :align-items "center"}}
+        [:strong {:style {:color ($/color-picker :neutral-md-gray)}} "Initial location source:"]
+        [:a {:href backlink :target "_blank"}
+         [:div {:style {:display        "flex"
+                        :flex-direction "column"
+                        :gap            "5px"}}
+          [:div {:style {:display          "flex"
+                         :gap              "8px"
+                         :align-items      "center"
+                         :align-self       "stretch"
+                         :border-radius    "8px"}}
+           icon
           ;; For calfire were using a p tag, for watchduty we use text. not sure
           ;; yet what will happen with other sources so this is a bit of a hack.
-          (when (= "Cal Fire" source)
-            [:p {:style
+           (when (= "Cal Fire" source)
+             [:p {:style
                  ;; TODO remove this margin-bottom by figuring out why it has
                  ;; a margin-bottom in the first place and likely changing that.
-                 {:margin-bottom "0px"
-                  :font-weight   "600"
-                  :color         ($/color-picker :neutral-black)}} "CAL FIRE"])
-          [svg/source-link]]]]])]
-   (when show-link? [fire-link on-click])])
+                  {:margin-bottom "0px"
+                   :font-weight   "600"
+                   :color         ($/color-picker :neutral-black)}} "CAL FIRE"])
+           [svg/source-link]]]]]])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Red-Flag Component

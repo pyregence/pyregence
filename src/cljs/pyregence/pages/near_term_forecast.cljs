@@ -674,7 +674,7 @@
         (-> feature (aget "properties") (js->clj :keywordize-keys true))
         lnglat     [longitude latitude]
         body       [fire-popup (-> fire-properties fire-properties->pop-up)]]
-    (mb/init-popup! "fire" lnglat body {:width "200px"})
+    (mb/init-popup! "fire" lnglat body {:width "350px"})
     (mb/set-center! lnglat 0)))
 
 (defn- change-type!
