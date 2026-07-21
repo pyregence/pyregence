@@ -59,16 +59,15 @@
                  :font-weight "600"}} value]]])
 
 (defn- fire-link [on-click]
-  [:div
-   [:button {:class    (<class $popup-btn)
-             :style    {:width "100%"
-                        :display "flex"
-                        :padding "10px"
-                        :gap "10px"
-                        :justify-content "center"}
-             :on-click on-click}
-    [svg/pyrecast]
-    [:div {:style {:font-size "18px"}} "View Forecast"]]])
+  [:button {:class    (<class $popup-btn)
+            :style    {:width "100%"
+                       :display "flex"
+                       :padding "10px"
+                       :gap "10px"
+                       :justify-content "center"}
+            :on-click on-click}
+   [svg/pyrecast]
+   [:div {:style {:font-size "18px"}} "View Forecast"]])
 
 (defn fire-popup
   "Popup body for active fires."
