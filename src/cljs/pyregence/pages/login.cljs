@@ -40,6 +40,7 @@
               (u-browser/jump-to-url! url)
               (gtag "log-in" {}))))
         ;; Login failed
+        ;; TODO add the backoff logic based on data will have to add in the response?
         ;; TODO, it would be helpful to show the user which of the two errors it actually is.
         (toast-message! ["Invalid login credentials. Please try again."
                          "If you feel this is an error, check your email for the verification email."])))))
