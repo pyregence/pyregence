@@ -12,16 +12,9 @@
             [java.security SecureRandom]
             [java.text SimpleDateFormat]))
 
-;; TODO this will need a
-;; 4 attempts 0 time
-;; 2 attempts 10 second
-;; 2 30 second
-;; 2 90  exceptional
-;; 2 360 exceptional
-
-;TODO make a less dumb one tomorrow
-;;TODO will need to get reset
-(def user-email->failed-login-attempts (atom {}))
+;; TODO consider a better password attempt policy then 5 tries then you have to reset your password.
+;; Do some research.
+(defonce user-email->failed-login-attempts (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -141,19 +134,20 @@
   "Authenticates user and determines 2FA requirements."
   [session email password]
   (def args [session email password])
-  ;;TODO not nested if block
-  (if (< 2 (@user-email->failed-login-attempts email 0))
-    (data-response "" {:status 429})
-    (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-      (let [user-id    (:user_id user)
-            two-factor (:two-factor (get-user-settings user-id))]
-        (case two-factor
-          :totp  (data-response {:email email :require-2fa true :method "totp"})
-          :email (do (email/send-email! nil email :2fa)
-                     (data-response {:email email :require-2fa true :method "email"}))
-          (successful-login user session)))
-      (data-response "" {:status 403
-                         :failed-login-attempts (swap! user-email->failed-login-attempts update email (fnil inc 0))}))))
+  (let [failed-login-attempts  (@user-email->failed-login-attempts email 0)]
+    ;;TODO sync max max-failed-login-attempts value with client
+    (if (<= 5 failed-login-attempts)
+      (data-response {:failed-login-attempts failed-login-attempts} {:status 429})
+      (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
+        (let [user-id    (:user_id user)
+              two-factor (:two-factor (get-user-settings user-id))]
+          (case two-factor
+            :totp  (data-response {:email email :require-2fa true :method "totp"})
+            :email (do (email/send-email! nil email :2fa)
+                       (data-response {:email email :require-2fa true :method "email"}))
+            (successful-login user session)))
+        (data-response {:failed-login-attempts ((swap! user-email->failed-login-attempts update email (fnil inc 0)) email)}
+                       {:status 403})))))
 
 (defn marketplace-sso-login
   "Marketplace SSO entry point. Validates JWT, auto-logs in or redirects to 2FA.

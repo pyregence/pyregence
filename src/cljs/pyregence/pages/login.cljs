@@ -20,6 +20,7 @@
 (defonce forgot?  (r/atom false))
 (defonce email    (r/atom ""))
 (defonce password (r/atom ""))
+(defonce failed-login-attempts (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -28,22 +29,23 @@
 (defn- log-in! []
   (go
     ;;TODO consider validating email before sending it.
-    (let [response (<! (u-async/call-clj-async! "log-in" @email @password))]
-      (if (:success response)
-        (let [resp-data (edn/read-string (:body response))]
-          (if (:require-2fa resp-data)
+    (let [{:keys [success body]} (<! (u-async/call-clj-async! "log-in" @email @password))]
+      (let [{:keys [require-2fa email method] :as body} (edn/read-string body)]
+        (if success
+          (if require-2fa
             ;; 2FA is required, redirect to 2FA verification page
-            (u-browser/jump-to-url! (str "/verify-2fa?email=" (:email resp-data) "&method=" (:method resp-data)))
+            (u-browser/jump-to-url! (str "/verify-2fa?email=" email "&method=" method))
             ;; Normal login success
             (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
               (u-browser/clear-session-storage!)
               (u-browser/jump-to-url! url)
-              (gtag "log-in" {}))))
-        ;; Login failed
-        ;; TODO add the backoff logic based on data will have to add in the response?
-        ;; TODO, it would be helpful to show the user which of the two errors it actually is.
-        (toast-message! ["Invalid login credentials. Please try again."
-                         "If you feel this is an error, check your email for the verification email."])))))
+              (gtag "log-in" {})))
+          ;; Login failed
+          ;; TODO, it would be helpful to show the user which of the two errors it actually is.
+          (do
+            (reset! failed-login-attempts (:failed-login-attempts body))
+            (toast-message! ["Invalid login credentials. Please try again."
+                             "If you feel this is an error, check your email for the verification email."])))))))
 
 (defn- request-password! []
   (go
@@ -82,13 +84,13 @@
          (fn []
            (let [color         ($/color-picker :primary-main-orange)
                  email-cmpt    (fn [] [utils/input-labeled {:label        "Email"
-                                                           :placeholder "Enter Email Address"
-                                                           :on-change   #(reset! email (-> % .-target .-value))
-                                                           :value       @email}])
+                                                            :placeholder "Enter Email Address"
+                                                            :on-change   #(reset! email (-> % .-target .-value))
+                                                            :value       @email}])
                  register-cmpt (fn [] [:p "Don't have an account? "
-                                      [:a {:href  "/register"
-                                           :style {:color color}}
-                                       [:u "Register Here."]]])]
+                                       [:a {:href  "/register"
+                                            :style {:color color}}
+                                        [:u "Register Here."]]])]
              (if-not @forgot?
                [utils/card {:title "LOGIN"
                             :children
@@ -104,6 +106,12 @@
                                   :style    {:color     color
                                              :underline true}}
                               [:u "Forgot Password?"]]
+                             (when-let [fla @failed-login-attempts]
+                               ;;TODO sync max max-failed-login-attempts value with server.
+                               (let [max-fla 5]
+                                 (if (< 1 fla max-fla)
+                                   [:p "Tries before lockout: " (- max-fla fla)]
+                                   [:p "Account locked. Please reset password using 'Forgot Password' link."])))
                              [buttons/primary {:text     "Login"
                                                :on-click log-in!}]
                              [register-cmpt]]}]
