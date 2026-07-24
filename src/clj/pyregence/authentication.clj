@@ -1,5 +1,6 @@
 (ns pyregence.authentication
-  (:require [pyregence.email            :as email]
+  (:require [clojure.string             :as str]
+            [pyregence.email            :as email]
             [pyregence.marketplace      :as marketplace]
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error ->uuid]]
@@ -11,6 +12,27 @@
   (:import  [java.util Base64]
             [java.security SecureRandom]
             [java.text SimpleDateFormat]))
+
+(defonce user-email->failed-login-attempts (atom {}))
+
+(defn- normalize-email
+  "Lower-cases and trims an email so throttle lookups match the identity the
+   DB authenticates against (verify_user_login uses lower_trim)."
+  [email]
+  (-> email str/lower-case str/trim))
+
+;;TODO As an improvement, this could be made to be user-email specific
+(defn reset-user-email->failed-login-attempts!
+  []
+  (future
+    (loop []
+      ;; 5 minutes
+      (Thread/sleep (* 1000 ;; 1s
+                       60   ;; 1m
+                       5    ;; 5m
+                       ))
+      (reset! user-email->failed-login-attempts {})
+      (recur))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -130,18 +152,24 @@
    (call-sql "set_user_session_invalidated_at" user_id (System/currentTimeMillis))
    (create-session-from-user-data user)))
 
+;;TODO this will have to store failed login attempts per user.
 (defn log-in
   "Authenticates user and determines 2FA requirements."
   [session email password]
-  (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-    (let [user-id    (:user_id user)
-          two-factor (:two-factor (get-user-settings user-id))]
-      (case two-factor
-        :totp  (data-response {:email email :require-2fa true :method "totp"})
-        :email (do (email/send-email! nil email :2fa)
-                   (data-response {:email email :require-2fa true :method "email"}))
-        (successful-login user session)))
-    (data-response "" {:status 403})))
+  (let [normalized-email      (normalize-email email)
+        failed-login-attempts (@user-email->failed-login-attempts normalized-email 0)]
+    (if (<= 6 failed-login-attempts)
+      (data-response {:failed-login-attempts failed-login-attempts} {:status 429})
+      (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
+        (let [user-id    (:user_id user)
+              two-factor (:two-factor (get-user-settings user-id))]
+          (case two-factor
+            :totp  (data-response {:email email :require-2fa true :method "totp"})
+            :email (do (email/send-email! nil email :2fa)
+                       (data-response {:email email :require-2fa true :method "email"}))
+            (successful-login user session)))
+        (data-response {:failed-login-attempts ((swap! user-email->failed-login-attempts update normalized-email (fnil inc 0)) normalized-email)}
+                       {:status 403})))))
 
 (defn marketplace-sso-login
   "Marketplace SSO entry point. Validates JWT, auto-logs in or redirects to 2FA.
@@ -238,7 +266,9 @@
   (if-not (valid-password? password)
     (data-response password->invalid-password-msg  {:status 400})
     (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
-      (successful-login user session)
+      (do
+        (swap! user-email->failed-login-attempts dissoc (normalize-email email))
+        (successful-login user session))
       (data-response "Invalid or expired reset token" {:status 403}))))
 
 (defn verify-user-email
@@ -747,26 +777,29 @@
           (if-not new-user-id
             (data-response (str "Failed to create the new user with name " user-name " and email " email)
                            {:status 403})
-            (cond
+            (do
+              ;; reset login attempts in case this account exceeded the max login attempts
+              (swap! user-email->failed-login-attempts dissoc (normalize-email email))
+              (cond
             ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
             ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
             ;; The new user will have a user_role of organization_member and a user_status of active
-              org-id
-              (if (or (= user-role "super_admin")
-                      (= user-role "organization_admin"))
-                (do
-                  (call-sql "add_org_user" org-id new-user-id)
-                  (data-response "User created and added to organization."))
-                (data-response "User does not have permission to assign users to this organization."
-                               {:status 403}))
+                org-id
+                (if (or (= user-role "super_admin")
+                        (= user-role "organization_admin"))
+                  (do
+                    (call-sql "add_org_user" org-id new-user-id)
+                    (data-response "User created and added to organization."))
+                  (data-response "User does not have permission to assign users to this organization."
+                                 {:status 403}))
 
             ;; No org-id provided — use email domain-based auto-assignment (dependent on org auto_add settings)
-              :else
-              (let [domain (re-find #"@{1}.+" email)]
-                (if (call-sql "auto_add_org_user" new-user-id domain)
-                  (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
-                  (data-response "User created successfully but something went wrong when calling auto_add_org_user."
-                                 {:status 403})))))]
+                :else
+                (let [domain (re-find #"@{1}.+" email)]
+                  (if (call-sql "auto_add_org_user" new-user-id domain)
+                    (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
+                    (data-response "User created successfully but something went wrong when calling auto_add_org_user."
+                                   {:status 403}))))))]
     ;; Stash org-name in session for marketplace provisioning
       (cond-> response
         (and new-user-id org-name (:marketplace-signup session))
