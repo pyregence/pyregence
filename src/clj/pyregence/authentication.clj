@@ -14,6 +14,13 @@
 
 (defonce user-email->failed-login-attempts (atom {}))
 
+(defn reset-user-email->failed-login-attempts!
+  []
+  (loop []
+    ;; 5 minutes
+    (Thread/sleep (* 1000 60 5))
+    (reset! user-email->failed-login-attempts {})))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
