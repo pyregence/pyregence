@@ -64,6 +64,7 @@
 
 (defn start-reset-user-email->failed-login-attempts! []
   (future
+    (log-str "Reset failed login attempt counter every five minutes.")
     (reset-user-email->failed-login-attempts!)))
 
 (defn stop-reset-user-email->failed-login-attempts! [fut]
