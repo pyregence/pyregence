@@ -103,8 +103,8 @@
                                                    :value       @password}]
                              (when-let [fla @failed-login-attempts]
                                ;; TODO sync max max-failed-login-attempts value with server.
-                               ;; It's actually 5 attempts because 0 to 1 counts as an attempt.
-                               (let [max-fla 4]
+                               ;; It's actually 6 attempts because 0 to 1 counts as an attempt.
+                               (let [max-fla 5]
                                  [:div {:style {:color       ($/color-picker :error-red)
                                                 :font-weight "bold"}}
                                   (if (<= 1 fla max-fla)
