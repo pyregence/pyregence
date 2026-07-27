@@ -12,8 +12,6 @@
             [java.security SecureRandom]
             [java.text SimpleDateFormat]))
 
-;; TODO consider a better password attempt policy then 5 tries then you have to reset your password.
-;; Do some research.
 (defonce user-email->failed-login-attempts (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
