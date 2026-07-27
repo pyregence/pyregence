@@ -14,6 +14,7 @@
 
 (defonce user-email->failed-login-attempts (atom {}))
 
+;;TODO As an improvement, this could be made to be user-email specific
 (defn reset-user-email->failed-login-attempts!
   []
   (loop []
