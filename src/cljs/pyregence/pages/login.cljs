@@ -102,13 +102,14 @@
                                                    :on-change   #(reset! password (-> % .-target .-value))
                                                    :value       @password}]
                              (when-let [fla @failed-login-attempts]
-                               ;;TODO sync max max-failed-login-attempts value with server.
-                               (let [max-fla 5]
-                                 (if (< 1 fla max-fla)
-                                   [:p {:style {:color "red"}}
-                                    (str "This account has " (- max-fla fla) " login attempts before it will need a password reset.")]
-                                   [:p {:style {:color "red"}}
-                                    "This account has exceeded the max login attempts and will need it's password reset by clicking the link 'Forgot Password?' below."])))
+                               ;; TODO sync max max-failed-login-attempts value with server.
+                               ;; It's actually 5 attempts because 0 to 1 counts as an attempt.
+                               (let [max-fla 4]
+                                 [:div {:style {:color       ($/color-picker :error-red)
+                                                :font-weight "bold"}}
+                                  (if (<= 1 fla max-fla)
+                                    [:p (str "This account has " (- (inc max-fla) fla) " more login attempts before it will need a password reset.")]
+                                    [:p "This account has exceeded the max login attempts and will need it's password reset by clicking the link 'Forgot Password?' below."])]))
                              [:a {:href     "#"
                                   :on-click #(reset! forgot? true)
                                   :style    {:color     color
