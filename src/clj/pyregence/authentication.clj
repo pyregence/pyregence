@@ -131,7 +131,6 @@
 (defn log-in
   "Authenticates user and determines 2FA requirements."
   [session email password]
-  (def args [session email password])
   (let [failed-login-attempts  (@user-email->failed-login-attempts email 0)]
     ;;TODO sync max max-failed-login-attempts value with client
     (if (<= 5 failed-login-attempts)
