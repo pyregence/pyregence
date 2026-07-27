@@ -7,9 +7,9 @@
   [password]
   [{:validation/text   "One number."
     :validation/valid? (boolean (re-find #"\d" password))}
-   {:validation/text   "One lowercase."
+   {:validation/text   "One lowercase letter."
     :validation/valid? (boolean (re-find #"[a-z]" password))}
-   {:validation/text   "One uppercase."
+   {:validation/text   "One uppercase letter."
     :validation/valid? (boolean (re-find #"[A-Z]" password))}
    {:validation/text   "At least 12 characters."
     :validation/valid? (<= 12 (count password))}
