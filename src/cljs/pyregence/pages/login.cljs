@@ -101,17 +101,19 @@
                                                    :placeholder "Enter Password"
                                                    :on-change   #(reset! password (-> % .-target .-value))
                                                    :value       @password}]
+                             (when-let [fla @failed-login-attempts]
+                               ;;TODO sync max max-failed-login-attempts value with server.
+                               (let [max-fla 5]
+                                 (if (< 1 fla max-fla)
+                                   [:p {:style {:color "red"}}
+                                    (str "This account has " (- max-fla fla) " login attempts before it will need a password reset.")]
+                                   [:p {:style {:color "red"}}
+                                    "This account has exceeded the max login attempts and will need it's password reset by clicking the link 'Forgot Password?' below."])))
                              [:a {:href     "#"
                                   :on-click #(reset! forgot? true)
                                   :style    {:color     color
                                              :underline true}}
                               [:u "Forgot Password?"]]
-                             (when-let [fla @failed-login-attempts]
-                               ;;TODO sync max max-failed-login-attempts value with server.
-                               (let [max-fla 5]
-                                 (if (< 1 fla max-fla)
-                                   [:p "Tries before lockout: " (- max-fla fla)]
-                                   [:p "Account locked. Please reset password using 'Forgot Password' link."])))
                              [buttons/primary {:text     "Login"
                                                :on-click log-in!}]
                              [register-cmpt]]}]
