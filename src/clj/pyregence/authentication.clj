@@ -14,19 +14,6 @@
 
 (defonce user-email->failed-login-attempts (atom {}))
 
-(comment
-  (@user-email->failed-login-attempts "dverlee@sig-gis.com")
-  ;; => 1
-
-  (@user-email->failed-login-attempts "dverlee@sig-gis.com")
-  ;; => 5
-
-  (@user-email->failed-login-attempts "dverlee@sig-gis.com")
-  ;; => nil
-
-;;
-  )
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
