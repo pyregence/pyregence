@@ -207,7 +207,9 @@
   (if-not (valid-password? password)
     (data-response password->invalid-password-msg  {:status 400})
     (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
-      (successful-login user session)
+      (do
+        (swap! user-email->failed-login-attempts dissoc email)
+        (successful-login user session))
       (data-response "Invalid or expired reset token" {:status 403}))))
 
 (defn verify-user-email
