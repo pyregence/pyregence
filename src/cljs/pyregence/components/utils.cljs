@@ -172,7 +172,8 @@
           (merge
            {:display         "flex"
             :justify-content "center"
-            :align-content   "center"}
+            :align-content   "center"
+            :overflow        "auto"}
            (if @!/mobile?
              {:height "100%"
               :width  "100%"}
