@@ -106,7 +106,9 @@
                                ;; It's actually 6 attempts because 0 to 1 counts as an attempt.
                                (let [max-fla 5]
                                  [:div {:style {:color       ($/color-picker :error-red)
-                                                :font-weight "bold"}}
+                                                :font-weight "bold"
+                                                ;;TODO consider moving this to the top level card
+                                                :width  "300px"}}
                                   (if (<= 1 fla max-fla)
                                     [:p (str "This account has " (- (inc max-fla) fla) " more login attempts before it will need a password reset.")]
                                     [:p "This account has exceeded the max login attempts and will need it's password reset by clicking the link 'Forgot Password?' below."])]))
