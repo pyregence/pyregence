@@ -23,10 +23,11 @@
     :margin-right  "auto"
     :padding       ".5rem"
     :right         "0"
-    :width         (if @!/mobile? "20rem" "min-content")}
+    :width         (if @!/mobile? "17rem" "min-content")}
     @!/mobile?
     (merge {:justify-content "center"
-            :flex-flow "wrap"})))
+            :flex-flow       "wrap"
+            :bottom          "30px"})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root Component

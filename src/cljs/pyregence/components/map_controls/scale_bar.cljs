@@ -38,7 +38,10 @@
   (r/with-let [max-width    100.0
                scale-params (r/atom {:distance 0 :ratio 1 :units "ft"})
                move-event   (mb/add-map-move! #(reset! scale-params (g/imperial-scale (mb/get-distance-meters))))]
-    [:div#scale-bar {:style ($/combine $/tool ($scale-line time-slider?) {:width (* (:ratio @scale-params) max-width)})}
+    [:div#scale-bar {:style
+                     (merge
+                       ($/combine $/tool ($scale-line time-slider?) {:width (* (:ratio @scale-params) max-width)})
+                       (when @!/mobile? {:bottom "150px"}))}
      [:div {:style ($scale-line-inner)}
       (str (:distance @scale-params) " " (:units @scale-params))]]
     (finally
