@@ -61,7 +61,7 @@
                           "Your password must be at least 12 characters long.")
 
                         (when (< 64 (count @password))
-                          "Your password must be less then 64 characters long.")
+                          "Your password must be less than 64 characters long.")
 
                         (when-not (= @password @re-password)
                           "The passwords you have entered do not match.")
