@@ -20,7 +20,6 @@
 (defonce forgot?  (r/atom false))
 (defonce email    (r/atom ""))
 (defonce password (r/atom ""))
-(defonce failed-login-attempts (r/atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -30,7 +29,7 @@
   (go
     ;;TODO consider validating email before sending it.
     (let [{:keys [success body]} (<! (u-async/call-clj-async! "log-in" @email @password))]
-      (let [{:keys [require-2fa email method] :as body} (edn/read-string body)]
+      (let [{:keys [require-2fa email method failed-login-attempts] :as body} (edn/read-string body)]
         (if success
           (if require-2fa
             ;; 2FA is required, redirect to 2FA verification page
@@ -40,12 +39,12 @@
               (u-browser/clear-session-storage!)
               (u-browser/jump-to-url! url)
               (gtag "log-in" {})))
-          ;; Login failed
-          ;; TODO, it would be helpful to show the user which of the two errors it actually is.
-          (do
-            (reset! failed-login-attempts (:failed-login-attempts body))
-            (toast-message! ["Invalid login credentials. Please try again."
-                             "If you feel this is an error, check your email for the verification email."])))))))
+          (toast-message!
+           (if (<= 6 failed-login-attempts)
+             ["Account locked due to multiple unsuccessful attempts."
+              "Please try again in 5 minutes or reset your password by clicking 'Forgot Password?'."]
+             ["Invalid login credentials. Please try again."
+              "If you feel this is an error, check your email for the verification email."])))))))
 
 (defn- request-password! []
   (go
@@ -101,17 +100,6 @@
                                                    :placeholder "Enter Password"
                                                    :on-change   #(reset! password (-> % .-target .-value))
                                                    :value       @password}]
-                             (when-let [fla @failed-login-attempts]
-                               ;; TODO sync max max-failed-login-attempts value with server.
-                               ;; It's actually 6 attempts because 0 to 1 counts as an attempt.
-                               (let [max-fla 5]
-                                 [:div {:style {:color       ($/color-picker :error-red)
-                                                :font-weight "bold"
-                                                ;;TODO consider moving this to the top level card
-                                                :width  "300px"}}
-                                  (if (<= 1 fla max-fla)
-                                    [:p (str "This account has " (- (inc max-fla) fla) " more login attempts before it will need a password reset.")]
-                                    [:p "This account has exceeded the max login attempts and will need it's password reset by clicking the link 'Forgot Password?' below."])]))
                              [:a {:href     "#"
                                   :on-click #(reset! forgot? true)
                                   :style    {:color     color
