@@ -57,9 +57,6 @@
                         (when-not (= @email @re-email)
                           "The emails you have entered do not match.")
 
-                        (when (< (count @password) 8)
-                          "Your password must be at least 8 characters long.")
-
                         (when-not (= @password @re-password)
                           "The passwords you have entered do not match.")
 
