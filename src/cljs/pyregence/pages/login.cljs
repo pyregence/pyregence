@@ -28,23 +28,23 @@
 (defn- log-in! []
   (go
     ;;TODO consider validating email before sending it.
-    (let [{:keys [success body]} (<! (u-async/call-clj-async! "log-in" @email @password))]
-      (let [{:keys [require-2fa email method failed-login-attempts] :as body} (edn/read-string body)]
-        (if success
-          (if require-2fa
+    (let [{:keys [success body]} (<! (u-async/call-clj-async! "log-in" @email @password))
+          {:keys [require-2fa email method failed-login-attempts]} (edn/read-string body)]
+      (if success
+        (if require-2fa
             ;; 2FA is required, redirect to 2FA verification page
-            (u-browser/jump-to-url! (str "/verify-2fa?email=" email "&method=" method))
+          (u-browser/jump-to-url! (str "/verify-2fa?email=" email "&method=" method))
             ;; Normal login success
-            (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
-              (u-browser/clear-session-storage!)
-              (u-browser/jump-to-url! url)
-              (gtag "log-in" {})))
-          (toast-message!
-           (if (<= 6 failed-login-attempts)
-             ["Account locked due to multiple unsuccessful attempts."
-              "Please try again in 5 minutes or reset your password by clicking 'Forgot Password?'."]
-             ["Invalid login credentials. Please try again."
-              "If you feel this is an error, check your email for the verification email."])))))))
+          (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
+            (u-browser/clear-session-storage!)
+            (u-browser/jump-to-url! url)
+            (gtag "log-in" {})))
+        (toast-message!
+         (if (<= 6 failed-login-attempts)
+           ["Account locked due to multiple unsuccessful attempts."
+            "Please try again in 5 minutes or reset your password by clicking 'Forgot Password?'."]
+           ["Invalid login credentials. Please try again."
+            "If you feel this is an error, check your email for the verification email."]))))))
 
 (defn- request-password! []
   (go
