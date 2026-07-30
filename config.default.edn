@@ -115,9 +115,12 @@
                               :triangulum.worker/stop  pyregence.jobs/stop-clean-up-service!}
                              {:triangulum.worker/name  "marketplace-subscriber"
                               :triangulum.worker/start pyregence.marketplace.pubsub/start-subscriber!
-                              :triangulum.worker/stop  pyregence.marketplace.pubsub/stop-subscriber!}]
+                              :triangulum.worker/stop  pyregence.marketplace.pubsub/stop-subscriber!}
+                             {:triangulum.worker/name  "reset-user-email->failed-login-attempts"
+                              :triangulum.worker/start pyregence.jobs/start-reset-user-email->failed-login-attempts!
+                              :triangulum.worker/stop  pyregence.jobs/stop-reset-user-email->failed-login-attempts!}]
 
- ;;; Pyrecast
+;;; Pyrecast
  :pyregence.cameras/alert-west-api-key              "<api-key>"
  ;; Credentials used to list workspaces (REST API) and query GetCapabilities per
  ;; GeoServer. Omit a GeoServer's entry entirely to query it anonymously (a
