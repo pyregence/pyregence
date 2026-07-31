@@ -20,7 +20,8 @@
   (loop []
     ;; 5 minutes
     (Thread/sleep (* 1000 60 5))
-    (reset! user-email->failed-login-attempts {})))
+    (reset! user-email->failed-login-attempts {})
+    (recur)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
