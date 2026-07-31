@@ -17,10 +17,15 @@
 ;;TODO As an improvement, this could be made to be user-email specific
 (defn reset-user-email->failed-login-attempts!
   []
-  (loop []
-    ;; 5 minutes
-    (Thread/sleep (* 1000 60 5))
-    (reset! user-email->failed-login-attempts {})))
+  (future
+    (loop []
+      ;; 5 minutes
+      (Thread/sleep (* 1000 ;; 1s
+                       60   ;; 1m
+                       5    ;; 5m
+                       ))
+      (reset! user-email->failed-login-attempts {})
+      (recur))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
