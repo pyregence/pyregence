@@ -41,7 +41,7 @@
             (gtag "log-in" {})))
         (toast-message!
          (if (= status 429)
-           ["Account locked due to multiple unsuccessful attempts."
+           ["Account was locked due to multiple unsuccessful attempts."
             "Please try again in 5 minutes or reset your password by clicking 'Forgot Password?'."]
            ["Invalid login credentials. Please try again."
             "If you feel this is an error, check your email for the verification email."]))))))
