@@ -28,8 +28,8 @@
 (defn- log-in! []
   (go
     ;;TODO consider validating email before sending it.
-    (let [{:keys [success body]} (<! (u-async/call-clj-async! "log-in" @email @password))
-          {:keys [require-2fa email method failed-login-attempts]} (edn/read-string body)]
+    (let [{:keys [success status body]} (<! (u-async/call-clj-async! "log-in" @email @password))
+          {:keys [require-2fa email method]} (edn/read-string body)]
       (if success
         (if require-2fa
             ;; 2FA is required, redirect to 2FA verification page
@@ -40,7 +40,9 @@
             (u-browser/jump-to-url! url)
             (gtag "log-in" {})))
         (toast-message!
-         (if (<= 6 failed-login-attempts)
+         ;; The server returns 429 once the account is locked; keep the lock
+         ;; decision server-side so the client and server can't drift out of sync.
+         (if (= status 429)
            ["Account locked due to multiple unsuccessful attempts."
             "Please try again in 5 minutes or reset your password by clicking 'Forgot Password?'."]
            ["Invalid login credentials. Please try again."

@@ -140,7 +140,6 @@
   "Authenticates user and determines 2FA requirements."
   [session email password]
   (let [failed-login-attempts  (@user-email->failed-login-attempts email 0)]
-    ;;TODO sync max max-failed-login-attempts value with client
     (if (<= 6 failed-login-attempts)
       (data-response {:failed-login-attempts failed-login-attempts} {:status 429})
       (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
