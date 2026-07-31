@@ -1,5 +1,6 @@
 (ns pyregence.authentication
-  (:require [pyregence.email            :as email]
+  (:require [clojure.string             :as str]
+            [pyregence.email            :as email]
             [pyregence.marketplace      :as marketplace]
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error ->uuid]]
@@ -13,6 +14,12 @@
             [java.text SimpleDateFormat]))
 
 (defonce user-email->failed-login-attempts (atom {}))
+
+(defn- normalize-email
+  "Lower-cases and trims an email so throttle lookups match the identity the
+   DB authenticates against (verify_user_login uses lower_trim)."
+  [email]
+  (-> email str/lower-case str/trim))
 
 ;;TODO As an improvement, this could be made to be user-email specific
 (defn reset-user-email->failed-login-attempts!
@@ -144,8 +151,8 @@
 (defn log-in
   "Authenticates user and determines 2FA requirements."
   [session email password]
-  (let [failed-login-attempts  (@user-email->failed-login-attempts email 0)]
-    ;;TODO sync max max-failed-login-attempts value with client
+  (let [normalized-email      (normalize-email email)
+        failed-login-attempts (@user-email->failed-login-attempts normalized-email 0)]
     (if (<= 6 failed-login-attempts)
       (data-response {:failed-login-attempts failed-login-attempts} {:status 429})
       (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
@@ -156,7 +163,7 @@
             :email (do (email/send-email! nil email :2fa)
                        (data-response {:email email :require-2fa true :method "email"}))
             (successful-login user session)))
-        (data-response {:failed-login-attempts ((swap! user-email->failed-login-attempts update email (fnil inc 0)) email)}
+        (data-response {:failed-login-attempts ((swap! user-email->failed-login-attempts update normalized-email (fnil inc 0)) normalized-email)}
                        {:status 403})))))
 
 (defn marketplace-sso-login
@@ -218,7 +225,7 @@
     (data-response password->invalid-password-msg  {:status 400})
     (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
       (do
-        (swap! user-email->failed-login-attempts dissoc email)
+        (swap! user-email->failed-login-attempts dissoc (normalize-email email))
         (successful-login user session))
       (data-response "Invalid or expired reset token" {:status 403}))))
 
@@ -730,7 +737,7 @@
                            {:status 403})
             (do
               ;; reset login attempts in case this account exceeded the max login attempts
-              (swap! user-email->failed-login-attempts dissoc email)
+              (swap! user-email->failed-login-attempts dissoc (normalize-email email))
               (cond
             ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
             ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
