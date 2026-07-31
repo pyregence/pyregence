@@ -199,7 +199,11 @@
   [{:keys [user-id]}]
   (when user-id
     (call-sql "set_user_session_invalidated_at" user-id (System/currentTimeMillis)))
+  ;; :session nil re-seals an empty cookie but Ring's cookie-store emits no expiry, so the browser
+  ;; keeps it; :session-cookie-attrs {:max-age 0} makes wrap-session send Max-Age=0 to delete it.
+  ;; Must be assoc'ed on the response: utils/data-response only passes through :status/:type/:session.
   (-> (data-response "" {:session nil})
+      (assoc :session-cookie-attrs {:max-age 0})
       (assoc-in [:headers "Clear-Site-Data"] "\"cache\", \"cookies\", \"storage\"")))
 
 ^:rct/test
@@ -213,11 +217,12 @@
             [f uid ts] (first @calls)]
         [(contains? resp :session)
          (:session resp)
+         (:session-cookie-attrs resp)
          (get-in resp [:headers "Clear-Site-Data"])
          f
          uid
          (>= ts before)])))
-  ;=> [true nil "\"cache\", \"cookies\", \"storage\"" "set_user_session_invalidated_at" 7 true]
+  ;=> [true nil {:max-age 0} "\"cache\", \"cookies\", \"storage\"" "set_user_session_invalidated_at" 7 true]
 
   ;; A guest logout still clears client state but writes nothing (no user-id).
   (let [calls (atom [])]
