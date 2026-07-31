@@ -40,8 +40,6 @@
             (u-browser/jump-to-url! url)
             (gtag "log-in" {})))
         (toast-message!
-         ;; The server returns 429 once the account is locked; keep the lock
-         ;; decision server-side so the client and server can't drift out of sync.
          (if (= status 429)
            ["Account locked due to multiple unsuccessful attempts."
             "Please try again in 5 minutes or reset your password by clicking 'Forgot Password?'."]
