@@ -67,7 +67,7 @@
                        :justify-content "center"}
             :on-click on-click}
    [svg/pyrecast]
-   [:div {:style {:font-size "18px"}} "View Forecast"]])
+   [:div {:style {:font-size "18px"}} "View PyreCast Fire Forecast"]])
 
 (defn fire-popup
   "Popup body for active fires."
