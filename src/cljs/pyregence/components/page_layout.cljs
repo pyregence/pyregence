@@ -14,7 +14,7 @@
                    :display         "flex"
                    :justify-content "space-between"
                    :min-height      "fit-content"
-                   :flex            "1 1 auto"}}
+                   :flex            "0 0 auto"}}
      [:a {:rel   "home"
           :href  (if pyrecast? "/" "https://pyregence.org")
           :title "Pyregence"
@@ -62,12 +62,16 @@
   [{:keys [root-component params footer?]}]
   (process-toast-messages!)
   (fn [{:keys [root-component params footer?]}]
-    [:div {:style {:display        :flex
-                   :flex-direction :column
-                   :height         "100%"}}
+    ;; `#page-wrapper` is sized to the *visible* viewport (see style.css). The
+    ;; content area then takes whatever the header leaves over, so anything a
+    ;; page anchors to `bottom: 0` (e.g. the time slider) lands on the bottom
+    ;; edge of the screen instead of underneath it.
+    [:div {:id    "page-wrapper"
+           :style {:display        :flex
+                   :flex-direction :column}}
      [header]
      [toast-message]
-     [:div {:style {:height "100vh"}}
+     [:div {:style {:flex "1 1 0" :min-height 0}}
       [root-component params]]
      (when footer?
        [footer])]))

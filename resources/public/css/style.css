@@ -49,6 +49,17 @@ body {
   text-align: left;
   background-color: #fff;
 }
+
+/* Every page is wrapped in #page-wrapper (see page-layout/wrap-page). It must
+   match the *visible* viewport: `100vh` on iOS Safari is the large viewport
+   (bottom toolbar retracted), which pushes bottom-anchored controls such as the
+   time slider off the bottom of the screen. `dvh` tracks the toolbar; the `vh`
+   line above it is the fallback for browsers without `dvh` support. */
+#page-wrapper {
+  height: 100vh;
+  height: 100dvh;
+}
+
 h1, h2, h3 {
     font-family: "big_caslonmedium";
 }
