@@ -4,6 +4,7 @@
             [clojure.string             :as str]
             [pyregence.capabilities     :refer [set-all-capabilities!]]
             [pyregence.weather-stations :refer [periodically-get-observation-stations-in-the-background!]]
+            [pyregence.authentication   :refer [reset-user-email->failed-login-attempts!]]
             [triangulum.config          :refer [get-config]]
             [triangulum.logging         :refer [log-str]]))
 
@@ -58,4 +59,13 @@
     (periodically-get-observation-stations-in-the-background!)))
 
 (defn stop-get-weather-stations! [fut]
+  (future-cancel fut))
+
+
+(defn start-reset-user-email->failed-login-attempts! []
+  (future
+    (log-str "Reset failed login attempt counter every five minutes.")
+    (reset-user-email->failed-login-attempts!)))
+
+(defn stop-reset-user-email->failed-login-attempts! [fut]
   (future-cancel fut))
