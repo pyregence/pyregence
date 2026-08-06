@@ -8,7 +8,7 @@
 (def ^:private default-idle-timeout-min     15)  ; NIST 800-63B AAL3 / PCI DSS 8.2.8
 (def ^:private default-absolute-timeout-min 420) ; 7 h
 
-(defn expired?
+(defn- expired?
   "Fail-closed: a session missing either timestamp counts as expired; an unauthenticated one never expires."
   [{:keys [user-id created-at last-active]} now idle-ms absolute-ms]
   (boolean (when user-id
@@ -28,7 +28,7 @@
             (timeout-ms :pyregence.auth/idle-timeout-min     default-idle-timeout-min)
             (timeout-ms :pyregence.auth/absolute-timeout-min default-absolute-timeout-min)))
 
-(defn invalidated?
+(defn- invalidated?
   "Created strictly before the user's invalidation point (set on logout / newer login).
    Strict `<` so a fresh login at the same instant survives; invalidated-at 0 = never."
   [{:keys [user-id created-at]} invalidated-at]
@@ -40,8 +40,9 @@
   [{:keys [user-id] :as session}]
   (boolean
    (and user-id
-        (invalidated? session (or (:get_user_session_invalidated_at
-                                   (first (call-sql "get_user_session_invalidated_at" user-id)))
+        (invalidated? session (or (some-> (call-sql "get_user_session_invalidated_at" user-id)
+                                          (ffirst)
+                                          (val))
                                   0)))))
 
 (defn live?

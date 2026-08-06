@@ -426,9 +426,10 @@
     :match-drops      {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\", \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}
     :wui-active-fires {:wui-fire-name   {:opt-label \"WUI Fire Name\"   :filter-set #{\"fire-spread-forecast\", \"wui-fire-name\"}  :auto-zoom? true :geoserver-key :psps}       ...}}"
   [session]
-  ;; The map is public, so this can't be liveness-gated at the route.
-  (let [{:keys [user-id match-drop-access?]} (when (session/live? session) session)
-        match-drop-names                     (when match-drop-access?
+  ;; The map is public, so this can't be gated at the route. live? goes last to keep its
+  ;; query off callers who get no names anyway.
+  (let [{:keys [user-id match-drop-access?]} session
+        match-drop-names                     (when (and match-drop-access? (session/live? session))
                                                (->> (call-sql "get_user_match_names" user-id)
                                                     (reduce (fn [acc row]
                                                               (assoc acc
