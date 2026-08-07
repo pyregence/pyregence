@@ -31,13 +31,18 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn email->username
+  [email]
+  (subs email 0 (str/index-of email "@")))
+
+
 (defn- add-user! []
   (go
     (toast-message! "Creating new account. This may take a moment...")
     ;;TODO it's awkward that add-new-user requires a user's name when it's not a unique identifier. Consider alternatives.
     (if (and (:success (<! (if @marketplace?
-                             (u-async/call-clj-async! "add-new-user" @email "" @password @org-name)
-                             (u-async/call-clj-async! "add-new-user" @email "" @password))))
+                             (u-async/call-clj-async! "add-new-user" @email (email->username @email) @password @org-name)
+                             (u-async/call-clj-async! "add-new-user" @email (email->username @email) @password))))
              (:success (<! (u-async/call-clj-async! "send-email" @email :new-user))))
       (do (toast-message! ["Your account has been created successfully."
                            "Please check your email for a link to complete registration."])
