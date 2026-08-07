@@ -4,6 +4,7 @@
             [clojure.repl        :refer [demunge]]
             [clojure.string      :as    str]
             [nrepl.server        :as    nrepl-server]
+            [pyregence.session   :as    session]
             [ring.util.codec     :refer [url-encode]]
             [ring.util.response  :refer [redirect]]
             [triangulum.config   :refer [get-config]]
@@ -87,82 +88,16 @@
   [tier]
   (not (isa? subscription-hierarchy tier :tier2-pro)))
 
-;; Session liveness
-
-(def ^:private default-idle-timeout-min     15)  ; NIST 800-63B AAL3 / PCI DSS 8.2.8
-(def ^:private default-absolute-timeout-min 420) ; 7 h
-
-(defn- session-expired?
-  "Fail-closed: a session missing either timestamp counts as expired; an unauthenticated one never expires."
-  [{:keys [user-id created-at last-active]} now idle-ms absolute-ms]
-  (boolean (when user-id
-             (or (nil? created-at)
-                 (nil? last-active)
-                 (> (- now created-at)  absolute-ms)
-                 (> (- now last-active) idle-ms)))))
-
-(defn- timeout-ms
-  [config-key default-min]
-  (* 60000 (or (get-config config-key) default-min)))
-
-(defn- session-timed-out?
-  [session now]
-  (session-expired? session now
-                    (timeout-ms :pyregence.auth/idle-timeout-min     default-idle-timeout-min)
-                    (timeout-ms :pyregence.auth/absolute-timeout-min default-absolute-timeout-min)))
-
-(defn- session-invalidated?
-  "Created strictly before the user's invalidation point (set on logout / newer login).
-   Strict `<` so a fresh login at the same instant survives; invalidated-at 0 = never."
-  [{:keys [user-id created-at]} invalidated-at]
-  (boolean (and user-id created-at (pos? invalidated-at) (< created-at invalidated-at))))
-
-(defn- session-revoked?
-  "A nil lookup (e.g. a deleted user) counts as not invalidated rather than crashing."
-  [{:keys [user-id] :as session}]
-  (boolean
-   (and user-id
-        (session-invalidated? session (or (sql-primitive (call-sql "get_user_session_invalidated_at" user-id)) 0)))))
-
 (defn redirect-handler
   "Sends a dead session (timed out or revoked) to log in again; only a live user who genuinely
-   lacks the role is told so. Defined below the liveness predicates so it can use them."
+   lacks the role is told so."
   [{:keys [session query-string uri] :as _request}]
-  (let [full-url (url-encode (str uri (when query-string (str "?" query-string))))
-        live?    (and (:user-id session)
-                      (not (session-timed-out? session (System/currentTimeMillis)))
-                      (not (session-revoked? session)))]
-    (if live?
+  (let [full-url (url-encode (str uri (when query-string (str "?" query-string))))]
+    (if (session/live? session)
       (redirect (str "/?flash_message=You do not have permission to access "
                      full-url))
       (redirect (str "/login?flash_message=You must login to see "
                      full-url)))))
-
-^:rct/test
-(comment
-  ;; idle 15 min = 900000 ms ; absolute 7 h = 25200000 ms (the production defaults)
-  (session-expired? {:user-id 1 :created-at 1000000000000 :last-active 1000000000000} 1000000000000 900000 25200000)
-  ;=> false
-  (session-expired? {:user-id 1 :created-at 1000000000000 :last-active 999999000000} 1000000000000 900000 25200000)
-  ;=> true
-  (session-expired? {:user-id 1 :created-at 999970000000 :last-active 1000000000000} 1000000000000 900000 25200000)
-  ;=> true
-  (session-expired? {:user-id 1} 1000000000000 900000 25200000)
-  ;=> true
-  (session-expired? {} 1000000000000 900000 25200000)
-  ;=> false
-
-  (session-invalidated? {:user-id 1 :created-at 1000} 0)
-  ;=> false
-  (session-invalidated? {:user-id 1 :created-at 1000} 2000)
-  ;=> true
-  (session-invalidated? {:user-id 1 :created-at 3000} 2000)
-  ;=> false
-  (session-invalidated? {:user-id 1 :created-at 2000} 2000)
-  ;=> false
-  (session-invalidated? {:created-at 1000} 2000)
-  ;=> false
-  )
 
 ^:rct/test
 (comment
@@ -233,8 +168,8 @@
   [{:keys [session] :as request} auth-type]
   (if (and (requires-live-session? auth-type)
            (:user-id session)
-           (or (session-timed-out? session (System/currentTimeMillis))
-               (session-revoked? session)))
+           (or (session/timed-out? session (System/currentTimeMillis))
+               (session/revoked? session)))
     false
     (authorized? request auth-type)))
 
@@ -363,7 +298,7 @@
       (let [now (System/currentTimeMillis)]
         (if (and (:user-id session)
                  (not (contains? response :session))
-                 (not (session-timed-out? session now)))
+                 (not (session/timed-out? session now)))
           (assoc response :session (assoc session :last-active now))
           response)))))
 
