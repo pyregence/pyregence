@@ -110,10 +110,10 @@
   (valid-password? "Helloworld12")
   ;; => true at 12
 
-  (valid-password? (clojure.string/join "" (repeat 6 "Helloworld12")))
+  (valid-password? (str/join "" (repeat 6 "Helloworld12")))
   ;; => false over 64
 
-  (valid-password? (clojure.string/join "" (repeat 5 "Helloworld12")))
+  (valid-password? (str/join "" (repeat 5 "Helloworld12")))
   ;; => true less then 64
 
 ;; Must have one uppercase
@@ -724,13 +724,108 @@
 
 
 (defn valid-user-name?
+  "Validates a username against a regex and a length check"
   [user-name]
   (and (string? user-name)
-       ;; Max length check to prevent memory issues
-       (<= 1 (count user-name) 100)
+       (not (str/blank? user-name)) ;; Max length check to prevent memory issues
+       (<= 2 (count user-name) 100)
        ;; Geminmi says this allows letters from any language, spaces, apostrophes, and hyphens
        ;; TODO consider a more lenient restriction
-       (boolean (re-matches #"^[\p{L}\s'-]+$" user-name))))
+       (boolean (re-matches #"^[\p{L}\s'\-]+$" user-name))))
+
+(defn valid-org-name?
+  [org-name]
+  (and (string? org-name)
+       (not (str/blank? org-name)) ;; Max length check to prevent memory issues
+       (<= 2 (count org-name) 100)
+       ;; Geminmi says this allows letters from any language, spaces, apostrophes, and hyphens
+       ;; TODO consider a more lenient restriction
+       (boolean (re-matches #"^[\p{L}\s'\-\.,]+$" org-name))))
+
+(comment
+
+  ;; --- nil / non-string ---
+  (valid-org-name? nil)                     ;; => false
+  (valid-org-name? 42)                      ;; => false
+  (valid-org-name? :keyword)                ;; => false
+  (valid-org-name? ["Org"])                 ;; => false
+
+  ;; --- blank ---
+  (valid-org-name? "")                      ;; => false
+  (valid-org-name? "   ")                   ;; => false
+  (valid-org-name? "\t\n")                  ;; => false
+
+  ;; --- length bounds (min 2, max 100) ---
+  (valid-org-name? "A")                     ;; => false
+  (valid-org-name? "Ab")                    ;; => true
+  (valid-org-name? (apply str (repeat 100 "a")))  ;; => true
+  (valid-org-name? (apply str (repeat 101 "a")))  ;; => false
+
+  ;; --- realistic org names ---
+  (valid-org-name? "Development")           ;; => true
+  (valid-org-name? "Delete Me Inc.")        ;; => true
+  (valid-org-name? "Spatial Informatics Group")   ;; => true
+  (valid-org-name? "Pyregence Consortium")  ;; => true
+  (valid-org-name? "O'Reilly Media")        ;; => true
+  (valid-org-name? "Coca-Cola")             ;; => true
+  (valid-org-name? "Société Générale")      ;; => true
+  (valid-org-name? "北京公司")               ;; => true
+
+  ;; --- disallowed characters ---
+  (valid-org-name? "Acme, Inc")             ;; => false  ; comma
+  (valid-org-name? "AT&T")                  ;; => false  ; ampersand
+  (valid-org-name? "Yahoo!")                ;; => false  ; bang
+  (valid-org-name? "Org #3")                ;; => false  ; digit + hash
+  (valid-org-name? "3M")                    ;; => false  ; digit
+  (valid-org-name? "a@b")                   ;; => false
+  (valid-org-name? "Robert'); DROP TABLE")  ;; => false  ; semicolon, parens
+
+  ;; --- REGEX QUIRK GUARD: these PASS with the current unescaped range
+  ;;     #"^[\p{L}\s'-\.]+$" and should FAIL once fixed to #"^[\p{L}\s'.-]+$".
+  ;;     Flip the expectations below when you apply the fix. ---
+  (valid-org-name? "A+B")                   ;; fixed => false
+  (valid-org-name? "Ben (Dev)")             ;; fixed => false
+  (valid-org-name? "A,B")                   ;; fixed => false
+  (valid-org-name? "A*B")                   ;; fixed => false
+
+  ;; --- edge trimming (decide policy) ---
+  (valid-org-name? " Acme ")                ;; => true under current regex (\s allowed anywhere)
+                                            ;; if you want to reject edge whitespace, trim-then-check
+                                            ;; or tighten the pattern to disallow leading/trailing \s
+
+  :rcf)
+
+
+(comment
+
+  ;; --- nil / blank ---
+  (valid-user-name? nil)              ;; => false
+  (valid-user-name? "")               ;; => false
+  (valid-user-name? "   ")            ;; => false
+  (valid-user-name? "\t\n")           ;; => false
+
+  ;; --- length bounds (assuming min 2, max 100) ---
+  (valid-user-name? "A")              ;; => false
+  (valid-user-name? "Al")             ;; => true
+  (valid-user-name? (apply str (repeat 50 "a")))   ;; => true
+  (valid-user-name? (apply str (repeat 101 "a")))  ;; => false
+
+  ;; --- allowed characters ---
+  (valid-user-name? "Mary Jane")      ;; => true
+  (valid-user-name? "Anne-Marie")     ;; => true
+  (valid-user-name? "O'Brien")        ;; => true
+  (valid-user-name? "José")           ;; => true
+
+  ;; --- disallowed characters ---
+  (valid-user-name? "John3")          ;; => false
+  (valid-user-name? "Bob_Smith")      ;; => false
+  (valid-user-name? "a@b")            ;; => false
+  (valid-user-name? "Robert; DROP")   ;; => false
+
+  ;; --- edge trimming ---
+  (valid-user-name? " Al ")           ;; => ???  ; decide: trim-then-validate or reject leading/trailing space
+
+  :rcf)
 
 
 (defn add-new-user
@@ -775,34 +870,37 @@
     (data-response "Invalid user name." {:status 400})
 
     :else
-    (let [org-name (cond (string? org-name-or-opts)             org-name-or-opts
-                         (map? org-name-or-opts) (or (:org-name org-name-or-opts)
-                                                     (get org-name-or-opts "org-name"))
-                         :else                                  nil)
-          org-id   (when (map? org-name-or-opts)
+    (let [org-name            (cond (string? org-name-or-opts) org-name-or-opts
+                                    (map? org-name-or-opts)    (or (:org-name org-name-or-opts)
+                                                                (get org-name-or-opts "org-name"))
+                                    :else                      nil)
+          _                   (when-not (valid-org-name? org-name)
+                               (data-response (str "Organization name " org-name " is invalid, failed to create user with " user-name " and email " email)
+                                              {:status 403})) ;; TODO: Enrich error to be specific, do not reflect input back to user
+          org-id              (when (map? org-name-or-opts)
                      (or (:org-id org-name-or-opts)
                          (get org-name-or-opts "org-id")))
-          org-name         (when (and (string? org-name) (seq org-name)) org-name)
+          org-name            (when (and (string? org-name) (seq org-name)) org-name)
           {:keys [user-role]} session
-          default-settings (pr-str {:timezone :utc})
-          new-user-id      (nil-on-error
-                            (sql-primitive (call-sql "add_new_user"
-                                                     {:log? false}
-                                                     email
-                                                     user-name
-                                                     password
-                                                     default-settings)))
+          default-settings    (pr-str {:timezone :utc})
+          new-user-id         (nil-on-error
+                             (sql-primitive (call-sql "add_new_user"
+                                                      {:log? false}
+                                                      email
+                                                      (str/trim user-name)
+                                                      password
+                                                      default-settings)))
           response
           (if-not new-user-id
             (data-response (str "Failed to create the new user with name " user-name " and email " email)
-                           {:status 403})
+                           {:status 403})  ;; TODO: Enrich error to be specific, do not reflect input back to user
             (do
               ;; reset login attempts in case this account exceeded the max login attempts
               (swap! user-email->failed-login-attempts dissoc (normalize-email email))
               (cond
-            ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
-            ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
-            ;; The new user will have a user_role of organization_member and a user_status of active
+                ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
+                ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
+                ;; The new user will have a user_role of organization_member and a user_status of active
                 org-id
                 (if (or (= user-role "super_admin")
                         (= user-role "organization_admin"))
@@ -812,14 +910,14 @@
                   (data-response "User does not have permission to assign users to this organization."
                                  {:status 403}))
 
-            ;; No org-id provided — use email domain-based auto-assignment (dependent on org auto_add settings)
+                ;; No org-id provided — use email domain-based auto-assignment (dependent on org auto_add settings)
                 :else
                 (let [domain (re-find #"@{1}.+" email)]
                   (if (call-sql "auto_add_org_user" new-user-id domain)
                     (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
                     (data-response "User created successfully but something went wrong when calling auto_add_org_user."
                                    {:status 403}))))))]
-    ;; Stash org-name in session for marketplace provisioning
+      ;; Stash org-name in session for marketplace provisioning
       (cond-> response
         (and new-user-id org-name (:marketplace-signup session))
         (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name))))))
