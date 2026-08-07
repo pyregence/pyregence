@@ -668,6 +668,8 @@
     (remove-totp {:user-id user-id} valid-code)))
   ;=>> {:status 200, :body "{:message \"Two-factor authentication has been disabled\"}"}
 
+
+
 (defn disable-2fa
   "Disables any 2FA method for the current user after verification."
   [{:keys [user-id user-email]} code]
@@ -720,6 +722,17 @@
 ;;; User Management
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+(defn valid-user-name?
+  [user-name]
+  (and (string? user-name)
+       ;; Max length check to prevent memory issues
+       (<= 1 (count user-name) 100)
+       ;; Geminmi says this allows letters from any language, spaces, apostrophes, and hyphens
+       ;; TODO consider a more lenient restriction
+       (boolean (re-matches #"^[\p{L}\s'-]+$" user-name))))
+
+
 (defn add-new-user
   "Creates a new user account and optionally associates them with an organization.
 
@@ -754,8 +767,14 @@
     explicitly assign a new user to an organization via `:org-id`.
   - All organization assignments are validated server-side using the session context."
   [session email user-name password & [org-name-or-opts]]
-  (if-not (valid-password? password)
+  (cond
+    (not (valid-password? password))
     (data-response password->invalid-password-msg {:status 400})
+
+    (not (valid-user-name? user-name))
+    (data-response "Invalid user name." {:status 400})
+
+    :else
     (let [org-name (cond (string? org-name-or-opts)             org-name-or-opts
                          (map? org-name-or-opts) (or (:org-name org-name-or-opts)
                                                      (get org-name-or-opts "org-name"))
@@ -822,10 +841,13 @@
 (defn update-own-user-name
   "Allows a logged-in user to update their own user name."
   [session new-name]
-  (if-let [user-id (:user-id session)]
-    (do (call-sql "update_user_name" user-id new-name)
-        (data-response (str "User's name successfully updated to " new-name)))
-    (data-response "" {:status 403})))
+  (if (not (valid-user-name? new-name))
+    (data-response "Invalid user name." {:status 400})
+    (if-let [user-id (:user-id session)]
+      (do (call-sql "update_user_name" user-id new-name)
+          (data-response (str "User's name successfully updated to " new-name)))
+     (data-response "" {:status 403}))))
+
 
 ;;TODO ideally this would be handled by the database but we should at the very least have a cljc file
 ;;for the fe and be to share.
@@ -833,11 +855,11 @@
   "True if `from` role is greater then `to`"
   [from to]
   (let [role->n
-        {"member" 0
+        {"member"              0
          "organization_member" 1
-         "organization_admin" 2
-         "account_manager" 3
-         "super_admin" 4}]
+         "organization_admin"  2
+         "account_manager"     3
+         "super_admin"         4}]
     (<= (role->n to) (role->n from))))
 
 (defn update-users-status
