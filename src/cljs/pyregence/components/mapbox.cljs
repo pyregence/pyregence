@@ -626,8 +626,7 @@
     :circle-color
     ["interpolate" ["linear"]  ["to-number" ["get" "containper"]]
      0  "red"
-     90 "grey"
-     ]
+     90 "grey"]
     :circle-opacity 0.4}})
 
 (defn- build-wfs
@@ -1221,8 +1220,12 @@
                                                   #js {:url url})))
                           :transition       {:duration 500 :delay 0}}
                          (when-not (:zoom opts)
-                           {:bounds c/california-extent})
+                           {:bounds c/default-view-extent})
                          opts)))]
+    ;; When no explicit zoom was requested, the map opens fitted to `c/default-view-extent`.
+    ;; Cap zoom-out at whatever zoom that fit resolved to for this container.
+    (when-not (:zoom opts)
+      (js-invoke the-map* "setMinZoom" (js-invoke the-map* "getZoom")))
     (js-invoke
      the-map*
      "on"
