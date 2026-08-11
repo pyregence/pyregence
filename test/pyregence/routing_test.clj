@@ -82,3 +82,28 @@
                    (request {:role "organization_admin" :membership "accepted"
                              :tier "tier2_pro" :token "wrong-token"})
                    gate))))))
+
+;; -----------------------------------------------------------------------------
+;; Secret-bearing routes must not log their arguments (PYR1-1569)
+;; -----------------------------------------------------------------------------
+;;
+;; `{:log-args? false}` is opt-in, so a route added later for a secret would log
+;; it by default. This fails the build instead.
+
+(def ^:private secret-arg #"(?i)password|token|code|secret")
+
+(defn- takes-a-secret?
+  "Does `sym`'s var accept an argument named like a password, a token or a code?"
+  [sym]
+  (->> (:arglists (meta (resolve sym)))
+       (mapcat #(filter symbol? (tree-seq coll? seq %)))
+       (some #(re-find secret-arg (name %)))
+       boolean))
+
+(deftest secret-bearing-routes-do-not-log-their-arguments
+  (doseq [[route {:keys [handler]}] routes
+          :let  [{::handlers/keys [wrapped log-args?]} (meta handler)]
+          :when (and wrapped (takes-a-secret? wrapped))]
+    (testing (str route)
+      (is (false? log-args?)
+          (str wrapped " takes a secret, so its route needs {:log-args? false}")))))
