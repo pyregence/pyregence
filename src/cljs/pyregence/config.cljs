@@ -73,6 +73,18 @@
 
 (def california-extent [-124.83131903974008 32.36304641169675 -113.24176261416054 42.24506977982483])
 
+;; The view the map opens at, and the furthest out a user is allowed to zoom. Starting
+;; closer in and capping zoom-out keeps the fuel layers from being requested over a huge
+;; area at once, which is what made them glitch while loading: zoomed far out, GeoServer
+;; is asked for more tiles than it can serve and the layers come in partial or blank.
+;;
+;; The default view is an extent rather than a zoom level because a zoom level is not
+;; device independent: mapbox spreads the world over 512 * 2^zoom CSS pixels, so the same
+;; zoom frames a different area on every container size. An extent lets fitBounds pick the
+;; zoom per device, which keeps the framing consistent.
+;; Derived from zoom 3.5 in a 640x541 container, centered on `california-extent`.
+(def default-view-extent [-138.924 23.005 -99.149 49.589])
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Match Drop Fuel Versions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
