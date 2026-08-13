@@ -34,12 +34,17 @@
       (if (seq errors)
         (do (toast-message! errors)
             (reset! pending? false))
-        (if (:success (<! (u-async/call-clj-async! "verify-2fa" @email @verification-code)))
-          (do (toast-message! "Your verification code has been verified successfully.")
-              (<! (timeout 2000))
-              (u-browser/jump-to-url! "/forecast"))
-          (do (toast-message! "Invalid verification code. Please try again.")
-              (reset! pending? false)))))))
+        (let [{:keys [success status]} (<! (u-async/call-clj-async! "verify-2fa" @email @verification-code))]
+          (if success
+            (do (toast-message! "Your verification code has been verified successfully.")
+                (<! (timeout 2000))
+                (u-browser/jump-to-url! "/forecast"))
+            (do (toast-message!
+                 (if (= status 429)
+                   ["Account was locked due to multiple unsuccessful attempts."
+                    "Please try again in 5 minutes or reset your password by clicking 'Forgot Password?' on the login page."]
+                   ["Invalid verification code. Please try again."]))
+                (reset! pending? false))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
