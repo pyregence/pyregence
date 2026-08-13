@@ -31,6 +31,11 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn email->username
+  [email]
+  (subs email 0 (str/index-of email "@")))
+
+
 (defn- add-user! []
   (go
     (toast-message! "Creating new account. This may take a moment...")

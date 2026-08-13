@@ -671,6 +671,8 @@
     (remove-totp {:user-id user-id} valid-code)))
   ;=>> {:status 200, :body "{:message \"Two-factor authentication has been disabled\"}"}
 
+
+
 (defn disable-2fa
   "Disables any 2FA method for the current user after verification."
   [{:keys [user-id user-email]} code]
@@ -722,6 +724,112 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; User Management
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn valid-user-name?
+  "Validates a username against a regex and a length check"
+  [user-name]
+  (and (string? user-name)
+       (not (str/blank? user-name)) ;; Max length check to prevent memory issues
+       (<= 2 (count user-name) 100)
+       ;; Geminmi says this allows letters from any language, spaces, apostrophes, and hyphens
+       ;; TODO consider a more lenient restriction
+       (boolean (re-matches #"^[\p{L}\s'\-]+$" user-name))))
+
+(defn valid-org-name?
+  [org-name]
+  (and (string? org-name)
+       (not (str/blank? org-name)) ;; Max length check to prevent memory issues
+       (<= 2 (count org-name) 100)
+       ;; Geminmi says this allows letters from any language, spaces, apostrophes, and hyphens
+       ;; TODO consider a more lenient restriction
+       (boolean (re-matches #"^[\p{L}\s'\-\.,]+$" org-name))))
+
+(comment
+
+  ;; --- nil / non-string ---
+  (valid-org-name? nil)                     ;; => false
+  (valid-org-name? 42)                      ;; => false
+  (valid-org-name? :keyword)                ;; => false
+  (valid-org-name? ["Org"])                 ;; => false
+
+  ;; --- blank ---
+  (valid-org-name? "")                      ;; => false
+  (valid-org-name? "   ")                   ;; => false
+  (valid-org-name? "\t\n")                  ;; => false
+
+  ;; --- length bounds (min 2, max 100) ---
+  (valid-org-name? "A")                     ;; => false
+  (valid-org-name? "Ab")                    ;; => true
+  (valid-org-name? (apply str (repeat 100 "a")))  ;; => true
+  (valid-org-name? (apply str (repeat 101 "a")))  ;; => false
+
+  ;; --- realistic org names ---
+  (valid-org-name? "Development")           ;; => true
+  (valid-org-name? "Delete Me Inc.")        ;; => true
+  (valid-org-name? "Spatial Informatics Group")   ;; => true
+  (valid-org-name? "Pyregence Consortium")  ;; => true
+  (valid-org-name? "O'Reilly Media")        ;; => true
+  (valid-org-name? "Coca-Cola")             ;; => true
+  (valid-org-name? "Société Générale")      ;; => true
+  (valid-org-name? "北京公司")               ;; => true
+
+  ;; --- disallowed characters ---
+  (valid-org-name? "Acme, Inc")             ;; => false  ; comma
+  (valid-org-name? "AT&T")                  ;; => false  ; ampersand
+  (valid-org-name? "Yahoo!")                ;; => false  ; bang
+  (valid-org-name? "Org #3")                ;; => false  ; digit + hash
+  (valid-org-name? "3M")                    ;; => false  ; digit
+  (valid-org-name? "a@b")                   ;; => false
+  (valid-org-name? "Robert'); DROP TABLE")  ;; => false  ; semicolon, parens
+
+  ;; --- REGEX QUIRK GUARD: these PASS with the current unescaped range
+  ;;     #"^[\p{L}\s'-\.]+$" and should FAIL once fixed to #"^[\p{L}\s'.-]+$".
+  ;;     Flip the expectations below when you apply the fix. ---
+  (valid-org-name? "A+B")                   ;; fixed => false
+  (valid-org-name? "Ben (Dev)")             ;; fixed => false
+  (valid-org-name? "A,B")                   ;; fixed => false
+  (valid-org-name? "A*B")                   ;; fixed => false
+
+  ;; --- edge trimming (decide policy) ---
+  (valid-org-name? " Acme ")                ;; => true under current regex (\s allowed anywhere)
+                                            ;; if you want to reject edge whitespace, trim-then-check
+                                            ;; or tighten the pattern to disallow leading/trailing \s
+
+  :rcf)
+
+
+(comment
+
+  ;; --- nil / blank ---
+  (valid-user-name? nil)              ;; => false
+  (valid-user-name? "")               ;; => false
+  (valid-user-name? "   ")            ;; => false
+  (valid-user-name? "\t\n")           ;; => false
+
+  ;; --- length bounds (assuming min 2, max 100) ---
+  (valid-user-name? "A")              ;; => false
+  (valid-user-name? "Al")             ;; => true
+  (valid-user-name? (apply str (repeat 50 "a")))   ;; => true
+  (valid-user-name? (apply str (repeat 101 "a")))  ;; => false
+
+  ;; --- allowed characters ---
+  (valid-user-name? "Mary Jane")      ;; => true
+  (valid-user-name? "Anne-Marie")     ;; => true
+  (valid-user-name? "O'Brien")        ;; => true
+  (valid-user-name? "José")           ;; => true
+
+  ;; --- disallowed characters ---
+  (valid-user-name? "John3")          ;; => false
+  (valid-user-name? "Bob_Smith")      ;; => false
+  (valid-user-name? "a@b")            ;; => false
+  (valid-user-name? "Robert; DROP")   ;; => false
+
+  ;; --- edge trimming ---
+  (valid-user-name? " Al ")           ;; => ???  ; decide: trim-then-validate or reject leading/trailing space
+
+  :rcf)
+
 
 (defn add-new-user
   "Creates a new user account and optionally associates them with an organization.
@@ -861,10 +969,13 @@
 (defn update-own-user-name
   "Allows a logged-in user to update their own user name."
   [session new-name]
-  (if-let [user-id (:user-id session)]
-    (do (call-sql "update_user_name" user-id new-name)
-        (data-response (str "User's name successfully updated to " new-name)))
-    (data-response "" {:status 403})))
+  (if (not (valid-user-name? new-name))
+    (data-response "Invalid user name." {:status 400})
+    (if-let [user-id (:user-id session)]
+      (do (call-sql "update_user_name" user-id new-name)
+          (data-response (str "User's name successfully updated to " new-name)))
+     (data-response "" {:status 403}))))
+
 
 ;;TODO ideally this would be handled by the database but we should at the very least have a cljc file
 ;;for the fe and be to share.
@@ -872,11 +983,11 @@
   "True if `from` role is greater then `to`"
   [from to]
   (let [role->n
-        {"member" 0
+        {"member"              0
          "organization_member" 1
-         "organization_admin" 2
-         "account_manager" 3
-         "super_admin" 4}]
+         "organization_admin"  2
+         "account_manager"     3
+         "super_admin"         4}]
     (<= (role->n to) (role->n from))))
 
 (defn update-users-status
