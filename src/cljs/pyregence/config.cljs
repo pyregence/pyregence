@@ -1721,6 +1721,32 @@
        (when layer-time
          (str "&TIME=" layer-time))))
 
+(defn point-time-series-url
+  "Generates an ncWMS GetTimeSeries URL, which returns every timestep of an
+   ImageMosaic in one request instead of one request per timestep.
+
+   This is the ncWMS community module, not core WMS, so the request shape
+   differs from `point-info-url`: WMS 1.1.1 with X/Y/SRS rather than 1.3.0 with
+   I/J/CRS, and CSV rather than JSON. A degenerate 1x1 window throws, so it
+   queries the centre pixel of a 101x101 grid over the same bbox."
+  [layer bbox geoserver-key start-time end-time]
+  (str (wms-url geoserver-key)
+       "?SERVICE=WMS"
+       "&VERSION=1.1.1"
+       "&REQUEST=GetTimeSeries"
+       "&INFO_FORMAT=text/csv"
+       "&LAYERS=" layer
+       "&QUERY_LAYERS=" layer
+       "&STYLES="
+       "&PROPERTYNAME=GRAY_INDEX"
+       "&X=50"
+       "&Y=50"
+       "&WIDTH=101"
+       "&HEIGHT=101"
+       "&SRS=EPSG:3857"
+       "&BBOX=" bbox
+       "&TIME=" start-time "/" end-time))
+
 (defn wms-layer-url
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
 
