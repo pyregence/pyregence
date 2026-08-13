@@ -46,6 +46,12 @@
 
 ;;; Layers
 
+(def ^:private timestamped-risk-weather-psps-layer
+  #"([a-z|-]+_[a-z0-9|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}")
+
+(def ^:private folded-risk-weather-psps-layer
+  #"([a-z|-]+_[a-z0-9|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)*[A-Za-z0-9|-]+\d*")
+
 (defn- split-risk-weather-psps-layer-name
   "Gets information about a risk, weather, or PSPS layer based on the layer's name.
    The layer is assumed to be in the format `forecast-type_model-name_forecast-start-time:layer-group_timestamp`
@@ -233,9 +239,14 @@
                             merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
 
-                          ;; The trailing `_<date>_<time>` is optional because an ImageMosaic
-                          ;; folds the series into one layer named for the prefix alone.
-                          (re-matches #"([a-z|-]+_[a-z0-9|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)*[A-Za-z0-9|-]+\d*(_\d{8}_\d{6})?" full-name)
+                          (or (re-matches timestamped-risk-weather-psps-layer full-name)
+                              ;; An ImageMosaic folds the series into one layer named for the
+                              ;; prefix alone. Its layer group publishes that exact same name
+                              ;; with no time dimension, so `times` is the only thing that
+                              ;; tells the two apart - without this check both get kept and
+                              ;; the front end picks between them by position.
+                              (and (seq times)
+                                   (re-matches folded-risk-weather-psps-layer full-name)))
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}(\d{2}|combined)_[a-z|-]+" full-name)
