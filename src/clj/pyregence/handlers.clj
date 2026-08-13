@@ -5,6 +5,7 @@
             [clojure.string      :as    str]
             [nrepl.server        :as    nrepl-server]
             [pyregence.session   :as    session]
+            [pyregence.validation :as   v]
             [ring.util.codec     :refer [url-encode]]
             [ring.util.response  :refer [redirect]]
             [triangulum.config   :refer [get-config]]
@@ -287,7 +288,20 @@
     (let [clj-args   (if (= content-type "application/edn")
                        (:clj-args params [])
                        (json/read-str (:clj-args params "[]")))
-          clj-result (apply function session clj-args)
+          clj-result (try
+                       (apply function session clj-args)
+                       ;; Validation exceptions (pyregence.validation) carry
+                       ;; user-facing explanations as data; surface them to the
+                       ;; client as a 400 instead of letting them bubble to a
+                       ;; generic 500. Anything else still propagates.
+                       (catch clojure.lang.ExceptionInfo e
+                         (if (v/invalid? e)
+                           (data-response (v/ex->data e)
+                                          {:status 400
+                                           :type   (if (= content-type "application/edn")
+                                                     :edn
+                                                     :json)})
+                           (throw e))))
           response   (if (:status clj-result)
                        clj-result
                        (data-response clj-result {:type (if (= content-type "application/edn") :edn :json)}))]
@@ -326,6 +340,22 @@
                {:content-type "application/edn" :params {:clj-args "[]"}
                 :session {:user-id 1 :created-at now :last-active now}})))
   ;=> nil
+
+  ;; A validation exception thrown anywhere inside the wrapped fn surfaces as a
+  ;; 400 whose EDN body carries the assembled message and per-condition errors
+  ;; for the client to toast -- not a generic 500.
+  (let [resp ((clj-handler (fn [_session & _]
+                             ((v/normalizer "Email" v/email-steps) "nope")))
+              {:content-type "application/edn" :params {:clj-args "[]"} :session {}})]
+    [(:status resp) (read-string (:body resp))])
+  ;=> [400 {:message "Email must be a valid email address like name@example.com."
+  ;         :errors  ["Email must be a valid email address like name@example.com"]}]
+
+  ;; A non-validation exception still propagates untouched.
+  (try ((clj-handler (fn [_session & _] (throw (ex-info "boom" {:other :thing}))))
+        {:content-type "application/edn" :params {:clj-args "[]"} :session {}})
+       (catch clojure.lang.ExceptionInfo e (ex-message e)))
+  ;=> "boom"
   )
 
 ;; Figwheel

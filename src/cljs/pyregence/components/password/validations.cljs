@@ -1,42 +1,32 @@
 (ns pyregence.components.password.validations
+  "Live password-policy UI derived from the single source of truth in
+   `pyregence.validation/password-steps` -- the same conditions the backend
+   enforces, so the checklist can never drift from what the server accepts."
   (:require
    [clojure.string                 :as str]
-   [pyregence.components.svg-icons :as svg]))
-
-(defn- data
-  [password]
-  [{:validation/text   "One number."
-    :validation/valid? (boolean (re-find #"\d" password))}
-   {:validation/text   "One lowercase letter."
-    :validation/valid? (boolean (re-find #"[a-z]" password))}
-   {:validation/text   "One uppercase letter."
-    :validation/valid? (boolean (re-find #"[A-Z]" password))}
-   {:validation/text   "At least 12 characters."
-    :validation/valid? (<= 12 (count password))}
-   {:validation/text   "At most 64 characters."
-    :validation/valid? (<= (count password) 64)}])
+   [pyregence.components.svg-icons :as svg]
+   [pyregence.validation           :as v]))
 
 (defn ->toast
+  "Returns a vector of toast-ready messages describing every password-policy
+   condition the given password fails, or nil when it passes (or is blank --
+   blankness is reported by the form's required-fields check instead)."
   [password]
-  (let [validations (data password)]
-    (when-not (every? :validation/valid? validations)
-      (str "Your password must have "
-           (str/lower-case
-            (some
-             (fn [{:validation/keys [text valid?]}]
-               (when (false? valid?) text))
-             validations))))))
+  (when-not (str/blank? password)
+    (v/errors-for "Your password" v/password-steps password)))
 
 (defn ->cmpt
+  "Renders the live checklist of password-policy conditions, each marked with
+   a check or an x as the user types."
   [password]
   (when-not (str/blank? password)
     [:div {:style {:padding "20px" :color "black"}}
-     [:h6 "Your password must have:"]
+     [:h6 "Your password:"]
      [:<>
-      (for  [{:validation/keys [text valid?]} (data password)]
-        ^{:key text}
+      (for [{:keys [explain valid?]} (v/report v/password-steps password)]
+        ^{:key explain}
         [:div {:style {:display         "grid"
                        :justify-content "start"
                        :grid-auto-flow  "column"
                        :height          "25px"}}
-         [(if valid? svg/check-mark svg/x-mark-small-red)] [:p text]])]]))
+         [(if valid? svg/check-mark svg/x-mark-small-red)] [:p explain]])]]))

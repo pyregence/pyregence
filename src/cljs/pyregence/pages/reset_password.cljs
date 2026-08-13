@@ -31,26 +31,27 @@
 (defn- reset-password! []
   (go
     (reset! pending? true)
-    (let [errors (remove nil?
-                         [(when (u-data/missing-data? @email @password @re-password)
-                            "Please fill in all the information.")
+    (let [errors (concat
+                  (remove nil?
+                          [(when (u-data/missing-data? @email @password @re-password)
+                             "Please fill in all the information.")
 
+                           (when (not= @password @re-password)
+                             "Password fields do not match.")])
+                  ;; token is validated server-side
+                  (password->validations/->toast @password))]
 
-                          (when (not= @password @re-password)
-                            "Password fields do not match.")
-
-                          (password->validations/->toast @password)
-                          ])] ; token is validated server-side
-
-      (if (pos? (count errors))
-        (do (toast-message! errors)
+      (if (seq errors)
+        (do (toast-message! (vec errors))
             (reset! pending? false))
-        (if (:success (<! (u-async/call-clj-async! "set-user-password" @email @password @verification-token)))
-          (do (toast-message! "Your password has been reset successfully.")
-              (<! (timeout 2000))
-              (u-browser/jump-to-url! "/forecast"))
-          (do (toast-message! "Error resetting password.")
-              (reset! pending? false)))))))
+        (let [{:keys [success body]} (<! (u-async/call-clj-async! "set-user-password" @email @password @verification-token))]
+          (if success
+            (do (toast-message! "Your password has been reset successfully.")
+                (<! (timeout 2000))
+                (u-browser/jump-to-url! "/forecast"))
+            (do (toast-message! (or (u-data/server-errors body)
+                                    "Error resetting password."))
+                (reset! pending? false))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components

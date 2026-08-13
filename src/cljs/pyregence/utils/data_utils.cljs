@@ -1,5 +1,6 @@
 (ns pyregence.utils.data-utils
-  (:require [clojure.string :as str]))
+  (:require [cljs.reader    :as edn]
+            [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions - Data Utils
@@ -24,6 +25,29 @@
   "Checks if an input of any type is missing specific data."
   [& args]
   (some no-data? args))
+
+(defn response-data
+  "Coerces the `:body` of a `call-clj-async!` response into a map.
+   The body may arrive as already-parsed EDN data or as an EDN string
+   (depending on the response path); anything unreadable becomes {}."
+  [body]
+  (cond
+    (map? body)    body
+    (string? body) (or (try (edn/read-string body) (catch :default _ nil)) {})
+    :else          {}))
+
+(defn server-errors
+  "Extracts the user-facing explanations from a failed `call-clj-async!`
+   response body, as produced by the backend's validation machinery
+   (`{:message <sentence> :errors [<per-condition message> ...]}`).
+   Returns a non-empty vector of displayable strings, or nil when the body
+   carries no explanation (so callers can fall back to a generic message)."
+  [body]
+  (let [{:keys [errors message]} (response-data body)]
+    (cond
+      (seq errors) (vec errors)
+      message      [message]
+      :else        nil)))
 
 (defn filter-no-data
   "Removes any nodata 'label' entries from the provided legend-list."

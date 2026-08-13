@@ -5,6 +5,7 @@
             [pyregence.session          :as session]
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error ->uuid]]
+            [pyregence.validation       :as v]
             [triangulum.config          :refer [get-config]]
             [triangulum.logging         :refer [log-str]]
             [triangulum.database        :refer [call-sql sql-primitive insert-rows!]]
@@ -86,59 +87,52 @@
          _     (.nextBytes (SecureRandom.) bytes)]
      (.encodeToString (Base64/getEncoder) bytes))))
 
-;;TODO consider sharing this logic on the frontend
-(defn valid-password?
-  "Password must be between 12 and 64 characters long, contain at least one number (0-9), and use a mix of uppercase and lowercase letters."
-  [password]
-  (and
-   ;; check if it's a strong
-   (string? password)
-   ;; between 12 and 64
-   (<= 12 (count password) 64)
-   ;; one digit
-   (boolean (re-find #"\d" password))
-   ;; one uppercase
-   (boolean (re-find #"[A-Z]" password))
-   ;; one lowercase
-   (boolean (re-find #"[a-z]" password))))
+;; Signup-time field rules (email shape, password policy, name/org whitelists)
+;; are single-sourced in the cljc `pyregence.validation` namespace so the
+;; frontend renders the same conditions it will be held to. The steps below are
+;; login-only: deliberately looser than the signup rules, because a check that
+;; a *new* password must satisfy may not hold for a grandfathered account, and
+;; login validation must never lock out an existing user.
+
+(def ^:private login-email-steps
+  "Login-time email checks: non-blank, bounded, and free of markup-capable
+   characters (the XSS/injection guard) -- but no shape matching, so any
+   address that ever managed to register can still authenticate."
+  [v/required
+   (v/max-length 254)
+   (v/forbids #"[<>\"'`]" "angle brackets, quotes, or backticks")])
+
+(def ^:private login-password-steps
+  "Login-time password checks: presence and an upper bound only (a DoS guard,
+   not a policy -- policy is enforced when passwords are *set*, not used)."
+  [v/required
+   (v/max-length 256)])
+
+(defn- validate-login!
+  "Validates login credentials, throwing a `pyregence.validation` exception
+   whose data (every failed condition, in prose) is propagated to the client
+   by `clj-handler`."
+  [email password]
+  (v/validate-all!
+   [[:email    "Email"    login-email-steps    email]
+    [:password "Password" login-password-steps password]]))
 
 ^:rct/test
 (comment
-  ;; Must have 12 characters
-  (valid-password? "Helloworld1")
-  ;; => false at 11
+  ;; Well-formed credentials pass through untouched (no lockout risk).
+  (validate-login! "grandfathered@weird-but-real" "old password with spaces")
+  ;=>> map?
 
-  (valid-password? "Helloworld12")
-  ;; => true at 12
+  ;; Both fields' failures are collected into one exception, as data.
+  (try (validate-login! "" "")
+       (catch Exception e (:errors (ex-data e))))
+  ;=> ["Email must not be blank" "Password must not be blank"]
 
-  (valid-password? (clojure.string/join "" (repeat 6 "Helloworld12")))
-  ;; => false over 64
-
-  (valid-password? (clojure.string/join "" (repeat 5 "Helloworld12")))
-  ;; => true less then 64
-
-;; Must have one uppercase
-  (valid-password? "helloworld12")
-  ;; => false with no upper case
-
-  (valid-password? "Helloworld12")
-  ;; => true with one
-
-  (valid-password? "Helloworldaa")
-  ;; => false with no number
-
-  (valid-password? "Helloworld12")
-  ;; => true with at least one number
-
-  (valid-password? "HELLOWORLD12")
-  ;; => false with no lowercase
-
-  (valid-password? "hELLOWORLD12")
-  ;; => true with one lowercase
+  ;; Markup-capable characters are rejected and quoted back precisely.
+  (try (validate-login! "<img src=x>@evil.com" "Fine password 1A")
+       (catch Exception e (first (:errors (ex-data e)))))
+  ;=> "Email must not contain angle brackets, quotes, or backticks (found: '<' '>')"
   )
-
-(def password->invalid-password-msg
-  "Invalid Password. Your password must be between 12 and 64 characters long, contain at least one number (0-9), and use a mix of uppercase and lowercase letters.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Authentication & Session Management
@@ -155,8 +149,13 @@
 
 ;;TODO this will have to store failed login attempts per user.
 (defn log-in
-  "Authenticates user and determines 2FA requirements."
+  "Authenticates user and determines 2FA requirements.
+
+   Throws a `pyregence.validation` exception (rendered to the client as a 400
+   with `{:message ... :errors [...]}` by `clj-handler`) when the submitted
+   credentials are malformed; see `validate-login!` for what that means."
   [session email password]
+  (validate-login! email password)
   (let [normalized-email      (normalize-email email)
         failed-login-attempts (@user-email->failed-login-attempts normalized-email 0)]
     (if (<= 6 failed-login-attempts)
@@ -262,15 +261,18 @@
   )
 
 (defn set-user-password
-  "Sets a new password for user with valid reset token."
+  "Sets a new password for user with valid reset token.
+
+   Throws a `pyregence.validation` exception carrying every violated policy
+   condition when the new password is unacceptable; `clj-handler` propagates
+   it to the client as data."
   [session email password token]
-  (if-not (valid-password? password)
-    (data-response password->invalid-password-msg  {:status 400})
-    (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
-      (do
-        (swap! user-email->failed-login-attempts dissoc (normalize-email email))
-        (successful-login user session))
-      (data-response "Invalid or expired reset token" {:status 403}))))
+  (v/normalize-password password)
+  (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
+    (do
+      (swap! user-email->failed-login-attempts dissoc (normalize-email email))
+      (successful-login user session))
+    (data-response "Invalid or expired reset token" {:status 403})))
 
 (defn verify-user-email
   "Verifies user email with the provided token."
@@ -750,62 +752,74 @@
   - A 200 OK response if the user was successfully created and optionally assigned
   - A 403 Forbidden response if user creation fails
 
+  Validation:
+  - Email, name, password, and (when present) organization name are validated
+    and normalized by `pyregence.validation`. Invalid input throws a single
+    aggregate exception carrying *every* failed condition in prose;
+    `clj-handler` propagates it to the client as a 400 with
+    `{:message ... :errors [...]}` so signup can explain exactly why it failed.
+
   Security:
   - Only users with sufficient privileges (super_admin or organization_admin) may
     explicitly assign a new user to an organization via `:org-id`.
   - All organization assignments are validated server-side using the session context."
   [session email user-name password & [org-name-or-opts]]
-  (if-not (valid-password? password)
-    (data-response password->invalid-password-msg {:status 400})
-    (let [org-name (cond (string? org-name-or-opts)             org-name-or-opts
-                         (map? org-name-or-opts) (or (:org-name org-name-or-opts)
-                                                     (get org-name-or-opts "org-name"))
-                         :else                                  nil)
-          org-id   (when (map? org-name-or-opts)
-                     (or (:org-id org-name-or-opts)
-                         (get org-name-or-opts "org-id")))
-          org-name         (when (and (string? org-name) (seq org-name)) org-name)
-          ;; Public signup too, so this can't be liveness-gated at the route.
-          user-role        (when (session/live? session) (:user-role session))
-          default-settings (pr-str {:timezone :utc})
-          new-user-id      (nil-on-error
-                            (sql-primitive (call-sql "add_new_user"
-                                                     {:log? false}
-                                                     email
-                                                     user-name
-                                                     password
-                                                     default-settings)))
-          response
-          (if-not new-user-id
-            (data-response (str "Failed to create the new user with name " user-name " and email " email)
-                           {:status 403})
-            (do
-              ;; reset login attempts in case this account exceeded the max login attempts
-              (swap! user-email->failed-login-attempts dissoc (normalize-email email))
-              (cond
-            ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
-            ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
-            ;; The new user will have a user_role of organization_member and a user_status of active
-                org-id
-                (if (or (= user-role "super_admin")
-                        (= user-role "organization_admin"))
-                  (do
-                    (call-sql "add_org_user" org-id new-user-id)
-                    (data-response "User created and added to organization."))
-                  (data-response "User does not have permission to assign users to this organization."
-                                 {:status 403}))
+  (let [raw-org-name (cond (string? org-name-or-opts)             org-name-or-opts
+                           (map? org-name-or-opts) (or (:org-name org-name-or-opts)
+                                                       (get org-name-or-opts "org-name"))
+                           :else                                  nil)
+        org-id       (when (map? org-name-or-opts)
+                       (or (:org-id org-name-or-opts)
+                           (get org-name-or-opts "org-id")))
+        {:keys [email user-name password org-name]}
+        (v/validate-all!
+         (cond-> [[:email     "Email"    v/email-steps     email]
+                  [:user-name "Name"     v/user-name-steps user-name]
+                  [:password  "Password" v/password-steps  password]]
+           (and (string? raw-org-name) (seq raw-org-name))
+           (conj [:org-name "Organization name" v/org-name-steps raw-org-name])))
+        ;; org-name is nil unless a non-blank name was provided and validated above.
+        ;; Public signup too, so this can't be liveness-gated at the route.
+        user-role        (when (session/live? session) (:user-role session))
+        default-settings (pr-str {:timezone :utc})
+        new-user-id      (nil-on-error
+                          (sql-primitive (call-sql "add_new_user"
+                                                   {:log? false}
+                                                   email
+                                                   user-name
+                                                   password
+                                                   default-settings)))
+        response
+        (if-not new-user-id
+          (data-response (str "Failed to create the new user with name " user-name " and email " email)
+                         {:status 403})
+          (do
+            ;; reset login attempts in case this account exceeded the max login attempts
+            (swap! user-email->failed-login-attempts dissoc (normalize-email email))
+            (cond
+              ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
+              ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
+              ;; The new user will have a user_role of organization_member and a user_status of active
+              org-id
+              (if (or (= user-role "super_admin")
+                      (= user-role "organization_admin"))
+                (do
+                  (call-sql "add_org_user" org-id new-user-id)
+                  (data-response "User created and added to organization."))
+                (data-response "User does not have permission to assign users to this organization."
+                               {:status 403}))
 
-            ;; No org-id provided — use email domain-based auto-assignment (dependent on org auto_add settings)
-                :else
-                (let [domain (re-find #"@{1}.+" email)]
-                  (if (call-sql "auto_add_org_user" new-user-id domain)
-                    (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
-                    (data-response "User created successfully but something went wrong when calling auto_add_org_user."
-                                   {:status 403}))))))]
+              ;; No org-id provided — use email domain-based auto-assignment (dependent on org auto_add settings)
+              :else
+              (let [domain (re-find #"@{1}.+" email)]
+                (if (call-sql "auto_add_org_user" new-user-id domain)
+                  (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
+                  (data-response "User created successfully but something went wrong when calling auto_add_org_user."
+                                 {:status 403}))))))]
     ;; Stash org-name in session for marketplace provisioning
-      (cond-> response
-        (and new-user-id org-name (:marketplace-signup session))
-        (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name))))))
+    (cond-> response
+      (and new-user-id org-name (:marketplace-signup session))
+      (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name)))))
 
 ^:rct/test
 (comment

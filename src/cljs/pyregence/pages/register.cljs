@@ -12,8 +12,8 @@
    [pyregence.utils.async-utils               :as u-async]
    [pyregence.utils.browser-utils             :as u-browser]
    [pyregence.utils.data-utils                :as u-data]
-   [reagent.core                              :as r]
-   [clojure.string                            :as str]))
+   [pyregence.validation                      :as v]
+   [reagent.core                              :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -35,34 +35,45 @@
   (go
     (toast-message! "Creating new account. This may take a moment...")
     ;;TODO it's awkward that add-new-user requires a user's name when it's not a unique identifier. Consider alternatives.
-    (if (and (:success (<! (if @marketplace?
-                             (u-async/call-clj-async! "add-new-user" @email "" @password @org-name)
-                             (u-async/call-clj-async! "add-new-user" @email "" @password))))
-             (:success (<! (u-async/call-clj-async! "send-email" @email :new-user))))
-      (do (toast-message! ["Your account has been created successfully."
-                           "Please check your email for a link to complete registration."])
-          (gtag "registered-user" {})
-          (<! (timeout 4000))
-          (u-browser/jump-to-url! "/forecast"))
-      (toast-message! ["An error occurred while registering."
-                       "Please contact support@pyrecast.com for help."]))))
+    (let [{:keys [success body]} (<! (if @marketplace?
+                                       (u-async/call-clj-async! "add-new-user" @email "" @password @org-name)
+                                       (u-async/call-clj-async! "add-new-user" @email "" @password)))]
+      (if (and success
+               (:success (<! (u-async/call-clj-async! "send-email" @email :new-user))))
+        (do (toast-message! ["Your account has been created successfully."
+                             "Please check your email for a link to complete registration."])
+            (gtag "registered-user" {})
+            (<! (timeout 4000))
+            (u-browser/jump-to-url! "/forecast"))
+        ;; The backend's validation exceptions arrive as data
+        ;; ({:message ... :errors [...]}); show the user exactly which
+        ;; conditions failed rather than a generic apology.
+        (toast-message!
+         (if-let [errors (u-data/server-errors body)]
+           (into ["We couldn't create your account:"] errors)
+           ["An error occurred while registering."
+            "Please contact support@pyrecast.com for help."]))))))
 
 (defn- register! []
   (reset! pending? true)
-  (let [errors (remove nil?
-                 ;;TODO consider adding an email validation.
-                       [(when (u-data/missing-data? @email @re-email @password @re-password)
-                          "You must fill in all required information to continue.")
+  ;; Instant pre-validation from the same cljc rules the backend enforces
+  ;; (pyregence.validation); the backend remains authoritative and reports
+  ;; through the same toast if anything slips past.
+  (let [errors (concat
+                (remove nil?
+                        [(when (u-data/missing-data? @email @re-email @password @re-password)
+                           "You must fill in all required information to continue.")
 
-                        (when-not (= @email @re-email)
-                          "The emails you have entered do not match.")
+                         (when-not (= @email @re-email)
+                           "The emails you have entered do not match.")
 
-                        (when-not (= @password @re-password)
-                          "The passwords you have entered do not match.")
-
-                        (password->validations/->toast @password)])]
-    (if (pos? (count errors))
-      (do (toast-message! errors)
+                         (when-not (= @password @re-password)
+                           "The passwords you have entered do not match.")])
+                (when (u-data/has-data? @email)
+                  (v/errors-for "Email" v/email-steps @email))
+                (password->validations/->toast @password))]
+    (if (seq errors)
+      (do (toast-message! (vec errors))
           (reset! pending? false))
       (add-user!))))
 
