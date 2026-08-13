@@ -1693,8 +1693,12 @@
              "r_wd_l" "r_wg_a" "r_wg_h" "r_wg_l" "r_ws_a" "r_ws_h" "r_ws_l"]))
 
 (defn point-info-url
-  "Generates a URL for the point information."
-  [layer-group bbox feature-count geoserver-key & [properties]]
+  "Generates a URL for the point information.
+
+   `layer-time` targets one granule of an ImageMosaic. Without it GeoServer
+   answers with the mosaic's default granule, which is the first timestep, so
+   any mosaic layer reports hour 0 no matter where the time slider sits."
+  [layer-group bbox feature-count geoserver-key & [properties layer-time]]
   (str (wms-url geoserver-key)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
@@ -1713,7 +1717,9 @@
        "&STYLES="
        "&BBOX=" bbox
        (when properties
-         (str "&propertyName=" properties))))
+         (str "&propertyName=" properties))
+       (when layer-time
+         (str "&TIME=" layer-time))))
 
 (defn wms-layer-url
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
