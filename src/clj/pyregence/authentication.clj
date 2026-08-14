@@ -946,7 +946,6 @@
                            (add-new-user session "a@b.com" "A" "Abcdefgh1234" opts)
                            (boolean (some #{"add_org_user"} @calls)))))
         admin        {:user-id 1 :user-role "super_admin" :created-at (- now 1000) :last-active now}]
-    #_(println admin)
     ;; timed-out admin, logged-out admin, live admin, then anonymous signup
     [(assigns-org? (assoc admin :last-active (- now 1000000000)) 0 {:org-id 3})
      (assigns-org? admin now {:org-id 3})
