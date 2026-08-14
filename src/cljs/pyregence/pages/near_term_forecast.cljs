@@ -272,10 +272,15 @@
          (str/join "&")
          (str js/location.origin js/location.pathname "?"))))
 
-(defn- wms-request-headers [basic-auth]
-  (cond-> {"Accept"       "application/json, text/xml"
-           "Content-Type" "application/json"}
-    basic-auth (assoc "Authorization" (str "Basic " (js/window.btoa basic-auth)))))
+(defn- wms-request-headers
+  "`accept` has to line up with the INFO_FORMAT in the URL. It stays broad enough
+   to cover an XML ServiceExceptionReport, which is how GeoServer reports a
+   failure even when it answers 200."
+  ([basic-auth] (wms-request-headers basic-auth "application/json, text/xml"))
+  ([basic-auth accept]
+   (cond-> {"Accept"       accept
+            "Content-Type" "application/json"}
+     basic-auth (assoc "Authorization" (str "Basic " (js/window.btoa basic-auth))))))
 
 (defn- fetch-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a channel
@@ -290,10 +295,10 @@
 (defn- fetch-text
   "Like `fetch-data` but hands back the raw response body. Returns a channel
    containing the body, or nil when the request failed."
-  [url basic-auth]
+  [url basic-auth accept]
   (u-async/fetch-and-process url
                              {:method  "get"
-                              :headers (wms-request-headers basic-auth)}
+                              :headers (wms-request-headers basic-auth accept)}
                              (fn [response] (.text response))))
 
 (defn- get-data
@@ -668,7 +673,8 @@
                                                            geoserver-key
                                                            (first times)
                                                            (last times))
-                                  basic-auth)))]
+                                  basic-auth
+                                  "text/csv, text/xml")))]
         ;; A newer click owns the panel and its own loading flag, so a response
         ;; that lost the race leaves both alone.
         (when (= request-id @point-info-request-id)
