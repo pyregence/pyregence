@@ -26,13 +26,13 @@
                    :unsaved-auto-accept? auto-accept?
                    :unsaved-auto-add?    auto-add?
                    :unsaved-org-name     org-name
-                   ;; NOTE this mapping is used to keep track of the email
+                   ;; NOTE this mapping is used to keep track of the email.
+                   ;; Org domains always start with an @ (e.g. @example.com), so
+                   ;; the @ is kept rather than stripped and re-added on save.
                    :og-email->email (reduce
                                      (fn [m e]
                                        (assoc m e {:email e :unsaved-email e}))
                                      {}
-                                     (->>
-                                      (str/split email-domains #",")
-                                      (map #(str/replace % "@" "")))))))
+                                     (str/split email-domains #",")))))
    {}
    orgs))

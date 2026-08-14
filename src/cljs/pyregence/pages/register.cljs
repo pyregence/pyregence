@@ -13,7 +13,8 @@
    [pyregence.utils.browser-utils             :as u-browser]
    [pyregence.utils.data-utils                :as u-data]
    [pyregence.validation                      :as v]
-   [reagent.core                              :as r]))
+   [reagent.core                              :as r]
+   [clojure.string                            :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; State
@@ -35,14 +36,20 @@
   [email]
   (subs email 0 (str/index-of email "@")))
 
-
 (defn- add-user! []
   (go
+    ;; TODO: Look here, consider ensuring that the proposed organization already exists in DB (in manually created whitelist)
+    ;;       Creation will fail against an organization that doesn't exist
+    ;; TODO: Attempt to locally recreate and verify an account with the email OTP link - I get a 500 expired error each time.
+    ;;       Ticket is very close. Validation/normalization DSL is extremely robust and single file, using exceptions to roll specific
+    ;;       error messages into a single user-facing toast explaining the error.
+
+    ;; HACK: (println "Orgs" (<! (u-async/call-clj-async! "get-all-organizations")))
     (toast-message! "Creating new account. This may take a moment...")
     ;;TODO it's awkward that add-new-user requires a user's name when it's not a unique identifier. Consider alternatives.
-    (let [{:keys [success body]} (<! (if @marketplace?
-                                       (u-async/call-clj-async! "add-new-user" @email "" @password @org-name)
-                                       (u-async/call-clj-async! "add-new-user" @email "" @password)))]
+    (let [{:keys [success body]} (<! (if (and @marketplace? (not (str/blank? @org-name)))
+                                       (u-async/call-clj-async! "add-new-user" @email (email->username @email) @password @org-name)
+                                       (u-async/call-clj-async! "add-new-user" @email (email->username @email) @password)))]
       (if (and success
                (:success (<! (u-async/call-clj-async! "send-email" @email :new-user))))
         (do (toast-message! ["Your account has been created successfully."

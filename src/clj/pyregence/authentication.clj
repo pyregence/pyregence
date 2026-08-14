@@ -872,6 +872,7 @@
     explicitly assign a new user to an organization via `:org-id`.
   - All organization assignments are validated server-side using the session context."
   [session email user-name password & [org-name-or-opts]]
+
   (let [raw-org-name (cond (string? org-name-or-opts)             org-name-or-opts
                            (map? org-name-or-opts) (or (:org-name org-name-or-opts)
                                                        (get org-name-or-opts "org-name"))
@@ -944,6 +945,7 @@
                            (add-new-user session "a@b.com" "A" "Abcdefgh1234" opts)
                            (boolean (some #{"add_org_user"} @calls)))))
         admin        {:user-id 1 :user-role "super_admin" :created-at (- now 1000) :last-active now}]
+    #_(println admin)
     ;; timed-out admin, logged-out admin, live admin, then anonymous signup
     [(assigns-org? (assoc admin :last-active (- now 1000000000)) 0 {:org-id 3})
      (assigns-org? admin now {:org-id 3})

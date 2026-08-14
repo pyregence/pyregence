@@ -19,17 +19,11 @@
 
 ;;TODO should be "domain" not "email"
 (defn- email-domain-cmpt
+  ;; The domain value already carries its leading @ (e.g. @example.com).
   [{:keys [email on-change] :as m}]
-  ;;TODO This position stuff feels hacky!
-  [:div {:style {:position "relative"}}
-   [:span {:style {:position "absolute"
-                   :color    "grey"
-                   :left     "3px"
-                   :top      "12px"}} "@"]
-   [input-field (assoc m
-                       :style {:padding "14px 14px 14px 20px"}
-                       :value email
-                       :on-change on-change)]])
+  [input-field (assoc m
+                      :value email
+                      :on-change on-change)])
 
 ;;TODO consider sharing styles with labeled-input cmpt
 (defn- email-domains-cmpt
@@ -115,7 +109,7 @@
                     :flex-direction "row"
                     :gap            "16px"}}
       [buttons/add {:text     "Add Another Domain"
-                    :on-click #(swap! org-uuid->org assoc-in [org-uuid :og-email->email (random-uuid)] {:email "" :unsaved-email ""})}]
+                    :on-click #(swap! org-uuid->org assoc-in [org-uuid :og-email->email (random-uuid)] {:email "@" :unsaved-email "@"})}]
       [buttons/ghost {:text      "Save Changes"
                       :disabled? (and (= unsaved-org-name org-name)
                                       (= unsaved-auto-accept? auto-accept?)
@@ -145,10 +139,10 @@
                                        (swap! org-uuid->org assoc-in [org-uuid :unsaved-org-name-support-message] organization-name-support-message)
                                        :else
                                        (go
+                                         ;; Domains already include their leading @, so join them as-is.
                                          (let [unsaved-email-domains (->> checked-og-email->email
                                                                           vals
                                                                           (map :unsaved-email)
-                                                                          (map #(str "@" %))
                                                                           (str/join ","))
 
                                                {:keys [success]}
