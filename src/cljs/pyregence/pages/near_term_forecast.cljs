@@ -1,7 +1,7 @@
 (ns pyregence.pages.near-term-forecast
   (:require
    [cljs.core.async.interop                                                   :refer-macros [<p!]]
-   [clojure.core.async                                                        :as async :refer [<! go]]
+   [clojure.core.async                                                        :refer [<! go]]
    [clojure.edn                                                               :as edn]
    [clojure.set                                                               :as set]
    [clojure.spec.alpha                                                        :as s]
@@ -610,18 +610,9 @@
       (reset! !/last-clicked-info
               (u-num/to-precision 2 (extract-band-value json-res))))))
 
-(def ^:private mosaic-point-info-concurrency
-  "How many GetFeatureInfo requests to keep in flight while walking a mosaic's
-   timesteps. GeoServer serves these over HTTP/2, so the browser's 6-per-host
-   connection cap does not apply and this is bounded by how hard we are willing
-   to hit GeoServer, not by the transport. Measured against a 49-step mosaic on
-   geoserver-dev: 6 took 2.6s, 12 took 1.7s, 24 took 1.2s. `pipeline-async`
-   overshoots this slightly, so 12 means roughly 14 requests in flight."
-  12)
-
 (defonce ^:private point-info-request-id
-  ;; Walking a mosaic takes a couple of seconds, long enough for a second click
-  ;; to land mid-flight. Without this the slower walk wins and the panel shows
+  ;; Reading a mosaic takes most of a second, long enough for a second click to
+  ;; land mid-request. Without this the slower response wins and the panel shows
   ;; the point the user already moved off.
   (atom 0))
 
@@ -649,10 +640,10 @@
      :hour    (mosaic-point-hour model-init js-time idx)}))
 
 (def ^:private iso-instant-re
-  ;; Keying rows off this rather than off line position is what makes a failed
-  ;; GetTimeSeries fall through. A layer whose coverage lacks band metadata
-  ;; answers 200 with an XML ServiceExceptionReport, and that message contains a
-  ;; comma, so positional parsing turns it into one plausible-looking row.
+  ;; Rows are keyed off this rather than off line position because a layer whose
+  ;; coverage lacks band metadata answers 200 with an XML ServiceExceptionReport,
+  ;; and that message contains a comma - positional parsing turns it into one
+  ;; plausible-looking row rather than an empty series.
   #"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}")
 
 (defn- parse-time-series-csv
@@ -670,56 +661,16 @@
                        [timestamp (when-not (js/isNaN band) band)])))))
          (vec))))
 
-(defn- walk-mosaic-point-info!
-  "Walks an ImageMosaic's timesteps, one GetFeatureInfo per timestep, and hands
-   the series to `finish!`.
-
-   Core WMS cannot do this in one request. It answers a TIME range with a single
-   merged feature rather than one per granule, and that merged value looks
-   plausible while belonging to no timestep. Mosaic granules also come back with
-   an empty feature id, so there is nothing to group on the way the layer-group
-   path does."
-  [layer bbox times geoserver-key basic-auth current? finish!]
-  (let [model-init (:model-init (current-layer))
-        entries    (async/chan (count times))]
-    ;; A sliding window rather than fixed batches: a finished request is replaced
-    ;; immediately instead of waiting on the slowest of its group.
-    ;; `pipeline-async` hands results to `entries` in input order.
-    (async/pipeline-async
-     mosaic-point-info-concurrency
-     entries
-     (fn [[idx layer-time] out]
-       (go
-         ;; A walk that has lost the race stops spending requests on its way out.
-         (when (current?)
-           (async/>! out (mosaic-point-entry
-                          model-init
-                          idx
-                          layer-time
-                          (<! (fetch-data #(wrap-wms-errors "point information" % extract-band-value)
-                                          (c/point-info-url layer bbox 1 geoserver-key nil layer-time)
-                                          basic-auth)))))
-         (async/close! out)))
-     (async/to-chan! (map-indexed vector times)))
-    (go
-      (finish! (<! (async/into [] entries))))))
-
 (defn- get-mosaic-point-info!
-  "Resets !/last-clicked-info with an ImageMosaic's whole series.
+  "Resets !/last-clicked-info with an ImageMosaic's whole series, read in one
+   ncWMS GetTimeSeries request.
 
-   Prefers ncWMS GetTimeSeries, which returns every timestep in one request.
-   That is a GeoServer community module and a layer only answers it once its
-   coverage carries band metadata, so anything that comes back empty falls back
-   to walking the timesteps one request at a time."
+   Core WMS cannot do this. It answers a TIME range with a single merged feature
+   rather than one per granule, and that merged value looks plausible while
+   belonging to no timestep. A layer only answers GetTimeSeries once its coverage
+   carries band metadata; without it the series comes back empty."
   [layer bbox times geoserver-key basic-auth request-id]
-  (let [model-init (:model-init (current-layer))
-        current?   #(= request-id @point-info-request-id)
-        finish!    (fn [series]
-                     ;; A newer click owns the panel and its own loading flag, so
-                     ;; a walk that lost the race leaves both alone.
-                     (when (current?)
-                       (reset! !/last-clicked-info series)
-                       (reset! !/point-info-loading? false)))]
+  (let [model-init (:model-init (current-layer))]
     (go
       (let [rows (parse-time-series-csv
                   (<! (fetch-text (c/point-time-series-url layer
@@ -728,12 +679,15 @@
                                                            (first times)
                                                            (last times))
                                   basic-auth)))]
-        (if (seq rows)
-          (finish! (into []
-                         (map-indexed (fn [idx [timestamp band]]
-                                        (mosaic-point-entry model-init idx timestamp band))
-                                      rows)))
-          (walk-mosaic-point-info! layer bbox times geoserver-key basic-auth current? finish!))))))
+        ;; A newer click owns the panel and its own loading flag, so a response
+        ;; that lost the race leaves both alone.
+        (when (= request-id @point-info-request-id)
+          (reset! !/last-clicked-info
+                  (into []
+                        (map-indexed (fn [idx [timestamp band]]
+                                       (mosaic-point-entry model-init idx timestamp band))
+                                     rows)))
+          (reset! !/point-info-loading? false))))))
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info!
