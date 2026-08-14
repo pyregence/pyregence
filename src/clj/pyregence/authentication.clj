@@ -745,6 +745,7 @@
        ;; TODO consider a more lenient restriction
        (boolean (re-matches #"^[\p{L}\s'\-\.,]+$" org-name))))
 
+^:rct/test
 (comment
 
   ;; --- nil / non-string ---
