@@ -9,6 +9,7 @@
 (defn valid-email-domain? [domain]
   (boolean (re-matches email-domain-regex domain)))
 
+^:rct/test
 (comment
   ;; --- Orgs always start with an @ ---
   (valid-email-domain? "@example.com")      ;; => true
