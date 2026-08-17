@@ -160,3 +160,34 @@
     (is (nil? (v/errors-for "Email" v/email-steps "aa@bb.co")))
     (is (= ["Email must be a valid email address like name@example.com"]
            (v/errors-for "Email" v/email-steps "nope")))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Derived-name sanitizing (best-effort coercion, never throws)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deftest sanitize-user-name-coerces-into-the-whitelist
+  (testing "drops characters an email local part may carry that a name may not"
+    ;; email-steps allows '_ % +' in the local part; user-name-steps does not.
+    (is (= "johndoe"     (v/sanitize-user-name "john_doe")))
+    (is (= "alice.smith2" (v/sanitize-user-name "alice.smith2")))
+    (is (= "ab"          (v/sanitize-user-name "a+b")))
+    (is (= "janetest"    (v/sanitize-user-name "jane%test"))))
+  (testing "letters and accent marks from any script survive"
+    (is (= "José"      (v/sanitize-user-name "José")))
+    (is (= "习近平"     (v/sanitize-user-name "习近平"))))
+  (testing "whatever survives is always accepted by the name whitelist"
+    (is (nil? (v/errors-for "Name" v/user-name-steps
+                            (v/sanitize-user-name "john_doe+tag")))))
+  (testing "returns \"\" when nothing survives, so the caller can omit the name"
+    (is (= "" (v/sanitize-user-name "+++")))
+    (is (= "" (v/sanitize-user-name nil)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Email shape regressions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deftest email-domain-rejects-a-literal-backslash
+  (testing "a backslash in the domain is rejected (was allowed by [a-z0-9.\\\\-])"
+    (is (vector? (errors-of v/normalize-email "alice@ev\\il.com"))))
+  (testing "ordinary domains with digits, dots and hyphens still validate"
+    (is (= "alice@ev-il2.com" (v/normalize-email "alice@ev-il2.com")))))
