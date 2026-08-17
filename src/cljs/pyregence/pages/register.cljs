@@ -33,8 +33,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn email->username
+  "Derives a best-effort default display name from an email's local part.
+   The local part may contain '_', '+' or '%' -- characters `v/user-name-steps`
+   forbids -- so it is run through `v/sanitize-user-name`, which strips anything
+   the name whitelist disallows. Without this, an email like john_doe@example.com
+   passes the client's email check and then throws on the server's name check."
   [email]
-  (subs email 0 (str/index-of email "@")))
+  (v/sanitize-user-name (subs email 0 (str/index-of email "@"))))
 
 (defn- add-user! []
   (go

@@ -305,20 +305,23 @@
   (str (str/join "; " messages) "."))
 
 (defn- throw-invalid!
-  "Throws the canonical validation `ex-info`. `field->errors` maps field
-   name -> vector of bare explanations."
-  [field->errors input]
+  "Throws the canonical validation `ex-info`. `field->pairs` is an *ordered*
+   sequence of `[field errors]` pairs (field name -> vector of bare
+   explanations); message order follows the sequence rather than any map's
+   iteration order, which is only insertion-ordered for small maps. The raw
+   input is deliberately never attached: it can carry a plaintext password, and
+   an ex-info may be logged on the non-validation path."
+  [field->pairs]
   (let [messages (into []
                        (mapcat (fn [[field errors]]
                                  (field-errors->messages field errors)))
-                       field->errors)
+                       field->pairs)
         message  (assemble-message messages)]
     (throw (ex-info message
                     {::invalid true
-                     :fields   field->errors
+                     :fields   (into {} field->pairs)
                      :errors   messages
-                     :message  message
-                     :input    input}))))
+                     :message  message}))))
 
 (defn invalid?
   "True when `e` is an exception thrown by a normalizer from this namespace,
@@ -346,7 +349,7 @@
   (fn [input]
     (let [{:keys [errors value]} (run-steps steps input)]
       (if (seq errors)
-        (throw-invalid! {field errors} input)
+        (throw-invalid! [[field errors]])
         value))))
 
 (defn optional
@@ -375,16 +378,15 @@
    `specs` is a vector of [result-key field-name steps input] tuples.
    Returns {result-key <normalized value> ...} when everything passes."
   [specs]
-  (let [runs          (mapv (fn [[k field steps input]]
-                              [k field (run-steps steps input)])
-                            specs)
-        field->errors (into {}
-                            (keep (fn [[_ field {:keys [errors]}]]
-                                    (when (seq errors) [field errors])))
-                            runs)]
-    (if (seq field->errors)
-      (throw-invalid! field->errors
-                      (into {} (map (fn [[k _ {:keys [value]}]] [k value])) runs))
+  (let [runs         (mapv (fn [[k field steps input]]
+                             [k field (run-steps steps input)])
+                           specs)
+        field->pairs (into []
+                           (keep (fn [[_ field {:keys [errors]}]]
+                                   (when (seq errors) [field errors])))
+                           runs)]
+    (if (seq field->pairs)
+      (throw-invalid! field->pairs)
       (into {} (map (fn [[k _ {:keys [value]}]] [k value])) runs))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -398,7 +400,7 @@
    trimmed
    lower-cased
    (max-length 254)
-   (matches #"[a-z0-9._%+\-]+@[a-z0-9.\\-]+\.[a-z]{2,}"
+   (matches #"[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}"
             "be a valid email address like name@example.com")])
 
 (def password-steps
@@ -412,6 +414,13 @@
    (contains-some #"[A-Z]" "one uppercase letter (A-Z)")
    no-surrounding-whitespace])
 
+(def user-name-class
+  "The single source of truth for which characters a display name may contain:
+   letters and accent marks from any script, digits, spaces, and . , ' - . Shared
+   by `user-name-steps` (which validates) and `sanitize-user-name` (which coerces
+   a derived default into this set), so the two can never disagree."
+  (unicode-pattern "[\\p{L}\\p{M}\\p{Nd} .,'\\-]"))
+
 (def user-name-steps
   "Display-name pipeline: NFC-normalizes, trims, bounds length, and
    whitelists characters via Unicode properties, so José, Zoë, Xi Jinping,
@@ -422,7 +431,7 @@
   [unicode-normalized
    trimmed
    (max-length 100)
-   (allowed-chars (unicode-pattern "[\\p{L}\\p{M}\\p{Nd} .,'\\-]"))])
+   (allowed-chars user-name-class)])
 
 (def org-name-steps
   "Organization-name pipeline for marketplace signup; same Unicode whitelist
@@ -449,6 +458,17 @@
    because signup does not require a name."
   (optional (normalizer "Name" user-name-steps)))
 
+(defn sanitize-user-name
+  "Best-effort coercion of an arbitrary string into the display-name whitelist:
+   drops every character `user-name-class` forbids, then trims. Unlike
+   `normalize-user-name` this never throws -- it exists to derive a *default*
+   name (e.g. from an email's local part, which may contain '_', '+' or '%'
+   that a display name may not), not to validate what a user deliberately typed.
+   May return \"\" when nothing survives, in which case the name is simply
+   omitted downstream."
+  [s]
+  (str/trim (str/replace (str s) (invert-char-class user-name-class) "")))
+
 (def normalize-org-name
   "Marketplace organization name -> trimmed name, or nil when omitted."
   (optional (normalizer "Organization name" org-name-steps)))
@@ -456,6 +476,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests (rich-comment-tests; run with `bb test`)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; These run on the JVM only: the rct runner parses each file with rewrite-clj,
+;; which does not process reader conditionals, so `#?(:clj ... :cljs ...)` inside
+;; a form is a syntax error that aborts the file. The catches below therefore use
+;; a bare `Exception` (JVM) rather than `#?(:clj Exception :cljs :default)`.
 
 ^:rct/test
 (comment
@@ -470,19 +495,19 @@
 
   ;; --- Failures are applicative: every broken condition is reported ---
   (try (normalize-password "shrt") :unreachable
-       (catch #?(:clj Exception :cljs :default) e (:errors (ex-data e))))
+       (catch Exception e (:errors (ex-data e))))
   ;=> ["Password must be between 12 and 64 characters long (yours is 4)"
   ;    "Password must contain at least one number (0-9)"
   ;    "Password must contain at least one uppercase letter (A-Z)"]
 
   ;; --- Gates keep messages clean: a blank input reports only 'blank' ---
   (try (normalize-email "") :unreachable
-       (catch #?(:clj Exception :cljs :default) e (:errors (ex-data e))))
+       (catch Exception e (:errors (ex-data e))))
   ;=> ["Email must not be blank"]
 
   ;; --- Inverted regexes quote exactly the invalid part of the input ---
   (try ((normalizer "Name" user-name-steps) "Bobby <script>")
-       (catch #?(:clj Exception :cljs :default) e (first (:errors (ex-data e)))))
+       (catch Exception e (first (:errors (ex-data e)))))
   ;; => "Name may only contain letters (any language), accent marks, digits (0-9), spaces, and the characters . , ' - (invalid: '<' '>')""Name may only contain letters (any language), accent marks, digits (0-9), spaces, and the characters . , ' - (invalid: '<' '>')"
 
   ;=> "Name may only contain letters (any language), accent marks, digits (0-9), spaces, and the characters . , ' - (invalid: '<' '>')"
@@ -498,7 +523,7 @@
 
   ;; ...and still reject markup in any script's company.
   (try ((normalizer "Name" user-name-steps) "习近平<b>")
-       (catch #?(:clj Exception :cljs :default) e
+       (catch Exception e
          (re-find #"invalid: .*" (first (:errors (ex-data e))))))
   ;=> "invalid: '<' '>')"
 
@@ -522,11 +547,20 @@
   (normalize-org-name "  Acme, Inc.  ")
   ;=> "Acme, Inc."
 
+  ;; --- sanitize-user-name coerces a derived default into the name whitelist ---
+  ;; (an email local part may carry '_', '+', '%' that a display name may not).
+  (mapv sanitize-user-name ["john_doe" "alice.smith2" "a+b" "jane%test" "José"])
+  ;=> ["johndoe" "alice.smith2" "ab" "janetest" "José"]
+
+  ;; What survives sanitizing is always accepted by the name whitelist.
+  (errors-for "Name" user-name-steps (sanitize-user-name "john_doe+tag"))
+  ;=> nil
+
   ;; --- validate-all! collects across fields into one exception ---
   (try (validate-all! [[:email    "Email"    email-steps    "not-an-email"]
                        [:password "Password" password-steps "GoodPassw0rdHere"]
                        [:name     "Name"     user-name-steps "Dr. Mothball"]])
-       (catch #?(:clj Exception :cljs :default) e
+       (catch Exception e
          [(:message (ex-data e)) (invalid? e)]))
   ;=> ["Email must be a valid email address like name@example.com." true]
 
@@ -537,7 +571,7 @@
 
   ;; --- ex->data is the wire payload the frontend renders as a toast ---
   (try (normalize-email "bad")
-       (catch #?(:clj Exception :cljs :default) e (ex->data e)))
+       (catch Exception e (ex->data e)))
   ;=> {:message "Email must be a valid email address like name@example.com."
   ;    :errors  ["Email must be a valid email address like name@example.com"]}
   )

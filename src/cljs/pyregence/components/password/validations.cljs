@@ -23,10 +23,15 @@
     [:div {:style {:padding "20px" :color "black"}}
      [:h6 "Your password:"]
      [:<>
-      (for [{:keys [explain valid?]} (v/report v/password-steps password)]
-        ^{:key explain}
-        [:div {:style {:display         "grid"
-                       :justify-content "start"
-                       :grid-auto-flow  "column"
-                       :height          "25px"}}
-         [(if valid? svg/check-mark svg/x-mark-small-red)] [:p explain]])]]))
+      ;; Key on the step's position, not its `explain`: `length-between` embeds
+      ;; the current length in its message, so keying on `explain` would remount
+      ;; the row on every keystroke. The step order is fixed, so the index is stable.
+      (map-indexed
+       (fn [i {:keys [explain valid?]}]
+         ^{:key i}
+         [:div {:style {:display         "grid"
+                        :justify-content "start"
+                        :grid-auto-flow  "column"
+                        :height          "25px"}}
+          [(if valid? svg/check-mark svg/x-mark-small-red)] [:p explain]])
+       (v/report v/password-steps password))]]))

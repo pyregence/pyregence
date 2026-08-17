@@ -11,6 +11,7 @@
                                                   text-labeled]]
    [pyregence.styles                      :as $]
    [pyregence.utils.async-utils           :as u-async]
+   [pyregence.utils.data-utils            :as u-data]
    [pyregence.utils.dom-utils :refer [input-value]]
    [reagent.core                          :as r]))
 
@@ -166,7 +167,11 @@
                                           (do
                                             (toast-message! (str "Your name has been updated to " new-name "."))
                                             (reset! user-name new-name))
-                                          (toast-message! (:body res)))))}]])))
+                                          ;; The backend's validation exceptions arrive as data
+                                          ;; ({:message ... :errors [...]}); show the specific
+                                          ;; reasons rather than a raw response body.
+                                          (toast-message! (or (u-data/server-errors (:body res))
+                                                              "Your name could not be updated.")))))}]])))
 
 (defn show-password-set-date
   []
