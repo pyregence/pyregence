@@ -702,7 +702,11 @@
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "14-day forecasts of active fires with burning areas established from satellite-based heat detection."
-                  :params          {:fire-name       {:opt-label      "Fire Name"
+                  ;; NOTE: array-map is used to preserve insertion order. With 9+ entries a
+                  ;; map literal becomes an unordered hash-map, which would scramble the
+                  ;; collapsible-panel render order of these params.
+                  :params          (array-map
+                                    :fire-name       {:opt-label      "Fire Name"
                                                       :sort?          true
                                                       :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
                                                       :default-option :active-fires
@@ -812,7 +816,7 @@
                                                                           (filter keyword?)
                                                                           (set))
                                                                      #{:active-fires}))
-                                                 :options    {:loading {:opt-label "Loading..."}}}}}
+                                                 :options    {:loading {:opt-label "Loading..."}}})}
    :psps-zonal   {:opt-label       "PSPS"
                   :filter          "psps-zonal"
                   :geoserver-key   :psps
