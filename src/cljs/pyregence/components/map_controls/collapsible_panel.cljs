@@ -122,7 +122,7 @@
                    :visibility   (if (and @!/show-panel? @!/mobile?) "visible" "hidden")}}
     [tool-button :close #(reset! !/show-panel? false)]]])
 
-(defn- optional-layer [{:keys [id opt-label filter-set z-index geoserver-key dependent-inputs disabled-for geoserver-key]
+(defn- optional-layer [{:keys [id opt-label filter-set z-index geoserver-key dependent-inputs disabled-for]
                         :as optional-layer-map}]
   (r/with-let [show?               (r/atom false)
                watcher-id          (keyword (str "watch-" opt-label))
