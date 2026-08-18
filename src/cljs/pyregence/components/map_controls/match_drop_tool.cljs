@@ -17,7 +17,6 @@
    [pyregence.utils.dom-utils             :as u-dom]
    [pyregence.utils.number-utils          :as u-num]
    [pyregence.utils.time-utils            :as u-time]
-   [pyregence.wui                         :as wui]
    [reagent.core                          :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -115,20 +114,13 @@
                            (<!)
                            (:body)
                            (edn/read-string))
-          ;; Match drops belong to this user; WUI fires are for pyregence-consortium
-          ;; members only and gated behind the :wui feature flag.
-          match?      (seq (:match-drops fire-names))
-          wui?        (wui/show-wui-fires? @!/user-orgs-list (:wui-active-fires fire-names))
-          add-options (fn [params k options] ; merge fire options into a select and unhide it
-                        (-> params
-                            (update-in [k :options] merge options)
-                            (assoc-in  [k :hidden?] false)))
           ;; Single transform so each atom below is updated with one swap! (avoids races)
           apply-fires (fn [params]
                         (cond-> (update-in params [:fire-name :options] merge (:active-fires fire-names))
-                          match? (add-options :match-drop-name (:match-drops fire-names))
-                          wui?   (add-options :wui-fire-name    (:wui-active-fires fire-names))))]
-      (swap! !/capabilities    update-in [:active-fire :params] apply-fires)
+                          (seq (:match-drops fire-names))
+                          (-> (update-in [:match-drop-name :options] merge (:match-drops fire-names))
+                              (assoc-in  [:match-drop-name :hidden?] false))))]
+      (swap! !/capabilities     update-in [:active-fire :params] apply-fires)
       (swap! !/processed-params apply-fires))))
 
 (defn- body-for-match-drop-modal [text]

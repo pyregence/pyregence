@@ -710,7 +710,7 @@
                                                       :sort?          true
                                                       :hover-text     "Provides a list of active fires for which forecasts are available. To zoom to a specific fire, select it from the dropdown menu."
                                                       :default-option :active-fires
-                                                      :resets         {:match-drop-name :none :wui-fire-name :none}
+                                                      :resets         {:match-drop-name :none}
                                                       :options        {:none         {:opt-label "\u2014"
                                                                                       :hidden?   true}
                                                                        :active-fires {:opt-label            "*All Active Fires"
@@ -724,14 +724,7 @@
                                                       :hidden?        true
                                                       :hover-text     "Select a match drop fire to view."
                                                       :default-option :none
-                                                      :resets         {:fire-name :none :wui-fire-name :none}
-                                                      :options        {:none {:opt-label "None"}}}
-                                    :wui-fire-name   {:opt-label      "WUI Fire"
-                                                      :sort?          true
-                                                      :hidden?        true
-                                                      :hover-text     "Select a WUI active fire to view."
-                                                      :default-option :none
-                                                      :resets         {:fire-name :none :match-drop-name :none}
+                                                      :resets         {:fire-name :none}
                                                       :options        {:none {:opt-label "None"}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "Available outputs are fire location, crown fire type (surface fire, passive, or active), flame length (ft), and surface fire spread rate (ft/min). Time can be advanced with the slider centered below."

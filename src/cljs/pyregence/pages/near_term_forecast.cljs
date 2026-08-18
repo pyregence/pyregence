@@ -36,7 +36,6 @@
    [pyregence.utils.misc-utils                                                :as u-misc]
    [pyregence.utils.number-utils                                              :as u-num]
    [pyregence.utils.time-utils                                                :as u-time]
-   [pyregence.wui                                                             :as wui]
    [react                                                                     :as react]
    [reagent.core                                                              :as r]
    [reagent.dom.server                                                        :as rs]))
@@ -371,7 +370,7 @@
    :psps-zonal   [:psps-zonal :utility]})
 
 (defn- selected-layer-cred-match
-  "Describes how to resolve GeoServer credentials for the currently selected non-WUI
+  "Describes how to resolve GeoServer credentials for the currently selected
    layer, as a map:
 
      {:match :any}             shared weather layers -- any PSPS org's creds work
@@ -406,8 +405,7 @@
    the `org-unique-id` from the organizations DB table. Super_admins can resolve
    credentials from *all* orgs.
 
-   Edge cases: WUI active fires are private to the pyregence-consortium org, and the
-   Euro/NFDRS weather layers are shared across every PSPS company."
+   Edge case: the Euro/NFDRS weather layers are shared across every PSPS company."
   []
   (when (seq @!/user-psps-orgs-list)
     (let [orgs                    @!/user-psps-orgs-list
@@ -415,23 +413,19 @@
           optional-layer-serves-org? (fn [org-unique-id]
                                        (boolean (and (seq optional-layer)
                                                      ((:filter-set optional-layer) org-unique-id))))
+          {:keys [match org-unique-id]} (selected-layer-cred-match)
           matching-org
-          (if (wui/wui-fire-selected?)
-            ;; WUI active fires are private to the pyregence-consortium org (itself a
-            ;; regular PSPS org): authenticate with its own credentials only.
-            (first (filter #(= wui/wui-org-unique-id (:org-unique-id %)) orgs))
-            (let [{:keys [match org-unique-id]} (selected-layer-cred-match)]
-              (case match
-                ;; Shared weather layers aren't utility-specific, so any org's creds work.
-                :any      (first orgs)
-                ;; Underlay-only tabs (fuels/active-fire): match via the optional layer.
-                :underlay (first (filter #(optional-layer-serves-org? (:org-unique-id %)) orgs))
-                ;; Utility-specific layer: match the org directly, or via its optional
-                ;; layer. Only one org can match since each `:org-unique-id` is unique.
-                :org      (first (filter #(or (= org-unique-id (:org-unique-id %))
-                                              (optional-layer-serves-org? (:org-unique-id %)))
-                                         orgs))
-                nil)))]
+          (case match
+            ;; Shared weather layers aren't utility-specific, so any org's creds work.
+            :any      (first orgs)
+            ;; Underlay-only tabs (fuels/active-fire): match via the optional layer.
+            :underlay (first (filter #(optional-layer-serves-org? (:org-unique-id %)) orgs))
+            ;; Utility-specific layer: match the org directly, or via its optional
+            ;; layer. Only one org can match since each `:org-unique-id` is unique.
+            :org      (first (filter #(or (= org-unique-id (:org-unique-id %))
+                                          (optional-layer-serves-org? (:org-unique-id %)))
+                                     orgs))
+            nil)]
       (:geoserver-credentials matching-org))))
 
 (comment
@@ -484,37 +478,33 @@
                     {:org-unique-id "sce" :geoserver-credentials "sce-creds"}])
 
   ;; Shared weather layer: not utility-specific, so the first org's creds are used.
-  (with-redefs [wui/wui-fire-selected? (constantly false)]
-    (reset! !/user-psps-orgs-list sample-orgs)
-    (reset! !/most-recent-optional-layer {})
-    (reset! !/*forecast :fire-weather)
-    (reset! !/*params   {:fire-weather {:model :ecmwf}})
-    (get-current-layer-geoserver-credentials)) ;=> "pge-creds"
+  (do (reset! !/user-psps-orgs-list sample-orgs)
+      (reset! !/most-recent-optional-layer {})
+      (reset! !/*forecast :fire-weather)
+      (reset! !/*params   {:fire-weather {:model :ecmwf}})
+      (get-current-layer-geoserver-credentials)) ;=> "pge-creds"
 
   ;; Utility-specific layer: matches that exact org by :org-unique-id.
-  (with-redefs [wui/wui-fire-selected? (constantly false)]
-    (reset! !/user-psps-orgs-list sample-orgs)
-    (reset! !/most-recent-optional-layer {})
-    (reset! !/*forecast :fire-risk)
-    (reset! !/*params   {:fire-risk {:pattern :sce}})
-    (get-current-layer-geoserver-credentials)) ;=> "sce-creds"
+  (do (reset! !/user-psps-orgs-list sample-orgs)
+      (reset! !/most-recent-optional-layer {})
+      (reset! !/*forecast :fire-risk)
+      (reset! !/*params   {:fire-risk {:pattern :sce}})
+      (get-current-layer-geoserver-credentials)) ;=> "sce-creds"
 
   ;; No matching org (and no optional layer) -> nil credentials.
-  (with-redefs [wui/wui-fire-selected? (constantly false)]
-    (reset! !/user-psps-orgs-list sample-orgs)
-    (reset! !/most-recent-optional-layer {})
-    (reset! !/*forecast :fire-risk)
-    (reset! !/*params   {:fire-risk {:pattern :some-other-utility}})
-    (get-current-layer-geoserver-credentials)) ;=> nil
+  (do (reset! !/user-psps-orgs-list sample-orgs)
+      (reset! !/most-recent-optional-layer {})
+      (reset! !/*forecast :fire-risk)
+      (reset! !/*params   {:fire-risk {:pattern :some-other-utility}})
+      (get-current-layer-geoserver-credentials)) ;=> nil
 
   ;; Selected layer's param not populated yet -> nil credentials (no NPE); the
   ;; caller (mapbox transformRequest) then sends the tile with no auth header.
-  (with-redefs [wui/wui-fire-selected? (constantly false)]
-    (reset! !/user-psps-orgs-list sample-orgs)
-    (reset! !/most-recent-optional-layer {})
-    (reset! !/*forecast :fire-weather)
-    (reset! !/*params   {})
-    (get-current-layer-geoserver-credentials)) ;=> nil
+  (do (reset! !/user-psps-orgs-list sample-orgs)
+      (reset! !/most-recent-optional-layer {})
+      (reset! !/*forecast :fire-weather)
+      (reset! !/*params   {})
+      (get-current-layer-geoserver-credentials)) ;=> nil
   )
 
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
@@ -739,7 +729,7 @@
           (swap! !/*params assoc-in [@!/*forecast reset-key] reset-val))))
     (when (= main-key :model-init)
       (reset! !/*last-start-time val))
-    (when (#{:fire-name :match-drop-name :wui-fire-name} main-key)
+    (when (#{:fire-name :match-drop-name} main-key)
       (reset! !/*layer-idx 0)
       (swap! !/*params assoc-in (cons @!/*forecast [:burn-pct]) :50)
       (reset! !/animate? false))
@@ -760,8 +750,7 @@
     (reset! !/processed-params (get-forecast-opt :params))
     (mb/set-multiple-layers-visibility! #"isochrones" false) ; hide isochrones underlay when switching tabs
     (when (and (= :active-fire selected-forecast)
-               (or @!/match-drop-access?
-                   (and (c/feature-enabled? :wui) (wui/user-in-wui-org? @!/user-orgs-list))))
+               @!/match-drop-access?)
       (refresh-fire-names!))
     (<! (change-type! true
                       true
@@ -832,13 +821,6 @@
                                merge
                                (:match-drops fire-names))
                     (assoc-in [:active-fire :params :match-drop-name :hidden?] false)))
-              ;; Add in WUI active fire names (pyregence-consortium members only, gated behind the :wui feature flag)
-              (cond->
-                (wui/show-wui-fires? @!/user-orgs-list (:wui-active-fires fire-names))
-                (-> (update-in [:active-fire :params :wui-fire-name :options]
-                               merge
-                               (:wui-active-fires fire-names))
-                    (assoc-in [:active-fire :params :wui-fire-name :hidden?] false)))
               ;; Set the default risk tab ignition pattern option to the logged in user's organization (when applicable)
               ;; Note that we default to using the first organization in the case where a user belongs to more than one org
               (assoc-in [:fire-risk :params :pattern :default-option] (keyword (:org-unique-id (first user-psps-orgs-list))))
