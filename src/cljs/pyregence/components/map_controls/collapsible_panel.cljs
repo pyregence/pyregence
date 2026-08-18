@@ -128,7 +128,7 @@
                watcher-id          (keyword (str "watch-" opt-label))
                add-params-watch    (fn []
                                      (add-watch !/*params watcher-id
-                                                (fn [key atom old-params new-params]
+                                                (fn [_key _atom old-params new-params]
                                                   (let [old-param-map    (@!/*forecast old-params)
                                                         new-param-map    (@!/*forecast new-params)
                                                         changed-keys     (u-data/get-changed-keys old-param-map new-param-map)
@@ -227,8 +227,7 @@
                                   :fill   ($/color-picker :font-color)})}
          [svg/help]]]]
       (doall
-       (map (fn [{:keys [id opt-label filter-set z-index enabled? geoserver-key dependent-inputs disabled-for geoserver-key]
-                  :as optional-layer-map}]
+       (map (fn [{:keys [id enabled?] :as optional-layer-map}]
               (when (or (nil? enabled?) (and (fn? enabled?) (enabled?)))
                 ^{:key id}
                 [optional-layer optional-layer-map]))
