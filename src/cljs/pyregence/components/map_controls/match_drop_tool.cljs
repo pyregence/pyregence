@@ -110,17 +110,18 @@
     :match-drops  {:match-drop-name {:opt-label \"Match Drop Name\" :filter-set #{\"match-drop-forecast\",  \"match-drop-name\"} :auto-zoom? true :geoserver-key :match-drop} ...}}"
   []
   (go
-    (let [fire-names (->> (u-async/call-clj-async! "get-fire-names")
-                          (<!)
-                          (:body)
-                          (edn/read-string))]
-      (swap! !/capabilities update-in [:active-fire :params :fire-name :options] merge (:active-fires fire-names))
-      (swap! !/processed-params update-in [:fire-name :options] merge (:active-fires fire-names))
-      (when (seq (:match-drops fire-names))
-        (swap! !/capabilities update-in [:active-fire :params :match-drop-name :options] merge (:match-drops fire-names))
-        (swap! !/capabilities assoc-in [:active-fire :params :match-drop-name :hidden?] false)
-        (swap! !/processed-params update-in [:match-drop-name :options] merge (:match-drops fire-names))
-        (swap! !/processed-params assoc-in [:match-drop-name :hidden?] false)))))
+    (let [fire-names  (->> (u-async/call-clj-async! "get-fire-names")
+                           (<!)
+                           (:body)
+                           (edn/read-string))
+          ;; Single transform so each atom below is updated with one swap! (avoids races)
+          apply-fires (fn [params]
+                        (cond-> (update-in params [:fire-name :options] merge (:active-fires fire-names))
+                          (seq (:match-drops fire-names))
+                          (-> (update-in [:match-drop-name :options] merge (:match-drops fire-names))
+                              (assoc-in  [:match-drop-name :hidden?] false))))]
+      (swap! !/capabilities     update-in [:active-fire :params] apply-fires)
+      (swap! !/processed-params apply-fires))))
 
 (defn- body-for-match-drop-modal [text]
   {:body
