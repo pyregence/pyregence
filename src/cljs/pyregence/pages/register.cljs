@@ -32,24 +32,18 @@
 ;; API Calls
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn email->username
-  "Derives a best-effort default display name from an email's local part.
-   The local part may contain '_', '+' or '%' -- characters `v/user-name-steps`
-   forbids -- so it is run through `v/sanitize-user-name`, which strips anything
-   the name whitelist disallows. Without this, an email like john_doe@example.com
-   passes the client's email check and then throws on the server's name check."
+(defn- email->username
+  "Derives a best-effort display name from an email's local part. Separators
+   ('.', '_', '+', '%') become spaces; anything else the name whitelist forbids
+   is dropped. Returns \"\" when nothing survives (e.g. ___@x.com)."
   [email]
-  (v/sanitize-user-name (subs email 0 (str/index-of email "@"))))
+  (let [local (if-let [at (str/index-of (str email) "@")]
+                (subs (str email) 0 at)
+                "")]
+    (v/sanitize-user-name (str/replace local #"[._%+]+" " "))))
 
 (defn- add-user! []
   (go
-    ;; TODO: Look here, consider ensuring that the proposed organization already exists in DB (in manually created whitelist)
-    ;;       Creation will fail against an organization that doesn't exist
-    ;; TODO: Attempt to locally recreate and verify an account with the email OTP link - I get a 500 expired error each time.
-    ;;       Ticket is very close. Validation/normalization DSL is extremely robust and single file, using exceptions to roll specific
-    ;;       error messages into a single user-facing toast explaining the error.
-
-    ;; HACK: (println "Orgs" (<! (u-async/call-clj-async! "get-all-organizations")))
     (toast-message! "Creating new account. This may take a moment...")
     ;;TODO it's awkward that add-new-user requires a user's name when it's not a unique identifier. Consider alternatives.
     (let [{:keys [success body]} (<! (if (and @marketplace? (not (str/blank? @org-name)))

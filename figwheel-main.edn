@@ -1,4 +1,4 @@
-{:watch-dirs          ["src/cljs"]
+{:watch-dirs          ["src/cljs" "src/cljc"]
  :css-dirs            ["resources/public/css"]
  :ring-server-options {:port 8080 :join? false}
  :ring-handler        pyregence.handlers/development-app-wrapper

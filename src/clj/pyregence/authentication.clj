@@ -100,7 +100,7 @@
    address that ever managed to register can still authenticate."
   [v/required
    (v/max-length 254)
-   (v/forbids #"[<>\"'`]" "angle brackets, quotes, or backticks")])
+   (v/forbids #"[<>\"]" "angle brackets or double quotes")])
 
 (def ^:private login-password-steps
   "Login-time password checks: presence and an upper bound only (a DoS guard,
@@ -131,7 +131,7 @@
   ;; Markup-capable characters are rejected and quoted back precisely.
   (try (validate-login! "<img src=x>@evil.com" "Fine password 1A")
        (catch Exception e (first (:errors (ex-data e)))))
-  ;=> "Email must not contain angle brackets, quotes, or backticks (found: '<' '>')"
+  ;=> "Email must not contain angle brackets or double quotes (found: '<' '>')"
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -775,13 +775,20 @@
         org-id       (when (map? org-name-or-opts)
                        (or (:org-id org-name-or-opts)
                            (get org-name-or-opts "org-id")))
-        {:keys [email user-name password org-name]}
+        {:keys [email user-name password org-name]
+         :or   {user-name ""}}
         (v/validate-all!
-         (cond-> [[:email     "Email"    v/email-steps     email]
-                  [:user-name "Name"     v/user-name-steps user-name]
-                  [:password  "Password" v/password-steps  password]]
-           (and (string? raw-org-name) (seq raw-org-name))
-           (conj [:org-name "Organization name" v/org-name-steps raw-org-name])))
+         ;; :user-name and :org-name are validated only when non-blank (the name
+         ;; is auto-derived from the email and may come back empty, e.g. ___@x.com),
+         ;; so a signup is never rejected for a name the user never typed.
+         (into []
+               (concat
+                [[:email "Email" v/email-steps email]]
+                (when (and (string? user-name) (not (str/blank? user-name)))
+                  [[:user-name "Name" v/user-name-steps user-name]])
+                [[:password "Password" v/password-steps password]]
+                (when (and (string? raw-org-name) (seq raw-org-name))
+                  [[:org-name "Organization name" v/org-name-steps raw-org-name]]))))
         ;; org-name is nil unless a non-blank name was provided and validated above.
         ;; Public signup too, so this can't be liveness-gated at the route.
         user-role        (when (session/live? session) (:user-role session))
