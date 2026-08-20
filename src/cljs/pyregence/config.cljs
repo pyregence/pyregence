@@ -155,7 +155,7 @@
 (def ^:private non-nfdrs-weather-models
   "All non-NFDRS weather models. The NFDRS-only Weather Parameters are
    disabled-for these so they can only be selected with an NFDRS model."
-  #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru})
+  #{:nbm :hrrr :hrdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru})
 
 (def near-term-forecast-options
   {:fuels        {:opt-label     "Fuels"
@@ -498,6 +498,10 @@
                                                               " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
                                                               [:br]
                                                               [:br]
+                                                              [:strong "HRDPS"]
+                                                              " - Canadian High Resolution Deterministic Prediction System at 2.5 km to 48 hours."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "Hybrid"]
                                                               " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
                                                               [:br]
@@ -535,6 +539,9 @@
                                                                               :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
                                                               :hrrr          {:opt-label "HRRR"
                                                                               :filter    "hrrr"}
+                                                              :hrdps         {:opt-label    "HRDPS"
+                                                                              :filter       "hrdps"
+                                                                              :disabled-for #{:apcp01 :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
                                                                               :disabled-for #{:apcptot :smoke :tcdc}}
