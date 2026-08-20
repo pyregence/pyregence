@@ -155,7 +155,13 @@
 (def ^:private non-nfdrs-weather-models
   "All non-NFDRS weather models. The NFDRS-only Weather Parameters are
    disabled-for these so they can only be selected with an NFDRS model."
-  #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru})
+  #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru :cffdrs})
+
+(def ^:private non-cffdrs-weather-models
+  "All non-CFFDRS weather models. The CFFDRS-only Weather Parameters are
+   disabled-for these so they can only be selected with the CFFDRS model."
+  #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+    :nfdrs-constant :nfdrs-variable :ecmwf :nve})
 
 (def near-term-forecast-options
   {:fuels        {:opt-label     "Fuels"
@@ -432,62 +438,86 @@
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
                                                                         :units     "%"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :tmpf    {:opt-label "Temperature (\u00B0F)"
                                                                         :filter    "tmpf"
                                                                         :units     "\u00B0F"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :ffwi    {:opt-label "Fosberg Fire Weather Index"
                                                                         :filter    "ffwi"
                                                                         :units     ""
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :meq     {:opt-label "Fine dead fuel moisture (%)"
                                                                         :filter    "meq"
                                                                         :units     "%"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :pign    {:opt-label "Firebrand ignition probability (%)"
                                                                         :filter    "pign"
                                                                         :units     "%"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :wd      {:opt-label       "Wind direction (\u00B0)"
                                                                         :filter          "wd"
                                                                         :units           "\u00B0"
                                                                         :reverse-legend? false
-                                                                        :disabled-for    #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for    #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :ws      {:opt-label "Sustained wind speed (mph)"
                                                                         :filter    "ws"
                                                                         :units     "mph"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :wg      {:opt-label "Wind gust (mph)"
                                                                         :filter    "wg"
                                                                         :units     "mph"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :apcptot {:opt-label       "Accumulated precipitation (in)"
                                                                         :filter          "apcptot"
                                                                         :units           "inches"
-                                                                        :disabled-for    #{:gfs0p125 :hybrid :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable}
+                                                                        :disabled-for    #{:gfs0p125 :hybrid :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}
                                                                         :reverse-legend? false}
                                                               :apcp01  {:opt-label       "1-hour precipitation (in)"
                                                                         :filter          "apcp01"
                                                                         :units           "inches"
-                                                                        :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable}
+                                                                        :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}
                                                                         :reverse-legend? false}
                                                               :vpd     {:opt-label    "Vapor pressure deficit (hPa)"
                                                                         :filter       "vpd"
                                                                         :units        "hPa"
-                                                                        :disabled-for #{:nbm :ecmwf :nve :nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:nbm :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :hdw     {:opt-label    "Hot-Dry-Windy Index (hPa*m/s)"
                                                                         :filter       "hdw"
                                                                         :units        "hPa*m/s"
-                                                                        :disabled-for #{:nbm :ecmwf :nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:nbm :ecmwf :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :smoke   {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
                                                                         :filter       "smoke"
                                                                         :units        "\u00b5g/m\u00b3"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :tcdc    {:opt-label    "Total cloud cover (%)"
                                                                         :filter       "tcdc"
                                                                         :units        "%"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable}})}
+                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                              :bui     {:opt-label "Buildup Index"
+                                                                        :filter    "bui"
+                                                                        :units     ""
+                                                                        :disabled-for non-cffdrs-weather-models}
+                                                              :dc      {:opt-label "Drought Code"
+                                                                        :filter    "dc"
+                                                                        :units     ""
+                                                                        :disabled-for non-cffdrs-weather-models}
+                                                              :dmc     {:opt-label "Duff Moisture Code"
+                                                                        :filter    "dmc"
+                                                                        :units     ""
+                                                                        :disabled-for non-cffdrs-weather-models}
+                                                              :ffmc    {:opt-label "Fine Fuel Moisture Code"
+                                                                        :filter    "ffmc"
+                                                                        :units     ""
+                                                                        :disabled-for non-cffdrs-weather-models}
+                                                              :fwi     {:opt-label "Fire Weather Index"
+                                                                        :filter    "fwi"
+                                                                        :units     ""
+                                                                        :disabled-for non-cffdrs-weather-models}
+                                                              :isi     {:opt-label "Initial Spread Index"
+                                                                        :filter    "isi"
+                                                                        :units     ""
+                                                                        :disabled-for non-cffdrs-weather-models})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "NBM"]
@@ -528,7 +558,11 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "RTMA"]
-                                                              " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."]
+                                                              " - Real Time Mesoscale Analysis at 2.5 km resolution updated every 15 minutes."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "CFFDRS"]
+                                                              " - Canadian Forest Fire Danger Rating System."]
                                                  :options    (array-map
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"

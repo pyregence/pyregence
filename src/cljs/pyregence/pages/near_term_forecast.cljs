@@ -354,9 +354,9 @@
 
 (def ^:private shared-weather-layer-ids
   "Layer ids every PSPS company can access: the Euro (`ecmwf`) forecast and the NFDRS
-   weather layers. They aren't utility-specific, so any PSPS org's GeoServer
+   and CFFDRS weather layers. They aren't utility-specific, so any PSPS org's GeoServer
    credentials will authenticate them."
-  #{"ecmwf" "nfdrs-constant" "nfdrs-variable"})
+  #{"ecmwf" "nfdrs-constant" "nfdrs-variable" "cffdrs"})
 
 (def ^:private forecast->credential-keypath
   "For each forecast type, the path into `@!/*params` holding the selected layer's
@@ -847,7 +847,16 @@
                        [[[:fire-weather :params :model :options :nfdrs-constant]
                          {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps}]
                         [[:fire-weather :params :model :options :nfdrs-variable]
-                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps}]])))))
+                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps}]])))
+              ;; CFFDRS: paid orgs, Super Admins, and Account Managers (served from the PSPS/utility GeoServer).
+              ;; Same gate as NFDRS above: the GeoFence rule allows every PSPS org, so this
+              ;; check is what actually keeps the model out of unentitled accounts.
+              (cond->
+               (or
+                (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
+                (#{"super_admin" "account_manager"} user-role))
+                (assoc-in [:fire-weather :params :model :options :cffdrs]
+                          {:opt-label "CFFDRS", :filter "cffdrs", :geoserver-key :psps}))))
 
   ;; TODO Consider sorting the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
