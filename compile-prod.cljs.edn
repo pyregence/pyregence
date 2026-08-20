@@ -7,4 +7,5 @@
  :pretty-print    false
  :target          :bundle
  :closure-defines {"goog.DEBUG"       false
-                   cljs.core/*global* "window"}}
+                   cljs.core/*global* "window"}
+  :externs ["externs/regexp.js"]}
