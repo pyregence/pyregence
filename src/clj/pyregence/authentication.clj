@@ -18,9 +18,35 @@
 
 (defn- normalize-email
   "Lower-cases and trims an email so throttle lookups match the identity the
-   DB authenticates against (verify_user_login uses lower_trim)."
+   DB authenticates against (verify_user_login uses lower_trim). A missing email
+   normalizes to \"\" rather than throwing, so a request without one is refused
+   by the usual authentication path instead of erroring out."
   [email]
-  (-> email str/lower-case str/trim))
+  (-> email str str/lower-case str/trim))
+
+(def ^:private max-failed-login-attempts
+  "Failed attempts allowed against one email before authentication is refused."
+  6)
+
+(defn- throttled?
+  "True once `normalized-email` has spent its failed-attempt budget."
+  [normalized-email]
+  (<= max-failed-login-attempts (@user-email->failed-login-attempts normalized-email 0)))
+
+(defn- failed-attempts
+  "Failed attempts currently recorded against `normalized-email`."
+  [normalized-email]
+  (@user-email->failed-login-attempts normalized-email 0))
+
+(defn- record-failed-attempt!
+  "Counts one failed authentication attempt, returning the new total."
+  [normalized-email]
+  ((swap! user-email->failed-login-attempts update normalized-email (fnil inc 0)) normalized-email))
+
+(defn- clear-failed-attempts!
+  "Drops the failed-attempt count once the user has proven who they are."
+  [normalized-email]
+  (swap! user-email->failed-login-attempts dissoc normalized-email))
 
 ;;TODO As an improvement, this could be made to be user-email specific
 (defn reset-user-email->failed-login-attempts!
@@ -158,8 +184,8 @@
   "Authenticates user and determines 2FA requirements."
   [session email password]
   (let [normalized-email      (normalize-email email)
-        failed-login-attempts (@user-email->failed-login-attempts normalized-email 0)]
-    (if (<= 6 failed-login-attempts)
+        failed-login-attempts (failed-attempts normalized-email)]
+    (if (throttled? normalized-email)
       (data-response {:failed-login-attempts failed-login-attempts} {:status 429})
       (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
         (let [user-id    (:user_id user)
@@ -169,7 +195,7 @@
             :email (do (email/send-email! nil email :2fa)
                        (data-response {:email email :require-2fa true :method "email"}))
             (successful-login user session)))
-        (data-response {:failed-login-attempts ((swap! user-email->failed-login-attempts update normalized-email (fnil inc 0)) normalized-email)}
+        (data-response {:failed-login-attempts (record-failed-attempt! normalized-email)}
                        {:status 403})))))
 
 (defn marketplace-sso-login
@@ -268,7 +294,7 @@
     (data-response password->invalid-password-msg  {:status 400})
     (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
       (do
-        (swap! user-email->failed-login-attempts dissoc (normalize-email email))
+        (clear-failed-attempts! (normalize-email email))
         (successful-login user session))
       (data-response "Invalid or expired reset token" {:status 403}))))
 
@@ -283,8 +309,8 @@
 ;;; 2FA Core Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn verify-2fa
-  "Verifies 2FA code for email/TOTP authentication."
+(defn- check-2fa-code
+  "Checks a 2FA code and, when it holds up, logs the user in."
   [session email code]
   (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
     (let [two-factor (:two-factor (get-user-settings user-id))]
@@ -304,6 +330,22 @@
 
         (data-response "2FA not configured for this account" {:status 403})))
     (data-response "User not found" {:status 403})))
+
+(defn verify-2fa
+  "Verifies 2FA code for email/TOTP authentication.
+
+   Shares the failed-attempt throttle with `log-in`: this route is reachable with
+   nothing but an email address and it hands back a session, so the 6-digit TOTP
+   codes and the 8-character backup codes must not be guessable without limit."
+  [session email code]
+  (let [normalized-email (normalize-email email)]
+    (if (throttled? normalized-email)
+      (data-response {:failed-login-attempts (failed-attempts normalized-email)} {:status 429})
+      (let [response (check-2fa-code session email code)]
+        (if (= 200 (:status response))
+          (clear-failed-attempts! normalized-email)
+          (record-failed-attempt! normalized-email))
+        response))))
 
 ^:rct/test
 (comment
@@ -781,7 +823,7 @@
                            {:status 403})
             (do
               ;; reset login attempts in case this account exceeded the max login attempts
-              (swap! user-email->failed-login-attempts dissoc (normalize-email email))
+              (clear-failed-attempts! (normalize-email email))
               (cond
             ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
             ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
