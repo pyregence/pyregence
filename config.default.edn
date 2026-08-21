@@ -45,8 +45,16 @@
  :triangulum.handler/route-authenticator   pyregence.handlers/route-authenticator
  :triangulum.handler/routing-tables        [pyregence.routing/routes]
  :triangulum.handler/bad-tokens            #{".php"}
- :triangulum.handler/private-request-keys  #{:auth-token :password :re-password}
- :triangulum.handler/private-response-keys #{}
+ ;; :clj-args holds every /clj/ argument, which clj-handler logs per route instead.
+ :triangulum.handler/private-request-keys  #{:auth-token
+                                             :clj-args
+                                             :password
+                                             :re-password
+                                             :token
+                                             :verification-token
+                                             :x-gcp-marketplace-token}
+ ;; 2FA setup answers with the TOTP seed and the backup codes, which the response logger prints.
+ :triangulum.handler/private-response-keys #{:backup-codes :qr-uri :secret}
  ;; Secure needs HTTPS; on plain-HTTP local dev set :secure false or the browser drops the cookie.
  :triangulum.handler/session-cookie-attrs  {:secure true :same-site :lax}
  :triangulum.handler/hsts?                 true
