@@ -440,15 +440,15 @@
                                                               :ffwi    {:opt-label "Fosberg Fire Weather Index"
                                                                         :filter    "ffwi"
                                                                         :units     ""
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:hrdps :nfdrs-constant :nfdrs-variable}}
                                                               :meq     {:opt-label "Fine dead fuel moisture (%)"
                                                                         :filter    "meq"
                                                                         :units     "%"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:hrdps :nfdrs-constant :nfdrs-variable}}
                                                               :pign    {:opt-label "Firebrand ignition probability (%)"
                                                                         :filter    "pign"
                                                                         :units     "%"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:hrdps :nfdrs-constant :nfdrs-variable}}
                                                               :wd      {:opt-label       "Wind direction (\u00B0)"
                                                                         :filter          "wd"
                                                                         :units           "\u00B0"
@@ -465,7 +465,7 @@
                                                               :apcptot {:opt-label       "Accumulated precipitation (in)"
                                                                         :filter          "apcptot"
                                                                         :units           "inches"
-                                                                        :disabled-for    #{:gfs0p125 :hybrid :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable}
+                                                                        :disabled-for    #{:hrdps :gfs0p125 :hybrid :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable}
                                                                         :reverse-legend? false}
                                                               :apcp01  {:opt-label       "1-hour precipitation (in)"
                                                                         :filter          "apcp01"
@@ -475,19 +475,19 @@
                                                               :vpd     {:opt-label    "Vapor pressure deficit (hPa)"
                                                                         :filter       "vpd"
                                                                         :units        "hPa"
-                                                                        :disabled-for #{:nbm :ecmwf :nve :nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:hrdps :nbm :ecmwf :nve :nfdrs-constant :nfdrs-variable}}
                                                               :hdw     {:opt-label    "Hot-Dry-Windy Index (hPa*m/s)"
                                                                         :filter       "hdw"
                                                                         :units        "hPa*m/s"
-                                                                        :disabled-for #{:nbm :ecmwf :nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:hrdps :nbm :ecmwf :nfdrs-constant :nfdrs-variable}}
                                                               :smoke   {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
                                                                         :filter       "smoke"
                                                                         :units        "\u00b5g/m\u00b3"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable}}
+                                                                        :disabled-for #{:hrdps :gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable}}
                                                               :tcdc    {:opt-label    "Total cloud cover (%)"
                                                                         :filter       "tcdc"
                                                                         :units        "%"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable}})}
+                                                                        :disabled-for #{:hrdps :gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable}})}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "NBM"]
@@ -541,7 +541,7 @@
                                                                               :filter    "hrrr"}
                                                               :hrdps         {:opt-label    "HRDPS"
                                                                               :filter       "hrdps"
-                                                                              :disabled-for #{:apcp01 :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:apcptot :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
                                                                               :disabled-for #{:apcptot :smoke :tcdc}}
