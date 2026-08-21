@@ -1686,8 +1686,12 @@
              "r_wd_l" "r_wg_a" "r_wg_h" "r_wg_l" "r_ws_a" "r_ws_h" "r_ws_l"]))
 
 (defn point-info-url
-  "Generates a URL for the point information."
-  [layer-group bbox feature-count geoserver-key & [properties]]
+  "Generates a URL for the point information.
+
+   `layer-time` targets one granule of an ImageMosaic. Without it GeoServer
+   answers with the mosaic's default granule, which is the first timestep, so
+   any mosaic layer reports hour 0 no matter where the time slider sits."
+  [layer-group bbox feature-count geoserver-key & [properties layer-time]]
   (str (wms-url geoserver-key)
        "?SERVICE=WMS"
        "&EXCEPTIONS=application/json"
@@ -1706,7 +1710,35 @@
        "&STYLES="
        "&BBOX=" bbox
        (when properties
-         (str "&propertyName=" properties))))
+         (str "&propertyName=" properties))
+       (when layer-time
+         (str "&TIME=" layer-time))))
+
+(defn point-time-series-url
+  "Generates an ncWMS GetTimeSeries URL, which returns every timestep of an
+   ImageMosaic in one request instead of one request per timestep.
+
+   This is the ncWMS community module, not core WMS, so the request shape
+   differs from `point-info-url`: WMS 1.1.1 with X/Y/SRS rather than 1.3.0 with
+   I/J/CRS, and CSV rather than JSON. A degenerate 1x1 window throws, so it
+   queries the centre pixel of a 101x101 grid over the same bbox."
+  [layer bbox geoserver-key start-time end-time]
+  (str (wms-url geoserver-key)
+       "?SERVICE=WMS"
+       "&VERSION=1.1.1"
+       "&REQUEST=GetTimeSeries"
+       "&INFO_FORMAT=text/csv"
+       "&LAYERS=" layer
+       "&QUERY_LAYERS=" layer
+       "&STYLES="
+       "&PROPERTYNAME=GRAY_INDEX"
+       "&X=50"
+       "&Y=50"
+       "&WIDTH=101"
+       "&HEIGHT=101"
+       "&SRS=EPSG:3857"
+       "&BBOX=" bbox
+       "&TIME=" start-time "/" end-time))
 
 (defn wms-layer-url
   "Generates a Web Mapping Service (WMS) url to download a PNG tile.
