@@ -1,4 +1,4 @@
-{:paths   ["src/clj" "src/cljs" "resources" "target" "src/sql"]
+{:paths   ["src/clj" "src/cljs" "src/cljc" "resources" "target" "src/sql"]
  :deps    {buddy/buddy-sign                                 {:mvn/version "3.5.351"}
            clj-http/clj-http                                {:mvn/version "3.13.1"}
            clj-tagsoup/clj-tagsoup                          {:mvn/version "0.3.0" :exclusions [org.clojure/data.xml org.clojure/clojure]}
@@ -31,7 +31,7 @@
  :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
            :build-uberjar    {:exec-fn   pyregence.packaging/build-uberjar!
                               :exec-args {:app-name      pyregence
-                                          :src-dirs      ["src/clj"]
+                                          :src-dirs      ["src/clj" "src/cljc"]
                                           :main-ns       pyregence.cli
                                           :resource-dirs ["resources" "target" "src/cljs" "src/sql"]}}
            :check-deps       {:deps       {com.github.liquidz/antq {:mvn/version "RELEASE"}}

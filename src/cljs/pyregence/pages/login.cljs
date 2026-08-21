@@ -1,6 +1,5 @@
 (ns pyregence.pages.login
   (:require
-   [cljs.reader                    :as edn]
    [clojure.core.async             :refer [<! go timeout]]
    [pyregence.analytics            :refer [gtag]]
    [pyregence.components.buttons   :as buttons]
@@ -11,6 +10,7 @@
    [pyregence.styles               :as $]
    [pyregence.utils.async-utils    :as u-async]
    [pyregence.utils.browser-utils  :as u-browser]
+   [pyregence.utils.data-utils     :as u-data]
    [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -27,9 +27,8 @@
 
 (defn- log-in! []
   (go
-    ;;TODO consider validating email before sending it.
     (let [{:keys [success status body]} (<! (u-async/call-clj-async! "log-in" @email @password))
-          {:keys [require-2fa email method]} (edn/read-string body)]
+          {:keys [require-2fa email method]} (u-data/response-data body)]
       (if success
         (if require-2fa
             ;; 2FA is required, redirect to 2FA verification page
@@ -39,12 +38,17 @@
             (u-browser/clear-session-storage!)
             (u-browser/jump-to-url! url)
             (gtag "log-in" {})))
+        ;; Prefer the server's own explanation (e.g. the input-validation
+        ;; messages carried on a 400) over a canned message; keep the canned
+        ;; messages for throttling and for bad credentials, where the server
+        ;; deliberately says nothing specific.
         (toast-message!
          (if (= status 429)
            ["Account was locked due to multiple unsuccessful attempts."
             "Please try again in 5 minutes or reset your password by clicking 'Forgot Password?'."]
-           ["Invalid login credentials. Please try again."
-            "If you feel this is an error, check your email for the verification email."]))))))
+           (or (u-data/server-errors body)
+               ["Invalid login credentials. Please try again."
+                "If you feel this is an error, check your email for the verification email."])))))))
 
 (defn- request-password! []
   (go
