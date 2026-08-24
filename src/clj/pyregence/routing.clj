@@ -43,20 +43,21 @@
    [:get "/verify-email"]                            {:handler (render-page "/verify-email")}
 
    ;; Users API
+   ;; {:log-args? false} wherever an argument is a password, a token or a 2FA code.
    ;; -- Core Authentication
-   [:post "/clj/log-in"]                             {:handler (clj-handler authentication/log-in)
+   [:post "/clj/log-in"]                             {:handler (clj-handler authentication/log-in {:log-args? false})
                                                      :auth-type :token
                                                      :auth-action :block}
    [:post "/clj/log-out"]                            {:handler (clj-handler authentication/log-out)
                                                      :auth-type :token
                                                      :auth-action :block}
-   [:post "/clj/set-user-password"]                  {:handler (clj-handler authentication/set-user-password)
+   [:post "/clj/set-user-password"]                  {:handler (clj-handler authentication/set-user-password {:log-args? false})
                                                      :auth-type :token
                                                      :auth-action :block}
-   [:post "/clj/verify-2fa"]                         {:handler (clj-handler authentication/verify-2fa)
+   [:post "/clj/verify-2fa"]                         {:handler (clj-handler authentication/verify-2fa {:log-args? false})
                                                      :auth-type :token
                                                      :auth-action :block}
-   [:post "/clj/verify-user-email"]                  {:handler (clj-handler authentication/verify-user-email)
+   [:post "/clj/verify-user-email"]                  {:handler (clj-handler authentication/verify-user-email {:log-args? false})
                                                      :auth-type :token
                                                      :auth-action :block}
 
@@ -64,24 +65,24 @@
    [:post "/clj/begin-totp-setup"]                   {:handler (clj-handler authentication/begin-totp-setup)
                                                      :auth-type :member
                                                      :auth-action :block}
-   [:post "/clj/complete-totp-setup"]                {:handler (clj-handler authentication/complete-totp-setup)
+   [:post "/clj/complete-totp-setup"]                {:handler (clj-handler authentication/complete-totp-setup {:log-args? false})
                                                      :auth-type :member
                                                      :auth-action :block}
    [:post "/clj/get-backup-codes"]                   {:handler (clj-handler authentication/get-backup-codes)
                                                      :auth-type :member
                                                      :auth-action :block}
-   [:post "/clj/regenerate-backup-codes"]            {:handler (clj-handler authentication/regenerate-backup-codes)
+   [:post "/clj/regenerate-backup-codes"]            {:handler (clj-handler authentication/regenerate-backup-codes {:log-args? false})
                                                      :auth-type :member
                                                      :auth-action :block}
-   [:post "/clj/enable-email-2fa"]                   {:handler (clj-handler authentication/enable-email-2fa)
+   [:post "/clj/enable-email-2fa"]                   {:handler (clj-handler authentication/enable-email-2fa {:log-args? false})
                                                      :auth-type :member
                                                      :auth-action :block}
-   [:post "/clj/disable-2fa"]                        {:handler (clj-handler authentication/disable-2fa)
+   [:post "/clj/disable-2fa"]                        {:handler (clj-handler authentication/disable-2fa {:log-args? false})
                                                      :auth-type :member
                                                      :auth-action :block}
 
    ;; -- User Management
-   [:post "/clj/add-new-user"]                       {:handler (clj-handler authentication/add-new-user)
+   [:post "/clj/add-new-user"]                       {:handler (clj-handler authentication/add-new-user {:log-args? false})
                                                      :auth-type :token
                                                      :auth-action :block}
    [:post "/clj/delete-users"]                       {:handler     (clj-handler authentication/delete-users)

@@ -70,7 +70,7 @@
                           email-config       (when security? (get-security-email-config))
                           from-name          (if security? "PyreCast Security" "PyreCast Support")
                           result             (send-mail email nil from-name subject body fmt email-config)]
-                      (call-sql "set_verification_token" email verification-token nil)
+                      (call-sql "set_verification_token" {:log? false} email verification-token nil)
                       result))]
     (if security?
       (do (when user-name (dispatch-off-thread send!))
@@ -109,7 +109,7 @@
         email-config  (get-security-email-config)  ; Get security config
         ;; Call send-mail with security config
         result        (send-mail email nil "PyreCast Security" "PyreCast Login Verification Code" body fmt email-config)]
-    (call-sql "set_verification_token" email token expiration)
+    (call-sql "set_verification_token" {:log? false} email token expiration)
     (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
 
 (defn- send-match-drop-email! [email match-drop-args]
@@ -144,7 +144,7 @@
                     "You're Invited to Join PyreCast")
         body      (messages/invite-email fmt base-url email user-name token org)
         result    (send-mail email nil "PyreCast Support" subject body fmt)]
-    (call-sql "set_verification_token" email token nil)
+    (call-sql "set_verification_token" {:log? false} email token nil)
     (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
 
 ;; Testing version of send-2fa-code that just prints the code
@@ -169,7 +169,7 @@
     (println body)
     (println "=====================================")
 
-    (call-sql "set_verification_token" email token expiration)
+    (call-sql "set_verification_token" {:log? false} email token expiration)
     (data-response email)))
 
 (defn send-email!

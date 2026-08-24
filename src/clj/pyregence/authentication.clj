@@ -277,7 +277,7 @@
 (defn verify-user-email
   "Verifies user email with the provided token."
   [session email token]
-  (if-let [user (first (call-sql "verify_user_email" email token))]
+  (if-let [user (first (call-sql "verify_user_email" {:log? false} email token))]
     (successful-login user session)
     (data-response "Invalid or expired verification token" {:status 403})))
 
@@ -294,13 +294,13 @@
         :totp
         (if-let [{:keys [secret] :as user} (first (call-sql "get_user_with_totp" user-id))]
           (if (or (totp/validate-totp-code secret code)
-                  (sql-primitive (call-sql "use_backup_code" user-id code)))
+                  (sql-primitive (call-sql "use_backup_code" {:log? false} user-id code)))
             (successful-login user session)
             (data-response "Invalid code" {:status 403}))
           (data-response "TOTP not configured" {:status 403}))
 
         :email
-        (if-let [user (first (call-sql "verify_user_2fa" email code))]
+        (if-let [user (first (call-sql "verify_user_2fa" {:log? false} email code))]
           (successful-login user session)
           (data-response "Invalid email verification code" {:status 403}))
 
@@ -390,7 +390,7 @@
 
       (let [secret       (totp/generate-secret)
             backup-codes (totp/generate-backup-codes 10)]
-        (call-sql "begin_totp_setup" user-id secret (into-array String backup-codes))
+        (call-sql "begin_totp_setup" {:log? false} user-id secret (into-array String backup-codes))
         (data-response {:backup-codes (mapv (fn [code] {:code code :used? false}) backup-codes)
                         :qr-uri       (totp/generate-totp-uri user-email secret)
                         :resuming     false
@@ -538,13 +538,13 @@
         (data-response "TOTP is not enabled for this account" {:status 400})
 
         (not (or (totp/validate-totp-code secret code)
-                 (sql-primitive (call-sql "use_backup_code" user-id code))))
+                 (sql-primitive (call-sql "use_backup_code" {:log? false} user-id code))))
         (data-response "Invalid code" {:status 403})
 
         :else
         (do
           (let [new-codes (totp/generate-backup-codes 10)]
-            (call-sql "regenerate_backup_codes" user-id (into-array String new-codes))
+            (call-sql "regenerate_backup_codes" {:log? false} user-id (into-array String new-codes))
             (data-response {:backup-codes (mapv (fn [code] {:code code :used? false}) new-codes)}))))
       (data-response "TOTP is not enabled for this account" {:status 400}))))
 
@@ -591,7 +591,7 @@
         (= :email (:two-factor settings))
         (data-response "Email 2FA is already enabled" {:status 400})
 
-        (empty? (call-sql "verify_user_2fa" user-email code))
+        (empty? (call-sql "verify_user_2fa" {:log? false} user-email code))
         (data-response "Invalid verification code" {:status 403})
 
         :else
@@ -639,7 +639,7 @@
         (data-response "TOTP is not enabled for this account" {:status 400})
 
         (not (or (totp/validate-totp-code secret code)
-                 (sql-primitive (call-sql "use_backup_code" user-id code))))
+                 (sql-primitive (call-sql "use_backup_code" {:log? false} user-id code))))
         (data-response "Invalid code" {:status 403})
 
         :else
@@ -688,7 +688,7 @@
         (remove-totp {:user-id user-id} code)
 
         (= two-factor :email)
-        (if (first (call-sql "verify_user_2fa" user-email code))
+        (if (first (call-sql "verify_user_2fa" {:log? false} user-email code))
           (do
             (save-user-settings! user-id (dissoc settings :two-factor))
             (data-response {:message "Two-factor authentication has been disabled"}))

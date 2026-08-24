@@ -269,52 +269,61 @@
      Arguments:
      - `function`: A Clojure function that must accept the session as its first argument,
        followed by any optional arguments extracted from `:clj-args`.
+     - `opts` (optional): `{:log-args? false}` keeps this route's arguments out of the log.
 
      Returns a Ring-compatible handler function that:
-     - Calls the wrapped function with `(apply function session clj-args)`
      - Logs the call and args
+     - Calls the wrapped function with `(apply function session clj-args)`
      - Returns the result as a Ring response (with optional `:status` handling and response type conversion)
 
      Example usage:
        (clj-handler my-fn)
+       (clj-handler my-secret-fn {:log-args? false})
 
      Where `my-fn` has a function signature such as:
       (defn my-fn [_ arg1 arg2 arg3 ...]) ; when session is unused
       (defn my-fn [session arg1 arg2 arg3 ...])
       (defn my-fn [_])
       (defn my-fn [session])"
-  [function]
-  (fn [{:keys [params content-type session]}]
-    (let [clj-args   (if (= content-type "application/edn")
-                       (:clj-args params [])
-                       (json/read-str (:clj-args params "[]")))
-          clj-result (try
-                       (apply function session clj-args)
-                       ;; Validation exceptions (pyregence.validation) carry
-                       ;; user-facing explanations as data; surface them to the
-                       ;; client as a 400 instead of letting them bubble to a
-                       ;; generic 500. Anything else still propagates.
-                       (catch clojure.lang.ExceptionInfo e
-                         (if (v/invalid? e)
-                           (data-response (v/ex->data e)
-                                          {:status 400
-                                           :type   (if (= content-type "application/edn")
-                                                     :edn
-                                                     :json)})
-                           (throw e))))
-          response   (if (:status clj-result)
-                       clj-result
-                       (data-response clj-result {:type (if (= content-type "application/edn") :edn :json)}))]
-      (log-str "CLJ Call: " (cons (fn->sym function) clj-args))
-      ;; Refresh idle timer, unless the wrapped fn already set :session (log-in/log-out) or the
-      ;; session is already expired: token-only routes skip the liveness gate, so refreshing one
-      ;; there would resurrect a dead session.
-      (let [now (System/currentTimeMillis)]
-        (if (and (:user-id session)
-                 (not (contains? response :session))
-                 (not (session/timed-out? session now)))
-          (assoc response :session (assoc session :last-active now))
-          response)))))
+  ([function]
+   (clj-handler function {}))
+  ([function {:keys [log-args?] :or {log-args? true}}]
+   ;; Metadata so a test can catch a new secret-bearing route that forgets {:log-args? false}.
+   (let [fn-sym (fn->sym function)]
+     (with-meta
+       (fn [{:keys [params content-type session]}]
+         (let [clj-args   (if (= content-type "application/edn")
+                            (:clj-args params [])
+                            (json/read-str (:clj-args params "[]")))
+               ;; Before the call, so a crash still leaves the arguments behind.
+               _          (log-str "CLJ Call: " (cons fn-sym (if log-args? clj-args '[<redacted>])))
+               clj-result (try
+                            (apply function session clj-args)
+                            ;; Validation exceptions (pyregence.validation) carry
+                            ;; user-facing explanations as data; surface them to the
+                            ;; client as a 400 instead of letting them bubble to a
+                            ;; generic 500. Anything else still propagates.
+                            (catch clojure.lang.ExceptionInfo e
+                              (if (v/invalid? e)
+                                (data-response (v/ex->data e)
+                                               {:status 400
+                                                :type   (if (= content-type "application/edn")
+                                                          :edn
+                                                          :json)})
+                                (throw e))))
+               response   (if (:status clj-result)
+                            clj-result
+                            (data-response clj-result {:type (if (= content-type "application/edn") :edn :json)}))
+               now        (System/currentTimeMillis)]
+           ;; Refresh idle timer, unless the wrapped fn already set :session (log-in/log-out) or the
+           ;; session is already expired: token-only routes skip the liveness gate, so refreshing one
+           ;; there would resurrect a dead session.
+           (if (and (:user-id session)
+                    (not (contains? response :session))
+                    (not (session/timed-out? session now)))
+             (assoc response :session (assoc session :last-active now))
+             response)))
+       {::wrapped fn-sym ::log-args? log-args?}))))
 
 ^:rct/test
 (comment
@@ -340,6 +349,28 @@
                {:content-type "application/edn" :params {:clj-args "[]"}
                 :session {:user-id 1 :created-at now :last-active now}})))
   ;=> nil
+  ;; A private route names the call but not the arguments.
+  (let [logged (atom [])
+        call   (fn [opts args]
+                 ((clj-handler (fn [_session & _] {:status 200 :body "ok"}) opts)
+                  {:content-type "application/edn" :params {:clj-args args} :session {}}))]
+    (with-redefs [log-str (fn [& parts] (swap! logged conj (apply str parts)))]
+      (call {:log-args? false} ["victim@example.com" "hunter2"])
+      (call {} ["fire-name"]))
+    (let [[private ordinary] @logged]
+      [(str/includes? private "<redacted>")
+       (str/includes? private "hunter2")
+       (str/includes? private "victim@example.com")
+       (str/includes? ordinary "fire-name")]))
+  ;=> [true false false true]
+  ;; A crash still leaves the arguments behind.
+  (let [logged (atom [])]
+    (with-redefs [log-str (fn [& parts] (swap! logged conj (apply str parts)))]
+      (try ((clj-handler (fn [_session & _] (throw (ex-info "boom" {}))))
+            {:content-type "application/edn" :params {:clj-args ["fire-name"]} :session {}})
+           (catch Exception _ nil)))
+    (str/includes? (first @logged) "fire-name"))
+  ;=> true
 
   ;; A validation exception thrown anywhere inside the wrapped fn surfaces as a
   ;; 400 whose EDN body carries the assembled message and per-condition errors
