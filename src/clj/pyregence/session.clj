@@ -1,12 +1,14 @@
 (ns pyregence.session
-  "Session liveness. Sessions are stateless signed cookies, so one is dead when its stamps
-   fall outside the configured timeouts or it predates the user's invalidation cutoff.
-   `live?` is what a public route asks, since the auth gate cannot enforce liveness for it."
+  "Session liveness, and the marker that sits between the two login steps. Sessions are stateless
+   signed cookies, so one is dead when its stamps fall outside the configured timeouts or it
+   predates the user's invalidation cutoff. `live?` is what a public route asks, since the auth gate
+   cannot enforce liveness for it."
   (:require [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql]]))
 
 (def ^:private default-idle-timeout-min     15)  ; NIST 800-63B AAL3 / PCI DSS 8.2.8
 (def ^:private default-absolute-timeout-min 420) ; 7 h
+(def ^:private default-two-factor-window-min 15) ; the emailed code's own lifetime
 
 (defn- expired?
   "Fail-closed: a session missing either timestamp counts as expired; an unauthenticated one never expires."
@@ -54,6 +56,24 @@
         (not (timed-out? session (System/currentTimeMillis)))
         (not (revoked? session)))))
 
+(defn awaiting-2fa
+  "`session` marked as owing a second factor from `user`, with its own fuse. Added to the session
+   rather than replacing it, since a marketplace signup rides along until the login finishes."
+  [session {:keys [user_id user_email]} now]
+  (assoc session :pending-2fa
+         {:user-id    user_id
+          :user-email user_email
+          :expires-at (+ now (timeout-ms :pyregence.auth/two-factor-window-min
+                                         default-two-factor-window-min))}))
+
+(defn pending-user
+  "Who this session is still owed a second factor for, or nil. Absent, incomplete and stale markers
+   all read alike, so what comes back is a whole user or nothing."
+  [session now]
+  (let [{:keys [user-id user-email expires-at]} (:pending-2fa session)]
+    (when (and user-id user-email expires-at (< now expires-at))
+      {:user-id user-id :user-email user-email})))
+
 ^:rct/test
 (comment
   ;; idle 15 min = 900000 ms ; absolute 7 h = 25200000 ms (the production defaults)
@@ -87,6 +107,21 @@
        (live? {:user-id 1 :created-at now :last-active now})
        (live? {:user-id 1 :created-at (- now 1000000000) :last-active (- now 1000000000)})]))
   ;=> [false true false]
+
+  ;; 15 min = 900000 ms, and the rest of the session rides along.
+  (awaiting-2fa {:marketplace-signup {:org "acme"}} {:user_id 1 :user_email "a@b.c"} 1000)
+  ;=> {:marketplace-signup {:org "acme"} :pending-2fa {:user-id 1 :user-email "a@b.c" :expires-at 901000}}
+
+  ;; Fresh, then exactly at the fuse, then each field missing in turn, then nothing at all.
+  (let [marked {:pending-2fa {:user-id 1 :user-email "a@b.c" :expires-at 2000}}]
+    [(pending-user marked 1999)
+     (pending-user marked 2000)
+     (pending-user (update marked :pending-2fa dissoc :expires-at) 1999)
+     (pending-user (update marked :pending-2fa dissoc :user-email) 1999)
+     (pending-user (update marked :pending-2fa dissoc :user-id) 1999)
+     (pending-user {} 1999)
+     (pending-user nil 1999)])
+  ;=> [{:user-id 1 :user-email "a@b.c"} nil nil nil nil nil nil]
 
   ;; Logout revokes without timing out, so the clock alone cannot catch it.
   (let [now (System/currentTimeMillis)]
