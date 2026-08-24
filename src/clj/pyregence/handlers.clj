@@ -16,24 +16,33 @@
             [triangulum.views    :as    views]
             [triangulum.worker   :refer [start-workers!]]))
 
+(defn- page-safe-session
+  "`session` as the browser may see it. Triangulum serializes the whole session into a script tag,
+   so the sequential PKs come out first (PYR1-1512 enumeration hardening) and a :logged-in? boolean
+   stands in for :user-id. :pending-2fa goes too, since it carries a user id of its own."
+  [session]
+  (-> session
+      (assoc :logged-in? (some? (:user-id session)))
+      (dissoc :user-id :organization-id :pending-2fa)))
+
+^:rct/test
+(comment
+  (page-safe-session {:user-id 7 :organization-id 3 :user-email "a@b.c"
+                      :pending-2fa {:user-id 7 :user-email "a@b.c" :expires-at 1}})
+  ;=> {:logged-in? true :user-email "a@b.c"}
+
+  (page-safe-session {})
+  ;=> {:logged-in? false}
+  )
+
 (defn render-page
-  "Wraps triangulum's render-page so the sequential :user-id and :organization-id
-   PKs are stripped from the session before it is serialized into the page, and a
-   :logged-in? boolean is substituted for the client to use in place of :user-id.
-   These internal ids must never reach the browser (PYR1-1512 enumeration
-   hardening) -- the client addresses users and orgs by other means (org uuid,
-   email) and never reads the raw PKs. The stored server-side session is
-   unaffected: GET page renders do not set a :session key on the response, so
-   wrap-session leaves the persisted session -- and its :user-id / :organization-id,
-   which server-side authorization relies on -- intact."
+  "Wraps triangulum's render-page so `page-safe-session` runs before the session is serialized into
+   the page. The stored session is unaffected: a page render sets no :session on the response, so
+   wrap-session leaves the persisted keys the server relies on intact."
   [uri]
   (let [handler (views/render-page uri)]
     (fn [request]
-      (handler (update request :session
-                       (fn [session]
-                         (-> session
-                             (assoc :logged-in? (some? (:user-id session)))
-                             (dissoc :user-id :organization-id))))))))
+      (handler (update request :session page-safe-session)))))
 
 (def not-found-handler (comp #(assoc % :status 404) (render-page "/not-found")))
 

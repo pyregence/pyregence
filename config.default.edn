@@ -146,9 +146,9 @@
                              {:triangulum.worker/name  "marketplace-subscriber"
                               :triangulum.worker/start pyregence.marketplace.pubsub/start-subscriber!
                               :triangulum.worker/stop  pyregence.marketplace.pubsub/stop-subscriber!}
-                             {:triangulum.worker/name  "reset-user-email->failed-login-attempts"
-                              :triangulum.worker/start pyregence.jobs/start-reset-user-email->failed-login-attempts!
-                              :triangulum.worker/stop  pyregence.jobs/stop-reset-user-email->failed-login-attempts!}]
+                             {:triangulum.worker/name  "throttle-sweep"
+                              :triangulum.worker/start pyregence.jobs/start-throttle-sweep!
+                              :triangulum.worker/stop  pyregence.jobs/stop-throttle-sweep!}]
 
 ;;; Pyrecast
  :pyregence.cameras/alert-west-api-key              "<api-key>"
@@ -165,6 +165,8 @@
  ;; Bounds (pentest AC): idle < 30, absolute < 8 h.
  :pyregence.auth/idle-timeout-min                   15
  :pyregence.auth/absolute-timeout-min               420
+ ;; How long the password step stays good for while the second factor is owed.
+ :pyregence.auth/two-factor-window-min              15
  :pyregence.match-drop/match-drop                   {:sig3-auth      "<AUTH_TOKEN>"
                                                      :sig3-env       "<dev | prod | stg>"
                                                      :max-queue-size 5}
