@@ -40,6 +40,7 @@
 
 (def ^:private fire-active "fire-active")
 (def ^:private mapbox-dem  "mapbox-dem")
+(def ^:private animation-marker "_anim_")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Layer Helper Functions
@@ -706,6 +707,13 @@
 ;; Manage Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- custom-map-layer?
+  "True for pyregence-managed layers (forecast or animation) that should
+   survive a base map source swap, as opposed to the base style's own layers."
+  [id layer]
+  (or (get-layer-metadata layer "type")
+      (str/includes? id animation-marker)))
+
 (defn set-base-map-source!
   "Sets the base map source."
   [source]
@@ -716,9 +724,9 @@
                            (u-data/filterm (fn [[k _]]
                                              (let [sname (name k)]
                                                (or (is-terrain? sname)
-                                                   (get-layer-metadata (get-layer sname) "type"))))))
+                                                   (custom-map-layer? sname (get-layer sname)))))))
           cur-layers  (->> (get cur-style "layers")
-                           (filter #(get-layer-metadata % "type")))
+                           (filter #(custom-map-layer? (get % "id") %)))
           new-style   (-> (<! style-chan)
                           (js->clj))]
       (update-style! cur-style
@@ -774,7 +782,6 @@
 
 (def ^:private hidden 0.0)
 (def ^:private instant-transition {:delay 0 :duration 0})
-(def ^:private animation-marker "_anim_")
 
 (defonce ^:private ^{:doc "Set of created layer IDs"}
   layers
