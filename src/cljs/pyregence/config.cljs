@@ -199,10 +199,23 @@
   "Weather models whose GeoTIFFs are published in metric units (mm, °C, m/s)
    rather than the imperial units the rest of the Weather tab assumes.
 
-   The band styles and :units labels are calibrated for imperial data, so a metric
-   model needs its own unit label (:units-metric) and its own GeoServer style
-   (:style-metric) or its values are displayed and coloured against the wrong scale."
+   The band styles and :units labels are calibrated for imperial data, so metric
+   values are displayed and coloured against the wrong scale unless handled. Which
+   way depends on how the source names the band:
+
+   - Same band name, metric values (ws, wg, apcp01): the band carries :units-metric
+     and :style-metric, applied when a metric model is selected.
+   - Its own band name (tmp for Celsius, against tmpf for Fahrenheit): the two are
+     separate parameters, each disabled-for the other's models, so no override is
+     needed -- the band's own :units and default style are already metric."
   #{:hrdps})
+
+(def ^:private non-metric-weather-models
+  "All weather models publishing imperial data. The metric-only Weather Parameters
+   (currently `tmp`, temperature in Celsius) are disabled-for these so they only
+   appear alongside a metric model."
+  #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+    :nfdrs-constant :nfdrs-variable :ecmwf :nve :cffdrs})
 
 (defn metric-weather-model?
   "Is a metric weather model currently selected? Takes the model keyword, or reads
@@ -489,11 +502,15 @@
                                                               :tmpf    {:opt-label "Temperature (\u00B0F)"
                                                                         :filter    "tmpf"
                                                                         :units     "\u00B0F"
-                                                                        ;; UNVERIFIED: assumed from HRDPS being a metric model. Confirm
-                                                                        ;; against a real GeoTIFF before enabling :metric-weather-styles.
-                                                                        :units-metric "\u00B0C"
-                                                                        :style-metric "tmpf-metric-css"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                              ;; The band name carries the unit: models publishing Fahrenheit ship
+                                                              ;; `tmpf`, metric ones ship `tmp` in Celsius. They are the same quantity
+                                                              ;; from different sources, so each is disabled-for the other's models
+                                                              ;; and only one ever appears for a given model.
+                                                              :tmp     {:opt-label    "Temperature (\u00B0C)"
+                                                                        :filter       "tmp"
+                                                                        :units        "\u00B0C"
+                                                                        :disabled-for non-metric-weather-models}
                                                               :ffwi    {:opt-label "Fosberg Fire Weather Index"
                                                                         :filter    "ffwi"
                                                                         :units     ""
@@ -514,15 +531,17 @@
                                                               :ws      {:opt-label "Sustained wind speed (mph)"
                                                                         :filter    "ws"
                                                                         :units     "mph"
-                                                                        ;; UNVERIFIED: m/s is the usual GRIB wind unit, but HRDPS may
-                                                                        ;; publish km/h. Confirm before enabling :metric-weather-styles.
+                                                                        ;; VERIFIED against an HRDPS ws GeoTIFF: values top out at 16,
+                                                                        ;; which is a believable domain maximum in m/s (~36 mph) but not
+                                                                        ;; in mph or km/h.
                                                                         :units-metric "m/s"
                                                                         :style-metric "ws-metric-css"
                                                                         :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :wg      {:opt-label "Wind gust (mph)"
                                                                         :filter    "wg"
                                                                         :units     "mph"
-                                                                        ;; UNVERIFIED: see :ws above.
+                                                                        ;; Assumed to match :ws, which is verified as m/s; no HRDPS wg
+                                                                        ;; file has been checked directly.
                                                                         :units-metric "m/s"
                                                                         :style-metric "wg-metric-css"
                                                                         :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
@@ -632,33 +651,34 @@
                                                  :options    (array-map
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
-                                                                              :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:tmp :apcp01 :hdw :smoke :tcdc :vpd}}
                                                               :hrrr          {:opt-label "HRRR"
-                                                                              :filter    "hrrr"}
+                                                                              :filter    "hrrr"
+                                                                              :disabled-for #{:tmp}}
                                                               :hrdps         {:opt-label    "HRDPS"
                                                                               :filter       "hrdps"
-                                                                              :disabled-for #{:apcptot :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:tmpf :apcptot :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
-                                                                              :disabled-for #{:apcptot :smoke :tcdc}}
+                                                                              :disabled-for #{:tmp :apcptot :smoke :tcdc}}
                                                               :gfs0p125      {:opt-label    "GFS 0.125\u00B0"
                                                                               :filter       "gfs0p125"
-                                                                              :disabled-for #{:apcptot :smoke :tcdc}}
+                                                                              :disabled-for #{:tmp :apcptot :smoke :tcdc}}
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
-                                                                              :disabled-for #{:smoke :tcdc}}
+                                                                              :disabled-for #{:tmp :smoke :tcdc}}
                                                               :nam-awip12    {:opt-label    "NAM 12 km"
                                                                               :filter       "nam-awip12"
-                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
+                                                                              :disabled-for #{:tmp :apcp01 :smoke :tcdc}}
                                                               :nam-conusnest {:opt-label    "NAM 3 km"
                                                                               :filter       "nam-conusnest"
-                                                                              :disabled-for #{:smoke}}
+                                                                              :disabled-for #{:tmp :smoke}}
                                                               :cansac-wrf    {:opt-label    "CANSAC WRF"
                                                                               :filter       "cansac-wrf"
-                                                                              :disabled-for #{:apcp01 :smoke :tcdc}}
+                                                                              :disabled-for #{:tmp :apcp01 :smoke :tcdc}}
                                                               :rtma-ru       {:opt-label    "RTMA"
                                                                               :filter       "rtma-ru"
-                                                                              :disabled-for #{:apcptot :apcp01 :smoke}})}
+                                                                              :disabled-for #{:tmp :apcptot :apcp01 :smoke}})}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "Start time for the forecast cycle, new data comes every 6 hours."
                                                  :options    {:loading {:opt-label "Loading..."}}}}}
