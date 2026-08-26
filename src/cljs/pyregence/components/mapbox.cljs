@@ -707,12 +707,14 @@
 ;; Manage Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- animation-layer? [id] (str/includes? id animation-marker))
+
 (defn- custom-map-layer?
   "True for pyregence-managed layers (forecast or animation) that should
    survive a base map source swap, as opposed to the base style's own layers."
   [id layer]
   (or (get-layer-metadata layer "type")
-      (str/includes? id animation-marker)))
+      (animation-layer? id)))
 
 (defn set-base-map-source!
   "Sets the base map source."
@@ -906,7 +908,7 @@
                   layer-type (get-layer-metadata layer "type")]
             :when (and layer-type
                        (get-layer-type-metadata-property layer-type :forecast-layer?)
-                       (not (str/includes? layer-id animation-marker)))]
+                       (not (animation-layer? layer-id)))]
       (when (js-invoke @the-map "getLayer" layer-id)
         (js-invoke @the-map "setLayoutProperty" layer-id "visibility" "none")))))
 
@@ -915,7 +917,7 @@
         map-layers (get map-style "layers")]
     (doseq [layer map-layers
             :let [layer-id (get layer "id")
-                  is-animation-layer? (str/includes? layer-id animation-marker)]]
+                  is-animation-layer? (animation-layer? layer-id)]]
       (when (and is-animation-layer?
                  (js-invoke @the-map "getLayer" layer-id))
         (js-invoke @the-map "setLayoutProperty" layer-id "visibility" "none")))))
