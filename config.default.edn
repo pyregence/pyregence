@@ -101,7 +101,10 @@
                                                                        :fire-history     true
                                                                        :structures       true
                                                                        :pyretechnics     true
-                                                                       :image-mosaic-gwc true}
+                                                                       :image-mosaic-gwc true
+                                                                       ;; Turn on once the *-metric-css styles are published to the
+                                                                       ;; GeoServer; requesting a style that isn't there fails the tile.
+                                                                       :metric-weather-styles false}
                                      :geoserver                       {:trinity     "https://trinity.pyregence.org/geoserver"
                                                                        ;; :trinity     "https://swift.sig-gis.com/geoserver"
                                                                        :shasta      "https://shasta.pyregence.org/geoserver"
