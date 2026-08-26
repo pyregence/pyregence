@@ -201,6 +201,21 @@
   #{:nbm :hrrr :hrdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
     :nfdrs-constant :nfdrs-variable :ecmwf :nve})
 
+(def ^:private metric-weather-models
+  "Weather models whose GeoTIFFs are published in metric units (mm, °C, m/s)
+   rather than the imperial units the rest of the Weather tab assumes.
+
+   The band styles and :units labels are calibrated for imperial data, so a metric
+   model needs its own unit label (:units-metric) and its own GeoServer style
+   (:style-metric) or its values are displayed and coloured against the wrong scale."
+  #{:hrdps})
+
+(defn metric-weather-model?
+  "Is a metric weather model currently selected? Takes the model keyword, or reads
+   the selected one from the Weather tab's params."
+  ([] (metric-weather-model? (-> @!/*params :fire-weather :model)))
+  ([model] (contains? metric-weather-models model)))
+
 (def near-term-forecast-options
   {:fuels        {:opt-label     "Fuels"
                   :filter        "fuels"
@@ -482,6 +497,10 @@
                                                               :tmpf    {:opt-label "Temperature (\u00B0F)"
                                                                         :filter    "tmpf"
                                                                         :units     "\u00B0F"
+                                                                        ;; UNVERIFIED: assumed from HRDPS being a metric model. Confirm
+                                                                        ;; against a real GeoTIFF before enabling :metric-weather-styles.
+                                                                        :units-metric "\u00B0C"
+                                                                        :style-metric "tmpf-metric-css"
                                                                         :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :ffwi    {:opt-label "Fosberg Fire Weather Index"
                                                                         :filter    "ffwi"
@@ -503,10 +522,17 @@
                                                               :ws      {:opt-label "Sustained wind speed (mph)"
                                                                         :filter    "ws"
                                                                         :units     "mph"
+                                                                        ;; UNVERIFIED: m/s is the usual GRIB wind unit, but HRDPS may
+                                                                        ;; publish km/h. Confirm before enabling :metric-weather-styles.
+                                                                        :units-metric "m/s"
+                                                                        :style-metric "ws-metric-css"
                                                                         :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :wg      {:opt-label "Wind gust (mph)"
                                                                         :filter    "wg"
                                                                         :units     "mph"
+                                                                        ;; UNVERIFIED: see :ws above.
+                                                                        :units-metric "m/s"
+                                                                        :style-metric "wg-metric-css"
                                                                         :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :apcptot {:opt-label       "Accumulated precipitation (in)"
                                                                         :filter          "apcptot"
@@ -516,6 +542,10 @@
                                                               :apcp01  {:opt-label       "1-hour precipitation (in)"
                                                                         :filter          "apcp01"
                                                                         :units           "inches"
+                                                                        ;; VERIFIED against an HRDPS apcp01 GeoTIFF: values peak near
+                                                                        ;; 57, which is only physical as mm/hr (57 in/hr is not).
+                                                                        :units-metric    "mm"
+                                                                        :style-metric    "apcp01-metric-css"
                                                                         :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}
                                                                         :reverse-legend? false}
                                                               :vpd     {:opt-label    "Vapor pressure deficit (hPa)"

@@ -159,11 +159,52 @@
          (name (get-in @!/*params [:psps-zonal :statistic]))
          "-css")))
 
+(defn- get-metric-weather-style
+  "Returns the name of the metric style for the selected weather layer, or nil.
+
+   The default band styles bake imperial breaks and labels into the SLD, so a model
+   publishing metric data (see `c/metric-weather-models`) renders against the wrong
+   scale with a legend to match. Naming a metric style here fixes both at once: the
+   same name is sent as `&STYLE=` on the tile and the GetLegendGraphic requests.
+
+   Returns nil for bands that read the same either way (relative humidity, wind
+   direction), which lets GeoServer fall back to the layer's default style.
+
+   Gated behind the :metric-weather-styles feature flag because the metric SLDs live
+   on the GeoServer: asking for one that hasn't been published yet fails the tile
+   request, so the flag stays off until they are deployed."
+  []
+  (when (and (= @!/*forecast :fire-weather)
+             (c/feature-enabled? :metric-weather-styles)
+             (c/metric-weather-model?))
+    (get-current-layer-key :style-metric)))
+
+(defn- get-layer-style
+  "Returns the GeoServer style to request for the current layer, or nil to let
+   GeoServer use the layer's default. PSPS layers pick a per-quantity style; weather
+   layers from a metric model pick a metric style."
+  []
+  (or (get-psps-layer-style)
+      (get-metric-weather-style)))
+
+(defn- get-current-layer-units
+  "Returns the unit label for the current layer.
+
+   Point info reads the raw raster value, so a metric model's numbers are metric
+   whether or not a metric style exists to colour them. The label follows the data
+   rather than the styling, and so is deliberately not behind the
+   :metric-weather-styles flag; bands that read the same either way have no
+   :units-metric and fall back to :units."
+  []
+  (or (when (and (= @!/*forecast :fire-weather) (c/metric-weather-model?))
+        (get-current-layer-key :units-metric))
+      (get-current-layer-key :units)))
+
 (defn- get-animation-layer-info
   "Returns layer information needed for animation."
   []
   {:geoserver-key (get-any-level-key :geoserver-key)
-   :style        (get-psps-layer-style)})
+   :style        (get-layer-style)})
 
 (defn- get-psps-column-name
   "Returns the name of the point info column for a PSPS layer."
@@ -515,7 +556,7 @@
     (get-data #(wrap-wms-errors "legend" % process-legend!)
               (c/legend-url layer
                             (get-any-level-key :geoserver-key)
-                            (get-psps-layer-style))
+                            (get-layer-style))
               :basic-auth (when (= :psps (get-any-level-key :geoserver-key))
                             (get-current-layer-geoserver-credentials)))))
 
@@ -614,7 +655,7 @@
   ([new-layer on-complete]
    (let [geoserver   (get-any-level-key :geoserver-key)
          opacity     (/ @!/active-opacity 100)
-         style       (get-psps-layer-style)
+         style       (get-layer-style)
          layer-name  (get-layer-name-for-idx new-layer)
          layer-time  (get-layer-time-for-idx new-layer)
          total       (count (or (:times (first @!/param-layers)) @!/param-layers))]
@@ -678,7 +719,7 @@
                                   style-fn
                                   (get-any-level-key :geoserver-key)
                                   (/ @!/active-opacity 100)
-                                  (get-psps-layer-style)
+                                  (get-layer-style)
                                   (get-current-layer-time)))
       (mb/clear-popup!)
       ; When we have a style-fn (which indicates a WFS layer) add the feature highlight.
@@ -1009,7 +1050,7 @@
                get-point-info!
                @my-box
                select-layer-by-hour!
-               (get-current-layer-key :units)
+               (get-current-layer-units)
                (get-current-layer-key :convert)
                (or (get-current-layer-key :no-convert) #{})
                (get-current-layer-hour)
@@ -1025,7 +1066,7 @@
          [legend-box
           (get-any-level-key :reverse-legend?)
           (get-any-level-key :time-slider?)
-          (get-current-layer-key :units)]
+          (get-current-layer-units)]
          [tool-bar
           set-show-info!
           get-any-level-key
