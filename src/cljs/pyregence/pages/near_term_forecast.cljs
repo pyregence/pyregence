@@ -838,7 +838,7 @@
               (cond->
                (or
                 (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
-                (#{"super_admin"} user-role))
+                (#{"super_admin" "account_manager"} user-role))
                 (as-> m
                       (reduce
                        (fn [m [k v]]
