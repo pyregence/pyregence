@@ -182,8 +182,12 @@
 
 (def ^:private non-nfdrs-weather-models
   "All non-NFDRS weather models. The NFDRS-only Weather Parameters are
-   disabled-for these so they can only be selected with an NFDRS model."
-  #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru :cffdrs})
+   disabled-for these so they can only be selected with an NFDRS model.
+   `:ecmwf` and `:nve` are injected at runtime from the organization_layers DB
+   table, so they're easy to forget here - leaving them out strands the NFDRS
+   parameter selected when you switch to those models."
+  #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+    :ecmwf :nve :cffdrs})
 
 (def ^:private non-cffdrs-weather-models
   "All non-CFFDRS weather models. The CFFDRS-only Weather Parameters are
