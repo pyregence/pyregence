@@ -59,6 +59,34 @@
   (#{:nfdrs-variable :nfdrs-constant} (-> @!/*params :fire-weather :model)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CFFDRS Weather Params
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def cffdrs-weather-params
+  {:bui  {:opt-label "Buildup Index"
+          :filter    "bui"
+          :units     ""}
+   :dc   {:opt-label "Drought Code"
+          :filter    "dc"
+          :units     ""}
+   :dmc  {:opt-label "Duff Moisture Code"
+          :filter    "dmc"
+          :units     ""}
+   :ffmc {:opt-label "Fine Fuel Moisture Code"
+          :filter    "ffmc"
+          :units     ""}
+   :fwi  {:opt-label "Fire Weather Index"
+          :filter    "fwi"
+          :units     ""}
+   :isi  {:opt-label "Initial Spread Index"
+          :filter    "isi"
+          :units     ""}})
+
+(defn cffdrs?
+  []
+  (= :cffdrs (-> @!/*params :fire-weather :model)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Feature Flags
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
