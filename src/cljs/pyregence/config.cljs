@@ -548,8 +548,8 @@
                                                               :wg      {:opt-label "Wind gust (mph)"
                                                                         :filter    "wg"
                                                                         :units     "mph"
-                                                                        ;; Assumed to match :ws, which is verified as m/s; no HRDPS wg
-                                                                        ;; file has been checked directly.
+                                                                        ;; m/s, matching :ws; confirmed by the data team rather than
+                                                                        ;; read off a file, as :ws was.
                                                                         :units-metric "m/s"
                                                                         :style-metric "wg-metric-css"
                                                                         :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
