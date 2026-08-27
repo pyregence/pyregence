@@ -186,13 +186,13 @@
    `:ecmwf` and `:nve` are injected at runtime from the organization_layers DB
    table, so they're easy to forget here - leaving them out strands the NFDRS
    parameter selected when you switch to those models."
-  #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+  #{:nbm :hrrr :hrdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
     :ecmwf :nve :cffdrs})
 
 (def ^:private non-cffdrs-weather-models
   "All non-CFFDRS weather models. The CFFDRS-only Weather Parameters are
    disabled-for these so they can only be selected with the CFFDRS model."
-  #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+  #{:nbm :hrrr :hrdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
     :nfdrs-constant :nfdrs-variable :ecmwf :nve})
 
 (def near-term-forecast-options
@@ -478,15 +478,15 @@
                                                               :ffwi    {:opt-label "Fosberg Fire Weather Index"
                                                                         :filter    "ffwi"
                                                                         :units     ""
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :meq     {:opt-label "Fine dead fuel moisture (%)"
                                                                         :filter    "meq"
                                                                         :units     "%"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :pign    {:opt-label "Firebrand ignition probability (%)"
                                                                         :filter    "pign"
                                                                         :units     "%"
-                                                                        :disabled-for #{:nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :wd      {:opt-label       "Wind direction (\u00B0)"
                                                                         :filter          "wd"
                                                                         :units           "\u00B0"
@@ -503,7 +503,7 @@
                                                               :apcptot {:opt-label       "Accumulated precipitation (in)"
                                                                         :filter          "apcptot"
                                                                         :units           "inches"
-                                                                        :disabled-for    #{:gfs0p125 :hybrid :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}
+                                                                        :disabled-for    #{:hrdps :gfs0p125 :hybrid :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}
                                                                         :reverse-legend? false}
                                                               :apcp01  {:opt-label       "1-hour precipitation (in)"
                                                                         :filter          "apcp01"
@@ -513,19 +513,19 @@
                                                               :vpd     {:opt-label    "Vapor pressure deficit (hPa)"
                                                                         :filter       "vpd"
                                                                         :units        "hPa"
-                                                                        :disabled-for #{:nbm :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :nbm :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :hdw     {:opt-label    "Hot-Dry-Windy Index (hPa*m/s)"
                                                                         :filter       "hdw"
                                                                         :units        "hPa*m/s"
-                                                                        :disabled-for #{:nbm :ecmwf :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :nbm :ecmwf :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :smoke   {:opt-label    "Smoke density (\u00b5g/m\u00b3)"
                                                                         :filter       "smoke"
                                                                         :units        "\u00b5g/m\u00b3"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :tcdc    {:opt-label    "Total cloud cover (%)"
                                                                         :filter       "tcdc"
                                                                         :units        "%"
-                                                                        :disabled-for #{:gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :bui     {:opt-label "Buildup Index"
                                                                         :filter    "bui"
                                                                         :units     ""
@@ -558,6 +558,10 @@
                                                               [:br]
                                                               [:strong "HRRR"]
                                                               " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "HRDPS"]
+                                                              " - Canadian High Resolution Deterministic Prediction System at 2.5 km to 48 hours."
                                                               [:br]
                                                               [:br]
                                                               [:strong "Hybrid"]
@@ -601,6 +605,9 @@
                                                                               :disabled-for #{:apcp01 :hdw :smoke :tcdc :vpd}}
                                                               :hrrr          {:opt-label "HRRR"
                                                                               :filter    "hrrr"}
+                                                              :hrdps         {:opt-label    "HRDPS"
+                                                                              :filter       "hrdps"
+                                                                              :disabled-for #{:apcptot :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
                                                                               :disabled-for #{:apcptot :smoke :tcdc}}
