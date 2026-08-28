@@ -386,11 +386,11 @@
                   :reverse-legend? true
                   :time-slider?    true
                   :always-utc?     true
-                  :hover-text      "Gridded weather forecasts from several US operational weather models including key parameters that affect wildfire behavior."
+                  :hover-text      "Gridded weather forecasts from several operational weather models including key parameters that affect wildfire behavior."
                   :params          {:band       {:opt-label      "Weather Parameter"
                                                  :default-option :rh
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
-                                                              "Gridded weather forecasts from several US operational weather models having different spatial resolutions and forecast durations. Available quantities include common weather parameters and fire weather indices:"
+                                                              "Gridded weather forecasts from several operational weather models having different spatial resolutions and forecast durations. Available quantities include common weather parameters and fire weather indices:"
                                                               [:br]
                                                               [:br]
                                                               [:strong "Fosberg Fire Weather Index (FFWI)"]
