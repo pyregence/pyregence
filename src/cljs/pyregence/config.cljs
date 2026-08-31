@@ -211,9 +211,15 @@
   #{:hrdps})
 
 (def ^:private non-metric-weather-models
-  "All weather models publishing imperial data. The metric-only Weather Parameters
-   (currently `tmp`, temperature in Celsius) are disabled-for these so they only
-   appear alongside a metric model."
+  "All weather models that do not publish the Celsius `tmp` band, which is
+   disabled-for these so it is only offered where it exists.
+
+   Membership is about the band, not the country. Models are here for two
+   different reasons: the imperial ones publish temperature as `tmpf` in
+   Fahrenheit instead, and CFFDRS -- Canadian, but not metric in any sense that
+   matters here -- publishes no temperature at all, only its six dimensionless
+   fire-danger indices. A model that starts shipping `tmp` should move out of
+   this set and into `metric-weather-models`."
   #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
     :nfdrs-constant :nfdrs-variable :ecmwf :nve :cffdrs})
 
