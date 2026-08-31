@@ -46,25 +46,6 @@
 (defn- ->org-unique-id [acct-id]
   (str "mp-" (last (str/split acct-id #"/"))))
 
-^:rct/test
-(comment
-  (email->org-name "joe@acme.com")               ;=> "Acme"
-  (email->org-name "joe@bbc.co.uk")              ;=> "Bbc"
-  (email->org-name "joe@co.uk")                  ;=> "Joe"
-  (email->org-name "joe@localhost")               ;=> "Localhost"
-  (->org-unique-id "accounts/xyz")               ;=> "mp-xyz"
-  (get plan-id->tier "basic")                    ;=> "tier1_free_registered"
-  (get plan-id->tier "essential-plan")           ;=> "tier1_basic_paid"
-  (get plan-id->tier "essential-plan-P1Y")       ;=> "tier1_basic_paid"
-  (get plan-id->tier "business-plan")            ;=> "tier2_pro"
-  (get plan-id->tier "business-plan-P1Y")        ;=> "tier2_pro"
-  (get plan-id->tier "enterprise-plan")          ;=> "tier3_enterprise"
-  (get plan-id->tier "enterprise-plan-P1Y")      ;=> "tier3_enterprise"
-  (get plan-id->tier "unknown" default-tier)     ;=> "tier1_free_registered"
-  ;; missing :email triggers "Email is required" — all validation errors use :invalid-user-info
-  (try (provision! {:procurement-account-id "1"} [])
-       (catch Exception e (:type (ex-data e))))  ;=> :invalid-user-info
-  )
 
 (defn- provision-result [acct-id org-id user-id]
   {:marketplace-account-id acct-id
@@ -110,3 +91,23 @@
           (log/info "Linked existing user to new marketplace org"
                     {:org-id org-id :user-id user_id})
           (provision-result acct-id org-id user_id))))))
+
+^:rct/test
+(comment
+  (email->org-name "joe@acme.com")               ;=> "Acme"
+  (email->org-name "joe@bbc.co.uk")              ;=> "Bbc"
+  (email->org-name "joe@co.uk")                  ;=> "Joe"
+  (email->org-name "joe@localhost")               ;=> "Localhost"
+  (->org-unique-id "accounts/xyz")               ;=> "mp-xyz"
+  (get plan-id->tier "basic")                    ;=> "tier1_free_registered"
+  (get plan-id->tier "essential-plan")           ;=> "tier1_basic_paid"
+  (get plan-id->tier "essential-plan-P1Y")       ;=> "tier1_basic_paid"
+  (get plan-id->tier "business-plan")            ;=> "tier2_pro"
+  (get plan-id->tier "business-plan-P1Y")        ;=> "tier2_pro"
+  (get plan-id->tier "enterprise-plan")          ;=> "tier3_enterprise"
+  (get plan-id->tier "enterprise-plan-P1Y")      ;=> "tier3_enterprise"
+  (get plan-id->tier "unknown" default-tier)     ;=> "tier1_free_registered"
+  ;; missing :email triggers "Email is required" — all validation errors use :invalid-user-info
+  (try (provision! {:procurement-account-id "1"} [])
+       (catch Exception e (:type (ex-data e))))  ;=> :invalid-user-info
+  )
