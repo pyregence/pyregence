@@ -939,7 +939,7 @@
                          (:active-fires fire-names))
               ;; Add in match drop names if the user has any completed match drops
               (cond->
-                (seq (:match-drops fire-names))
+               (seq (:match-drops fire-names))
                 (-> (update-in [:active-fire :params :match-drop-name :options]
                                merge
                                (:match-drops fire-names))
