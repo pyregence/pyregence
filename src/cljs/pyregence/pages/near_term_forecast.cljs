@@ -697,6 +697,7 @@
         layer-group   (get-current-layer-group)
         times         (:times (current-layer))
         single?       (str/blank? layer-group)
+        layer-group?  (not single?)
         ;; A mosaic is one GeoServer layer carrying a time dimension, so it is
         ;; always queried by layer name. Dev still publishes a 1-member layer
         ;; group next to it, and querying that returns a single timestep.
@@ -709,7 +710,7 @@
         request-id    (swap! point-info-request-id inc)]
     (when-not (u-data/missing-data? layer point-info-bbox)
       (reset! !/point-info-loading? true)
-      (if (and mosaic? (not single?))
+      (if (and mosaic? layer-group?)
         (get-mosaic-point-info! layer bbox times geoserver-key basic-auth request-id)
         (get-data #(wrap-wms-errors "point information"
                                     %
