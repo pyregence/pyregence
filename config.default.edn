@@ -29,7 +29,7 @@
  :pyregence.email/security-from "no-reply@pyrecast.com"  ;; Optional: From address (defaults to security-user)
 
  ;; server
- :triangulum.server/http-port  8080
+ :triangulum.server/http-port  13371
  :triangulum.server/mode       "<prod/dev>"
  :triangulum.server/log-dir    "logs"
  :triangulum.server/handler    triangulum.handler/authenticated-routing-handler
@@ -64,7 +64,7 @@
  :triangulum.views/description      {:en "Open source wildfire forecasting tool to assess wildfire risk for electric grid safety."}
  :triangulum.views/keywords         {:en "Pyrecast, Pyregence, wildfires, fire risk, fire weather, fuels, open source, fire modeling, California"}
  :triangulum.views/extra-head-tags  [[:meta {:name "robots" :content "index, follow"}]
-                                     [:meta {:name "viewport"
+                                     [:meta {:name    "viewport"
                                              :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
                                      [:meta {:property "og:title" :content "Pyrecast"}]
                                      [:meta {:property "og:description"
@@ -128,28 +128,28 @@
                               :triangulum.worker/stop  pyregence.jobs/stop-reset-user-email->failed-login-attempts!}]
 
 ;;; Pyrecast
- :pyregence.cameras/alert-west-api-key              "<api-key>"
+ :pyregence.cameras/alert-west-api-key                                "<api-key>"
  ;; Credentials used to list workspaces (REST API) and query GetCapabilities per
  ;; GeoServer. Omit a GeoServer's entry entirely to query it anonymously (a
  ;; present-but-blank username/password is still sent as-is). Keys must match the
  ;; keys under :geoserver above.
- :pyregence.capabilities/geoserver-credentials      {:trinity     {:username "<username>" :password "<password>"}
-                                                     :shasta      {:username "<username>" :password "<password>"}
-                                                     :match-drop  {:username "<username>" :password "<password>"}
-                                                     :psps        {:username "<username>" :password "<password>"}}
+ :pyregence.capabilities/geoserver-credentials                        {:trinity    {:username "<username>" :password "<password>"}
+                                                                       :shasta     {:username "<username>" :password "<password>"}
+                                                                       :match-drop {:username "<username>" :password "<password>"}
+                                                                       :psps       {:username "<username>" :password "<password>"}}
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
- :pyregence.email/verification-token-expiry-minutes 15
+ :pyregence.email/verification-token-expiry-minutes                   15
  ;; Bounds (pentest AC): idle < 30, absolute < 8 h.
- :pyregence.auth/idle-timeout-min                   15
- :pyregence.auth/absolute-timeout-min               420
- :pyregence.match-drop/match-drop                   {:sig3-auth      "<AUTH_TOKEN>"
-                                                     :sig3-env       "<dev | prod | stg>"
-                                                     :max-queue-size 5}
+ :pyregence.auth/idle-timeout-min                                     15
+ :pyregence.auth/absolute-timeout-min                                 420
+ :pyregence.match-drop/match-drop                                     {:sig3-auth      "<AUTH_TOKEN>"
+                                                                       :sig3-env       "<dev | prod | stg>"
+                                                                       :max-queue-size 5}
  ;; Marketplace (e.g. audience "example.com", partner-id "my-project-123")
- :pyregence.marketplace/config {:enabled              false
-                                :audience             "<your-app-domain>"
-                                :partner-id           "<partner-id>"
-                                :poll-interval-ms     30000
-                                :procurement-key-path "resources/keys/marketplace-procurement.json"
-                                :pubsub-key-path      "resources/keys/marketplace-pubsub.json"
-                                :subscription-id      "projects/<project-id>/subscriptions/<subscription-name>"}}
+ :pyregence.marketplace/config                                        {:enabled              false
+                                                                       :audience             "<your-app-domain>"
+                                                                       :partner-id           "<partner-id>"
+                                                                       :poll-interval-ms     30000
+                                                                       :procurement-key-path "resources/keys/marketplace-procurement.json"
+                                                                       :pubsub-key-path      "resources/keys/marketplace-pubsub.json"
+                                                                       :subscription-id      "projects/<project-id>/subscriptions/<subscription-name>"}}
