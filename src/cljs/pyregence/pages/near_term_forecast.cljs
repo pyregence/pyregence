@@ -317,6 +317,25 @@
          (str/join "&")
          (str js/location.origin js/location.pathname "?"))))
 
+(defn- wms-request-headers
+  "`accept` has to line up with the INFO_FORMAT in the URL. It stays broad enough
+   to cover an XML ServiceExceptionReport, which is how GeoServer reports a
+   failure even when it answers 200."
+  ([basic-auth] (wms-request-headers basic-auth "application/json, text/xml"))
+  ([basic-auth accept]
+   (cond-> {"Accept"       accept
+            "Content-Type" "application/json"}
+     basic-auth (assoc "Authorization" (str "Basic " (js/window.btoa basic-auth))))))
+
+(defn- fetch-text
+  "Asynchronously fetches url and hands back the raw response body. Returns a
+   channel containing the body, or nil when the request failed."
+  [url basic-auth accept]
+  (u-async/fetch-and-process url
+                             {:method  "get"
+                              :headers (wms-request-headers basic-auth accept)}
+                             (fn [response] (.text response))))
+
 (defn- get-data
   "Asynchronously fetches the JSON or XML resource at url. Returns a
    channel containing the result of calling process-fn on the response
@@ -324,17 +343,12 @@
    passed in. The loading-atom is set to false after the resource has been fetched."
   [process-fn url & {:keys [loading-atom basic-auth]}]
   (go
-    (let [base-headers    {"Accept"       "application/json, text/xml"
-                           "Content-Type" "application/json"}
-          request-headers (if basic-auth
-                            (assoc base-headers "Authorization" (str "Basic " (js/window.btoa basic-auth)))
-                            base-headers)]
-      (<! (u-async/fetch-and-process url
-                                     {:method "get"
-                                      :headers request-headers}
-                                     process-fn))
-      (when loading-atom
-        (reset! loading-atom false)))))
+    (<! (u-async/fetch-and-process url
+                                   {:method  "get"
+                                    :headers (wms-request-headers basic-auth)}
+                                   process-fn))
+    (when loading-atom
+      (reset! loading-atom false))))
 
 (defn- wrap-wms-errors [type response success-fn]
   (go
@@ -624,6 +638,70 @@
                                             (js/Object.values)
                                             (first)))))))
 
+(defn- mosaic-point-entry
+  "Builds one series entry from the timestep we asked for, rather than from a
+   positional zip against @!/param-layers - a mosaic collapses param-layers to a
+   single entry, so there is nothing to zip against."
+  [model-init layer-time band]
+  (let [js-time (u-time/js-date-from-string layer-time)]
+    {:band    band
+     :js-time js-time
+     :date    (u-time/get-date-from-js js-time @!/show-utc?)
+     :time    (u-time/get-time-from-js js-time @!/show-utc?)
+     ;; Hours since model init, matching the `:hour` capabilities.clj stamps on
+     ;; non-mosaic layers. Vega plots this as a quantitative axis, so it has to
+     ;; stay numeric.
+     :hour    (/ (- (.getTime js-time)
+                    (.getTime (u-time/js-date-from-string (str model-init "0000"))))
+                 1000.0 60 60)}))
+
+(def ^:private iso-instant-re
+  ;; Rows are keyed off this rather than off line position because a layer whose
+  ;; coverage lacks band metadata answers 200 with an XML ServiceExceptionReport,
+  ;; and that message contains a comma - positional parsing turns it into one
+  ;; plausible-looking row rather than an empty series.
+  #"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}")
+
+(defn- parse-time-series-csv
+  "Pulls `[timestamp band]` pairs out of an ncWMS GetTimeSeries CSV body, which
+   is two `#` comment lines, a header, then one row per timestep. Values come
+   back as floats even when integral. A row with no value is left out rather
+   than carried as a hole, since hours come off the timestamp either way."
+  [csv]
+  (when csv
+    (->> (str/split-lines csv)
+         (keep (fn [line]
+                 (let [[timestamp value] (str/split line #",")]
+                   (when (and timestamp value (re-find iso-instant-re timestamp))
+                     (let [band (js/parseFloat value)]
+                       [timestamp (when-not (js/isNaN band) band)])))))
+         (vec))))
+
+(defn- get-mosaic-point-info!
+  "Resets !/last-clicked-info with an ImageMosaic's whole series, read in one
+   ncWMS GetTimeSeries request.
+
+   Core WMS cannot do this. It answers a TIME range with a single merged feature
+   rather than one per granule, and that merged value looks plausible while
+   belonging to no timestep. A layer only answers GetTimeSeries once its coverage
+   carries band metadata; without it the series comes back empty."
+  [layer bbox times geoserver-key basic-auth]
+  (let [model-init (:model-init (current-layer))]
+    (go
+      (let [rows (parse-time-series-csv
+                  (<! (fetch-text (c/point-time-series-url layer
+                                                           bbox
+                                                           geoserver-key
+                                                           (first times)
+                                                           (last times))
+                                  basic-auth
+                                  "text/csv, text/xml")))]
+        (reset! !/last-clicked-info
+                (mapv (fn [[timestamp band]]
+                        (mosaic-point-entry model-init timestamp band))
+                      rows))
+        (reset! !/point-info-loading? false)))))
+
 ;; Use <! for synchronous behavior or leave it off for asynchronous behavior.
 (defn get-point-info!
   "Called when you use the point information tool and click a point on the map.
@@ -632,23 +710,32 @@
    to reset! the !/last-clicked-info atom for use in rendering the information-tool.
    Takes in one argument, the bounding box of the currently selected point."
   [point-info-bbox]
-  (let [layer-name          (get-current-layer-name)
-        layer-group         (get-current-layer-group)
-        single?             (str/blank? layer-group)
-        layer               (if single? layer-name layer-group)
-        process-point-info! (if single? process-single-point-info! process-timeline-point-info!)]
+  (let [layer-group   (get-current-layer-group)
+        single?       (str/blank? layer-group)
+        times         (:times (current-layer))
+        ;; A mosaic folds the series into one GeoServer layer, so it is queried
+        ;; by layer name; its layer group answers with a single timestep.
+        mosaic?       (and (not single?) (seq times))
+        layer         (if (or single? mosaic?) (get-current-layer-name) layer-group)
+        bbox          (str/join "," point-info-bbox)
+        geoserver-key (get-any-level-key :geoserver-key)
+        basic-auth    (when (= :psps geoserver-key)
+                        (get-current-layer-geoserver-credentials))]
     (when-not (u-data/missing-data? layer point-info-bbox)
       (reset! !/point-info-loading? true)
-      (get-data #(wrap-wms-errors "point information" % process-point-info!)
-                (c/point-info-url layer
-                                  (str/join "," point-info-bbox)
-                                  (if single? 1 50000)
-                                  (get-any-level-key :geoserver-key)
-                                  (when (= @!/*forecast :psps-zonal)
-                                    c/all-psps-columns))
-                :loading-atom !/point-info-loading?
-                :basic-auth   (when (= :psps (get-any-level-key :geoserver-key))
-                                (get-current-layer-geoserver-credentials))))))
+      (if mosaic?
+        (get-mosaic-point-info! layer bbox times geoserver-key basic-auth)
+        (get-data #(wrap-wms-errors "point information"
+                                    %
+                                    (if single? process-single-point-info! process-timeline-point-info!))
+                  (c/point-info-url layer
+                                    bbox
+                                    (if single? 1 50000)
+                                    geoserver-key
+                                    (when (= @!/*forecast :psps-zonal)
+                                      c/all-psps-columns))
+                  :loading-atom !/point-info-loading?
+                  :basic-auth   basic-auth)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; More Data Processing Functions
