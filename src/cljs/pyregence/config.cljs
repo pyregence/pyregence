@@ -771,7 +771,7 @@
                                                         :dependent-inputs [:fire-name :burn-pct :fuel :model :model-init]
                                                         :disabled-for     #{:active-fires}
                                                         :geoserver-key    :trinity}})
-                  :block-info?     false
+                  :block-info?     true
                   :reverse-legend? true
                   :time-slider?    true
                   :hover-text      "14-day forecasts of active fires with burning areas established from satellite-based heat detection."
