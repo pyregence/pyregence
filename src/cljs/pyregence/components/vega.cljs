@@ -15,12 +15,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- create-stops [processed-legend processed-point-info]
-  (let [max-band (reduce (fn [acc cur] (max acc (:band cur))) 1.0 processed-point-info)]
+  ;; Gradient offsets must land in [0,1]; canvas addColorStop throws on anything
+  ;; else and takes the whole mark down with it. The span starts at the data
+  ;; minimum, not at zero, or every sub-zero legend entry goes negative -- which
+  ;; is what blanked the Celsius chart while every non-negative ramp was fine.
+  (let [bands    (keep :band processed-point-info)
+        max-band (reduce max 1.0 bands)
+        min-band (reduce min 0.0 bands)
+        span     (- max-band min-band)]
     (reductions
      (fn [last cur] (let [last-q (get last :quantity  0.0)
                           cur-q  (get cur  "quantity" 0.0)]
                       {:quantity cur-q
-                       :offset   (min (/ cur-q max-band) 1.0)
+                       :offset   (-> (/ (- cur-q min-band) span) (max 0.0) (min 1.0))
                        :color    (if (< last-q max-band cur-q)
                                    (u-misc/interp-color (get last :color)
                                                         (get cur  "color")
