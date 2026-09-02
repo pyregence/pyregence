@@ -159,6 +159,11 @@
          (name (get-in @!/*params [:psps-zonal :statistic]))
          "-css")))
 
+(defn- fire-weather-metric-model?
+  "Is a metric weather model currently selected on the Weather tab?"
+  []
+  (and (= @!/*forecast :fire-weather) (c/metric-weather-model?)))
+
 (defn- get-metric-weather-style
   "Returns the name of the metric style for the selected weather layer, or nil.
 
@@ -174,9 +179,8 @@
    on the GeoServer: asking for one that hasn't been published yet fails the tile
    request, so the flag stays off until they are deployed."
   []
-  (when (and (= @!/*forecast :fire-weather)
-             (c/feature-enabled? :metric-weather-styles)
-             (c/metric-weather-model?))
+  (when (and (fire-weather-metric-model?)
+             (c/feature-enabled? :metric-weather-styles))
     (get-current-layer-key :style-metric)))
 
 (defn- get-layer-style
@@ -196,7 +200,7 @@
    :metric-weather-styles flag; bands that read the same either way have no
    :units-metric and fall back to :units."
   []
-  (or (when (and (= @!/*forecast :fire-weather) (c/metric-weather-model?))
+  (or (when (fire-weather-metric-model?)
         (get-current-layer-key :units-metric))
       (get-current-layer-key :units)))
 
