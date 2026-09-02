@@ -41,7 +41,8 @@
               :filter    "ic"
               :units     "%"}
    :kbdiI    {:opt-label "Keetch Byram Drought Index (0-800)"
-              :filter    "kbdiI"}
+              :filter    "kbdiI"
+              :units     "in * 100"}
    :lh       {:opt-label "Live herbaceous fuel moisture (%)"
               :filter    "lh"
               :units     "%"}
@@ -472,6 +473,7 @@
                                                                       :disabled-for non-nfdrs-weather-models}
                                                               :kbdiI {:opt-label "Keetch Byram Drought Index (0-800)"
                                                                       :filter "kbdiI"
+                                                                      :units "in * 100"
                                                                       :disabled-for non-nfdrs-weather-models}
                                                               :rh      {:opt-label "Relative humidity (%)"
                                                                         :filter    "rh"
