@@ -54,9 +54,13 @@
             :filter "kbdiI"
             :units "Index (0-800)"}})
 
+(def ^:private nfdrs-weather-models
+  "The two NFDRS models."
+  #{:nfdrs-constant :nfdrs-variable})
+
 (defn nfdrs?
   []
-  (#{:nfdrs-variable :nfdrs-constant} (-> @!/*params :fire-weather :model)))
+  (contains? nfdrs-weather-models (-> @!/*params :fire-weather :model)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CFFDRS Weather Params
@@ -214,14 +218,15 @@
   "All weather models that do not publish the Celsius `tmp` band, which is
    disabled-for these so it is only offered where it exists.
 
-   Membership is about the band, not the country. Models are here for two
-   different reasons: the imperial ones publish temperature as `tmpf` in
-   Fahrenheit instead, and CFFDRS -- Canadian, but not metric in any sense that
-   matters here -- publishes no temperature at all, only its six dimensionless
-   fire-danger indices. A model that starts shipping `tmp` should move out of
-   this set and into `metric-weather-models`."
-  #{:nbm :hrrr :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
-    :nfdrs-constant :nfdrs-variable :ecmwf :nve :cffdrs})
+   Derived rather than listed by hand, so a model added to
+   `non-nfdrs-weather-models` or `metric-weather-models` doesn't also need a
+   manual update here. Membership is about the band, not the country: the
+   imperial models publish temperature as `tmpf` in Fahrenheit instead, and
+   CFFDRS -- Canadian, but not metric in any sense that matters here --
+   publishes no temperature at all, only its six dimensionless fire-danger
+   indices."
+  (set/difference (into non-nfdrs-weather-models nfdrs-weather-models)
+                   metric-weather-models))
 
 (defn metric-weather-model?
   "Is a metric weather model currently selected? Takes the model keyword, or reads
