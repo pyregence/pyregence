@@ -3,8 +3,8 @@
   (:require [clojure.java.io            :as io]
             [clojure.string             :as str]
             [pyregence.capabilities     :refer [set-all-capabilities!]]
+            [pyregence.throttle         :refer [sweep!]]
             [pyregence.weather-stations :refer [periodically-get-observation-stations-in-the-background!]]
-            [pyregence.authentication   :refer [reset-user-email->failed-login-attempts!]]
             [triangulum.config          :refer [get-config]]
             [triangulum.logging         :refer [log-str]]))
 
@@ -61,11 +61,12 @@
 (defn stop-get-weather-stations! [fut]
   (future-cancel fut))
 
+;; Throttle Sweep
 
-(defn start-reset-user-email->failed-login-attempts! []
+(defn start-throttle-sweep! []
   (future
     (log-str "Reset failed login attempt counter every five minutes.")
-    (reset-user-email->failed-login-attempts!)))
+    (sweep!)))
 
-(defn stop-reset-user-email->failed-login-attempts! [fut]
+(defn stop-throttle-sweep! [fut]
   (future-cancel fut))

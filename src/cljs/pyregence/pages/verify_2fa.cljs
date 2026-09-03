@@ -34,12 +34,27 @@
       (if (seq errors)
         (do (toast-message! errors)
             (reset! pending? false))
-        (if (:success (<! (u-async/call-clj-async! "verify-2fa" @email @verification-code)))
-          (do (toast-message! "Your verification code has been verified successfully.")
-              (<! (timeout 2000))
-              (u-browser/jump-to-url! "/forecast"))
-          (do (toast-message! "Invalid verification code. Please try again.")
-              (reset! pending? false)))))))
+        (let [{:keys [success status]} (<! (u-async/call-clj-async! "verify-2fa"
+                                                                    @email
+                                                                    @verification-code))]
+          (cond
+            success
+            (do (toast-message! "Your verification code has been verified successfully.")
+                (<! (timeout 2000))
+                (u-browser/jump-to-url! "/forecast"))
+
+            (= status 401)
+            (do (toast-message! "Your login has expired. Please sign in again.")
+                (<! (timeout 2000))
+                (u-browser/jump-to-url! "/login"))
+
+            :else
+            (do (toast-message!
+                 (if (= status 429)
+                   ;; Waiting is the only remedy: a password reset clears the login count, not this one.
+                   "Too many incorrect codes. Please wait 5 minutes before trying again."
+                   "Invalid verification code. Please try again."))
+                (reset! pending? false))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
