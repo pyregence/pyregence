@@ -46,12 +46,26 @@
 
 ;;; Layers
 
+(def ^:private risk-weather-psps-layer
+  "`forecast-type_model-name_YYYYMMDD_HH:layer_group_tokens`, with an optional
+   trailing `_YYYYMMDD_HHMMSS` timestep."
+  #"[a-z|-]+_[a-z0-9|-]+_\d{8}_\d{2}:[A-Za-z0-9|-]+\d*(_[A-Za-z0-9|-]+\d*)*")
+
+(def ^:private timestep-suffix
+  "The `_YYYYMMDD_HHMMSS` that a per-timestep layer ends in."
+  #"_\d{8}_\d{6}$")
+
 (defn- split-risk-weather-psps-layer-name
   "Gets information about a risk, weather, or PSPS layer based on the layer's name.
    The layer is assumed to be in the format `forecast-type_model-name_forecast-start-time:layer-group_timestamp`
    e.g. `fire-risk-forecast_tlines_20231031_12:elmfire_landfire_times-burned_20231105_060000`
         `fire-weather-forecast_hrrr_20231031_18:tmpf_20231031_190000`
-        `psps-zonal_nve_20231031_18:deenergization-zones_20231031_180000`"
+        `psps-zonal_nve_20231031_18:deenergization-zones_20231031_180000`
+
+   An ImageMosaic folds the whole time series into one layer, so its name carries
+   no trailing timestamp and its timesteps arrive in `:times` instead
+   e.g. `fire-risk-forecast_all_20260813_00:elmfire_landfire_fire-area`
+        `fire-weather-forecast_hrrr_20260813_12:ws`"
   [name-string]
   (let [[workspace layer]             (str/split name-string #":")
         [forecast model-name ts1 ts2] (str/split workspace #"_")
@@ -65,9 +79,42 @@
      :filter-set  (into #{forecast init-timestamp model-name} (str/split layer-group #"_"))
      :model-init  init-timestamp
      :sim-time    sim-timestamp
-     :hour        (/ (- (.getTime (java-date-from-string sim-timestamp))
-                        (.getTime (java-date-from-string (str init-timestamp "0000"))))
-                     1000.0 60 60)}))
+     ;; A mosaic has one hour per timestep rather than one for the layer, so the
+     ;; front end reads them off `:times`. 0 keeps the fallback lookups numeric.
+     :hour        (if sim-timestamp
+                    (/ (- (.getTime (java-date-from-string sim-timestamp))
+                          (.getTime (java-date-from-string (str init-timestamp "0000"))))
+                       1000.0 60 60)
+                    0)}))
+
+^:rct/test
+(comment
+  ;; A timestamped layer keeps its own hour and sim-time
+  (split-risk-weather-psps-layer-name
+   "fire-risk-forecast_tlines_20231031_12:elmfire_landfire_times-burned_20231105_060000")
+  ;=>> {:layer-group "fire-risk-forecast_tlines_20231031_12:elmfire_landfire_times-burned"
+  ;     :forecast    "fire-risk-forecast"
+  ;     :model-init  "20231031_12"
+  ;     :sim-time    "20231105_060000"
+  ;     :hour        114.0
+  ;     :filter-set  #{"fire-risk-forecast" "20231031_12" "tlines" "elmfire" "landfire" "times-burned"}}
+
+  ;; A mosaic folds the series into one layer: no timestamp, hours come from `:times`
+  (split-risk-weather-psps-layer-name
+   "fire-risk-forecast_all_20260813_00:elmfire_landfire_fire-area")
+  ;=>> {:layer-group "fire-risk-forecast_all_20260813_00:elmfire_landfire_fire-area"
+  ;     :forecast    "fire-risk-forecast"
+  ;     :model-init  "20260813_00"
+  ;     :sim-time    nil
+  ;     :hour        0
+  ;     :filter-set  #{"fire-risk-forecast" "20260813_00" "all" "elmfire" "landfire" "fire-area"}}
+
+  ;; A folded weather layer collapses to a single bare token
+  (split-risk-weather-psps-layer-name "fire-weather-forecast_hrrr_20260813_12:ws")
+  ;=>> {:layer-group "fire-weather-forecast_hrrr_20260813_12:ws"
+  ;     :sim-time    nil
+  ;     :filter-set  #{"fire-weather-forecast" "20260813_12" "hrrr" "ws"}}
+  )
 
 (defn- split-fire-spread-forecast-layer-name
   "Gets information about a fire spread layer based on the layer's name.
@@ -195,7 +242,13 @@
                             merge-fn  #(merge % {:layer full-name :extent coords :times times})]
                         (cond
 
-                          (re-matches #"([a-z|-]+_[a-z0-9|-]+_)\d{8}_\d{2}:([A-Za-z0-9|-]+\d*_)+\d{8}_\d{6}" full-name)
+                          (and (re-matches risk-weather-psps-layer full-name)
+                               ;; Either one layer per timestep, or an ImageMosaic that folds
+                               ;; them into a single layer and carries the timesteps in its
+                               ;; <Dimension>. GeoServer also publishes that same name as a
+                               ;; timeless layer group; skipping it keeps one entry per layer.
+                               (or (re-find timestep-suffix full-name)
+                                   (seq times)))
                           (merge-fn (split-risk-weather-psps-layer-name full-name))
 
                           (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}(\d{2}|combined)_[a-z|-]+" full-name)
