@@ -145,15 +145,23 @@ CREATE OR REPLACE FUNCTION count_all_running_match_jobs()
 
 $$ LANGUAGE SQL;
 
--- Inserts a new match-drop job
+-- Inserts a new match-drop job, stamping it with the user's organization so the run
+-- can be billed later. Reading the org here rather than from the session keeps the
+-- stored row and the sig3 submit-job payload in agreement, and picks up a user who
+-- changed organization since logging in. org_id is returned because it is derived in
+-- SQL and the caller needs it for the payload.
 CREATE OR REPLACE FUNCTION initialize_match_job(_user_id integer)
- RETURNS integer AS $$
+ RETURNS TABLE (
+    match_job_id integer,
+    org_id       integer
+ ) AS $$
 
     INSERT INTO match_jobs
-        (user_rid)
-    VALUES
-        (_user_id)
-    RETURNING match_job_uid
+        (user_rid, org_rid)
+    SELECT _user_id, organization_rid
+    FROM users
+    WHERE user_uid = _user_id
+    RETURNING match_job_uid, org_rid
 
 $$ LANGUAGE SQL;
 

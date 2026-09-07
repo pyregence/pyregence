@@ -158,8 +158,14 @@
 (defn- count-running-user-match-jobs [user-id]
   (sql-primitive (call-sql "count_running_user_match_jobs" user-id)))
 
-(defn- initialize-match-job! [user-id]
-  (sql-primitive (call-sql "initialize_match_job" user-id)))
+(defn- initialize-match-job!
+  "Inserts the job row and returns {:match-job-id .. :org-id ..}. The org is derived
+   from the user inside the SQL, so it cannot drift from what was stored."
+  [user-id]
+  (-> (call-sql "initialize_match_job" user-id)
+      (first)
+      (rename-keys {:match_job_id :match-job-id
+                    :org_id       :org-id})))
 
 (defn- update-match-job!
   "Updates any of the properties of a match job based on a match-job-id (required).
@@ -202,13 +208,17 @@
 
 (defn- match-drop-args->body
   [match-job-id
-   {:keys [ignition-time lat lon wx-type fuel-version]}
+   {:keys [ignition-time lat lon wx-type fuel-version user-id org-id]}
    {:keys [sig3-env]}]
   (let [model-time    (u/convert-date-string ignition-time) ; e.g. Turns "2022-12-01 18:00 UTC" into "20221201_180000"
         wx-start-time (u/round-down-to-nearest-hour model-time)
         fire-name     (str "md-" match-job-id)]
     {:network   :match-drop
      :arguments {:env                  sig3-env
+                 ;; billing attribution: lets sig3's own logs name the paying org
+                 ;; without a lookup back into this database (PYR1-1668)
+                 :pyrc_user_id         user-id
+                 :pyrc_org_id          org-id
                  :pyrc_fire_name       fire-name
                  :geoserver-workspace  (str "match-drop-forecast_" fire-name "_" model-time)
                  :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
@@ -339,7 +349,8 @@
 
 (defn- create-match-job-using-kubernetes!
   [{:keys [user-id display-name] :as params} sig3-endpoint]
-  (let [match-job-id                       (initialize-match-job! user-id)
+  (let [{:keys [match-job-id org-id]}      (initialize-match-job! user-id)
+        params                             (assoc params :org-id org-id)
         {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3-endpoint match-job-id)
         {:keys [geoserver-workspace]}      match-drop-inputs]
     (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
