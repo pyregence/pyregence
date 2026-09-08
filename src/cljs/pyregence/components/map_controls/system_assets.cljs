@@ -14,10 +14,12 @@
 (defn panel-section
   []
   (let [orgs-with-system-assets (r/atom nil)
-        device-info             [{:device "fuse"       :color "red"    :hover-color "#9C2007" :selected-color "#F87C63"}
-                                 {:device "substation" :color "blue"   :hover-color "#072F9C" :selected-color "#638BF8"}
-                                 {:device "recloser"   :color "green"  :hover-color "#177005" :selected-color "#7CF863"}
-                                 {:device "breaker"    :color "orange" :hover-color "#9C5907" :selected-color "#FACA8F"}]]
+        device-info             [{:device "fuse"              :color "red"    :hover-color "#9C2007" :selected-color "#F87C63"}
+                                 {:device "substation"        :color "blue"   :hover-color "#072F9C" :selected-color "#638BF8"}
+                                 {:device "recloser"          :color "green"  :hover-color "#177005" :selected-color "#7CF863"}
+                                 {:device "breaker"           :color "orange" :hover-color "#9C5907" :selected-color "#FACA8F"}
+                                 {:device "switch"            :color "TODO"   :hover-color "TODO"    :selected-color "TODO"}
+                                 {:device "sectionalizer"     :color "TODO"   :hover-color "TODO"    :selected-color "TODO"}]]
     (go
       (reset! orgs-with-system-assets
               (let [{:keys [body success]}
