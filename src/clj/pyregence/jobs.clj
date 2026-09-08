@@ -65,7 +65,7 @@
 
 (defn start-throttle-sweep! []
   (future
-    (log-str "Reset failed login attempt counter every five minutes.")
+    (log-str "Starting throttle sweep: login and 2FA attempt counts clear every five minutes")
     (sweep!)))
 
 (defn stop-throttle-sweep! [fut]
