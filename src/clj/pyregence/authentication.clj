@@ -1,5 +1,6 @@
 (ns pyregence.authentication
   (:require [clojure.string             :as str]
+            [pyregence.clock            :as clock]
             [pyregence.email            :as email]
             [pyregence.marketplace      :as marketplace]
             [pyregence.session          :as session]
@@ -31,7 +32,7 @@
    This is the single source of truth for session structure."
   [user-data]
   (when user-data
-    (let [now (System/currentTimeMillis)]
+    (let [now (clock/now)]
       (data-response "" {:session (merge {:match-drop-access?    (:match_drop_access user-data)
                                           :user-email            (:user_email user-data)
                                           :user-id               (:user_id user-data)
@@ -130,7 +131,7 @@
    (call-sql "set_users_last_login_date_to_now" user_id)
    (marketplace/complete-signup! request-session user_email)
    ;; A new login invalidates the user's prior sessions (single active session)
-   (call-sql "set_user_session_invalidated_at" user_id (System/currentTimeMillis))
+   (call-sql "set_user_session_invalidated_at" user_id (clock/now))
    (create-session-from-user-data user)))
 
 (defn log-in
@@ -211,7 +212,7 @@
    clears the session cookie, and asks the browser to drop client-side state."
   [{:keys [user-id]}]
   (when user-id
-    (call-sql "set_user_session_invalidated_at" user-id (System/currentTimeMillis)))
+    (call-sql "set_user_session_invalidated_at" user-id (clock/now)))
   ;; :session nil re-seals an empty cookie but Ring's cookie-store emits no expiry, so the browser
   ;; keeps it; :session-cookie-attrs {:max-age 0} makes wrap-session send Max-Age=0 to delete it.
   ;; Must be assoc'ed on the response: utils/data-response only passes through :status/:type/:session.

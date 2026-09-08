@@ -1,5 +1,6 @@
 (ns pyregence.handlers
   (:require [cider.nrepl         :refer [cider-nrepl-handler]]
+            [pyregence.clock     :as    clock]
             [clojure.data.json   :as    json]
             [clojure.repl        :refer [demunge]]
             [clojure.string      :as    str]
@@ -433,9 +434,20 @@
     (let [log-dir (get-config :triangulum.server/log-dir)]
       (set-log-path! (or log-dir "")))))
 
+(defonce clock-delay
+  (delay
+    ;; Figwheel is a composition root too, and the only one that cannot install
+    ;; eagerly: it owns the launch and hands us no hook that runs before the
+    ;; first request, so the install rides the same delay as the other three.
+    ;; A dev process needs a clock for the same reason a shipping one does --
+    ;; every page read asks `session/live?` -- and before this it had none, so
+    ;; `bb dev` answered every request with the "no clock installed" throw.
+    (clock/install! (clock/->SystemClock))))
+
 (defn development-app-wrapper
   "Funky wrap-a-doodler"
   [request]
+  @clock-delay
   @nrepl-delay
   @workers-delay
   @log-dir-delay

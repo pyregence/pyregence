@@ -3,7 +3,8 @@
    signed cookies, so one is dead when its stamps fall outside the configured timeouts or it
    predates the user's invalidation cutoff. `live?` is what a public route asks, since the auth gate
    cannot enforce liveness for it."
-  (:require [triangulum.config   :refer [get-config]]
+  (:require [pyregence.clock     :as    clock]
+            [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql]]))
 
 (def ^:private default-idle-timeout-min     15)  ; NIST 800-63B AAL3 / PCI DSS 8.2.8
@@ -49,12 +50,17 @@
 
 (defn live?
   "Authenticated and neither timed out nor revoked. A public route should treat a session
-   as anonymous unless this is true."
-  [session]
-  (boolean
-   (and (:user-id session)
-        (not (timed-out? session (System/currentTimeMillis)))
-        (not (revoked? session)))))
+   as anonymous unless this is true.
+
+   The two-argument form takes `now` and reads no clock at all, which is what makes
+   liveness testable without waiting for it. The one-argument form is the same
+   question asked of the clock this system was built with."
+  ([session] (live? session (clock/now)))
+  ([session now]
+   (boolean
+    (and (:user-id session)
+         (not (timed-out? session now))
+         (not (revoked? session))))))
 
 (defn awaiting-2fa
   "`session` marked as owing a second factor from `user`, with its own fuse. Added to the session
