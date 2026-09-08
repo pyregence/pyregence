@@ -297,7 +297,12 @@
          (zero? @!/active-fire-count))
         (toast-message! "There are currently no active fire forecasts in the system.")
 
-        (not (seq @!/param-layers))
+        ;; Not when the session ended. Then the parameters are not the reason there
+        ;; is nothing here, and saying they are is what sent an organization looking
+        ;; for its missing data (PYR1-1623). call-clj-async! has already said what
+        ;; actually happened.
+        (and (not (seq @!/param-layers))
+             (not @!/session-ended?))
         (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
 
 (defn- create-share-link

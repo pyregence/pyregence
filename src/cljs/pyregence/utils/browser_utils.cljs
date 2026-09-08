@@ -105,6 +105,22 @@
   (.addEventListener js/window "touchend" f)
   (f))
 
+(defn url-param
+  "The value the current URL carries for query parameter NAME, or nil where it
+   carries none.
+
+   Here rather than at each page that wants one, because `js/URLSearchParams` is
+   the browser's abstraction and not PyreCast's: a page component asking it
+   directly is a page component that has to know about `js/location`, a
+   constructor, and a `.get`, to answer a question that is one word long. Three
+   other pages still open it inline (register, setup-2fa, disable-2fa); they
+   want moving here too, and that is not this ticket."
+  [param-name]
+  (-> js/location
+      (.-search)
+      (js/URLSearchParams.)
+      (.get param-name)))
+
 (defn jump-to-url!
   "Redirects the current window to the given URL."
   ([url]

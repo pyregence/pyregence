@@ -113,6 +113,13 @@ that has ended. Nil until PyreCast has been asked."}
 for, as a pyregence.datatypes.organizations value. Derived from the two above and
 asked of nobody."}
   user-psps-orgs-list (r/atom nil))
+(defonce ^{:doc "True once PyreCast has refused a call on the grounds that this session
+has ended -- idled out, aged out, or revoked. The page was rendered while the session
+was still live, so everything on it dates from then: the tabs, the organization lists,
+the layer options. Marking the fact here lets the parts that would otherwise explain an
+empty result some other way stop guessing. Nothing clears it; a session that has ended
+does not come back, and the next page load starts over."}
+  session-ended? (r/atom false))
 (defonce ^{:doc "A boolean that enables time-step animation for the Time Slider when true."}
   animate? (r/atom false))
 (defonce ^{:doc "True when animation layers exist in Mapbox."}
