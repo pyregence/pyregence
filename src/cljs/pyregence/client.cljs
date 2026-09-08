@@ -20,6 +20,9 @@
             [pyregence.pages.switch-2fa         :as switch-2fa]
             [pyregence.pages.verify-2fa         :as verify-2fa]
             [pyregence.pages.verify-email       :as verify-email]
+            [pyregence.archetypes.directory     :refer [=>Directory]]
+            [pyregence.datatypes.session        :as session]
+            [pyregence.wiring                   :as wiring]
             [pyregence.state                    :as !]
             [pyregence.utils.async-utils        :as u-async]))
 
@@ -27,38 +30,45 @@
 (defonce ^:private original-session (atom {}))
 
 (def ^:private uri->root-component-h
-  "All root-components for URIs that should have just a header."
-  {"/"                   #(ntf/root-component (merge % {:forecast-type :near-term}))
-   "/account-settings"   account-settings/root-component
-   "/backup-codes"       backup-codes/root-component
-   "/dashboard"          dashboard/root-component
-   "/disable-2fa"        disable-2fa/root-component
-   "/forecast"           #(ntf/root-component (merge % {:forecast-type :near-term}))
-   "/login"              login/root-component
-   "/long-term-forecast" #(ntf/root-component (merge % {:forecast-type :long-term}))
-   "/near-term-forecast" #(ntf/root-component (merge % {:forecast-type :near-term}))
-   "/register"           register/root-component
-   "/reset-password"     reset-password/root-component
-   "/setup-2fa"          setup-2fa/root-component
-   "/switch-2fa"         switch-2fa/root-component
-   "/verify-2fa"         verify-2fa/root-component
-   "/verify-email"       verify-email/root-component})
+  "All root-components for URIs that should have just a header.
+
+   Builders rather than components. Init is the only thing that builds a
+   collaborator, so a page that needs one is handed it here; `constantly` is a
+   page that needs nothing. The alternative -- a page reaching into a holder for
+   what init built -- is dependency injection with the injection left out, and
+   makes every page a possible caller of every concept."
+  {"/"                   (fn [d] #(ntf/root-component d (merge % {:forecast-type :near-term})))
+   "/account-settings"   (fn [d] #(account-settings/root-component d %))
+   "/backup-codes"       (constantly backup-codes/root-component)
+   "/dashboard"          (constantly dashboard/root-component)
+   "/disable-2fa"        (constantly disable-2fa/root-component)
+   "/forecast"           (fn [d] #(ntf/root-component d (merge % {:forecast-type :near-term})))
+   "/login"              (constantly login/root-component)
+   "/long-term-forecast" (fn [d] #(ntf/root-component d (merge % {:forecast-type :long-term})))
+   "/near-term-forecast" (fn [d] #(ntf/root-component d (merge % {:forecast-type :near-term})))
+   "/register"           (constantly register/root-component)
+   "/reset-password"     (constantly reset-password/root-component)
+   "/setup-2fa"          (constantly setup-2fa/root-component)
+   "/switch-2fa"         (constantly switch-2fa/root-component)
+   "/verify-2fa"         (constantly verify-2fa/root-component)
+   "/verify-email"       (constantly verify-email/root-component)})
 
 (def ^:private uri->root-component-hf
-  "All root-components for URIs that should have a header and a footer."
-  {"/help"           help/root-component
-   "/privacy-policy" privacy/root-component
-   "/terms-of-use"   terms/root-component})
+  "All root-components for URIs that should have a header and a footer. Builders,
+   as above."
+  {"/help"           (constantly help/root-component)
+   "/privacy-policy" (constantly privacy/root-component)
+   "/terms-of-use"   (constantly terms/root-component)})
 (defn- render-root
-  "Renders the root component for the current URI."
-  [params]
+  "Renders the root component for the current URI, built with what init built."
+  [params a-directory]
   (let [uri           (.. js/window -location -pathname)
-        root-cmpt-h   (get uri->root-component-h uri)
-        root-cmpt-hf  (get uri->root-component-hf uri)
-        root-cmpt     (or root-cmpt-h root-cmpt-hf not-found/root-component)
-        footer?       (some? root-cmpt-hf)]
+        build-h       (get uri->root-component-h uri)
+        build-hf      (get uri->root-component-hf uri)
+        build         (or build-h build-hf (constantly not-found/root-component))
+        footer?       (some? build-hf)]
     (render
-     [wrap-page {:root-component root-cmpt
+     [wrap-page {:root-component (build a-directory)
                  :params         params
                  :footer?        footer?}]
      (dom/getElement "app"))))
@@ -80,7 +90,13 @@
       (reset! !/default-forecasts               (get clj-session :default-forecasts))
       (reset! !/pyr-auth-token                  (get clj-session :auth-token))
       (reset! !/mapbox-access-token             (get clj-session :mapbox-access-token))
-      (render-root merged-params))))
+      ;; The composition root, and the only one. Nothing below builds a
+      ;; collaborator for itself or reaches for one: a page is handed what it
+      ;; needs and speaks to it through its protocol. The wiring is in force for
+      ;; the construction and for nothing else.
+      (render-root merged-params
+                   (wiring/with-wiring (wiring/->BrowserWiring)
+                     (=>Directory (session/->session (:user-role merged-params))))))))
 
 (defn- ^:after-load mount-root!
   "A hook for figwheel to call the init function again."

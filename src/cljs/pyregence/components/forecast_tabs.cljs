@@ -1,9 +1,9 @@
 (ns pyregence.components.forecast-tabs
   (:require
-   [clojure.set                 :as set]
    [herb.core                   :refer [<class]]
    [pyregence.components.common :refer [tool-tip-wrapper]]
-   [pyregence.styles             :as $]))
+   [pyregence.datatypes.tab     :as tab]
+   [pyregence.styles            :as $]))
 
 ;; This is needed so that we can show the tabs on the src/cljs/pyregence/pages/account_settings.cljs page
 ;; The duplication of code here with `config.cljs` is not ideal
@@ -32,29 +32,28 @@
                        "16px 12px"
                        "16px 24px")})
 
+(defn- published-tabs
+  "What PyreCast published, as tabs. `capabilities` is a forecast's whole
+   configuration and arrives keyed by forecast; only the four fields a tab is
+   rendered and gated by come across."
+  [capabilities]
+  (map (fn [[forecast row]] (tab/->tab forecast row))
+       (or capabilities default-forecast-tabs)))
+
 (defn forecast-tabs
   "Declares a component that displayes interactive tabs for selecting distinct forecasts.
-   Allows super_admins to see all tabs."
-  [{:keys [capabilities current-forecast on-forecast-select user-orgs-list user-role mobile? psps-organizations] :as m}]
-  (let [tabs (or capabilities default-forecast-tabs)]
-    [:div {:style {:display "flex" :padding ".25rem 0"}}
-     (doall
-      (map (fn [[forecast-key {:keys [allowed-orgs hover-text opt-label] :as m}]]
-             (when (or (#{"super_admin" "account_manager"} user-role)
-                       (and (not= opt-label "PSPS") (nil? allowed-orgs)) ;; Tab isn't organization-specific, so show it
-                       (and (= opt-label "PSPS")
-                            (seq (set/intersection psps-organizations
-                                                   (->> user-orgs-list (map :org-unique-id) (into #{})))))
-                       (some (fn [{org-unique-id :org-unique-id}]         ;; If tab **is** organization-specific
-                               (when allowed-orgs
-                                 (allowed-orgs org-unique-id)))          ;; the user must be an organization_admin or organization_member of one of the allowed orgs
-                             user-orgs-list))
-               ^{:key forecast-key}
-               [tool-tip-wrapper
-                hover-text
-                :top
-                [:label {:style    ($forecast-label (= current-forecast forecast-key) mobile?)
-                         :class    (<class $/p-add-hover)
-                         :on-click #(on-forecast-select forecast-key)}
-                 opt-label]]))
-           tabs))]))
+   Which of them a viewer is offered is `tab/offered-to?`, and is asked there so
+   it can be tested without a browser."
+  [{:keys [capabilities current-forecast on-forecast-select a-viewer mobile?]}]
+  [:div {:style {:display "flex" :padding ".25rem 0"}}
+   (doall
+    (for [{:keys [forecast label hover-text] :as a-tab} (published-tabs capabilities)
+          :when (tab/offered-to? a-tab a-viewer)]
+      ^{:key forecast}
+      [tool-tip-wrapper
+       hover-text
+       :top
+       [:label {:style    ($forecast-label (= current-forecast forecast) mobile?)
+                :class    (<class $/p-add-hover)
+                :on-click #(on-forecast-select forecast)}
+        label]]))])

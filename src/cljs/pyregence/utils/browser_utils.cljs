@@ -64,6 +64,47 @@
 ;; Utility Functions - Browser Management
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:private narrow-window-px
+  "Below this width a page lays itself out for a phone.
+
+   One copy of the number. Six pages each carried their own, which is six places
+   to change it and six chances to change five of them."
+  800.0)
+
+(defn narrow-window?
+  "Whether the window is narrow enough that a page should lay itself out for a
+   phone. A question about the room available, not about the device: a desktop
+   window dragged narrow answers yes, and should."
+  []
+  (> narrow-window-px (.-innerWidth js/window)))
+
+(defn scroll-to-top!
+  "Put the page back at the top of itself."
+  []
+  (.scrollTo js/window 0 0))
+
+(defn after-the-layout-settles!
+  "Call F once the browser has finished laying the page out.
+
+   The browser offers no event for \"you have finished reflowing\", so the idiom
+   is a short timer and the number is folklore. Named so that a caller can say
+   what it wants -- to measure something that has just moved -- without also
+   having to pick a delay."
+  [f]
+  (js/setTimeout f 50))
+
+(defn when-the-window-changes-shape!
+  "Call F now, and again whenever the window is resized or a touch ends -- the
+   two events that mean the page has a different amount of room than it did.
+
+   Which DOM events those are is the browser's business and not a page's: a
+   component registering them itself is a component that has to name
+   \"touchend\" to say \"the layout may have moved\"."
+  [f]
+  (.addEventListener js/window "resize"   f)
+  (.addEventListener js/window "touchend" f)
+  (f))
+
 (defn jump-to-url!
   "Redirects the current window to the given URL."
   ([url]

@@ -9,6 +9,10 @@
    [cognitect.transit                                                         :as t]
    [herb.core                                                                 :refer [<class]]
    [pyregence.analytics                                                       :refer [gtag]]
+   [pyregence.api.directory                                                   :as directory]
+   [pyregence.datatypes.organizations                                         :as organizations]
+   [pyregence.datatypes.session                                               :as session]
+   [pyregence.datatypes.viewer                                                :as viewer]
    [pyregence.components.map-controls.camera-tool                             :refer [camera-tool]]
    [pyregence.components.map-controls.weather-station-observation-latest-tool :as weather-obs]
    [pyregence.components.map-controls.collapsible-panel                       :refer [collapsible-panel]]
@@ -466,26 +470,22 @@
 
    Edge case: the Euro/NFDRS weather layers are shared across every PSPS company."
   []
-  (when (seq @!/user-psps-orgs-list)
-    (let [orgs                    @!/user-psps-orgs-list
-          optional-layer          @!/most-recent-optional-layer
-          optional-layer-serves-org? (fn [org-unique-id]
-                                       (boolean (and (seq optional-layer)
-                                                     ((:filter-set optional-layer) org-unique-id))))
-          {:keys [match org-unique-id]} (selected-layer-cred-match)
-          matching-org
-          (case match
-            ;; Shared weather layers aren't utility-specific, so any org's creds work.
-            :any      (first orgs)
-            ;; Underlay-only tabs (fuels/active-fire): match via the optional layer.
-            :underlay (first (filter #(optional-layer-serves-org? (:org-unique-id %)) orgs))
-            ;; Utility-specific layer: match the org directly, or via its optional
-            ;; layer. Only one org can match since each `:org-unique-id` is unique.
-            :org      (first (filter #(or (= org-unique-id (:org-unique-id %))
-                                          (optional-layer-serves-org? (:org-unique-id %)))
-                                     orgs))
-            nil)]
-      (:geoserver-credentials matching-org))))
+  (let [mine                       @!/user-psps-orgs-list
+        optional-layer             @!/most-recent-optional-layer
+        served-by-the-optional-layer  (organizations/backed-by
+                                       mine (or (:filter-set optional-layer) #{}))
+        {:keys [match org-unique-id]} (selected-layer-cred-match)]
+    (when (organizations/any? mine)
+      (case match
+        ;; Shared weather layers aren't utility-specific, so any org's creds work.
+        :any      (organizations/a-credential mine)
+        ;; Underlay-only tabs (fuels/active-fire): match via the optional layer.
+        :underlay (organizations/a-credential served-by-the-optional-layer)
+        ;; Utility-specific layer: match the org directly, or via its optional
+        ;; layer. Only one org can match since each id is unique.
+        :org      (or (organizations/credential-for mine org-unique-id)
+                      (organizations/a-credential served-by-the-optional-layer))
+        nil))))
 
 (comment
   ;; Worked examples for the GeoServer-credential resolution above. These read the
@@ -871,10 +871,42 @@
                   (get-current-option-key main-key val :auto-zoom?)
                   (get-any-level-key     :max-zoom))))
 
+(defn- refresh-user-orgs-list!
+  "Re-ask which organizations this user may see, and re-derive the PSPS subset of them.
+
+   Both lists are read once, at page load, and every private layer option on the
+   forecast panel is built from them. Nothing asks again, so a page that has been
+   open a while goes on offering whatever was true when it loaded -- which is the
+   second half of PYR1-1623, PyreCast offering an organization layers it will then
+   refuse.
+
+   It is also the only call on the forecast path that consults the session.
+   get-layers authenticates with the shared client token and so answers a dead
+   session exactly as happily as a live one; both routes behind this one are
+   session-gated, which is what gives PyreCast a chance to refuse.
+
+   Left alone when PyreCast will not say. An empty list would read as this user
+   belonging to no organization, which is a different and wrong statement -- and
+   on the refusal that matters here call-clj-async! has already started sending
+   them to /login."
+  [a-directory]
+  (go
+    (<! (directory/refresh! a-directory))
+    (when-let [orgs (directory/organizations a-directory)]
+      (reset! !/user-orgs-list orgs))
+    (when-let [ids (directory/psps-backed-ids a-directory)]
+      (reset! !/psps-orgs-list ids))
+    (reset! !/user-psps-orgs-list
+            (organizations/backed-by @!/user-orgs-list @!/psps-orgs-list))))
+
 (defn select-forecast!
   "The function called whenever you select a new forecast/tab."
-  [selected-forecast]
+  [a-directory selected-forecast]
   (go
+    ;; Awaited, not fired and forgotten: everything below rebuilds the option
+    ;; panel out of user-orgs-list, so letting it run first is the difference
+    ;; between offering what is true now and offering what was true at page load.
+    (<! (refresh-user-orgs-list! a-directory))
     (!/set-state-legend-list! [])
     (reset! !/last-clicked-info nil)
     (gtag "select-forecast" {:forecast-type (str selected-forecast)})
@@ -955,18 +987,18 @@
                     (assoc-in [:active-fire :params :match-drop-name :hidden?] false)))
               ;; Set the default risk tab ignition pattern option to the logged in user's organization (when applicable)
               ;; Note that we default to using the first organization in the case where a user belongs to more than one org
-              (assoc-in [:fire-risk :params :pattern :default-option] (keyword (:org-unique-id (first user-psps-orgs-list))))
+              (assoc-in [:fire-risk :params :pattern :default-option] (some-> (organizations/all user-psps-orgs-list) first :id keyword))
               ;; Add in the PSPS tab for all organizations that are permitted to see it
               (assoc-in [:psps-zonal :allowed-orgs] (into #{} psps-orgs-list))
               ;; Add in the specific PSPS layer options for the user's organization
               (assoc-in [:psps-zonal :params :utility :options]
-                        (reduce (fn [acc {:keys [org-unique-id org-name]}]
+                        (reduce (fn [acc {:keys [id name]}]
                                   (assoc acc
-                                         (keyword org-unique-id)
-                                         {:opt-label  org-name
-                                          :filter     org-unique-id}))
+                                         (keyword id)
+                                         {:opt-label  name
+                                          :filter     id}))
                                 {}
-                                user-psps-orgs-list))
+                                (organizations/all user-psps-orgs-list)))
               (cond->
                (or
                 (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
@@ -1013,7 +1045,7 @@
                                                        params))]))
                      options-config)))
 
-(defn- initialize! [{:keys [forecast-type forecast layer-idx lat lng zoom user-role] :as params}]
+(defn- initialize! [a-directory {:keys [forecast-type forecast layer-idx lat lng zoom user-role] :as params}]
   (go
     (reset! !/loading? true)
     (let [{:keys [options-config layers]} (c/get-forecast forecast-type)
@@ -1022,10 +1054,7 @@
           fire-names-chan                 (u-async/call-clj-async! "get-fire-names")
           fire-cameras-chan               (u-async/call-clj-async! "get-cameras")
           weather-stations-chan           (u-async/call-clj-async! "get-weather-stations")
-          user-orgs-list-chan             (u-async/call-clj-async! (if admin?
-                                                                     "get-all-organizations"
-                                                                     "get-current-user-organization"))
-          psps-orgs-list-chan             (u-async/call-clj-async! "get-psps-organizations")
+          directory-chan                  (directory/refresh! a-directory)
           match-drop-access-chan          (u-async/call-clj-async! "get-user-match-drop-access")
           fire-names                      (edn/read-string (:body (<! fire-names-chan)))
           active-fire-count               (count (:active-fires fire-names))
@@ -1037,13 +1066,20 @@
                                                              :combined]
                                                             {:opt-label "Combined"
                                                              :filter    "combined"}))]
+      (reset! !/admin? (boolean admin?))
       (reset! !/match-drop-access? (:success (<! match-drop-access-chan)))
       (reset! !/active-fire-count active-fire-count)
-      (reset! !/user-orgs-list (edn/read-string (:body (<! user-orgs-list-chan))))
-      (reset! !/psps-orgs-list (edn/read-string (:body (<! psps-orgs-list-chan))))
-      (reset! !/user-psps-orgs-list (filter (fn [org]
-                                              (some #(= (:org-unique-id org) %) @!/psps-orgs-list))
-                                            @!/user-orgs-list))
+      ;; Left at their defaults when PyreCast would not say, rather than emptied.
+      ;; Writing [] here would put a claim in the atoms that nobody made -- this
+      ;; user belongs to no organization -- which is the sentence NV Energy read
+      ;; off a dead session and reported as their data having vanished.
+      (<! directory-chan)
+      (when-let [orgs (directory/organizations a-directory)]
+        (reset! !/user-orgs-list orgs))
+      (when-let [ids (directory/psps-backed-ids a-directory)]
+        (reset! !/psps-orgs-list ids))
+      (reset! !/user-psps-orgs-list
+              (organizations/backed-by @!/user-orgs-list @!/psps-orgs-list))
       (reset! !/*forecast-type forecast-type)
       (reset! !/*forecast
               (cond
@@ -1065,7 +1101,7 @@
       (mb/init-map! "map"
                     layers
                     get-current-layer-geoserver-credentials
-                    #(select-forecast! @!/*forecast)
+                    #(select-forecast! a-directory @!/*forecast)
                     (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (let [{:keys [body success]} (<! user-layers-chan)]
         (process-capabilities! fire-names
@@ -1317,7 +1353,7 @@
 
 (defn root-component
   "Component definition for the \"Near Term\" and \"Long Term\" Forecast Pages."
-  [{:keys [logged-in? user-role user-email] :as params}]
+  [a-directory {:keys [logged-in? user-role user-email] :as params}]
   (r/create-class
    {:component-did-mount
     (fn [_]
@@ -1327,10 +1363,10 @@
                         (js/setTimeout mb/resize-map! 50))]
         (-> js/window (.addEventListener "touchend" update-fn))
         (-> js/window (.addEventListener "resize"   update-fn))
-        (initialize! params)
+        (initialize! a-directory params)
         (update-fn)))
     :reagent-render
-    (fn [_]
+    (fn [_ _]
       [:div#near-term-forecast
        {:style ($/combine $/root {:height "100%" :padding 0 :position "relative" :overflow :hidden})}
        [message-box-modal]
@@ -1341,9 +1377,13 @@
                  :is-admin?          (roles-who-can-see-admin-btn user-role)
                  :logged-in?         logged-in?
                  :mobile?            @!/mobile?
-                 :user-orgs-list     @!/user-orgs-list
-                 :on-forecast-select select-forecast!
-                 :user-role          user-role}]
+                 :on-forecast-select (partial select-forecast! a-directory)
+                 :user-role          user-role
+                 ;; No psps-backed-ids: on this page the PSPS tab carries its own
+                 ;; allow-list, assoc'd into capabilities by process-capabilities!.
+                 :a-viewer           (viewer/->viewer (session/->session user-role)
+                                                      @!/user-orgs-list
+                                                      nil)}]
        [:div {:style {:height "100%" :position "relative" :width "100%"}}
         (when (and @mb/the-map
                    (not-empty @!/capabilities)
