@@ -202,6 +202,19 @@
                                                       {:sql-args args}))]
       (if success message (do (show-sql-error! message) [{}])))))
 
+(def idle-logout-message
+  "What to say to somebody the page logged out on its own.
+
+   Not `session-ended/message`, because it is not the same event and it does not
+   read the same to the person it happens to. That one answers somebody who did
+   something and was turned away. This one answers somebody who did nothing at
+   all, and telling them their session \"has ended\" invites them to wonder what
+   they did to end it.
+
+   No duration named, on purpose: a sentence that says fifteen minutes is a
+   sentence that has to be found and changed when the config does."
+  "You've been logged out due to inactivity.")
+
 (def session-ended-param
   "Query parameter carrying the reason to the login page. A toast does not
    survive the navigation that follows it, so the explanation travels in the URL
@@ -211,6 +224,10 @@
 (def session-ended-reason-refused
   "PyreCast refused something and the reason was the session."
   "refused")
+
+(def session-ended-reason-idle
+  "The page gave up on its own, before anything was asked or refused."
+  "idle")
 
 (defn session-ended-explanation
   "What to tell somebody who has just arrived at the login page, or nil where
@@ -223,6 +240,7 @@
   []
   (case (u-browser/url-param session-ended-param)
     "refused" session-ended/message
+    "idle"    idle-logout-message
     ;; What the refusal path sent before there were two reasons to be here.
     ;; Recognized so that a link somebody still has open says something rather
     ;; than arriving at a bare form with no explanation, which is most of what

@@ -105,6 +105,54 @@
   (.addEventListener js/window "touchend" f)
   (f))
 
+(def ^:private user-input-events
+  "The DOM events that mean a person is at this page rather than merely leaving
+   it open.
+
+   Input and not app-level actions: the question being asked is whether somebody
+   is there, and moving a mouse across a map answers it as well as clicking
+   anything does. Held here and not at the caller because these five strings are
+   the browser's vocabulary for one idea, and a namespace deciding session
+   policy should not have to know that a finger arriving is spelled
+   \"touchstart\"."
+  ["mousemove" "mousedown" "keydown" "wheel" "touchstart"])
+
+(defn when-the-user-does-anything!
+  "Call F on any sign of a person -- mouse, keyboard, wheel or touch.
+
+   Capture phase, so a handler that stops propagation cannot make somebody
+   invisible; passive, so the browser knows F will never call preventDefault and
+   need not wait for it before scrolling. F runs on every mousemove, which is
+   tens of times a second: it must be cheap, and anything more than noting the
+   time belongs on a timer instead."
+  [f]
+  (doseq [event user-input-events]
+    (.addEventListener js/document event f #js {:capture true :passive true})))
+
+(defn every-so-often!
+  "Call F every MS, for as long as the page lives.
+
+   Returns nothing to cancel with, because nothing here cancels: the callers are
+   page-lifetime watches, and a handle nobody uses is a handle that gets passed
+   around and stored anyway."
+  [ms f]
+  (js/setInterval f ms)
+  nil)
+
+(defn when-the-page-becomes-visible!
+  "Call F whenever this page stops being hidden -- the tab brought forward, the
+   window unminimized.
+
+   Which DOM event that is stays here, but the reason a caller wants it is worth
+   knowing: a browser slows a hidden page down hard. Timers in a tab hidden for
+   more than a few minutes are clamped to roughly one a minute, so anything
+   deciding on a schedule is deciding late for exactly as long as nobody is
+   looking -- and is then wrong at the moment somebody looks again. Being told
+   the page is back is how a schedule catches up before it is seen."
+  [f]
+  (.addEventListener js/document "visibilitychange"
+                     #(when-not (.-hidden js/document) (f))))
+
 (defn url-param
   "The value the current URL carries for query parameter NAME, or nil where it
    carries none.

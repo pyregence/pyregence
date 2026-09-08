@@ -190,6 +190,26 @@
   (let [live? (live? session)]
     (page-facing session live? (when live? (idle-timeout-min)))))
 
+(defn note-activity
+  "Answer a heartbeat: the page saying the person is still here.
+
+   Deliberately does nothing. The refresh this route exists to cause is
+   `handlers/clj-handler`'s -- every live `/clj/*` call already stamps
+   `:last-active`, and already declines to stamp one that has timed out -- so a
+   body here would be a second implementation of a thing that is already right.
+
+   It is a route of its own because the client needs exactly one call that means
+   nothing but \"still here\". Every other route means something, and sending one
+   of those on a timer to keep a session alive would be a request PyreCast has
+   to actually serve.
+
+   Answering at all is the useful half in the other direction too: a heartbeat
+   from a session that was revoked elsewhere is refused like any other gated
+   call, so somebody sitting in front of an open tab finds out within one beat
+   rather than at their next click."
+  [_session]
+  {:success true})
+
 ^:rct/test
 (comment
   ;; idle 15 min = 900000 ms ; absolute 7 h = 25200000 ms (the production defaults)
