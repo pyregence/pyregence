@@ -69,6 +69,22 @@
           (catch ExceptionInfo e (js/console.log "Error in process-fn:" (ex-cause e))))
         (js/console.log "HTTP Error:" response)))))
 
+(defn- browser-encoded-body?
+  "Whether the browser will encode this body itself, rather than PyreCast
+   encoding it.
+
+   True for exactly one payload: a multipart form carrying an upload. The
+   browser sets its own Content-Type with the boundary token baked into it, so a
+   Content-Type of ours corrupts the request, and `pr-str` would flatten a File
+   into a string. Every site below asks this only to decide not to interfere.
+
+   Named because the class is the browser's abstraction and not PyreCast's, and
+   because the question was spelled two ways -- as an equality against `type`
+   and as its negation -- in seven places, one of which is not transport code at
+   all."
+  [body]
+  (instance? js/FormData body))
+
 (defmulti call-remote! (fn [method url data] method))
 
 (defmethod call-remote! :get [_ url data]
@@ -95,11 +111,11 @@
   (go
     (let [headers (cond-> {"Accept" "application/edn"}
                     @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token))
-                    (not= (type data) js/FormData) (assoc "Content-Type" "application/edn"))
+                    (not (browser-encoded-body? data)) (assoc "Content-Type" "application/edn"))
           fetch-params {:method  "post"
                         :headers headers
                         :body    (cond
-                                   (= js/FormData (type data)) data
+                                   (browser-encoded-body? data)  data
                                    data                        (pr-str data)
                                    :else                       nil)}
           response     (<! (fetch url fetch-params))]
@@ -115,11 +131,11 @@
   (go
     (let [headers (cond-> {"Accept" "application/edn"}
                     @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token))
-                    (not= (type data) js/FormData) (assoc "Content-Type" "application/edn"))
+                    (not (browser-encoded-body? data)) (assoc "Content-Type" "application/edn"))
           fetch-params {:method  "post"
                         :headers headers
                         :body    (cond
-                                   (= js/FormData (type data)) data
+                                   (browser-encoded-body? data)  data
                                    data                        (pr-str data)
                                    :else                       nil)}
           response     (<! (fetch url fetch-params))]
@@ -135,11 +151,11 @@
   (go
     (let [headers (cond-> {"Accept" "application/edn"}
                     @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token))
-                    (not= (type data) js/FormData) (assoc "Content-Type" "application/edn"))
+                    (not (browser-encoded-body? data)) (assoc "Content-Type" "application/edn"))
           fetch-params {:method  "post"
                         :headers headers
                         :body    (cond
-                                   (= js/FormData (type data)) data
+                                   (browser-encoded-body? data)  data
                                    data                        (pr-str data)
                                    :else                       nil)}
           response     (<! (fetch url fetch-params))]
@@ -191,7 +207,7 @@
   (let [first-arg (first args)
         method    (or (post-options first-arg) :post-text)
         data      (cond
-                    (= js/FormData (type first-arg))
+                    (browser-encoded-body? first-arg)
                     first-arg
 
                     (= :post-text method)
