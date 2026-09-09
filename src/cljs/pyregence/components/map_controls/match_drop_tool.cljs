@@ -6,7 +6,7 @@
    [clojure.string                        :as str]
    [herb.core                             :refer [<class]]
    [pyregence.components.common           :refer [input-datetime labeled-input
-                                                  radio]]
+                                                  radio tool-tip-wrapper]]
    [pyregence.components.mapbox           :as mb]
    [pyregence.components.messaging        :refer [set-message-box-content!]]
    [pyregence.components.resizable-window :refer [resizable-window]]
@@ -36,11 +36,25 @@
 ;; Match Drop Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def match-drop-instructions
+(def landfire-instructions
   "Simulates a 72 hour fire using real-time weather data from the Hybrid model,
    which is a blend of the HRRR, NAM 3 km, and GFS 0.125\u00B0 models.
    Click on any CONUS location to \"drop\" a match, then set the date and time to begin
    the simulation. Chrome is currently the only supported browser for Match Drop.")
+
+(def cawfe-instructions
+  "Simulates a 5 hour fire with CAWFE, which downscales the NAM forecast and models
+   the fire's feedback on the local atmosphere. Click on any CONUS location to
+   \"drop\" a match, then set the date and time to begin the simulation. Chrome is
+   currently the only supported browser for Match Drop.")
+
+(def match-drop-models
+  "The available fire models. Each maps to its own network in sig3."
+  (array-map
+   "landfire" {:opt-label "LANDFIRE"
+               :tooltip   "ELMFIRE and Pyretechnics running on LANDFIRE fuels and topography, driven by Hybrid weather (HRRR, NAM 3 km and GFS 0.125\u00B0). A 200 member ensemble over 72 hours."}
+   "cawfe"    {:opt-label "CAWFE"
+               :tooltip   "The Coupled Atmosphere-Wildland Fire Environment model. It downscales the NAM forecast and simulates how the fire feeds back on local weather, which the other models cannot do. Forecast weather only, a fixed 5 hour window, and much slower to run."}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -183,7 +197,7 @@
   "Initiates the match drop run and initiates polling for updates.
    Note that md-datetime-local is in local time and will be converted back
    to UTC before being passed to the back-end as the ignition-time."
-  [display-name [lon lat] md-datetime-local forecast-weather? user-email fuel-version]
+  [display-name [lon lat] md-datetime-local forecast-weather? user-email fuel-version model]
   (go
     ;; Lat and Lon must be within CONUS
     ;; TODO we should also add a separate check for md-datetime-local being within the available weather dates
@@ -198,7 +212,8 @@
                                                     :lon           lon
                                                     :lat           lat
                                                     :wx-type       (if forecast-weather? "forecast" "historical")
-                                                    :fuel-version  fuel-version})]
+                                                    :fuel-version  fuel-version
+                                                    :model         model})]
         (set-message-box-content! {:title         "Processing Match Drop"
                                    :body          "Initiating match drop run."
                                    :mode          :custom
@@ -312,6 +327,18 @@
       (reset! md-datetime-local (u-dom/input-value %))
       (reset-local-time-zone! local-time-zone (u-dom/input-value %)))])
 
+(defn- model-radio-buttons [model]
+  [:div {:style {:margin "0.5rem 0"}}
+   [:label {:style {:font-size "0.9rem" :font-weight "bold" :display "block" :margin-bottom "0.25rem"}} "Model"]
+   [:div {:style {:display "flex"}}
+    (doall
+     (for [[value {:keys [opt-label tooltip]}] match-drop-models]
+       ^{:key value}
+       [tool-tip-wrapper
+        tooltip
+        :top
+        [radio opt-label @model value #(reset! model %)]]))]])
+
 (defn- fuel-version-select [fuel-version]
   [:div {:style {:margin "0.5rem 0"}}
    [:label {:style {:font-size "0.9rem" :font-weight "bold" :display "block" :margin-bottom "0.25rem"}} "Fuels Version"]
@@ -322,7 +349,7 @@
       ^{:key version}
       [:option {:value version} opt-label])]])
 
-(defn- md-buttons [md-datetime-local forecast-weather? display-name lon-lat user-email fuel-version]
+(defn- md-buttons [md-datetime-local forecast-weather? display-name lon-lat user-email fuel-version model]
   [:div {:style {:display         "flex"
                  :flex-shrink     0
                  :justify-content "space-between"
@@ -334,7 +361,7 @@
              :disabled (or (= [0 0] @lon-lat)
                            (= "" @md-datetime-local)
                            (empty? @!/md-available-dates))
-             :on-click #(initiate-match-drop! @display-name @lon-lat @md-datetime-local @forecast-weather? user-email @fuel-version)}
+             :on-click #(initiate-match-drop! @display-name @lon-lat @md-datetime-local @forecast-weather? user-email @fuel-version @model)}
     "Submit"]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -351,6 +378,7 @@
                md-datetime-local (r/atom (u-time/get-current-local-datetime-string)) ; Default to the current date/time
                local-time-zone   (r/atom (u-time/get-time-zone (js/Date. @md-datetime-local))) ; Default to the user's current time zone
                fuel-version      (r/atom c/default-fuel-version)
+               model             (r/atom "landfire")
                click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %))
                                                                     {:coord-fn clamp-to-fuel-extent})
                move-event        (mb/add-mouse-move-xy!
@@ -358,6 +386,15 @@
                                            (point-within-fuel-extent? %)))
                _                 (set-md-available-dates!)
                _                 (draw-fuel-boundary! @fuel-version)
+               ;; CAWFE has no historical path, so switching to it puts the picker
+               ;; back on forecast weather rather than letting the server reject it.
+               _                 (add-watch model ::forecast-only
+                                            (fn [_ _ _ new-model]
+                                              (when (and (= "cawfe" new-model)
+                                                         (not @forecast-weather?))
+                                                (reset! forecast-weather? true)
+                                                (reset! md-datetime-local (u-time/get-current-local-datetime-string))
+                                                (reset-local-time-zone! local-time-zone @md-datetime-local))))
                _                 (add-watch fuel-version ::fuel-boundary
                                             (fn [_ _ old-v new-v]
                                               (when (not= old-v new-v)
@@ -381,11 +418,14 @@
          [:div {:style {:flex "1 1 0" :min-height 0 :font-size "0.9rem" :padding "0.5rem 1rem" :overflow-y "auto"}}
 
           [:div {:style {:font-size "0.85rem" :margin "0.5rem 0"}}
-           match-drop-instructions]
+           (if (= "cawfe" @model) cawfe-instructions landfire-instructions)]
           [:hr {:style {:background "white"}}]
           [labeled-input "Fire Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Ignition Location:" @lon-lat]
-          [fuel-version-select fuel-version]
+          [model-radio-buttons model]
+          ;; CAWFE takes its fuels from the sig3 network defaults, so there is no version to pick.
+          (when-not (= "cawfe" @model)
+            [fuel-version-select fuel-version])
           [:hr {:style {:background "white"}}]
           (cond
             (nil? @!/md-available-dates)
@@ -399,16 +439,20 @@
 
             (seq @!/md-available-dates)
             [:<>
-             [weather-info forecast-weather?]
-             [weather-radio-buttons forecast-weather? md-datetime-local local-time-zone]
+             ;; CAWFE resolves the NAM forecast, so historical weather is not on offer.
+             (when-not (= "cawfe" @model)
+               [:<>
+                [weather-info forecast-weather?]
+                [weather-radio-buttons forecast-weather? md-datetime-local local-time-zone]])
              [datetime-local-picker forecast-weather? md-datetime-local local-time-zone]])
-          [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-email fuel-version]]])]]
+          [md-buttons md-datetime-local forecast-weather? display-name lon-lat user-email fuel-version model]]])]]
     (finally
       (mb/remove-markers!)
       (mb/remove-event! click-event)
       (mb/remove-event! move-event)
       (reset! fuel-extent-bbox nil)
       (reset! !/cursor-within-fuel-bounds? nil)
+      (remove-watch model ::forecast-only)
       (remove-watch fuel-version ::fuel-boundary)
       (remove-watch fuel-extent-bbox ::clamp-point)
       (when (mb/layer-exists? fuel-boundary-layer-id)
