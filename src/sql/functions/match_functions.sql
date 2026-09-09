@@ -18,7 +18,8 @@ CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
     dps_request         text,
     elmfire_request     text,
     geosync_request     text,
-    geoserver_workspace text
+    geoserver_workspace text,
+    model               text
  ) AS $$
 
     SELECT match_job_uid,
@@ -35,7 +36,8 @@ CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
         dps_request::text,
         elmfire_request::text,
         geosync_request::text,
-        geoserver_workspace
+        geoserver_workspace,
+        model
     FROM match_jobs
     WHERE match_job_uid = _match_job_id
 
@@ -58,7 +60,8 @@ CREATE OR REPLACE FUNCTION get_match_job_by_uuid(_match_job_uuid uuid)
     dps_request         text,
     elmfire_request     text,
     geosync_request     text,
-    geoserver_workspace text
+    geoserver_workspace text,
+    model               text
  ) AS $$
 
     SELECT match_job_uid,
@@ -75,7 +78,8 @@ CREATE OR REPLACE FUNCTION get_match_job_by_uuid(_match_job_uuid uuid)
         dps_request::text,
         elmfire_request::text,
         geosync_request::text,
-        geoserver_workspace
+        geoserver_workspace,
+        model
     FROM match_jobs
     WHERE match_job_uuid = _match_job_uuid
 
@@ -100,7 +104,8 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
     dps_request         text,
     elmfire_request     text,
     geosync_request     text,
-    geoserver_workspace text
+    geoserver_workspace text,
+    model               text
  ) AS $$
 
     SELECT match_job_uuid,
@@ -116,7 +121,8 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
         dps_request::text,
         elmfire_request::text,
         geosync_request::text,
-        geoserver_workspace
+        geoserver_workspace,
+        model
     FROM match_jobs
     WHERE user_rid = _user_id
 
@@ -186,7 +192,8 @@ CREATE OR REPLACE FUNCTION update_match_job(
     _elmfire_request     text,
     _gridfire_request    text,
     _geosync_request     text,
-    _geoserver_workspace text
+    _geoserver_workspace text,
+    _model               text
  ) RETURNS void AS $$
 
     UPDATE match_jobs
@@ -202,7 +209,8 @@ CREATE OR REPLACE FUNCTION update_match_job(
         gridfire_request = coalesce(_gridfire_request::jsonb, gridfire_request),
         geosync_request = coalesce(_geosync_request::jsonb, geosync_request),
         updated_at = now(),
-        geoserver_workspace = coalesce(_geoserver_workspace, geoserver_workspace)
+        geoserver_workspace = coalesce(_geoserver_workspace, geoserver_workspace),
+        model = coalesce(_model, model)
     WHERE match_job_uid = _match_job_id
 
 $$ LANGUAGE SQL;

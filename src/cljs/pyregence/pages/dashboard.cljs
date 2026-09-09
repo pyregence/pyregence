@@ -107,19 +107,24 @@
                                 created-at
                                 updated-at
                                 dps-request
+                                model
                                 job-log]}]
   (let [common-args   (get-in dps-request [:script-args :common-args])
-        ;; WORKAROUND for sig3 requests
+        ;; WORKAROUND for sig3 requests. CAWFE arguments are flat, the others nested.
         lon           (or (:lon common-args)
-                          (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lon]))
+                          (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lon])
+                          (:center_lon_deg dps-request))
         lat           (or (:lat common-args)
-                          (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lat]))
+                          (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lat])
+                          (:center_lat_deg dps-request))
         ignition-time (or (:ignition-time common-args)
-                          (some-> (get-in dps-request [:pyrc_ignition :pyrc_ignition_epoch_s])
+                          (some-> (or (get-in dps-request [:pyrc_ignition :pyrc_ignition_epoch_s])
+                                      (:pyrc_ignition_epoch_s dps-request))
                                   (u-time/epoch-s->utc-date)))]
     [:tr
      [:td (str match-job-unique-id)] ; "Job ID"
      [:td {:width "10%"} (when-not (nil? display-name) display-name)] ; "Fire Name"
+     [:td (if (= "cawfe" model) "CAWFE" "LANDFIRE")] ; "Model"
      [:td ; "Match Drop Status"
       (case md-status
         0 "Completed!"
@@ -158,6 +163,7 @@
   [:table {:class (<class $table) :style {:width "100%"}}
    [thead ["Job ID"
            "Fire Name"
+           "Model"
            "Status"
            "Message"
            "Lon, Lat"
