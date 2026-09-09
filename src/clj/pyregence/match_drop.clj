@@ -186,8 +186,8 @@
 (defn- count-all-running-match-drops []
   (sql-primitive (call-sql "count_all_running_match_jobs")))
 
-(defn- count-running-user-match-jobs [user-id]
-  (sql-primitive (call-sql "count_running_user_match_jobs" user-id)))
+(defn- count-running-user-match-jobs [user-id model]
+  (sql-primitive (call-sql "count_running_user_match_jobs" user-id model)))
 
 (defn- initialize-match-job!
   "Inserts the job row and returns {:match-job-id .. :org-id ..}. The org is derived
@@ -496,8 +496,8 @@
                 (and extent (not (point-within-extent? lon lat extent)))))
          {:error (str "The ignition point is outside the geographic boundary of LANDFIRE " fuel-version ". Please select a different fuel version or location.")}
 
-         (pos? (count-running-user-match-jobs user-id))
-         {:error "Match drop is already running. Please wait until it has completed."}
+         (pos? (count-running-user-match-jobs user-id model))
+         {:error (str "A " (str/upper-case model) " match drop is already running. Please wait until it has completed.")}
 
          (<= (get-md-config :max-queue-size) (count-all-running-match-drops))
          {:error "The queue is currently full. Please try again later."}

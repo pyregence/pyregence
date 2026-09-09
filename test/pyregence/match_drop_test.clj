@@ -5,8 +5,11 @@
    [pyregence.match-drop :refer [calculate-transitions
                                  cawfe-match-drop-args->body
                                  cawfe-sim-hours
+                                 initiate-md!
                                  landfire-match-drop-args->body
-                                 model->polling-steps]]))
+                                 model->polling-steps]]
+   [triangulum.config]
+   [triangulum.database]))
 
 (def match-job-id 42)
 
@@ -169,3 +172,50 @@
           result    (calculate-transitions state job-state match-job-id)]
       (is (= ["pending" "success"] (mapv #(nth % 2) result)))
       (is (every? #(= "cawfe-simulation-task" (nth % 1)) result)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Per-model concurrency guard
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- initiate-md-with-running!
+  "Runs `initiate-md!` against stubbed config and SQL. `running` maps a model to
+   how many of that user's jobs are currently in progress. Returns
+   `{:sql-calls [...] :body <response body>}`."
+  [running params]
+  (let [sql-calls (atom [])]
+    (with-redefs [triangulum.config/get-config
+                  (fn [& ks]
+                    (case (vec ks)
+                      [:triangulum.views/client-keys :features :match-drop]  true
+                      [:pyregence.match-drop/match-drop :max-queue-size]     5
+                      nil))
+
+                  triangulum.database/call-sql
+                  (fn [f & args]
+                    (swap! sql-calls conj (vec (cons f args)))
+                    (case f
+                      "count_running_user_match_jobs" [{:count (get running (second args) 0)}]
+                      "count_all_running_match_jobs"  [{:count 0}]
+                      nil))
+
+                  pyregence.match-drop/create-match-job!
+                  (fn [p] {:started (:model p)})]
+      (let [body (:body (initiate-md! {:user-id 1 :match-drop-access? true} params))]
+        {:sql-calls @sql-calls
+         :body      body}))))
+
+(deftest running-job-guard-is-scoped-to-the-model
+  (testing "a running LANDFIRE job does not block a CAWFE run"
+    (let [{:keys [sql-calls body]} (initiate-md-with-running!
+                                    {"landfire" 1}
+                                    (assoc md-params :model "cawfe"))]
+      (is (some #{["count_running_user_match_jobs" 1 "cawfe"]} sql-calls)
+          "the running count is asked for per model")
+      (is (str/includes? (str body) "cawfe")))))
+
+(deftest running-job-guard-blocks-the-same-model
+  (testing "a second CAWFE run is refused while one is in progress"
+    (let [{:keys [body]} (initiate-md-with-running!
+                          {"cawfe" 1}
+                          (assoc md-params :model "cawfe"))]
+      (is (str/includes? (str body) "already running")))))
