@@ -128,14 +128,17 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
 
 $$ LANGUAGE SQL;
 
--- Retrieve count of running match drop jobs associated with user_rid
-CREATE OR REPLACE FUNCTION count_running_user_match_jobs(_user_id integer)
+-- Retrieve count of the user's running match drop jobs for one model.
+-- Scoped by model so a slow CAWFE run does not block a LANDFIRE one (PYR1-1097).
+-- Rows predating the model column were backfilled to 'landfire' by the ALTER.
+CREATE OR REPLACE FUNCTION count_running_user_match_jobs(_user_id integer, _model text)
  RETURNS integer AS $$
 
     SELECT count(*)::integer
     FROM match_jobs
     WHERE user_rid = _user_id
         AND md_status = 2
+        AND coalesce(model, 'landfire') = _model
         AND updated_at > now() - interval '1 hour'
 
 $$ LANGUAGE SQL;
