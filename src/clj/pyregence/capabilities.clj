@@ -31,8 +31,14 @@
 
 ;;; Helper Functions
 
-(defn java-date-from-string [date-str]
-  (.parse (java.text.SimpleDateFormat. "yyyyMMdd_HHmmss") date-str))
+(defn java-date-from-string
+  "Parses a layer's `yyyyMMdd_HHmmss` stamp. GeoServer writes these in UTC, so parse them
+   that way: on a server in a DST-observing zone the default would make `:hour` an hour out
+   for any forecast whose window crosses a transition."
+  [date-str]
+  (.parse (doto (java.text.SimpleDateFormat. "yyyyMMdd_HHmmss")
+            (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))
+          date-str))
 
 (defn layers-exist?
   "Based on a given GeoServer key and workspace, checks to see if any layers
