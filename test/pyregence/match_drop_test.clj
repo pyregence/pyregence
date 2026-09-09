@@ -5,9 +5,11 @@
    [pyregence.match-drop :refer [calculate-transitions
                                  cawfe-match-drop-args->body
                                  cawfe-sim-hours
+                                 default-cawfe-artefacts-dir
                                  initiate-md!
                                  landfire-match-drop-args->body
                                  model->polling-steps]]
+   [clj-http.client]
    [triangulum.config]
    [triangulum.database]))
 
@@ -219,3 +221,53 @@
                           {"cawfe" 1}
                           (assoc md-params :model "cawfe"))]
       (is (str/includes? (str body) "already running")))))
+
+(deftest cawfe-artefacts-dir-falls-back-to-a-default
+  (testing "an unset :cawfe-artefacts-dir must not submit a nil storage path"
+    (let [{:keys [arguments]} (cawfe-match-drop-args->body 42 md-params {:sig3-env "dev"})]
+      (is (= default-cawfe-artefacts-dir (:cawfe_artefacts_dir arguments)))
+      (is (string? (:cawfe_artefacts_dir arguments))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Failed submit handling
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deftest failed-submit-marks-the-job-as-errored
+  (testing "a sig3 rejection records the error instead of leaving a blank row"
+    (let [sql-calls (atom [])
+          job-uuid  #uuid "00000000-0000-0000-0000-0000000000ff"]
+      (with-redefs [triangulum.config/get-config
+                    (fn [& ks]
+                      (case (vec ks)
+                        [:triangulum.views/client-keys :features :match-drop]    true
+                        [:triangulum.views/client-keys :features :sig3-endpoint] "http://sig3.test"
+                        [:pyregence.match-drop/match-drop :max-queue-size]       5
+                        nil))
+
+                    triangulum.database/call-sql
+                    (fn [f & args]
+                      (swap! sql-calls conj (vec (cons f args)))
+                      (case f
+                        "count_running_user_match_jobs" [{:count 0}]
+                        "count_all_running_match_jobs"  [{:count 0}]
+                        ;; main returns the row and renames its columns, rather than a bare id
+                        "initialize_match_job"          [{:match_job_id 7 :org_id 3}]
+                        "get_match_job"                 [{:match_job_id 7 :match_job_uuid job-uuid}]
+                        nil))
+
+                    clj-http.client/post
+                    (fn [_ _]
+                      (throw (ex-info "clj-http: status 500"
+                                      {:status 500
+                                       :body   "{\"error\":\"Network 'cawfe-match-drop' not found.\"}"})))]
+
+        (let [body    (:body (initiate-md! {:user-id 1 :match-drop-access? true}
+                                           (assoc md-params :model "cawfe")))
+              updates (filter #(= "update_match_job" (first %)) @sql-calls)]
+          (is (= 1 (count updates)) "the failure is written back to the job")
+          (let [[_ _ _ md-status _ message] (first updates)]
+            (is (= 1 md-status) "md-status 1 is Error")
+            (is (str/includes? (str message) "cawfe-match-drop")
+                "the sig3 error reaches the message"))
+          (is (str/includes? (str body) (str job-uuid))
+              "the browser still gets a job id to poll"))))))

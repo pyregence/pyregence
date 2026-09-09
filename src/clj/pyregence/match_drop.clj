@@ -40,6 +40,11 @@
 
 (def default-md-model "landfire")
 
+(def default-cawfe-artefacts-dir
+  "Fallback for an unset :cawfe-artefacts-dir. sig3 specs it as a non-empty storage
+   path, so submitting nil fails the run before anything is recorded."
+  "s3://owo/cawfe/match-drop/artefacts")
+
 (def cawfe-sim-hours
   "How far past ignition a CAWFE run simulates. CAWFE is roughly 6x faster than
    reality, so this is also the ceiling on how long a run occupies the queue."
@@ -299,7 +304,7 @@
      :arguments {:env                   sig3-env
                  :cawfe_run_id          fire-name
                  :geoserver-workspace   (geoserver-workspace-for fire-name model-time)
-                 :cawfe_artefacts_dir   cawfe-artefacts-dir
+                 :cawfe_artefacts_dir   (or cawfe-artefacts-dir default-cawfe-artefacts-dir)
                  :pyrc_ignition_lat     lat
                  :pyrc_ignition_lon     lon
                  :center_lat_deg        lat
@@ -425,31 +430,49 @@
                                         :md-status    1
                                         :message      (str "Match Drop #" match-job-id " timed out.")}))})))
 
+(defn- submit-failure-message
+  "sig3 answers a bad request with the reason in the body, but clj-http's own
+   message is only \"status 500\", so surface the body too."
+  [e]
+  (str "Could not start the Match Drop. " (:body (ex-data e) (ex-message e))))
+
 (defn- create-match-job-using-kubernetes!
   [{:keys [user-id display-name model] :as params} sig3-endpoint]
-  (let [{:keys [match-job-id org-id]}      (initialize-match-job! user-id)
-        params                             (assoc params :org-id org-id)
-        {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3-endpoint match-job-id)
-        {:keys [geoserver-workspace]}      match-drop-inputs]
-    (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
-                        :md-status           2
-                        :message             "Match Drop initiated from Pyrecast."
-                        :elmfire-done?       false
-                        :dps-request         match-drop-inputs
-                        :elmfire-request     {}
-                        :geosync-request     {}
-                        :match-job-id        match-job-id
-                        :sig3-job-id         job-id
-                        :model               model
-                        :geoserver-workspace geoserver-workspace})
-    (start-polling-results! sig3-endpoint job-id match-job-id model)
-    ;; Return the unpredictable public id as the browser's handle for this job.
-    ;; NOTE: the sequential PK is still indirectly exposed through
-    ;; geoserver-workspace (named "match-drop-forecast_md-<pk>_..."), which
-    ;; get-md-status/get-match-drops return. That leak is owner-scoped and only
-    ;; reveals system job volume -- accepted as low severity (PYR1-1512); a full
-    ;; fix means renaming the sig3/GeoServer workspace, out of scope here.
-    {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}))
+  (let [{:keys [match-job-id org-id]} (initialize-match-job! user-id)
+        params                        (assoc params :org-id org-id)
+        ;; Return the unpredictable public id as the browser's handle for this job.
+        ;; NOTE: the sequential PK is still indirectly exposed through
+        ;; geoserver-workspace (named "match-drop-forecast_md-<pk>_..."), which
+        ;; get-md-status/get-match-drops return. That leak is owner-scoped and only
+        ;; reveals system job volume -- accepted as low severity (PYR1-1512); a full
+        ;; fix means renaming the sig3/GeoServer workspace, out of scope here.
+        public-id                     {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}]
+    (try
+      (let [{:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3-endpoint match-job-id)
+            {:keys [geoserver-workspace]}      match-drop-inputs]
+        (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
+                            :md-status           2
+                            :message             "Match Drop initiated from Pyrecast."
+                            :elmfire-done?       false
+                            :dps-request         match-drop-inputs
+                            :elmfire-request     {}
+                            :geosync-request     {}
+                            :match-job-id        match-job-id
+                            :sig3-job-id         job-id
+                            :model               model
+                            :geoserver-workspace geoserver-workspace})
+        (start-polling-results! sig3-endpoint job-id match-job-id model)
+        public-id)
+      ;; Without this the row stays blank and In-Progress forever, and the browser
+      ;; polls a job it can never see finish.
+      (catch Exception e
+        (log-str "ERROR submitting match-drop match-job-id=" match-job-id ": " (ex-message e))
+        (update-match-job! {:match-job-id  match-job-id
+                            :md-status     1
+                            :display-name  (or display-name (str "Match Drop " match-job-id))
+                            :model         model
+                            :message       (submit-failure-message e)})
+        public-id))))
 
 (defn- create-match-job!
   [{:keys [user-id] :as params}]
