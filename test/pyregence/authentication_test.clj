@@ -5,6 +5,7 @@
    locked-out paths a database-backed test cannot."
   (:require [clojure.test             :refer [deftest is testing use-fixtures]]
             [pyregence.authentication :as authentication]
+            [pyregence.clock          :as clock]
             [pyregence.marketplace    :as marketplace]
             [pyregence.session        :as session]
             [pyregence.throttle       :as throttle]
@@ -51,6 +52,7 @@
   ;; `get-config` answers nil rather than an empty map, because a map is truthy and the configured
   ;; timeouts multiply what it returns.
   (fn [run]
+    (clock/install! (clock/->SystemClock))
     (reset! throttle/attempts {})
     (with-redefs [database/call-sql            fake-call-sql
                   config/get-config            (fn [& _] nil)
