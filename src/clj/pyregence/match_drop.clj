@@ -506,6 +506,9 @@
          (not (valid-md-models model))
          {:error (str "Invalid model: " model ". Valid models are: " (str/join ", " (sort valid-md-models)))}
 
+         (and cawfe? (not (get-config :triangulum.views/client-keys :features :cawfe)))
+         {:error "The CAWFE model is currently disabled. Please contact your system administrator to enable it."}
+
          ;; CAWFE resolves its weather from the NAM forecast, so there is no historical path.
          (and cawfe? (= "historical" wx-type))
          {:error "CAWFE only supports forecast weather. Please select a forecast fire or a different model."}

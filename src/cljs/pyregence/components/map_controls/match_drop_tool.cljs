@@ -422,7 +422,8 @@
           [:hr {:style {:background "white"}}]
           [labeled-input "Fire Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Ignition Location:" @lon-lat]
-          [model-radio-buttons model]
+          (when (c/feature-enabled? :cawfe)
+            [model-radio-buttons model])
           ;; CAWFE takes its fuels from the sig3 network defaults, so there is no version to pick.
           (when-not (= "cawfe" @model)
             [fuel-version-select fuel-version])
