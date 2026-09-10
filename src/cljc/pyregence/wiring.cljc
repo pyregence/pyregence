@@ -5,7 +5,8 @@
    `composition/` puts the arrow the wrong way round -- an archetype sits below
    composition and would have to import upward to reach it -- and leaves a
    reader two addresses for one decision."
-  #?@(:cljs [(:require [pyregence.archetypes.directory.over-the-wire :as arch.directory.over-the-wire])
+  #?@(:cljs [(:require [pyregence.archetypes.directory.over-the-wire :as arch.directory.over-the-wire]
+                       [pyregence.archetypes.session-activity.local-storage :as arch.session-activity.local-storage])
              (:require-macros [pyregence.wiring])]))
 
 (defprotocol IWiring
@@ -16,7 +17,10 @@
 
    Each row's arguments after the wiring are the concept's dependency set."
   (-directory [wiring a-session]
-    "The directory answering for A-SESSION."))
+    "The directory answering for A-SESSION.")
+
+  (-session-activity [wiring]
+    "The activity shared by every tab in this browser session."))
 
 #?(:cljs
    ;; No fields: nothing is assembled here, so there is nothing to hold. Which
@@ -24,7 +28,10 @@
    (defrecord BrowserWiring []
      IWiring
      (-directory [_ a-session]
-       (arch.directory.over-the-wire/Directory a-session))))
+       (arch.directory.over-the-wire/Directory a-session))
+
+     (-session-activity [_]
+       (arch.session-activity.local-storage/SessionActivity))))
 
 (def ^:dynamic *wiring*
   "Nil outside a composition, deliberately: an archetype asked without one

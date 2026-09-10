@@ -15,6 +15,7 @@
             [triangulum.handler  :as    handler :refer [development-app]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.response :refer [data-response]]
+            [triangulum.utils    :refer [resolve-foreign-symbol]]
             [triangulum.views    :as    views]
             [triangulum.worker   :refer [start-workers!]]))
 
@@ -260,6 +261,25 @@
   [response]
   (= 403 (:status response)))
 
+(defn- request-auth-type
+  "The authorization the route named by REQUEST requires.
+
+   Triangulum knows this while routing but does not expose the matched route to
+   a wrapper. Read the same configured tables here rather than infer the route
+   from its response: a route's own handler may answer 403 too, and that answer
+   is not an authentication refusal."
+  [{:keys [request-method uri]}]
+  (->> (get-config :triangulum.handler/routing-tables)
+       (map (comp deref resolve-foreign-symbol))
+       (apply merge)
+       (#(get % [request-method uri]))
+       (:auth-type)))
+
+(defn- session-gated?
+  "Whether REQUEST names a route whose authorization consults the session."
+  [request]
+  (requires-live-session? (request-auth-type request)))
+
 (defn- explaining-the-ended-session
   "The same refusal, re-answered with the reason. 401 rather than 403 because
    that is what actually went wrong: not \"you may not\" but \"I no longer know
@@ -286,6 +306,7 @@
   [request]
   (let [response (handler/authenticated-routing-handler request)]
     (if (and (refused? response)
+             (session-gated? request)
              (session-ended? request))
       (explaining-the-ended-session)
       response)))
@@ -294,16 +315,22 @@
 (comment
   ;; Invalidation lookup stubbed to 0 = never, isolating the timeout path.
   (with-redefs [call-sql (fn [& _] [{:get_user_session_invalidated_at 0}])]
-    (let [now      (System/currentTimeMillis)
-          refused  (fn [_] {:status 403 :body "Forbidden"})
-          reason   (fn [session]
-                     (with-redefs [handler/authenticated-routing-handler refused]
-                       (:status (authenticated-routing-handler {:session session}))))]
-      ;; idled out; live but refused on role; never logged in at all
-      [(reason {:user-id 1 :created-at now :last-active (- now 1000000)})
-       (reason {:user-id 1 :created-at now :last-active now})
-       (reason {})]))
-  ;=> [401 403 403]
+    (let [now       (System/currentTimeMillis)
+          fresh     {:user-id 1 :created-at now :last-active now}
+          window-ms (* 60000 (:idle-timeout-min (session/as-a-page-may-see-it fresh)))
+          idled     (assoc fresh :last-active (- now (inc window-ms)))
+          refused   (fn [_] {:status 403 :body "Forbidden"})
+          reason    (fn [uri session]
+                      (with-redefs [handler/authenticated-routing-handler refused]
+                        (:status (authenticated-routing-handler
+                                  {:request-method :post :uri uri :session session}))))]
+      ;; idled out on a session route; live but refused on role; never logged in;
+      ;; and idled out on log-in, whose own bad-credentials 403 must survive.
+      [(reason "/clj/note-activity" idled)
+       (reason "/clj/note-activity" fresh)
+       (reason "/clj/note-activity" {})
+       (reason "/clj/log-in" idled)]))
+  ;=> [401 403 403 403]
 
   ;; A response that was not a refusal is passed through untouched, however dead
   ;; the session -- this explains refusals, it does not manufacture them.
@@ -311,7 +338,9 @@
     (let [now (System/currentTimeMillis)]
       (with-redefs [handler/authenticated-routing-handler (fn [_] {:status 200 :body "fine"})]
         (authenticated-routing-handler
-         {:session {:user-id 1 :created-at now :last-active (- now 1000000)}}))))
+         {:request-method :post
+          :uri            "/clj/note-activity"
+          :session        {:user-id 1 :created-at now}}))))
   ;=> {:status 200 :body "fine"}
   )
 

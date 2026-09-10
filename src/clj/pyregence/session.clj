@@ -285,23 +285,26 @@
   ;; Liveness, not the presence of a :user-id: a stale cookie carries one forever,
   ;; and a page that reads it claims a session every gated route is refusing.
   (with-redefs [call-sql (fn [& _] [{:get_user_session_invalidated_at 0}])]
-    (let [now   (System/currentTimeMillis)
-          fresh {:user-id 1 :organization-id 7 :created-at now :last-active now}]
+    (let [now           (System/currentTimeMillis)
+          fresh         {:user-id 1 :organization-id 7 :created-at now :last-active now}
+          idle-past     (inc (timeout-ms :pyregence.auth/idle-timeout-min default-idle-timeout-min))
+          absolute-past (inc (timeout-ms :pyregence.auth/absolute-timeout-min default-absolute-timeout-min))]
       (mapv (comp :logged-in? as-a-page-may-see-it)
-            [fresh                                        ; fresh
-             (assoc fresh :last-active (- now 1000000))   ; idle past the window
-             (assoc fresh :created-at  (- now 30000000))  ; past the absolute cap
-             {}])))                                       ; never logged in
+            [fresh
+             (assoc fresh :last-active (- now idle-past))
+             (assoc fresh :created-at (- now absolute-past))
+             {}])))
   ;=> [true false false false]
 
   ;; Somebody with no session is told no window: there is nothing for them to be
   ;; early for, and a number they must not act on is a number the page then has
   ;; to be told to ignore.
   (with-redefs [call-sql (fn [& _] [{:get_user_session_invalidated_at 0}])]
-    (let [now (System/currentTimeMillis)]
+    (let [now       (System/currentTimeMillis)
+          idle-past (inc (timeout-ms :pyregence.auth/idle-timeout-min default-idle-timeout-min))]
       (mapv (comp some? :idle-timeout-min as-a-page-may-see-it)
             [{:user-id 1 :created-at now :last-active now}
-             {:user-id 1 :created-at now :last-active (- now 1000000)}
+             {:user-id 1 :created-at now :last-active (- now idle-past)}
              {}])))
   ;=> [true false false]
 
@@ -317,10 +320,11 @@
 
   ;; `ended?` is not `live?` negated: a caller who never had a session is neither.
   (with-redefs [call-sql (fn [& _] [{:get_user_session_invalidated_at 0}])]
-    (let [now (System/currentTimeMillis)]
+    (let [now       (System/currentTimeMillis)
+          idle-past (inc (timeout-ms :pyregence.auth/idle-timeout-min default-idle-timeout-min))]
       ;; anonymous, fresh, then idled out
       [(ended? {})
        (ended? {:user-id 1 :created-at now :last-active now})
-       (ended? {:user-id 1 :created-at now :last-active (- now 1000000)})]))
+       (ended? {:user-id 1 :created-at now :last-active (- now idle-past)})]))
   ;=> [false false true]
   )

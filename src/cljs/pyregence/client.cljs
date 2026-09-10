@@ -21,6 +21,7 @@
             [pyregence.pages.verify-2fa         :as verify-2fa]
             [pyregence.pages.verify-email       :as verify-email]
             [pyregence.archetypes.directory     :refer [=>Directory]]
+            [pyregence.archetypes.session-activity :refer [=>SessionActivity]]
             [pyregence.clock                    :as clock]
             [pyregence.datatypes.idle-window    :as idle-window]
             [pyregence.datatypes.session        :as session]
@@ -97,19 +98,21 @@
       ;; from. Installed before anything is rendered, because a component that
       ;; reads the clock during its first mount would otherwise find none.
       (clock/install! (clock/->SystemClock))
-      ;; PYR1-1623: watch the session for the moment it goes quiet too long. The
-      ;; window is PyreCast's own, reported with the page and only to somebody
-      ;; who has a session to lose -- so an anonymous visitor arrives here with
-      ;; nothing, `->idle-window` answers nothing, and `watch!` declines to
-      ;; watch. No test of who this is belongs at this end.
-      (session-watch/watch! (idle-window/->idle-window (:idle-timeout-min clj-session)))
       ;; The composition root, and the only one. Nothing below builds a
       ;; collaborator for itself or reaches for one: a page is handed what it
       ;; needs and speaks to it through its protocol. The wiring is in force for
       ;; the construction and for nothing else.
-      (render-root merged-params
-                   (wiring/with-wiring (wiring/->BrowserWiring)
-                     (=>Directory (session/->session (:user-role merged-params))))))))
+      (wiring/with-wiring (wiring/->BrowserWiring)
+        (let [an-activity (=>SessionActivity)
+              a-directory (=>Directory (session/->session (:user-role merged-params)))]
+          ;; Watch the session for the moment it goes quiet too long. The window
+          ;; is PyreCast's own, reported only to somebody with a session to lose;
+          ;; `->idle-window` answers nil for anybody else, and `watch!` declines
+          ;; to watch. Activity is shared across tabs by the chosen realization.
+          (session-watch/watch!
+           (idle-window/->idle-window (:idle-timeout-min clj-session))
+           an-activity)
+          (render-root merged-params a-directory))))))
 
 (defn- ^:after-load mount-root!
   "A hook for figwheel to call the init function again."
