@@ -1,44 +1,35 @@
 (ns pyregence.pages.account-settings
   (:require
-   [clojure.core.async                                  :refer [<! go]]
-   [clojure.edn                                         :as edn]
-   [pyregence.components.mapbox                         :as mb]
-   [pyregence.components.nav-bar                        :refer [nav-bar]]
-   [pyregence.components.settings.nav-bar               :refer [side-nav-bar-and-page]]
-   [pyregence.state                                     :as !]
-   [pyregence.utils.async-utils :as u-async]
-   [pyregence.utils.browser-utils :as u-browser]
-   [reagent.core :as r]))
+   [pyregence.api.directory               :as directory]
+   [pyregence.components.mapbox           :as mb]
+   [pyregence.components.nav-bar          :refer [nav-bar]]
+   [pyregence.components.settings.nav-bar :refer [side-nav-bar-and-page]]
+   [pyregence.datatypes.session           :as session]
+   [pyregence.datatypes.viewer            :as viewer]
+   [pyregence.state                       :as !]
+   [pyregence.utils.browser-utils         :as u-browser]))
 
-(def psps-orgs (r/atom nil))
+(defn- remeasure!
+  "Note how much room the page has now, and let the map catch up."
+  []
+  (u-browser/scroll-to-top!)
+  (reset! !/mobile? (u-browser/narrow-window?))
+  (u-browser/after-the-layout-settles! mb/resize-map!))
 
 (defn root-component
-  [{:keys [user-role]}]
-  (let [update-fn (fn [& _]
-                    (-> js/window (.scrollTo 0 0))
-                    (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))
-                    (js/setTimeout mb/resize-map! 50))]
-    (-> js/window (.addEventListener "touchend" update-fn))
-    (-> js/window (.addEventListener "resize"   update-fn))
-    (update-fn)
-    (go
-      ;; TODO This reset! and fetch logic is all to tell if the nav bar should
-      ;; fetch the psps zones, and do it in roughly the same way the other
-      ;; components.nav-bar are, and so it duplicates the logic in the
-      ;; initialize function of near-term-forecasts... which isn't great, but
-      ;; it's not clear how to share logic, or even if the original way is a good
-      ;; one or just bi-product of growing complexity and needs re-wiring.
-      (reset! psps-orgs
-
-                (into #{}
-                      (edn/read-string (:body (<! (u-async/call-clj-async! "get-psps-organizations"))))))
-      (reset! !/user-orgs-list (edn/read-string
-                                (:body
-                                 (<! (u-async/call-clj-async!
-                                      (if (#{"super_admin" "account_manager"} user-role)
-                                        "get-all-organizations"
-                                        "get-current-user-organization"))))))))
-  (fn [{:keys [user-role] :as m}]
+  [a-directory _]
+  (u-browser/when-the-window-changes-shape! remeasure!)
+  ;; Asked here and in near-term-forecast's initialize!, because each page loads
+  ;; on its own and the nav bar needs the answer to decide whether to offer the
+  ;; PSPS zones. Asked twice, not written twice: the routes, the role branch and
+  ;; the refusal all live behind the directory now.
+  ;;
+  ;; Nothing waits on it and nothing copies out of it. The directory holds what
+  ;; PyreCast said in reagent atoms, so reading it below is what makes this page
+  ;; re-render when the answer arrives -- and what PyreCast last said stays said
+  ;; until it says something else, which is the disappearance PYR1-1623 is about.
+  (directory/refresh! a-directory)
+  (fn [_ {:keys [user-role] :as m}]
     [:div
      {:style {:height         "100vh"
               :margin-bottom  "40px"
@@ -49,7 +40,7 @@
      [nav-bar {:logged-in?         true
                :mobile?            @!/mobile?
                :on-forecast-select #(u-browser/jump-to-url! (str "/?forecast=" (name %)))
-               :user-role          user-role
-               :psps-organizations @psps-orgs
-               :user-orgs-list     @!/user-orgs-list}]
+               :a-viewer           (viewer/->viewer (session/->session user-role)
+                                                    (directory/organizations   a-directory)
+                                                    (directory/psps-backed-ids a-directory))}]
      [side-nav-bar-and-page m]]))

@@ -32,7 +32,7 @@
  :triangulum.server/http-port  8080
  :triangulum.server/mode       "<prod/dev>"
  :triangulum.server/log-dir    "logs"
- :triangulum.server/handler    triangulum.handler/authenticated-routing-handler
+ :triangulum.server/handler    pyregence.handlers/authenticated-routing-handler
  :triangulum.server/nrepl      true
  :triangulum.server/nrepl-port 5555
 

@@ -52,13 +52,27 @@
            :production       {:jvm-opts   ["-XX:MaxRAMPercentage=90" "-XX:+PrintFlagsFinal"]}
            :rebel            {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
                               :main-opts  ["-m" "rebel-readline.main"]}
-           :server           {:main-opts  ["-m" "triangulum.server"]}
+           ;; Through pyregence.cli and not straight to triangulum.server: the
+           ;; cli namespace is the composition root, and a launch that skips it
+           ;; starts a PyreCast with no clock installed.
+           :server           {:main-opts  ["-m" "pyregence.cli" "server"]}
            :systemd          {:main-opts  ["-m" "triangulum.systemd"]}
            :test             {:extra-paths ["test"]
                               :extra-deps  {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
                               :main-opts   ["-m" "cognitect.test-runner"]
                               :exec-fn     cognitect.test-runner.api/test}
-           :rct-test         {:main-opts ["-e" "(require 'com.mjdowney.rich-comment-tests.test-runner) (let [{:keys [fail error]} (com.mjdowney.rich-comment-tests.test-runner/run-tests-in-file-tree! :dirs #{\"src\"})] (System/exit (if (pos? (+ (or fail 0) (or error 0))) 1 0)))"]}
+           ;; Runs PyreCast for the acceptance suite: the same server, on a clock
+           ;; that can be pushed forward. It enters through a composition root of
+           ;; its own, which is what builds the advanceable clock -- adding
+           ;; test-support to the classpath and entering through the root that
+           ;; needs it happen together, here and nowhere else. Never used by
+           ;; `bb prod`, `bb deploy`, or :build-uberjar.
+           :acceptance       {:extra-paths ["test-support"]
+                              :main-opts   ["-m" "pyregence.test-support.acceptance-main" "server" "start"]}
+           ;; Through a root of its own: the rct blocks exercise production
+           ;; namespaces, and some of them read the clock.
+           :rct-test         {:extra-paths ["test"]
+                              :main-opts   ["-m" "pyregence.rct-runner"]}
            :clj-watson       {:replace-deps
                               {io.github.clj-holmes/clj-watson
                                {:git/tag "v6.0.1" :git/sha "b520351"}}
