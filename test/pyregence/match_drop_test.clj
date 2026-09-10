@@ -189,6 +189,7 @@
                   (fn [& ks]
                     (case (vec ks)
                       [:triangulum.views/client-keys :features :match-drop]  true
+                      [:triangulum.views/client-keys :features :cawfe]       true
                       [:pyregence.match-drop/match-drop :max-queue-size]     5
                       nil))
 
@@ -240,6 +241,7 @@
                     (fn [& ks]
                       (case (vec ks)
                         [:triangulum.views/client-keys :features :match-drop]    true
+                        [:triangulum.views/client-keys :features :cawfe]         true
                         [:triangulum.views/client-keys :features :sig3-endpoint] "http://sig3.test"
                         [:pyregence.match-drop/match-drop :max-queue-size]       5
                         nil))
@@ -271,3 +273,44 @@
                 "the sig3 error reaches the message"))
           (is (str/includes? (str body) (str job-uuid))
               "the browser still gets a job id to poll"))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; :cawfe feature flag
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- initiate-md-with-cawfe-flag!
+  "Runs `initiate-md!` with the `:cawfe` feature flag set to `flag`."
+  [flag params]
+  (with-redefs [triangulum.config/get-config
+                (fn [& ks]
+                  (case (vec ks)
+                    [:triangulum.views/client-keys :features :match-drop] true
+                    [:triangulum.views/client-keys :features :cawfe]      flag
+                    [:pyregence.match-drop/match-drop :max-queue-size]    5
+                    nil))
+
+                triangulum.database/call-sql
+                (fn [f & _]
+                  (case f
+                    "count_running_user_match_jobs" [{:count 0}]
+                    "count_all_running_match_jobs"  [{:count 0}]
+                    nil))
+
+                pyregence.match-drop/create-match-job!
+                (fn [p] {:started (:model p)})]
+    (:body (initiate-md! {:user-id 1 :match-drop-access? true} params))))
+
+(deftest cawfe-is-refused-when-the-flag-is-off
+  (testing "a CAWFE submit is rejected while :cawfe is disabled"
+    (let [body (initiate-md-with-cawfe-flag! false (assoc md-params :model "cawfe"))]
+      (is (str/includes? (str body) "disabled")))))
+
+(deftest landfire-still-runs-when-the-cawfe-flag-is-off
+  (testing "the flag only gates CAWFE"
+    (let [body (initiate-md-with-cawfe-flag! false (assoc md-params :model "landfire"))]
+      (is (= {:started "landfire"} body)))))
+
+(deftest cawfe-runs-when-the-flag-is-on
+  (testing "a CAWFE submit goes through while :cawfe is enabled"
+    (let [body (initiate-md-with-cawfe-flag! true (assoc md-params :model "cawfe"))]
+      (is (= {:started "cawfe"} body)))))

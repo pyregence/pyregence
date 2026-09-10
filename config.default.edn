@@ -97,6 +97,10 @@
                                      :auth-token                      "<changeme123456789>"
                                      :usage-terms-and-conditions-date "December 2, 2025"
                                      :features                        {:match-drop       true
+                                                                       ;; Gates the CAWFE model inside Match Drop. Off leaves the tool
+                                                                       ;; LANDFIRE-only: the model picker is hidden and the server
+                                                                       ;; refuses a CAWFE submit.
+                                                                       :cawfe            true
                                                                        :sig3-endpoint    "https://sig3.sig-gis-00.corespeq.com/"
                                                                        :fire-history     true
                                                                        :structures       true
