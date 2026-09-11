@@ -1,6 +1,7 @@
 (ns pyregence.components.map-controls.panel-dropdown
   (:require [pyregence.components.common    :refer [tool-tip-wrapper]]
             [pyregence.components.svg-icons :as svg]
+            [pyregence.config               :as c]
             [pyregence.styles               :as $]
             [pyregence.utils.dom-utils      :as u-dom]))
 
@@ -25,9 +26,9 @@
              :on-change #(call-back (u-dom/input-keyword %))}
     (->> options
          (remove (fn [[_ {:keys [hidden? opt-label]}]] (or hidden? (empty? opt-label))))
-         (map (fn [[key {:keys [opt-label enabled? disabled-for]}]]
+         (map (fn [[key {:as option :keys [opt-label enabled?]}]]
                 [:option {:key      key
                           :value    key
-                          :disabled (or (and (set? disabled-for) (some selected-param-set disabled-for))
+                          :disabled (or (c/option-unavailable? option (set selected-param-set))
                                         (and (fn? enabled?) (not (enabled?))))}
                  opt-label])))]])

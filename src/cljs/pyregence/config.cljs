@@ -106,6 +106,19 @@
   (get @!/feature-flags feature-name))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Option Availability
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn option-unavailable?
+  "Whether a param option is off-limits given the currently selected params.
+   `:disabled-for` blacklists, `:enabled-for` whitelists. The whitelist exists for options
+   that belong to one model alone, such as the placeholders standing in for the fuel source
+   and percentile that CAWFE does not have."
+  [{:keys [disabled-for enabled-for]} selected-set]
+  (boolean (or (and (set? disabled-for) (seq (set/intersection disabled-for selected-set)))
+               (and (set? enabled-for)  (empty? (set/intersection enabled-for selected-set))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
