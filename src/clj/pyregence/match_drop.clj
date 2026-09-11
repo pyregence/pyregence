@@ -167,6 +167,20 @@
       (rename-keys {:match_job_id :match-job-id
                     :org_id       :org-id})))
 
+^:rct/test
+(comment
+  ;; The billing fields in the sig3 payload come from this rename, so a column-name drift
+  ;; in initialize_match_job would send a null org rather than fail (PYR1-1668).
+  (with-redefs [call-sql (fn [& _] [{:match_job_id 42 :org_id 3}])]
+    (initialize-match-job! 7))
+  ;=> {:match-job-id 42 :org-id 3}
+
+  ;; A user with no organization: :org-id is present and nil, not missing.
+  (with-redefs [call-sql (fn [& _] [{:match_job_id 42 :org_id nil}])]
+    (initialize-match-job! 7))
+  ;=> {:match-job-id 42 :org-id nil}
+  )
+
 (defn- update-match-job!
   "Updates any of the properties of a match job based on a match-job-id (required).
    Any keys that are not provided will not be updated in the DB."
