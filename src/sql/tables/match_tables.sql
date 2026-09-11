@@ -22,7 +22,8 @@ CREATE TABLE match_jobs (
     elmfire_request     jsonb,
     gridfire_request    jsonb,
     geosync_request     jsonb,
-    geoserver_workspace text
+    geoserver_workspace text,
+    model               text DEFAULT 'standard'
 );
 
 CREATE INDEX CONCURRENTLY match_jobs_user_rid_index ON match_jobs (user_rid);

@@ -28,10 +28,46 @@
          [k (get-md-config k)])
        (into {})))
 
+(defn- cawfe-artefact-storage-configured?
+  "Whether this environment names the storage prefix for CAWFE run artifacts."
+  []
+  (not (str/blank? (get-md-config :cawfe-artefacts-dir))))
+
 (def valid-md-fuel-versions
   #{"2.5.0" "2.4.0" "2.3.0" "2.2.0" "2.1.0" "1.4.0" "1.3.0" "1.0.5"})
 
 (def default-fuel-version "2.5.0")
+
+(def valid-md-models
+  "\"standard\" runs ELMFIRE + Pyretechnics; \"cawfe\" runs the coupled
+   fire-atmosphere model. Each maps to its own sig3 network."
+  #{"standard" "cawfe"})
+
+(def default-md-model "standard")
+
+(def cawfe-sim-hours
+  "How far past ignition a CAWFE run simulates. CAWFE is roughly 6x faster than
+   reality, so this is also the ceiling on how long a run occupies the queue."
+  5)
+
+(def ^:private standard-polling-steps
+  {"mdrop-dps"          {"pending" false "success" false "failure" false "order" 1}
+   "mdrop-elmfire"      {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
+   "mdrop-pyretechnics" {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
+   "mdrop-geosync"      {"pending" false "success" false "failure" false "order" 3}})
+
+(def ^:private cawfe-polling-steps
+  {"resolve-weather-forecast"  {"pending" false "success" false "failure" false "order" 1}
+   "cawfe-compilation-task"    {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: these two run in parallel
+   "cawfe-preprocess-weather"  {"pending" false "success" false "failure" false "order" 2}
+   "cawfe-static-preproc-task" {"pending" false "success" false "failure" false "order" 3}
+   "cawfe-simulation-task"     {"pending" false "success" false "failure" false "order" 4}
+   "cawfe-geosync"             {"pending" false "success" false "failure" false "order" 5}})
+
+(defn model->polling-steps
+  "The sig3 node names to watch for a model, keyed by step name and seeded as unseen."
+  [model]
+  (if (= "cawfe" model) cawfe-polling-steps standard-polling-steps))
 
 (def ^:private conus-bounds
   {:min-x -125.0 :min-y 25.0 :max-x -66.0 :max-y 50.0})
@@ -155,8 +191,8 @@
 (defn- count-all-running-match-drops []
   (sql-primitive (call-sql "count_all_running_match_jobs")))
 
-(defn- count-running-user-match-jobs [user-id]
-  (sql-primitive (call-sql "count_running_user_match_jobs" user-id)))
+(defn- count-running-user-match-jobs [user-id model]
+  (sql-primitive (call-sql "count_running_user_match_jobs" user-id model)))
 
 (defn- initialize-match-job!
   "Inserts the job row and returns {:match-job-id .. :org-id ..}. The org is derived
@@ -193,7 +229,8 @@
            dps-request
            elmfire-request
            geosync-request
-           geoserver-workspace]}]
+           geoserver-workspace
+           model]}]
   {:pre [(some? match-job-id)]}
   (call-sql "update_match_job"
             match-job-id
@@ -207,7 +244,8 @@
             (when elmfire-request (clj->json elmfire-request))
             nil ; gridfire_request (unused, kept for SQL positional compat)
             (when geosync-request (clj->json geosync-request))
-            geoserver-workspace))
+            geoserver-workspace
+            model))
 
 ;;==============================================================================
 ;; Create Match Job Functions
@@ -220,7 +258,13 @@
     (/ (.toEpochMilli (.toInstant (.atZone dt  (ZoneId/of "UTC"))))
        1000)))
 
-(defn- match-drop-args->body
+(defn- geoserver-workspace-for
+  "The `:*-geosync` steps recover the fire name and model time by splitting this on
+   \"_\", so it has to stay exactly four parts."
+  [fire-name model-time]
+  (str "match-drop-forecast_" fire-name "_" model-time))
+
+(defn standard-match-drop-args->body
   [match-job-id
    {:keys [ignition-time lat lon wx-type fuel-version user-id org-id]}
    {:keys [sig3-env]}]
@@ -234,7 +278,7 @@
                  :pyrc_user_id         user-id
                  :pyrc_org_id          org-id
                  :pyrc_fire_name       fire-name
-                 :geoserver-workspace  (str "match-drop-forecast_" fire-name "_" model-time)
+                 :geoserver-workspace  (geoserver-workspace-for fire-name model-time)
                  :pyrc_simulation_span {:pyrc_simspan_center_lon    lon
                                         :pyrc_simspan_center_lat    lat
                                         :pyrc_simspan_start_epoch_s (utc-date->epoch-s wx-start-time)}
@@ -246,11 +290,39 @@
                                         :pyrc_fuel_version (or fuel-version default-fuel-version)}
                  :pyrc_sim_params      {:pyrc_sim_num_ensemble_members 200}}}))
 
+(defn cawfe-match-drop-args->body
+  "Baseline CAWFE request. The network's `:request-mapping` is a flat identity map,
+   so unlike the standard body these arguments are not nested. Fuels and topography
+   are left out on purpose: `cawfe-matchdrop.edn` defaults them to LANDFIRE 2025."
+  [match-job-id
+   {:keys [ignition-time lat lon]}
+   {:keys [sig3-env cawfe-artefacts-dir]}]
+  (let [model-time     (u/convert-date-string ignition-time)
+        fire-name      (str "md-" match-job-id)
+        ignition-epoch (utc-date->epoch-s ignition-time)]
+    {:network   :cawfe-match-drop
+     :arguments {:env                   sig3-env
+                 :cawfe_run_id          fire-name
+                 :geoserver-workspace   (geoserver-workspace-for fire-name model-time)
+                 :cawfe_artefacts_dir   cawfe-artefacts-dir
+                 :pyrc_ignition_lat     lat
+                 :pyrc_ignition_lon     lon
+                 :center_lat_deg        lat
+                 :center_lon_deg        lon
+                 :pyrc_ignition_epoch_s ignition-epoch
+                 :target_interval_end   (+ ignition-epoch (* cawfe-sim-hours 60 60))}}))
+
+(defn- match-drop-args->body
+  [model match-job-id params match-drop-config]
+  (if (= "cawfe" model)
+    (cawfe-match-drop-args->body match-job-id params match-drop-config)
+    (standard-match-drop-args->body match-job-id params match-drop-config)))
+
 (defn- submit-match-drop-job!
   "Requests a match-drop job from kubernetes"
-  [params sig3-endpoint match-job-id]
-  (let [match-drop-config                  (get-md-configs [:sig3-env])
-        request                            (match-drop-args->body match-job-id params match-drop-config)
+  [{:keys [model] :as params} sig3-endpoint match-job-id]
+  (let [match-drop-config                  (get-md-configs [:sig3-env :cawfe-artefacts-dir])
+        request                            (match-drop-args->body model match-job-id params match-drop-config)
         api-url                            (format "%s/api/submit-job" sig3-endpoint)
         http-request                       {:body         (json/write-str request)
                                             :headers      {"sig-auth" (get-md-config :sig3-auth)}
@@ -327,11 +399,8 @@
 
 ;; https://mikerowecode.com/2013/02/clojure-polling-function.html
 (defn- start-polling-results!
-  [sig3-endpoint job-id match-job-id]
-  (let [state (atom {"mdrop-dps"          {"pending" false "success" false "failure" false "order" 1}
-                     "mdrop-elmfire"      {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
-                     "mdrop-pyretechnics" {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
-                     "mdrop-geosync"      {"pending" false "success" false "failure" false "order" 3}})]
+  [sig3-endpoint job-id match-job-id model]
+  (let [state (atom (model->polling-steps model))]
     (poll-with-retries!
      {:poll-fn    (fn poll-and-record-transitions []
                     (let [job-state     (poll-job! sig3-endpoint job-id)
@@ -361,30 +430,49 @@
                                         :md-status    1
                                         :message      (str "Match Drop #" match-job-id " timed out.")}))})))
 
+(defn- submit-failure-message
+  "sig3 answers a bad request with the reason in the body, but clj-http's own
+   message is only \"status 500\", so surface the body too."
+  [e]
+  (str "Could not start the Match Drop. " (:body (ex-data e) (ex-message e))))
+
 (defn- create-match-job-using-kubernetes!
-  [{:keys [user-id display-name] :as params} sig3-endpoint]
-  (let [{:keys [match-job-id org-id]}      (initialize-match-job! user-id)
-        params                             (assoc params :org-id org-id)
-        {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3-endpoint match-job-id)
-        {:keys [geoserver-workspace]}      match-drop-inputs]
-    (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
-                        :md-status           2
-                        :message             "Match Drop initiated from Pyrecast."
-                        :elmfire-done?       false
-                        :dps-request         match-drop-inputs
-                        :elmfire-request     {}
-                        :geosync-request     {}
-                        :match-job-id        match-job-id
-                        :sig3-job-id         job-id
-                        :geoserver-workspace geoserver-workspace})
-    (start-polling-results! sig3-endpoint job-id match-job-id)
-    ;; Return the unpredictable public id as the browser's handle for this job.
-    ;; NOTE: the sequential PK is still indirectly exposed through
-    ;; geoserver-workspace (named "match-drop-forecast_md-<pk>_..."), which
-    ;; get-md-status/get-match-drops return. That leak is owner-scoped and only
-    ;; reveals system job volume -- accepted as low severity (PYR1-1512); a full
-    ;; fix means renaming the sig3/GeoServer workspace, out of scope here.
-    {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}))
+  [{:keys [user-id display-name model] :as params} sig3-endpoint]
+  (let [{:keys [match-job-id org-id]} (initialize-match-job! user-id)
+        params                        (assoc params :org-id org-id)
+        ;; Return the unpredictable public id as the browser's handle for this job.
+        ;; NOTE: the sequential PK is still indirectly exposed through
+        ;; geoserver-workspace (named "match-drop-forecast_md-<pk>_..."), which
+        ;; get-md-status/get-match-drops return. That leak is owner-scoped and only
+        ;; reveals system job volume -- accepted as low severity (PYR1-1512); a full
+        ;; fix means renaming the sig3/GeoServer workspace, out of scope here.
+        public-id                     {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}]
+    (try
+      (let [{:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3-endpoint match-job-id)
+            {:keys [geoserver-workspace]}      match-drop-inputs]
+        (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
+                            :md-status           2
+                            :message             "Match Drop initiated from Pyrecast."
+                            :elmfire-done?       false
+                            :dps-request         match-drop-inputs
+                            :elmfire-request     {}
+                            :geosync-request     {}
+                            :match-job-id        match-job-id
+                            :sig3-job-id         job-id
+                            :model               model
+                            :geoserver-workspace geoserver-workspace})
+        (start-polling-results! sig3-endpoint job-id match-job-id model)
+        public-id)
+      ;; Without this the row stays blank and In-Progress forever, and the browser
+      ;; polls a job it can never see finish.
+      (catch Exception e
+        (log-str "ERROR submitting match-drop match-job-id=" match-job-id ": " (ex-message e))
+        (update-match-job! {:match-job-id  match-job-id
+                            :md-status     1
+                            :display-name  (or display-name (str "Match Drop " match-job-id))
+                            :model         model
+                            :message       (submit-failure-message e)})
+        public-id))))
 
 (defn- create-match-job!
   [{:keys [user-id] :as params}]
@@ -399,10 +487,14 @@
 (defn initiate-md!
   "Creates a new match drop run and starts the analysis."
   [session match-drop-job-params]
-  (let [{:keys [user-id match-drop-access?]} session
-        {:keys [fuel-version lat lon]}       match-drop-job-params
-        fuel-version                         (or fuel-version default-fuel-version)
-        match-drop-job-params                (assoc match-drop-job-params :fuel-version fuel-version)]
+  (let [{:keys [user-id match-drop-access?]}    session
+        {:keys [fuel-version lat lon wx-type]}  match-drop-job-params
+        fuel-version                            (or fuel-version default-fuel-version)
+        model                                   (or (:model match-drop-job-params) default-md-model)
+        cawfe?                                  (= "cawfe" model)
+        match-drop-job-params                   (assoc match-drop-job-params
+                                                       :fuel-version fuel-version
+                                                       :model        model)]
     (if-not match-drop-access?
       (data-response "You do not have access to the Match Drop tool."
                      {:status 403})
@@ -411,15 +503,30 @@
          (not (get-config :triangulum.views/client-keys :features :match-drop))
          {:error "Match drop is currently disabled. Please contact your system administrator to enable it."}
 
-         (not (valid-md-fuel-versions fuel-version))
+         (not (valid-md-models model))
+         {:error (str "Invalid model: " model ". Valid models are: " (str/join ", " (sort valid-md-models)))}
+
+         (and cawfe? (not (get-config :triangulum.views/client-keys :features :cawfe)))
+         {:error "The CAWFE model is currently disabled. Please contact your system administrator to enable it."}
+
+         (and cawfe? (not (cawfe-artefact-storage-configured?)))
+         {:error "The CAWFE model is not configured. Please contact your system administrator."}
+
+         ;; CAWFE resolves its weather from the NAM forecast, so there is no historical path.
+         (and cawfe? (= "historical" wx-type))
+         {:error "CAWFE only supports forecast weather. Please select a forecast fire or a different model."}
+
+         (and (not cawfe?) (not (valid-md-fuel-versions fuel-version)))
          {:error (str "Invalid fuel version: " fuel-version ". Valid versions are: " (str/join ", " (sort valid-md-fuel-versions)))}
 
-         (let [extent (get-fuel-layer-extent fuel-version)]
-           (and extent (not (point-within-extent? lon lat extent))))
+         ;; CAWFE takes its fuels from the sig3 network defaults, so there is no version to bound.
+         (and (not cawfe?)
+              (let [extent (get-fuel-layer-extent fuel-version)]
+                (and extent (not (point-within-extent? lon lat extent)))))
          {:error (str "The ignition point is outside the geographic boundary of LANDFIRE " fuel-version ". Please select a different fuel version or location.")}
 
-         (pos? (count-running-user-match-jobs user-id))
-         {:error "Match drop is already running. Please wait until it has completed."}
+         (pos? (count-running-user-match-jobs user-id model))
+         {:error (str "A " (str/upper-case model) " match drop is already running. Please wait until it has completed.")}
 
          (<= (get-md-config :max-queue-size) (count-all-running-match-drops))
          {:error "The queue is currently full. Please try again later."}
