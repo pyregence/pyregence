@@ -136,20 +136,20 @@
        [svg/binoculars]]]]]])
 
 (defn- loading-all-stations []
-    [:div {:style {:padding "1.2em"}}
-     "Grabbing weather stations from the "
-     [:a {:href   "https://www.canada.ca/en/environment-climate-change.html"
-          :ref    "noreferrer noopener"
-          :target "_blank"}
-      "Environment and Climate Change Canada"]
-     " and the "
-     [:a {:href   "https://api.weather.gov/"
-          :ref    "noreferrer noopener"
-          :target "_blank"}
-      "National Weather Service (NWS) API"]
-     "..."
-     [:div {:style {:padding-top "1rem"}}
-      "Please check back later."]])
+  [:div {:style {:padding "1.2em"}}
+   "Grabbing weather stations from the "
+   [:a {:href   "https://www.canada.ca/en/environment-climate-change.html"
+        :ref    "noreferrer noopener"
+        :target "_blank"}
+    "Environment and Climate Change Canada"]
+   " and the "
+   [:a {:href   "https://api.weather.gov/"
+        :ref    "noreferrer noopener"
+        :target "_blank"}
+    "National Weather Service (NWS) API"]
+   "..."
+   [:div {:style {:padding-top "1rem"}}
+    "Please check back later."]])
 
 (defn- loading-one-station [station-name]
   [:div {:style {:padding "1.2em"}}

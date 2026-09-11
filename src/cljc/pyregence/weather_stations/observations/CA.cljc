@@ -15,7 +15,7 @@
   (str "https://api.weather.gc.ca/collections/swob-realtime/items?f=json&sortby=-date_tm-value&limit=1&msc_id-value=" station-id))
 
 (comment
-  ;; example response
+  ;; example http observation response
   (def response
     {:type "FeatureCollection",
      :features
@@ -204,8 +204,8 @@
    display-name->perferred-properties-order
    (reduce-kv
     (fn [display-name->value-with-metric-unit
-        display-name
-        keys-ordered-by-business-preference-for-selection-to-show]
+         display-name
+         keys-ordered-by-business-preference-for-selection-to-show]
       (if-let [value (some
                       #(and
                            ;; filter out display-names without keys that have values
