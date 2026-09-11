@@ -108,7 +108,7 @@
      [:li "Observed at: " (u-time/date-string->iso-string (station :timestamp) @!/show-utc?)]
      (->> observations
           (map (fn [[display-name value-with-uom]]
-                 [:li {:key display-name} (str display-name " " value-with-uom)]))
+                 [:li {:key display-name} (str display-name ": " value-with-uom)]))
           (cons :<>)
           vec)]]
 
