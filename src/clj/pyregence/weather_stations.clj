@@ -58,6 +58,7 @@
   []
   (reset! observation-stations
           (->> (get-US-observation-stations!)
+               ;; CloudFire said to exclude these providers.
                (filter (fn [{{provider :provider} :properties}]
                          (#{"MesoWest" "RAWS" "ASOS"} provider)))
                (remove (fn [{:keys [id]}] (= id "https://api.weather.gov/stations/0007W")))
