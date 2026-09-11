@@ -1,39 +1,37 @@
 (ns pyregence.handlers
   (:require [cider.nrepl         :refer [cider-nrepl-handler]]
+            [pyregence.clock     :as    clock]
             [clojure.data.json   :as    json]
             [clojure.repl        :refer [demunge]]
             [clojure.string      :as    str]
             [nrepl.server        :as    nrepl-server]
             [pyregence.session   :as    session]
+            [pyregence.session-ended :as session-ended]
             [pyregence.validation :as   v]
             [ring.util.codec     :refer [url-encode]]
             [ring.util.response  :refer [redirect]]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.handler  :refer [development-app]]
+            [triangulum.handler  :as    handler :refer [development-app]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.response :refer [data-response]]
+            [triangulum.utils    :refer [resolve-foreign-symbol]]
             [triangulum.views    :as    views]
             [triangulum.worker   :refer [start-workers!]]))
 
 (defn render-page
-  "Wraps triangulum's render-page so the sequential :user-id and :organization-id
-   PKs are stripped from the session before it is serialized into the page, and a
-   :logged-in? boolean is substituted for the client to use in place of :user-id.
-   These internal ids must never reach the browser (PYR1-1512 enumeration
-   hardening) -- the client addresses users and orgs by other means (org uuid,
-   email) and never reads the raw PKs. The stored server-side session is
-   unaffected: GET page renders do not set a :session key on the response, so
-   wrap-session leaves the persisted session -- and its :user-id / :organization-id,
-   which server-side authorization relies on -- intact."
+  "Wraps triangulum's render-page so a page is served the session as
+   `session/as-a-page-may-see-it` reports it rather than the stored one.
+
+   What that view leaves out and why is that function's business. What is this
+   one's: the substitution is safe because the stored server-side session is
+   unaffected. GET page renders do not set a :session key on the response, so
+   wrap-session leaves the persisted session -- and its :user-id /
+   :organization-id, which server-side authorization relies on -- intact."
   [uri]
   (let [handler (views/render-page uri)]
     (fn [request]
-      (handler (update request :session
-                       (fn [session]
-                         (-> session
-                             (assoc :logged-in? (some? (:user-id session)))
-                             (dissoc :user-id :organization-id))))))))
+      (handler (update request :session session/as-a-page-may-see-it)))))
 
 (def not-found-handler (comp #(assoc % :status 404) (render-page "/not-found")))
 
@@ -164,13 +162,19 @@
   [auth-type]
   (not-every? #{:token} (auth-types auth-type)))
 
+(defn- session-ended?
+  "Whether this request arrives holding a session PyreCast no longer honours.
+   The question itself, and the reasons a session can be past honouring, belong
+   to `pyregence.session`; all this adds is which part of the request to ask it
+   about."
+  [{:keys [session]}]
+  (session/ended? session))
+
 (defn route-authenticator
   "Rejects a timed-out or revoked (logout / newer login) session before authorizing."
-  [{:keys [session] :as request} auth-type]
+  [request auth-type]
   (if (and (requires-live-session? auth-type)
-           (:user-id session)
-           (or (session/timed-out? session (System/currentTimeMillis))
-               (session/revoked? session)))
+           (session-ended? request))
     false
     (authorized? request auth-type)))
 
@@ -251,6 +255,95 @@
   ;=> true
   )
 
+(defn- refused?
+  "Whether triangulum turned this request away. It answers a refusal with a bare
+   403 and the word \"Forbidden\" -- no reason, nothing the front end can act on."
+  [response]
+  (= 403 (:status response)))
+
+(defn- request-auth-type
+  "The authorization the route named by REQUEST requires.
+
+   Triangulum knows this while routing but does not expose the matched route to
+   a wrapper. Read the same configured tables here rather than infer the route
+   from its response: a route's own handler may answer 403 too, and that answer
+   is not an authentication refusal."
+  [{:keys [request-method uri]}]
+  (->> (get-config :triangulum.handler/routing-tables)
+       (map (comp deref resolve-foreign-symbol))
+       (apply merge)
+       (#(get % [request-method uri]))
+       (:auth-type)))
+
+(defn- session-gated?
+  "Whether REQUEST names a route whose authorization consults the session."
+  [request]
+  (requires-live-session? (request-auth-type request)))
+
+(defn- explaining-the-ended-session
+  "The same refusal, re-answered with the reason. 401 rather than 403 because
+   that is what actually went wrong: not \"you may not\" but \"I no longer know
+   who you are\"."
+  []
+  (data-response session-ended/message {:status session-ended/status}))
+
+(defn authenticated-routing-handler
+  "Triangulum's routing handler, with one thing added: when a request is refused
+   *and* the session it arrived with had already ended, say so.
+
+   PYR1-1623 is largely a story about a missing explanation. Every gated route
+   correctly turned an idle NV Energy session away, but triangulum answers a
+   refusal with a bare 403 and the word \"Forbidden\" -- no reason, nothing the
+   front end can act on. The interface, having no better account of it, told the
+   user there were no layers available for the selected parameters, and the
+   organization read that as their data having disappeared rather than as their
+   session having ended.
+
+   This only ever re-explains a refusal that has already happened; it never
+   creates one, and it never lets anybody in who would otherwise be kept out.
+   401 rather than 403 because that is what actually went wrong: not \"you may
+   not\" but \"I no longer know who you are\"."
+  [request]
+  (let [response (handler/authenticated-routing-handler request)]
+    (if (and (refused? response)
+             (session-gated? request)
+             (session-ended? request))
+      (explaining-the-ended-session)
+      response)))
+
+^:rct/test
+(comment
+  ;; Invalidation lookup stubbed to 0 = never, isolating the timeout path.
+  (with-redefs [call-sql (fn [& _] [{:get_user_session_invalidated_at 0}])]
+    (let [now       (System/currentTimeMillis)
+          fresh     {:user-id 1 :created-at now :last-active now}
+          window-ms (* 60000 (:idle-timeout-min (session/as-a-page-may-see-it fresh)))
+          idled     (assoc fresh :last-active (- now (inc window-ms)))
+          refused   (fn [_] {:status 403 :body "Forbidden"})
+          reason    (fn [uri session]
+                      (with-redefs [handler/authenticated-routing-handler refused]
+                        (:status (authenticated-routing-handler
+                                  {:request-method :post :uri uri :session session}))))]
+      ;; idled out on a session route; live but refused on role; never logged in;
+      ;; and idled out on log-in, whose own bad-credentials 403 must survive.
+      [(reason "/clj/note-activity" idled)
+       (reason "/clj/note-activity" fresh)
+       (reason "/clj/note-activity" {})
+       (reason "/clj/log-in" idled)]))
+  ;=> [401 403 403 403]
+
+  ;; A response that was not a refusal is passed through untouched, however dead
+  ;; the session -- this explains refusals, it does not manufacture them.
+  (with-redefs [call-sql (fn [& _] [{:get_user_session_invalidated_at 0}])]
+    (let [now (System/currentTimeMillis)]
+      (with-redefs [handler/authenticated-routing-handler (fn [_] {:status 200 :body "fine"})]
+        (authenticated-routing-handler
+         {:request-method :post
+          :uri            "/clj/note-activity"
+          :session        {:user-id 1 :created-at now}}))))
+  ;=> {:status 200 :body "fine"}
+  )
+
 (defn- fn->sym [f]
   (-> (str f)
       (demunge)
@@ -314,7 +407,7 @@
                response   (if (:status clj-result)
                             clj-result
                             (data-response clj-result {:type (if (= content-type "application/edn") :edn :json)}))
-               now        (System/currentTimeMillis)]
+               now        (clock/now)]
            ;; Refresh idle timer, unless the wrapped fn already set :session (log-in/log-out) or the
            ;; session is already expired: token-only routes skip the liveness gate, so refreshing one
            ;; there would resurrect a dead session.
@@ -424,9 +517,20 @@
     (let [log-dir (get-config :triangulum.server/log-dir)]
       (set-log-path! (or log-dir "")))))
 
+(defonce clock-delay
+  (delay
+    ;; Figwheel is a composition root too, and the only one that cannot install
+    ;; eagerly: it owns the launch and hands us no hook that runs before the
+    ;; first request, so the install rides the same delay as the other three.
+    ;; A dev process needs a clock for the same reason a shipping one does --
+    ;; every page read asks `session/live?` -- and before this it had none, so
+    ;; `bb dev` answered every request with the "no clock installed" throw.
+    (clock/install! (clock/->SystemClock))))
+
 (defn development-app-wrapper
   "Funky wrap-a-doodler"
   [request]
+  @clock-delay
   @nrepl-delay
   @workers-delay
   @log-dir-delay

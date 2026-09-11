@@ -10,7 +10,14 @@
 # Build Directories and Files
 /.key
 /logs
-/target
+# target/ must EXIST at JVM start: deps.edn lists it in :paths, and a
+# classpath entry that is absent when the JVM boots stays dead for the life of
+# the process. On a fresh clone that makes every page 500 with
+# "Cannot open <nil> as a Reader" from triangulum.views/find-cljs-app-js,
+# because target/public/cljs/manifest.edn is unreachable even after figwheel
+# writes it. Track the directory, ignore its contents.
+/target/*
+!/target/.gitkeep
 /deps-for-clj-watson.edn
 
 # Configuration files

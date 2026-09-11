@@ -7,6 +7,7 @@
             [pyregence.marketplace      :as marketplace]
             [pyregence.match-drop       :as match-drop]
             [pyregence.red-flag         :as red-flag]
+            [pyregence.session          :as session]
             [pyregence.weather-stations :as weather-stations]))
 
 (def routes
@@ -50,6 +51,12 @@
                                                      :auth-action :block}
    [:post "/clj/log-out"]                            {:handler (clj-handler authentication/log-out)
                                                      :auth-type :token
+                                                     :auth-action :block}
+   ;; The heartbeat. :member and not :token, because consulting the session is
+   ;; the entire point: a beat has to be refused when the session is gone, and
+   ;; :token routes deliberately skip the liveness gate.
+   [:post "/clj/note-activity"]                      {:handler (clj-handler session/note-activity)
+                                                     :auth-type :member
                                                      :auth-action :block}
    [:post "/clj/set-user-password"]                  {:handler (clj-handler authentication/set-user-password {:log-args? false})
                                                      :auth-type :token

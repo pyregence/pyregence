@@ -69,6 +69,15 @@
     (r/create-class
      {:component-did-mount
       (fn [_]
+        ;; Say why they are here, when they did not come here on purpose.
+        ;; Something puts the reason in the URL on the way out -- a refusal, or
+        ;; the page giving up on its own -- because the toast it raised does not
+        ;; survive the navigation. Which reason it was decides the sentence, and
+        ;; deciding that is async-utils' business, not this page's. PYR1-1623:
+        ;; arriving at a bare login form with no explanation is most of what
+        ;; made an ended session read as missing data in the first place.
+        (when-let [explanation (u-async/session-ended-explanation)]
+          (toast-message! explanation))
         (reset! update-fn (fn [& _]
                             (-> js/window (.scrollTo 0 0))
                             (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))))
