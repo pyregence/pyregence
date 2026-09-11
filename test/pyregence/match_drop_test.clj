@@ -68,3 +68,35 @@
           job-state {"steps" {}}
           result    (calculate-transitions state job-state match-job-id)]
       (is (empty? result)))))
+
+;;==============================================================================
+;; submit-job payload
+;;==============================================================================
+
+(def ^:private base-params
+  {:ignition-time "2022-12-01 18:00 UTC"
+   :lat           38.0
+   :lon           -120.0
+   :wx-type       "forecast"
+   :fuel-version  "2.5.0"
+   :user-id       7})
+
+(deftest match-drop-args->body-carries-user-and-org
+  (testing "submit-job arguments carry the user and org ids for billing attribution"
+    (let [{:keys [arguments]} (#'pyregence.match-drop/match-drop-args->body
+                               42
+                               (assoc base-params :org-id 3)
+                               {:sig3-env "dev"})]
+      (is (= 7 (:pyrc_user_id arguments)))
+      (is (= 3 (:pyrc_org_id arguments))))))
+
+(deftest match-drop-args->body-allows-no-org
+  (testing "a user with no organization still produces a valid body"
+    (let [{:keys [arguments]} (#'pyregence.match-drop/match-drop-args->body
+                               42
+                               (assoc base-params :org-id nil)
+                               {:sig3-env "dev"})]
+      (is (= 7 (:pyrc_user_id arguments)))
+      (is (nil? (:pyrc_org_id arguments)))
+      (is (= "md-42" (:pyrc_fire_name arguments))
+          "the rest of the payload is unaffected"))))
