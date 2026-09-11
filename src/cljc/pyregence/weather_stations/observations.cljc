@@ -29,7 +29,7 @@
                        (dissoc :stationName :stationId :timestamp)
                        observations-us/properties->display-name->value-with-uom)}
 
-    :canada
+    properties-ca
     {:station {:name      (-> properties-ca
                               :stn_nam-value
                               observations-ca/format-string)
