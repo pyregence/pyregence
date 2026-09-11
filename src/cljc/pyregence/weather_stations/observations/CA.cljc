@@ -2,9 +2,9 @@
   (:require
    [clojure.string :as str]))
 
-(defn stn_name-value->format
-  [stn_name-value]
-  (->> (str/split stn_name-value #" ")
+(defn format-string
+  [allcaps]
+  (->> (str/split allcaps #" ")
        (map str/lower-case)
        (map str/capitalize)
        (str/join " ")))
