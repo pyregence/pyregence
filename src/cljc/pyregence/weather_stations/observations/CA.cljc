@@ -134,69 +134,69 @@
   )
 
 (def display-name->perferred-properties-order
-  {"FWI​ fire weather index" [:fire_wx_indx],
-   "wind speed"
-   [:avg_wnd_spd_10m_pst10mts
-    :wnd_spd
-    :avg_wnd_spd_10m_pst2mts
-    :avg_wnd_spd_pst10mts],
-   "wind gust speed"
-   [:max_wnd_gst_spd_10m_pst10mts
-    :max_wnd_spd_10m_pst10mts
-    :max_pk_wnd_spd_10m_pst1hr
-    :max_wnd_spd_10m_pst1hr],
-   "wave height" [:wv_hgt],
-   "dew point temperature" [:dwpt_temp :avg_dwpt_temp_pst1hr],
-   "reflected shortwave radiation" [:refltd_shrtwv_radn],
-   "global solar radiation"
+  {"Fuel Temperature" [:fuel_temp],
+   "Wind Direction At Precipitation Gauge"
+   [:avg_wnd_dir_pcpn_gag_pst10mts :avg_wnd_dir_pcpn_gag_pst1hr],
+   "Global Solar Radiation"
    [:globl_solr_radn
     :avg_globl_solr_radn_pst1mt
     :avg_globl_solr_radn_pst1hr
     :tot_globl_solr_radn_pst1mt],
-   "peak wind speed" [:max_pk_wnd_spd_10m_pst1hr],
-   "FWI​ duff moisture code" [:dff_moist_code],
-   "relative humidity"
-   [:rel_hum :avg_rel_hum_pst2mts :avg_rel_hum_pst5mts :avg_rel_hum_pst1hr],
-   "surface freezing point" [:sfc_frzng_pt_1 :sfc_frzng_pt_2],
-   "snow water equivalent" [:snw_dpth_wtr_equiv],
-   "snowfall amount" [:snwfl_amt_pst1hr],
-   "vapour pressure" [:avg_vpr_pres_pst1hr],
-   "FWI​ fine fuel moisture code" [:fine_fuel_moist_code],
-   "FWI​ initial spread index" [:initl_sprd_indx],
-   "fuel temperature" [:fuel_temp],
-   "visibility" [:vis :avg_vis_pst10mts :max_vis_pst10mts :min_vis_pst10mts],
-   "precipitation rate" [:pcpn_rt :pcpn_rt_pst1hr],
-   "surface temperature" [:sfc_temp],
-   "fuel moisture" [:fuel_moist],
-   "mean sea level pressure" [:mslp :avg_mslp_pst1hr],
-   "snow depth"
-   [:snw_dpth :avg_snw_dpth_pst5mts :medn_snw_dpth_pst1mt :snw_dpth_1],
-   "cloud base height"
+   "Fwi​ Initial Spread Index" [:initl_sprd_indx],
+   "Fwi​ Drought Code" [:drght_code],
+   "Cloud Base Height"
    [:cld_bas_hgt_1 :cld_bas_hgt_2 :cld_bas_hgt_3 :cld_bas_hgt_4],
-   "FWI​ daily severity rating" [:dly_svrty_ratng],
-   "air temperature"
-   [:air_temp :avg_air_temp_pst2mts :avg_air_temp_pst1hr :max_air_temp_pst1hr],
-   "precipitation amount"
+   "Station Pressure" [:stn_pres :avg_stn_pres_pst1hr],
+   "Wet Bulb Temperature" [:wetblb_temp],
+   "Precipitation Amount"
    [:pcpn_amt_pst1hr :rnfl_amt_pst1hr :pcpn_amt_pst10mts :pcpn_amt_pst5mts],
-   "wet bulb temperature" [:wetblb_temp],
-   "FWI​ buildup index" [:bldup_indx],
-   "wind direction at peak speed"
-   [:wnd_dir_max_spd_2m_pst1hr
-    :avg_wnd_dir_max_spd_10m_pst10mts
-    :max_wnd_dir_max_spd_10m_pst1hr
-    :avg_wnd_dir_max_spd_10m_pst10mts_sensor1],
-   "station pressure" [:stn_pres :avg_stn_pres_pst1hr],
-   "wind direction at precipitation gauge"
-   [:avg_wnd_dir_pcpn_gag_pst10mts :avg_wnd_dir_pcpn_gag_pst1hr],
-   "FWI​ drought code" [:drght_code],
-   "wind direction"
+   "Precipitation Since Last Gauge Reset"
+   [:rnfl_snc_last_reset :pcpn_snc_last_reset],
+   "Present Weather" [:prsnt_wx_1 :prsnt_wx_2 :prsnt_wx_3],
+   "Air Temperature"
+   [:air_temp :avg_air_temp_pst2mts :avg_air_temp_pst1hr :max_air_temp_pst1hr],
+   "Visibility" [:vis :avg_vis_pst10mts :max_vis_pst10mts :min_vis_pst10mts],
+   "Wave Height" [:wv_hgt],
+   "Reflected Shortwave Radiation" [:refltd_shrtwv_radn],
+   "Fwi​ Fine Fuel Moisture Code" [:fine_fuel_moist_code],
+   "Fwi​ Buildup Index" [:bldup_indx],
+   "Surface Temperature" [:sfc_temp],
+   "Snow Water Equivalent" [:snw_dpth_wtr_equiv],
+   "Fuel Moisture" [:fuel_moist],
+   "Fwi​ Fire Weather Index" [:fire_wx_indx],
+   "Fwi​ Duff Moisture Code" [:dff_moist_code],
+   "Mean Sea Level Pressure" [:mslp :avg_mslp_pst1hr],
+   "Wind Gust Speed"
+   [:max_wnd_gst_spd_10m_pst10mts
+    :max_wnd_spd_10m_pst10mts
+    :max_pk_wnd_spd_10m_pst1hr
+    :max_wnd_spd_10m_pst1hr],
+   "Wind Direction"
    [:avg_wnd_dir_10m_pst10mts
     :avg_wnd_dir_10m_pst2mts
     :avg_wnd_dir_pst10mts
     :avg_wnd_dir_10m_pst1mt],
-   "precipitation since last gauge reset"
-   [:rnfl_snc_last_reset :pcpn_snc_last_reset],
-   "present weather" [:prsnt_wx_1 :prsnt_wx_2 :prsnt_wx_3]})
+   "Peak Wind Speed" [:max_pk_wnd_spd_10m_pst1hr],
+   "Relative Humidity"
+   [:rel_hum :avg_rel_hum_pst2mts :avg_rel_hum_pst5mts :avg_rel_hum_pst1hr],
+   "Fwi​ Daily Severity Rating" [:dly_svrty_ratng],
+   "Vapour Pressure" [:avg_vpr_pres_pst1hr],
+   "Snow Depth"
+   [:snw_dpth :avg_snw_dpth_pst5mts :medn_snw_dpth_pst1mt :snw_dpth_1],
+   "Wind Direction At Peak Speed"
+   [:wnd_dir_max_spd_2m_pst1hr
+    :avg_wnd_dir_max_spd_10m_pst10mts
+    :max_wnd_dir_max_spd_10m_pst1hr
+    :avg_wnd_dir_max_spd_10m_pst10mts_sensor1],
+   "Dew Point Temperature" [:dwpt_temp :avg_dwpt_temp_pst1hr],
+   "Precipitation Rate" [:pcpn_rt :pcpn_rt_pst1hr],
+   "Wind Speed"
+   [:avg_wnd_spd_10m_pst10mts
+    :wnd_spd
+    :avg_wnd_spd_10m_pst2mts
+    :avg_wnd_spd_pst10mts],
+   "Snowfall Amount" [:snwfl_amt_pst1hr],
+   "Surface Freezing Point" [:sfc_frzng_pt_1 :sfc_frzng_pt_2]})
 
 (defn properties->display-name->value-with-uom
   [properties]
