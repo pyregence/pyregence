@@ -106,6 +106,7 @@
      [:li "Station ID: "   (station :id)]
      [:li "Station name: " (station :name)]
      [:li "Observed at: " (u-time/date-string->iso-string (station :timestamp) @!/show-utc?)]
+     ;;TODO it might be better to do the display name formatting here if we can generalize it
      (->> observations
           sort
           (map (fn [[display-name value-with-uom]]
