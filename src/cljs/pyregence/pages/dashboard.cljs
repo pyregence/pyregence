@@ -124,7 +124,7 @@
     [:tr
      [:td (str match-job-unique-id)] ; "Job ID"
      [:td {:width "10%"} (when-not (nil? display-name) display-name)] ; "Fire Name"
-     [:td (if (= "cawfe" model) "CAWFE" "LANDFIRE")] ; "Model"
+     [:td (if (= "cawfe" model) "CAWFE" "STANDARD")] ; "Model"
      [:td ; "Match Drop Status"
       (case md-status
         0 "Completed!"
