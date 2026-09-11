@@ -255,26 +255,9 @@
   )
 
 (defn refused-handler
-  "How PyreCast answers a request its `route-authenticator` turned away.
-
-   Registered as `:triangulum.handler/refused-handler`, which triangulum calls
-   on the branch where it has already decided to refuse. That is the whole of
-   the arrangement: this never creates a refusal and never lets anybody in who
-   would otherwise be kept out.
-
-   PYR1-1623 is largely a story about a missing explanation. Every gated route
-   correctly turned an idle NV Energy session away, but triangulum answers a
-   refusal with a bare 403 and the word \"Forbidden\" -- no reason, nothing the
-   front end can act on. The interface, having no better account of it, told the
-   user there were no layers available for the selected parameters, and the
-   organization read that as their data having disappeared rather than as their
-   session having ended.
-
-   401 rather than 403 for the ended session, because that is what actually went
-   wrong: not \"you may not\" but \"I no longer know who you are\". Everything
-   else keeps the 403 it always had -- a visitor who never had a session did not
-   have one end, and a member refused on their role is being told the truth."
+  "Answers a request that Triangulum has refused."
   [request]
+  ;; PYR1-1675: An ended session is unauthenticated; other refusals remain forbidden.
   (if (session-ended? request)
     (data-response session-ended/message {:status session-ended/status})
     (response/forbidden-response request)))
