@@ -988,12 +988,24 @@
                                                               [:a {:href  "https://pyregence.github.io/pyretechnics/"
                                                                    :target "_blank"}
                                                                "site"]
-                                                              "."]
+                                                              "."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "CAWFE"]
+                                                              " (Coupled Atmosphere-Wildland Fire Environment) downscales the NAM forecast and simulates how the fire feeds back on the local weather, so the fire's own heat shapes the winds that drive it. It runs a single deterministic simulation rather than an ensemble, so there is no predicted fire size to choose, and it takes considerably longer to finish."]
                                                  :options    {:elmfire      {:opt-label "ELMFIRE"
                                                                              :filter    "elmfire"}
                                                               :pyretechnics {:enabled?  #(feature-enabled? :pyretechnics)
                                                                              :opt-label "Pyretechnics (Beta)"
-                                                                             :filter    "pyretec"}}}
+                                                                             :filter    "pyretec"}
+                                                              ;; Shown so the dropdown can display it while a CAWFE drop is
+                                                              ;; selected, but never pickable: a match drop is run by one
+                                                              ;; model and its option selects this through :resets, so the
+                                                              ;; entry greys out whenever anything else is selected.
+                                                              :cawfe        {:enabled?     #(feature-enabled? :cawfe)
+                                                                             :disabled-for #{:elmfire :pyretechnics}
+                                                                             :opt-label    "CAWFE"
+                                                                             :filter       "cawfe"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :disabled   (fn [selected-set]
