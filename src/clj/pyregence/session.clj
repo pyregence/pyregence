@@ -47,6 +47,12 @@
   [config-key default-min]
   (* 60000 (timeout-min config-key default-min)))
 
+(defn- session-timeouts-enabled?
+  []
+  ;; PYR1-1701: missing means enabled so existing deployment configs retain
+  ;; their session policy; only an explicit false grants the local bypass.
+  (not= false (get-config :triangulum.views/client-keys :features :session-timeouts)))
+
 (defn- idle-timeout-min
   "How many minutes of quiet PyreCast allows before it stops honouring a session.
 
@@ -59,9 +65,10 @@
 (defn timed-out?
   "Whether the session is past its configured idle or absolute timeout as of `now`."
   [session now]
-  (expired? session now
-            (timeout-ms :pyregence.auth/idle-timeout-min     default-idle-timeout-min)
-            (timeout-ms :pyregence.auth/absolute-timeout-min default-absolute-timeout-min)))
+  (and (session-timeouts-enabled?)
+       (expired? session now
+                 (timeout-ms :pyregence.auth/idle-timeout-min     default-idle-timeout-min)
+                 (timeout-ms :pyregence.auth/absolute-timeout-min default-absolute-timeout-min))))
 
 (defn- invalidated?
   "Created strictly before the user's invalidation point (set on logout / newer login).
@@ -180,15 +187,13 @@
    ClojureScript that agrees with the server only until somebody changes the
    config.
 
-   Reported only to a session that has one to lose. An anonymous visitor is told
-   nothing, not because the number is a secret -- knowing how long PyreCast
-   tolerates quiet gets a caller nothing it does not already get by waiting --
-   but because a page that is sent a window it must not act on has to be told
-   separately not to act on it, and that second sentence is a conditional in the
-   ClojureScript whose only job is to undo this one."
+   Reported only to a live session while automatic timeouts are enabled. An
+   anonymous visitor or a local developer using the bypass is told no window,
+   so the page has nothing to watch."
   [session]
   (let [live? (live? session)]
-    (page-facing session live? (when live? (idle-timeout-min)))))
+    (page-facing session live? (when (and live? (session-timeouts-enabled?))
+                                 (idle-timeout-min)))))
 
 (defn note-activity
   "Answer a heartbeat: the page saying the person is still here.
@@ -327,4 +332,34 @@
        (ended? {:user-id 1 :created-at now :last-active now})
        (ended? {:user-id 1 :created-at now :last-active (- now idle-past)})]))
   ;=> [false false true]
+
+  ;; PYR1-1701: false suspends both automatic timeouts and tells the page there
+  ;; is no idle window to watch. True and absent retain the production policy.
+  (let [now       (System/currentTimeMillis)
+        fresh     {:user-id 1 :created-at now :last-active now}
+        idle-past (assoc fresh :last-active (- now (* 16 60000)))
+        under     (fn [flag f]
+                    (with-redefs [get-config (fn [& path]
+                                               (when (= path [:triangulum.views/client-keys
+                                                              :features
+                                                              :session-timeouts])
+                                                 flag))
+                                  call-sql   (fn [& _] [{:get_user_session_invalidated_at 0}])]
+                      (f)))]
+    [(mapv #(under % (fn [] (timed-out? idle-past now))) [false true nil])
+     (mapv #(under % (fn [] (:idle-timeout-min (as-a-page-may-see-it fresh))))
+           [false true nil])])
+  ;=> [[false true true] [nil 15 15]]
+
+  ;; The bypass is for time alone. Logout and newer-login invalidation still win.
+  (let [now     (System/currentTimeMillis)
+        session {:user-id 1 :created-at (dec now) :last-active now}]
+    (with-redefs [get-config (fn [& path]
+                               (when (= path [:triangulum.views/client-keys
+                                              :features
+                                              :session-timeouts])
+                                 false))
+                  call-sql   (fn [& _] [{:get_user_session_invalidated_at now}])]
+      (live? session now)))
+  ;=> false
   )
