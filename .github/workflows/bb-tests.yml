@@ -54,8 +54,7 @@ jobs:
                                         :triangulum.email/host          "smtp.ci.local"
                                         :triangulum.email/pass          "ci"
                                         :triangulum.views/gtag-id       "G-CI")
-                                 ;; Exercise the production policy in CI. PYR1-1701's
-                                 ;; false branch is covered explicitly in session.clj.
+                                 ;; CI exercises the production policy; session.clj covers false explicitly.
                                  (assoc-in [:triangulum.views/client-keys :features :session-timeouts]
                                            true))))'
     - name: Build database with dev data
