@@ -170,9 +170,7 @@
  :pyregence.auth/two-factor-window-min              15
  :pyregence.match-drop/match-drop                   {:sig3-auth           "<AUTH_TOKEN>"
                                                      :sig3-env            "<dev | prod | stg>"
-                                                     :max-queue-size      5
-                                                     ;; Where the CAWFE network writes its per-run artefacts.
-                                                     :cawfe-artefacts-dir "s3://owo/cawfe/match-drop/artefacts"}
+                                                     :max-queue-size      5}
  ;; Marketplace (e.g. audience "example.com", partner-id "my-project-123")
  :pyregence.marketplace/config {:enabled              false
                                 :audience             "<your-app-domain>"
