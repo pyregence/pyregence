@@ -95,14 +95,31 @@ Each entry in the legend contains the legend's label, value, color, and opacity.
 ;; Miscellaneous State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^{:doc "For the currently logged in user, stores a list of all the organization
-that they belong to as an Admin or a Member. Will be bound to an empty vector if
-the user is not an Admin or Member of their organization."}
-  user-orgs-list (r/atom []))
-(defonce ^{:doc "Stores a list of all organizations that have PSPS data."}
-  psps-orgs-list (r/atom []))
-(defonce ^{:doc "Stores a list of all PSPS organizations that a user belongs to."}
-  user-psps-orgs-list (r/atom []))
+(defonce ^{:doc "The organizations PyreCast reported for this session, as a
+pyregence.datatypes.organizations value. Nil until PyreCast has been asked, and
+still nil if it would not say -- which is a different claim from `none`, and
+conflating the two is PYR1-1623."}
+  user-orgs-list (r/atom nil))
+(defonce ^{:doc "True when the logged-in user is a super admin or account manager. Those
+two have no organization of their own, so the call that answers which organizations they
+may see is a different one -- get-all-organizations rather than get-current-user-organization.
+Recorded at page load because the answer is needed again whenever that list is refreshed."}
+  admin? (r/atom false))
+(defonce ^{:doc "Ids of every organization PyreCast holds PSPS data for, as a set.
+A fact about the world rather than about this session, so it outlives a session
+that has ended. Nil until PyreCast has been asked."}
+  psps-orgs-list (r/atom nil))
+(defonce ^{:doc "Those of this session's organizations PyreCast holds PSPS data
+for, as a pyregence.datatypes.organizations value. Derived from the two above and
+asked of nobody."}
+  user-psps-orgs-list (r/atom nil))
+(defonce ^{:doc "True once PyreCast has refused a call on the grounds that this session
+has ended -- idled out, aged out, or revoked. The page was rendered while the session
+was still live, so everything on it dates from then: the tabs, the organization lists,
+the layer options. Marking the fact here lets the parts that would otherwise explain an
+empty result some other way stop guessing. Nothing clears it; a session that has ended
+does not come back, and the next page load starts over."}
+  session-ended? (r/atom false))
 (defonce ^{:doc "A boolean that enables time-step animation for the Time Slider when true."}
   animate? (r/atom false))
 (defonce ^{:doc "True when animation layers exist in Mapbox."}

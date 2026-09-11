@@ -145,15 +145,31 @@ CREATE OR REPLACE FUNCTION count_all_running_match_jobs()
 
 $$ LANGUAGE SQL;
 
--- Inserts a new match-drop job
+-- Inserts a new match-drop job, stamping it with the user's organization so the run
+-- can be billed later. Reading the org here rather than from the session keeps the
+-- stored row and the sig3 submit-job payload in agreement, and picks up a user who
+-- changed organization since logging in. org_id is returned because it is derived in
+-- SQL and the caller needs it for the payload.
+--
+-- VALUES with a subquery rather than INSERT ... SELECT FROM users: a deleted user whose
+-- session cookie is still live matches no row, so the SELECT form inserts nothing and
+-- hands the caller a null job id to submit to sig3. This form still inserts, so the
+-- user_rid foreign key raises instead.
+--
+-- No org_membership_status filter: a pending member already draws the org's subscription
+-- tier (current-subscription-tier reads organization_rid unfiltered), so the org is
+-- already paying for what gets spent here.
 CREATE OR REPLACE FUNCTION initialize_match_job(_user_id integer)
- RETURNS integer AS $$
+ RETURNS TABLE (
+    match_job_id integer,
+    org_id       integer
+ ) AS $$
 
     INSERT INTO match_jobs
-        (user_rid)
+        (user_rid, org_rid)
     VALUES
-        (_user_id)
-    RETURNING match_job_uid
+        (_user_id, (SELECT organization_rid FROM users WHERE user_uid = _user_id))
+    RETURNING match_job_uid, org_rid
 
 $$ LANGUAGE SQL;
 
