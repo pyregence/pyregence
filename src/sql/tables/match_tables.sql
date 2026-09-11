@@ -9,6 +9,7 @@ CREATE TABLE match_jobs (
     match_job_uuid      uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(), -- unpredictable public id; the integer PK stays internal
     sig3_job_uid        text,
     user_rid            integer NOT NULL REFERENCES users (user_uid) ON DELETE CASCADE ON UPDATE CASCADE,
+    org_rid             integer REFERENCES organizations (organization_uid) ON DELETE SET NULL, -- who gets billed; null for users with no org
     created_at          timestamp DEFAULT now(),
     updated_at          timestamp DEFAULT now(),
     display_name        varchar,
@@ -25,3 +26,4 @@ CREATE TABLE match_jobs (
 );
 
 CREATE INDEX CONCURRENTLY match_jobs_user_rid_index ON match_jobs (user_rid);
+CREATE INDEX CONCURRENTLY match_jobs_org_rid_index ON match_jobs (org_rid);
