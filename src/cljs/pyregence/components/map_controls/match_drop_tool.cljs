@@ -330,8 +330,6 @@
 (defn- model-radio-buttons [model]
   [:div {:style {:margin "0.5rem 0"}}
    [:label {:style {:font-size "0.9rem" :font-weight "bold" :display "block" :margin-bottom "0.25rem"}} "Model"]
-   [:p {:style {:font-size "0.8rem" :margin "0 0 0.25rem"}}
-    "The Standard model runs both ELMFIRE and Pyretechnics."]
    [:div {:style {:display "flex"}}
     (doall
      (for [[value {:keys [opt-label tooltip]}] match-drop-models]
