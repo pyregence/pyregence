@@ -28,6 +28,11 @@
          [k (get-md-config k)])
        (into {})))
 
+(defn- cawfe-artefact-storage-configured?
+  "Whether this environment names the storage prefix for CAWFE run artifacts."
+  []
+  (not (str/blank? (get-md-config :cawfe-artefacts-dir))))
+
 (def valid-md-fuel-versions
   #{"2.5.0" "2.4.0" "2.3.0" "2.2.0" "2.1.0" "1.4.0" "1.3.0" "1.0.5"})
 
@@ -39,11 +44,6 @@
   #{"standard" "cawfe"})
 
 (def default-md-model "standard")
-
-(def default-cawfe-artefacts-dir
-  "Fallback for an unset :cawfe-artefacts-dir. sig3 specs it as a non-empty storage
-   path, so submitting nil fails the run before anything is recorded."
-  "s3://owo/cawfe/match-drop/artefacts")
 
 (def cawfe-sim-hours
   "How far past ignition a CAWFE run simulates. CAWFE is roughly 6x faster than
@@ -304,7 +304,7 @@
      :arguments {:env                   sig3-env
                  :cawfe_run_id          fire-name
                  :geoserver-workspace   (geoserver-workspace-for fire-name model-time)
-                 :cawfe_artefacts_dir   (or cawfe-artefacts-dir default-cawfe-artefacts-dir)
+                 :cawfe_artefacts_dir   cawfe-artefacts-dir
                  :pyrc_ignition_lat     lat
                  :pyrc_ignition_lon     lon
                  :center_lat_deg        lat
@@ -508,6 +508,9 @@
 
          (and cawfe? (not (get-config :triangulum.views/client-keys :features :cawfe)))
          {:error "The CAWFE model is currently disabled. Please contact your system administrator to enable it."}
+
+         (and cawfe? (not (cawfe-artefact-storage-configured?)))
+         {:error "The CAWFE model is not configured. Please contact your system administrator."}
 
          ;; CAWFE resolves its weather from the NAM forecast, so there is no historical path.
          (and cawfe? (= "historical" wx-type))

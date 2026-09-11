@@ -5,7 +5,6 @@
    [pyregence.match-drop :refer [calculate-transitions
                                  cawfe-match-drop-args->body
                                  cawfe-sim-hours
-                                 default-cawfe-artefacts-dir
                                  initiate-md!
                                  standard-match-drop-args->body
                                  model->polling-steps]]
@@ -190,7 +189,8 @@
                     (case (vec ks)
                       [:triangulum.views/client-keys :features :match-drop]  true
                       [:triangulum.views/client-keys :features :cawfe]       true
-                      [:pyregence.match-drop/match-drop :max-queue-size]     5
+                      [:pyregence.match-drop/match-drop :cawfe-artefacts-dir] (:cawfe-artefacts-dir md-config)
+                      [:pyregence.match-drop/match-drop :max-queue-size]      5
                       nil))
 
                   triangulum.database/call-sql
@@ -223,12 +223,6 @@
                           (assoc md-params :model "cawfe"))]
       (is (str/includes? (str body) "already running")))))
 
-(deftest cawfe-artefacts-dir-falls-back-to-a-default
-  (testing "an unset :cawfe-artefacts-dir must not submit a nil storage path"
-    (let [{:keys [arguments]} (cawfe-match-drop-args->body 42 md-params {:sig3-env "dev"})]
-      (is (= default-cawfe-artefacts-dir (:cawfe_artefacts_dir arguments)))
-      (is (string? (:cawfe_artefacts_dir arguments))))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Failed submit handling
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -243,6 +237,7 @@
                         [:triangulum.views/client-keys :features :match-drop]    true
                         [:triangulum.views/client-keys :features :cawfe]         true
                         [:triangulum.views/client-keys :features :sig3-endpoint] "http://sig3.test"
+                        [:pyregence.match-drop/match-drop :cawfe-artefacts-dir]  (:cawfe-artefacts-dir md-config)
                         [:pyregence.match-drop/match-drop :max-queue-size]       5
                         nil))
 
@@ -278,27 +273,37 @@
 ;; :cawfe feature flag
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- initiate-md-with-cawfe-config!
+  "Runs `initiate-md!` with the supplied CAWFE configuration."
+  [flag cawfe-artefacts-dir params]
+  (let [created? (atom false)]
+    (with-redefs [triangulum.config/get-config
+                  (fn [& ks]
+                    (case (vec ks)
+                      [:triangulum.views/client-keys :features :match-drop]             true
+                      [:triangulum.views/client-keys :features :cawfe]                  flag
+                      [:pyregence.match-drop/match-drop :cawfe-artefacts-dir]           cawfe-artefacts-dir
+                      [:pyregence.match-drop/match-drop :max-queue-size]                5
+                      nil))
+
+                  triangulum.database/call-sql
+                  (fn [f & _]
+                    (case f
+                      "count_running_user_match_jobs" [{:count 0}]
+                      "count_all_running_match_jobs"  [{:count 0}]
+                      nil))
+
+                  pyregence.match-drop/create-match-job!
+                  (fn [p]
+                    (reset! created? true)
+                    {:started (:model p)})]
+      {:body     (:body (initiate-md! {:user-id 1 :match-drop-access? true} params))
+       :created? @created?})))
+
 (defn- initiate-md-with-cawfe-flag!
   "Runs `initiate-md!` with the `:cawfe` feature flag set to `flag`."
   [flag params]
-  (with-redefs [triangulum.config/get-config
-                (fn [& ks]
-                  (case (vec ks)
-                    [:triangulum.views/client-keys :features :match-drop] true
-                    [:triangulum.views/client-keys :features :cawfe]      flag
-                    [:pyregence.match-drop/match-drop :max-queue-size]    5
-                    nil))
-
-                triangulum.database/call-sql
-                (fn [f & _]
-                  (case f
-                    "count_running_user_match_jobs" [{:count 0}]
-                    "count_all_running_match_jobs"  [{:count 0}]
-                    nil))
-
-                pyregence.match-drop/create-match-job!
-                (fn [p] {:started (:model p)})]
-    (:body (initiate-md! {:user-id 1 :match-drop-access? true} params))))
+  (:body (initiate-md-with-cawfe-config! flag (:cawfe-artefacts-dir md-config) params)))
 
 (deftest cawfe-is-refused-when-the-flag-is-off
   (testing "a CAWFE submit is rejected while :cawfe is disabled"
@@ -314,3 +319,18 @@
   (testing "a CAWFE submit goes through while :cawfe is enabled"
     (let [body (initiate-md-with-cawfe-flag! true (assoc md-params :model "cawfe"))]
       (is (= {:started "cawfe"} body)))))
+
+(deftest cawfe-is-refused-when-artefact-storage-is-not-configured
+  (testing "a CAWFE submit stops before job creation when its artifact path is missing or blank"
+    (doseq [cawfe-artefacts-dir [nil "" "   "]]
+      (let [{:keys [body created?]} (initiate-md-with-cawfe-config! true
+                                                                   cawfe-artefacts-dir
+                                                                   (assoc md-params :model "cawfe"))]
+        (is (str/includes? (str body) "not configured"))
+        (is (false? created?) "the database and Sig3 submission boundary is not crossed"))))
+  (testing "standard match drops do not require CAWFE artifact storage"
+    (let [{:keys [body created?]} (initiate-md-with-cawfe-config! true
+                                                                 nil
+                                                                 (assoc md-params :model "standard"))]
+      (is (= {:started "standard"} body))
+      (is (true? created?)))))
