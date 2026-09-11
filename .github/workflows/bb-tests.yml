@@ -53,7 +53,10 @@ jobs:
                                         :triangulum.server/mode         "dev"
                                         :triangulum.email/host          "smtp.ci.local"
                                         :triangulum.email/pass          "ci"
-                                        :triangulum.views/gtag-id       "G-CI"))))'
+                                        :triangulum.views/gtag-id       "G-CI")
+                                 ;; CI exercises the production policy; session.clj covers false explicitly.
+                                 (assoc-in [:triangulum.views/client-keys :features :session-timeouts]
+                                           true))))'
     - name: Build database with dev data
       run: clojure -M:build-db build-all --dev-data --admin-pass postgres
     - name: Run rich-comment tests

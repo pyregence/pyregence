@@ -102,6 +102,9 @@
                                                                        :structures       true
                                                                        :pyretechnics     true
                                                                        :image-mosaic-gwc true
+                                                                       ;; PYR1-1701: local development may bypass automatic idle and absolute expiry.
+                                                                       ;; Explicit logout and invalidation remain enforced.
+                                                                       :session-timeouts false
                                                                        ;; Colours HRDPS (and any future metric model) on a metric scale instead of the
                                                                        ;; imperial one the other models use. Off until the GeoServer actually serves the
                                                                        ;; styles: the client asks for them by name via &STYLE=, and GeoServer fails the
