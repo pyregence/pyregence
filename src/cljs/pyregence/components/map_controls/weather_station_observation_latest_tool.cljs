@@ -107,6 +107,7 @@
      [:li "Station name: " (station :name)]
      [:li "Observed at: " (u-time/date-string->iso-string (station :timestamp) @!/show-utc?)]
      (->> observations
+          sort
           (map (fn [[display-name value-with-uom]]
                  [:li {:key display-name} (str display-name ": " value-with-uom)]))
           (cons :<>)
