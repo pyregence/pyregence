@@ -307,8 +307,11 @@
              [collapsible-panel-section
               "layer-selection"
               [:<>
+               ;; `hidden?` takes a predicate over the selected params as well as a boolean,
+               ;; the same way `disabled` below does, so a param can drop out entirely for one
+               ;; model. CAWFE uses it for the two dropdowns it has no values for.
                (keep (fn [[key {:keys [opt-label hover-text options sort? disabled hidden?]}]]
-                       (when-not hidden?
+                       (when-not (if (ifn? hidden?) (hidden? *params) hidden?)
                          (let [sorted-options (if sort? (sort-by (comp :opt-label second) options) options)]
                            ^{:key (str (random-uuid))}
                            [:<>
