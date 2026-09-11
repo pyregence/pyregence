@@ -96,16 +96,13 @@
                                      :mapbox-access-token             "<access-token>"
                                      :auth-token                      "<changeme123456789>"
                                      :usage-terms-and-conditions-date "December 2, 2025"
-                                     :features                        {:match-drop       true
-                                                                       ;; Gates the CAWFE model inside Match Drop. Off leaves the tool
-                                                                       ;; LANDFIRE-only: the model picker is hidden and the server
-                                                                       ;; refuses a CAWFE submit.
-                                                                       :cawfe            true
-                                                                       :sig3-endpoint    "https://sig3.sig-gis-00.corespeq.com/"
-                                                                       :fire-history     true
-                                                                       :structures       true
-                                                                       :pyretechnics     true
-                                                                       :image-mosaic-gwc true
+                                     :features                        {:match-drop            true
+                                                                       :cawfe                 true
+                                                                       :sig3-endpoint         "https://sig3.sig-gis-00.corespeq.com/"
+                                                                       :fire-history          true
+                                                                       :structures            true
+                                                                       :pyretechnics          true
+                                                                       :image-mosaic-gwc      true
                                                                        ;; Colours HRDPS (and any future metric model) on a metric scale instead of the
                                                                        ;; imperial one the other models use. Off until the GeoServer actually serves the
                                                                        ;; styles: the client asks for them by name via &STYLE=, and GeoServer fails the
