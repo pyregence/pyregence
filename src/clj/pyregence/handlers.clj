@@ -12,10 +12,9 @@
             [ring.util.response  :refer [redirect]]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.handler  :as    handler :refer [development-app]]
+            [triangulum.handler  :refer [development-app]]
             [triangulum.logging  :refer [log-str set-log-path!]]
-            [triangulum.response :refer [data-response]]
-            [triangulum.utils    :refer [resolve-foreign-symbol]]
+            [triangulum.response :as    response :refer [data-response]]
             [triangulum.views    :as    views]
             [triangulum.worker   :refer [start-workers!]]))
 
@@ -255,61 +254,13 @@
   ;=> true
   )
 
-(defn- refused?
-  "Whether triangulum turned this request away. It answers a refusal with a bare
-   403 and the word \"Forbidden\" -- no reason, nothing the front end can act on."
-  [response]
-  (= 403 (:status response)))
-
-(defn- request-auth-type
-  "The authorization the route named by REQUEST requires.
-
-   Triangulum knows this while routing but does not expose the matched route to
-   a wrapper. Read the same configured tables here rather than infer the route
-   from its response: a route's own handler may answer 403 too, and that answer
-   is not an authentication refusal."
-  [{:keys [request-method uri]}]
-  (->> (get-config :triangulum.handler/routing-tables)
-       (map (comp deref resolve-foreign-symbol))
-       (apply merge)
-       (#(get % [request-method uri]))
-       (:auth-type)))
-
-(defn- session-gated?
-  "Whether REQUEST names a route whose authorization consults the session."
+(defn refused-handler
+  "Answers a request that Triangulum has refused."
   [request]
-  (requires-live-session? (request-auth-type request)))
-
-(defn- explaining-the-ended-session
-  "The same refusal, re-answered with the reason. 401 rather than 403 because
-   that is what actually went wrong: not \"you may not\" but \"I no longer know
-   who you are\"."
-  []
-  (data-response session-ended/message {:status session-ended/status}))
-
-(defn authenticated-routing-handler
-  "Triangulum's routing handler, with one thing added: when a request is refused
-   *and* the session it arrived with had already ended, say so.
-
-   PYR1-1623 is largely a story about a missing explanation. Every gated route
-   correctly turned an idle NV Energy session away, but triangulum answers a
-   refusal with a bare 403 and the word \"Forbidden\" -- no reason, nothing the
-   front end can act on. The interface, having no better account of it, told the
-   user there were no layers available for the selected parameters, and the
-   organization read that as their data having disappeared rather than as their
-   session having ended.
-
-   This only ever re-explains a refusal that has already happened; it never
-   creates one, and it never lets anybody in who would otherwise be kept out.
-   401 rather than 403 because that is what actually went wrong: not \"you may
-   not\" but \"I no longer know who you are\"."
-  [request]
-  (let [response (handler/authenticated-routing-handler request)]
-    (if (and (refused? response)
-             (session-gated? request)
-             (session-ended? request))
-      (explaining-the-ended-session)
-      response)))
+  ;; PYR1-1675: An ended session is unauthenticated; other refusals remain forbidden.
+  (if (session-ended? request)
+    (data-response session-ended/message {:status session-ended/status})
+    (response/forbidden-response request)))
 
 ^:rct/test
 (comment
@@ -319,29 +270,12 @@
           fresh     {:user-id 1 :created-at now :last-active now}
           window-ms (* 60000 (:idle-timeout-min (session/as-a-page-may-see-it fresh)))
           idled     (assoc fresh :last-active (- now (inc window-ms)))
-          refused   (fn [_] {:status 403 :body "Forbidden"})
-          reason    (fn [uri session]
-                      (with-redefs [handler/authenticated-routing-handler refused]
-                        (:status (authenticated-routing-handler
-                                  {:request-method :post :uri uri :session session}))))]
-      ;; idled out on a session route; live but refused on role; never logged in;
-      ;; and idled out on log-in, whose own bad-credentials 403 must survive.
-      [(reason "/clj/note-activity" idled)
-       (reason "/clj/note-activity" fresh)
-       (reason "/clj/note-activity" {})
-       (reason "/clj/log-in" idled)]))
-  ;=> [401 403 403 403]
-
-  ;; A response that was not a refusal is passed through untouched, however dead
-  ;; the session -- this explains refusals, it does not manufacture them.
-  (with-redefs [call-sql (fn [& _] [{:get_user_session_invalidated_at 0}])]
-    (let [now (System/currentTimeMillis)]
-      (with-redefs [handler/authenticated-routing-handler (fn [_] {:status 200 :body "fine"})]
-        (authenticated-routing-handler
-         {:request-method :post
-          :uri            "/clj/note-activity"
-          :session        {:user-id 1 :created-at now}}))))
-  ;=> {:status 200 :body "fine"}
+          reason    #(:status (refused-handler {:session %}))]
+      ;; idled out; live but refused on role; never logged in at all
+      [(reason idled)
+       (reason fresh)
+       (reason {})]))
+  ;=> [401 403 403]
   )
 
 (defn- fn->sym [f]
