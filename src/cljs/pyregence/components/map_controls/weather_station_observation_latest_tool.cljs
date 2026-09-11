@@ -73,7 +73,7 @@
    [:a {:href   "https://www.canada.ca/en/environment-climate-change.html"
         :ref    "noreferrer noopener"
         :target "_blank"}
-    "National Weather Service (NWS) API"] " in Canada."])
+    "Environment and Climate Change Canada"] "in Canada."])
 
 (defn- not-found
   [{:keys [name id]}]
