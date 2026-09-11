@@ -726,6 +726,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+(defn- can-admin-org?
+  "True when `user-id` may administer `org-id`: super_admin and account_manager any org,
+   organization_admin only their own. A nil user-id is refused without a query, and a nil
+   org-id is refused here because SQL lets an account_manager through for a NULL org."
+  [user-id org-id]
+  (boolean (and user-id org-id (sql-primitive (call-sql "can_admin_org" user-id org-id)))))
+
 (defn add-new-user
   "Creates a new user account and optionally associates them with an organization.
 
@@ -737,12 +744,11 @@
 
   Behavior:
   - A new user is created and persisted to the database.
-  - If `:org-id` is provided, the function checks whether the current user is a
-    super admin or an org admin for the given org. Given the right permissions,
-    the user is associated to the org with the role of 'organization_member'.
+  - If `:org-id` is provided and the caller may administer that org, the user is
+    associated to it with the role of 'organization_member'. Otherwise a 403.
 
-  - If `:org-id` is not provided or the user lacks permissions to assign directly,
-    the system falls back to automatic domain-based organization assignment.
+  - If `:org-id` is not provided, the system falls back to automatic domain-based
+    organization assignment.
     This associates the user with an organization that matches their email domain
     to the `email_domains` column. The user's assigned role is:
     - 'organization_member' if the organization has `auto_accept = true` (auto-approved)
@@ -763,9 +769,9 @@
     `{:message ... :errors [...]}` so signup can explain exactly why it failed.
 
   Security:
-  - Only users with sufficient privileges (super_admin or organization_admin) may
-    explicitly assign a new user to an organization via `:org-id`.
-  - All organization assignments are validated server-side using the session context."
+  - Assigning via `:org-id` is gated on `can_admin_org`, so a super_admin or
+    account_manager may target any org and an organization_admin only their own.
+  - The caller comes from a live session, so a timed-out or revoked one cannot assign."
   [session email user-name password & [org-name-or-opts]]
 
   (let [raw-org-name (cond (string? org-name-or-opts)             org-name-or-opts
@@ -791,7 +797,7 @@
                   [[:org-name "Organization name" v/org-name-steps raw-org-name]]))))
         ;; org-name is nil unless a non-blank name was provided and validated above.
         ;; Public signup too, so this can't be liveness-gated at the route.
-        user-role        (when (session/live? session) (:user-role session))
+        caller-id        (when (session/live? session) (:user-id session))
         default-settings (pr-str {:timezone :utc})
         new-user-id      (nil-on-error
                           (sql-primitive (call-sql "add_new_user"
@@ -807,19 +813,14 @@
           (do
             (throttle/forgive! [:password (normalize-email email)])
             (cond
-              ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
-              ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
-              ;; The new user will have a user_role of organization_member and a user_status of active
               org-id
-              (if (or (= user-role "super_admin")
-                      (= user-role "organization_admin"))
+              (if (can-admin-org? caller-id org-id)
                 (do
                   (call-sql "add_org_user" org-id new-user-id)
                   (data-response "User created and added to organization."))
                 (data-response "User does not have permission to assign users to this organization."
                                {:status 403}))
 
-              ;; No org-id provided — use email domain-based auto-assignment (dependent on org auto_add settings)
               :else
               (let [domain (re-find #"@{1}.+" email)]
                 (if (call-sql "auto_add_org_user" new-user-id domain)
@@ -833,25 +834,35 @@
 
 ^:rct/test
 (comment
-  ;; `cutoff` is the user's invalidation stamp, 0 = never logged out.
-  (let [now          (System/currentTimeMillis)
-        assigns-org? (fn [session cutoff opts]
-                       (let [calls (atom [])]
-                         (with-redefs [call-sql (fn [& args]
-                                                  (swap! calls conj (first args))
-                                                  (case (first args)
-                                                    "add_new_user"                    [{:add_new_user 42}]
-                                                    "get_user_session_invalidated_at" [{:get_user_session_invalidated_at cutoff}]
-                                                    nil))]
-                           (add-new-user session "a@b.com" "A" "Abcdefgh1234" opts)
-                           (boolean (some #{"add_org_user"} @calls)))))
-        admin        {:user-id 1 :user-role "super_admin" :created-at (- now 1000) :last-active now}]
-    ;; timed-out admin, logged-out admin, live admin, then anonymous signup
-    [(assigns-org? (assoc admin :last-active (- now 1000000000)) 0 {:org-id 3})
-     (assigns-org? admin now {:org-id 3})
-     (assigns-org? admin 0 {:org-id 3})
+  ;; `cutoff` is the user's invalidation stamp, 0 = never logged out. Only `can_admin_org`
+  ;; reaches the database: user 1 administers org 1, user 3 is an account_manager of no org.
+  (let [now           (System/currentTimeMillis)
+        real-call-sql call-sql
+        assigns-org?  (fn [session cutoff opts]
+                        (let [calls (atom [])]
+                          (with-redefs [call-sql (fn [sql & args]
+                                                   (swap! calls conj sql)
+                                                   (case sql
+                                                     "add_new_user"                    [{:add_new_user 42}]
+                                                     "get_user_session_invalidated_at" [{:get_user_session_invalidated_at cutoff}]
+                                                     "can_admin_org"                   (apply real-call-sql sql args)
+                                                     nil))]
+                            (add-new-user session "a@b.com" "A" "Abcdefgh1234" opts)
+                            (boolean (some #{"add_org_user"} @calls)))))
+        live          (fn [user-id role] {:user-id user-id :user-role role
+                                          :created-at (- now 1000) :last-active now})
+        admin         (live 1 "organization_admin")]
+    ;; timed out, logged out, then live: assigning at all needs a live session
+    [(assigns-org? (assoc admin :last-active (- now 1000000000)) 0 {:org-id 1})
+     (assigns-org? admin now {:org-id 1})
+     (assigns-org? admin 0 {:org-id 1})
+     ;; org 2 is someone else's, and a session claiming super_admin does not change that
+     (assigns-org? admin 0 {:org-id 2})
+     (assigns-org? (live 1 "super_admin") 0 {:org-id 2})
+     (assigns-org? (live 3 "account_manager") 0 {:org-id 2})
+     ;; anonymous signup takes the email-domain path instead
      (assigns-org? {} 0 {})])
-  ;=> [false false true false]
+  ;=> [false false true false false true false]
   )
 
 (defn get-current-user-settings
@@ -1113,7 +1124,7 @@
 
 (defn update-org-info [{:keys [user-id]} org-uuid org-name email-domains auto-add? auto-accept?]
   (let [org-id (org-uuid->id org-uuid)]
-    (if (and org-id (sql-primitive (call-sql "can_admin_org" user-id org-id)))
+    (if (can-admin-org? user-id org-id)
       (do (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
           (data-response ""))
       (data-response "You are not authorized to manage this organization." {:status 403}))))
@@ -1133,20 +1144,23 @@
   ;; user 2 (user@pyr.dev) is a member of org 1; user 3 (account_manager@pyr.dev)
   ;; is an account_manager with no org; user 12 is an admin/member of org 2.
 
-  ;; can_admin_org: org admin may manage their own org, not another; AM manages any
-  (sql-primitive (call-sql "can_admin_org" 1 1))
+  ;; org admin may manage their own org, not another. AM manages any, but not a missing one
+  (can-admin-org? 1 1)
   ;=> true
-  (sql-primitive (call-sql "can_admin_org" 1 2))
+  (can-admin-org? 1 2)
   ;=> false
-  (sql-primitive (call-sql "can_admin_org" 3 2))
+  (can-admin-org? 3 2)
   ;=> true
+  (can-admin-org? 3 nil)
+  ;=> false
 
   ;; Org handlers take the org's public uuid, never the sequential PK. An unknown
   ;; org (here a non-existent uuid) yields a uniform 403 without revealing existence,
-  ;; and a malformed (non-uuid) id is rejected the same way -- no 500 and no mutation.
+  ;; and a malformed (non-uuid) id is rejected the same way -- no 500 and no mutation,
+  ;; even for an account_manager, whom the SQL alone would let through.
   (update-org-info {:user-id 1} "00000000-0000-0000-0000-000000000000" "Hacked" "@hack.com" false false)
   ;=>> {:status 403}
 
-  (update-org-info {:user-id 1} "not-a-uuid" "Hacked" "@hack.com" false false)
+  (update-org-info {:user-id 3} "not-a-uuid" "Hacked" "@hack.com" false false)
   ;=>> {:status 403}
   )
