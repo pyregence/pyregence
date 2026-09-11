@@ -1,34 +1,31 @@
 (ns pyregence.components.map-controls.weather-station-observation-latest-tool
-  (:require [clojure.core.async                            :refer [take! go <!]]
-            [clojure.string                                :as str]
-            [herb.core                                     :refer [<class]]
-            [pyregence.components.common                   :refer [tool-tip-wrapper]]
-            [pyregence.components.help                     :as h]
-            [pyregence.components.map-controls.tool-button :refer [tool-button]]
-            [pyregence.components.mapbox                   :as mb]
-            [pyregence.components.resizable-window         :refer [resizable-window]]
-            [pyregence.components.svg-icons                :as svg]
-            [pyregence.state                               :as !]
-            [pyregence.styles                              :as $]
-            [pyregence.utils.async-utils                   :as u-async]
-            [pyregence.utils.time_utils                    :as u-time]
-            [pyregence.utils.wmo-codes                     :refer [unit-id->labels]]
-            [reagent.core                                  :as r]
-            [cljs.core.async.interop                       :refer-macros [<p!]]))
-
+  (:require
+   [cljs.core.async.interop                        :refer-macros [<p!]]
+   [clojure.core.async                             :refer [<! go take!]]
+   [herb.core                                      :refer [<class]]
+   [pyregence.components.common                    :refer [tool-tip-wrapper]]
+   [pyregence.components.help                      :as h]
+   [pyregence.components.map-controls.tool-button  :refer [tool-button]]
+   [pyregence.components.mapbox                    :as mb]
+   [pyregence.components.resizable-window          :refer [resizable-window]]
+   [pyregence.components.svg-icons                 :as svg]
+   [pyregence.state                                :as !]
+   [pyregence.styles                               :as $]
+   [pyregence.utils.async-utils                    :as u-async]
+   [pyregence.utils.time_utils                     :as u-time]
+   [pyregence.weather-stations.observations.switch :as observations]
+   [reagent.core                                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- get-weather-station-chan [weather-station]
-  (u-async/fetch-and-process
-   (str "https://api.weather.gov/stations/" (:stationIdentifier weather-station) "/observations/latest")
-   {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
-   (fn [response]
-     (go
-       (js->clj (aget (<p! (.json response)) "properties")
-                :keywordize-keys true)))))
+(defn fetch!
+  [url]
+  (-> url
+      (u-async/fetch-and-process
+       {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
+       #(go (js->clj (<p! (.json %)) :keywordize-keys true)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -72,10 +69,14 @@
         :ref    "noreferrer noopener"
         :target "_blank"}
     "National Weather Service (NWS) API"]
-   "."])
+   " in the U.S. and "
+   [:a {:href   "https://www.canada.ca/en/environment-climate-change.html"
+        :ref    "noreferrer noopener"
+        :target "_blank"}
+    "National Weather Service (NWS) API"] " in Canada."])
 
 (defn- not-found
-  [{:keys [station-name stationIdentifier]}]
+  [{:keys [name id]}]
   [:div
    [:div {:style {:display         "flex"
                   :flex-direction  "column"
@@ -83,13 +84,14 @@
                   :width           "100%"
                   :padding-top     "1rem"
                   :padding-left    "1rem"}}
-    [:p "No information for the " station-name " weather station was found. Please check back later or try another station."]
+    [:p "No information for the " name " weather station was found. Please check back later or try another station."]
     [:ul {:style {:padding-inline-start "1rem"}}
-     [:li "Station ID: " stationIdentifier]
-     [:li "Station name: " station-name]]]])
+     [:li "Station ID: "   id]
+     [:li "Station name: " name]]]])
 
 ;;TODO this could share styles with the `not-found` component
-(defn- info [{:keys [stationName stationId timestamp] :as latest-observation} reset-view zoom-weather-station]
+;;TODO instead of or the "OR" arguments here we should have this function take in the US or CA data and generalize the parameters.
+(defn- info [{:keys [station observations]} reset-view zoom-weather-station]
   [:div
    [:p {:style {:font-size     "1.1rem"
                 :font-weight   "bold"
@@ -101,84 +103,61 @@
                   :width           "100%"
                   :padding-left    "1rem"}}
     [:ul {:style {:padding-inline-start "1rem"}}
-     [:li "Station ID: " stationId]
-     [:li "Station name: " stationName]
-     [:li "Observed at: " (u-time/date-string->iso-string timestamp @!/show-utc?)]
-     (let [CamelCase->title    (fn [CamelCase]
-                                 (let [[f & r] (-> CamelCase
-                                                   name
-                                                   (str/split #"(?=[A-Z])"))]
-                                   (str/join " " (concat [(str/capitalize f)] (mapv str/lower-case r)))))
-           unitCode->wmo-label #(-> %
-                                    (str/split #":")
-                                    last
-                                    unit-id->labels
-                                    (get "skos:altLabel"))
-           observation->item   (fn [[observation-key {:keys [unitCode value]}]]
-                                 (let [round-to-1-decimal #(/ (Math/round (* % 10)) 10)
-                                       c->f               (fn [c] (+ (* c 1.8) 32))
-                                       is-celsius?        (= unitCode "wmoUnit:degC")
-                                       observation-param  (-> observation-key
-                                                              CamelCase->title
-                                                              (str/replace #"last(\d+)" "last $1"))
-                                       numeric-value      (when (number? value)
-                                                            (if is-celsius?
-                                                              (round-to-1-decimal (c->f value))
-                                                              (round-to-1-decimal value)))
-                                       units              (or ({"wmoUnit:km_h-1" "km/hr"
-                                                                "wmoUnit:degC"   "\u00B0F"} unitCode)
-                                                              (unitCode->wmo-label unitCode))]
-                                   (str observation-param ": " numeric-value units)))]
-       (vec
-        (cons :<>
-              (->> latest-observation
-                   (filter (fn [[_ {:keys [value]}]] value))
-                   (map observation->item)
-                   sort
-                   (mapv (fn [i] [:li {:key (hash i)} i]))))))]]
+     [:li "Station ID: "   (station :id)]
+     [:li "Station name: " (station :name)]
+     [:li "Observed at: " (u-time/date-string->iso-string (station :timestamp) @!/show-utc?)]
+     (->> observations
+          (map (fn [[display-name value-with-uom]]
+                 [:li {:key display-name} (str display-name " " value-with-uom)]))
+          (cons :<>)
+          vec)]]
+
    [:div {:style {:display         "flex"
                   :justify-content "flex-end"
                   :align-items     "center"
                   :gap             "1rem"
                   :padding         "1rem 1rem 0 1rem"}}
-      (when @!/terrain?
-        [tool-tip-wrapper
-         "Zoom Out"
-         :top
-         [:button {:class    (<class $/p-themed-button)
-                   :on-click reset-view
-                   :style    {:padding "2px"}}
-          [:div {:style {:height "32px" :width "32px"}}
-           [svg/return]]]])
-   
+    (when @!/terrain?
       [tool-tip-wrapper
-       "Zoom Map to Weather Station"
+       "Zoom Out"
        :top
        [:button {:class    (<class $/p-themed-button)
-                 :on-click zoom-weather-station
+                 :on-click reset-view
                  :style    {:padding "2px"}}
         [:div {:style {:height "32px" :width "32px"}}
-         [svg/binoculars]]]]]])
-   
-(defn- loading-all-stations []
-  [:div {:style {:padding "1.2em"}}
-   "Grabbing weather stations from the "
-   [:a {:href   "https://api.weather.gov/"
-        :ref    "noreferrer noopener"
-        :target "_blank"}
-    "National Weather Service (NWS) API"]
-   "..."
-   [:div {:style {:padding-top "1rem"}}
-    "Please check back later."]])
+         [svg/return]]]])
+    [tool-tip-wrapper
+     "Zoom Map to Weather Station"
+     :top
+     [:button {:class    (<class $/p-themed-button)
+               :on-click zoom-weather-station
+               :style    {:padding "2px"}}
+      [:div {:style {:height "32px" :width "32px"}}
+       [svg/binoculars]]]]]])
 
-(defn- loading-one-station [weather-station-name]
+(defn- loading-all-stations []
+    [:div {:style {:padding "1.2em"}}
+     "Grabbing weather stations from the "
+     [:a {:href   "https://www.canada.ca/en/environment-climate-change.html"
+          :ref    "noreferrer noopener"
+          :target "_blank"}
+      "Environment and Climate Change Canada"]
+     " and the "
+     [:a {:href   "https://api.weather.gov/"
+          :ref    "noreferrer noopener"
+          :target "_blank"}
+      "National Weather Service (NWS) API"]
+     "..."
+     [:div {:style {:padding-top "1rem"}}
+      "Please check back later."]])
+
+(defn- loading-one-station [station-name]
   [:div {:style {:padding "1.2em"}}
-   (str "Loading the " weather-station-name " weather station...")])
+   (str "Loading the " station-name " weather station...")])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Root Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defn tool [parent-box close-fn!]
   (r/with-let [latest-observation   (r/atom nil)
@@ -198,21 +177,22 @@
                                                      :zoom   6})))
                on-click             (fn [features]
                                       (go
-                                        (when-let [new-weather-station (js->clj (aget features "properties") :keywordize-keys true)]
+                                        (when-let [new-weather-station (js->clj (aget features "properties")  :keywordize-keys true)]
                                           (reset! weather-station new-weather-station)
-                                          (let [observation-chan (get-weather-station-chan new-weather-station)]
+                                          (let [observation-chan (-> new-weather-station
+                                                                     observations/weather-station-response->observation-url
+                                                                     fetch!)]
                                             (reset! latest-observation
-                                                    (or (<! observation-chan)
-                                                        ;;TODO improve on how we handle the network calls
-                                                        :error))))))
+                                                    (or
+                                                     (-> (<! observation-chan) observations/response->observations)
+                                                     :error))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _                    (take! (mb/create-weather-station-layer! "weather-stations")
                                            #(mb/add-feature-highlight!
                                              "weather-stations" "weather-stations"
                                              :click-fn on-click))]
 
-    (let [{:keys [stationName]
-           :as latest-observation-info} @latest-observation
+    (let [{:keys [station]} @latest-observation
           render-content                (fn []
                                           (cond
                                             (empty? (:features @!/the-weather-stations))
@@ -221,17 +201,18 @@
                                             (nil? @latest-observation)
                                             [intro]
 
-                                            stationName
+                                            (:id station)
                                             [info
-                                             latest-observation-info
+                                             @latest-observation
                                              reset-view
                                              zoom-weather-station]
 
                                             (= @latest-observation :error)
-                                            [not-found @weather-station]
+                                            [not-found (observations/weather-station->cmpt-info @weather-station)]
 
                                             :else
-                                            [loading-one-station stationName]))]
+                                            [loading-one-station (:name station)]))]
+
       (if @!/mobile?
         [:div#wildfire-mobile-weather-station-tool
          {:style ($/combine $/tool $mobile)}
