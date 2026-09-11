@@ -34,11 +34,11 @@
 (def default-fuel-version "2.5.0")
 
 (def valid-md-models
-  "\"landfire\" runs ELMFIRE + Pyretechnics; \"cawfe\" runs the coupled
+  "\"standard\" runs ELMFIRE + Pyretechnics; \"cawfe\" runs the coupled
    fire-atmosphere model. Each maps to its own sig3 network."
-  #{"landfire" "cawfe"})
+  #{"standard" "cawfe"})
 
-(def default-md-model "landfire")
+(def default-md-model "standard")
 
 (def default-cawfe-artefacts-dir
   "Fallback for an unset :cawfe-artefacts-dir. sig3 specs it as a non-empty storage
@@ -50,7 +50,7 @@
    reality, so this is also the ceiling on how long a run occupies the queue."
   5)
 
-(def ^:private landfire-polling-steps
+(def ^:private standard-polling-steps
   {"mdrop-dps"          {"pending" false "success" false "failure" false "order" 1}
    "mdrop-elmfire"      {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
    "mdrop-pyretechnics" {"pending" false "success" false "failure" false "order" 2} ;; `2` is not a typo: the models run in parallel
@@ -67,7 +67,7 @@
 (defn model->polling-steps
   "The sig3 node names to watch for a model, keyed by step name and seeded as unseen."
   [model]
-  (if (= "cawfe" model) cawfe-polling-steps landfire-polling-steps))
+  (if (= "cawfe" model) cawfe-polling-steps standard-polling-steps))
 
 (def ^:private conus-bounds
   {:min-x -125.0 :min-y 25.0 :max-x -66.0 :max-y 50.0})
@@ -264,7 +264,7 @@
   [fire-name model-time]
   (str "match-drop-forecast_" fire-name "_" model-time))
 
-(defn landfire-match-drop-args->body
+(defn standard-match-drop-args->body
   [match-job-id
    {:keys [ignition-time lat lon wx-type fuel-version user-id org-id]}
    {:keys [sig3-env]}]
@@ -292,7 +292,7 @@
 
 (defn cawfe-match-drop-args->body
   "Baseline CAWFE request. The network's `:request-mapping` is a flat identity map,
-   so unlike the LANDFIRE body these arguments are not nested. Fuels and topography
+   so unlike the standard body these arguments are not nested. Fuels and topography
    are left out on purpose: `cawfe-matchdrop.edn` defaults them to LANDFIRE 2025."
   [match-job-id
    {:keys [ignition-time lat lon]}
@@ -316,7 +316,7 @@
   [model match-job-id params match-drop-config]
   (if (= "cawfe" model)
     (cawfe-match-drop-args->body match-job-id params match-drop-config)
-    (landfire-match-drop-args->body match-job-id params match-drop-config)))
+    (standard-match-drop-args->body match-job-id params match-drop-config)))
 
 (defn- submit-match-drop-job!
   "Requests a match-drop job from kubernetes"

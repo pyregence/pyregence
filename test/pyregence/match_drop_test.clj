@@ -7,7 +7,7 @@
                                  cawfe-sim-hours
                                  default-cawfe-artefacts-dir
                                  initiate-md!
-                                 landfire-match-drop-args->body
+                                 standard-match-drop-args->body
                                  model->polling-steps]]
    [clj-http.client]
    [triangulum.config]
@@ -94,7 +94,7 @@
 (deftest match-drop-args->body-carries-user-and-org
   (testing "submit-job arguments carry the user and org ids for billing attribution"
     (let [{:keys [arguments]} (#'pyregence.match-drop/match-drop-args->body
-                               "landfire"
+                               "standard"
                                42
                                (assoc base-params :org-id 3)
                                {:sig3-env "dev"})]
@@ -104,7 +104,7 @@
 (deftest match-drop-args->body-allows-no-org
   (testing "a user with no organization still produces a valid body"
     (let [{:keys [arguments]} (#'pyregence.match-drop/match-drop-args->body
-                               "landfire"
+                               "standard"
                                42
                                (assoc base-params :org-id nil)
                                {:sig3-env "dev"})]
@@ -154,9 +154,9 @@
       (is (= "match-drop-forecast_md-42_20260809_211500" workspace))
       (is (= 4 (count (str/split workspace #"_")))))))
 
-(deftest landfire-body-is-unchanged
-  (testing "the LANDFIRE builder still submits the nested :match-drop body"
-    (let [{:keys [network arguments]} (landfire-match-drop-args->body 42 md-params md-config)]
+(deftest standard-body-is-unchanged
+  (testing "the STANDARD builder still submits the nested :match-drop body"
+    (let [{:keys [network arguments]} (standard-match-drop-args->body 42 md-params md-config)]
       (is (= :match-drop network))
       (is (= "md-42" (:pyrc_fire_name arguments)))
       (is (= "match-drop-forecast_md-42_20260809_211500" (:geoserver-workspace arguments)))
@@ -208,9 +208,9 @@
          :body      body}))))
 
 (deftest running-job-guard-is-scoped-to-the-model
-  (testing "a running LANDFIRE job does not block a CAWFE run"
+  (testing "a running STANDARD job does not block a CAWFE run"
     (let [{:keys [sql-calls body]} (initiate-md-with-running!
-                                    {"landfire" 1}
+                                    {"standard" 1}
                                     (assoc md-params :model "cawfe"))]
       (is (some #{["count_running_user_match_jobs" 1 "cawfe"]} sql-calls)
           "the running count is asked for per model")
@@ -305,10 +305,10 @@
     (let [body (initiate-md-with-cawfe-flag! false (assoc md-params :model "cawfe"))]
       (is (str/includes? (str body) "disabled")))))
 
-(deftest landfire-still-runs-when-the-cawfe-flag-is-off
+(deftest standard-still-runs-when-the-cawfe-flag-is-off
   (testing "the flag only gates CAWFE"
-    (let [body (initiate-md-with-cawfe-flag! false (assoc md-params :model "landfire"))]
-      (is (= {:started "landfire"} body)))))
+    (let [body (initiate-md-with-cawfe-flag! false (assoc md-params :model "standard"))]
+      (is (= {:started "standard"} body)))))
 
 (deftest cawfe-runs-when-the-flag-is-on
   (testing "a CAWFE submit goes through while :cawfe is enabled"

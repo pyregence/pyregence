@@ -36,7 +36,7 @@
 ;; Match Drop Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def landfire-instructions
+(def standard-instructions
   "Simulates a 72 hour fire using real-time weather data from the Hybrid model,
    which is a blend of the HRRR, NAM 3 km, and GFS 0.125\u00B0 models.
    Click on any CONUS location to \"drop\" a match, then set the date and time to begin
@@ -51,7 +51,7 @@
 (def match-drop-models
   "The available fire models. Each maps to its own network in sig3."
   (array-map
-   "landfire" {:opt-label "LANDFIRE"
+   "standard" {:opt-label "STANDARD"
                :tooltip   "ELMFIRE and Pyretechnics running on LANDFIRE fuels and topography, driven by Hybrid weather (HRRR, NAM 3 km and GFS 0.125\u00B0). A 200 member ensemble over 72 hours."}
    "cawfe"    {:opt-label "CAWFE"
                :tooltip   "The Coupled Atmosphere-Wildland Fire Environment model. It downscales the NAM forecast and simulates how the fire feeds back on local weather, which the other models cannot do. Forecast weather only, a fixed 5 hour window, and much slower to run."}))
@@ -378,7 +378,7 @@
                md-datetime-local (r/atom (u-time/get-current-local-datetime-string)) ; Default to the current date/time
                local-time-zone   (r/atom (u-time/get-time-zone (js/Date. @md-datetime-local))) ; Default to the user's current time zone
                fuel-version      (r/atom c/default-fuel-version)
-               model             (r/atom "landfire")
+               model             (r/atom "standard")
                click-event       (mb/enqueue-marker-on-click! #(reset! lon-lat (first %))
                                                                     {:coord-fn clamp-to-fuel-extent})
                move-event        (mb/add-mouse-move-xy!
@@ -418,7 +418,7 @@
          [:div {:style {:flex "1 1 0" :min-height 0 :font-size "0.9rem" :padding "0.5rem 1rem" :overflow-y "auto"}}
 
           [:div {:style {:font-size "0.85rem" :margin "0.5rem 0"}}
-           (if (= "cawfe" @model) cawfe-instructions landfire-instructions)]
+           (if (= "cawfe" @model) cawfe-instructions standard-instructions)]
           [:hr {:style {:background "white"}}]
           [labeled-input "Fire Name:" display-name {:placeholder "New Fire"}]
           [lon-lat-position $match-drop-location "Ignition Location:" @lon-lat]
