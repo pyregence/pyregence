@@ -13,7 +13,7 @@
    [pyregence.styles                               :as $]
    [pyregence.utils.async-utils                    :as u-async]
    [pyregence.utils.time_utils                     :as u-time]
-   [pyregence.weather-stations.observations :as observations]
+   [pyregence.weather-stations.observations        :as observations]
    [reagent.core                                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
