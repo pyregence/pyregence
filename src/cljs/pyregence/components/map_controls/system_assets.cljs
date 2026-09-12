@@ -18,8 +18,8 @@
                                  {:device "substation"        :color "blue"   :hover-color "#072F9C" :selected-color "#638BF8"}
                                  {:device "recloser"          :color "green"  :hover-color "#177005" :selected-color "#7CF863"}
                                  {:device "breaker"           :color "orange" :hover-color "#9C5907" :selected-color "#FACA8F"}
-                                 {:device "switch"            :color "TODO"   :hover-color "TODO"    :selected-color "TODO"}
-                                 {:device "sectionalizer"     :color "TODO"   :hover-color "TODO"    :selected-color "TODO"}]]
+                                 {:device "switch"            :color "purple" :hover-color "#910891" :selected-color "#F28CF2"}
+                                 {:device "sectionalizer"     :color "teal"   :hover-color "#078888" :selected-color "#8CF2F2"}]]
     (go
       (reset! orgs-with-system-assets
               (let [{:keys [body success]}
