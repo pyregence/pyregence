@@ -48,7 +48,7 @@
 (def cawfe-sim-hours
   "How far past ignition a CAWFE run simulates. CAWFE is roughly 6x faster than
    reality, so this is also the ceiling on how long a run occupies the queue."
-  5)
+  12)
 
 (def ^:private standard-polling-steps
   {"mdrop-dps"          {"pending" false "success" false "failure" false "order" 1}
