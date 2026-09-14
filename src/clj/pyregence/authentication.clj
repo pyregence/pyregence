@@ -743,9 +743,10 @@
     or a map with :org-id / :org-name keys (for admin/REPL use)
 
   Behavior:
-  - A new user is created and persisted to the database.
-  - If `:org-id` is provided and the caller may administer that org, the user is
-    associated to it with the role of 'organization_member'. Otherwise a 403.
+  - If `:org-id` is provided, the caller must be able to administer that org. This is
+    settled first, so a refusal is a 403 with no account created.
+  - A new user is created and persisted to the database, and an `:org-id` given places
+    it in that org with the role of 'organization_member'.
 
   - If `:org-id` is not provided, the system falls back to automatic domain-based
     organization assignment.
@@ -759,7 +760,8 @@
 
   Returns:
   - A 200 OK response if the user was successfully created and optionally assigned
-  - A 403 Forbidden response if user creation fails
+  - A 403 Forbidden response if the caller may not assign to `:org-id`, or if user
+    creation fails
 
   Validation:
   - Email, name, password, and (when present) organization name are validated
@@ -797,40 +799,38 @@
                   [[:org-name "Organization name" v/org-name-steps raw-org-name]]))))
         ;; org-name is nil unless a non-blank name was provided and validated above.
         ;; Public signup too, so this can't be liveness-gated at the route.
-        caller-id        (when (session/live? session) (:user-id session))
-        default-settings (pr-str {:timezone :utc})
-        new-user-id      (nil-on-error
-                          (sql-primitive (call-sql "add_new_user"
-                                                   {:log? false}
-                                                   email
-                                                   user-name
-                                                   password
-                                                   default-settings)))
-        response
-        (if-not new-user-id
-          (data-response (str "Failed to create the new user with name " user-name " and email " email)
-                         {:status 403})
-          (do
-            (throttle/forgive! [:password (normalize-email email)])
-            (cond
-              org-id
-              (if (can-admin-org? caller-id org-id)
-                (do
-                  (call-sql "add_org_user" org-id new-user-id)
-                  (data-response "User created and added to organization."))
-                (data-response "User does not have permission to assign users to this organization."
-                               {:status 403}))
-
-              :else
-              (let [domain (re-find #"@{1}.+" email)]
-                (if (call-sql "auto_add_org_user" new-user-id domain)
-                  (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
-                  (data-response "User created successfully but something went wrong when calling auto_add_org_user."
-                                 {:status 403}))))))]
-    ;; Stash org-name in session for marketplace provisioning
-    (cond-> response
-      (and new-user-id org-name (:marketplace-signup session))
-      (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name)))))
+        caller-id    (when (session/live? session) (:user-id session))]
+    ;; Settled before anything is written, so a refusal leaves no orphan account behind.
+    (if (and org-id (not (can-admin-org? caller-id org-id)))
+      (data-response "User does not have permission to assign users to this organization."
+                     {:status 403})
+      (let [default-settings (pr-str {:timezone :utc})
+            new-user-id      (nil-on-error
+                              (sql-primitive (call-sql "add_new_user"
+                                                       {:log? false}
+                                                       email
+                                                       user-name
+                                                       password
+                                                       default-settings)))
+            response
+            (if-not new-user-id
+              (data-response (str "Failed to create the new user with name " user-name " and email " email)
+                             {:status 403})
+              (do
+                (throttle/forgive! [:password (normalize-email email)])
+                (if org-id
+                  (do
+                    (call-sql "add_org_user" org-id new-user-id)
+                    (data-response "User created and added to organization."))
+                  (let [domain (re-find #"@{1}.+" email)]
+                    (if (call-sql "auto_add_org_user" new-user-id domain)
+                      (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
+                      (data-response "User created successfully but something went wrong when calling auto_add_org_user."
+                                     {:status 403}))))))]
+        ;; Stash org-name in session for marketplace provisioning
+        (cond-> response
+          (and new-user-id org-name (:marketplace-signup session))
+          (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name)))))))
 
 ^:rct/test
 (comment
@@ -838,7 +838,7 @@
   ;; reaches the database: user 1 administers org 1, user 3 is an account_manager of no org.
   (let [now           (System/currentTimeMillis)
         real-call-sql call-sql
-        assigns-org?  (fn [session cutoff opts]
+        sql-calls     (fn [session cutoff opts]
                         (let [calls (atom [])]
                           (with-redefs [call-sql (fn [sql & args]
                                                    (swap! calls conj sql)
@@ -848,21 +848,26 @@
                                                      "can_admin_org"                   (apply real-call-sql sql args)
                                                      nil))]
                             (add-new-user session "a@b.com" "A" "Abcdefgh1234" opts)
-                            (boolean (some #{"add_org_user"} @calls)))))
+                            (set @calls))))
+        assigns-org?  (fn [& args] (contains? (apply sql-calls args) "add_org_user"))
+        creates-user? (fn [& args] (contains? (apply sql-calls args) "add_new_user"))
         live          (fn [user-id role] {:user-id user-id :user-role role
                                           :created-at (- now 1000) :last-active now})
         admin         (live 1 "organization_admin")]
-    ;; timed out, logged out, then live: assigning at all needs a live session
-    [(assigns-org? (assoc admin :last-active (- now 1000000000)) 0 {:org-id 1})
-     (assigns-org? admin now {:org-id 1})
-     (assigns-org? admin 0 {:org-id 1})
-     ;; org 2 is someone else's, and a session claiming super_admin does not change that
-     (assigns-org? admin 0 {:org-id 2})
-     (assigns-org? (live 1 "super_admin") 0 {:org-id 2})
-     (assigns-org? (live 3 "account_manager") 0 {:org-id 2})
-     ;; anonymous signup takes the email-domain path instead
-     (assigns-org? {} 0 {})])
-  ;=> [false false true false false true false]
+    [;; timed out, logged out, then live: assigning at all needs a live session
+     [(assigns-org? (assoc admin :last-active (- now 1000000000)) 0 {:org-id 1})
+      (assigns-org? admin now {:org-id 1})
+      (assigns-org? admin 0 {:org-id 1})
+      ;; org 2 is someone else's, and a session claiming super_admin does not change that
+      (assigns-org? admin 0 {:org-id 2})
+      (assigns-org? (live 1 "super_admin") 0 {:org-id 2})
+      (assigns-org? (live 3 "account_manager") 0 {:org-id 2})
+      ;; anonymous signup takes the email-domain path instead
+      (assigns-org? {} 0 {})]
+     ;; a refusal writes nothing, so the denied caller leaves no account behind
+     [(creates-user? admin 0 {:org-id 2})
+      (creates-user? admin 0 {:org-id 1})]])
+  ;=> [[false false true false false true false] [false true]]
   )
 
 (defn get-current-user-settings
