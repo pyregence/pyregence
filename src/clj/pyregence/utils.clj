@@ -1,7 +1,7 @@
 (ns pyregence.utils
   (:import  [java.util TimeZone]
             [java.text SimpleDateFormat]
-            [java.time LocalDateTime ZonedDateTime]
+            [java.time LocalDateTime ZonedDateTime ZoneOffset]
             [java.time.format DateTimeFormatter]
             [java.time.temporal ChronoUnit]))
 
@@ -81,9 +81,12 @@
 
 (defn get-current-date-time-iso-string
   "Returns the current date and time as an ISO string rounded down to the nearest
-   hour. e.g. \"2023-06-07T15:00Z\""
+   hour. e.g. \"2023-06-07T15:00Z\"
+
+   Read in UTC, because the trailing Z is a quoted literal rather than an offset:
+   asking the ambient zone would stamp local wall-clock time and label it UTC."
   []
-  (let [current-datetime (ZonedDateTime/now)
+  (let [current-datetime (ZonedDateTime/now ZoneOffset/UTC)
         rounded-datetime (-> current-datetime
                              (.truncatedTo ChronoUnit/HOURS))]
     (.format (DateTimeFormatter/ofPattern "yyyy-MM-dd'T'HH:mm'Z'")
