@@ -8,7 +8,7 @@
 ;; Root component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn panel-dropdown [title tool-tip-text val options disabled? call-back & [selected-param-set]]
+(defn panel-dropdown [title tool-tip-text val options disabled? call-back & [selected-param-set test-id]]
   [:div {:style {:display "flex" :flex-direction "column" :margin-top ".25rem"}}
    [:div {:style {:display "flex" :justify-content "space-between"}}
     [:label title]
@@ -20,6 +20,7 @@
                                :fill   ($/color-picker :font-color)})}
       [svg/help]]]]
    [:select {:style     ($/dropdown)
+             :data-testid test-id
              :value     (or val :none)
              :disabled  disabled?
              :on-change #(call-back (u-dom/input-keyword %))}
