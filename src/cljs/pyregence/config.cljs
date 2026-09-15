@@ -106,6 +106,19 @@
   (get @!/feature-flags feature-name))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Option Availability
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn option-unavailable?
+  "Whether a param option is off-limits given the currently selected params.
+   `:disabled-for` blacklists, `:enabled-for` whitelists. The whitelist exists for options
+   that belong to one model alone, such as the placeholders standing in for the fuel source
+   and percentile that CAWFE does not have."
+  [{:keys [disabled-for enabled-for]} selected-set]
+  (boolean (or (and (set? disabled-for) (seq (set/intersection disabled-for selected-set)))
+               (and (set? enabled-for)  (empty? (set/intersection enabled-for selected-set))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Geographic Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -870,34 +883,49 @@
                                                       :options        {:none {:opt-label "None"}}}
                                     :output     {:opt-label  "Output"
                                                  :hover-text "Available outputs are fire location, crown fire type (surface fire, passive, or active), flame length (ft), and surface fire spread rate (ft/min). Time can be advanced with the slider centered below."
-                                                 :options    {:burned       {:opt-label       "Forecasted fire location"
-                                                                             :filter          "hours-since-burned"
-                                                                             :units           ""
-                                                                             :reverse-legend? false}
-                                                              :crown-fire   {:opt-label       "Crown Fire"
-                                                                             :filter          "crown-fire"
-                                                                             :units           ""
-                                                                             :reverse-legend? false}
-                                                              :flame-length {:opt-label "Flame Length"
-                                                                             :filter    "flame-length"
-                                                                             :units     "ft"}
-                                                              :spread-rate  {:opt-label "Spread Rate"
-                                                                             :filter    "spread-rate"
-                                                                             :units     "ft/min"}}}
+                                                 :options    {:burned          {:opt-label       "Forecasted fire location"
+                                                                                :filter          "hours-since-burned"
+                                                                                :units           ""
+                                                                                :reverse-legend? false}
+                                                              :crown-fire      {:opt-label       "Crown Fire"
+                                                                                :filter          "crown-fire"
+                                                                                :units           ""
+                                                                                :reverse-legend? false}
+                                                              :flame-length    {:opt-label    "Flame Length"
+                                                                                :filter       "flame-length"
+                                                                                :units        "ft"
+                                                                                :disabled-for #{:cawfe}}
+                                                              :spread-rate     {:opt-label "Spread Rate"
+                                                                                :filter    "spread-rate"
+                                                                                :units     "ft/min"}}}
+                                    ;; CAWFE is one deterministic run, so it has no ensemble to take a
+                                    ;; percentile of. The dropdown is hidden for it and the selection falls
+                                    ;; to :not-applicable, which contributes no filter to the layer lookup.
                                     :burn-pct   {:opt-label      "Predicted Fire Size"
                                                  :default-option :50
+                                                 :hidden?        #(= :cawfe (:model %))
                                                  :hover-text     "Each fire forecast is an ensemble of 1,000 separate simulations to account for uncertainty in model inputs. This leads to a range of predicted fire sizes, five of which can be selected from the dropdown menu."
-                                                 :options        {:90 {:opt-label "Largest (90th percentile)"
-                                                                       :filter    "90"}
-                                                                  :70 {:opt-label "Larger (70th percentile)"
-                                                                       :filter    "70"}
-                                                                  :50 {:opt-label "Median (50th percentile)"
-                                                                       :filter    "50"}
-                                                                  :30 {:opt-label "Smaller (30th percentile)"
-                                                                       :filter    "30"}
-                                                                  :10 {:opt-label "Smallest (10th percentile)"
-                                                                       :filter    "10"}}}
+                                                 :options        {:90             {:opt-label    "Largest (90th percentile)"
+                                                                                   :filter       "90"
+                                                                                   :disabled-for #{:cawfe}}
+                                                                  :70             {:opt-label    "Larger (70th percentile)"
+                                                                                   :filter       "70"
+                                                                                   :disabled-for #{:cawfe}}
+                                                                  :50             {:opt-label    "Median (50th percentile)"
+                                                                                   :filter       "50"
+                                                                                   :disabled-for #{:cawfe}}
+                                                                  :30             {:opt-label    "Smaller (30th percentile)"
+                                                                                   :filter       "30"
+                                                                                   :disabled-for #{:cawfe}}
+                                                                  :10             {:opt-label    "Smallest (10th percentile)"
+                                                                                   :filter       "10"
+                                                                                   :disabled-for #{:cawfe}}
+                                                                  :not-applicable {:opt-label   "Not applicable"
+                                                                                   :enabled-for #{:cawfe}}}}
+                                    ;; Hidden for CAWFE, which carries its fuels inside the model run and
+                                    ;; publishes no fuel-source segment for the layer lookup to match on.
                                     :fuel       {:opt-label  "Fuels"
+                                                 :hidden?    #(= :cawfe (:model %))
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               "Source of surface and canopy fuel inputs:"
                                                               [:br]
@@ -916,14 +944,30 @@
                                                                    :target "_blank"}
                                                                "https://forestobservatory.com"]
                                                               "), © Salo Sciences, Inc. 2020."]
-                                                 :options    {:landfire {:opt-label "LANDFIRE 2.4.0/2.3.0"
-                                                                         :filter    "landfire"}}}
+                                                 :options    {:landfire       {:opt-label    "LANDFIRE 2.4.0/2.3.0"
+                                                                                :filter       "landfire"
+                                                                                :disabled-for #{:cawfe}}
+                                                              :not-applicable {:opt-label   "Not applicable"
+                                                                               :enabled-for #{:cawfe}}}}
                                     :weather    {:opt-label  "Weather Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "Hybrid"]
-                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."]
-                                                 :options    {:hybrid {:opt-label "Hybrid"}}}
+                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM"]
+                                                              " - the North American Mesoscale forecast, which CAWFE downscales and then couples to the fire."]
+                                                 ;; Neither option filters anything; this dropdown only reports which
+                                                 ;; forecast drove the run, so each model shows its own.
+                                                 :options    {:hybrid {:opt-label    "Hybrid"
+                                                                       :disabled-for #{:cawfe}}
+                                                              :nam    {:opt-label   "NAM"
+                                                                       :enabled-for #{:cawfe}}}}
+                                    ;; Inert rather than hidden for CAWFE: the match drop picks the model,
+                                    ;; but the panel should still say which one is running so a CAWFE drop
+                                    ;; reads differently from a LANDFIRE one at a glance.
                                     :model      {:opt-label  "Model"
+                                                 :disabled   #(= :cawfe (:model %))
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "ELMFIRE"]
                                                               " (Eulerian Level Set Model of FIRE spread) is a cloud-based deterministic fire model developed by Chris Lautenberger at Reax Engineering. Details on its mathematical implementation have been published in Fire Safety Journal ("
@@ -944,12 +988,24 @@
                                                               [:a {:href  "https://pyregence.github.io/pyretechnics/"
                                                                    :target "_blank"}
                                                                "site"]
-                                                              "."]
+                                                              "."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "CAWFE"]
+                                                              " (Coupled Atmosphere-Wildland Fire Environment) downscales the NAM forecast and simulates how the fire feeds back on the local weather, so the fire's own heat shapes the winds that drive it. It runs a single deterministic simulation rather than an ensemble, so there is no predicted fire size to choose, and it takes considerably longer to finish."]
                                                  :options    {:elmfire      {:opt-label "ELMFIRE"
                                                                              :filter    "elmfire"}
                                                               :pyretechnics {:enabled?  #(feature-enabled? :pyretechnics)
                                                                              :opt-label "Pyretechnics (Beta)"
-                                                                             :filter    "pyretec"}}}
+                                                                             :filter    "pyretec"}
+                                                              ;; Shown so the dropdown can display it while a CAWFE drop is
+                                                              ;; selected, but never pickable: a match drop is run by one
+                                                              ;; model and its option selects this through :resets, so the
+                                                              ;; entry greys out whenever anything else is selected.
+                                                              :cawfe        {:enabled?     #(feature-enabled? :cawfe)
+                                                                             :disabled-for #{:elmfire :pyretechnics}
+                                                                             :opt-label    "CAWFE"
+                                                                             :filter       "cawfe"}}}
                                     :model-init {:opt-label  "Forecast Start Time"
                                                  :hover-text "This shows the date and time (24 hour time) from which the prediction starts. To view a different start time, select one from the dropdown menu. This data is automatically updated when active fires are sensed by satellites."
                                                  :disabled   (fn [selected-set]
