@@ -32,7 +32,7 @@
  :triangulum.server/http-port  8080
  :triangulum.server/mode       "<prod/dev>"
  :triangulum.server/log-dir    "logs"
- :triangulum.server/handler    pyregence.handlers/authenticated-routing-handler
+ :triangulum.server/handler    triangulum.handler/authenticated-routing-handler
  :triangulum.server/nrepl      true
  :triangulum.server/nrepl-port 5555
 
@@ -42,6 +42,7 @@
  ;; handler (server)
  :triangulum.handler/not-found-handler     pyregence.handlers/not-found-handler
  :triangulum.handler/redirect-handler      pyregence.handlers/redirect-handler
+ :triangulum.handler/refused-handler       pyregence.handlers/refused-handler
  :triangulum.handler/route-authenticator   pyregence.handlers/route-authenticator
  :triangulum.handler/routing-tables        [pyregence.routing/routes]
  :triangulum.handler/bad-tokens            #{".php"}
@@ -96,15 +97,16 @@
                                      :mapbox-access-token             "<access-token>"
                                      :auth-token                      "<changeme123456789>"
                                      :usage-terms-and-conditions-date "December 2, 2025"
-                                     :features                        {:match-drop       true
-                                                                       :sig3-endpoint    "https://sig3.sig-gis-00.corespeq.com/"
-                                                                       :fire-history     true
-                                                                       :structures       true
-                                                                       :pyretechnics     true
-                                                                       :image-mosaic-gwc true
+                                     :features                        {:match-drop            true
+                                                                       :cawfe                 true
+                                                                       :sig3-endpoint         "https://sig3.sig-gis-00.corespeq.com/"
+                                                                       :fire-history          true
+                                                                       :structures            true
+                                                                       :pyretechnics          true
+                                                                       :image-mosaic-gwc      true
                                                                        ;; PYR1-1701: local development may bypass automatic idle and absolute expiry.
                                                                        ;; Explicit logout and invalidation remain enforced.
-                                                                       :session-timeouts false
+                                                                       :session-timeouts      false
                                                                        ;; Colours HRDPS (and any future metric model) on a metric scale instead of the
                                                                        ;; imperial one the other models use. Off until the GeoServer actually serves the
                                                                        ;; styles: the client asks for them by name via &STYLE=, and GeoServer fails the
@@ -170,9 +172,9 @@
  :pyregence.auth/absolute-timeout-min               420
  ;; How long the password step stays good for while the second factor is owed.
  :pyregence.auth/two-factor-window-min              15
- :pyregence.match-drop/match-drop                   {:sig3-auth      "<AUTH_TOKEN>"
-                                                     :sig3-env       "<dev | prod | stg>"
-                                                     :max-queue-size 5}
+ :pyregence.match-drop/match-drop                   {:sig3-auth           "<AUTH_TOKEN>"
+                                                     :sig3-env            "<dev | prod | stg>"
+                                                     :max-queue-size      5}
  ;; Marketplace (e.g. audience "example.com", partner-id "my-project-123")
  :pyregence.marketplace/config {:enabled              false
                                 :audience             "<your-app-domain>"
