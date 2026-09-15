@@ -1,5 +1,8 @@
-{:tasks
- {:enter                (println (str (java.util.Date.)
+{;; bb >= 1.13.221 resolves deps in-process by default, and its XML parser
+ ;; rejects the `&oslash;` entity in plexus-1.0.4.pom (a transitive dep).
+ :deps-resolver :jvm
+ :tasks
+ {:enter               (println (str (java.util.Date.)
                                       " task " "'" (:name (current-task)) "'"
                                       " running... "))
   :leave                (println (str (java.util.Date.)

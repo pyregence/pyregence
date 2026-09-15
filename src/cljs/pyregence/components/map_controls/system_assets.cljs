@@ -2,7 +2,6 @@
   (:require
    [clojure.core.async                      :refer [<! go]]
    [clojure.edn                             :as edn]
-   [clojure.string                          :as str]
    [goog.object                             :as gobj]
    [pyregence.components.map-controls.utils :as u]
    [pyregence.components.mapbox             :as mb]
@@ -14,10 +13,12 @@
 (defn panel-section
   []
   (let [orgs-with-system-assets (r/atom nil)
-        device-info             [{:device "fuse"       :color "red"    :hover-color "#9C2007" :selected-color "#F87C63"}
-                                 {:device "substation" :color "blue"   :hover-color "#072F9C" :selected-color "#638BF8"}
-                                 {:device "recloser"   :color "green"  :hover-color "#177005" :selected-color "#7CF863"}
-                                 {:device "breaker"    :color "orange" :hover-color "#9C5907" :selected-color "#FACA8F"}]]
+        device-info             [{:device "fuse"              :label "Fuses"          :color "red"    :hover-color "#9C2007" :selected-color "#F87C63"}
+                                 {:device "substation"        :label "Substations"    :color "blue"   :hover-color "#072F9C" :selected-color "#638BF8"}
+                                 {:device "recloser"          :label "Reclosers"      :color "green"  :hover-color "#177005" :selected-color "#7CF863"}
+                                 {:device "breaker"           :label "Breakers"       :color "orange" :hover-color "#9C5907" :selected-color "#FACA8F"}
+                                 {:device "switch"            :label "Switches"       :color "purple" :hover-color "#910891" :selected-color "#F28CF2"}
+                                 {:device "sectionalizer"     :label "Sectionalizers" :color "teal"   :hover-color "#078888" :selected-color "#8CF2F2"}]]
     (go
       (reset! orgs-with-system-assets
               (let [{:keys [body success]}
@@ -31,12 +32,13 @@
           [:label "System Assets"]
           (for [{:keys [org_unique_id org_name]} orgs-with-system-assets
                 {:keys [device
+                        label
                         color
                         hover-color
                         selected-color]}         device-info
                 :let                             [id           (str org_unique_id "-" device)
                                                   source-layer (str org_unique_id "-devices")
-                                                  opt-label    (str (str/capitalize device) "s " "(" org_name ")")
+                                                  opt-label    (str label " (" org_name ")")
                                                   layer-name   (str "psps-static_" org_unique_id "%3A" source-layer)
                                                   layer        {:id         id
                                                                 :z-index    110

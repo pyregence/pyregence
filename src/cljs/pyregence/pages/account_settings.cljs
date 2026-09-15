@@ -29,7 +29,7 @@
   ;; re-render when the answer arrives -- and what PyreCast last said stays said
   ;; until it says something else, which is the disappearance PYR1-1623 is about.
   (directory/refresh! a-directory)
-  (fn [_ {:keys [user-role] :as m}]
+  (fn [{:keys [user-role] :as m}]
     [:div
      {:style {:height         "100vh"
               :margin-bottom  "40px"
