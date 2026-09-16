@@ -132,7 +132,9 @@
                                                                        :shasta      "https://shasta.pyregence.org/geoserver"
                                                                        ;; :shasta      "https://solitaire.sig-gis.com/geoserver"
                                                                        :match-drop  "https://sierra.pyregence.org/geoserver"
-                                                                       :psps        "https://energy.pyregence.org:8443/geoserver"
+                                                                       :parrot04    "https://some-geoserver/geoserver04"
+                                                                       :parrot05    "https://some-geoserver/geoserver05"
+                                                                       :parrot06    "https://some-geoserver/geoserver06"
                                                                        :pyreclimate "https://climate.pyregence.org/geoserver"}}
 
  ;; workers (server)
@@ -161,7 +163,9 @@
  :pyregence.capabilities/geoserver-credentials      {:trinity     {:username "<username>" :password "<password>"}
                                                      :shasta      {:username "<username>" :password "<password>"}
                                                      :match-drop  {:username "<username>" :password "<password>"}
-                                                     :psps        {:username "<username>" :password "<password>"}}
+                                                     :parrot04    {:username "<username>" :password "<password>"}
+                                                     :parrot05    {:username "<username>" :password "<password>"}
+                                                     :parrot06    {:username "<username>" :password "<password>"}}
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
  ;; Bounds (pentest AC): idle < 30, absolute < 8 h.
