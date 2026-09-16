@@ -968,7 +968,7 @@
                                                  :options    {:loading {:opt-label "Loading..."}}})}
    :psps-zonal   {:opt-label       "PSPS"
                   :filter          "psps-zonal"
-                  :geoserver-key   :psps
+                  :geoserver-key   :parrot06
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
