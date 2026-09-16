@@ -49,9 +49,11 @@
 
 (defn- session-timeouts-enabled?
   []
-  ;; PYR1-1701: missing means enabled so existing deployment configs retain
-  ;; their session policy; only an explicit false grants the local bypass.
-  (not= false (get-config :triangulum.views/client-keys :features :session-timeouts)))
+  ;; Missing means enabled so existing deployment configs retain their session
+  ;; policy; only an explicit true grants the local bypass.
+  (not (true? (get-config :triangulum.views/client-keys
+                          :features
+                          :session-timeouts-disabled?))))
 
 (defn- idle-timeout-min
   "How many minutes of quiet PyreCast allows before it stops honouring a session.
@@ -333,8 +335,8 @@
        (ended? {:user-id 1 :created-at now :last-active (- now idle-past)})]))
   ;=> [false false true]
 
-  ;; PYR1-1701: false suspends both automatic timeouts and tells the page there
-  ;; is no idle window to watch. True and absent retain the production policy.
+  ;; True suspends both automatic timeouts and tells the page there is no idle
+  ;; window to watch. False and absent retain the production policy.
   (let [now       (System/currentTimeMillis)
         fresh     {:user-id 1 :created-at now :last-active now}
         idle-past (assoc fresh :last-active (- now (* 16 60000)))
@@ -342,13 +344,13 @@
                     (with-redefs [get-config (fn [& path]
                                                (when (= path [:triangulum.views/client-keys
                                                               :features
-                                                              :session-timeouts])
+                                                              :session-timeouts-disabled?])
                                                  flag))
                                   call-sql   (fn [& _] [{:get_user_session_invalidated_at 0}])]
                       (f)))]
-    [(mapv #(under % (fn [] (timed-out? idle-past now))) [false true nil])
+    [(mapv #(under % (fn [] (timed-out? idle-past now))) [true false nil])
      (mapv #(under % (fn [] (:idle-timeout-min (as-a-page-may-see-it fresh))))
-           [false true nil])])
+           [true false nil])])
   ;=> [[false true true] [nil 15 15]]
 
   ;; The bypass is for time alone. Logout and newer-login invalidation still win.
@@ -357,8 +359,8 @@
     (with-redefs [get-config (fn [& path]
                                (when (= path [:triangulum.views/client-keys
                                               :features
-                                              :session-timeouts])
-                                 false))
+                                              :session-timeouts-disabled?])
+                                 true))
                   call-sql   (fn [& _] [{:get_user_session_invalidated_at now}])]
       (live? session now)))
   ;=> false
