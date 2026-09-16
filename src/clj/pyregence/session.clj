@@ -162,6 +162,26 @@
       (assoc :logged-in?       logged-in?
              :idle-timeout-min idle-timeout-min)))
 
+(defrecord PageSession [visible ended?])
+
+(defn for-page
+  "The session view a page may receive, and whether its login had already ended."
+  [stored-session]
+  (let [live? (live? stored-session)]
+    (->PageSession
+     (page-facing stored-session live? (when live? (idle-timeout-min)))
+     (and (authenticated? stored-session) (not live?)))))
+
+(defn visible-to-page
+  "The safe session value to embed in a rendered page."
+  [page-session]
+  (:visible page-session))
+
+(defn ended-before-page-load?
+  "Whether the page was requested with a login PyreCast no longer honours."
+  [page-session]
+  (:ended? page-session))
+
 (defn as-a-page-may-see-it
   "This session as a page is allowed to know it: PyreCast's own PKs taken out,
    the fact of a user replaced by whether that user's session is still live, and
@@ -178,7 +198,7 @@
    The window travels with the page because the page acts on it: the client-side
    kick gives up shortly before it, and the alternative is a literal in the
    ClojureScript that agrees with the server only until somebody changes the
-   config.
+  config.
 
    Reported only to a session that has one to lose. An anonymous visitor is told
    nothing, not because the number is a secret -- knowing how long PyreCast
@@ -187,8 +207,7 @@
    separately not to act on it, and that second sentence is a conditional in the
    ClojureScript whose only job is to undo this one."
   [session]
-  (let [live? (live? session)]
-    (page-facing session live? (when live? (idle-timeout-min)))))
+  (visible-to-page (for-page session)))
 
 (defn note-activity
   "Answer a heartbeat: the page saying the person is still here.

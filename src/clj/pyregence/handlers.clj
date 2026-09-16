@@ -6,6 +6,7 @@
             [clojure.string      :as    str]
             [nrepl.server        :as    nrepl-server]
             [pyregence.session   :as    session]
+            [pyregence.session-cookie :as session-cookie]
             [pyregence.session-ended :as session-ended]
             [pyregence.validation :as   v]
             [ring.util.codec     :refer [url-encode]]
@@ -18,19 +19,51 @@
             [triangulum.views    :as    views]
             [triangulum.worker   :refer [start-workers!]]))
 
-(defn render-page
-  "Wraps triangulum's render-page so a page is served the session as
-   `session/as-a-page-may-see-it` reports it rather than the stored one.
+(defn- request-session
+  [request]
+  (:session request))
 
-   What that view leaves out and why is that function's business. What is this
-   one's: the substitution is safe because the stored server-side session is
-   unaffected. GET page renders do not set a :session key on the response, so
-   wrap-session leaves the persisted session -- and its :user-id /
-   :organization-id, which server-side authorization relies on -- intact."
+(defn- with-page-session
+  [request page-session]
+  (assoc request :session (session/visible-to-page page-session)))
+
+(defn- render-session-aware-page
+  [handler request page-session]
+  (cond-> (handler (with-page-session request page-session))
+    (session/ended-before-page-load? page-session) session-cookie/expire))
+
+(defn render-page
+  "Serve the page-facing session view. If an authenticated session has ended,
+   expire its cookie so the next request is an ordinary guest request."
   [uri]
   (let [handler (views/render-page uri)]
     (fn [request]
-      (handler (update request :session session/as-a-page-may-see-it)))))
+      (render-session-aware-page handler
+                                 request
+                                 (session/for-page (request-session request))))))
+
+^:rct/test
+(comment
+  ;; An ended login is shown as logged out and its cookie is deleted. Live and
+  ;; anonymous sessions remain untouched.
+  (with-redefs [views/render-page (fn [_]
+                                    (fn [request]
+                                      {:status       200
+                                       :page-session (:session request)}))
+                session/live?    (fn [stored-session]
+                                   (:live? stored-session))]
+    (let [serve     (render-page "/")
+          ended    (serve {:session {:user-id 1 :live? false}})
+          live     (serve {:session {:user-id 1 :live? true}})
+          anonymous (serve {:session {}})]
+      [[(get-in ended [:page-session :logged-in?])
+        (contains? ended :session)
+        (:session ended)
+        (:session-cookie-attrs ended)]
+       [(contains? live :session)
+        (contains? anonymous :session)]]))
+  ;=> [[false true nil {:max-age 0}] [false false]]
+  )
 
 (def not-found-handler (comp #(assoc % :status 404) (render-page "/not-found")))
 
