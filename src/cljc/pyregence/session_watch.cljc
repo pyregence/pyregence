@@ -116,6 +116,7 @@
         page rendering clears any ended cookie as the server-side fallback."
        []
        (go
+         ;; PYR1-1748: move this and manual logout behind the session BBA command.
          (alts! [(u-async/call-clj-async! "log-out")
                  (timeout logout-grace-ms)])
          (u-browser/jump-to-url! (str "/login?"
