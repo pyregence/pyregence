@@ -125,10 +125,24 @@
       (testing "and the signup riding on that session survives"
         (is (= {:org-name "acme"} (get-in response [:session :marketplace-signup])))))))
 
-(deftest log-in-adds-the-marker-rather-than-replacing-the-session
-  (testing "a marketplace signup rides along until the login finishes"
-    (let [response (authentication/log-in {:marketplace-signup {:org-name "acme"}} account password)]
-      (is (= {:org-name "acme"} (get-in response [:session :marketplace-signup]))))))
+(deftest log-in-starts-a-fresh-pre-authentication-session
+  (let [ended-session {:user-id            7
+                       :organization-id    11
+                       :user-role          "member"
+                       :created-at         1
+                       :last-active        1
+                       :marketplace-signup {:org-name "acme"}}
+        response      (authentication/log-in ended-session account password)
+        awaiting      (:session response)
+        page-session  (session/for-page awaiting)]
+    (testing "marketplace signup context rides along until login finishes"
+      (is (= {:org-name "acme"} (:marketplace-signup awaiting))))
+    (testing "authenticated identity and its lifetime do not cross the password boundary"
+      (is (= #{:marketplace-signup :pending-2fa} (set (keys awaiting)))))
+    (testing "page rendering preserves the challenge rather than treating it as an ended login"
+      (is (false? (session/ended-before-page-load? page-session))))
+    (testing "the preserved challenge still completes authentication"
+      (is (= 200 (verify awaiting (valid-code)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; The budget
