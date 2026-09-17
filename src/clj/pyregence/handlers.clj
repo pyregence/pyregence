@@ -19,28 +19,15 @@
             [triangulum.views    :as    views]
             [triangulum.worker   :refer [start-workers!]]))
 
-(defn- request-session
-  [request]
-  (:session request))
-
-(defn- with-page-session
-  [request page-session]
-  (assoc request :session (session/visible-to-page page-session)))
-
-(defn- render-session-aware-page
-  [handler request page-session]
-  (cond-> (handler (with-page-session request page-session))
-    (session/ended-before-page-load? page-session) session-cookie/expire))
-
 (defn render-page
   "Serve the page-facing session view. If an authenticated session has ended,
    expire its cookie so the next request is an ordinary guest request."
   [uri]
   (let [handler (views/render-page uri)]
     (fn [request]
-      (render-session-aware-page handler
-                                 request
-                                 (session/for-page (request-session request))))))
+      (let [{:keys [visible ended?]} (session/for-page (:session request))]
+        (cond-> (handler (assoc request :session visible))
+          ended? session-cookie/expire)))))
 
 ^:rct/test
 (comment

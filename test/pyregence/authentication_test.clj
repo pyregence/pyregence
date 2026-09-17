@@ -140,7 +140,7 @@
     (testing "authenticated identity and its lifetime do not cross the password boundary"
       (is (= #{:marketplace-signup :pending-2fa} (set (keys awaiting)))))
     (testing "page rendering preserves the challenge rather than treating it as an ended login"
-      (is (false? (session/ended-before-page-load? page-session))))
+      (is (false? (:ended? page-session))))
     (testing "the preserved challenge still completes authentication"
       (is (= 200 (verify awaiting (valid-code)))))))
 

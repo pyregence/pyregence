@@ -169,25 +169,12 @@
       (assoc :logged-in?       logged-in?
              :idle-timeout-min idle-timeout-min)))
 
-(defrecord PageSession [visible ended?])
-
 (defn for-page
   "The session view a page may receive, and whether its login had already ended."
   [stored-session]
   (let [live? (live? stored-session)]
-    (->PageSession
-     (page-facing stored-session live? (when live? (idle-timeout-min)))
-     (and (authenticated? stored-session) (not live?)))))
-
-(defn visible-to-page
-  "The safe session value to embed in a rendered page."
-  [page-session]
-  (:visible page-session))
-
-(defn ended-before-page-load?
-  "Whether the page was requested with a login PyreCast no longer honours."
-  [page-session]
-  (:ended? page-session))
+    {:visible (page-facing stored-session live? (when live? (idle-timeout-min)))
+     :ended?  (and (authenticated? stored-session) (not live?))}))
 
 (defn as-a-page-may-see-it
   "This session as a page is allowed to know it: PyreCast's own PKs taken out,
@@ -214,7 +201,7 @@
    separately not to act on it, and that second sentence is a conditional in the
    ClojureScript whose only job is to undo this one."
   [session]
-  (visible-to-page (for-page session)))
+  (:visible (for-page session)))
 
 (defn note-activity
   "Answer a heartbeat: the page saying the person is still here.
