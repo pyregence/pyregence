@@ -94,11 +94,18 @@
          (not (timed-out? session now))
          (not (revoked? session))))))
 
+(def ^:private pre-authentication-keys
+  "Context allowed to cross from an unauthenticated first step into the second.
+  Authenticated identity and its timestamps deliberately do not: an ended login
+  carried into this state would make page rendering discard the 2FA challenge."
+  [:marketplace-signup])
+
 (defn awaiting-2fa
-  "`session` marked as owing a second factor from `user`, with its own fuse. Added to the session
-   rather than replacing it, since a marketplace signup rides along until the login finishes."
+  "A fresh pre-authentication session owing a second factor from `user`, with its
+  own fuse. Marketplace signup context rides along until login finishes; a prior
+  authenticated session does not."
   [session {:keys [user_id user_email]} now]
-  (assoc session :pending-2fa
+  (assoc (select-keys session pre-authentication-keys) :pending-2fa
          {:user-id    user_id
           :user-email user_email
           :expires-at (+ now (timeout-ms :pyregence.auth/two-factor-window-min
