@@ -30,7 +30,7 @@
    `clock`'s, and the activity shared by the session is injected. What remains
    here is policy: how long is too long, and what to do about it."
   (:require [pyregence.api.session-activity :as session-activity]
-            #?(:cljs [clojure.core.async :refer [alts! go timeout]])
+            #?(:cljs [clojure.core.async :refer [<! go]])
             #?(:cljs [pyregence.datatypes.idle-window :as idle-window])
             #?(:cljs [pyregence.clock :as clock])
             #?(:cljs [pyregence.utils.async-utils :as u-async])
@@ -85,10 +85,6 @@
        ;; quietly doubling the beat rate for the rest of the session.
        (atom false))
 
-     (def ^:private logout-grace-ms
-       "How long the idle kick gives its logout request before navigating anyway."
-       1000)
-
      (defn- note-input!
        "Remember that somebody is here. Runs on every mouse move, so it does one
         thing."
@@ -111,14 +107,13 @@
      (defn- give-up!
        "Stop claiming this session and go where something can be done about it.
 
-        Ask PyreCast to zero and expire the cookie first. Navigation still wins
-        after a short grace period if the server or network does not answer;
-        page rendering clears any ended cookie as the server-side fallback."
+        Use the same hard logout a person does and wait for PyreCast to answer
+        before leaving. A redirect alone only makes the page look logged out;
+        returning would recover the still-live cookie and recreate PYR1-1744."
        []
        (go
          ;; PYR1-1748: move this and manual logout behind the session BBA command.
-         (alts! [(u-async/call-clj-async! "log-out")
-                 (timeout logout-grace-ms)])
+         (<! (u-async/call-clj-async! "log-out"))
          (u-browser/jump-to-url! (str "/login?"
                                       u-async/session-ended-param
                                       "="
