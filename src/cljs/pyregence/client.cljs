@@ -113,7 +113,7 @@
       ;; needs and speaks to it through its protocol. The wiring is in force for
       ;; the construction and for nothing else.
       (wiring/with-wiring (wiring/->BrowserWiring)
-        (let [an-activity (=>SessionActivity)
+        (let [an-activity (=>SessionActivity (:session-generation clj-session))
               a-directory (=>Directory (session/->session (:user-role merged-params)))]
           ;; Watch the session for the moment it goes quiet too long. The window
           ;; is PyreCast's own, reported only to somebody with a session to lose;

@@ -19,7 +19,7 @@
   (-directory [wiring a-session]
     "The directory answering for A-SESSION.")
 
-  (-session-activity [wiring]
+  (-session-activity [wiring generation]
     "The activity shared by every tab in this browser session."))
 
 #?(:cljs
@@ -30,8 +30,8 @@
      (-directory [_ a-session]
        (arch.directory.over-the-wire/Directory a-session))
 
-     (-session-activity [_]
-       (arch.session-activity.local-storage/SessionActivity))))
+     (-session-activity [_ generation]
+       (arch.session-activity.local-storage/SessionActivity generation))))
 
 (def ^:dynamic *wiring*
   "Nil outside a composition, deliberately: an archetype asked without one
