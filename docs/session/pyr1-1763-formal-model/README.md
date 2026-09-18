@@ -1,5 +1,9 @@
 # PYR1-1763 session-fencing models
 
+This ticket-scoped directory preserves the formal design and review work for
+[PYR1-1763](https://sig-gis.atlassian.net/browse/PYR1-1763). It is historical
+engineering evidence for that change rather than a general TLA+ subsystem.
+
 These deliberately small TLA+ models cover the concurrency arguments in the
 stale-device fencing change without producing an unreadable state graph.
 
