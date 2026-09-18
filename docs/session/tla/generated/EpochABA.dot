@@ -1,0 +1,18 @@
+strict digraph DiskGraph {
+nodesep=0.35;
+subgraph cluster_graph {
+color="white";
+-5793510126009789396 [label="/\\ currentGeneration = \"G1\"\n/\\ epoch = 1\n/\\ outcome = \"ready\"\n/\\ challengeStaged = FALSE\n/\\ observedGeneration = \"none\"\n/\\ recycled = FALSE\n/\\ challengeUsed = FALSE\n/\\ observedEpoch = 0",style = filled]
+-5793510126009789396 -> -9214057102938877512 [label="Observe",color="black",fontcolor="black"];
+-9214057102938877512 [label="/\\ currentGeneration = \"G1\"\n/\\ epoch = 1\n/\\ outcome = \"ready\"\n/\\ challengeStaged = TRUE\n/\\ observedGeneration = \"G1\"\n/\\ recycled = FALSE\n/\\ challengeUsed = FALSE\n/\\ observedEpoch = 1"];
+-9214057102938877512 -> 6894011921713397369 [label="RecycleGeneration",color="black",fontcolor="black"];
+6894011921713397369 [label="/\\ currentGeneration = \"G1\"\n/\\ epoch = 3\n/\\ outcome = \"ready\"\n/\\ challengeStaged = TRUE\n/\\ observedGeneration = \"G1\"\n/\\ recycled = TRUE\n/\\ challengeUsed = FALSE\n/\\ observedEpoch = 1"];
+-9214057102938877512 -> -943408473912143099 [label="Confirm",color="black",fontcolor="black"];
+-943408473912143099 [label="/\\ currentGeneration = \"G1\"\n/\\ epoch = 1\n/\\ outcome = \"accepted\"\n/\\ challengeStaged = TRUE\n/\\ observedGeneration = \"G1\"\n/\\ recycled = FALSE\n/\\ challengeUsed = TRUE\n/\\ observedEpoch = 1"];
+6894011921713397369 -> -1019171969599122443 [label="Confirm",color="black",fontcolor="black"];
+-1019171969599122443 [label="/\\ currentGeneration = \"G1\"\n/\\ epoch = 3\n/\\ outcome = \"rejected\"\n/\\ challengeStaged = TRUE\n/\\ observedGeneration = \"G1\"\n/\\ recycled = TRUE\n/\\ challengeUsed = TRUE\n/\\ observedEpoch = 1"];
+{rank = same; -5793510126009789396;}
+{rank = same; -9214057102938877512;}
+{rank = same; 6894011921713397369;}
+}
+}
