@@ -8,7 +8,7 @@ mkdir -p "$generated_dir"
 
 for model in IdleRevocation TransferCleanup EpochABA; do
   tla2sany "$script_dir/$model.tla"
-  tlc -workers 1 \
+  tlc -workers 1 -fp 0 \
       -config "$script_dir/$model.cfg" \
       -dump dot,actionlabels "$generated_dir/$model.dot" \
       "$script_dir/$model.tla"

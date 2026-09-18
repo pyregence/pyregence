@@ -13,9 +13,9 @@
 <title>cluster_graph</title>
 <polygon fill="none" stroke="white" points="8,-8 8,-1513.33 1530,-1513.33 1530,-8 8,-8"/>
 </g>
-<!-- &#45;6159339876781104299 -->
+<!-- 2280303826281191848 -->
 <g id="node1" class="node">
-<title>&#45;6159339876781104299</title>
+<title>2280303826281191848</title>
 <ellipse fill="lightgrey" stroke="black" cx="728" cy="-1377.69" rx="242.54" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="728" y="-1450.64" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = FALSE</text>
 <text xml:space="preserve" text-anchor="middle" x="728" y="-1433.39" font-family="Times,serif" font-size="14.00">/\ idleHandled = FALSE</text>
@@ -28,9 +28,9 @@
 <text xml:space="preserve" text-anchor="middle" x="728" y="-1312.64" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;ready&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="728" y="-1295.39" font-family="Times,serif" font-size="14.00">/\ lastActive = 0</text>
 </g>
-<!-- 8015388983388889185 -->
+<!-- 4109470960738941970 -->
 <g id="node2" class="node">
-<title>8015388983388889185</title>
+<title>4109470960738941970</title>
 <ellipse fill="none" stroke="black" cx="473" cy="-1069.18" rx="242.54" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="473" y="-1142.13" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = FALSE</text>
 <text xml:space="preserve" text-anchor="middle" x="473" y="-1124.88" font-family="Times,serif" font-size="14.00">/\ idleHandled = FALSE</text>
@@ -43,16 +43,16 @@
 <text xml:space="preserve" text-anchor="middle" x="473" y="-1004.13" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;ready&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="473" y="-986.88" font-family="Times,serif" font-size="14.00">/\ lastActive = 0</text>
 </g>
-<!-- &#45;6159339876781104299&#45;&gt;8015388983388889185 -->
+<!-- 2280303826281191848&#45;&gt;4109470960738941970 -->
 <g id="edge1" class="edge">
-<title>&#45;6159339876781104299&#45;&gt;8015388983388889185</title>
+<title>2280303826281191848&#45;&gt;4109470960738941970</title>
 <path fill="none" stroke="black" d="M631.23,-1260.38C613.59,-1239.17 595.1,-1216.95 577.25,-1195.49"/>
 <polygon fill="black" stroke="black" points="579.97,-1193.28 570.88,-1187.84 574.59,-1197.76 579.97,-1193.28"/>
 <text xml:space="preserve" text-anchor="middle" x="643.62" y="-1218.76" font-family="Times,serif" font-size="14.00">ObserveIdle</text>
 </g>
-<!-- &#45;1427985890688209223 -->
+<!-- 852514079587945497 -->
 <g id="node3" class="node">
-<title>&#45;1427985890688209223</title>
+<title>852514079587945497</title>
 <ellipse fill="none" stroke="black" cx="983" cy="-1069.18" rx="242.54" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="983" y="-1142.13" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = FALSE</text>
 <text xml:space="preserve" text-anchor="middle" x="983" y="-1124.88" font-family="Times,serif" font-size="14.00">/\ idleHandled = FALSE</text>
@@ -65,16 +65,16 @@
 <text xml:space="preserve" text-anchor="middle" x="983" y="-1004.13" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;ready&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="983" y="-986.88" font-family="Times,serif" font-size="14.00">/\ lastActive = 0</text>
 </g>
-<!-- &#45;6159339876781104299&#45;&gt;&#45;1427985890688209223 -->
+<!-- 2280303826281191848&#45;&gt;852514079587945497 -->
 <g id="edge2" class="edge">
-<title>&#45;6159339876781104299&#45;&gt;&#45;1427985890688209223</title>
+<title>2280303826281191848&#45;&gt;852514079587945497</title>
 <path fill="none" stroke="black" d="M824.77,-1260.38C842.41,-1239.17 860.9,-1216.95 878.75,-1195.49"/>
 <polygon fill="black" stroke="black" points="881.41,-1197.76 885.12,-1187.84 876.03,-1193.28 881.41,-1197.76"/>
 <text xml:space="preserve" text-anchor="middle" x="900.5" y="-1218.76" font-family="Times,serif" font-size="14.00">HumanInput</text>
 </g>
-<!-- 2996871437868559757 -->
+<!-- 3275875214001383843 -->
 <g id="node4" class="node">
-<title>2996871437868559757</title>
+<title>3275875214001383843</title>
 <ellipse fill="none" stroke="black" cx="769" cy="-760.66" rx="242.54" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="769" y="-833.61" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = FALSE</text>
 <text xml:space="preserve" text-anchor="middle" x="769" y="-816.36" font-family="Times,serif" font-size="14.00">/\ idleHandled = FALSE</text>
@@ -87,16 +87,16 @@
 <text xml:space="preserve" text-anchor="middle" x="769" y="-695.61" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;ready&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="769" y="-678.36" font-family="Times,serif" font-size="14.00">/\ lastActive = 0</text>
 </g>
-<!-- 8015388983388889185&#45;&gt;2996871437868559757 -->
+<!-- 4109470960738941970&#45;&gt;3275875214001383843 -->
 <g id="edge3" class="edge">
-<title>8015388983388889185&#45;&gt;2996871437868559757</title>
+<title>4109470960738941970&#45;&gt;3275875214001383843</title>
 <path fill="none" stroke="black" d="M582.38,-954.92C605.02,-931.47 628.95,-906.69 651.85,-882.97"/>
 <polygon fill="black" stroke="black" points="654.1,-885.69 658.53,-876.06 649.06,-880.82 654.1,-885.69"/>
 <text xml:space="preserve" text-anchor="middle" x="666" y="-910.25" font-family="Times,serif" font-size="14.00">HumanInput</text>
 </g>
-<!-- 2194886970043143584 -->
+<!-- 5653030566158014264 -->
 <g id="node5" class="node">
-<title>2194886970043143584</title>
+<title>5653030566158014264</title>
 <ellipse fill="none" stroke="black" cx="259" cy="-760.66" rx="242.54" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="259" y="-833.61" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = FALSE</text>
 <text xml:space="preserve" text-anchor="middle" x="259" y="-816.36" font-family="Times,serif" font-size="14.00">/\ idleHandled = TRUE</text>
@@ -109,23 +109,23 @@
 <text xml:space="preserve" text-anchor="middle" x="259" y="-695.61" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;revoked&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="259" y="-678.36" font-family="Times,serif" font-size="14.00">/\ lastActive = 0</text>
 </g>
-<!-- 8015388983388889185&#45;&gt;2194886970043143584 -->
+<!-- 4109470960738941970&#45;&gt;5653030566158014264 -->
 <g id="edge4" class="edge">
-<title>8015388983388889185&#45;&gt;2194886970043143584</title>
+<title>4109470960738941970&#45;&gt;5653030566158014264</title>
 <path fill="none" stroke="black" d="M389.96,-949.23C376.42,-929.84 362.34,-909.67 348.65,-890.06"/>
 <polygon fill="black" stroke="black" points="351.63,-888.23 343.04,-882.04 345.9,-892.24 351.63,-888.23"/>
 <text xml:space="preserve" text-anchor="middle" x="433.12" y="-910.25" font-family="Times,serif" font-size="14.00">RunIdleRevocation</text>
 </g>
-<!-- &#45;1427985890688209223&#45;&gt;2996871437868559757 -->
+<!-- 852514079587945497&#45;&gt;3275875214001383843 -->
 <g id="edge5" class="edge">
-<title>&#45;1427985890688209223&#45;&gt;2996871437868559757</title>
+<title>852514079587945497&#45;&gt;3275875214001383843</title>
 <path fill="none" stroke="black" d="M899.96,-949.23C886.42,-929.84 872.34,-909.67 858.65,-890.06"/>
 <polygon fill="black" stroke="black" points="861.63,-888.23 853.04,-882.04 855.9,-892.24 861.63,-888.23"/>
 <text xml:space="preserve" text-anchor="middle" x="919.12" y="-910.25" font-family="Times,serif" font-size="14.00">ObserveIdle</text>
 </g>
-<!-- 5210743011570994527 -->
+<!-- 8647783093734137976 -->
 <g id="node6" class="node">
-<title>5210743011570994527</title>
+<title>8647783093734137976</title>
 <ellipse fill="none" stroke="black" cx="1279" cy="-760.66" rx="242.54" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-833.61" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = FALSE</text>
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-816.36" font-family="Times,serif" font-size="14.00">/\ idleHandled = FALSE</text>
@@ -138,16 +138,16 @@
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-695.61" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;heartbeat&#45;accepted&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-678.36" font-family="Times,serif" font-size="14.00">/\ lastActive = 1</text>
 </g>
-<!-- &#45;1427985890688209223&#45;&gt;5210743011570994527 -->
+<!-- 852514079587945497&#45;&gt;8647783093734137976 -->
 <g id="edge6" class="edge">
-<title>&#45;1427985890688209223&#45;&gt;5210743011570994527</title>
+<title>852514079587945497&#45;&gt;8647783093734137976</title>
 <path fill="none" stroke="black" d="M1092.38,-954.92C1115.02,-931.47 1138.95,-906.69 1161.85,-882.97"/>
 <polygon fill="black" stroke="black" points="1164.1,-885.69 1168.53,-876.06 1159.06,-880.82 1164.1,-885.69"/>
 <text xml:space="preserve" text-anchor="middle" x="1191.38" y="-910.25" font-family="Times,serif" font-size="14.00">AcceptHeartbeat</text>
 </g>
-<!-- &#45;5188107717714194473 -->
+<!-- &#45;2224233481268327522 -->
 <g id="node7" class="node">
-<title>&#45;5188107717714194473</title>
+<title>&#45;2224233481268327522</title>
 <ellipse fill="none" stroke="black" cx="771" cy="-452.15" rx="238.83" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="771" y="-525.1" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = TRUE</text>
 <text xml:space="preserve" text-anchor="middle" x="771" y="-507.85" font-family="Times,serif" font-size="14.00">/\ idleHandled = FALSE</text>
@@ -160,16 +160,16 @@
 <text xml:space="preserve" text-anchor="middle" x="771" y="-387.1" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;heartbeat&#45;accepted&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="771" y="-369.85" font-family="Times,serif" font-size="14.00">/\ lastActive = 1</text>
 </g>
-<!-- 2996871437868559757&#45;&gt;&#45;5188107717714194473 -->
+<!-- 3275875214001383843&#45;&gt;&#45;2224233481268327522 -->
 <g id="edge7" class="edge">
-<title>2996871437868559757&#45;&gt;&#45;5188107717714194473</title>
+<title>3275875214001383843&#45;&gt;&#45;2224233481268327522</title>
 <path fill="none" stroke="black" d="M769.83,-632.78C769.92,-619 770.01,-604.94 770.1,-591.04"/>
 <polygon fill="black" stroke="black" points="773.6,-591.47 770.16,-581.45 766.6,-591.43 773.6,-591.47"/>
 <text xml:space="preserve" text-anchor="middle" x="830.38" y="-601.73" font-family="Times,serif" font-size="14.00">AcceptHeartbeat</text>
 </g>
-<!-- 7394160074636592089 -->
+<!-- 7295322590984333254 -->
 <g id="node8" class="node">
-<title>7394160074636592089</title>
+<title>7295322590984333254</title>
 <ellipse fill="none" stroke="black" cx="265" cy="-452.15" rx="242.54" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="265" y="-525.1" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = FALSE</text>
 <text xml:space="preserve" text-anchor="middle" x="265" y="-507.85" font-family="Times,serif" font-size="14.00">/\ idleHandled = TRUE</text>
@@ -182,16 +182,16 @@
 <text xml:space="preserve" text-anchor="middle" x="265" y="-387.1" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;revoked&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="265" y="-369.85" font-family="Times,serif" font-size="14.00">/\ lastActive = 0</text>
 </g>
-<!-- 2996871437868559757&#45;&gt;7394160074636592089 -->
+<!-- 3275875214001383843&#45;&gt;7295322590984333254 -->
 <g id="edge8" class="edge">
-<title>2996871437868559757&#45;&gt;7394160074636592089</title>
+<title>3275875214001383843&#45;&gt;7295322590984333254</title>
 <path fill="none" stroke="black" d="M610.91,-663.52C554.17,-629.01 490.01,-589.99 432.5,-555.02"/>
 <polygon fill="black" stroke="black" points="434.61,-552.21 424.25,-550 430.98,-558.19 434.61,-552.21"/>
 <text xml:space="preserve" text-anchor="middle" x="584.12" y="-601.73" font-family="Times,serif" font-size="14.00">RunIdleRevocation</text>
 </g>
-<!-- &#45;8986096934736536993 -->
+<!-- 9047805114225478059 -->
 <g id="node9" class="node">
-<title>&#45;8986096934736536993</title>
+<title>9047805114225478059</title>
 <ellipse fill="none" stroke="black" cx="1279" cy="-452.15" rx="242.54" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-525.1" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = FALSE</text>
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-507.85" font-family="Times,serif" font-size="14.00">/\ idleHandled = FALSE</text>
@@ -204,16 +204,16 @@
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-387.1" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;heartbeat&#45;accepted&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-369.85" font-family="Times,serif" font-size="14.00">/\ lastActive = 1</text>
 </g>
-<!-- 5210743011570994527&#45;&gt;&#45;8986096934736536993 -->
+<!-- 8647783093734137976&#45;&gt;9047805114225478059 -->
 <g id="edge9" class="edge">
-<title>5210743011570994527&#45;&gt;&#45;8986096934736536993</title>
+<title>8647783093734137976&#45;&gt;9047805114225478059</title>
 <path fill="none" stroke="black" d="M1279,-632.78C1279,-619.14 1279,-605.21 1279,-591.45"/>
 <polygon fill="black" stroke="black" points="1282.5,-591.45 1279,-581.45 1275.5,-591.45 1282.5,-591.45"/>
 <text xml:space="preserve" text-anchor="middle" x="1322.12" y="-601.73" font-family="Times,serif" font-size="14.00">ObserveIdle</text>
 </g>
-<!-- 147620298756658731 -->
+<!-- &#45;3003511632594726324 -->
 <g id="node10" class="node">
-<title>147620298756658731</title>
+<title>&#45;3003511632594726324</title>
 <ellipse fill="none" stroke="black" cx="771" cy="-143.63" rx="238.83" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="771" y="-216.58" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = TRUE</text>
 <text xml:space="preserve" text-anchor="middle" x="771" y="-199.33" font-family="Times,serif" font-size="14.00">/\ idleHandled = TRUE</text>
@@ -226,16 +226,16 @@
 <text xml:space="preserve" text-anchor="middle" x="771" y="-78.58" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;fenced&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="771" y="-61.33" font-family="Times,serif" font-size="14.00">/\ lastActive = 1</text>
 </g>
-<!-- &#45;5188107717714194473&#45;&gt;147620298756658731 -->
+<!-- &#45;2224233481268327522&#45;&gt;&#45;3003511632594726324 -->
 <g id="edge10" class="edge">
-<title>&#45;5188107717714194473&#45;&gt;147620298756658731</title>
+<title>&#45;2224233481268327522&#45;&gt;&#45;3003511632594726324</title>
 <path fill="none" stroke="black" d="M771,-324.26C771,-310.63 771,-296.7 771,-282.94"/>
 <polygon fill="black" stroke="black" points="774.5,-282.94 771,-272.94 767.5,-282.94 774.5,-282.94"/>
 <text xml:space="preserve" text-anchor="middle" x="838.12" y="-293.22" font-family="Times,serif" font-size="14.00">RunIdleRevocation</text>
 </g>
-<!-- 7076669694148402931 -->
+<!-- &#45;907217461445414978 -->
 <g id="node11" class="node">
-<title>7076669694148402931</title>
+<title>&#45;907217461445414978</title>
 <ellipse fill="none" stroke="black" cx="265" cy="-143.63" rx="242.54" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="265" y="-216.58" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = FALSE</text>
 <text xml:space="preserve" text-anchor="middle" x="265" y="-199.33" font-family="Times,serif" font-size="14.00">/\ idleHandled = TRUE</text>
@@ -248,16 +248,16 @@
 <text xml:space="preserve" text-anchor="middle" x="265" y="-78.58" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;heartbeat&#45;rejected&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="265" y="-61.33" font-family="Times,serif" font-size="14.00">/\ lastActive = 0</text>
 </g>
-<!-- 7394160074636592089&#45;&gt;7076669694148402931 -->
+<!-- 7295322590984333254&#45;&gt;&#45;907217461445414978 -->
 <g id="edge11" class="edge">
-<title>7394160074636592089&#45;&gt;7076669694148402931</title>
+<title>7295322590984333254&#45;&gt;&#45;907217461445414978</title>
 <path fill="none" stroke="black" d="M265,-324.26C265,-310.63 265,-296.7 265,-282.94"/>
 <polygon fill="black" stroke="black" points="268.5,-282.94 265,-272.94 261.5,-282.94 268.5,-282.94"/>
 <text xml:space="preserve" text-anchor="middle" x="323.88" y="-293.22" font-family="Times,serif" font-size="14.00">RejectHeartbeat</text>
 </g>
-<!-- 1686077121493927473 -->
+<!-- &#45;4720159471200083995 -->
 <g id="node12" class="node">
-<title>1686077121493927473</title>
+<title>&#45;4720159471200083995</title>
 <ellipse fill="none" stroke="black" cx="1279" cy="-143.63" rx="242.54" ry="127.63"/>
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-216.58" font-family="Times,serif" font-size="14.00">/\ activityAdvancedAfterObservation = FALSE</text>
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-199.33" font-family="Times,serif" font-size="14.00">/\ idleHandled = TRUE</text>
@@ -270,9 +270,9 @@
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-78.58" font-family="Times,serif" font-size="14.00">/\ lastOutcome = &quot;revoked&quot;</text>
 <text xml:space="preserve" text-anchor="middle" x="1279" y="-61.33" font-family="Times,serif" font-size="14.00">/\ lastActive = 1</text>
 </g>
-<!-- &#45;8986096934736536993&#45;&gt;1686077121493927473 -->
+<!-- 9047805114225478059&#45;&gt;&#45;4720159471200083995 -->
 <g id="edge12" class="edge">
-<title>&#45;8986096934736536993&#45;&gt;1686077121493927473</title>
+<title>9047805114225478059&#45;&gt;&#45;4720159471200083995</title>
 <path fill="none" stroke="black" d="M1279,-324.26C1279,-310.63 1279,-296.7 1279,-282.94"/>
 <polygon fill="black" stroke="black" points="1282.5,-282.94 1279,-272.94 1275.5,-282.94 1282.5,-282.94"/>
 <text xml:space="preserve" text-anchor="middle" x="1346.12" y="-293.22" font-family="Times,serif" font-size="14.00">RunIdleRevocation</text>
