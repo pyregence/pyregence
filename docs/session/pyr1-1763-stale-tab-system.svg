@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1110" viewBox="0 0 1600 1110" role="img" aria-label="One active device · shared tabs · explicit transfer">
+<rect width="1600" height="1110" fill="#f6f8fa"/>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="#637f90" stroke-width="1.4"/></marker></defs>
+<rect x="0" y="0" width="1600" height="8" rx="0" fill="#276f7d" stroke="#276f7d" stroke-width="1.5"/>
+<text x="48" y="59" font-family="DejaVu Sans,Arial,sans-serif" font-size="30" font-weight="700" fill="#193549">One active device · shared tabs · explicit transfer</text>
+<text x="48" y="94" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">PYR1-1763 · implementation map · a device is a browser profile / cookie jar; G identifies one login generation</text>
+<rect x="48" y="143" width="730" height="298" rx="12" fill="#eef4fa" stroke="#aac0d0" stroke-width="1.5"/>
+<text x="70" y="180" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" font-weight="700" fill="#527caa">01  PROFILE A · CURRENT DEVICE</text>
+<rect x="72" y="211" width="326" height="128" rx="12" fill="#fff" stroke="#527caa" stroke-width="1.5"/>
+<rect x="87" y="225" width="42" height="28" rx="6" fill="#527caa" stroke="#527caa" stroke-width="1.5"/>
+<text x="95" y="245" font-family="DejaVu Sans,Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">A1</text>
+<text x="142" y="246" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" font-weight="700" fill="#193549">Tab 1</text>
+<text x="90" y="283" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Shares cookie and G1.</text>
+<text x="90" y="310" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">No transfer prompt.</text>
+<rect x="424" y="211" width="330" height="128" rx="12" fill="#fff" stroke="#527caa" stroke-width="1.5"/>
+<rect x="439" y="225" width="42" height="28" rx="6" fill="#527caa" stroke="#527caa" stroke-width="1.5"/>
+<text x="447" y="245" font-family="DejaVu Sans,Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">A2</text>
+<text x="494" y="246" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" font-weight="700" fill="#193549">Tab 2</text>
+<text x="442" y="283" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Shares activity with A1.</text>
+<text x="442" y="310" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">May close without losing it.</text>
+<text x="72" y="379" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#193549">Input and server activity acknowledgments use shared storage.</text>
+<text x="72" y="411" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Idle logout names the latest acknowledged activity version.</text>
+<rect x="820" y="143" width="732" height="298" rx="12" fill="#fcf8ed" stroke="#cdb67a" stroke-width="1.5"/>
+<text x="844" y="180" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" font-weight="700" fill="#9d752d">02  PROFILE B · SEPARATE DEVICE</text>
+<rect x="845" y="211" width="682" height="128" rx="12" fill="#fff" stroke="#9d752d" stroke-width="1.5"/>
+<rect x="860" y="225" width="42" height="28" rx="6" fill="#9d752d" stroke="#9d752d" stroke-width="1.5"/>
+<text x="868" y="245" font-family="DejaVu Sans,Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">B</text>
+<text x="915" y="246" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" font-weight="700" fill="#193549">Authenticated, awaiting transfer</text>
+<text x="863" y="283" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Credentials / final 2FA can stage a signed pending challenge.</text>
+<text x="863" y="310" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">B has no active login yet; A remains active until confirmation.</text>
+<text x="845" y="379" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#193549">Use it here confirms the generation and epoch in the challenge.</text>
+<text x="845" y="411" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">A stale challenge is rejected: the user is asked to sign in again.</text>
+<rect x="48" y="471" width="1504" height="104" rx="12" fill="#fff" stroke="#bacbd7" stroke-width="1.5"/>
+<text x="72" y="504" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="700" fill="#276f7d">03  EXACT PROMPT · USE IT HERE IS THE IMPLEMENTED ACTION</text>
+<text x="72" y="547" font-family="DejaVu Sans,Arial,sans-serif" font-size="21" font-weight="700" fill="#193549">“PyreCast is being used in another device. Would you like to use it here instead?”</text>
+<rect x="48" y="612" width="734" height="213" rx="12" fill="#eef6f2" stroke="#347753" stroke-width="1.5"/>
+<rect x="63" y="626" width="42" height="28" rx="6" fill="#347753" stroke="#347753" stroke-width="1.5"/>
+<text x="71" y="646" font-family="DejaVu Sans,Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">04</text>
+<text x="118" y="647" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" font-weight="700" fill="#193549">Shared server authority</text>
+<text x="66" y="684" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">One active_user_sessions row per account.</text>
+<text x="66" y="711" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Atomic begin / transfer returns the exact row it writes.</text>
+<text x="66" y="738" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Compare generation + epoch before replacing a session.</text>
+<text x="66" y="765" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Qualified logout also checks the page’s expected generation.</text>
+<text x="66" y="792" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Ordinary page / API responses do not refresh session cookies.</text>
+<rect x="817" y="612" width="735" height="213" rx="12" fill="#fff" stroke="#276f7d" stroke-width="1.5"/>
+<rect x="832" y="626" width="42" height="28" rx="6" fill="#276f7d" stroke="#276f7d" stroke-width="1.5"/>
+<text x="840" y="646" font-family="DejaVu Sans,Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">05</text>
+<text x="887" y="647" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" font-weight="700" fill="#193549">Browser cleanup is a separate operation</text>
+<text x="835" y="684" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Logout mutation first revokes the matching server session.</text>
+<text x="835" y="711" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Qualified cleanup expires the matching cookie / site data.</text>
+<text x="835" y="738" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Web Lock orders browser-managed login and cleanup.</text>
+<text x="835" y="765" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Failed cleanup returns failure, not a completed logout.</text>
+<text x="835" y="792" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Superseded pages discover rejection on a later request / check.</text>
+<rect x="48" y="861" width="1504" height="168" rx="12" fill="#eef6f2" stroke="#abcbbb" stroke-width="1.5"/>
+<text x="72" y="899" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="700" fill="#347753">06  LEGACY LOGOUT + MARKETPLACE SSO USE THE SAME CLEANUP / COOKIE BOUNDARY</text>
+<text x="72" y="936" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#193549">Legacy logout changes the cutoff only. An ended page requests qualified cookie cleanup under the profile Web Lock.</text>
+<text x="72" y="973" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Marketplace entry returns a cookie-neutral page → Web Lock → /marketplace-login/complete → cookie installation → navigation.</text>
+<text x="72" y="1007" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">Outside local.pyrecast.org, missing Web Locks fails closed. Acceptance explicitly enables and checks Web Locks.</text>
+<text x="48" y="1071" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#193549">Numbers identify implementation areas; the acceptance diagram names the four browser scenarios currently present.</text>
+</svg>
