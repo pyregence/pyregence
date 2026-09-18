@@ -1,4 +1,6 @@
-(ns pyregence.utils.wmo-codes)
+(ns pyregence.weather-stations.observations.US
+  (:require
+   [clojure.string :as str]))
 
 (def unit-id->labels
   "A mapping of wmo-id's to labels curated from https://codes.wmo.int/common/unit in 2025"
@@ -223,3 +225,46 @@
    {"skos:altLabel" "log (m^-2)", "skos:prefLabel" "logarithm per square metre"},
    "S_m-1" {"skos:altLabel" "S m^-1", "skos:prefLabel" "siemens per metre"},
    "ft" {"skos:altLabel" "ft", "skos:prefLabel" "foot"}})
+
+(defn station-id->url
+  [station-id]
+  (str "https://api.weather.gov/stations/" station-id "/observations/latest"))
+
+(defn properties->display-name->value-with-uom
+  [properties]
+  (let [CamelCase->title    (fn [CamelCase]
+                              (let [[f & r] (-> CamelCase
+                                                name
+                                                (str/split #"(?=[A-Z])"))]
+                                (str/join " " (concat [(str/capitalize f)] (mapv str/lower-case r)))))
+        unitCode->wmo-label #(-> %
+                                 (str/split #":")
+                                 last
+                                 unit-id->labels
+                                 (get "skos:altLabel"))]
+    (->> properties
+         (reduce-kv
+          (fn [m k v]
+            (cond
+              (or
+               (string? v)
+               (nil? (:value v)))
+              m
+
+              :else
+              (let [{:keys [unitCode value]} v
+                    round-to-1-decimal #(/ (Math/round (* % 10)) 10)
+                    c->f               (fn [c] (+ (* c 1.8) 32))
+                    is-celsius?        (= unitCode "wmoUnit:degC")
+                    observation-param  (-> k
+                                           CamelCase->title
+                                           (str/replace #"last(\d+)" "last $1"))
+                    numeric-value      (when (number? value)
+                                         (if is-celsius?
+                                           (round-to-1-decimal (c->f value))
+                                           (round-to-1-decimal value)))
+                    units              (or ({"wmoUnit:km_h-1" "km/hr"
+                                             "wmoUnit:degC"   "\u00B0F"} unitCode)
+                                           (unitCode->wmo-label unitCode))]
+                (assoc m observation-param (str numeric-value units)))))
+          {}))))
