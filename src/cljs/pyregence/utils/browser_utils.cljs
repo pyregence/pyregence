@@ -180,6 +180,11 @@
      (.open js/window url window-name)
      (jump-to-url! url))))
 
+(defn reload!
+  "Reload the current page so it adopts the cookie that won a session race."
+  []
+  (.reload (.-location js/window)))
+
 (defn copy-to-clipboard!
   "Copies text to the system clipboard. Returns true if successful, false otherwise."
   [text]
