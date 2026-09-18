@@ -6,6 +6,19 @@
    [pyregence.utils.async-utils :as u-async]))
 
 (defn get-orgs!
+  "The same two routes `pyregence.archetypes.directory.over-the-wire` drives,
+   and deliberately not behind that protocol yet.
+
+   The directory answers what the forecast page needs -- an id, a name and a
+   credential. The settings pages administer organizations rather than read
+   them, so they also want :org-uuid, :email-domains, :auto-accept? and
+   :auto-add?, and they write back. Widening the directory to carry all of that
+   would make one concept out of two: what a member is told they belong to, and
+   what an account manager may edit.
+
+   The `{}` below is the conflation that seam exists to remove: a session
+   PyreCast has stopped honouring reads here as an account manager who
+   administers nothing."
   [user-role]
   (go
     (let [api-route (if (#{"super_admin" "account_manager"} user-role)

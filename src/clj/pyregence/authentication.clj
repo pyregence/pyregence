@@ -1,8 +1,10 @@
 (ns pyregence.authentication
   (:require [clojure.string             :as str]
+            [pyregence.clock            :as clock]
             [pyregence.email            :as email]
             [pyregence.marketplace      :as marketplace]
             [pyregence.session          :as session]
+            [pyregence.throttle         :as throttle]
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error ->uuid]]
             [pyregence.validation       :as v]
@@ -15,26 +17,11 @@
             [java.security SecureRandom]
             [java.text SimpleDateFormat]))
 
-(defonce user-email->failed-login-attempts (atom {}))
-
 (defn- normalize-email
   "Lower-cases and trims an email so throttle lookups match the identity the
    DB authenticates against (verify_user_login uses lower_trim)."
   [email]
   (-> email str/lower-case str/trim))
-
-;;TODO As an improvement, this could be made to be user-email specific
-(defn reset-user-email->failed-login-attempts!
-  []
-  (future
-    (loop []
-      ;; 5 minutes
-      (Thread/sleep (* 1000 ;; 1s
-                       60   ;; 1m
-                       5    ;; 5m
-                       ))
-      (reset! user-email->failed-login-attempts {})
-      (recur))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -45,7 +32,7 @@
    This is the single source of truth for session structure."
   [user-data]
   (when user-data
-    (let [now (System/currentTimeMillis)]
+    (let [now (clock/now)]
       (data-response "" {:session (merge {:match-drop-access?    (:match_drop_access user-data)
                                           :user-email            (:user_email user-data)
                                           :user-id               (:user_id user-data)
@@ -144,10 +131,9 @@
    (call-sql "set_users_last_login_date_to_now" user_id)
    (marketplace/complete-signup! request-session user_email)
    ;; A new login invalidates the user's prior sessions (single active session)
-   (call-sql "set_user_session_invalidated_at" user_id (System/currentTimeMillis))
+   (call-sql "set_user_session_invalidated_at" user_id (clock/now))
    (create-session-from-user-data user)))
 
-;;TODO this will have to store failed login attempts per user.
 (defn log-in
   "Authenticates user and determines 2FA requirements.
 
@@ -156,20 +142,19 @@
    credentials are malformed; see `validate-login!` for what that means."
   [session email password]
   (validate-login! email password)
-  (let [normalized-email      (normalize-email email)
-        failed-login-attempts (@user-email->failed-login-attempts normalized-email 0)]
-    (if (<= 6 failed-login-attempts)
-      (data-response {:failed-login-attempts failed-login-attempts} {:status 429})
+  (let [normalized-email (normalize-email email)]
+    (if (throttle/over-budget? (throttle/spend! [:password normalized-email]))
+      (data-response "Too many attempts" {:status 429})
       (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
-        (let [user-id    (:user_id user)
-              two-factor (:two-factor (get-user-settings user-id))]
-          (case two-factor
-            :totp  (data-response {:email email :require-2fa true :method "totp"})
-            :email (do (email/send-email! nil email :2fa)
-                       (data-response {:email email :require-2fa true :method "email"}))
-            (successful-login user session)))
-        (data-response {:failed-login-attempts ((swap! user-email->failed-login-attempts update normalized-email (fnil inc 0)) normalized-email)}
-                       {:status 403})))))
+        (do
+          (throttle/forgive! [:password normalized-email])
+          (let [awaiting (session/awaiting-2fa session user (System/currentTimeMillis))]
+            (case (:two-factor (get-user-settings (:user_id user)))
+              :totp  (data-response {:email email :require-2fa true :method "totp"} {:session awaiting})
+              :email (do (email/send-email! nil email :2fa)
+                         (data-response {:email email :require-2fa true :method "email"} {:session awaiting}))
+              (successful-login user session))))
+        (data-response "Invalid login credentials" {:status 403})))))
 
 (defn marketplace-sso-login
   "Marketplace SSO entry point. Validates JWT, auto-logs in or redirects to 2FA.
@@ -178,15 +163,16 @@
   (try
     (if-let [{:keys [user session]} (marketplace/sso-login request)]
       (let [user-id    (:user_id user)
-            two-factor (:two-factor (get-user-settings user-id))]
+            two-factor (:two-factor (get-user-settings user-id))
+            awaiting   (session/awaiting-2fa session user (System/currentTimeMillis))]
         (case two-factor
           :totp  {:status  302
                   :headers {"Location" (str "/verify-2fa?email=" (:user_email user) "&method=totp")}
-                  :session session}
+                  :session awaiting}
           :email (do (email/send-email! nil (:user_email user) :2fa)
                      {:status  302
                       :headers {"Location" (str "/verify-2fa?email=" (:user_email user) "&method=email")}
-                      :session session})
+                      :session awaiting})
           (let [resp (successful-login user session)]
             (assoc resp :status 302 :headers {"Location" "/"}))))
       {:status  302
@@ -226,7 +212,7 @@
    clears the session cookie, and asks the browser to drop client-side state."
   [{:keys [user-id]}]
   (when user-id
-    (call-sql "set_user_session_invalidated_at" user-id (System/currentTimeMillis)))
+    (call-sql "set_user_session_invalidated_at" user-id (clock/now)))
   ;; :session nil re-seals an empty cookie but Ring's cookie-store emits no expiry, so the browser
   ;; keeps it; :session-cookie-attrs {:max-age 0} makes wrap-session send Max-Age=0 to delete it.
   ;; Must be assoc'ed on the response: utils/data-response only passes through :status/:type/:session.
@@ -270,7 +256,7 @@
   (v/normalize-password password)
   (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
     (do
-      (swap! user-email->failed-login-attempts dissoc (normalize-email email))
+      (throttle/forgive! [:password (normalize-email email)])
       (successful-login user session))
     (data-response "Invalid or expired reset token" {:status 403})))
 
@@ -285,82 +271,96 @@
 ;;; 2FA Core Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- check-2fa-code
+  "Checks `code` against whichever second factor the user has configured and, when it holds up, logs
+   them in. Every rejection answers the same way, so the response says nothing about how the account
+   is set up."
+  [session {:keys [user-id user-email]} code]
+  (or (case (:two-factor (get-user-settings user-id))
+        :totp  (when-let [{:keys [secret] :as user} (first (call-sql "get_user_with_totp" user-id))]
+                 (when (or (totp/validate-totp-code secret code)
+                           (sql-primitive (call-sql "use_backup_code" {:log? false} user-id code)))
+                   (successful-login user session)))
+        :email (when-let [user (first (call-sql "verify_user_2fa" {:log? false} user-email code))]
+                 (successful-login user session))
+        nil)
+      (data-response "Invalid code" {:status 403})))
+
 (defn verify-2fa
-  "Verifies 2FA code for email/TOTP authentication."
-  [session email code]
-  (if-let [user-id (sql-primitive (call-sql "get_user_id_by_email" email))]
-    (let [two-factor (:two-factor (get-user-settings user-id))]
-      (case two-factor
-        :totp
-        (if-let [{:keys [secret] :as user} (first (call-sql "get_user_with_totp" user-id))]
-          (if (or (totp/validate-totp-code secret code)
-                  (sql-primitive (call-sql "use_backup_code" {:log? false} user-id code)))
-            (successful-login user session)
-            (data-response "Invalid code" {:status 403}))
-          (data-response "TOTP not configured" {:status 403}))
+  "Verifies the second factor for whoever the session's `log-in` marker names.
 
-        :email
-        (if-let [user (first (call-sql "verify_user_2fa" {:log? false} email code))]
-          (successful-login user session)
-          (data-response "Invalid email verification code" {:status 403}))
-
-        (data-response "2FA not configured for this account" {:status 403})))
-    (data-response "User not found" {:status 403})))
+   The `email` argument is ignored. The page still sends it and the marker decides who is verified."
+  [session _email code]
+  (if-let [{:keys [user-id user-email] :as user} (session/pending-user session (System/currentTimeMillis))]
+    (if (throttle/over-budget? (throttle/spend! [:2fa user-id]))
+      (data-response "Too many attempts" {:status 429})
+      (let [response (check-2fa-code session user code)]
+        (when (= 200 (:status response))
+          ;; Safe here and not at the password step, where an attacker holding the password
+          ;; could otherwise reset this at will.
+          (throttle/forgive! [:2fa user-id] [:password (normalize-email user-email)]))
+        response))
+    (data-response "Not authenticated" {:status 401})))
 
 ^:rct/test
 (comment
-  ;; Test user not found
-  (verify-2fa nil "nonexistent@test.com" "123456")
-  ;=>> {:status 403 :body string?}
+  ;; `log-in` leaves the marker, so every case here mints one the same way.
 
-  ;; Test TOTP with invalid code
-  (verify-2fa nil "totp-2fa@pyr.dev" "wrong")
-  ;=>> {:status 403 :body string?}
+  ;; No session, an anonymous one, and a marker past its fuse all answer alike: nobody to verify.
+  (let [now   (System/currentTimeMillis)
+        stale (update (session/awaiting-2fa {} {:user_id 24 :user_email "totp-2fa@pyr.dev"} now)
+                      :pending-2fa assoc :expires-at now)]
+    (mapv #(:status (verify-2fa % "totp-2fa@pyr.dev" "123456")) [nil {} stale]))
+  ;=> [401 401 401]
 
-  ;; Test TOTP with valid code
-  (let [user-id 24
-        ;; Save original settings
+  ;; A wrong code with a good marker is refused. Every rejection answers with this same body,
+  ;; which says nothing about how the account is set up.
+  (verify-2fa (session/awaiting-2fa {} {:user_id 24 :user_email "totp-2fa@pyr.dev"} (System/currentTimeMillis))
+              "totp-2fa@pyr.dev"
+              "wrong")
+  ;=>> {:status 403 :body "\"Invalid code\""}
+
+  ;; A valid TOTP code behind a marker still mints the session.
+  (let [user-id           24
         original-settings (:settings (first (call-sql "get_user_settings" user-id)))
-        ;; Ensure user has verified TOTP
-        _ (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :totp}))
-        _ (call-sql "delete_totp_setup" user-id)
-        _ (call-sql "create_totp_setup" user-id "JBSWY3DPEHPK3PXP")
-        _ (call-sql "mark_totp_verified" user-id)
-        secret (:secret (first (call-sql "get_totp_setup" user-id)))
-        valid-code (str (totp/get-current-totp-code secret))]
+        _                 (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :totp}))
+        _                 (call-sql "delete_totp_setup" user-id)
+        _                 (call-sql "create_totp_setup" user-id "JBSWY3DPEHPK3PXP")
+        _                 (call-sql "mark_totp_verified" user-id)
+        secret            (:secret (first (call-sql "get_totp_setup" user-id)))
+        marked            (session/awaiting-2fa {} {:user_id user-id :user_email "totp-2fa@pyr.dev"} (System/currentTimeMillis))]
     (try
-      (verify-2fa nil "totp-2fa@pyr.dev" valid-code)
+      (verify-2fa marked "totp-2fa@pyr.dev" (str (totp/get-current-totp-code secret)))
       (finally
-        ;; Restore original state
         (call-sql "update_user_settings" user-id original-settings))))
   ;=>> {:status 200 :session some?}
 
-  ;; Test backup code usage
+  ;; So does a backup code.
   (let [user-id 24
-        ;; Ensure user has TOTP enabled
-        _ (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :totp}))
-        _ (call-sql "delete_backup_codes" user-id)
-        _ (call-sql "create_backup_codes" user-id (into-array ["TESTCODE"]))]
+        _       (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :totp}))
+        _       (call-sql "delete_backup_codes" user-id)
+        _       (call-sql "create_backup_codes" user-id (into-array ["TESTCODE"]))
+        marked  (session/awaiting-2fa {} {:user_id user-id :user_email "totp-2fa@pyr.dev"} (System/currentTimeMillis))]
     (try
-      (verify-2fa nil "totp-2fa@pyr.dev" "TESTCODE")
+      (verify-2fa marked "totp-2fa@pyr.dev" "TESTCODE")
       (finally
-        ;; Clean up
         (call-sql "delete_backup_codes" user-id))))
   ;=>> {:status 200 :session some?}
 
-  ;; Test email 2FA
-  (let [_ (require '[pyregence.email :as email])
-        _ (email/mock-send-2fa-code "email-2fa@pyr.dev")
-        token (with-out-str
-                (email/mock-send-2fa-code "email-2fa@pyr.dev"))
-        ;; Extract the code from the printed output
-        code (second (re-find #"2FA CODE for .* : (\d+)" token))]
-    (verify-2fa nil "email-2fa@pyr.dev" code))
+  ;; And so does an emailed code, on the account configured for that method.
+  (let [_      (email/mock-send-2fa-code "email-2fa@pyr.dev")
+        token  (with-out-str (email/mock-send-2fa-code "email-2fa@pyr.dev"))
+        code   (second (re-find #"2FA CODE for .* : (\d+)" token))
+        marked (session/awaiting-2fa {} {:user_id 23 :user_email "email-2fa@pyr.dev"} (System/currentTimeMillis))]
+    (verify-2fa marked "email-2fa@pyr.dev" code))
   ;=>> {:status 200 :session some?}
 
-  ;; Test no 2FA configured
-  (verify-2fa nil "user@pyr.dev" "123456"))
-  ;=>> {:status 403 :body string?}
+  ;; An account with no second factor is refused exactly like a wrong code.
+  (verify-2fa (session/awaiting-2fa {} {:user_id 2 :user_email "user@pyr.dev"} (System/currentTimeMillis))
+              "user@pyr.dev"
+              "123456")
+  ;=>> {:status 403 :body "\"Invalid code\""}
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; TOTP Management
@@ -726,6 +726,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+(defn- can-admin-org?
+  "True when `user-id` may administer `org-id`: super_admin and account_manager any org,
+   organization_admin only their own. A nil user-id is refused without a query, and a nil
+   org-id is refused here because SQL lets an account_manager through for a NULL org."
+  [user-id org-id]
+  (boolean (and user-id org-id (sql-primitive (call-sql "can_admin_org" user-id org-id)))))
+
 (defn add-new-user
   "Creates a new user account and optionally associates them with an organization.
 
@@ -736,13 +743,13 @@
     or a map with :org-id / :org-name keys (for admin/REPL use)
 
   Behavior:
-  - A new user is created and persisted to the database.
-  - If `:org-id` is provided, the function checks whether the current user is a
-    super admin or an org admin for the given org. Given the right permissions,
-    the user is associated to the org with the role of 'organization_member'.
+  - If `:org-id` is provided, the caller must be able to administer that org. This is
+    settled first, so a refusal is a 403 with no account created.
+  - A new user is created and persisted to the database, and an `:org-id` given places
+    it in that org with the role of 'organization_member'.
 
-  - If `:org-id` is not provided or the user lacks permissions to assign directly,
-    the system falls back to automatic domain-based organization assignment.
+  - If `:org-id` is not provided, the system falls back to automatic domain-based
+    organization assignment.
     This associates the user with an organization that matches their email domain
     to the `email_domains` column. The user's assigned role is:
     - 'organization_member' if the organization has `auto_accept = true` (auto-approved)
@@ -753,7 +760,8 @@
 
   Returns:
   - A 200 OK response if the user was successfully created and optionally assigned
-  - A 403 Forbidden response if user creation fails
+  - A 403 Forbidden response if the caller may not assign to `:org-id`, or if user
+    creation fails
 
   Validation:
   - Email, name, password, and (when present) organization name are validated
@@ -763,9 +771,9 @@
     `{:message ... :errors [...]}` so signup can explain exactly why it failed.
 
   Security:
-  - Only users with sufficient privileges (super_admin or organization_admin) may
-    explicitly assign a new user to an organization via `:org-id`.
-  - All organization assignments are validated server-side using the session context."
+  - Assigning via `:org-id` is gated on `can_admin_org`, so a super_admin or
+    account_manager may target any org and an organization_admin only their own.
+  - The caller comes from a live session, so a timed-out or revoked one cannot assign."
   [session email user-name password & [org-name-or-opts]]
 
   (let [raw-org-name (cond (string? org-name-or-opts)             org-name-or-opts
@@ -791,68 +799,75 @@
                   [[:org-name "Organization name" v/org-name-steps raw-org-name]]))))
         ;; org-name is nil unless a non-blank name was provided and validated above.
         ;; Public signup too, so this can't be liveness-gated at the route.
-        user-role        (when (session/live? session) (:user-role session))
-        default-settings (pr-str {:timezone :utc})
-        new-user-id      (nil-on-error
-                          (sql-primitive (call-sql "add_new_user"
-                                                   {:log? false}
-                                                   email
-                                                   user-name
-                                                   password
-                                                   default-settings)))
-        response
-        (if-not new-user-id
-          (data-response (str "Failed to create the new user with name " user-name " and email " email)
-                         {:status 403})
-          (do
-            ;; reset login attempts in case this account exceeded the max login attempts
-            (swap! user-email->failed-login-attempts dissoc (normalize-email email))
-            (cond
-              ;; If org-id is provided, we explicitly assign the org (must be super_admin or organization_admin)
-              ;; This happens when a super_admin or org_admin is manually adding a user via the admin page
-              ;; The new user will have a user_role of organization_member and a user_status of active
-              org-id
-              (if (or (= user-role "super_admin")
-                      (= user-role "organization_admin"))
-                (do
-                  (call-sql "add_org_user" org-id new-user-id)
-                  (data-response "User created and added to organization."))
-                (data-response "User does not have permission to assign users to this organization."
-                               {:status 403}))
-
-              ;; No org-id provided — use email domain-based auto-assignment (dependent on org auto_add settings)
-              :else
-              (let [domain (re-find #"@{1}.+" email)]
-                (if (call-sql "auto_add_org_user" new-user-id domain)
-                  (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
-                  (data-response "User created successfully but something went wrong when calling auto_add_org_user."
-                                 {:status 403}))))))]
-    ;; Stash org-name in session for marketplace provisioning
-    (cond-> response
-      (and new-user-id org-name (:marketplace-signup session))
-      (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name)))))
+        caller-id    (when (session/live? session) (:user-id session))]
+    ;; Settled before anything is written, so a refusal leaves no orphan account behind.
+    (if (and org-id (not (can-admin-org? caller-id org-id)))
+      (data-response "User does not have permission to assign users to this organization."
+                     {:status 403})
+      (let [default-settings (pr-str {:timezone :utc})
+            new-user-id      (nil-on-error
+                              (sql-primitive (call-sql "add_new_user"
+                                                       {:log? false}
+                                                       email
+                                                       user-name
+                                                       password
+                                                       default-settings)))
+            response
+            (if-not new-user-id
+              (data-response (str "Failed to create the new user with name " user-name " and email " email)
+                             {:status 403})
+              (do
+                (throttle/forgive! [:password (normalize-email email)])
+                (if org-id
+                  (do
+                    (call-sql "add_org_user" org-id new-user-id)
+                    (data-response "User created and added to organization."))
+                  (let [domain (re-find #"@{1}.+" email)]
+                    (if (call-sql "auto_add_org_user" new-user-id domain)
+                      (data-response "User created and added to an organization by email domain (when auto_add is true for that organization).")
+                      (data-response "User created successfully but something went wrong when calling auto_add_org_user."
+                                     {:status 403}))))))]
+        ;; Stash org-name in session for marketplace provisioning
+        (cond-> response
+          (and new-user-id org-name (:marketplace-signup session))
+          (assoc :session (assoc-in session [:marketplace-signup :org-name] org-name)))))))
 
 ^:rct/test
 (comment
-  ;; `cutoff` is the user's invalidation stamp, 0 = never logged out.
-  (let [now          (System/currentTimeMillis)
-        assigns-org? (fn [session cutoff opts]
-                       (let [calls (atom [])]
-                         (with-redefs [call-sql (fn [& args]
-                                                  (swap! calls conj (first args))
-                                                  (case (first args)
-                                                    "add_new_user"                    [{:add_new_user 42}]
-                                                    "get_user_session_invalidated_at" [{:get_user_session_invalidated_at cutoff}]
-                                                    nil))]
-                           (add-new-user session "a@b.com" "A" "Abcdefgh1234" opts)
-                           (boolean (some #{"add_org_user"} @calls)))))
-        admin        {:user-id 1 :user-role "super_admin" :created-at (- now 1000) :last-active now}]
-    ;; timed-out admin, logged-out admin, live admin, then anonymous signup
-    [(assigns-org? (assoc admin :last-active (- now 1000000000)) 0 {:org-id 3})
-     (assigns-org? admin now {:org-id 3})
-     (assigns-org? admin 0 {:org-id 3})
-     (assigns-org? {} 0 {})])
-  ;=> [false false true false]
+  ;; `cutoff` is the user's invalidation stamp, 0 = never logged out. Only `can_admin_org`
+  ;; reaches the database: user 1 administers org 1, user 3 is an account_manager of no org.
+  (let [now           (System/currentTimeMillis)
+        real-call-sql call-sql
+        sql-calls     (fn [session cutoff opts]
+                        (let [calls (atom [])]
+                          (with-redefs [call-sql (fn [sql & args]
+                                                   (swap! calls conj sql)
+                                                   (case sql
+                                                     "add_new_user"                    [{:add_new_user 42}]
+                                                     "get_user_session_invalidated_at" [{:get_user_session_invalidated_at cutoff}]
+                                                     "can_admin_org"                   (apply real-call-sql sql args)
+                                                     nil))]
+                            (add-new-user session "a@b.com" "A" "Abcdefgh1234" opts)
+                            (set @calls))))
+        assigns-org?  (fn [& args] (contains? (apply sql-calls args) "add_org_user"))
+        creates-user? (fn [& args] (contains? (apply sql-calls args) "add_new_user"))
+        live          (fn [user-id role] {:user-id user-id :user-role role
+                                          :created-at (- now 1000) :last-active now})
+        admin         (live 1 "organization_admin")]
+    [;; timed out, logged out, then live: assigning at all needs a live session
+     [(assigns-org? (assoc admin :last-active (- now 1000000000)) 0 {:org-id 1})
+      (assigns-org? admin now {:org-id 1})
+      (assigns-org? admin 0 {:org-id 1})
+      ;; org 2 is someone else's, and a session claiming super_admin does not change that
+      (assigns-org? admin 0 {:org-id 2})
+      (assigns-org? (live 1 "super_admin") 0 {:org-id 2})
+      (assigns-org? (live 3 "account_manager") 0 {:org-id 2})
+      ;; anonymous signup takes the email-domain path instead
+      (assigns-org? {} 0 {})]
+     ;; a refusal writes nothing, so the denied caller leaves no account behind
+     [(creates-user? admin 0 {:org-id 2})
+      (creates-user? admin 0 {:org-id 1})]])
+  ;=> [[false false true false false true false] [false true]]
   )
 
 (defn get-current-user-settings
@@ -1114,7 +1129,7 @@
 
 (defn update-org-info [{:keys [user-id]} org-uuid org-name email-domains auto-add? auto-accept?]
   (let [org-id (org-uuid->id org-uuid)]
-    (if (and org-id (sql-primitive (call-sql "can_admin_org" user-id org-id)))
+    (if (can-admin-org? user-id org-id)
       (do (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
           (data-response ""))
       (data-response "You are not authorized to manage this organization." {:status 403}))))
@@ -1134,20 +1149,23 @@
   ;; user 2 (user@pyr.dev) is a member of org 1; user 3 (account_manager@pyr.dev)
   ;; is an account_manager with no org; user 12 is an admin/member of org 2.
 
-  ;; can_admin_org: org admin may manage their own org, not another; AM manages any
-  (sql-primitive (call-sql "can_admin_org" 1 1))
+  ;; org admin may manage their own org, not another. AM manages any, but not a missing one
+  (can-admin-org? 1 1)
   ;=> true
-  (sql-primitive (call-sql "can_admin_org" 1 2))
+  (can-admin-org? 1 2)
   ;=> false
-  (sql-primitive (call-sql "can_admin_org" 3 2))
+  (can-admin-org? 3 2)
   ;=> true
+  (can-admin-org? 3 nil)
+  ;=> false
 
   ;; Org handlers take the org's public uuid, never the sequential PK. An unknown
   ;; org (here a non-existent uuid) yields a uniform 403 without revealing existence,
-  ;; and a malformed (non-uuid) id is rejected the same way -- no 500 and no mutation.
+  ;; and a malformed (non-uuid) id is rejected the same way -- no 500 and no mutation,
+  ;; even for an account_manager, whom the SQL alone would let through.
   (update-org-info {:user-id 1} "00000000-0000-0000-0000-000000000000" "Hacked" "@hack.com" false false)
   ;=>> {:status 403}
 
-  (update-org-info {:user-id 1} "not-a-uuid" "Hacked" "@hack.com" false false)
+  (update-org-info {:user-id 3} "not-a-uuid" "Hacked" "@hack.com" false false)
   ;=>> {:status 403}
   )

@@ -12,9 +12,11 @@
   (and (> x minimum) (< x maximum)))
 
 (defn clean-units
-  "Cleans units by adding/not adding a space when needed for units."
+  "Cleans units by adding/not adding a space when needed for units.
+   Degree and percent symbols sit flush against the number; word and ratio units
+   (mph, m/s, mm, inches) read better with a space."
   [units]
-  (if (#{"%" "\u00B0F" "\u00B0"} units)
+  (if (#{"%" "\u00B0F" "\u00B0C" "\u00B0"} units)
     units
     (str " " units)))
 

@@ -321,17 +321,24 @@
                                    (boolean? disabled) disabled
                                    :else               (= 1 (count sorted-options)))
                              #(select-param! % key)
-                             selected-param-set]])))
+                             selected-param-set
+                             (str "forecast-" (name key) "-select")]])))
                      (cond-> @!/processed-params
                        ;; On the Weather tab, show only the Weather Parameters compatible with the
-                       ;; selected model: the NFDRS params when an NFDRS model is selected, the
-                       ;; standard params otherwise. (`:band` only exists on the Weather tab, so the
-                       ;; tab guard also keeps us from assoc-ing a phantom :band onto other tabs.)
+                       ;; selected model: the NFDRS params under an NFDRS model, the CFFDRS indices
+                       ;; under CFFDRS, the standard params otherwise. (`:band` only exists on the
+                       ;; Weather tab, so the tab guard also keeps us from assoc-ing a phantom
+                       ;; :band onto other tabs.)
                        (and (= @!/*forecast :fire-weather) (c/nfdrs?))
                        (assoc-in [:band :options] c/nfdrs-weather-params)
 
-                       (and (= @!/*forecast :fire-weather) (not (c/nfdrs?)))
-                       (update-in [:band :options] #(apply dissoc % (keys c/nfdrs-weather-params)))))
+                       (and (= @!/*forecast :fire-weather) (c/cffdrs?))
+                       (assoc-in [:band :options] c/cffdrs-weather-params)
+
+                       (and (= @!/*forecast :fire-weather) (not (c/nfdrs?)) (not (c/cffdrs?)))
+                       (update-in [:band :options]
+                                  #(apply dissoc % (concat (keys c/nfdrs-weather-params)
+                                                           (keys c/cffdrs-weather-params))))))
                [opacity-input]]]
              [sa/panel-section]
              [collapsible-panel-section
