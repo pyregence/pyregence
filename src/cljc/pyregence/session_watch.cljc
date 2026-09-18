@@ -112,7 +112,6 @@
         returning would recover the still-live cookie and recreate PYR1-1744."
        []
        (go
-         ;; PYR1-1748: move this and manual logout behind the session BBA command.
          (<! (u-async/call-clj-async! "log-out"))
          (u-browser/jump-to-url! (str "/login?"
                                       u-async/session-ended-param
