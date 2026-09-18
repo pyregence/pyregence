@@ -321,7 +321,8 @@
                                    (boolean? disabled) disabled
                                    :else               (= 1 (count sorted-options)))
                              #(select-param! % key)
-                             selected-param-set]])))
+                             selected-param-set
+                             (str "forecast-" (name key) "-select")]])))
                      (cond-> @!/processed-params
                        ;; On the Weather tab, show only the Weather Parameters compatible with the
                        ;; selected model: the NFDRS params under an NFDRS model, the CFFDRS indices
