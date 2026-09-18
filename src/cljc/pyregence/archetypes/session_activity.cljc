@@ -3,5 +3,5 @@
 
 (defn =>SessionActivity
   "The activity shared by every tab in this browser session."
-  []
-  (wiring/-session-activity (wiring/current)))
+  [generation]
+  (wiring/-session-activity (wiring/current) generation))
