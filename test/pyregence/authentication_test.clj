@@ -3,7 +3,8 @@
    the rich-comment-tests in `pyregence.authentication`, which need a real database and run under
    `bb test`. This namespace runs under `bb test-clj`, needs no database, and can set up the
    locked-out paths a database-backed test cannot."
-  (:require [clojure.test             :refer [deftest is testing use-fixtures]]
+  (:require [clojure.data.json        :as json]
+            [clojure.test             :refer [deftest is testing use-fixtures]]
             [pyregence.authentication :as authentication]
             [pyregence.clock          :as clock]
             [pyregence.marketplace    :as marketplace]
@@ -46,6 +47,15 @@
       "use_backup_code"    [{:use_backup_code (and (= (first args) user-id)
                                                    (= (second args) backup-code))}]
       "verify_user_login"  (when (= (second args) password) [user-row])
+      "begin_active_user_session"
+      (let [[id _observed-generation _observed-epoch generation device now] args]
+        [{:user_rid id
+          :session_generation generation
+          :device_id device
+          :session_epoch 1
+          :created_at (inc now)
+          :last_active_at (inc now)
+          :revoked_at nil}])
       nil)))
 
 (use-fixtures :each
@@ -117,10 +127,13 @@
 (deftest marketplace-sso-also-leaves-a-marker
   (with-redefs [marketplace/sso-login (fn [_] {:user    user-row
                                                :session {:marketplace-signup {:org-name "acme"}}})]
-    (let [response (authentication/marketplace-sso-login {})
-          pending  (get-in response [:session :pending-2fa])]
+    (let [response (authentication/marketplace-sso-complete {})
+          pending  (get-in response [:session :pending-2fa])
+          body     (json/read-str (:body response) :key-fn keyword)]
       (testing "SSO lands on the same 2FA page, so it mints the same marker"
-        (is (= 302 (:status response)))
+        (is (= 200 (:status response)))
+        (is (= (str "/verify-2fa?email=" account "&method=totp")
+               (:location body)))
         (is (= user-id (:user-id pending))))
       (testing "and the signup riding on that session survives"
         (is (= {:org-name "acme"} (get-in response [:session :marketplace-signup])))))))

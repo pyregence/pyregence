@@ -5,9 +5,11 @@
             [clojure.core.async             :refer [alts! go chan <! put! go-loop timeout]]
             [clojure.string                 :as str]
             [pyregence.components.messaging :refer [toast-message!]]
+            [pyregence.device-session       :as device-session]
             [pyregence.session-ended        :as session-ended]
             [pyregence.state                :as !]
-            [pyregence.utils.browser-utils  :as u-browser]))
+            [pyregence.utils.browser-utils  :as u-browser]
+            [pyregence.utils.data-utils     :as u-data]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions - Asynchronous Helpers
@@ -96,8 +98,9 @@
                             (str/join "&")
                             (js/encodeURIComponent))
           ;; Add token to Authorization header
-          headers      (cond-> {"Accept" "application/edn"
-                                "Content-Type" "application/edn"}
+          headers      (cond-> (merge {"Accept" "application/edn"
+                                       "Content-Type" "application/edn"}
+                                      (device-session/request-headers))
                          @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token)))
           fetch-params {:method  "get"
                         :headers headers}
@@ -111,7 +114,8 @@
 ;; Combines status and error message into return value
 (defmethod call-remote! :post [_ url data]
   (go
-    (let [headers (cond-> {"Accept" "application/edn"}
+    (let [headers (cond-> (merge {"Accept" "application/edn"}
+                                 (device-session/request-headers))
                     @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token))
                     (not (browser-encoded-body? data)) (assoc "Content-Type" "application/edn"))
           fetch-params {:method  "post"
@@ -131,7 +135,8 @@
 
 (defmethod call-remote! :post-text [_ url data]
   (go
-    (let [headers (cond-> {"Accept" "application/edn"}
+    (let [headers (cond-> (merge {"Accept" "application/edn"}
+                                 (device-session/request-headers))
                     @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token))
                     (not (browser-encoded-body? data)) (assoc "Content-Type" "application/edn"))
           fetch-params {:method  "post"
@@ -151,7 +156,8 @@
 
 (defmethod call-remote! :post-blob [_ url data]
   (go
-    (let [headers (cond-> {"Accept" "application/edn"}
+    (let [headers (cond-> (merge {"Accept" "application/edn"}
+                                 (device-session/request-headers))
                     @!/pyr-auth-token (assoc "Authorization" (str "Bearer " @!/pyr-auth-token))
                     (not (browser-encoded-body? data)) (assoc "Content-Type" "application/edn"))
           fetch-params {:method  "post"
@@ -296,6 +302,45 @@
     (go
       (doto (<! (call-remote! method (str "/clj/" clj-fn-name) data))
         (note-session-ended!)))))
+
+(defn log-out!
+  "End this page's exact login generation, then ask the server to clean up only
+   if the cookie currently presented is still that generation. Report logout
+   complete only after both the mutation and qualified cleanup succeed."
+  [reason]
+  (device-session/serialized!
+   (fn []
+     (go
+       (let [command  (device-session/logout-command reason)
+             response (<! (call-clj-async! "log-out" command))
+             outcome  (when (:success response)
+                        (:outcome (u-data/response-data (:body response))))]
+         (cond
+           (= :still-active outcome) :still-active
+
+           (#{:ended :already-ended :superseded} outcome)
+           (let [cleanup (<! (call-clj-async! "clean-up-ended-session"
+                                              (device-session/cleanup-command
+                                               :browser-state)))
+                 cleanup-outcome (when (:success cleanup)
+                                   (:outcome (u-data/response-data (:body cleanup))))]
+             (case cleanup-outcome
+               (:clean-up :already-clean) :logged-out
+               (:superseded :still-live)  :current-login
+               :failed))
+
+           :else :failed))))))
+
+(defn clean-up-ended-session!
+  "Ask the server to clear browser state only if the cookie currently presented
+   is still the ended generation this page rendered with."
+  []
+  (device-session/serialized!
+   (fn []
+     (go
+       (let [response (<! (call-clj-async! "clean-up-ended-session"
+                                           (device-session/cleanup-command :cookie-only)))]
+         (:outcome (u-data/response-data (:body response))))))))
 
 ;;; Process Returned Results
 

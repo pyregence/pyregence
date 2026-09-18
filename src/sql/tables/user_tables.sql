@@ -43,6 +43,22 @@ CREATE TABLE users (
     session_invalidated_at bigint NOT NULL DEFAULT 0
 );
 
+-- The one device session PyreCast currently honours for an account. Browser
+-- tabs in the same origin-storage profile share device_id and activity.
+CREATE TABLE active_user_sessions (
+    user_rid           INTEGER PRIMARY KEY REFERENCES users(user_uid) ON DELETE CASCADE,
+    session_generation UUID NOT NULL UNIQUE,
+    device_id          UUID NOT NULL,
+    session_epoch      BIGINT NOT NULL DEFAULT 1,
+    created_at         BIGINT NOT NULL,
+    last_active_at     BIGINT NOT NULL,
+    revoked_at         BIGINT
+);
+
+CREATE INDEX idx_active_user_sessions_live
+    ON active_user_sessions (session_generation)
+    WHERE revoked_at IS NULL;
+
 ALTER TABLE users
 ADD CONSTRAINT valid_org_role_and_status
 CHECK (

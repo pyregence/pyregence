@@ -6,7 +6,6 @@
             [clojure.string      :as    str]
             [nrepl.server        :as    nrepl-server]
             [pyregence.session   :as    session]
-            [pyregence.session-cookie :as session-cookie]
             [pyregence.session-ended :as session-ended]
             [pyregence.validation :as   v]
             [ring.util.codec     :refer [url-encode]]
@@ -20,24 +19,22 @@
             [triangulum.worker   :refer [start-workers!]]))
 
 (defn render-page
-  "Serve the page-facing session view. If an authenticated session has ended,
-   expire its cookie so the next request is an ordinary guest request."
+  "Serve the page-facing session view without rewriting browser state. A
+   delayed ordinary response must not erase a later login cookie."
   [uri]
   (let [handler (views/render-page uri)]
     (fn [request]
-      (let [{:keys [visible ended?]} (session/for-page (:session request))]
-        (cond-> (handler (assoc request :session visible))
-          ended? session-cookie/expire)))))
+      (let [{:keys [visible]} (session/for-page (:session request))]
+        (handler (assoc request :session visible))))))
 
 ^:rct/test
 (comment
-  ;; An ended login is shown as logged out and its cookie is deleted. Live and
-  ;; anonymous sessions remain untouched.
+  ;; Ended, live, and anonymous page renders are all cookie-neutral.
   (with-redefs [views/render-page (fn [_]
                                     (fn [request]
                                       {:status       200
                                        :page-session (:session request)}))
-                session/live?    (fn [stored-session]
+                session/live?    (fn [stored-session & _]
                                    (:live? stored-session))]
     (let [serve     (render-page "/")
           ended    (serve {:session {:user-id 1 :live? false}})
@@ -49,7 +46,7 @@
         (:session-cookie-attrs ended)]
        [(contains? live :session)
         (contains? anonymous :session)]]))
-  ;=> [[false true nil {:max-age 0}] [false false]]
+  ;=> [[false false nil nil] [false false]]
   )
 
 (def not-found-handler (comp #(assoc % :status 404) (render-page "/not-found")))
@@ -189,13 +186,20 @@
   [{:keys [session]}]
   (session/ended? session))
 
+(defn- request-session
+  "The signed session plus the validated origin-device identity supplied by the
+   browser request. Header mechanics stop at this boundary."
+  [{:keys [session headers]}]
+  (session/with-request-device session (get headers "x-pyrecast-device-id")))
+
 (defn route-authenticator
   "Rejects a timed-out or revoked (logout / newer login) session before authorizing."
   [request auth-type]
-  (if (and (requires-live-session? auth-type)
-           (session-ended? request))
-    false
-    (authorized? request auth-type)))
+  (let [request (assoc request :session (request-session request))]
+    (if (and (requires-live-session? auth-type)
+             (session-ended? request))
+      false
+      (authorized? request auth-type))))
 
 ^:rct/test
 (comment
@@ -338,8 +342,9 @@
    ;; Metadata so a test can catch a new secret-bearing route that forgets {:log-args? false}.
    (let [fn-sym (fn->sym function)]
      (with-meta
-       (fn [{:keys [params content-type session]}]
-         (let [clj-args   (if (= content-type "application/edn")
+       (fn [{:keys [params content-type] :as request}]
+         (let [session    (request-session request)
+               clj-args   (if (= content-type "application/edn")
                             (:clj-args params [])
                             (json/read-str (:clj-args params "[]")))
                ;; Before the call, so a crash still leaves the arguments behind.
@@ -360,34 +365,21 @@
                                 (throw e))))
                response   (if (:status clj-result)
                             clj-result
-                            (data-response clj-result {:type (if (= content-type "application/edn") :edn :json)}))
-               now        (clock/now)]
-           ;; Refresh idle timer, unless the wrapped fn already set :session (log-in/log-out) or the
-           ;; session is already expired: token-only routes skip the liveness gate, so refreshing one
-           ;; there would resurrect a dead session.
-           (if (and (:user-id session)
-                    (not (contains? response :session))
-                    (not (session/timed-out? session now)))
-             (assoc response :session (assoc session :last-active now))
-             response)))
+                            (data-response clj-result {:type (if (= content-type "application/edn") :edn :json)}))]
+           ;; Ordinary API responses are cookie-neutral. Human input advances
+           ;; activity through `note-activity`; login and cleanup deliberately
+           ;; set a session themselves.
+           response))
        {::wrapped fn-sym ::log-args? log-args?}))))
 
 ^:rct/test
 (comment
-  ;; A live call moves :last-active forward (idle timer) and keeps :created-at (absolute anchor).
-  (let [now  (System/currentTimeMillis)
-        resp ((clj-handler (fn [_session & _] {:status 200 :body "ok"}))
-              {:content-type "application/edn" :params {:clj-args "[]"}
-               :session {:user-id 1 :created-at now :last-active (- now 1000)}})]
-    [(> (get-in resp [:session :last-active]) (- now 1000))
-     (= (get-in resp [:session :created-at]) now)])
-  ;=> [true true]
-  ;; An expired session is never refreshed: token-only routes skip the liveness gate, so a
-  ;; refresh there would resurrect it.
-  (let [old (- (System/currentTimeMillis) 1000000000)]
+  ;; Ordinary calls never rewrite the signed cookie. Only login and cleanup own
+  ;; that transition; human input is recorded by the heartbeat in shared state.
+  (let [now (System/currentTimeMillis)]
     (contains? ((clj-handler (fn [_session & _] {:status 200 :body "ok"}))
                 {:content-type "application/edn" :params {:clj-args "[]"}
-                 :session {:user-id 1 :created-at old :last-active old}})
+                 :session {:user-id 1 :created-at now :last-active now}})
                :session))
   ;=> false
   ;; ...but a handler that sets :session itself (log-in/log-out) is passed through, not re-attached.

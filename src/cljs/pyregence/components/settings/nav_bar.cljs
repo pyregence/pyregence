@@ -4,6 +4,7 @@
    [clojure.string                                            :as str]
    [clojure.walk                                              :as walk]
    [herb.core                                                 :refer [<class]]
+   [pyregence.components.messaging                            :refer [toast-message!]]
    [pyregence.components.settings.organizations-utils         :refer [get-orgs! orgs->org->uuid]]
    [pyregence.components.settings.pages.account-settings      :as account-settings]
    [pyregence.components.settings.pages.admin                 :as admin]
@@ -32,6 +33,13 @@
         s2 (str/lower-case s2)]
     (and (<= (count s1) (count s2))
          (= s1 (subs s2 0 (count s1))))))
+
+(defn- log-out! []
+  (go
+    (case (<! (u-async/log-out! :explicit))
+      :logged-out    (u-browser/jump-to-url! "/")
+      :current-login (u-browser/reload!)
+      (toast-message! "Logout could not be completed. Please try again."))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tabs
@@ -262,7 +270,6 @@
                          :border-bottom  (str "1px solid " ($/color-picker :neutral-soft-gray))}}
            [tabs tab+page]]
           [button {:text     "Logout" :icon svg/logout
-                   :on-click #(go (<! (u-async/call-clj-async! "log-out"))
-                                  (u-browser/jump-to-url! "/"))}]]
+                   :on-click log-out!}]]
          [(:page (first ((group-by :selected? tab+page)
                          (last @selected-log)))) m]]))))

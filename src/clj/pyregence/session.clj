@@ -12,6 +12,7 @@
    domain concept and the hashmap that happens to carry it -- so the shaping
    belongs here, where the map is the local vocabulary rather than a foreign one."
   (:require [pyregence.clock     :as    clock]
+            [pyregence.utils     :refer [->uuid]]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql]]))
 
@@ -69,16 +70,63 @@
   [{:keys [created-at] :as session} invalidated-at]
   (boolean (and (authenticated? session) created-at (pos? invalidated-at) (< created-at invalidated-at))))
 
+(defn active-login
+  "The account's server-authoritative device session, or nil."
+  [{:keys [user-id]}]
+  (when user-id (first (call-sql "get_active_user_session" user-id))))
+
+(defn active-login-live?
+  "Whether the registry row still represents an active login at NOW."
+  [{:keys [created_at last_active_at revoked_at]} now]
+  (boolean
+   (and created_at last_active_at (nil? revoked_at)
+        (not (expired? {:user-id 1
+                        :created-at created_at
+                        :last-active last_active_at}
+                       now
+                       (timeout-ms :pyregence.auth/idle-timeout-min default-idle-timeout-min)
+                       (timeout-ms :pyregence.auth/absolute-timeout-min default-absolute-timeout-min))))))
+
+(defn same-device?
+  "Whether ACTIVE belongs to the device presenting this request."
+  [active request-session]
+  (= (str (:device_id active)) (str (:request-device-id request-session))))
+
+(defn with-request-device
+  "Attach the validated origin-device identifier at the HTTP boundary."
+  [stored-session header-value]
+  (cond-> (or stored-session {})
+    (->uuid header-value) (assoc :request-device-id (str (->uuid header-value)))))
+
+(defn- registered-row-live?
+  [session active now]
+  (and active
+       (= (str (:session-generation session))
+          (str (:session_generation active)))
+       (= (str (:device-id session)) (str (:device_id active)))
+       (nil? (:revoked_at active))
+       (not (expired? (assoc session
+                             :created-at (:created_at active)
+                             :last-active (:last_active_at active))
+                      now
+                      (timeout-ms :pyregence.auth/idle-timeout-min default-idle-timeout-min)
+                      (timeout-ms :pyregence.auth/absolute-timeout-min default-absolute-timeout-min)))))
+
+(defn- registered-live?
+  [session now]
+  (registered-row-live? session (active-login session) now))
+
 (defn revoked?
-  "Invalidated server-side (logout / newer login). A missing lookup, nil or no row at all,
-   counts as not invalidated rather than crashing."
-  [{:keys [user-id] :as session}]
+  "Whether shared persistence has stopped honouring this login. Legacy cookies
+   retain the per-user cutoff during rollout."
+  [{:keys [user-id session-generation] :as session}]
   (boolean
    (and (authenticated? session)
-        (invalidated? session (or (some-> (call-sql "get_user_session_invalidated_at" user-id)
-                                          (ffirst)
-                                          (val))
-                                  0)))))
+        (if session-generation
+          (not (registered-live? session (clock/now)))
+          (invalidated? session (or (some-> (call-sql "get_user_session_invalidated_at" user-id)
+                                            (ffirst) (val))
+                                    0))))))
 
 (defn live?
   "Authenticated and neither timed out nor revoked. A public route should treat a session
@@ -91,8 +139,39 @@
   ([session now]
    (boolean
     (and (authenticated? session)
-         (not (timed-out? session now))
-         (not (revoked? session))))))
+         (if (:session-generation session)
+           (boolean (registered-live? session now))
+           (and (not (timed-out? session now))
+                (not (revoked? session))))))))
+
+(defn request-device-current?
+  "Whether this request comes from the device named by its signed session and
+   by the active registry row. Tabs in that device intentionally compare equal."
+  [{:keys [user-id session-generation device-id request-device-id]}]
+  (boolean
+   (and user-id session-generation device-id request-device-id
+        (= (str device-id) (str request-device-id))
+        (some-> (call-sql "active_device_session_matches"
+                          user-id session-generation device-id)
+                first :active_device_session_matches))))
+
+(defn logout-disposition
+  "Classify a qualified logout without mutating its session."
+  [stored-session {:keys [expected-generation scope]}]
+  (cond
+    (not= :current scope) :unsupported-scope
+    (not= (:session-generation stored-session) expected-generation) :superseded
+    (not (request-device-current? stored-session)) :superseded
+    :else :current))
+
+(defn cleanup-disposition
+  "Classify whether an ended generation may clear the cookie presented now."
+  [stored-session {:keys [expected-generation]}]
+  (cond
+    (not= (:session-generation stored-session) expected-generation) :superseded
+    (not (authenticated? stored-session)) :already-clean
+    (live? stored-session) :still-live
+    :else :clean-up))
 
 (def ^:private pre-authentication-keys
   "Context allowed to cross from an unauthenticated first step into the second.
@@ -118,6 +197,42 @@
   (let [{:keys [user-id user-email expires-at]} (:pending-2fa session)]
     (when (and user-id user-email expires-at (< now expires-at))
       {:user-id user-id :user-email user-email})))
+
+(def ^:private takeover-user-keys
+  [:match_drop_access :user_email :user_id :user_name :user_role
+   :organization_rid :org_membership_status :subscription_tier
+   :marketplace_status])
+
+(defn awaiting-takeover
+  "Stage an authenticated request to move an account to another device."
+  [session user active candidate-device candidate-generation now]
+  (assoc (select-keys session pre-authentication-keys)
+         :pending-takeover
+         {:user-data (select-keys user takeover-user-keys)
+          :candidate-device candidate-device
+          :candidate-generation candidate-generation
+          :observed-generation (str (:session_generation active))
+          :observed-epoch (:session_epoch active)
+          :expires-at (+ now (timeout-ms :pyregence.auth/two-factor-window-min
+                                         default-two-factor-window-min))}))
+
+(defn pending-takeover
+  "Return a complete, unexpired device-transfer challenge, or nil."
+  [session now]
+  (let [{:keys [user-data candidate-device candidate-generation
+                observed-generation observed-epoch expires-at] :as challenge}
+        (:pending-takeover session)]
+    (when (and (:user_id user-data) (->uuid candidate-device)
+               (->uuid candidate-generation) (->uuid observed-generation)
+               (some? observed-epoch) expires-at (< now expires-at))
+      challenge)))
+
+(defn takeover-required?
+  "Whether SESSION carries a live, authenticated request to move the account
+   to this browser device. This is the one fact a page needs; the signed
+   challenge itself remains server-side."
+  [session now]
+  (boolean (pending-takeover session now)))
 
 (defn ended?
   "Whether a session that once existed is one PyreCast no longer honours -- idled
@@ -153,7 +268,15 @@
    `:pending-2fa` is on it for the same reason and not a second one: the marker
    carries a user id of its own (PYR1-1615), so a page told nothing about
    `:user-id` while being handed `:pending-2fa` would have been told anyway."
-  [:user-id :organization-id :pending-2fa])
+  [:user-id :organization-id :pending-2fa :pending-takeover
+   :device-id :request-device-id])
+
+(def ^:private ended-page-keys
+  "The facts an ended page needs in order to clean up the exact generation it
+   rendered. Account claims are deliberately absent: a page PyreCast calls a
+   guest must not retain an authenticated role, organization, or token in its
+   own model."
+  [:session-generation :last-active])
 
 (defn- page-facing
   "A session shaped the way a page receives one: PyreCast's own PKs out, and in
@@ -162,19 +285,36 @@
 
    Told both rather than asking for either, so that this is map-shaping and
    nothing else. `live?` takes `now` for the same reason a few lines up: a
-   function that is handed its facts stays at one altitude, and one that reaches
-   for them does not."
-  [session logged-in? idle-timeout-min]
-  (-> (apply dissoc session internal-keys)
-      (assoc :logged-in?       logged-in?
-             :idle-timeout-min idle-timeout-min)))
+  function that is handed its facts stays at one altitude, and one that reaches
+  for them does not."
+  [session is-logged-in? ended-session? idle-min requires-takeover?]
+  (let [visible-session (if is-logged-in? session (select-keys session ended-page-keys))
+        page-device    (or (:device-id session)
+                           (get-in session [:pending-takeover :candidate-device]))]
+    (-> (apply dissoc visible-session internal-keys)
+        (assoc :logged-in?       is-logged-in?
+               :ended-session?   ended-session?
+               :device-session-id page-device
+               :idle-timeout-min idle-min
+               :device-transfer-required? requires-takeover?))))
 
 (defn for-page
   "The session view a page may receive, and whether its login had already ended."
   [stored-session]
-  (let [live? (live? stored-session)]
-    {:visible (page-facing stored-session live? (when live? (idle-timeout-min)))
-     :ended?  (and (authenticated? stored-session) (not live?))}))
+  (let [now          (clock/now)
+        active       (when (:session-generation stored-session)
+                       (active-login stored-session))
+        is-live?     (if active
+                       (boolean (registered-row-live? stored-session active now))
+                       (live? stored-session now))
+        page-session (cond-> stored-session
+                       (and is-live? active)
+                       (assoc :last-active (:last_active_at active)))]
+    {:visible (page-facing page-session is-live?
+                           (and (authenticated? stored-session) (not is-live?))
+                           (when is-live? (idle-timeout-min))
+                           (takeover-required? stored-session now))
+     :ended?  (and (authenticated? stored-session) (not is-live?))}))
 
 (defn as-a-page-may-see-it
   "This session as a page is allowed to know it: PyreCast's own PKs taken out,
@@ -206,10 +346,8 @@
 (defn note-activity
   "Answer a heartbeat: the page saying the person is still here.
 
-   Deliberately does nothing. The refresh this route exists to cause is
-   `handlers/clj-handler`'s -- every live `/clj/*` call already stamps
-   `:last-active`, and already declines to stamp one that has timed out -- so a
-   body here would be a second implementation of a thing that is already right.
+   This is the only ordinary route that advances authoritative activity. Page
+   rendering and background polling do not prove a person is present.
 
    It is a route of its own because the client needs exactly one call that means
    nothing but \"still here\". Every other route means something, and sending one
@@ -220,8 +358,16 @@
    from a session that was revoked elsewhere is refused like any other gated
    call, so somebody sitting in front of an open tab finds out within one beat
    rather than at their next click."
-  [_session]
-  {:success true})
+  [{:keys [user-id session-generation device-id] :as session}]
+  (if session-generation
+    (let [last-active-at
+          (when (request-device-current? session)
+            (some-> (call-sql "note_active_device_activity"
+                              user-id session-generation device-id (clock/now))
+                    first :note_active_device_activity))]
+      (cond-> {:accepted? (some? last-active-at)}
+        last-active-at (assoc :last-active-at last-active-at)))
+    {:accepted? (live? session)}))
 
 ^:rct/test
 (comment
@@ -308,6 +454,20 @@
              (assoc fresh :created-at (- now absolute-past))
              {}])))
   ;=> [true false false false]
+
+  ;; An ended login is an actual guest at the page boundary. Its generation and
+  ;; device survive only so qualified cleanup can target the cookie it rendered.
+  (with-redefs [call-sql (fn [& _] [])]
+    (let [visible (as-a-page-may-see-it
+                   {:user-id 1 :user-role "organization_member"
+                    :user-email "member@example.test" :auth-token "secret"
+                    :session-generation "11111111-1111-1111-1111-111111111111"
+                    :device-id "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+                    :created-at 1 :last-active 1})]
+      [(select-keys visible [:user-role :user-email :auth-token])
+       (:session-generation visible)
+       (:device-session-id visible)]))
+  ;=> [{} "11111111-1111-1111-1111-111111111111" "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"]
 
   ;; Somebody with no session is told no window: there is nothing for them to be
   ;; early for, and a number they must not act on is a number the page then has
