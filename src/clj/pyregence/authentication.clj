@@ -1,8 +1,10 @@
 (ns pyregence.authentication
-  (:require [clojure.string             :as str]
+  (:require [clojure.data.json          :as json]
+            [clojure.string             :as str]
             [pyregence.clock            :as clock]
             [pyregence.email            :as email]
             [pyregence.marketplace      :as marketplace]
+            [pyregence.marketplace.jwt  :as marketplace-jwt]
             [pyregence.session          :as session]
             [pyregence.session-cookie   :as session-cookie]
             [pyregence.throttle         :as throttle]
@@ -14,7 +16,7 @@
             [triangulum.database        :refer [call-sql sql-primitive insert-rows!]]
             [triangulum.type-conversion :as tc]
             [triangulum.response        :refer [data-response]])
-  (:import  [java.util Base64]
+  (:import  [java.util Base64 UUID]
             [java.security SecureRandom]
             [java.text SimpleDateFormat]))
 
@@ -31,7 +33,7 @@
 (defn- create-session-from-user-data
   "Creates a session response from user data returned by SQL functions.
    This is the single source of truth for session structure."
-  [user-data]
+  [user-data active-session]
   (when user-data
     (let [now (clock/now)]
       (data-response "" {:session (merge {:match-drop-access?    (:match_drop_access user-data)
@@ -43,8 +45,11 @@
                                           :org-membership-status (:org_membership_status user-data)
                                           :subscription-tier     (:subscription_tier user-data)
                                           :marketplace-status    (:marketplace_status user-data)
-                                          :created-at            now
-                                          :last-active           now}
+                                          :session-generation    (str (:session_generation active-session))
+                                          :device-id              (str (:device_id active-session))
+                                          :session-epoch          (:session_epoch active-session)
+                                          :created-at             (or (:created_at active-session) now)
+                                          :last-active            (or (:last_active_at active-session) now)}
                                          (get-config :app :client-keys))}))))
 
 (defn- parse-user-settings
@@ -126,14 +131,95 @@
 ;;; Authentication & Session Management
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- device-id
+  "The browser profile completing this login. Older pages and SSO entry points
+   receive a server-generated value which the rendered page adopts."
+  [request-session]
+  (or (:request-device-id request-session)
+      (:device-id request-session)
+      (str (UUID/randomUUID))))
+
+(defn- complete-login!
+  [{:keys [user_id user_email] :as user} request-session active generation device now]
+  (when-let [started (first (call-sql "begin_active_user_session"
+                                      user_id
+                                      (some-> active :session_generation str)
+                                      (:session_epoch active)
+                                      generation device now))]
+    (call-sql "set_users_last_login_date_to_now" user_id)
+    (marketplace/complete-signup! request-session user_email)
+    (create-session-from-user-data user started)))
+
+(defn- stage-takeover
+  [request-session user active device generation now]
+  (data-response {:takeover-required true}
+                 {:session (session/awaiting-takeover request-session user active
+                                                      device generation now)}))
+
 (defn- successful-login
   ([user] (successful-login user nil))
-  ([{:keys [user_id user_email] :as user} request-session]
-   (call-sql "set_users_last_login_date_to_now" user_id)
-   (marketplace/complete-signup! request-session user_email)
-   ;; A new login invalidates the user's prior sessions (single active session)
-   (call-sql "set_user_session_invalidated_at" user_id (clock/now))
-   (create-session-from-user-data user)))
+  ([{:keys [user_id] :as user} request-session]
+   (let [now        (clock/now)
+         device     (device-id request-session)
+         generation (str (UUID/randomUUID))
+         active     (session/active-login {:user-id user_id})]
+     (if (and (session/active-login-live? active now)
+              (not (session/same-device? active (assoc request-session
+                                                       :request-device-id device))))
+       (stage-takeover request-session user active device generation now)
+       (or (complete-login! user request-session active generation device now)
+           ;; Another login won after the read above. Never mint its row into
+           ;; this response: offer transfer only when it is a live other device;
+           ;; every other race asks the caller to retry.
+           (let [successor (session/active-login {:user-id user_id})]
+             (if (and (session/active-login-live? successor now)
+                      (not (session/same-device? successor
+                                                 (assoc request-session
+                                                        :request-device-id device))))
+               (stage-takeover request-session user successor device generation now)
+               (data-response "The active login changed. Please sign in again."
+                              {:status 409}))))))))
+
+(defn confirm-login-takeover
+  "Move the account to the device named by the pending, authenticated challenge.
+   The compare-and-swap makes a delayed confirmation unable to evict a login the
+   prompt never described; a retried successful confirmation is idempotent."
+  [request-session]
+  (let [now       (clock/now)
+        challenge (session/pending-takeover request-session now)]
+    (if-not challenge
+      (data-response "The device transfer has expired. Please sign in again."
+                     {:status 401})
+      (let [{:keys [user-data candidate-device candidate-generation
+                    observed-generation observed-epoch]} challenge
+            user-id (:user_id user-data)
+            active  (session/active-login {:user-id user-id})
+            same-request-device? (= candidate-device (:request-device-id request-session))
+            already-complete? (and (= candidate-generation (str (:session_generation active)))
+                                   (= candidate-device (str (:device_id active)))
+                                   (session/active-login-live? active now))
+            replaced  (when (and same-request-device? (not already-complete?))
+                        (first (call-sql "replace_active_user_session"
+                                         user-id observed-generation observed-epoch
+                                         candidate-generation candidate-device now)))
+            completed (when same-request-device? (or (when already-complete? active)
+                                                     replaced))]
+        (cond
+          (not same-request-device?)
+          (data-response "This transfer belongs to another device." {:status 409})
+
+          (not completed)
+          (data-response "The active login changed. Please sign in again."
+                         {:status 409})
+
+          already-complete?
+          (create-session-from-user-data user-data completed)
+
+          :else
+          (do
+            (call-sql "set_users_last_login_date_to_now" user-id)
+            (marketplace/complete-signup! request-session (:user_email user-data))
+            (create-session-from-user-data user-data completed)))))))
 
 (defn log-in
   "Authenticates user and determines 2FA requirements.
@@ -157,9 +243,8 @@
               (successful-login user session))))
         (data-response "Invalid login credentials" {:status 403})))))
 
-(defn marketplace-sso-login
-  "Marketplace SSO entry point. Validates JWT, auto-logs in or redirects to 2FA.
-  Falls back to /login on error or unknown user."
+(defn- marketplace-sso-outcome
+  "Validate and complete a Marketplace login as a browser-transition outcome."
   [request]
   (try
     (if-let [{:keys [user session]} (marketplace/sso-login request)]
@@ -167,21 +252,76 @@
             two-factor (:two-factor (get-user-settings user-id))
             awaiting   (session/awaiting-2fa session user (System/currentTimeMillis))]
         (case two-factor
-          :totp  {:status  302
-                  :headers {"Location" (str "/verify-2fa?email=" (:user_email user) "&method=totp")}
+          :totp  {:location (str "/verify-2fa?email=" (:user_email user) "&method=totp")
                   :session awaiting}
           :email (do (email/send-email! nil (:user_email user) :2fa)
-                     {:status  302
-                      :headers {"Location" (str "/verify-2fa?email=" (:user_email user) "&method=email")}
+                     {:location (str "/verify-2fa?email=" (:user_email user) "&method=email")
                       :session awaiting})
           (let [resp (successful-login user session)]
-            (assoc resp :status 302 :headers {"Location" "/"}))))
-      {:status  302
-       :headers {"Location" "/login?marketplace=1"}})
+            (if (contains? resp :session)
+              {:location (if (session/takeover-required? (:session resp) (clock/now))
+                           "/login"
+                           "/")
+               :session (:session resp)}
+              {:location "/login?marketplace=1"}))))
+      {:location "/login?marketplace=1"})
     (catch Exception e
       (log-str "Marketplace SSO login error: " (.getMessage e))
-      {:status  302
-       :headers {"Location" "/login?marketplace=1"}})))
+      {:location "/login?marketplace=1"})))
+
+(defn marketplace-sso-complete
+  "Complete Marketplace SSO inside the browser-profile transition lock. The
+   fetch response may install an active or pending-2FA cookie; the calling page
+   does not navigate until that response has arrived and released the lock."
+  [request]
+  (let [{:keys [location session] :as outcome}
+        (marketplace-sso-outcome
+         (update request :session session/with-request-device
+                 (get-in request [:headers "x-pyrecast-device-id"])))]
+    (cond-> {:status  200
+             :headers {"Content-Type" "application/json"
+                       "Cache-Control" "no-store"}
+             :body    (json/write-str {:location location})}
+      (contains? outcome :session) (assoc :session session))))
+
+(defn- base64
+  [value]
+  (.encodeToString (Base64/getEncoder) (.getBytes ^String value "UTF-8")))
+
+(defn- marketplace-transition-page
+  [token]
+  (let [encoded-token (base64 token)]
+    (str "<!doctype html><html><head><meta charset=\"utf-8\">"
+         "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+         "<title>Completing sign in</title></head><body>"
+         "<p>Completing sign in&hellip;</p><script>"
+         "(()=>{const fallback='/login?marketplace=1';"
+         "const locks=navigator.locks;if(!locks){location.replace(fallback);return;}"
+         "const key='pyrecast-device-id';"
+         "const device=localStorage.getItem(key)||crypto.randomUUID();"
+         "localStorage.setItem(key,device);"
+         "const token=atob('" encoded-token "');"
+         "locks.request('pyrecast-session-transition',async()=>{"
+         "const body=new URLSearchParams({'x-gcp-marketplace-token':token});"
+         "const response=await fetch('/marketplace-login/complete',{method:'POST',"
+         "credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded',"
+         "'X-PyreCast-Device-Id':device},body});"
+         "if(!response.ok)throw new Error('Marketplace sign in failed');"
+         "const result=await response.json();return result.location||fallback;})"
+         ".then(target=>location.replace(target)).catch(()=>location.replace(fallback));"
+         "})();</script></body></html>")))
+
+(defn marketplace-sso-login
+  "Receive Google's top-level POST without changing the shared cookie. A small
+   transition page replays the token under the browser-profile Web Lock; only
+   the completion endpoint may install the resulting session."
+  [request]
+  (if-let [token (marketplace-jwt/request->token request)]
+    {:status  200
+     :headers {"Content-Type" "text/html; charset=utf-8"
+               "Cache-Control" "no-store"}
+     :body    (marketplace-transition-page token)}
+    {:status 302 :headers {"Location" "/login?marketplace=1"}}))
 
 ^:rct/test
 (comment
@@ -208,41 +348,93 @@
   ;=>> {:status 200 :body string?}
   )
 
-(defn log-out
-  "Logs the user out: invalidates all of their sessions server-side,
-   clears the session cookie, and asks the browser to drop client-side state."
-  [{:keys [user-id]}]
-  (when user-id
-    (call-sql "set_user_session_invalidated_at" user-id (clock/now)))
-  ;; Re-seal an empty session and expire it: overwrite and deletion are both deliberate.
-  (-> (data-response "")
+(defn- destructive-browser-cleanup
+  [response]
+  (-> response
       (session-cookie/expire)
       (assoc-in [:headers "Clear-Site-Data"] "\"cache\", \"cookies\", \"storage\"")))
 
+(defn log-out
+  "End the exact device generation named by COMMAND. The mutation response is
+   deliberately cookie-neutral; the browser asks for cleanup afterward, when
+   the cookie it currently presents can be compared with the ended generation."
+  ([request-session] (log-out request-session nil))
+  ([{:keys [user-id session-generation]
+     stored-device-id :device-id
+     :as request-session} command]
+   (if-not command
+     ;; A legacy cookie can safely use the legacy cutoff. A registry-backed
+     ;; cookie without an expected generation fails closed: an old page may be
+     ;; holding it after a newer same-device login and cannot name what it means
+     ;; to end.
+     (if session-generation
+       (data-response {:outcome :upgrade-required} {:status 409})
+       (do
+         (when user-id
+           (call-sql "set_user_session_invalidated_at" user-id (clock/now)))
+         ;; Compatibility callers can still revoke a legacy login, but this
+         ;; already-dispatched response must not erase a cookie installed later.
+         ;; The next rendered page performs qualified cleanup under Web Locks.
+         (data-response {:outcome :ended})))
+     (let [now         (clock/now)
+           disposition (session/logout-disposition request-session command)
+           reason      (:reason command)
+           expected-last-active (:expected-last-active command)
+           ended?      (and (= :current disposition)
+                            (case reason
+                              :idle (sql-primitive
+                                     (call-sql "revoke_idle_device_session"
+                                               user-id session-generation stored-device-id
+                                               expected-last-active now))
+                              :explicit (sql-primitive
+                                         (call-sql "revoke_active_device_session"
+                                                   user-id session-generation stored-device-id now))
+                              false))
+           outcome     (cond
+                         (not= :current disposition) disposition
+                         ended? :ended
+                         (= :idle reason) :still-active
+                         :else :already-ended)]
+       (data-response {:outcome outcome})))))
+
+(defn clean-up-ended-session
+  "Expire browser state only when the cookie presented now is the generation the
+   browser says it ended. A newer shared-tab cookie therefore survives a delayed
+   response from its predecessor."
+  [request-session command]
+  (let [outcome (session/cleanup-disposition request-session command)
+        response (data-response {:outcome outcome})]
+    (if (= :clean-up outcome)
+      (if (= :cookie-only (:scope command))
+        (session-cookie/expire response)
+        (destructive-browser-cleanup response))
+      response)))
+
 ^:rct/test
 (comment
-  ;; Logout drops the cookie (:session nil), sends Clear-Site-Data, and stamps the cutoff at now
-  ;; for that user. A zero or stale stamp would silently stop invalidating anything.
+  ;; Legacy logout stamps the cutoff at now but leaves browser mutation to the
+  ;; qualified cleanup request. A zero or stale stamp would silently stop
+  ;; invalidating anything.
   (let [calls  (atom [])
         before (System/currentTimeMillis)]
     (with-redefs [call-sql (fn [& args] (swap! calls conj (vec args)) nil)]
       (let [resp       (log-out {:user-id 7})
             [f uid ts] (first @calls)]
-        [(contains? resp :session)
-         (:session resp)
+        [(-> resp :body read-string :outcome)
+         (contains? resp :session)
          (:session-cookie-attrs resp)
          (get-in resp [:headers "Clear-Site-Data"])
          f
          uid
          (>= ts before)])))
-  ;=> [true nil {:max-age 0} "\"cache\", \"cookies\", \"storage\"" "set_user_session_invalidated_at" 7 true]
+  ;=> [:ended false nil nil "set_user_session_invalidated_at" 7 true]
 
-  ;; A guest logout still clears client state but writes nothing (no user-id).
+  ;; A guest compatibility call remains browser-neutral and writes nothing.
   (let [calls (atom [])]
     (with-redefs [call-sql (fn [& args] (swap! calls conj (vec args)) nil)]
       (let [resp (log-out {})]
         [(get-in resp [:headers "Clear-Site-Data"]) (count @calls)])))
-  ;=> ["\"cache\", \"cookies\", \"storage\"" 0]
+  ;=> [nil 0]
   )
 
 (defn set-user-password
