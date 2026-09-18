@@ -196,13 +196,13 @@
    `:ecmwf` and `:nve` are injected at runtime from the organization_layers DB
    table, so they're easy to forget here - leaving them out strands the NFDRS
    parameter selected when you switch to those models."
-  #{:nbm :hrrr :hrdps :rdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+  #{:nbm :hrrr :hrdps :rdps :gdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
     :ecmwf :nve :cffdrs})
 
 (def ^:private non-cffdrs-weather-models
   "All non-CFFDRS weather models. The CFFDRS-only Weather Parameters are
    disabled-for these so they can only be selected with the CFFDRS model."
-  #{:nbm :hrrr :hrdps :rdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+  #{:nbm :hrrr :hrdps :rdps :gdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
     :nfdrs-constant :nfdrs-variable :ecmwf :nve})
 
 (def ^:private metric-weather-models
@@ -218,7 +218,7 @@
    - Its own band name (tmp for Celsius, against tmpf for Fahrenheit): the two are
      separate parameters, each disabled-for the other's models, so no override is
      needed -- the band's own :units and default style are already metric."
-  #{:hrdps :rdps})
+  #{:hrdps :rdps :gdps})
 
 (def ^:private non-metric-weather-models
   "All weather models that do not publish the Celsius `tmp` band, which is
@@ -521,7 +521,7 @@
                                                               :tmpf    {:opt-label "Temperature (\u00B0F)"
                                                                         :filter    "tmpf"
                                                                         :units     "\u00B0F"
-                                                                        :disabled-for #{:hrdps :rdps :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               ;; The band name carries the unit: models publishing Fahrenheit ship
                                                               ;; `tmpf`, metric ones ship `tmp` in Celsius. They are the same quantity
                                                               ;; from different sources, so each is disabled-for the other's models
@@ -533,15 +533,15 @@
                                                               :ffwi    {:opt-label "Fosberg Fire Weather Index"
                                                                         :filter    "ffwi"
                                                                         :units     ""
-                                                                        :disabled-for #{:hrdps :rdps :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :meq     {:opt-label "Fine dead fuel moisture"
                                                                         :filter    "meq"
                                                                         :units     "%"
-                                                                        :disabled-for #{:hrdps :rdps :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :pign    {:opt-label "Firebrand ignition probability"
                                                                         :filter    "pign"
                                                                         :units     "%"
-                                                                        :disabled-for #{:hrdps :rdps :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :wd      {:opt-label       "Wind direction"
                                                                         :filter          "wd"
                                                                         :units           "\u00B0"
@@ -567,7 +567,7 @@
                                                               :apcptot {:opt-label       "Accumulated precipitation"
                                                                         :filter          "apcptot"
                                                                         :units           "inches"
-                                                                        :disabled-for    #{:hrdps :rdps :gfs0p125 :hybrid :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}
+                                                                        :disabled-for    #{:hrdps :rdps :gdps :gfs0p125 :hybrid :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}
                                                                         :reverse-legend? false}
                                                               :apcp01  {:opt-label       "1-hour precipitation"
                                                                         :filter          "apcp01"
@@ -581,19 +581,19 @@
                                                               :vpd     {:opt-label    "Vapor pressure deficit"
                                                                         :filter       "vpd"
                                                                         :units        "hPa"
-                                                                        :disabled-for #{:hrdps :rdps :nbm :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :nbm :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :hdw     {:opt-label    "Hot-Dry-Windy Index"
                                                                         :filter       "hdw"
                                                                         :units        "hPa*m/s"
-                                                                        :disabled-for #{:hrdps :rdps :nbm :ecmwf :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :nbm :ecmwf :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :smoke   {:opt-label    "Smoke density"
                                                                         :filter       "smoke"
                                                                         :units        "\u00b5g/m\u00b3"
-                                                                        :disabled-for #{:hrdps :rdps :gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :tcdc    {:opt-label    "Total cloud cover"
                                                                         :filter       "tcdc"
                                                                         :units        "%"
-                                                                        :disabled-for #{:hrdps :rdps :gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :bui     {:opt-label "Buildup Index"
                                                                         :filter    "bui"
                                                                         :units     ""
@@ -634,6 +634,10 @@
                                                               [:br]
                                                               [:strong "RDPS"]
                                                               " - Canada Regional Deterministic Prediction System at 10 km to 84 hours."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "GDPS"]
+                                                              " - Canadian Global Deterministic Predictive System at 15 km to 10 days."
                                                               [:br]
                                                               [:br]
                                                               [:strong "Hybrid"]
@@ -683,6 +687,9 @@
                                                                               :disabled-for #{:tmpf :apcptot :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
                                                               :rdps          {:opt-label    "RDPS"
                                                                               :filter       "rdps"
+                                                                              :disabled-for #{:tmpf :apcptot :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
+                                                              :gdps          {:opt-label    "GDPS"
+                                                                              :filter       "gdps"
                                                                               :disabled-for #{:tmpf :apcptot :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
