@@ -1,6 +1,5 @@
 (ns ^:figwheel-hooks pyregence.client
   (:require [clojure.core.async                 :refer [go <!]]
-            [clojure.edn                        :as edn]
             [goog.dom                           :as dom]
             [reagent.dom                        :refer [render]]
             [pyregence.components.page-layout   :refer [wrap-page]]
@@ -24,6 +23,7 @@
             [pyregence.archetypes.session-activity :refer [=>SessionActivity]]
             [pyregence.clock                    :as clock]
             [pyregence.datatypes.idle-window    :as idle-window]
+            [pyregence.device-session           :as device-session]
             [pyregence.datatypes.session        :as session]
             [pyregence.session-watch            :as session-watch]
             [pyregence.wiring                   :as wiring]
@@ -94,10 +94,20 @@
       (reset! !/default-forecasts               (get clj-session :default-forecasts))
       (reset! !/pyr-auth-token                  (get clj-session :auth-token))
       (reset! !/mapbox-access-token             (get clj-session :mapbox-access-token))
+      (device-session/install! (:device-session-id clj-session)
+                               (:session-generation clj-session)
+                               (:last-active clj-session))
       ;; This is the root, so this is where the page's sense of the present comes
       ;; from. Installed before anything is rendered, because a component that
       ;; reads the clock during its first mount would otherwise find none.
       (clock/install! (clock/->SystemClock))
+      ;; An ended page is already safe to render as a guest. Ask the server to
+      ;; overwrite its legacy or registry cookie before rendering, but do not
+      ;; reload: cookie expiry is browser work, and a client that ignores it must
+      ;; not enter a reload loop. A newer shared-tab cookie answers :superseded
+      ;; and is untouched.
+      (when (:ended-session? clj-session)
+        (<! (u-async/clean-up-ended-session!)))
       ;; The composition root, and the only one. Nothing below builds a
       ;; collaborator for itself or reaches for one: a page is handed what it
       ;; needs and speaks to it through its protocol. The wiring is in force for

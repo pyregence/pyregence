@@ -1,7 +1,9 @@
 (ns pyregence.pages.verify-email
   (:require [clojure.core.async            :refer [go <! timeout]]
+            [pyregence.device-session      :as device-session]
             [pyregence.utils.async-utils   :as u-async]
             [pyregence.utils.browser-utils :as u-browser]
+            [pyregence.utils.data-utils    :as u-data]
             [reagent.core                  :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -16,11 +18,16 @@
 
 (defn- verify-account! [email verification-token]
   (go
-    (if (:success (<! (u-async/call-clj-async! "verify-user-email" email verification-token)))
-      (do
-        (<! (timeout 2000))
-        (u-browser/jump-to-url! "/forecast"))
-      (reset! pending? false))))
+    (let [{:keys [success body]}
+          (<! (device-session/serialized!
+               (fn [] (u-async/call-clj-async! "verify-user-email"
+                                               email verification-token))))
+          {:keys [takeover-required]} (u-data/response-data body)]
+      (if success
+        (do
+          (<! (timeout 2000))
+          (u-browser/jump-to-url! (if takeover-required "/login" "/forecast")))
+        (reset! pending? false)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
