@@ -52,7 +52,7 @@
                 (let [show? (swap! show? not)]
                   (when show?
                     (when-not (js-invoke @mb/the-map "getSource" id)
-                      (js-invoke @mb/the-map "addSource"  id (clj->js (mb/mvt-source layer-name "psps"))))
+                      (js-invoke @mb/the-map "addSource"  id (clj->js (mb/mvt-source layer-name "parrot06"))))
                     (when-not (js-invoke @mb/the-map "getLayer" id)
                       ;;TODO consider using a different :source then :id because they might clash down the line.
                       (js-invoke @mb/the-map "addLayer" (clj->js {:id           id

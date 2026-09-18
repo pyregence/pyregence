@@ -968,7 +968,7 @@
                                                  :options    {:loading {:opt-label "Loading..."}}})}
    :psps-zonal   {:opt-label       "PSPS"
                   :filter          "psps-zonal"
-                  :geoserver-key   :psps
+                  :geoserver-key   :parrot06
                   :underlays       (merge common-underlays near-term-forecast-underlays)
                   :reverse-legend? true
                   :time-slider?    true
@@ -1785,6 +1785,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WFS/WMS Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def utility-geoserver-keys
+  "The three GeoServers on geoserver-utility. They are the only ones behind
+   per-company basic auth, so every request to them needs credentials attached."
+  #{:parrot04 :parrot05 :parrot06})
+
+(defn utility-geoserver-url?
+  "True when `url` points at one of the utility GeoServers."
+  [url]
+  (boolean (some #(str/starts-with? url %)
+                 (vals (select-keys @!/geoserver-urls utility-geoserver-keys)))))
 
 (defn- wms-url [geoserver-key]
   (str (u-str/end-with (geoserver-key @!/geoserver-urls) "/") "wms"))
