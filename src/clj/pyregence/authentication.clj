@@ -4,6 +4,7 @@
             [pyregence.email            :as email]
             [pyregence.marketplace      :as marketplace]
             [pyregence.session          :as session]
+            [pyregence.session-cookie   :as session-cookie]
             [pyregence.throttle         :as throttle]
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error ->uuid]]
@@ -213,11 +214,9 @@
   [{:keys [user-id]}]
   (when user-id
     (call-sql "set_user_session_invalidated_at" user-id (clock/now)))
-  ;; :session nil re-seals an empty cookie but Ring's cookie-store emits no expiry, so the browser
-  ;; keeps it; :session-cookie-attrs {:max-age 0} makes wrap-session send Max-Age=0 to delete it.
-  ;; Must be assoc'ed on the response: utils/data-response only passes through :status/:type/:session.
-  (-> (data-response "" {:session nil})
-      (assoc :session-cookie-attrs {:max-age 0})
+  ;; Re-seal an empty session and expire it: overwrite and deletion are both deliberate.
+  (-> (data-response "")
+      (session-cookie/expire)
       (assoc-in [:headers "Clear-Site-Data"] "\"cache\", \"cookies\", \"storage\"")))
 
 ^:rct/test
