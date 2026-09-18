@@ -1,0 +1,56 @@
+strict digraph DiskGraph {
+nodesep=0.35;
+subgraph cluster_graph {
+color="white";
+-127777690555269044 [label="/\\ revoked = FALSE\n/\\ epoch = 1\n/\\ currentSession = \"G1A\"\n/\\ cookieA = \"G1\"\n/\\ cookieB = \"none\"\n/\\ challengeState = \"none\"\n/\\ oldLogoutHandled = FALSE\n/\\ oldCleanupHandled = FALSE\n/\\ successorInstalled = FALSE",style = filled]
+-127777690555269044 -> -197999472053881444 [label="StageTransfer",color="black",fontcolor="black"];
+-197999472053881444 [label="/\\ revoked = FALSE\n/\\ epoch = 1\n/\\ currentSession = \"G1A\"\n/\\ cookieA = \"G1\"\n/\\ cookieB = \"none\"\n/\\ challengeState = \"pending\"\n/\\ oldLogoutHandled = FALSE\n/\\ oldCleanupHandled = FALSE\n/\\ successorInstalled = FALSE"];
+-197999472053881444 -> -2817581010610236178 [label="ConfirmTransfer",color="black",fontcolor="black"];
+-2817581010610236178 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G2B\"\n/\\ cookieA = \"G1\"\n/\\ cookieB = \"G2\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = FALSE\n/\\ oldCleanupHandled = FALSE\n/\\ successorInstalled = FALSE"];
+-197999472053881444 -> -3717436067455617199 [label="InstallCompetingSuccessor",color="black",fontcolor="black"];
+-3717436067455617199 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"none\"\n/\\ challengeState = \"pending\"\n/\\ oldLogoutHandled = FALSE\n/\\ oldCleanupHandled = FALSE\n/\\ successorInstalled = TRUE"];
+-2817581010610236178 -> -431583397127280324 [label="InstallCompetingSuccessor",color="black",fontcolor="black"];
+-431583397127280324 [label="/\\ revoked = FALSE\n/\\ epoch = 3\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"G2\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = FALSE\n/\\ oldCleanupHandled = FALSE\n/\\ successorInstalled = TRUE"];
+-2817581010610236178 -> 4327581588372776614 [label="RunOldPageLogout",color="black",fontcolor="black"];
+4327581588372776614 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G2B\"\n/\\ cookieA = \"G1\"\n/\\ cookieB = \"G2\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = TRUE\n/\\ oldCleanupHandled = FALSE\n/\\ successorInstalled = FALSE"];
+-2817581010610236178 -> -1564889214925524792 [label="RunOldPageCleanup",color="black",fontcolor="black"];
+-1564889214925524792 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G2B\"\n/\\ cookieA = \"none\"\n/\\ cookieB = \"G2\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = FALSE\n/\\ oldCleanupHandled = TRUE\n/\\ successorInstalled = FALSE"];
+-3717436067455617199 -> -7236719334198785945 [label="ConfirmTransfer",color="black",fontcolor="black"];
+-7236719334198785945 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"none\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = FALSE\n/\\ oldCleanupHandled = FALSE\n/\\ successorInstalled = TRUE"];
+-3717436067455617199 -> 2918996589536019737 [label="RunOldPageLogout",color="black",fontcolor="black"];
+2918996589536019737 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"none\"\n/\\ challengeState = \"pending\"\n/\\ oldLogoutHandled = TRUE\n/\\ oldCleanupHandled = FALSE\n/\\ successorInstalled = TRUE"];
+-3717436067455617199 -> -2767635225039823902 [label="RunOldPageCleanup",color="black",fontcolor="black"];
+-2767635225039823902 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"none\"\n/\\ challengeState = \"pending\"\n/\\ oldLogoutHandled = FALSE\n/\\ oldCleanupHandled = TRUE\n/\\ successorInstalled = TRUE"];
+-431583397127280324 -> 2227572447363701620 [label="RunOldPageLogout",color="black",fontcolor="black"];
+2227572447363701620 [label="/\\ revoked = FALSE\n/\\ epoch = 3\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"G2\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = TRUE\n/\\ oldCleanupHandled = FALSE\n/\\ successorInstalled = TRUE"];
+-431583397127280324 -> -1153813391862397553 [label="RunOldPageCleanup",color="black",fontcolor="black"];
+-1153813391862397553 [label="/\\ revoked = FALSE\n/\\ epoch = 3\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"G2\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = FALSE\n/\\ oldCleanupHandled = TRUE\n/\\ successorInstalled = TRUE"];
+4327581588372776614 -> 2227572447363701620 [label="InstallCompetingSuccessor",color="black",fontcolor="black"];
+4327581588372776614 -> 1054754863303099008 [label="RunOldPageCleanup",color="black",fontcolor="black"];
+1054754863303099008 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G2B\"\n/\\ cookieA = \"none\"\n/\\ cookieB = \"G2\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = TRUE\n/\\ oldCleanupHandled = TRUE\n/\\ successorInstalled = FALSE"];
+-1564889214925524792 -> -1153813391862397553 [label="InstallCompetingSuccessor",color="black",fontcolor="black"];
+-1564889214925524792 -> 1054754863303099008 [label="RunOldPageLogout",color="black",fontcolor="black"];
+-7236719334198785945 -> 9185472292324080175 [label="RunOldPageLogout",color="black",fontcolor="black"];
+9185472292324080175 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"none\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = TRUE\n/\\ oldCleanupHandled = FALSE\n/\\ successorInstalled = TRUE"];
+-7236719334198785945 -> -8184056600754854700 [label="RunOldPageCleanup",color="black",fontcolor="black"];
+-8184056600754854700 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"none\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = FALSE\n/\\ oldCleanupHandled = TRUE\n/\\ successorInstalled = TRUE"];
+2918996589536019737 -> 9185472292324080175 [label="ConfirmTransfer",color="black",fontcolor="black"];
+2918996589536019737 -> 4430479992214694314 [label="RunOldPageCleanup",color="black",fontcolor="black"];
+4430479992214694314 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"none\"\n/\\ challengeState = \"pending\"\n/\\ oldLogoutHandled = TRUE\n/\\ oldCleanupHandled = TRUE\n/\\ successorInstalled = TRUE"];
+-2767635225039823902 -> -8184056600754854700 [label="ConfirmTransfer",color="black",fontcolor="black"];
+-2767635225039823902 -> 4430479992214694314 [label="RunOldPageLogout",color="black",fontcolor="black"];
+2227572447363701620 -> 799262130304858055 [label="RunOldPageCleanup",color="black",fontcolor="black"];
+799262130304858055 [label="/\\ revoked = FALSE\n/\\ epoch = 3\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"G2\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = TRUE\n/\\ oldCleanupHandled = TRUE\n/\\ successorInstalled = TRUE"];
+-1153813391862397553 -> 799262130304858055 [label="RunOldPageLogout",color="black",fontcolor="black"];
+1054754863303099008 -> 799262130304858055 [label="InstallCompetingSuccessor",color="black",fontcolor="black"];
+9185472292324080175 -> 7676169616541537948 [label="RunOldPageCleanup",color="black",fontcolor="black"];
+7676169616541537948 [label="/\\ revoked = FALSE\n/\\ epoch = 2\n/\\ currentSession = \"G3A\"\n/\\ cookieA = \"G3\"\n/\\ cookieB = \"none\"\n/\\ challengeState = \"used\"\n/\\ oldLogoutHandled = TRUE\n/\\ oldCleanupHandled = TRUE\n/\\ successorInstalled = TRUE"];
+-8184056600754854700 -> 7676169616541537948 [label="RunOldPageLogout",color="black",fontcolor="black"];
+4430479992214694314 -> 7676169616541537948 [label="ConfirmTransfer",color="black",fontcolor="black"];
+{rank = same; -127777690555269044;}
+{rank = same; -197999472053881444;}
+{rank = same; -2817581010610236178;-3717436067455617199;}
+{rank = same; -431583397127280324;4327581588372776614;-1564889214925524792;2918996589536019737;-2767635225039823902;-7236719334198785945;}
+{rank = same; -1153813391862397553;2227572447363701620;-8184056600754854700;1054754863303099008;4430479992214694314;9185472292324080175;}
+}
+}
