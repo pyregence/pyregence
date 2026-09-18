@@ -550,6 +550,176 @@ RETURNS bigint AS $$
     WHERE user_uid = _user_id;
 $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION get_active_user_session(_user_id integer)
+RETURNS TABLE (
+    session_generation uuid,
+    device_id uuid,
+    session_epoch bigint,
+    created_at bigint,
+    last_active_at bigint,
+    revoked_at bigint
+) AS $$
+    SELECT s.session_generation, s.device_id, s.session_epoch,
+           s.created_at, s.last_active_at, s.revoked_at
+      FROM active_user_sessions s
+     WHERE s.user_rid = _user_id;
+$$ LANGUAGE SQL;
+
+-- Start a session after either an uncontested login or an explicit takeover.
+-- The registry and legacy cutoff move atomically.
+CREATE OR REPLACE FUNCTION begin_active_user_session(
+    _user_id integer,
+    _observed_generation text,
+    _observed_epoch bigint,
+    _generation text,
+    _device_id text,
+    _now bigint)
+RETURNS TABLE (
+    user_rid integer,
+    session_generation uuid,
+    device_id uuid,
+    session_epoch bigint,
+    created_at bigint,
+    last_active_at bigint,
+    revoked_at bigint
+) AS $$
+    WITH started AS (
+        INSERT INTO active_user_sessions AS current_session
+                    (user_rid, session_generation, device_id, session_epoch,
+                     created_at, last_active_at, revoked_at)
+             VALUES (_user_id, _generation::uuid, _device_id::uuid, 1,
+                     _now + 1, _now + 1, NULL)
+        ON CONFLICT (user_rid) DO UPDATE
+                SET session_generation = EXCLUDED.session_generation,
+                    device_id          = EXCLUDED.device_id,
+                    session_epoch      = current_session.session_epoch + 1,
+                    created_at         = EXCLUDED.created_at,
+                    last_active_at     = EXCLUDED.last_active_at,
+                    revoked_at         = NULL
+              WHERE _observed_generation IS NOT NULL
+                AND current_session.session_generation = _observed_generation::uuid
+                AND current_session.session_epoch = _observed_epoch
+        RETURNING current_session.*
+    ), advanced_cutoff AS (
+        UPDATE users
+           SET session_invalidated_at = _now
+         WHERE user_uid = _user_id
+           AND EXISTS (SELECT 1 FROM started)
+    )
+    SELECT started.user_rid, started.session_generation, started.device_id,
+           started.session_epoch, started.created_at, started.last_active_at,
+           started.revoked_at
+      FROM started;
+$$ LANGUAGE SQL;
+
+-- Confirm the exact account session named by the prompt. A delayed confirmation
+-- cannot evict an unseen successor.
+CREATE OR REPLACE FUNCTION replace_active_user_session(
+    _user_id integer,
+    _observed_generation text,
+    _observed_epoch bigint,
+    _new_generation text,
+    _device_id text,
+    _now bigint)
+RETURNS TABLE (
+    user_rid integer,
+    session_generation uuid,
+    device_id uuid,
+    session_epoch bigint,
+    created_at bigint,
+    last_active_at bigint,
+    revoked_at bigint
+) AS $$
+    WITH replaced AS (
+        UPDATE active_user_sessions
+           SET session_generation = _new_generation::uuid,
+               device_id = _device_id::uuid,
+               session_epoch = session_epoch + 1,
+               created_at = _now + 1,
+               last_active_at = _now + 1,
+               revoked_at = NULL
+         WHERE user_rid = _user_id
+           AND session_generation = _observed_generation::uuid
+           AND session_epoch = _observed_epoch
+           AND revoked_at IS NULL
+        RETURNING active_user_sessions.*
+    ), advanced_cutoff AS (
+        UPDATE users
+           SET session_invalidated_at = _now
+         WHERE user_uid = _user_id
+           AND EXISTS (SELECT 1 FROM replaced)
+    )
+    SELECT replaced.user_rid, replaced.session_generation, replaced.device_id,
+           replaced.session_epoch, replaced.created_at, replaced.last_active_at,
+           replaced.revoked_at
+      FROM replaced;
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION active_device_session_matches(
+    _user_id integer, _generation text, _device_id text)
+RETURNS boolean AS $$
+    SELECT EXISTS (
+        SELECT 1 FROM active_user_sessions
+         WHERE user_rid = _user_id
+           AND session_generation = _generation::uuid
+           AND device_id = _device_id::uuid
+           AND revoked_at IS NULL);
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION note_active_device_activity(
+    _user_id integer, _generation text, _device_id text, _now bigint)
+RETURNS bigint AS $$
+    WITH touched AS (
+        UPDATE active_user_sessions
+           SET last_active_at = GREATEST(last_active_at, _now)
+         WHERE user_rid = _user_id
+           AND session_generation = _generation::uuid
+           AND device_id = _device_id::uuid
+           AND revoked_at IS NULL
+        RETURNING last_active_at)
+    SELECT last_active_at FROM touched;
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION revoke_active_device_session(
+    _user_id integer, _generation text, _device_id text, _now bigint)
+RETURNS boolean AS $$
+DECLARE revoked_count integer;
+BEGIN
+    UPDATE active_user_sessions SET revoked_at = _now
+     WHERE user_rid = _user_id
+       AND session_generation = _generation::uuid
+       AND device_id = _device_id::uuid
+       AND revoked_at IS NULL;
+    GET DIAGNOSTICS revoked_count = ROW_COUNT;
+    IF revoked_count = 1 THEN
+        UPDATE users SET session_invalidated_at = _now WHERE user_uid = _user_id;
+    END IF;
+    RETURN revoked_count = 1;
+END;
+$$ LANGUAGE plpgsql;
+
+-- An idle decision made by one tab may arrive after a sibling tab reported
+-- activity. Revoke only the exact activity version the idle tab observed.
+CREATE OR REPLACE FUNCTION revoke_idle_device_session(
+    _user_id integer, _generation text, _device_id text,
+    _expected_last_active bigint, _now bigint)
+RETURNS boolean AS $$
+DECLARE revoked_count integer;
+BEGIN
+    UPDATE active_user_sessions SET revoked_at = _now
+     WHERE user_rid = _user_id
+       AND session_generation = _generation::uuid
+       AND device_id = _device_id::uuid
+       AND last_active_at = _expected_last_active
+       AND revoked_at IS NULL;
+    GET DIAGNOSTICS revoked_count = ROW_COUNT;
+    IF revoked_count = 1 THEN
+        UPDATE users SET session_invalidated_at = _now WHERE user_uid = _user_id;
+    END IF;
+    RETURN revoked_count = 1;
+END;
+$$ LANGUAGE plpgsql;
+
 --------------------------------------------------------------------------------
 -- Marketplace Provisioning
 --------------------------------------------------------------------------------
