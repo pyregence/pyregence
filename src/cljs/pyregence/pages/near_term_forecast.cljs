@@ -421,10 +421,10 @@
                                 (doall %)))))
 
 (def ^:private shared-weather-layer-ids
-  "Layer ids every PSPS company can access: the Euro (`ecmwf`) forecast and the NFDRS
-   and CFFDRS weather layers. They aren't utility-specific, so any PSPS org's GeoServer
-   credentials will authenticate them."
-  #{"ecmwf" "nfdrs-constant" "nfdrs-variable" "cffdrs"})
+  "Layer ids every PSPS company can access: the Euro (`ecmwf`) forecast and the NFDRS,
+   CFFDRS and ADS WRF weather layers. They aren't utility-specific, so any PSPS org's
+   GeoServer credentials will authenticate them."
+  #{"ecmwf" "nfdrs-constant" "nfdrs-variable" "cffdrs" "adswrf"})
 
 (def ^:private forecast->credential-keypath
   "For each forecast type, the path into `@!/*params` holding the selected layer's
@@ -502,6 +502,7 @@
   ;; Shared (non-utility) weather layers: every PSPS company has access.
   (shared-weather-layer-ids "ecmwf")           ;=> "ecmwf"
   (shared-weather-layer-ids "nfdrs-variable")  ;=> "nfdrs-variable"
+  (shared-weather-layer-ids "adswrf")          ;=> "adswrf"
   (shared-weather-layer-ids "pge")             ;=> nil
 
   ;; Forecast -> where the selected layer's org-unique-id lives in @!/*params.
@@ -1025,7 +1026,16 @@
                 (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
                 (#{"super_admin" "account_manager"} user-role))
                 (assoc-in [:fire-weather :params :model :options :cffdrs]
-                          {:opt-label "CFFDRS", :filter "cffdrs", :geoserver-key :psps}))))
+                          {:opt-label "CFFDRS", :filter "cffdrs", :geoserver-key :psps}))
+              ;; ADS WRF: same gate and GeoServer as CFFDRS above. Not a per-organization
+              ;; layer -- the GeoFence rule allows every PSPS org, and the older `nve` row
+              ;; in organization_layers points at workspaces that no longer exist.
+              (cond->
+               (or
+                (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
+                (#{"super_admin" "account_manager"} user-role))
+                (assoc-in [:fire-weather :params :model :options :adswrf]
+                          {:opt-label "ADS WRF", :filter "adswrf", :geoserver-key :psps}))))
 
   ;; TODO Consider sorting the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
