@@ -1218,9 +1218,9 @@
                           :style            (-> (c/base-map-options) c/base-map-default :source)
                           :touchPitch       false
                           :trackResize      true
-                           ;; For PSPS layers, we need to add basic auth to the GetTile requests
+                           ;; For utility layers, we need to add basic auth to the GetTile requests
                           :transformRequest (fn [url resource-type]
-                                              (when (and (str/starts-with? url (:psps @!/geoserver-urls))
+                                              (when (and (c/utility-geoserver-url? url)
                                                          (= resource-type "Tile"))
                                                 (if-let [credentials (get-current-layer-geoserver-credentials)]
                                                   #js {:url     url

@@ -580,7 +580,7 @@
               (c/legend-url layer
                             (get-any-level-key :geoserver-key)
                             (get-layer-style))
-              :basic-auth (when (= :psps (get-any-level-key :geoserver-key))
+              :basic-auth (when (c/utility-geoserver-keys (get-any-level-key :geoserver-key))
                             (get-current-layer-geoserver-credentials)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -724,7 +724,7 @@
         layer         (if (or single? mosaic?) (get-current-layer-name) layer-group)
         bbox          (str/join "," point-info-bbox)
         geoserver-key (get-any-level-key :geoserver-key)
-        basic-auth    (when (= :psps geoserver-key)
+        basic-auth    (when (c/utility-geoserver-keys geoserver-key)
                         (get-current-layer-geoserver-credentials))]
     (when-not (u-data/missing-data? layer point-info-bbox)
       (reset! !/point-info-loading? true)
@@ -1014,9 +1014,9 @@
                          (assoc-in m k v))
                        m
                        [[[:fire-weather :params :model :options :nfdrs-constant]
-                         {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :psps}]
+                         {:opt-label "NFDRS Constant", :filter "nfdrs-constant", :geoserver-key :parrot05}]
                         [[:fire-weather :params :model :options :nfdrs-variable]
-                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :psps}]])))
+                         {:opt-label "NFDRS Variable", :filter "nfdrs-variable", :geoserver-key :parrot05}]])))
               ;; CFFDRS: paid orgs, Super Admins, and Account Managers (served from the PSPS/utility GeoServer).
               ;; Same gate as NFDRS above: the GeoFence rule allows every PSPS org, so this
               ;; check is what actually keeps the model out of unentitled accounts.
@@ -1025,7 +1025,7 @@
                 (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
                 (#{"super_admin" "account_manager"} user-role))
                 (assoc-in [:fire-weather :params :model :options :cffdrs]
-                          {:opt-label "CFFDRS", :filter "cffdrs", :geoserver-key :psps}))))
+                          {:opt-label "CFFDRS", :filter "cffdrs", :geoserver-key :parrot05}))))
 
   ;; TODO Consider sorting the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
