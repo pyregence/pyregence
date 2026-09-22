@@ -1037,9 +1037,7 @@
                 (#{"super_admin" "account_manager"} user-role))
                 (assoc-in [:fire-weather :params :model :options :cffdrs]
                           {:opt-label "CFFDRS", :filter "cffdrs", :geoserver-key :parrot05}))
-              ;; ADS WRF: NVE's own model, served from the same GeoServer as CFFDRS above.
-              ;; Unlike CFFDRS the parrot05 GeoFence rule names nve alone, so offering it
-              ;; to any other org would put a 401 behind the dropdown entry.
+              ;; ADS WRF is a NVE's own model
               (cond->
                (organizations/allowed? user-psps-orgs-list #{"nve"})
                 (assoc-in [:fire-weather :params :model :options :adswrf]
