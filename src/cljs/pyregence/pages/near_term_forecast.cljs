@@ -426,11 +426,6 @@
    credentials will authenticate them."
   #{"ecmwf" "nfdrs-constant" "nfdrs-variable" "cffdrs"})
 
-(def ^:private weather-layer-id->org-unique-id
-  "Weather models one organization owns whose layer id isn't that organization's
-   `org-unique-id`. `nve` needs no entry: its model id already is its org id."
-  {"adswrf" "nve"})
-
 (def ^:private forecast->credential-keypath
   "For each forecast type, the path into `@!/*params` holding the selected layer's
    org/model id (a utility `org-unique-id`, or a shared-weather model like `ecmwf`).
@@ -466,7 +461,7 @@
                                    (str/replace #"-planning$" ""))]
         (if (shared-weather-layer-ids layer-id)
           {:match :any}
-          {:match :org :org-unique-id (weather-layer-id->org-unique-id layer-id layer-id)})))))
+          {:match :org :org-unique-id layer-id})))))
 
 (defn- get-current-layer-geoserver-credentials
   "Returns the GeoServer credentials a PSPS user should send for the currently
@@ -507,7 +502,6 @@
   ;; Shared (non-utility) weather layers: every PSPS company has access.
   (shared-weather-layer-ids "ecmwf")           ;=> "ecmwf"
   (shared-weather-layer-ids "nfdrs-variable")  ;=> "nfdrs-variable"
-  (shared-weather-layer-ids "adswrf")          ;=> nil  ; NVE-only, not shared
   (shared-weather-layer-ids "pge")             ;=> nil
 
   ;; Forecast -> where the selected layer's org-unique-id lives in @!/*params.
@@ -531,11 +525,6 @@
   (do (reset! !/*forecast :fire-weather)
       (reset! !/*params   {:fire-weather {:model :ecmwf}})
       (selected-layer-cred-match))             ;=> {:match :any}
-
-  ;; An org-owned model whose id isn't its org's -> match the owning org.
-  (do (reset! !/*forecast :fire-weather)
-      (reset! !/*params   {:fire-weather {:model :adswrf}})
-      (selected-layer-cred-match))             ;=> {:match :org, :org-unique-id "nve"}
 
   ;; Tabs without utility-specific layers -> match via the optional layer.
   (do (reset! !/*forecast :fuels)
@@ -1036,18 +1025,7 @@
                 (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
                 (#{"super_admin" "account_manager"} user-role))
                 (assoc-in [:fire-weather :params :model :options :cffdrs]
-                          {:opt-label "CFFDRS", :filter "cffdrs", :geoserver-key :psps}))
-              ;; ADS WRF is NVE's own model: the GeoFence rule names nve alone, so
-              ;; offering it to any other org would put a 401 behind the entry.
-              (cond->
-               (organizations/allowed? user-psps-orgs-list #{"nve"})
-                (assoc-in [:fire-weather :params :model :options :adswrf]
-                          {:opt-label    "ADS WRF"
-                           :filter       "adswrf"
-                           :geoserver-key :psps
-                           ;; The model publishes none of these, so they stay
-                           ;; disabled - same set the old :nve entry carried.
-                           :disabled-for #{:apcptot :apcp01 :vpd :smoke :tcdc}}))))
+                          {:opt-label "CFFDRS", :filter "cffdrs", :geoserver-key :psps}))))
 
   ;; TODO Consider sorting the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)

@@ -197,13 +197,13 @@
    table, so they're easy to forget here - leaving them out strands the NFDRS
    parameter selected when you switch to those models."
   #{:nbm :hrrr :hrdps :rdps :gdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
-    :ecmwf :nve :adswrf :cffdrs})
+    :ecmwf :nve :cffdrs})
 
 (def ^:private non-cffdrs-weather-models
   "All non-CFFDRS weather models. The CFFDRS-only Weather Parameters are
    disabled-for these so they can only be selected with the CFFDRS model."
   #{:nbm :hrrr :hrdps :rdps :gdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
-    :nfdrs-constant :nfdrs-variable :ecmwf :nve :adswrf})
+    :nfdrs-constant :nfdrs-variable :ecmwf :nve})
 
 (def ^:private metric-weather-models
   "Weather models whose GeoTIFFs are published in metric units (mm, °C, m/s)
