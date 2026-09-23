@@ -815,25 +815,30 @@
     (mb/init-popup! "fire" lnglat body {:width "350px"})
     (mb/set-center! lnglat 0)))
 
+(defn- any-layers? []
+  (seq @!/param-layers))
+
 (defn- change-type!
   "Changes the type of data that is being shown on the map."
   [get-model-times? clear? auto-zoom? max-zoom]
   (go
     (<! (get-layers! get-model-times?))
-    (let [source   (get-current-layer-name)
-          style-fn (get-current-layer-key :style-fn)]
-      (<! (mb/reset-active-layer! source
-                                  style-fn
-                                  (get-any-level-key :geoserver-key)
-                                  (/ @!/active-opacity 100)
-                                  (get-layer-style)
-                                  (get-current-layer-time)))
-      (mb/clear-popup!)
-      ; When we have a style-fn (which indicates a WFS layer) add the feature highlight.
-      ; For now, the only dropdown layer that is WFS is the *Active Fires layer.
-      (when style-fn
-        (mb/add-feature-highlight! "fire-active" "fire-active" :click-fn init-fire-popup!))
-      (get-legend! source))
+    (if-not (any-layers?)
+      (mb/clear-active-layer!)
+      (let [source   (get-current-layer-name)
+            style-fn (get-current-layer-key :style-fn)]
+        (<! (mb/reset-active-layer! source
+                                    style-fn
+                                    (get-any-level-key :geoserver-key)
+                                    (/ @!/active-opacity 100)
+                                    (get-layer-style)
+                                    (get-current-layer-time)))
+        (mb/clear-popup!)
+        ; When we have a style-fn (which indicates a WFS layer) add the feature highlight.
+        ; For now, the only dropdown layer that is WFS is the *Active Fires layer.
+        (when style-fn
+          (mb/add-feature-highlight! "fire-active" "fire-active" :click-fn init-fire-popup!))
+        (get-legend! source)))
     (if clear?
       (clear-info!)
       (get-point-info! (mb/get-overlay-bbox)))

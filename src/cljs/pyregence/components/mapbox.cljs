@@ -764,6 +764,14 @@
                      :new-sources new-sources
                      :new-layers  new-layers))))
 
+(defn clear-active-layer!
+  "Hides the forecast layers without putting another in their place, for when
+   the chosen parameters have no layer. Left alone, the last layer stays drawn
+   under a choice it does not belong to."
+  []
+  (let [map-style (get-style)]
+    (update-style! map-style :layers (hide-forecast-layers (get map-style "layers")))))
+
 (defn create-wms-layer!
   "Adds WMS layer to the map. This is currently only used to add optional layers to the map."
   [id source geoserver-key visible? & [z-index]]
