@@ -150,10 +150,10 @@
 ;; TODO add in an API route to dynamically grab this from the org_unique_id column in the organizations table
 (def all-utility-companies #{:anza :atco :beartooth :bighorn :butte :canadian-valley
                              :capital :clp :columbia-basin :consumers :cotton :cowlitz
-                             :dso :flathead :garkane :grand-valley :highline
+                             :deseret-power :dso :flathead :garkane :grand-valley :highline
                              :holy-cross :la-plata :lea-county :liberty :lincoln
                              :midwest :missoula :mountain-view :nodak :north-fork
-                             :northwestern :nve :okanogan-county :otec :pacificorp
+                             :northern-lights :northwestern :nve :okanogan-county :otec :pacificorp
                              :pnm :poudre-valley :ravalli :rushmore :san-isabel
                              :southeast-colorado :springer :srp :tep :trico :wasco})
 
