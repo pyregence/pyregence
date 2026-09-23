@@ -305,6 +305,13 @@
              (not @!/session-ended?))
         (toast-message! "There are no layers available for the selected parameters. Please try another combination.")))))
 
+(defn- say-the-map-could-not-load!
+  "Every tile a layer asked for was turned away -- most often a login GeoServer
+   no longer accepts. The map is otherwise silent about it: the layer is simply
+   blank."
+  [_sources]
+  (toast-message! "The map data for this layer could not be loaded. Please try again later."))
+
 (defn- create-share-link
   "Generates a link with forecast and parameters encoded in a URL"
   []
@@ -1127,7 +1134,8 @@
       (mb/init-map! "map"
                     layers
                     get-current-layer-geoserver-credentials
-                    #(select-forecast! a-directory @!/*forecast)
+                    #(do (mb/watch-for-refused-sources! say-the-map-could-not-load!)
+                         (select-forecast! a-directory @!/*forecast))
                     (if (every? nil? [lng lat zoom]) {} {:center [lng lat] :zoom zoom}))
       (let [{:keys [body success]} (<! user-layers-chan)]
         (process-capabilities! fire-names

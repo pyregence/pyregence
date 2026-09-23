@@ -7,6 +7,7 @@
    [goog.dom                             :as dom]
    [goog.object                          :as goog]
    [pyregence.config                     :as c]
+   [pyregence.datatypes.tile-tally       :as tile-tally]
    [pyregence.geo-utils                  :as g]
    [pyregence.state                      :as !]
    [pyregence.utils.async-utils          :as u-async]
@@ -33,6 +34,8 @@
   markers (r/atom []))
 (def ^{:private true :doc "A map to track the interactive state of a feature: i.e. hovered, clicked, etc."}
   feature-state (atom {}))
+(def ^{:private true :doc "What the tiles of the layers now shown came back as. Starts over when they change."}
+  tile-outcomes (atom (tile-tally/->tile-tally)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -747,6 +750,7 @@
    `style-fn` must not be nil."
   [geo-layer style-fn geoserver-key opacity style & [layer-time]]
   {:pre [(string? geo-layer) (number? opacity) (<= 0.0 opacity 1.0)]}
+  (reset! tile-outcomes (tile-tally/->tile-tally))
   (go
     (let [map-style                (get-style)
           layers                   (hide-forecast-layers (get map-style "layers"))
@@ -769,6 +773,7 @@
    the chosen parameters have no layer. Left alone, the last layer stays drawn
    under a choice it does not belong to."
   []
+  (reset! tile-outcomes (tile-tally/->tile-tally))
   (let [map-style (get-style)]
     (update-style! map-style :layers (hide-forecast-layers (get map-style "layers")))))
 
@@ -1203,6 +1208,47 @@
   [id]
   (remove-layer! (str id "-mask"))
   (remove-layer! id))
+
+(defn- tile-status
+  "The HTTP status a failed tile came back with, or nil when the browser could
+   not read one."
+  [event]
+  (some-> event (aget "error") (aget "status")))
+
+(defn- source-of [event]
+  (aget event "sourceId"))
+
+(defn- a-tile? [event]
+  (some? (aget event "tile")))
+
+(defn- tile-refused-as-missing? [event]
+  (= "error" (aget event "sourceDataType")))
+
+(defn watch-for-refused-sources!
+  "Calls `on-refused` with the ids of any map sources that have had every tile
+   they asked for turned away, once per source, each time the map settles.
+
+   mapbox-gl reports a tile's failure in two places: a 404 as `data` with a
+   `sourceDataType` of \"error\", anything else as `error`. Listening for
+   `error` also takes over its console logging, so that is kept here."
+  [on-refused]
+  (add-event! "error"
+              (fn [event]
+                (if (a-tile? event)
+                  (swap! tile-outcomes tile-tally/tile-failed (source-of event) (tile-status event))
+                  (js/console.error (aget event "error")))))
+  (add-event! "sourcedata"
+              (fn [event]
+                (when (a-tile? event)
+                  (if (tile-refused-as-missing? event)
+                    (swap! tile-outcomes tile-tally/tile-failed (source-of event) 404)
+                    (swap! tile-outcomes tile-tally/tile-loaded (source-of event))))))
+  (add-event! "idle"
+              (fn [_]
+                (let [refused (tile-tally/newly-refused @tile-outcomes)]
+                  (when (seq refused)
+                    (swap! tile-outcomes tile-tally/reported refused)
+                    (on-refused refused))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Creation
