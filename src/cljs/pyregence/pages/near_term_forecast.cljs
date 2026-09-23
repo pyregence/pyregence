@@ -1042,12 +1042,7 @@
               (cond->
                (organizations/allowed? user-psps-orgs-list #{"nve"})
                 (assoc-in [:fire-weather :params :model :options :adswrf]
-                          {:opt-label    "ADS WRF"
-                           :filter       "adswrf"
-                           :geoserver-key :psps
-                           ;; The model publishes none of these, so they stay
-                           ;; disabled - same set the old :nve entry carried.
-                           :disabled-for #{:apcptot :apcp01 :vpd :smoke :tcdc}}))))
+                          {:opt-label "ADS WRF", :filter "adswrf", :geoserver-key :psps}))))
 
   ;; TODO Consider sorting the Risk tab "Ignition Pattern" options alphabetically by :opt-label
   (swap! !/capabilities update-in [:fire-risk :params :pattern :options] sort-by-opt-label)
