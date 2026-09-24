@@ -442,14 +442,8 @@
                                                               " - A fuel-independent measure of potential spread rate based on wind speed, relative humidity, and temperature."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "Vapor Pressure Deficit (VPD)"]
-                                                              " - Difference between amount of moisture in air and how much it can hold when saturated."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "Hot Dry Windy Index (HDWI)"]
-                                                              " - Similar to FFWI, but based on VPD."
-                                                              [:br]
-                                                              [:br]
+                                                              ;; To add Vapor pressure deficit (vpd) and Hot-Dry-Windy index (hdw)
+                                                              ;; see PR #1188, related to PYR1-1161, and roll those changes back.
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
@@ -578,14 +572,6 @@
                                                                         :style-metric    "apcp01-metric-css"
                                                                         :disabled-for    #{:nam-awip12 :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}
                                                                         :reverse-legend? false}
-                                                              :vpd     {:opt-label    "Vapor pressure deficit"
-                                                                        :filter       "vpd"
-                                                                        :units        "hPa"
-                                                                        :disabled-for #{:hrdps :rdps :gdps :nbm :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
-                                                              :hdw     {:opt-label    "Hot-Dry-Windy Index"
-                                                                        :filter       "hdw"
-                                                                        :units        "hPa*m/s"
-                                                                        :disabled-for #{:hrdps :rdps :gdps :nbm :ecmwf :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :smoke   {:opt-label    "Smoke density"
                                                                         :filter       "smoke"
                                                                         :units        "\u00b5g/m\u00b3"
@@ -678,19 +664,19 @@
                                                  :options    (array-map
                                                               :nbm           {:opt-label    "NBM"
                                                                               :filter       "nbm"
-                                                                              :disabled-for #{:tmp :apcp01 :hdw :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:tmp :apcp01 :smoke :tcdc}}
                                                               :hrrr          {:opt-label "HRRR"
                                                                               :filter    "hrrr"
                                                                               :disabled-for #{:tmp}}
                                                               :hrdps         {:opt-label    "HRDPS"
                                                                               :filter       "hrdps"
-                                                                              :disabled-for #{:tmpf :apcptot :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:tmpf :apcptot :ffwi :meq :pign :smoke :tcdc}}
                                                               :rdps          {:opt-label    "RDPS"
                                                                               :filter       "rdps"
-                                                                              :disabled-for #{:tmpf :apcptot :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:tmpf :apcptot :ffwi :meq :pign :smoke :tcdc}}
                                                               :gdps          {:opt-label    "GDPS"
                                                                               :filter       "gdps"
-                                                                              :disabled-for #{:tmpf :apcptot :ffwi :hdw :meq :pign :smoke :tcdc :vpd}}
+                                                                              :disabled-for #{:tmpf :apcptot :ffwi :meq :pign :smoke :tcdc}}
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
                                                                               :disabled-for #{:tmp :apcptot :smoke :tcdc}}
