@@ -443,7 +443,7 @@
                                                               [:br]
                                                               [:br]
                                                               ;; To add Vapor pressure deficit (vpd) and Hot-Dry-Windy index (hdw)
-                                                              ;; see PR related to PYR1-1161 and roll those changes back.
+                                                              ;; see PR #1188, related to PYR1-1161, and roll those changes back.
                                                               [:strong "Firebrand Ignition Probability"]
                                                               " - An estimate of the probability that a burning ember could ignite a receptive fuel bed based on its temperature and moisture content."]
                                                  :options    (array-map
