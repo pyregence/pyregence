@@ -196,13 +196,13 @@
    `:ecmwf` and `:nve` are injected at runtime from the organization_layers DB
    table, so they're easy to forget here - leaving them out strands the NFDRS
    parameter selected when you switch to those models."
-  #{:nbm :hrrr :hrdps :rdps :gdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+  #{:nbm :hrrr :rrfs :hrdps :rdps :gdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
     :ecmwf :nve :cffdrs})
 
 (def ^:private non-cffdrs-weather-models
   "All non-CFFDRS weather models. The CFFDRS-only Weather Parameters are
    disabled-for these so they can only be selected with the CFFDRS model."
-  #{:nbm :hrrr :hrdps :rdps :gdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+  #{:nbm :hrrr :rrfs :hrdps :rdps :gdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
     :nfdrs-constant :nfdrs-variable :ecmwf :nve})
 
 (def ^:private metric-weather-models
@@ -614,6 +614,10 @@
                                                               " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
                                                               [:br]
                                                               [:br]
+                                                              [:strong "RRFS"]
+                                                              " - Rapid Refresh Forecast System at 3 km to 84 hours."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "HRDPS"]
                                                               " - Canadian High Resolution Deterministic Prediction System at 2.5 km to 48 hours."
                                                               [:br]
@@ -667,6 +671,9 @@
                                                                               :disabled-for #{:tmp :apcp01 :smoke :tcdc}}
                                                               :hrrr          {:opt-label "HRRR"
                                                                               :filter    "hrrr"
+                                                                              :disabled-for #{:tmp}}
+                                                              :rrfs          {:opt-label    "RRFS"
+                                                                              :filter       "rrfs"
                                                                               :disabled-for #{:tmp}}
                                                               :hrdps         {:opt-label    "HRDPS"
                                                                               :filter       "hrdps"
