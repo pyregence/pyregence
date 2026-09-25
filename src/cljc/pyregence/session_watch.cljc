@@ -33,8 +33,10 @@
             #?(:cljs [clojure.core.async :refer [<! go]])
             #?(:cljs [pyregence.datatypes.idle-window :as idle-window])
             #?(:cljs [pyregence.clock :as clock])
+            #?(:cljs [pyregence.device-session :as device-session])
             #?(:cljs [pyregence.utils.async-utils :as u-async])
-            #?(:cljs [pyregence.utils.browser-utils :as u-browser])))
+            #?(:cljs [pyregence.utils.browser-utils :as u-browser])
+            #?(:cljs [pyregence.utils.data-utils :as u-data])))
 
 (defn- quiet-ms
   "How long since any tab in this browser session last saw the person."
@@ -85,6 +87,11 @@
        ;; quietly doubling the beat rate for the rest of the session.
        (atom false))
 
+     (defonce ^:private reporting?
+       ;; Input is noisy. At most one heartbeat may cross the wire at once; an
+       ;; input arriving during it remains owed and the next poll retries it.
+       (atom false))
+
      (defn- note-input!
        "Remember that somebody is here. Runs on every mouse move, so it does one
         thing."
@@ -99,10 +106,18 @@
         page that every other refused call takes -- which is how an open tab
         whose session was revoked elsewhere finds out without being clicked."
        [an-activity]
-       (session-activity/note-reported-input-at!
-        an-activity
-        (session-activity/last-input-at an-activity))
-       (u-async/call-clj-async! "note-activity"))
+       (when (compare-and-set! reporting? false true)
+         (go
+           (try
+             (let [reported-at (session-activity/last-input-at an-activity)
+                   response    (<! (u-async/call-clj-async! "note-activity"))
+                   {:keys [accepted? last-active-at]}
+                   (u-data/response-data (:body response))]
+               (when (and (:success response) accepted?)
+                 (device-session/note-server-activity! last-active-at)
+                 (session-activity/note-reported-input-at! an-activity reported-at)))
+             (finally
+               (reset! reporting? false))))))
 
      (defn- give-up!
        "Stop claiming this session and go where something can be done about it.
@@ -112,11 +127,22 @@
         the cookie stays live, and returning to the map signs the person back in."
        []
        (go
-         (<! (u-async/call-clj-async! "log-out"))
-         (u-browser/jump-to-url! (str "/login?"
-                                      u-async/session-ended-param
-                                      "="
-                                      u-async/session-ended-reason-idle))))
+         (let [outcome (<! (u-async/log-out! :idle))]
+           (case outcome
+             ;; A sibling tab may have reported newer activity after this tab
+             ;; made its idle decision. The database recheck wins and this tab
+             ;; resumes.
+             :still-active nil
+             ;; A newer same-device login won while this page was waiting.
+             :current-login (u-browser/reload!)
+             ;; Only a completed mutation plus cleanup may look logged out.
+             :logged-out (u-browser/jump-to-url! (str "/login?"
+                                                      u-async/session-ended-param
+                                                      "="
+                                                      u-async/session-ended-reason-idle))
+             ;; The next poll retries a failed transition.
+             :failed nil
+             nil))))
 
      (defn- check!
        "One look at the clock: give up, beat, or do nothing.
@@ -143,8 +169,9 @@
         person to open one and then sit reading it."
        [an-idle-window an-activity]
        (when (and an-idle-window (compare-and-set! watching? false true))
-         (note-input! an-activity)
-         (u-browser/when-the-user-does-anything! #(note-input! an-activity))
+         (when (note-input! an-activity) (report-input! an-activity))
+         (u-browser/when-the-user-does-anything!
+          #(when (note-input! an-activity) (report-input! an-activity)))
          (u-browser/every-so-often! idle-window/poll-interval-ms
                                     #(check! an-idle-window an-activity))
          ;; And again the moment the page is looked at, because the poll above is

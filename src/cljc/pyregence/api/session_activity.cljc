@@ -9,7 +9,8 @@
     "The newest input PyreCast has already received a heartbeat for.")
 
   (note-input-at! [activity at]
-    "Remember input at AT for every tab in this session.")
+    "Remember input at AT for every tab in this session. True when this call
+    shared a newer value and the server is owed a heartbeat.")
 
   (note-reported-input-at! [activity at]
     "Remember that input at AT has been reported to PyreCast."))

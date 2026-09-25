@@ -2,12 +2,14 @@
   (:require
    [clojure.core.async             :refer [<! go timeout]]
    [pyregence.components.messaging :refer [toast-message!]]
-   [pyregence.components.nav-bar   :refer [nav-bar]]
+   [pyregence.components.device-takeover :as device-takeover]
    [pyregence.components.utils     :as utils]
    [pyregence.state                :as !]
    [pyregence.styles               :as $]
    [pyregence.utils.async-utils    :as u-async]
    [pyregence.utils.browser-utils  :as u-browser]
+   [pyregence.utils.data-utils     :as u-data]
+   [pyregence.device-session       :as device-session]
    [reagent.core                   :as r]
    [pyregence.components.buttons   :as buttons]))
 
@@ -19,6 +21,7 @@
 (defonce email             (r/atom ""))      ;; User email
 (defonce verification-code (r/atom ""))      ;; Code input
 (defonce method            (r/atom "email")) ;; 'email' or 'totp'
+(defonce takeover?         (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -34,10 +37,17 @@
       (if (seq errors)
         (do (toast-message! errors)
             (reset! pending? false))
-        (let [{:keys [success status]} (<! (u-async/call-clj-async! "verify-2fa"
-                                                                    @email
-                                                                    @verification-code))]
+        (let [{:keys [success status body]}
+              (<! (device-session/serialized!
+                   (fn [] (u-async/call-clj-async! "verify-2fa"
+                                                   @email
+                                                   @verification-code))))
+              {:keys [takeover-required]} (u-data/response-data body)]
           (cond
+            (and success takeover-required)
+            (do (reset! takeover? true)
+                (reset! pending? false))
+
             success
             (do (toast-message! "Your verification code has been verified successfully.")
                 (<! (timeout 2000))
@@ -90,6 +100,8 @@
     (r/create-class
      {:component-did-mount
       (fn [_]
+        (reset! takeover? (boolean (:device-transfer-required? params)))
+        (reset! pending? false)
         (reset! update-fn (fn [& _]
                             (-> js/window (.scrollTo 0 0))
                             (reset! !/mobile? (> 800.0 (.-innerWidth js/window)))))
@@ -109,17 +121,20 @@
       (fn [_]
         [utils/card-page
          (fn []
-           [utils/card
-            {:title "Two-Factor Authentication"
-             :children
-             [:<>
-              [utils/input-labeled {:label     "Verification Code"
-                                    :value     @verification-code
-                                    :on-change #(reset! verification-code (-> % .-target .-value))}]
-              [buttons/primary {:text     "Verify"
-                                :on-click verify-2fa!}]
-              [prompt {:auth-method @method :user-email @email}
-               #(go
-                  (if (:success (<! (u-async/call-clj-async! "send-email" @email :2fa)))
-                    (toast-message! "A new verification code has been sent to your email.")
-                    (toast-message! "Failed to send verification code. Please try again.")))]]}])])})))
+           (if @takeover?
+             [device-takeover/prompt pending?
+              #(u-browser/jump-to-url! "/forecast")]
+             [utils/card
+              {:title "Two-Factor Authentication"
+               :children
+               [:<>
+                [utils/input-labeled {:label     "Verification Code"
+                                      :value     @verification-code
+                                      :on-change #(reset! verification-code (-> % .-target .-value))}]
+                [buttons/primary {:text     "Verify"
+                                  :on-click verify-2fa!}]
+                [prompt {:auth-method @method :user-email @email}
+                 #(go
+                    (if (:success (<! (u-async/call-clj-async! "send-email" @email :2fa)))
+                      (toast-message! "A new verification code has been sent to your email.")
+                      (toast-message! "Failed to send verification code. Please try again.")))]]}]))])})))

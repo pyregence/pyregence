@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1570" viewBox="0 0 1600 1570" role="img" aria-label="Transfer authority, then fence the predecessor">
+<rect width="1600" height="1570" fill="#f6f8fa"/>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="#637f90" stroke-width="1.4"/></marker></defs>
+<rect x="0" y="0" width="1600" height="8" rx="0" fill="#276f7d" stroke="#276f7d" stroke-width="1.5"/>
+<text x="48" y="59" font-family="DejaVu Sans,Arial,sans-serif" font-size="30" font-weight="700" fill="#193549">Transfer authority, then fence the predecessor</text>
+<text x="48" y="94" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">PYR1-1763 · implemented sequence · separate profiles have separate cookies; same-profile transitions share a Web Lock</text>
+<rect x="25" y="143" width="230" height="80" rx="12" fill="#fff" stroke="#276f7d" stroke-width="1.5"/>
+<text x="40" y="175" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" font-weight="700" fill="#193549">Profile A</text>
+<text x="40" y="202" font-family="DejaVu Sans,Arial,sans-serif" font-size="13" font-weight="400" fill="#567084">A1 + A2 · active G1</text>
+<path d="M140,223 L140,1310" stroke="#bccbd5" stroke-width="1.5" stroke-dasharray="5 6"/>
+<rect x="335" y="143" width="230" height="80" rx="12" fill="#fff" stroke="#276f7d" stroke-width="1.5"/>
+<text x="350" y="175" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" font-weight="700" fill="#193549">Profile B</text>
+<text x="350" y="202" font-family="DejaVu Sans,Arial,sans-serif" font-size="13" font-weight="400" fill="#567084">authenticated candidate</text>
+<path d="M450,223 L450,1310" stroke="#bccbd5" stroke-width="1.5" stroke-dasharray="5 6"/>
+<rect x="645" y="143" width="230" height="80" rx="12" fill="#fff" stroke="#276f7d" stroke-width="1.5"/>
+<text x="660" y="175" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" font-weight="700" fill="#193549">Profile lock</text>
+<text x="660" y="202" font-family="DejaVu Sans,Arial,sans-serif" font-size="13" font-weight="400" fill="#567084">local to each profile</text>
+<path d="M760,223 L760,1310" stroke="#bccbd5" stroke-width="1.5" stroke-dasharray="5 6"/>
+<rect x="965" y="143" width="230" height="80" rx="12" fill="#fff" stroke="#276f7d" stroke-width="1.5"/>
+<text x="980" y="175" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" font-weight="700" fill="#193549">Session API</text>
+<text x="980" y="202" font-family="DejaVu Sans,Arial,sans-serif" font-size="13" font-weight="400" fill="#567084">mutation + cleanup</text>
+<path d="M1080,223 L1080,1310" stroke="#bccbd5" stroke-width="1.5" stroke-dasharray="5 6"/>
+<rect x="1315" y="143" width="230" height="80" rx="12" fill="#fff" stroke="#276f7d" stroke-width="1.5"/>
+<text x="1330" y="175" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" font-weight="700" fill="#193549">Account row</text>
+<text x="1330" y="202" font-family="DejaVu Sans,Arial,sans-serif" font-size="13" font-weight="400" fill="#567084">current generation + epoch</text>
+<path d="M1430,223 L1430,1310" stroke="#bccbd5" stroke-width="1.5" stroke-dasharray="5 6"/>
+<rect x="40" y="246" width="1520" height="37" rx="5" fill="#eaf0f4" stroke="#eaf0f4" stroke-width="1.5"/>
+<rect x="50" y="251" width="42" height="28" rx="6" fill="#276f7d" stroke="#276f7d" stroke-width="1.5"/>
+<text x="58" y="271" font-family="DejaVu Sans,Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">01</text>
+<text x="108" y="271" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="700" fill="#193549">B authenticates; the signed challenge names G1 / epoch; A1 and A2 remain active</text>
+<path d="M450,328 L1080,328" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)"/>
+<text x="473" y="310" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">Credentials / final 2FA → pending challenge</text>
+<path d="M1080,378 L450,378" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)" stroke-dasharray="6 5"/>
+<text x="473" y="362" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">Return takeover-required; no active replacement login</text>
+<text x="57" y="426" font-family="DejaVu Sans,Arial,sans-serif" font-size="19" font-weight="700" fill="#193549">“PyreCast is being used in another device. Would you like to use it here instead?”</text>
+<path d="M450,484 L760,484" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)"/>
+<text x="473" y="468" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">Use it here → acquire B lock</text>
+<path d="M450,535 L1080,535" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)"/>
+<text x="473" y="519" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">Confirm signed candidate + observed G1 / epoch</text>
+<path d="M1080,587 L1430,587" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)"/>
+<text x="1098" y="571" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">CAS G1 → G2; return written row</text>
+<path d="M1080,639 L450,639" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)" stroke-dasharray="6 5"/>
+<text x="473" y="623" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">Install G2; release B lock; navigate</text>
+<text x="165" y="686" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#9d752d">If the observed generation changed: 409, ask the user to sign in again. Retrying a completed transfer is idempotent.</text>
+<rect x="40" y="723" width="1520" height="37" rx="5" fill="#eaf0f4" stroke="#eaf0f4" stroke-width="1.5"/>
+<rect x="50" y="728" width="42" height="28" rx="6" fill="#276f7d" stroke="#276f7d" stroke-width="1.5"/>
+<text x="58" y="748" font-family="DejaVu Sans,Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">02</text>
+<text x="108" y="748" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="700" fill="#193549">A stale logout request sent after takeover cannot revoke G2</text>
+<path d="M140,805 L1080,805" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)"/>
+<text x="179" y="788" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">A request: old G1 cookie + expected-generation G1</text>
+<path d="M1080,856 L1430,856" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)"/>
+<text x="1100" y="840" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">Current is G2 → superseded</text>
+<path d="M1080,907 L140,907" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)" stroke-dasharray="6 5"/>
+<text x="178" y="891" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">No revocation; browser-neutral mutation result</text>
+<text x="166" y="949" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#567084">A may then clean up its own ended G1 cookie. Profile B’s independent cookie jar is unaffected.</text>
+<rect x="40" y="985" width="1520" height="37" rx="5" fill="#eaf0f4" stroke="#eaf0f4" stroke-width="1.5"/>
+<rect x="50" y="990" width="42" height="28" rx="6" fill="#276f7d" stroke="#276f7d" stroke-width="1.5"/>
+<text x="58" y="1010" font-family="DejaVu Sans,Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">03</text>
+<text x="108" y="1010" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="700" fill="#193549">Current-profile logout: revoke, clean up, then report completion</text>
+<path d="M450,1066 L760,1066" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)"/>
+<text x="474" y="1050" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">Acquire B transition lock</text>
+<path d="M450,1117 L1080,1117" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)"/>
+<text x="474" y="1101" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">Revoke matching G2; mutation response has no cleanup headers</text>
+<path d="M450,1168 L1080,1168" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)"/>
+<text x="474" y="1152" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">Qualified cleanup: expected G2 + currently attached cookie</text>
+<path d="M1080,1219 L450,1219" fill="none" stroke="#637f90" stroke-width="2" marker-end="url(#a)" stroke-dasharray="6 5"/>
+<text x="474" y="1203" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#567084">Expire cookie / site data, or report cleanup failure</text>
+<text x="166" y="1270" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#347753">Await cleanup result before releasing the lock. Only successful completion navigates as logged out.</text>
+<text x="48" y="1350" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#193549">Browser test holds the logout response’s delivery to application code; a second tab’s login page waits on the lock.</text>
+<rect x="48" y="1383" width="1504" height="143" rx="12" fill="#eef6f2" stroke="#abcbbb" stroke-width="1.5"/>
+<text x="72" y="1419" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="700" fill="#347753">04  OTHER COOKIE-WRITING ENTRY POINTS</text>
+<text x="72" y="1456" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" font-weight="400" fill="#193549">Legacy logout: cookie-neutral mutation → next ended page → qualified cleanup under the profile lock.</text>
+<text x="72" y="1493" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" font-weight="400" fill="#193549">Marketplace POST: cookie-neutral transition page → acquire lock → completion fetch installs active / pending-2FA cookie → release → navigate.</text>
+</svg>

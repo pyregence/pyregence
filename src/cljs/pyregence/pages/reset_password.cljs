@@ -1,14 +1,12 @@
 (ns pyregence.pages.reset-password
   (:require
    [clojure.core.async                        :refer [<! go timeout]]
-   [clojure.string                            :as str]
    [pyregence.components.buttons              :as buttons]
    [pyregence.components.messaging            :refer [toast-message!]]
-   [pyregence.components.nav-bar              :as nav-bar]
    [pyregence.components.utils                :as utils]
    [pyregence.components.password.validations :as password->validations]
+   [pyregence.device-session                   :as device-session]
    [pyregence.state                           :as !]
-   [pyregence.styles                          :as $]
    [pyregence.utils.async-utils               :as u-async]
    [pyregence.utils.browser-utils             :as u-browser]
    [pyregence.utils.data-utils                :as u-data]
@@ -44,11 +42,15 @@
       (if (seq errors)
         (do (toast-message! (vec errors))
             (reset! pending? false))
-        (let [{:keys [success body]} (<! (u-async/call-clj-async! "set-user-password" @email @password @verification-token))]
+        (let [{:keys [success body]}
+              (<! (device-session/serialized!
+                   (fn [] (u-async/call-clj-async! "set-user-password"
+                                                   @email @password @verification-token))))
+              {:keys [takeover-required]} (u-data/response-data body)]
           (if success
             (do (toast-message! "Your password has been reset successfully.")
                 (<! (timeout 2000))
-                (u-browser/jump-to-url! "/forecast"))
+                (u-browser/jump-to-url! (if takeover-required "/login" "/forecast")))
             (do (toast-message! (or (u-data/server-errors body)
                                     "Error resetting password."))
                 (reset! pending? false))))))))

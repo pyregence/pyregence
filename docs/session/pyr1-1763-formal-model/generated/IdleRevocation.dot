@@ -1,0 +1,34 @@
+strict digraph DiskGraph {
+nodesep=0.35;
+subgraph cluster_graph {
+color="white";
+2280303826281191848 [label="/\\ activityAdvancedAfterObservation = FALSE\n/\\ idleHandled = FALSE\n/\\ live = TRUE\n/\\ idleObserved = FALSE\n/\\ inputUsed = FALSE\n/\\ heartbeatPending = FALSE\n/\\ idleExpected = 0\n/\\ everRevoked = FALSE\n/\\ lastOutcome = \"ready\"\n/\\ lastActive = 0",style = filled]
+2280303826281191848 -> 4109470960738941970 [label="ObserveIdle",color="black",fontcolor="black"];
+4109470960738941970 [label="/\\ activityAdvancedAfterObservation = FALSE\n/\\ idleHandled = FALSE\n/\\ live = TRUE\n/\\ idleObserved = TRUE\n/\\ inputUsed = FALSE\n/\\ heartbeatPending = FALSE\n/\\ idleExpected = 0\n/\\ everRevoked = FALSE\n/\\ lastOutcome = \"ready\"\n/\\ lastActive = 0"];
+2280303826281191848 -> 852514079587945497 [label="HumanInput",color="black",fontcolor="black"];
+852514079587945497 [label="/\\ activityAdvancedAfterObservation = FALSE\n/\\ idleHandled = FALSE\n/\\ live = TRUE\n/\\ idleObserved = FALSE\n/\\ inputUsed = TRUE\n/\\ heartbeatPending = TRUE\n/\\ idleExpected = 0\n/\\ everRevoked = FALSE\n/\\ lastOutcome = \"ready\"\n/\\ lastActive = 0"];
+4109470960738941970 -> 3275875214001383843 [label="HumanInput",color="black",fontcolor="black"];
+3275875214001383843 [label="/\\ activityAdvancedAfterObservation = FALSE\n/\\ idleHandled = FALSE\n/\\ live = TRUE\n/\\ idleObserved = TRUE\n/\\ inputUsed = TRUE\n/\\ heartbeatPending = TRUE\n/\\ idleExpected = 0\n/\\ everRevoked = FALSE\n/\\ lastOutcome = \"ready\"\n/\\ lastActive = 0"];
+4109470960738941970 -> 5653030566158014264 [label="RunIdleRevocation",color="black",fontcolor="black"];
+5653030566158014264 [label="/\\ activityAdvancedAfterObservation = FALSE\n/\\ idleHandled = TRUE\n/\\ live = FALSE\n/\\ idleObserved = TRUE\n/\\ inputUsed = FALSE\n/\\ heartbeatPending = FALSE\n/\\ idleExpected = 0\n/\\ everRevoked = TRUE\n/\\ lastOutcome = \"revoked\"\n/\\ lastActive = 0"];
+852514079587945497 -> 3275875214001383843 [label="ObserveIdle",color="black",fontcolor="black"];
+852514079587945497 -> 8647783093734137976 [label="AcceptHeartbeat",color="black",fontcolor="black"];
+8647783093734137976 [label="/\\ activityAdvancedAfterObservation = FALSE\n/\\ idleHandled = FALSE\n/\\ live = TRUE\n/\\ idleObserved = FALSE\n/\\ inputUsed = TRUE\n/\\ heartbeatPending = FALSE\n/\\ idleExpected = 0\n/\\ everRevoked = FALSE\n/\\ lastOutcome = \"heartbeat-accepted\"\n/\\ lastActive = 1"];
+3275875214001383843 -> -2224233481268327522 [label="AcceptHeartbeat",color="black",fontcolor="black"];
+-2224233481268327522 [label="/\\ activityAdvancedAfterObservation = TRUE\n/\\ idleHandled = FALSE\n/\\ live = TRUE\n/\\ idleObserved = TRUE\n/\\ inputUsed = TRUE\n/\\ heartbeatPending = FALSE\n/\\ idleExpected = 0\n/\\ everRevoked = FALSE\n/\\ lastOutcome = \"heartbeat-accepted\"\n/\\ lastActive = 1"];
+3275875214001383843 -> 7295322590984333254 [label="RunIdleRevocation",color="black",fontcolor="black"];
+7295322590984333254 [label="/\\ activityAdvancedAfterObservation = FALSE\n/\\ idleHandled = TRUE\n/\\ live = FALSE\n/\\ idleObserved = TRUE\n/\\ inputUsed = TRUE\n/\\ heartbeatPending = TRUE\n/\\ idleExpected = 0\n/\\ everRevoked = TRUE\n/\\ lastOutcome = \"revoked\"\n/\\ lastActive = 0"];
+8647783093734137976 -> 9047805114225478059 [label="ObserveIdle",color="black",fontcolor="black"];
+9047805114225478059 [label="/\\ activityAdvancedAfterObservation = FALSE\n/\\ idleHandled = FALSE\n/\\ live = TRUE\n/\\ idleObserved = TRUE\n/\\ inputUsed = TRUE\n/\\ heartbeatPending = FALSE\n/\\ idleExpected = 1\n/\\ everRevoked = FALSE\n/\\ lastOutcome = \"heartbeat-accepted\"\n/\\ lastActive = 1"];
+-2224233481268327522 -> -3003511632594726324 [label="RunIdleRevocation",color="black",fontcolor="black"];
+-3003511632594726324 [label="/\\ activityAdvancedAfterObservation = TRUE\n/\\ idleHandled = TRUE\n/\\ live = TRUE\n/\\ idleObserved = TRUE\n/\\ inputUsed = TRUE\n/\\ heartbeatPending = FALSE\n/\\ idleExpected = 0\n/\\ everRevoked = FALSE\n/\\ lastOutcome = \"fenced\"\n/\\ lastActive = 1"];
+7295322590984333254 -> -907217461445414978 [label="RejectHeartbeat",color="black",fontcolor="black"];
+-907217461445414978 [label="/\\ activityAdvancedAfterObservation = FALSE\n/\\ idleHandled = TRUE\n/\\ live = FALSE\n/\\ idleObserved = TRUE\n/\\ inputUsed = TRUE\n/\\ heartbeatPending = FALSE\n/\\ idleExpected = 0\n/\\ everRevoked = TRUE\n/\\ lastOutcome = \"heartbeat-rejected\"\n/\\ lastActive = 0"];
+9047805114225478059 -> -4720159471200083995 [label="RunIdleRevocation",color="black",fontcolor="black"];
+-4720159471200083995 [label="/\\ activityAdvancedAfterObservation = FALSE\n/\\ idleHandled = TRUE\n/\\ live = FALSE\n/\\ idleObserved = TRUE\n/\\ inputUsed = TRUE\n/\\ heartbeatPending = FALSE\n/\\ idleExpected = 1\n/\\ everRevoked = TRUE\n/\\ lastOutcome = \"revoked\"\n/\\ lastActive = 1"];
+{rank = same; 2280303826281191848;}
+{rank = same; 4109470960738941970;852514079587945497;}
+{rank = same; 8647783093734137976;3275875214001383843;}
+{rank = same; 9047805114225478059;7295322590984333254;-2224233481268327522;}
+}
+}

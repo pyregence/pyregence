@@ -3,14 +3,15 @@
    [clojure.core.async             :refer [<! go timeout]]
    [pyregence.analytics            :refer [gtag]]
    [pyregence.components.buttons   :as buttons]
+   [pyregence.components.device-takeover :as device-takeover]
    [pyregence.components.messaging :refer [toast-message!]]
-   [pyregence.components.nav-bar   :refer [nav-bar]]
    [pyregence.components.utils     :as utils]
    [pyregence.state                :as !]
    [pyregence.styles               :as $]
    [pyregence.utils.async-utils    :as u-async]
    [pyregence.utils.browser-utils  :as u-browser]
    [pyregence.utils.data-utils     :as u-data]
+   [pyregence.device-session       :as device-session]
    [reagent.core                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -20,6 +21,8 @@
 (defonce forgot?  (r/atom false))
 (defonce email    (r/atom ""))
 (defonce password (r/atom ""))
+(defonce takeover? (r/atom false))
+(defonce takeover-pending? (r/atom false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Calls
@@ -27,13 +30,21 @@
 
 (defn- log-in! []
   (go
-    (let [{:keys [success status body]} (<! (u-async/call-clj-async! "log-in" @email @password))
-          {:keys [require-2fa email method]} (u-data/response-data body)]
+    (let [{:keys [success status body]}
+          (<! (device-session/serialized!
+               (fn [] (u-async/call-clj-async! "log-in" @email @password))))
+          {:keys [require-2fa method takeover-required]
+           login-email :email} (u-data/response-data body)]
       (if success
-        (if require-2fa
+        (cond
+          takeover-required
+          (reset! takeover? true)
+
+          require-2fa
             ;; 2FA is required, redirect to 2FA verification page
-          (u-browser/jump-to-url! (str "/verify-2fa?email=" email "&method=" method))
+          (u-browser/jump-to-url! (str "/verify-2fa?email=" login-email "&method=" method))
             ;; Normal login success
+          :else
           (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
             (u-browser/clear-session-storage!)
             (u-browser/jump-to-url! url)
@@ -64,11 +75,13 @@
 (defn root-component
   "The root component for the /login page.
    Displays either the login form or request new password form and a link to the register page."
-  [_]
+  [params]
   (let [update-fn (atom nil)]
     (r/create-class
      {:component-did-mount
       (fn [_]
+        (reset! takeover? (boolean (:device-transfer-required? params)))
+        (reset! takeover-pending? false)
         ;; Say why they are here, when they did not come here on purpose.
         ;; Something puts the reason in the URL on the way out -- a refusal, or
         ;; the page giving up on its own -- because the toast it raised does not
@@ -103,7 +116,15 @@
                                        [:a {:href  "/register"
                                             :style {:color color}}
                                         [:u "Register Here."]]])]
-             (if-not @forgot?
+             (cond
+               @takeover?
+               [device-takeover/prompt takeover-pending?
+                #(let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
+                   (u-browser/clear-session-storage!)
+                   (u-browser/jump-to-url! url)
+                   (gtag "log-in" {}))]
+
+               (not @forgot?)
                [utils/card {:title "LOGIN"
                             :children
                             [:<>
@@ -121,6 +142,7 @@
                              [buttons/primary {:text     "Login"
                                                :on-click log-in!}]
                              [register-cmpt]]}]
+               :else
                [utils/card {:title "Request New Password"
                             :children
                             [:<>

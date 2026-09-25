@@ -52,6 +52,12 @@
    [:post "/clj/log-out"]                            {:handler (clj-handler authentication/log-out)
                                                      :auth-type :token
                                                      :auth-action :block}
+   [:post "/clj/clean-up-ended-session"]             {:handler (clj-handler authentication/clean-up-ended-session)
+                                                     :auth-type :token
+                                                     :auth-action :block}
+   [:post "/clj/confirm-login-takeover"]             {:handler (clj-handler authentication/confirm-login-takeover)
+                                                     :auth-type :token
+                                                     :auth-action :block}
    ;; The heartbeat. :member and not :token, because consulting the session is
    ;; the entire point: a beat has to be refused when the session is gone, and
    ;; :token routes deliberately skip the liveness gate.
@@ -221,4 +227,5 @@
 
    ;; Marketplace API
    [:post "/marketplace-signup"]                     {:handler marketplace/signup}
-   [:post "/marketplace-login"]                      {:handler authentication/marketplace-sso-login}})
+   [:post "/marketplace-login"]                      {:handler authentication/marketplace-sso-login}
+   [:post "/marketplace-login/complete"]             {:handler authentication/marketplace-sso-complete}})
