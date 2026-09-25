@@ -154,7 +154,7 @@
                              :holy-cross :la-plata :lea-county :liberty :lincoln
                              :midwest :missoula :mountain-view :nodak :north-fork
                              :northern-lights :northwestern :nve :okanogan-county :otec :pacificorp
-                             :pnm :poudre-valley :ravalli :rushmore :san-isabel
+                             :pnm :poudre-valley :pyregence-consortium :ravalli :rushmore :san-isabel
                              :southeast-colorado :springer :srp :tep :trico :wasco})
 
 (def all-utility-companies-planning (into #{} (map #(keyword (str (name %) "-planning")) all-utility-companies)))
