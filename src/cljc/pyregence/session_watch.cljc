@@ -30,6 +30,7 @@
    `clock`'s, and the activity shared by the session is injected. What remains
    here is policy: how long is too long, and what to do about it."
   (:require [pyregence.api.session-activity :as session-activity]
+            #?(:cljs [clojure.core.async :refer [<! go]])
             #?(:cljs [pyregence.datatypes.idle-window :as idle-window])
             #?(:cljs [pyregence.clock :as clock])
             #?(:cljs [pyregence.utils.async-utils :as u-async])
@@ -106,13 +107,16 @@
      (defn- give-up!
        "Stop claiming this session and go where something can be done about it.
 
-        Nothing is torn down first: the page is going away, and a page that
-        dismantled itself and then navigated would be doing the work twice."
+        Use the same hard logout a person does and wait for PyreCast to answer
+        before leaving. A redirect alone only makes the page look logged out;
+        the cookie stays live, and returning to the map signs the person back in."
        []
-       (u-browser/jump-to-url! (str "/login?"
-                                    u-async/session-ended-param
-                                    "="
-                                    u-async/session-ended-reason-idle)))
+       (go
+         (<! (u-async/call-clj-async! "log-out"))
+         (u-browser/jump-to-url! (str "/login?"
+                                      u-async/session-ended-param
+                                      "="
+                                      u-async/session-ended-reason-idle))))
 
      (defn- check!
        "One look at the clock: give up, beat, or do nothing.

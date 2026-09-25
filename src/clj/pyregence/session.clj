@@ -94,11 +94,18 @@
          (not (timed-out? session now))
          (not (revoked? session))))))
 
+(def ^:private pre-authentication-keys
+  "Context allowed to cross from an unauthenticated first step into the second.
+  Authenticated identity and its timestamps deliberately do not: an ended login
+  carried into this state would make page rendering discard the 2FA challenge."
+  [:marketplace-signup])
+
 (defn awaiting-2fa
-  "`session` marked as owing a second factor from `user`, with its own fuse. Added to the session
-   rather than replacing it, since a marketplace signup rides along until the login finishes."
+  "A fresh pre-authentication session owing a second factor from `user`, with its
+  own fuse. Marketplace signup context rides along until login finishes; a prior
+  authenticated session does not."
   [session {:keys [user_id user_email]} now]
-  (assoc session :pending-2fa
+  (assoc (select-keys session pre-authentication-keys) :pending-2fa
          {:user-id    user_id
           :user-email user_email
           :expires-at (+ now (timeout-ms :pyregence.auth/two-factor-window-min
@@ -162,6 +169,13 @@
       (assoc :logged-in?       logged-in?
              :idle-timeout-min idle-timeout-min)))
 
+(defn for-page
+  "The session view a page may receive, and whether its login had already ended."
+  [stored-session]
+  (let [live? (live? stored-session)]
+    {:visible (page-facing stored-session live? (when live? (idle-timeout-min)))
+     :ended?  (and (authenticated? stored-session) (not live?))}))
+
 (defn as-a-page-may-see-it
   "This session as a page is allowed to know it: PyreCast's own PKs taken out,
    the fact of a user replaced by whether that user's session is still live, and
@@ -187,8 +201,7 @@
    separately not to act on it, and that second sentence is a conditional in the
    ClojureScript whose only job is to undo this one."
   [session]
-  (let [live? (live? session)]
-    (page-facing session live? (when live? (idle-timeout-min)))))
+  (:visible (for-page session)))
 
 (defn note-activity
   "Answer a heartbeat: the page saying the person is still here.
