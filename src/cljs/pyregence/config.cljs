@@ -638,14 +638,6 @@
                                                               " - Global Forecast System at 0.250\u00B0 (approx 26 km) resolution to 16 days."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "NAM 12 km"]
-                                                              " - North American Mesoscale Model at 12 km resolution to 84 hours."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "NAM 3 km"]
-                                                              " -  North American Mesoscale Model at 3 km resolution to 60 hours."
-                                                              [:br]
-                                                              [:br]
                                                               [:strong "CANSAC WRF"]
                                                               " - California and Nevada Smoke and Air Committee (CANSAC) Weather Research and Forecasting (WRF) forecast model from Desert Research Institute."
                                                               " Two cycles per day (00z and 12z) at very high (1.33 km) resolution. See "
@@ -686,12 +678,6 @@
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
                                                                               :disabled-for #{:tmp :smoke :tcdc}}
-                                                              :nam-awip12    {:opt-label    "NAM 12 km"
-                                                                              :filter       "nam-awip12"
-                                                                              :disabled-for #{:tmp :apcp01 :smoke :tcdc}}
-                                                              :nam-conusnest {:opt-label    "NAM 3 km"
-                                                                              :filter       "nam-conusnest"
-                                                                              :disabled-for #{:tmp :smoke}}
                                                               :cansac-wrf    {:opt-label    "CANSAC WRF"
                                                                               :filter       "cansac-wrf"
                                                                               :disabled-for #{:tmp :apcp01 :smoke :tcdc}}
