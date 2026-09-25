@@ -15,8 +15,8 @@
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql]]))
 
-(def ^:private default-idle-timeout-min     15)  ; NIST 800-63B AAL3 / PCI DSS 8.2.8
-(def ^:private default-absolute-timeout-min 420) ; 7 h
+(def ^:private default-idle-timeout-min     29)  ; pentest: under 30 min
+(def ^:private default-absolute-timeout-min 479) ; pentest: under 8 h
 (def ^:private default-two-factor-window-min 15) ; the emailed code's own lifetime
 
 (defn authenticated?
@@ -225,7 +225,7 @@
 
 ^:rct/test
 (comment
-  ;; idle 15 min = 900000 ms ; absolute 7 h = 25200000 ms (the production defaults)
+  ;; idle 15 min = 900000 ms ; absolute 7 h = 25200000 ms
   (expired? {:user-id 1 :created-at 1000000000000 :last-active 1000000000000} 1000000000000 900000 25200000)
   ;=> false
   (expired? {:user-id 1 :created-at 1000000000000 :last-active 999999000000} 1000000000000 900000 25200000)
