@@ -1,6 +1,5 @@
 (ns ^:figwheel-hooks pyregence.client
-  (:require [clojure.core.async                 :refer [go <!]]
-            [clojure.edn                        :as edn]
+  (:require [clojure.edn                        :as edn]
             [goog.dom                           :as dom]
             [reagent.dom                        :refer [render]]
             [pyregence.components.page-layout   :refer [wrap-page]]
@@ -80,39 +79,38 @@
 (defn- ^:export init
   "Defines the init function to be called from window.onload()."
   [params session]
-  (go
-    (let [clj-params    (if params
-                          (reset! original-params (js->clj params :keywordize-keys true))
-                          @original-params)
-          clj-session   (if session
-                          (reset! original-session (js->clj session :keywordize-keys true))
-                          @original-session)
-          merged-params (merge clj-params clj-session)]
-      (reset! !/usage-terms-and-conditions-date (get clj-session :usage-terms-and-conditions-date))
-      (reset! !/feature-flags                   (get clj-session :features))
-      (reset! !/geoserver-urls                  (get clj-session :geoserver))
-      (reset! !/default-forecasts               (get clj-session :default-forecasts))
-      (reset! !/pyr-auth-token                  (get clj-session :auth-token))
-      (reset! !/mapbox-access-token             (get clj-session :mapbox-access-token))
-      ;; This is the root, so this is where the page's sense of the present comes
-      ;; from. Installed before anything is rendered, because a component that
-      ;; reads the clock during its first mount would otherwise find none.
-      (clock/install! (clock/->SystemClock))
-      ;; The composition root, and the only one. Nothing below builds a
-      ;; collaborator for itself or reaches for one: a page is handed what it
-      ;; needs and speaks to it through its protocol. The wiring is in force for
-      ;; the construction and for nothing else.
-      (wiring/with-wiring (wiring/->BrowserWiring)
-        (let [an-activity (=>SessionActivity)
-              a-directory (=>Directory (session/->session (:user-role merged-params)))]
-          ;; Watch the session for the moment it goes quiet too long. The window
-          ;; is PyreCast's own, reported only to somebody with a session to lose;
-          ;; `->idle-window` answers nil for anybody else, and `watch!` declines
-          ;; to watch. Activity is shared across tabs by the chosen realization.
-          (session-watch/watch!
-           (idle-window/->idle-window (:idle-timeout-min clj-session))
-           an-activity)
-          (render-root merged-params a-directory))))))
+  (let [clj-params    (if params
+                        (reset! original-params (js->clj params :keywordize-keys true))
+                        @original-params)
+        clj-session   (if session
+                        (reset! original-session (js->clj session :keywordize-keys true))
+                        @original-session)
+        merged-params (merge clj-params clj-session)]
+    (reset! !/usage-terms-and-conditions-date (get clj-session :usage-terms-and-conditions-date))
+    (reset! !/feature-flags                   (get clj-session :features))
+    (reset! !/geoserver-urls                  (get clj-session :geoserver))
+    (reset! !/default-forecasts               (get clj-session :default-forecasts))
+    (reset! !/pyr-auth-token                  (get clj-session :auth-token))
+    (reset! !/mapbox-access-token             (get clj-session :mapbox-access-token))
+    ;; This is the root, so this is where the page's sense of the present comes
+    ;; from. Installed before anything is rendered, because a component that
+    ;; reads the clock during its first mount would otherwise find none.
+    (clock/install! (clock/->SystemClock))
+    ;; The composition root, and the only one. Nothing below builds a
+    ;; collaborator for itself or reaches for one: a page is handed what it
+    ;; needs and speaks to it through its protocol. The wiring is in force for
+    ;; the construction and for nothing else.
+    (wiring/with-wiring (wiring/->BrowserWiring)
+      (let [an-activity (=>SessionActivity)
+            a-directory (=>Directory (session/->session (:user-role merged-params)))]
+        ;; Watch the session for the moment it goes quiet too long. The window
+        ;; is PyreCast's own, reported only to somebody with a session to lose;
+        ;; `->idle-window` answers nil for anybody else, and `watch!` declines
+        ;; to watch. Activity is shared across tabs by the chosen realization.
+        (session-watch/watch!
+         (idle-window/->idle-window (:idle-timeout-min clj-session))
+         an-activity)
+        (render-root merged-params a-directory)))))
 
 (defn- ^:after-load mount-root!
   "A hook for figwheel to call the init function again."
